@@ -75,7 +75,7 @@ Additional Resources
 
 == HiveMQ Community Forum
 
-The ideal place for questions or discussions about the HiveMQ Community Edition is our brand new https://community.hivemq.com/[HiveMQ Community Forum].
+The ideal place for questions or discussions about the HiveMQ Edge Edition is our brand new https://community.hivemq.com/[HiveMQ Community Forum].
 
 == How to Use
 
