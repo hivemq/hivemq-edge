@@ -24,6 +24,7 @@ import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -37,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SuppressWarnings("NullabilityAnnotations")
+@Disabled("String payload conversion is disabled atm")
 class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
 
     public static final String TEST_UUID = "b12776f9-bf9f-460a-9984-89c5ac1ea724";
