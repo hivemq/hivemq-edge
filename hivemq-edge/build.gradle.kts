@@ -289,6 +289,7 @@ tasks.jar {
         "Implementation-Vendor" to metadata.organization.get().name.get(),
         "Implementation-Version" to project.version,
         "HiveMQ-Version" to project.version,
+        "HiveMQ-Edge-Version" to project.version,
         "Main-Class" to "com.hivemq.HiveMQEdgeMain"
     )
 }
