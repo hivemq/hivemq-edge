@@ -17,6 +17,7 @@ package com.hivemq.configuration.info;
 
 import com.google.common.io.Files;
 import com.hivemq.HiveMQEdgeGateway;
+import com.hivemq.HiveMQEdgeMain;
 import com.hivemq.configuration.EnvironmentVariables;
 import com.hivemq.configuration.SystemProperties;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -136,7 +137,7 @@ public class SystemInformationImpl implements SystemInformation {
 
     private void setHivemqVersion() {
 
-        hivemqVersion = ManifestUtils.getValueFromManifest(HiveMQEdgeGateway.class, "HiveMQ-Edge-Version");
+        hivemqVersion = ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Edge-Version");
 
         if (hivemqVersion == null || hivemqVersion.length() < 1) {
             hivemqVersion = DEVELOPMENT_VERSION;
