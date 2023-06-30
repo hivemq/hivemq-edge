@@ -64,7 +64,7 @@ public class HiveMQRemoteConfigurationServiceImpl implements HiveMQEdgeRemoteCon
     public HiveMQEdgeRemoteConfiguration getConfiguration() {
         Optional<HiveMQEdgeRemoteConfiguration> optional = hiveMQEdgeHttpService.getRemoteConfiguration();
         if (optional.isPresent()) {
-            logger.info("Loaded HiveMQ Edge Configuration From Remote");
+            logger.debug("Loaded HiveMQ Edge Frontend Configuration");
             return optional.get();
         } else {
             loadLocalConfiguration();
