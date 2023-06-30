@@ -7,6 +7,8 @@
 
 = HiveMQ Edge
 
+image:https://img.shields.io/github/actions/workflow/status/hivemq/hivemq-edge/check.yml?branch=master[GitHub Workflow Status (with branch),link=https://github.com/hivemq/hivemq-edge/actions/workflows/check.yml?query=branch%3Amaster]
+
 HiveMQ Edge is an open-source, modular, secure by design platform which consolidates industrial workloads, unifying them into open-standards MQTT to connect to the enterprise.
 Seamlessly defining UNS by deployment, using targeted data model & transformation plugins, allows IT and OT to unify and ‘control by policy’, data collected at the Edge.
 
