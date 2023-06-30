@@ -64,7 +64,7 @@ EXPOSE 1883
 EXPOSE 2442
 
 #api and webinterface
-EXPOSE 8000
+EXPOSE 8080
 
 WORKDIR /opt/hivemq
 
