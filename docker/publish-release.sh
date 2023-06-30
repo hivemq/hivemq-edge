@@ -8,8 +8,8 @@ echo "Building Docker image for HiveMQ Edge ${HIVEMQ_EDGE_VERSION}"
 ./gradlew :hivemqEdgeZip
 cd docker
 cp ../build/distributions/hivemq-edge-${HIVEMQ_EDGE_VERSION}.zip .
-IMAGE="schaebo/hivemq-edge:${HIVEMQ_EDGE_VERSION}"
-IMAGE_LATEST="schaebo/hivemq-edge:latest"
+IMAGE="hivemq/hivemq-edge:${HIVEMQ_EDGE_VERSION}"
+IMAGE_LATEST="hivemq/hivemq-edge:latest"
 
 BUILDER=$(docker buildx create --use)
 
