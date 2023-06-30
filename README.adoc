@@ -109,14 +109,25 @@ To execute this image, simply run the following command:
 
 [source,bash]
 ----
-docker run --name hivemq-edge -d -p 1883:1883 -p 8080:8080 hivemq/hivemq-edge:2023.1
+docker run --name hivemq-edge -d -p 1883:1883 -p 8080:8080 hivemq/hivemq-edge
 ----
+
+When the container is running you can connect MQTT clients at port 1883 and access the UI at http://localhost:8080/.
+
+Default credentials for the UI are user: `admin`, password: `hivemq`
+
+
+To run the current state of master branch you can use the `snapshot` tag.
+----
+docker run --name hivemq-edge -p 1883:1883 -p 8080:8080 hivemq/hivemq-edge:snapshot
+----
+
 
 To change the default log level you can set the environment variable `HIVEMQ_LOG_LEVEL` when running the container:
 
 [source,bash]
 ----
-docker run --name hivemq-edge -e HIVEMQ_LOG_LEVEL=INFO -d -p 1883:1883 -p 8080:8080 hivemq/hivemq-edge:2023.1
+docker run --name hivemq-edge -e HIVEMQ_LOG_LEVEL=INFO -d -p 1883:1883 -p 8080:8080 hivemq/hivemq-edge
 
 ----
 
