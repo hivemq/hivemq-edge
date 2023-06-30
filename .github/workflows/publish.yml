@@ -22,7 +22,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: Attach HiveMQ Zip to GitHub Release
-        run: ./gradlew :hivemq-edge-build:hivemqEdgeZip
+        run: ./gradlew :hivemqEdgeZip
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
