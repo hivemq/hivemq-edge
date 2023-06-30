@@ -1,0 +1,36 @@
+MASTER_BRANCH = 'master'
+
+pipeline {
+    agent { label 'jenkins-worker' }
+    options {
+        skipDefaultCheckout() // no checkout needed
+        buildDiscarder(logRotator(numToKeepStr: '100'))
+        timestamps()
+    }
+    stages {
+        stage('Trigger build') {
+            steps {
+                script {
+                    def multiBranchJobPath = '../../hivemq-edge-composite'
+                    def branchJobName = BRANCH_NAME.replace('/', '%2F')
+                    try {
+                        build job: "${multiBranchJobPath}/${branchJobName}", wait: false
+                    } catch (e) {
+                        try {
+                            withCredentials([gitUsernamePassword(credentialsId: 'hivemq-jenkins')]) {
+                                sh("git clone https://github.com/hivemq/hivemq-edge-composite.git --branch=${MASTER_BRANCH} --single-branch --depth 1 .")
+                                try {
+                                    sh("git push origin HEAD:${BRANCH_NAME}")
+                                } catch (e2) { // if push failed, branch already exists
+                                }
+                            }
+                        } finally {
+                            cleanWs()
+                            build job: multiBranchJobPath, wait: false
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

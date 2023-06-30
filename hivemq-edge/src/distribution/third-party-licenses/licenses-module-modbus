@@ -1,0 +1,18 @@
+HiveMQ Edge Module Modbus Additional Third Party Libraries
+==============================
+HiveMQ Edge Module Modbus uses the following third party libraries in addition to HiveMQ dependencies:
+
+Library                                                            | License                                    | License text                                                      | Notes
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ com.digitalpetri.fsm:strict-machine                               | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.digitalpetri.modbus:modbus-codec                              | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.digitalpetri.modbus:modbus-core                               | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.digitalpetri.modbus:modbus-master-tcp                         | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.digitalpetri.netty:netty-channel-fsm                          | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.fasterxml.jackson.core:jackson-annotations                    | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.fasterxml.jackson.core:jackson-core                           | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.fasterxml.jackson.core:jackson-databind                       | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+The open source code of the libraries can be obtained by sending an email to legal@hivemq.com.

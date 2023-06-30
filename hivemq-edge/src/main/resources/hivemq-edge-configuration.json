@@ -1,0 +1,33 @@
+{
+  "gitHubLink" : {
+    "displayText" : "HiveMQ Edge GitHub",
+    "url" : "https://github.com/hivemq/hivemq-edge",
+    "description" : "",
+    "target" : "",
+    "imageUrl" : "",
+    "external" : true
+  },
+  "cloudLink" : null,
+  "ctas" : [],
+  "resources" : [
+    {
+      "displayText" : "Power Of Smart Manufacturing",
+      "url" : "https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/",
+      "description" : "",
+      "target" : "",
+      "imageUrl" : "",
+      "external" : true
+    },
+    {
+      "displayText" : "Power Of Smart Manufacturing",
+      "url" : "https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/",
+      "description" : "",
+      "target" : "",
+      "imageUrl" : "",
+      "external" : true
+    }
+  ],
+  "extensions" : [],
+  "modules" : [],
+  "properties" : {  }
+}

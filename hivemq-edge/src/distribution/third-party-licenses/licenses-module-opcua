@@ -1,0 +1,25 @@
+HiveMQ Edge Module for OPC UA Additional Third Party Libraries
+==============================
+
+HiveMQ Edge Module for OPC UA uses the following third party libraries in addition to HiveMQ dependencies:
+
+Library                                                            | License                                    | License text                                                      | Notes
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ com.digitalpetri.fsm:strict-machine                               | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.digitalpetri.netty:netty-channel-fsm                          | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.fasterxml.jackson.core:jackson-annotations                    | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.fasterxml.jackson.core:jackson-core                           | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.fasterxml.jackson.core:jackson-databind                       | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ com.google.code.gson:gson                                         | Apache License, Version 2.0                | https://opensource.org/licenses/Apache-2.0                        |
+ org.eclipse.milo:bsd-core                                         | Eclipse Public License - v 2.0             | https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.html        |
+ org.eclipse.milo:bsd-parser                                       | Eclipse Public License - v 2.0             | https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.html        |
+ org.eclipse.milo:bsd-parser-gson                                  | Eclipse Public License - v 2.0             | https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.html        |
+ org.eclipse.milo:dictionary-reader                                | Eclipse Public License - v 2.0             | https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.html        |
+ org.eclipse.milo:sdk-client                                       | Eclipse Public License - v 2.0             | https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.html        |
+ org.eclipse.milo:sdk-core                                         | Eclipse Public License - v 2.0             | https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.html        |
+ org.eclipse.milo:stack-client                                     | Eclipse Public License - v 2.0             | https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.html        |
+ org.eclipse.milo:stack-core                                       | Eclipse Public License - v 2.0             | https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.html        |
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+The open source code of the libraries can be obtained by sending an email to legal@hivemq.com.

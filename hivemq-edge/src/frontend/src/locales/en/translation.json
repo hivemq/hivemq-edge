@@ -1,0 +1,488 @@
+{
+  "branding": {
+    "appName": "HiveMQ Industrial Edge",
+    "company": "HiveMQ"
+  },
+  "action": {
+    "skipNavLink": "Skip to content",
+    "logout": "Logout",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "navigation": {
+    "mainPage": "Main content",
+    "gateway": {
+      "title": "HiveMQ Edge",
+      "routes": {
+        "home": "Home",
+        "bridges": "MQTT Bridges",
+        "protocolAdapters": "Protocol Adapters",
+        "eventLogs": "Event logs"
+      }
+    },
+    "extensions": {
+      "title": "Extensions",
+      "routes": {
+        "modules": "Modules",
+        "namespace": "Unified namespace"
+      }
+    },
+    "resources": {
+      "title": "External resources",
+      "routes": {
+        "articles": "Useful articles",
+        "github": "GitHub",
+        "help": "Documentation"
+      }
+    }
+  },
+  "error": {
+    "backHome": "Back to Home",
+    "notfound": { "heading": "Sorry, an unexpected error has occurred" }
+  },
+  "login": {
+    "aside": {
+      "header": "Simple, Fast & Secure Edge Gateway",
+      "subheader": "Plug and play with your Edge devices and unify the data into standards compliant MQTT workload"
+    },
+    "title": "Sign in",
+    "username": {
+      "label": "Username",
+      "placeholder": "Enter your username",
+      "error": {
+        "required": "The username is required"
+      }
+    },
+    "password": {
+      "label": "Password",
+      "placeholder": "Enter your password",
+      "show": "Show password",
+      "hide": "Hide password",
+      "support": "Contact your system administrator for access credentials",
+      "error": {
+        "required": "The password is required"
+      }
+    },
+    "submit": { "label": "Sign in" },
+    "error": {
+      "tokenType": "Authentication Token",
+      "tokenInvalid": "There is a problem with your credentials. Contact us",
+      "tokenExpired": "Your credentials have expired. Contact us"
+    }
+  },
+  "welcome": {
+    "title": "Welcome to HiveMQ",
+    "description": "Connect from and to any device and send streams of data to your enterprise.",
+    "onboarding": {
+      "title": "Get data flowing",
+      "connectDevice": {
+        "header": "From Devices To HiveMQ Edge",
+        "readMore": {
+          "title": "Connect MQTT or MQTT-SN devices to the broker",
+          "label": "Read more"
+        },
+        "protocolAdapter": {
+          "title": "Use HiveMQ Edge modular Protocol adapters to connect to local and network based devices.",
+          "label": "Get Started!"
+        }
+      },
+      "connectEnterprise": {
+        "header": "From HiveMQ Edge to the Enterprise",
+        "bridge": {
+          "title": "Connect your HiveMQ Edge MQTT Broker to your Enterprise using MQTT Bridge connections.",
+          "label": "Get Started!"
+        }
+      }
+    },
+    "metrics": {
+      "com.hivemq.messages.incoming.connect.count": "Incoming messages (count)",
+      "com.hivemq.subscriptions.overall.current": "Overall subscriptions (current)"
+    }
+  },
+  "bridge": {
+    "title": "MQTT bridges",
+    "description": "A MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
+    "action": {
+      "add": "Add bridge connection",
+      "edit": "Edit",
+      "delete": "Delete",
+      "start": "Start",
+      "stop": "Stop",
+      "create": "Create the bridge",
+      "update": "Update the bridge",
+      "submitting": "Submitting"
+    },
+    "toast": {
+      "delete": {
+        "title": "Deleting Bridge",
+        "description": "We've successfully deleted the bridge for you.",
+        "error": "There was a problem trying to delete the bridge"
+      },
+      "update": {
+        "title": "Updating Bridge",
+        "description": "We've successfully updated the bridge for you.",
+        "error": "There was a problem trying to update the bridge"
+      },
+      "create": {
+        "title": "Creating Bridge",
+        "description": "We've successfully created a new bridge for you.",
+        "error": "There was a problem trying to create the bridge"
+      }
+    },
+    "status": {
+      "label": "Status"
+    },
+    "menu": "Bridge Menu",
+    "subscription": {
+      "description_zero": "Subscription",
+      "description_one": "Subscription",
+      "description_other": "Subscriptions",
+      "type_local": "Local",
+      "type_remote": "Remote",
+      "type_local_zero": "Local subscription",
+      "type_local_one": "Local subscription",
+      "type_local_other": "Local subscriptions",
+      "type_remote_zero": "Remote subscription",
+      "type_remote_one": "Remote subscription",
+      "type_remote_other": "Remote subscriptions",
+      "local" : {
+        "info" : "Subscriptions to your local MQTT Broker are used to forward messages from this HiveMQ Edge to a remote MQTT broker."
+      },
+      "remote" : {
+        "info" : "Subscriptions to a remote MQTT Broker are used to receive messages from a remote MQTT broker on this HiveMQ Edge."
+      },
+      "filters": {
+        "label": "Filters",
+        "helper": "The list of topics used to filter the messages. MQTT wildcards are supported.",
+        "error": {
+          "required": "At least one topic is required"
+        }
+      },
+      "excludes": "Excludes",
+      "destination": {
+        "label": "Destination",
+        "helper": "The destination topic. You can use '{#}' to keep the original topic.",
+        "error": {
+          "required": "At least one topic is required"
+        }
+      },
+      "maxQoS": {
+        "label": "Max QoS",
+        "helper": "Maximum Quality of Service",
+        "values": {
+          "0": "At most once",
+          "1": "At least once",
+          "2": "Exactly once"
+        }
+      },
+      "preserveRetain": {
+        "label": "Preserve Retain",
+        "helper": "Description of the Preserve Retain"
+      },
+      "customUserProperties": {
+        "label": "Custom Properties",
+        "helper": "A list of key-value",
+        "headers": {
+          "key": "Key",
+          "value": "Value",
+          "action": "Action"
+        },
+        "actions": {
+          "add": "Add a key/value pair",
+          "delete": "Delete the pair"
+        }
+      },
+      "actions": "Actions",
+      "add": "Add a new subscription",
+      "edit": "Edit the subscription",
+      "delete": "Delete the subscription",
+      "topic": {
+        "placeholder": "Type your topic and press enter..."
+      }
+    },
+    "connection": {
+      "host": "Host",
+      "port": "Port",
+      "username": "Username",
+      "password": "Password",
+      "clientId": "Client Id",
+      "sessionExpiry": "Session Expiry",
+      "testConnection": "Test Connection"
+    },
+    "options": {
+      "id": {
+        "label": "Name",
+        "placeholder": "my-mqtt-bridge",
+        "helper": "The unique name of this bridge",
+        "error": {
+          "required": "The name of the bridge is required",
+          "pattern": "Should only contain alpha-numeric characters with spaces and hyphens",
+          "notUnique": "The name is already in use for another bridge"
+        }
+      },
+      "cleanStart": { "legend": "Connection", "label": "Clean Start", "helper": "Clean start determines if existing MQTT session state should be cleared up on connect." },
+      "loopPrevention": {
+        "legend": "Loop Prevention",
+        "label": "Enable loop prevention",
+        "helper": "Ensure messages cannot cause infinite loops."
+      },
+      "hopCount": {
+        "label": "Maximum hop count for bridged messages",
+        "helper": "The maximum number of hops before a message is discarded."
+      },
+      "keepAlive": {
+        "label": "Keep Alive",
+        "helper": "Maximum time (in seconds) that the client maybe considered idle before disconnection"
+      },
+      "sessionExpiry": {
+        "label": "Session Expiry",
+        "helper": "Time in seconds your session is maintained on the broker"
+      },
+      "clientid": {
+        "label": "Client Id Override",
+        "helper": "Override the client identifier used to connect to the remote broker. Leave empty to use the bridge id."
+      }
+    },
+    "security": {
+      "cipherSuites": {
+        "label": "Cipher Suites",
+        "helper": "Select the cipher suites. Leave empty to use the default cipher suites."
+      },
+      "enabled": {
+        "label": "Enable Transport Layer Security (TLS)",
+        "helper": "If a TLS listener is enabled in HiveMQ, each client connection for that listener is encrypted and secured by TLS"
+      },
+      "protocols": {
+        "label": "TLS Protocols",
+        "helper": "Select the protocols. Leave emtpy to use the default protocols."
+      },
+      "keystorePath": {
+        "label": "Key Store Path",
+        "helper": "Select the Key Store path"
+      },
+      "keystorePassword": {
+        "label": "Key Store Password",
+        "helper": "Select the Key Store password"
+      },
+      "truststorePath": {
+        "label": "Trust Store Path",
+        "helper": "Select the Trust Store path"
+      },
+      "truststorePassword": {
+        "label": "Truth Store Password",
+        "helper": "Select the Trust Store password"
+      },
+      "privateKeyPassword": {
+        "label": "Private Key Password",
+        "helper": "Select the Private Key password"
+      },
+      "keyStore": {
+        "legend": "Key Store"
+      },
+      "trustStore": {
+        "legend": "Trust Store"
+      }
+    },
+    "noDataWarning": {
+      "title": "No bridges currently installed",
+      "description": "Configure Bridges to start sending data to your enterprise MQTT broker."
+    },
+    "drawer": {
+      "label": "Edit bridge configuration",
+      "title": {
+        "create": "Create a new bridge configuration",
+        "update": "Update the bridge configuration"
+      },
+      "connection": "Connection details",
+      "broker": "Broker Configuration",
+      "security": "Security"
+    },
+    "stepper": {
+      "description": "Create a new bridge to a broker",
+      "source": { "title": "Source", "description": "MQTT Broker" },
+      "local": { "title": "Local", "description": "Local subscriptions" },
+      "remote": { "title": "Remote", "description": "Remote subscriptions" },
+      "options": { "title": "Options" },
+      "publish": { "title": "Publish" }
+    }
+  },
+  "protocolAdapter": {
+    "title": "Protocol Adapters",
+    "description": "Protocol adapters provide the ability to connect your HiveMQ Edge installation to local and remote devices. Once a connection has been established, you can consolidate data from this connection into your HiveMQ MQTT Broker.",
+    "action": {
+      "add": "Add",
+      "delete": "Delete",
+      "create": "Create",
+      "update": "Update",
+      "validate": "Validate",
+      "instantiate": "Instantiate",
+      "createInstance": "Create new adapter"
+    },
+    "overview": {
+      "type": "Type:",
+      "author": "Author:",
+      "documentation": "Documentation:"
+    },
+    "noDataWarning": {
+      "title": "No protocol adapters are configured",
+      "description": "Protocol adapters allow you to connect your HiveMQ Edge installation to local or remote devices. View your installed protocol adapters to create new connections."
+    },
+    "tabs": {
+      "adapters": "Protocol Adapters Instances",
+      "protocols": "Installed Protocol Adapters"
+    },
+    "protocols": {
+      "adapterCount_zero": "There are no adapter protocol defined. Please check your configuration",
+      "adapterCount_one": "{{count}} adapter type",
+      "adapterCount_other": "{{count}} adapter types",
+      "description_zero": "There are no adapter protocol defined. Please check your configuration",
+      "description_one": "Select the adapter type to start creating your adapter",
+      "description_other": "Select one of the following $t(protocolAdapter.protocols.adapterCount, {\"count\": {{count}} }) to start creating your adapter"
+    },
+    "facet": {
+      "search": {
+        "label": "Search",
+        "placeholder": "Search for a protocol",
+        "clear": "Clear"
+      },
+      "categories": {
+        "label": "Categories",
+        "allFilters": "All"
+      }
+    },
+    "store": {
+      "label": "Protocol Adapter Store",
+      "title": {
+        "create": "Select a template to instantiate"
+      }
+    },
+    "drawer": {
+      "label": "Protocol Adapter Editor",
+      "title": {
+        "create": "Create a new adapter",
+        "update": "Update the adapter"
+      }
+    },
+    "table": {
+      "pagination": {
+        "summary": "Seeing {{ count }} of {{ total }} adapters"
+      },
+      "header": {
+        "name": "Name",
+        "type": "Type",
+        "status": "Status",
+        "lastStarted": "Last started",
+        "actions": "Actions"
+      },
+      "actions": {
+        "label": "Actions",
+        "connect": "Connect",
+        "disconnect": "Disconnect",
+        "create": "Create similar",
+        "edit": "Edit",
+        "delete": "Delete"
+      }
+    },
+    "toast": {
+      "delete": {
+        "title": "Deleting Protocol Adapter",
+        "description": "We've successfully deleted the Protocol Adapter for you.",
+        "error": "There was a problem trying to delete the Protocol Adapter"
+      },
+      "update": {
+        "title": "Updating Protocol Adapter",
+        "description": "We've successfully updated the Protocol Adapter for you.",
+        "error": "There was a problem trying to update the Protocol Adapter"
+      },
+      "create": {
+        "title": "Creating Protocol Adapter",
+        "description": "We've successfully created a new Protocol Adapter for you.",
+        "error": "There was a problem trying to create the Protocol Adapter"
+      }
+    },
+    "type": {
+      "label": "Type",
+      "select": "Select an adapter type",
+      "error": {
+        "required": "This field is required"
+      }
+    },
+    "uiSchema": {
+      "groups": {
+        "coreFields": "Settings",
+        "security": "Security",
+        "publishing": "Publishing",
+        "authentication": "Authentication"
+      }
+    }
+  },
+  "articles": {
+    "title": "Articles",
+    "description": "Some reading for your understanding of HiveMQ Edge",
+    "content": "Article image",
+    "action": {
+      "read": "Go to article"
+    }
+  },
+  "unifiedNamespace": {
+    "title": "Unified Namespace",
+    "description": "SA 95 provides a convenient way of structuring data sources in relation to their position within a manufacturing enterprise, hierarchically. ISA 95 recommends following the Enterprise => Site => Area => Line => Cell format",
+    "enabled": {
+      "label": "Enable Unified Namespace",
+      "helper": "When enabled, unified namespace will provide tokens that can be used in topics to apply UNS convention to your data."
+    },
+    "namespaceGroup": {
+      "legend": "ISA-95 Namespace",
+      "helper": ""
+    },
+    "enterprise": {
+      "label": "Enterprise"
+    },
+    "site": {
+      "label": "Site"
+    },
+    "area": {
+      "label": "Area"
+    },
+    "productionLine": {
+      "label": "Production Line"
+    },
+    "workCell": {
+      "label": "Work Cell"
+    },
+    "options": {
+      "legend": "Options"
+    },
+    "prefixAllTopics": {
+      "label": "Prefix all topics",
+      "helper": "MQTT topics will all use the namespace defined"
+    },
+    "toast": {
+      "update": {
+        "title": "Updating namespace",
+        "description": "We've successfully updated the namespace for you.",
+        "error": "There was a problem trying to update the namespace"
+      }
+    }
+  },
+  "modals": {
+    "generics": {
+      "confirmation": "Are you sure? You can't undo this action afterwards."
+    },
+    "StepperCancelDialog": {
+      "header": "Delete Bridge"
+    },
+    "deleteBridgeDialog": {
+      "header": "Delete Bridge"
+    },
+    "deleteProtocolAdapterDialog": {
+      "header": "Delete Adapter"
+    },
+    "SubscriptionEditor": {
+      "header": "Define the subscription pattern",
+      "submit": "Add Subscription"
+    }
+  }
+}

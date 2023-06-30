@@ -1,0 +1,164 @@
+
+++++
+<p align="center">
+  <img src="https://github.com/hivemq/hivemq-edge/blob/master/hivemq-edge/images/hivemq-edge-logo.svg?raw=true" width="500">
+</p>
+++++
+
+= HiveMQ Edge
+
+image:https://img.shields.io/github/actions/workflow/status/hivemq/hivemq-edge/check.yml?branch=master[GitHub Workflow Status (with branch),link=https://github.com/hivemq/hivemq-edge/actions/workflows/check.yml?query=branch%3Amaster]
+
+HiveMQ Edge is an open-source, modular, secure by design platform which consolidates industrial workloads, unifying them into open-standards MQTT to connect to the enterprise.
+Seamlessly defining UNS by deployment, using targeted data model & transformation plugins, allows IT and OT to unify and ‘control by policy’, data collected at the Edge.
+
+It is a Java-based open source MQTT and MQTT-SN broker that fully supports MQTT 3.x,5 and MQTT-SN 1.2.
+
+* Website: https://www.hivemq.com/
+* Documentation: https://github.com/hivemq/hivemq-edge/wiki
+* Community Forum: https://community.hivemq.com/
+* Contribution guidelines: link:CONTRIBUTING.adoc[Contributing.adoc]
+* License: The source files in this repository are made available under the link:LICENSE[Apache License Version 2.0].
+
+== Features
+
+* Converters for OPC UA, Modbus, and other protocols into MQTT messages
+* All MQTT 3.1, 3.1.1 and MQTT 5.0 features
+* MQTT over TCP, TLS, WebSocket and Secure WebSocket transport
+* Integrated MQTT-SN gateway allowing constrained devices to access the MQTT broker.
+* Bidirectional MQTT bridge functionality to connect to enterprise MQTT brokers
+* Java Extension SDK for:
+** Authentication
+** Authorization
+** Client Initializers
+** MQTT Packet Interceptors
+** Interacting with Publishes, Retained Messages, Clients and Subscriptions
+* Running on Windows, Linux and MacOS (Linux is recommended)
+
+=== MQTT Broker
+
+HiveMQ Edge incorperates a fully standards compliant MQTT broker.
+Connect your devices to the broker to subscribe and gain access to data obtained from devices on the Edge.
+
+HiveMQ Edge is compatible with all MQTT 3.x and MQTT 5 clients, including Eclipse Paho and https://github.com/hivemq/hivemq-mqtt-client[HiveMQ MQTT Client].
+
+=== MQTT-SN Gateway
+
+HiveMQ Edge incorperates an MQTT-SN gateway allowing constrained devices to access the MQTT broker.
+
+MQTT-SN is an optimized version of the MQTT specification designed for use on small, low powered, sensor devices, often running on the edge of the network; typical of the IoT.
+
+=== Protocol Adapters
+
+A protocol adapter contributes code to connect to PLCs and coverts the data retrieved from these devices into MQTT messages which are PUBLISHED into the local MQTT broker.
+More Protocol adapters will be added to the project over time.
+
+* OPC UA
+* Modbus
+* S7 footnoteref:[tba, coming soon]
+* Allen-Bradley footnoteref:[tba]
+* and many more
+
+
+=== MQTT Bridging
+
+HiveMQ allows you backhaul your data into an enterprise broker using MQTT bridges.
+Connect any number of bridges to transport Edge data upstream. By connecting Edge to enterprise MQTT brokers like https://www.hivemq.com/[HiveMQ] you can build a flexible https://www.hivemq.com/unified-namespace-uns-essentials-iiot-industry-40/[Unified Namespace (UNS)] solution based on open standards.
+
+== Documentation
+
+The documentation for the HiveMQ Edge can be found https://github.com/hivemq/hivemq-edge/wiki[here].
+
+Additional Resources
+
+* https://www.hivemq.com/mqtt-essentials/[MQTT Essentials]
+* https://www.hivemq.com/mqtt-5/[MQTT 5 Essentials]
+* https://www.hivemq.com/unified-namespace-uns-essentials-iiot-industry-40/[UNS Essentials]
+
+== HiveMQ Community Forum
+
+The ideal place for questions or discussions about the HiveMQ Community Edition is our brand new https://community.hivemq.com/[HiveMQ Community Forum].
+
+== How to Use
+
+=== Quick Start
+
+* Download the latest https://github.com/hivemq/hivemq-edge/releases/download/2023.1/hivemq-edge-2023.1.zip[HiveMQ Edge binary package].
+* Unzip the package.
+* Run the run.sh (Linux/OSX) or run.bat (Windows) in the bin folder of the package.
+
+[source,bash]
+----
+cd hivemq-edge-<version>
+bin/run.sh
+----
+
+[IMPORTANT]
+At least Java version 11 is required to run HiveMQ Edge.
+If you are in doubt, you can check the installed Java version by entering `java -version` on your command line.
+
+You can now connect MQTT clients to `<ip address>:1883`.
+
+[CAUTION]
+If you want to connect devices on external networks to HiveMQ Edge, please make sure your server is reachable from those networks and the required ports (default: 1883) are accessible through your firewall.
+
+=== Run with Docker
+
+All releases are available in the https://hub.docker.com/r/hivemq/hivemq-edge[hivemq/hivemq-edge] repository on DockerHub.
+To execute this image, simply run the following command:
+
+[source,bash]
+----
+docker run --name hivemq-edge -d -p 1883:1883 -p 8080:8080 hivemq/hivemq-edge:2023.1
+----
+
+To change the default log level you can set the environment variable `HIVEMQ_LOG_LEVEL` when running the container:
+
+[source,bash]
+----
+docker run --name hivemq-edge -e HIVEMQ_LOG_LEVEL=INFO -d -p 1883:1883 -p 8080:8080 hivemq/hivemq-edge:2023.1
+
+----
+
+=== Building from Source
+
+==== Building the Binary Package
+
+Check out the git repository and build the binary package.
+
+[source,bash]
+----
+git clone https://github.com/hivemq/hivemq-edge.git
+
+cd hivemq-edge
+
+./gradlew hivemqEdgeZip
+----
+
+The package `hivemq-edge-<version>.zip` is created in the sub-folder `build/distributions/`.
+
+==== Building the Docker Image
+
+Check out the git repository and build the Docker image.
+
+[source,bash]
+----
+git clone https://github.com/hivemq/hivemq-edge.git
+
+cd hivemq-edge
+
+docker/build.sh
+----
+
+The Docker image `hivemq/hivemq-edge:snapshot` is created locally.
+
+For further development instructions see the link:CONTRIBUTING.adoc[contribution guidelines].
+
+== Contributing
+
+If you want to contribute to HiveMQ Edge, see the link:CONTRIBUTING.adoc[contribution guidelines].
+
+== License
+
+HiveMQ Edge is licensed under the `APACHE LICENSE, VERSION 2.0`.
+A copy of the license can be found link:LICENSE[here].

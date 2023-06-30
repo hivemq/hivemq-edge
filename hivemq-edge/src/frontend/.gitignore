@@ -1,0 +1,29 @@
+.DS_Store
+node_modules
+/dist
+/coverage
+# local env files
+.env.local
+.env.*.local
+
+# Log files
+pnpm-debug.log*
+pnpm-error.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Cypress collection
+cypress/videos
+cypress/screenshots
+
+# Exclude test-results
+test-results
+/public/app/
+/public/images/

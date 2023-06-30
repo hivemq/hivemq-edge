@@ -1,0 +1,7 @@
+pnpm-lock.*
+
+docs/
+dist/
+coverage/
+public/
+src/api/__generated__

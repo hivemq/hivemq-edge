@@ -1,0 +1,36 @@
+HiveMQ Third Party Libraries
+==============================
+
+HiveMQ uses the following third party libraries for its web frontend:
+
+Library                                                            | License                                    | License text                                                      | Notes
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+@chakra-ui/anatomy                                                 | MIT License                                | https://opensource.org/licenses/MIT                               |
+@chakra-ui/icons                                                   | MIT License                                | https://opensource.org/licenses/MIT                               |
+@chakra-ui/radio                                                   | MIT License                                | https://opensource.org/licenses/MIT                               |
+@chakra-ui/react                                                   | MIT License                                | https://opensource.org/licenses/MIT                               |
+@chakra-ui/skip-nav                                                | MIT License                                | https://opensource.org/licenses/MIT                               |
+@chakra-ui/utils                                                   | MIT License                                | https://opensource.org/licenses/MIT                               |
+@emotion/react                                                     | MIT License                                | https://opensource.org/licenses/MIT                               |
+@emotion/styled                                                    | MIT License                                | https://opensource.org/licenses/MIT                               |
+@fontsource/roboto                                                 | Apache-2.0                                 | https://opensource.org/licenses/Apache-2.0                        |
+@monaco-editor/react                                               | MIT License                                | https://opensource.org/licenses/MIT                               |
+@rjsf/chakra-ui                                                    | Apache-2.0                                 | https://opensource.org/licenses/Apache-2.0                        |
+@rjsf/core                                                         | Apache-2.0                                 | https://opensource.org/licenses/Apache-2.0                        |
+@rjsf/utils                                                        | Apache-2.0                                 | https://opensource.org/licenses/Apache-2.0                        |
+@rjsf/validator-ajv8                                               | Apache-2.0                                 | https://opensource.org/licenses/Apache-2.0                        |
+@tanstack/react-query-devtools                                     | MIT License                                | https://opensource.org/licenses/MIT                               |
+@tanstack/react-query                                              | MIT License                                | https://opensource.org/licenses/MIT                               |
+axios                                                              | MIT License                                | https://opensource.org/licenses/MIT                               |
+chakra-react-select                                                | MIT License                                | https://opensource.org/licenses/MIT                               |
+form-data                                                          | MIT License                                | https://opensource.org/licenses/MIT                               |
+framer-motion                                                      | MIT License                                | https://opensource.org/licenses/MIT                               |
+i18next                                                            | MIT License                                | https://opensource.org/licenses/MIT                               |
+luxon                                                              | MIT License                                | https://opensource.org/licenses/MIT                               |
+react-chakra-pagination                                            | MIT License                                | https://opensource.org/licenses/MIT                               |
+react-dom                                                          | MIT License                                | https://opensource.org/licenses/MIT                               |
+react-hook-form                                                    | MIT License                                | https://opensource.org/licenses/MIT                               |
+react-i18next                                                      | MIT License                                | https://opensource.org/licenses/MIT                               |
+react-icons                                                        | MIT License                                | https://opensource.org/licenses/MIT                               |
+react-router-dom                                                   | MIT License                                | https://opensource.org/licenses/MIT                               |
+react                                                              | MIT License                                | https://opensource.org/licenses/MIT                               |

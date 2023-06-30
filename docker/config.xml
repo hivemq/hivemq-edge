@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<hivemq>
+    <mqtt-listeners>
+        <tcp-listener>
+            <port>1883</port>
+            <bind-address>0.0.0.0</bind-address>
+        </tcp-listener>
+    </mqtt-listeners>
+    <mqtt-sn-listeners>
+        <udp-listener>
+            <port>2442</port>
+            <bind-address>0.0.0.0</bind-address>
+        </udp-listener>
+    </mqtt-sn-listeners>
+    <admin-api>
+        <enabled>true</enabled>
+        <listeners>
+            <http-listener>
+                <bind-address>0.0.0.0</bind-address>
+                <port>8080</port>
+            </http-listener>
+        </listeners>
+    </admin-api>
+</hivemq>

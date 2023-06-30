@@ -1,0 +1,54 @@
+/*
+ * Copyright 2019-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.configuration.service.entity;
+
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+/**
+ * A marker interface for a listener. Any listener implementation must implement this interface.
+ */
+public interface Listener {
+
+    /**
+     * @return the port of the listener
+     */
+    int getPort();
+
+    void setPort(int port);
+
+    /**
+     * @return the bind address of a listener
+     */
+    @NotNull String getBindAddress();
+
+    /**
+     * @return the human-readable, name of the listener
+     */
+    @NotNull String getReadableName();
+
+    /**
+     * @return the name of the listener
+     * @since 4.1
+     */
+    @NotNull String getName();
+
+    /**
+     * @return the hostname where the listener can be reached from clients
+     * @since 4.1
+     */
+    @Nullable String getExternalHostname();
+}

@@ -1,0 +1,22 @@
+<modbus-adapter>
+    <id>modbus-1</id>
+    <hostName>127.0.0.1</hostName>
+    <port>5021</port>
+    <pollingIntervalMillis>1000</pollingIntervalMillis>
+    <maxPollingErrorsBeforeRemoval>5</maxPollingErrorsBeforeRemoval>
+    <publishChangedDataOnly>true</publishChangedDataOnly>
+    <subscriptions>
+        <subscription>
+            <registers>
+                <startIdx>1</startIdx>
+                <endIdx>10</endIdx>
+            </registers>
+            <coils>
+                <startIdx>100000</startIdx>
+                <endIdx>10000000</endIdx>
+            </coils>
+            <mqtt-topic>test</mqtt-topic>
+            <mqtt-qos>1</mqtt-qos>
+        </subscription>
+    </subscriptions>
+</modbus-adapter>

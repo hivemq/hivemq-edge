@@ -1,0 +1,16 @@
+# Gradle
+.gradle
+build/
+
+# IntelliJ
+out/
+*.iml
+.idea/*
+!.idea/codeStyles
+!.idea/inspectionProfiles
+!.idea/runConfigurations
+
+.java-version
+.DS_Store
+/src/website/*
+/website/
