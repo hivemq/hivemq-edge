@@ -4,11 +4,12 @@ set -eo pipefail
 
 cd "$(dirname $0)/../"
 HIVEMQ_EDGE_VERSION=$(./gradlew properties | grep ^version: | sed -e "s/version: //")
-echo "Building Docker image for HiveMQ Edge ${HIVEMQ_EDGE_VERSION}"
+echo "Building Snapshot Docker image for HiveMQ Edge ${HIVEMQ_EDGE_VERSION}"
 ./gradlew :hivemqEdgeZip
 cd docker
 cp ../build/distributions/hivemq-edge-${HIVEMQ_EDGE_VERSION}.zip .
-IMAGE="schaebo/hivemq-edge:${HIVEMQ_EDGE_VERSION}"
+IMAGE="hivemq/hivemq-edge:snapshot"
+
 BUILDER=$(docker buildx create --use)
 
 function shutdown () {
