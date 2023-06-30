@@ -16,7 +16,10 @@ jobs:
           git clone https://github.com/hivemq/hivemq-extension-sdk.git ../hivemq-extension-sdk
           cd ../hivemq-extension-sdk
           git checkout ${GITHUB_REF##*/} || true
-          cd ../hivemq-community-edition
+          git clone https://github.com/hivemq/hivemq-edge-extension-sdk.git ../hivemq-edge-extension-sdk
+          cd ../hivemq-edge-extension-sdk
+          git checkout ${GITHUB_REF##*/} || true
+          cd ../hivemq-edge
       - name: Setup Java
         uses: actions/setup-java@v2
         with:
