@@ -268,8 +268,9 @@ val openApiSpec by tasks.registering(Sync::class) {
 
     from(tasks.resolve)
     into(layout.buildDirectory.dir("openapi"))
-    filter { line -> line.replace("PLACEHOLDER_HIVEMQ_VERSION", "${project.version}") }
+    filter { line -> line.replace("PLACEHOLDER_HIVEMQ_VERSION", "\"${project.version}\"") }
 }
+
 
 val openApiDoc by tasks.registering(Sync::class) {
     group = "openapi"
@@ -278,7 +279,7 @@ val openApiDoc by tasks.registering(Sync::class) {
     from(openApiSpec)
     from("src/openapi/index.html")
     into(layout.buildDirectory.dir("docs/openapi"))
-    filter { line -> line.replace("PLACEHOLDER_HIVEMQ_VERSION", "${project.version}") }
+    filter { line -> line.replace("PLACEHOLDER_HIVEMQ_VERSION", "\"${project.version}\"") }
 }
 
 /* ******************** distribution ******************** */

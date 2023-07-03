@@ -57,12 +57,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = ProtocolAdaptersList.class),
-                                                       examples = {
-                                                               @ExampleObject(description = "An example of x3 adapter types.",
-                                                                              name = "adapter-type-list",
-                                                                              value = ApiBodyExamples.EXAMPLE_ADAPTER_TYPE_LIST)
-                                                       }))})
+                                                       schema = @Schema(implementation = ProtocolAdaptersList.class)))})
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull Response getAdapterTypes();
 
