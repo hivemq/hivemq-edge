@@ -8,6 +8,11 @@ import PageContainer from '@/components/PageContainer.tsx'
 import ProtocolAdapters from '@/modules/ProtocolAdapters/components/panels/ProtocolAdapters.tsx'
 import ProtocolIntegrationStore from '@/modules/ProtocolAdapters/components/panels/ProtocolIntegrationStore.tsx'
 
+export enum ProtocolAdapterTabIndex {
+  protocols = 0,
+  adapters = 1,
+}
+
 const ProtocolAdapterPage: FC = () => {
   const { t } = useTranslation()
   return (
