@@ -44,6 +44,7 @@ export const AuthProvider: FunctionComponent<PropsWithChildren> = ({ children })
   const login = (newUser: ApiBearerToken, callback: VoidFunction) => {
     return fakeAuthProvider.login(() => {
       setCredentials(newUser)
+      setAuthToken(newUser.token)
       callback()
     })
   }
