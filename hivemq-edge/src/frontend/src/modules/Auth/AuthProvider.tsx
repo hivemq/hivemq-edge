@@ -39,6 +39,7 @@ export const AuthProvider: FunctionComponent<PropsWithChildren> = ({ children })
     } else {
       setLoading(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const login = (newUser: ApiBearerToken, callback: VoidFunction) => {
