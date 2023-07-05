@@ -11,6 +11,7 @@ import { useCreateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useCre
 import { useTranslation } from 'react-i18next'
 import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpdateProtocolAdapter.tsx'
+import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
 
 interface AdapterEditorProps {
   isNew?: boolean
@@ -61,7 +62,7 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
 
   const handleInstanceClose = () => {
     onInstanceClose()
-    navigate('/protocol-adapters')
+    navigate('/protocol-adapters', { state: { protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters } })
   }
 
   const handleInstanceSubmit: SubmitHandler<Adapter> = (props) => {
