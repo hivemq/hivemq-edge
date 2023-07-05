@@ -8,9 +8,9 @@ import { usePostAuthentication } from '@/api/hooks/usePostAuthentication'
 import { ApiBearerToken, ApiError, UsernamePasswordCredentials } from '@/api/__generated__'
 import { parseJWT } from '@/api/utils.ts'
 
-import { useAuth } from '../../Auth/hooks/useAuth.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PasswordInput from '@/components/PasswordInput.tsx'
+import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 
 const Login: FC = () => {
   const auth = useAuth()
