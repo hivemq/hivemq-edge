@@ -5,3 +5,4 @@ dist/
 coverage/
 public/
 src/api/__generated__
+.gradle/
