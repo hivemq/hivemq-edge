@@ -1,13 +1,12 @@
 import { describe, it, expect } from 'vitest'
+
+import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
+
 import { parseJWT, verifyJWT } from './utils'
 import { JWTPayload } from './types/jwt-payload.ts'
 
 const MOCK_DURATION = 30 * 60
 const MOCK_BEFORE = 120
-const MOCK_JWT =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +
-  'eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.' +
-  'SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
 
 const MOCK_EXPIRED: JWTPayload = {
   jti: 'OlJJYRU3r4fx8nJ0BygfSQ',
