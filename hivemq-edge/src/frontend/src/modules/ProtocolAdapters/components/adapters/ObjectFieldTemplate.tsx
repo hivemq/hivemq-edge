@@ -26,7 +26,7 @@ export const ObjectFieldTemplate = <
   if (!groups) {
     return (
       <Card m={2}>
-        <CardHeader  p={2}>
+        <CardHeader p={2}>
           {title && (
             <TitleFieldTemplate
               id={titleId<T>(idSchema)}
@@ -39,7 +39,7 @@ export const ObjectFieldTemplate = <
           )}
           {description}
         </CardHeader>
-        <CardBody  p={2}>
+        <CardBody p={2}>
           {properties.map((prop) => (
             <div className="x0" key={prop.content.key}>
               {prop.content}

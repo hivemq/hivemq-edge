@@ -147,11 +147,11 @@
       "type_remote_zero": "Remote subscription",
       "type_remote_one": "Remote subscription",
       "type_remote_other": "Remote subscriptions",
-      "local" : {
-        "info" : "Subscriptions to your local MQTT Broker are used to forward messages from this HiveMQ Edge to a remote MQTT broker."
+      "local": {
+        "info": "Subscriptions to your local MQTT Broker are used to forward messages from this HiveMQ Edge to a remote MQTT broker."
       },
-      "remote" : {
-        "info" : "Subscriptions to a remote MQTT Broker are used to receive messages from a remote MQTT broker on this HiveMQ Edge."
+      "remote": {
+        "info": "Subscriptions to a remote MQTT Broker are used to receive messages from a remote MQTT broker on this HiveMQ Edge."
       },
       "filters": {
         "label": "Filters",
@@ -222,7 +222,11 @@
           "notUnique": "The name is already in use for another bridge"
         }
       },
-      "cleanStart": { "legend": "Connection", "label": "Clean Start", "helper": "Clean start determines if existing MQTT session state should be cleared up on connect." },
+      "cleanStart": {
+        "legend": "Connection",
+        "label": "Clean Start",
+        "helper": "Clean start determines if existing MQTT session state should be cleared up on connect."
+      },
       "loopPrevention": {
         "legend": "Loop Prevention",
         "label": "Enable loop prevention",

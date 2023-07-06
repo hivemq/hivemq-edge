@@ -23,9 +23,7 @@ const AdapterTypeSummary: FC<AdapterTypeSummaryProps> = ({ id, searchQuery }) =>
   if (!selectedType) return null
   return (
     <Flex m={0}>
-      <Image boxSize='100px'
-              objectFit='scale-down'
-              src={selectedType.logoUrl} />
+      <Image boxSize="100px" objectFit="scale-down" src={selectedType.logoUrl} />
       <Box ml="3">
         <Text fontWeight="bold">
           <AdapterHighlight query={searchQuery || ''}>{selectedType.name || ''}</AdapterHighlight>

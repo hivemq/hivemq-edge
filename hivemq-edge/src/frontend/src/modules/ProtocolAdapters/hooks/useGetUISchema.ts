@@ -1,8 +1,8 @@
-import {UIGroup} from '@/modules/ProtocolAdapters/types.ts'
-import {useTranslation} from 'react-i18next'
+import { UIGroup } from '@/modules/ProtocolAdapters/types.ts'
+import { useTranslation } from 'react-i18next'
 
 const useGetUiSchema = () => {
-  const {t} = useTranslation()
+  const { t } = useTranslation()
 
   const groups: UIGroup[] = [
     {
@@ -10,7 +10,7 @@ const useGetUiSchema = () => {
       title: t('protocolAdapter.uiSchema.groups.coreFields'),
       children: ['id', 'port', 'host', 'uri', 'pollingIntervalMillis'],
     },
-    {id: 'subFields', title: 'Subscription', children: ['subscriptions']},
+    { id: 'subFields', title: 'Subscription', children: ['subscriptions'] },
     {
       id: 'security',
       title: t('protocolAdapter.uiSchema.groups.security'),
@@ -25,7 +25,7 @@ const useGetUiSchema = () => {
       id: 'authentication',
       title: t('protocolAdapter.uiSchema.groups.authentication'),
       children: ['auth'],
-    }
+    },
   ]
 
   const uiSchema = {
@@ -43,14 +43,14 @@ const useGetUiSchema = () => {
     'ui:order': ['id', 'host', 'port', '*', 'subscriptions'],
     subscriptions: {
       items: {
-        'ui:order': ['node', 'holding-registers', 'mqtt-topic', 'destination', 'qos', '*']
-      }
+        'ui:order': ['node', 'holding-registers', 'mqtt-topic', 'destination', 'qos', '*'],
+      },
     },
     auth: {
       basic: {
-          'ui:order': ['username', 'password', '*']
-      }
-    }
+        'ui:order': ['username', 'password', '*'],
+      },
+    },
   }
 
   return uiSchema
