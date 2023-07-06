@@ -1,10 +1,8 @@
 import { createContext, FunctionComponent, PropsWithChildren, useEffect, useState } from 'react'
 
-import { parseJWT, verifyJWT } from '@/api/utils.ts'
 import { ApiBearerToken } from '@/api/__generated__'
 import { useLocalStorage } from '@/hooks/useLocalStorage/useLocalStorage.ts'
-
-import { fakeAuthProvider } from './fakeAuthProvider'
+import { authUtilities, processToken } from '@/modules/Auth/auth-utilities.ts'
 
 interface AuthContextType {
   credentials: ApiBearerToken | null
@@ -23,27 +21,12 @@ export const AuthProvider: FunctionComponent<PropsWithChildren> = ({ children })
   const [isLoading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (isAuthToken) {
-      const parsedToken = parseJWT(isAuthToken)
-      if (parsedToken) {
-        const isValid = verifyJWT(parsedToken)
-        if (isValid) {
-          login({ token: isAuthToken }, () => {
-            setLoading(false)
-          })
-        } else {
-          setAuthToken(undefined)
-          setLoading(false)
-        }
-      }
-    } else {
-      setLoading(false)
-    }
+    processToken(isAuthToken, setAuthToken, login, setLoading)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const login = (newUser: ApiBearerToken, callback: VoidFunction) => {
-    return fakeAuthProvider.login(() => {
+    return authUtilities.login(() => {
       setCredentials(newUser)
       setAuthToken(newUser.token)
       callback()
@@ -51,7 +34,7 @@ export const AuthProvider: FunctionComponent<PropsWithChildren> = ({ children })
   }
 
   const logout = (callback: VoidFunction) => {
-    return fakeAuthProvider.logout(() => {
+    return authUtilities.logout(() => {
       setCredentials(null)
       setAuthToken(undefined)
       callback()
@@ -60,7 +43,7 @@ export const AuthProvider: FunctionComponent<PropsWithChildren> = ({ children })
 
   return (
     <AuthContext.Provider
-      value={{ credentials, login, logout, isLoading, isAuthenticated: fakeAuthProvider.isAuthenticated }}
+      value={{ credentials, login, logout, isLoading, isAuthenticated: authUtilities.isAuthenticated }}
     >
       {children}
     </AuthContext.Provider>
