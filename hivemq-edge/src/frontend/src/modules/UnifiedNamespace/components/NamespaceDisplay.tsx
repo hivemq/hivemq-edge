@@ -15,12 +15,15 @@ export const toArray = (namespace: ISA95Namespace): string[] => {
   return breadcrumb.filter((element): element is string => !!element)
 }
 
+export const NAMESPACE_SEPARATOR = '/'
+
 const NamespaceDisplay: FC<NamespaceDisplayProps> = ({ namespace, fontSize = '2xl' }) => {
   const color = fontSize === '2xl' ? 'gray.500' : 'black'
 
   // TODO[NVL] Maybe not a good idea to use breadcrumb as it adds role=nav
   return (
     <Breadcrumb
+      separator={NAMESPACE_SEPARATOR}
       sx={{
         ol: { flexWrap: 'wrap' },
       }}
