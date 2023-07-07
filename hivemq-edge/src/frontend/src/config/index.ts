@@ -22,7 +22,10 @@ const config = {
     /**
      * The initial list of metrics
      */
-    METRICS_DEFAULTS: ['com.hivemq.edge.messages.incoming.connect.count', 'com.hivemq.edge.subscriptions.overall.current'],
+    METRICS_DEFAULTS: [
+      'com.hivemq.edge.messages.incoming.connect.count',
+      'com.hivemq.edge.subscriptions.overall.current',
+    ],
   },
 }
 

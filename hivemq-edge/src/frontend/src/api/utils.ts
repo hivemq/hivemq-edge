@@ -18,3 +18,10 @@ export const parseJWT = (token: string): JWTPayload | null => {
     return null
   }
 }
+
+export const verifyJWT = (parsedToken: JWTPayload | null) => {
+  if (!parsedToken) return false
+
+  if (!parsedToken.exp) return false
+  return parsedToken.exp * 1000 >= Date.now()
+}
