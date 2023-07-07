@@ -7,7 +7,6 @@ import {
   DrawerOverlay,
   DrawerContent,
   DrawerCloseButton,
-  Button,
   Flex,
   Spinner,
 } from '@chakra-ui/react'
@@ -23,6 +22,7 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 import { ObjectFieldTemplate } from '@/modules/ProtocolAdapters/components/adapters/ObjectFieldTemplate.tsx'
 import useGetUiSchema from '@/modules/ProtocolAdapters/hooks/useGetUISchema.ts'
+import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -93,9 +93,9 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
 
         <DrawerFooter borderTopWidth="1px">
           <Flex flexGrow={1} justifyContent={'flex-end'}>
-            <Button type="submit" colorScheme="yellow" variant="solid" form="adapter-instance-form">
+            <ButtonCTA type="submit" form="adapter-instance-form">
               {isNewAdapter ? t('protocolAdapter.action.create') : t('protocolAdapter.action.update')}
-            </Button>
+            </ButtonCTA>
           </Flex>
         </DrawerFooter>
       </DrawerContent>
