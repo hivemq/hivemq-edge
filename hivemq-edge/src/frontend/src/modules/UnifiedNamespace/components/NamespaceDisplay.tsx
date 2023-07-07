@@ -20,8 +20,8 @@ const NamespaceDisplay: FC<NamespaceDisplayProps> = ({ namespace, fontSize = '2x
       }}
     >
       {namespaceToStrings(namespace).map((e, i) => (
-        <BreadcrumbItem color={color} fontWeight={600} fontSize={fontSize}>
-          <Text key={`element-${i}`}>{e}</Text>
+        <BreadcrumbItem key={`element-${i}`} color={color} fontWeight={600} fontSize={fontSize}>
+          <Text>{e}</Text>
         </BreadcrumbItem>
       ))}
     </Breadcrumb>
