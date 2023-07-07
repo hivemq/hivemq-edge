@@ -1,21 +1,12 @@
 import { FC } from 'react'
 import { Breadcrumb, BreadcrumbItem, type BreadcrumbProps, Text } from '@chakra-ui/react'
-import { ISA95ApiBean } from '@/api/__generated__'
+import { ISA95Namespace } from '@/modules/UnifiedNamespace/types.ts'
+
+import { NAMESPACE_SEPARATOR, namespaceToStrings } from '../namespace-utils.ts'
 
 interface NamespaceDisplayProps extends Pick<BreadcrumbProps, 'fontSize'> {
   namespace: ISA95Namespace
 }
-
-type ISA95Namespace = Pick<ISA95ApiBean, 'enterprise' | 'site' | 'area' | 'productionLine' | 'workCell'>
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const toArray = (namespace: ISA95Namespace): string[] => {
-  const { enterprise, site, area, workCell, productionLine } = namespace
-  const breadcrumb = [enterprise, site, area, productionLine, workCell]
-  return breadcrumb.filter((element): element is string => !!element)
-}
-
-export const NAMESPACE_SEPARATOR = '/'
 
 const NamespaceDisplay: FC<NamespaceDisplayProps> = ({ namespace, fontSize = '2xl' }) => {
   const color = fontSize === '2xl' ? 'gray.500' : 'black'
@@ -28,7 +19,7 @@ const NamespaceDisplay: FC<NamespaceDisplayProps> = ({ namespace, fontSize = '2x
         ol: { flexWrap: 'wrap' },
       }}
     >
-      {toArray(namespace).map((e, i) => (
+      {namespaceToStrings(namespace).map((e, i) => (
         <BreadcrumbItem color={color} fontWeight={600} fontSize={fontSize}>
           <Text key={`element-${i}`}>{e}</Text>
         </BreadcrumbItem>
