@@ -1,16 +1,7 @@
 /// <reference types="cypress" />
 
 import NamespaceDisplay from './NamespaceDisplay.tsx'
-import { ISA95ApiBean } from '@/api/__generated__'
-
-const MOCK_BREADCRUMB = ['Enterprise', 'Site', 'Area', 'Line', 'Cell']
-const MOCK_NAMESPACE: ISA95ApiBean = {
-  enterprise: MOCK_BREADCRUMB[0],
-  site: MOCK_BREADCRUMB[1],
-  area: MOCK_BREADCRUMB[2],
-  productionLine: MOCK_BREADCRUMB[3],
-  workCell: MOCK_BREADCRUMB[4],
-}
+import { MOCK_BREADCRUMB, MOCK_NAMESPACE } from '@/__test-utils__/mocks.ts'
 
 describe('NamespaceDisplay', () => {
   beforeEach(() => {
