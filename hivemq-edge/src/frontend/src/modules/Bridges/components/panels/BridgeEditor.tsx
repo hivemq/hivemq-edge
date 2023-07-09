@@ -1,5 +1,5 @@
 import { FC, ReactNode, useEffect } from 'react'
-import { Text, useDisclosure, useToast, UseToastOptions } from '@chakra-ui/react'
+import { useDisclosure } from '@chakra-ui/react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -9,27 +9,21 @@ import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { useCreateBridge } from '@/api/hooks/useGetBridges/useCreateBridge.tsx'
 import { useUpdateBridge } from '@/api/hooks/useGetBridges/useUpdateBridge.tsx'
 import { useDeleteBridge } from '@/api/hooks/useGetBridges/useDeleteBridge.tsx'
-import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 
+import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
+
+import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import BridgeMainDrawer from '@/modules/Bridges/components/panels/BridgeMainDrawer.tsx'
 import { bridgeInitialState, useBridgeSetup } from '@/modules/Bridges/hooks/useBridgeConfig.tsx'
-import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 
 interface BridgeEditorProps {
   isNew?: boolean
   children?: ReactNode
 }
 
-const DEFAULT_TOAST_OPTION: UseToastOptions = {
-  status: 'success',
-  duration: 3000,
-  isClosable: true,
-  position: 'top-right',
-}
-
 const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
   const { t } = useTranslation()
-  const createToast = useToast()
+  const { successToast, errorToast } = useEdgeToast()
 
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { bridgeId } = useParams()
@@ -67,59 +61,39 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
         updateBridge
           .mutateAsync({ name: bridgeId, requestBody: data })
           .then(() => {
-            createToast({
-              ...DEFAULT_TOAST_OPTION,
+            successToast({
               title: t('bridge.toast.update.title'),
               description: t('bridge.toast.update.description'),
             })
           })
-          .catch((err: ApiError) => {
-            const { body } = err
-            createToast({
-              ...DEFAULT_TOAST_OPTION,
-              status: 'error',
-              title: t('bridge.toast.update.title'),
-              description: (
-                <>
-                  <Text>{t('bridge.toast.update.error')}</Text>
-                  {body.errors?.map((e: ProblemDetailsExtended) => (
-                    <Text key={e.fieldName as string}>
-                      {e.fieldName as string} : {e.detail}
-                    </Text>
-                  ))}
-                </>
-              ),
-            })
-          })
+          .catch((err: ApiError) =>
+            errorToast(
+              {
+                title: t('bridge.toast.update.title'),
+                description: t('bridge.toast.update.error'),
+              },
+              err
+            )
+          )
       }
     } else {
       createBridge
         .mutateAsync(data)
         .then(() => {
-          createToast({
-            ...DEFAULT_TOAST_OPTION,
+          successToast({
             title: t('bridge.toast.create.title'),
             description: t('bridge.toast.create.description'),
           })
         })
-        .catch((err: ApiError) => {
-          const { body } = err
-          createToast({
-            ...DEFAULT_TOAST_OPTION,
-            status: 'error',
-            title: t('bridge.toast.create.title'),
-            description: (
-              <>
-                <Text>{t('bridge.toast.create.error')}</Text>
-                {body.errors?.map((e: ProblemDetailsExtended) => (
-                  <Text key={e.fieldName as string}>
-                    {e.fieldName as string} : {e.detail}
-                  </Text>
-                ))}
-              </>
-            ),
-          })
-        })
+        .catch((err: ApiError) =>
+          errorToast(
+            {
+              title: t('bridge.toast.create.title'),
+              description: t('bridge.toast.create.error'),
+            },
+            err
+          )
+        )
     }
 
     handleEditorOnClose()
@@ -138,8 +112,7 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
   const handleConfirmOnSubmit = () => {
     if (bridgeId)
       deleteBridge.mutateAsync(bridgeId).then(() => {
-        createToast({
-          ...DEFAULT_TOAST_OPTION,
+        successToast({
           title: t('bridge.toast.delete.title'),
           description: t('bridge.toast.delete.description'),
         })
