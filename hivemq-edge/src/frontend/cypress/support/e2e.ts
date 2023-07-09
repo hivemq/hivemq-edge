@@ -14,7 +14,9 @@
 // ***********************************************************
 
 import 'cypress-axe'
+import 'cypress-each'
 import '@percy/cypress'
+
 import './commands'
 
 import installLogsCollector from 'cypress-terminal-report/src/installLogsCollector'
