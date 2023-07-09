@@ -1,6 +1,7 @@
-import { Card, CardBody, CardFooter, CardHeader, Heading, Text } from '@chakra-ui/react'
-import NamespaceDisplay from '@/modules/UnifiedNamespace/components/NamespaceDisplay.tsx'
 import { useTranslation } from 'react-i18next'
+import { Box, Card, CardBody, CardHeader, Flex, Heading, Text } from '@chakra-ui/react'
+
+import NamespaceDisplay from '@/modules/UnifiedNamespace/components/NamespaceDisplay.tsx'
 
 const RecommendationPanel = () => {
   const { t } = useTranslation()
@@ -13,22 +14,24 @@ const RecommendationPanel = () => {
         </Heading>
       </CardHeader>
       <CardBody>
-        <Text as={'span'}> {t('unifiedNamespace.container.recommend.by')}</Text>{' '}
-        <Text as={'span'} fontSize="2xl">
-          {t('unifiedNamespace.standard')}
-        </Text>
+        <Flex flexDirection={'column'}>
+          <Box>
+            <Text as={'span'}> {t('unifiedNamespace.container.recommend.by')}</Text>{' '}
+            <Text as={'span'} fontSize="2xl">
+              {t('unifiedNamespace.standard')}
+            </Text>
+          </Box>
+          <NamespaceDisplay
+            namespace={{
+              enterprise: 'Enterprise',
+              site: 'Site',
+              area: 'Area',
+              productionLine: 'Line',
+              workCell: 'Cell',
+            }}
+          />
+        </Flex>
       </CardBody>
-      <CardFooter>
-        <NamespaceDisplay
-          namespace={{
-            enterprise: 'Enterprise',
-            site: 'Site',
-            area: 'Area',
-            productionLine: 'Line',
-            workCell: 'Cell',
-          }}
-        />
-      </CardFooter>
     </Card>
   )
 }
