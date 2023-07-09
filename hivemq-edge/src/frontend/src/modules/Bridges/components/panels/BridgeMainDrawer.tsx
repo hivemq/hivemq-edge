@@ -127,6 +127,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
                 isDisabled={!form.formState.isValid}
                 isLoading={isSubmitting}
                 variant="solid"
+                type="submit"
                 form="bridge-form"
               >
                 {isNewBridge ? t('bridge.action.create') : t('bridge.action.update')}
