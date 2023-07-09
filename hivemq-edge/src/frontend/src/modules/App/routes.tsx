@@ -11,6 +11,7 @@ import AdapterController from '@/modules/ProtocolAdapters/components/AdapterCont
 import UnifiedNamespacePage from '@/modules/UnifiedNamespace/UnifiedNamespacePage.tsx'
 import WelcomePage from '@/modules/Welcome/WelcomePage.tsx'
 import LoginPage from '@/modules/Login/LoginPage.tsx'
+import UnifiedNamespaceEditor from '@/modules/UnifiedNamespace/components/UnifiedNamespaceEditor.tsx'
 
 export const routes = createBrowserRouter(
   [
@@ -64,6 +65,12 @@ export const routes = createBrowserRouter(
         {
           path: 'namespace/',
           element: <UnifiedNamespacePage />,
+          children: [
+            {
+              path: 'edit',
+              element: <UnifiedNamespaceEditor />,
+            },
+          ],
         },
       ],
     },
