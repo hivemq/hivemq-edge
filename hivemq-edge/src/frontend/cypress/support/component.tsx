@@ -13,19 +13,23 @@
 // https://on.cypress.io/configuration
 // ***********************************************************
 
-// Import commands.js using ES2015 syntax:
-import './commands'
+// TODO[NVL] See https://github.com/cypress-io/cypress/issues/21434
+import './workaround-cypress-10-0-2-process-issue.ts'
 
-// Alternatively you can use CommonJS syntax:
-// require('./commands')
+import 'cypress-axe'
+import 'cypress-each'
+import '@percy/cypress'
+import './commands'
 
 import { mount, MountOptions, MountReturn } from 'cypress/react18'
 import { MemoryRouterProps, MemoryRouter } from 'react-router-dom'
-import { AuthProvider } from '../../src/modules/Auth/AuthProvider.tsx'
-import { ChakraProvider } from '@chakra-ui/react'
-import { themeHiveMQ } from '../../src/modules/App/themes/themeHiveMQ.ts'
-import queryClient from '../../src/api/queryClient.ts'
+import { ChakraProvider, VisuallyHidden } from '@chakra-ui/react'
 import { QueryClientProvider } from '@tanstack/react-query'
+
+import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
+import { themeHiveMQ } from '@/modules/App/themes/themeHiveMQ.ts'
+import queryClient from '@/api/queryClient.ts'
+import '@/config/i18n.config.ts'
 
 // Augment the Cypress namespace to include type definitions for
 // your custom command.
@@ -52,7 +56,14 @@ Cypress.Commands.add('mountWithProviders', (component, options = {}) => {
     <QueryClientProvider client={queryClient}>
       <ChakraProvider theme={themeHiveMQ}>
         <AuthProvider>
-          <MemoryRouter {...routerProps}>{component}</MemoryRouter>
+          <MemoryRouter {...routerProps}>
+            <main style={{ padding: '20px' }}>
+              <VisuallyHidden>
+                <h1>Component Testing</h1>
+              </VisuallyHidden>
+              {component}
+            </main>
+          </MemoryRouter>
         </AuthProvider>
       </ChakraProvider>
     </QueryClientProvider>
