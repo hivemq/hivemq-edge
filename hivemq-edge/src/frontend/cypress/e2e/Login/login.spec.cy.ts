@@ -6,7 +6,7 @@ import { mockAuthApi, mockValidCredentials } from '@/api/hooks/usePostAuthentica
 describe('Login Page', () => {
   beforeEach(() => {
     loginPage.visit()
-    cy.intercept('/auth/authenticate', mockAuthApi(mockValidCredentials))
+    cy.intercept('/api/v1/auth/authenticate', mockAuthApi(mockValidCredentials))
   })
 
   it('should be accessible', () => {
@@ -16,13 +16,13 @@ describe('Login Page', () => {
   })
 
   it('should redirect to login', () => {
-    cy.visit('/')
+    cy.visit('/app')
     cy.url().should('contain', '/login')
   })
 
   it('should log in with correct credentials', () => {
     loginPage.userInput.type('admin')
-    loginPage.passwordInput.type('password')
+    loginPage.passwordInput.type('hivemq')
     loginPage.loginButton.click()
     cy.url().should('not.contain', '/login')
   })
@@ -31,7 +31,7 @@ describe('Login Page', () => {
     const userName = 'mock'
     const password = 'incorrect'
 
-    cy.intercept('/auth/authenticate', mockAuthApi({ userName, password }))
+    cy.intercept('/api/v1/auth/authenticate', mockAuthApi({ userName, password }))
 
     cy.url().should('contain', '/login')
     loginPage.userInput.type(userName)
