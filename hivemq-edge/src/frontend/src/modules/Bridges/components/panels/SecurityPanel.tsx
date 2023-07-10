@@ -19,7 +19,7 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
     <Flex flexDirection={'column'} mt={8} maxW={600} gap={4}>
       <FormControl>
         <FormLabel htmlFor={'tlsConfiguration.enabled'}>{t('bridge.security.enabled.label')}</FormLabel>
-        <Switch {...register('tlsConfiguration.enabled')} />
+        <Switch id={'tlsConfiguration.enabled'} {...register('tlsConfiguration.enabled')} />
         <FormHelperText>{t('bridge.security.enabled.helper')}</FormHelperText>
       </FormControl>
 
