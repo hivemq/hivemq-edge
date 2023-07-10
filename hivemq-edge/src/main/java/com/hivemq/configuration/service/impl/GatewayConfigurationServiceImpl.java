@@ -24,7 +24,6 @@ public class GatewayConfigurationServiceImpl implements DynamicConfigurationServ
 
     private boolean mutableConfigurationEnabled;
     private boolean configurationExportEnabled;
-    private String externalHostname;
 
     @Override
     public boolean isMutableConfigurationEnabled() {
