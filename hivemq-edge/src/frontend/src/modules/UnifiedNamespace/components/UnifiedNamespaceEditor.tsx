@@ -46,7 +46,6 @@ const UnifiedNamespaceEditor: FC<UnifiedNamespaceEditorProps> = () => {
   }
 
   const handleOnSubmit: SubmitHandler<ISA95ApiBean> = (data) => {
-    console.log('XXXXX enabled', data.enabled)
     mutateAsync({ requestBody: data })
       .then(() => {
         successToast({

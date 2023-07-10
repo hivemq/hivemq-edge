@@ -15,7 +15,6 @@ export const useEdgeToast = () => {
 
   const errorToast = (options: UseToastOptions, err: ApiError) => {
     const { body } = err
-    console.log('XX  XXXXXXX', { ...err })
     createToast({
       ...DEFAULT_TOAST_OPTION,
       ...options,
