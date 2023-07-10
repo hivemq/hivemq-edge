@@ -1,33 +1,28 @@
 import { FC, ReactNode, useEffect, useState } from 'react'
-import { Text, useDisclosure, useToast, UseToastOptions } from '@chakra-ui/react'
+import { useDisclosure } from '@chakra-ui/react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { SubmitHandler } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
+import { Adapter, ApiError } from '@/api/__generated__'
+import { useCreateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useCreateProtocolAdapter.tsx'
+import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpdateProtocolAdapter.tsx'
+
+import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
+
+import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
 import AdapterInstanceDrawer from '@/modules/ProtocolAdapters/components/drawers/AdapterInstanceDrawer.tsx'
 import ProtocolSelectorDrawer from '@/modules/ProtocolAdapters/components/drawers/ProtocolSelectorDrawer.tsx'
 import { AdapterType } from '@/modules/ProtocolAdapters/types.ts'
-import { Adapter, ApiError } from '@/api/__generated__'
-import { useCreateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useCreateProtocolAdapter.tsx'
-import { useTranslation } from 'react-i18next'
-import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
-import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpdateProtocolAdapter.tsx'
-import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
 
 interface AdapterEditorProps {
   isNew?: boolean
   children?: ReactNode
 }
 
-const DEFAULT_TOAST_OPTION: UseToastOptions = {
-  status: 'success',
-  duration: 3000,
-  isClosable: true,
-  position: 'top-right',
-}
-
 const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
   const { t } = useTranslation()
-  const createToast = useToast()
+  const { successToast, errorToast } = useEdgeToast()
 
   const [adaptorType, setAdaptorType] = useState<string | undefined>(undefined)
   const { isOpen: isSelectorOpen, onClose: onSelectorClose } = useDisclosure()
@@ -80,31 +75,20 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
           },
         })
         .then(() => {
-          createToast({
-            ...DEFAULT_TOAST_OPTION,
+          successToast({
             title: t('protocolAdapter.toast.create.title'),
             description: t('protocolAdapter.toast.create.description'),
           })
         })
-        .catch((e: ApiError) => {
-          const { body } = e
-          createToast({
-            ...DEFAULT_TOAST_OPTION,
-            status: 'error',
-            title: t('protocolAdapter.toast.create.title'),
-            description: (
-              <>
-                <Text>{t('protocolAdapter.toast.create.error')}</Text>
-                {body.errors?.map((e: ProblemDetailsExtended) => (
-                  <Text key={e.fieldName as string}>
-                    {e.fieldName as string} : {e.detail}
-                  </Text>
-                ))}
-                {(typeof body === 'string' || body instanceof String) && <Text>{body}</Text>}
-              </>
-            ),
-          })
-        })
+        .catch((err: ApiError) =>
+          errorToast(
+            {
+              title: t('protocolAdapter.toast.create.title'),
+              description: t('protocolAdapter.toast.create.error'),
+            },
+            err
+          )
+        )
     } else {
       updateProtocolAdapter
         .mutateAsync({
@@ -117,31 +101,20 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
           },
         })
         .then(() => {
-          createToast({
-            ...DEFAULT_TOAST_OPTION,
+          successToast({
             title: t('protocolAdapter.toast.update.title'),
             description: t('protocolAdapter.toast.update.description'),
           })
         })
-        .catch((e: ApiError) => {
-          const { body } = e
-          createToast({
-            ...DEFAULT_TOAST_OPTION,
-            status: 'error',
-            title: t('protocolAdapter.toast.update.title'),
-            description: (
-              <>
-                <Text>{t('protocolAdapter.toast.update.error')}</Text>
-                {body.errors?.map((e: ProblemDetailsExtended) => (
-                  <Text key={e.fieldName as string}>
-                    {e.fieldName as string} : {e.detail}
-                  </Text>
-                ))}
-                {(typeof body === 'string' || body instanceof String) && <Text>{body}</Text>}
-              </>
-            ),
-          })
-        })
+        .catch((err: ApiError) =>
+          errorToast(
+            {
+              title: t('protocolAdapter.toast.update.title'),
+              description: t('protocolAdapter.toast.update.error'),
+            },
+            err
+          )
+        )
     }
 
     handleInstanceClose()

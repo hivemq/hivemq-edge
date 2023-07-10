@@ -27,6 +27,11 @@ const config = {
       'com.hivemq.edge.subscriptions.overall.current',
     ],
   },
+
+  documentation: {
+    // TODO[NVL] Is this the right place?
+    namespace: 'https://www.hivemq.com/solutions/manufacturing/smart-manufacturing-using-isa95-mqtt-sparkplug-and-uns/',
+  },
 }
 
 export default config

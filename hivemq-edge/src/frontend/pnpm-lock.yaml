@@ -141,6 +141,9 @@ devDependencies:
   cypress-axe:
     specifier: ^1.4.0
     version: 1.4.0(axe-core@4.7.1)(cypress@12.13.0)
+  cypress-each:
+    specifier: ^1.13.3
+    version: 1.13.3
   cypress-terminal-report:
     specifier: ^5.1.1
     version: 5.1.1(cypress@12.13.0)
@@ -3684,6 +3687,10 @@ packages:
     dependencies:
       axe-core: 4.7.1
       cypress: 12.13.0
+    dev: true
+
+  /cypress-each@1.13.3:
+    resolution: {integrity: sha512-aNFoDuybFAQ7OObbeO5yxBGmXkGKVAcT1wLHLiL3+HQi+g+q3vECbn4J9cYOXJ7yYfbcBLh8dgQd/IG3Ls2z7A==}
     dev: true
 
   /cypress-terminal-report@5.1.1(cypress@12.13.0):
