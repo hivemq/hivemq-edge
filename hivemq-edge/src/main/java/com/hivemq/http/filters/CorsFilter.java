@@ -27,6 +27,7 @@ public class CorsFilter implements ContainerResponseFilter {
             ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
         responseContext.getHeaders().add("Access-Control-Allow-Origin", "*");
         responseContext.getHeaders().add("Access-Control-Allow-Credentials", "true");
+        //-- Added the re-issuance header to the allow headers list for use on the UI
         responseContext.getHeaders().add("Access-Control-Allow-Headers", "origin, content-type, accept, authorization, X-Bearer-Token-Reissue");
         responseContext.getHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, HEAD");
     }
