@@ -2,12 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export const $Metric = {
-    description: `List of result items that are returned by this endpoint`,
+export const $HealthStatus = {
     properties: {
-        name: {
+        status: {
             type: 'string',
-            description: `The name of the metric`,
         },
     },
 } as const;

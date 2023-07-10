@@ -1,3 +1,4 @@
+/* generated using openapi-typescript-codegen -- do no edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
@@ -61,6 +62,9 @@ export class FrontendService {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/management/system/configuration',
+            errors: {
+                405: `Error - function not supported`,
+            },
         });
     }
 

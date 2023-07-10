@@ -1,3 +1,4 @@
+/* generated using openapi-typescript-codegen -- do no edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
@@ -91,7 +92,49 @@ export class ProtocolAdaptersService {
     }
 
     /**
-     * Obtain a list of available data points
+     * Get the up to date status of a bridge
+     * Get the up to date status of a bridge.
+     * @param adapterId The name of the adapter to query.
+     * @returns ConnectionStatus Success
+     * @throws ApiError
+     */
+    public getConnectionStatus1(
+        adapterId: string,
+    ): CancelablePromise<ConnectionStatus> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/connection',
+            path: {
+                'adapterId': adapterId,
+            },
+        });
+    }
+
+    /**
+     * Transition the connection status of an adapter
+     * Transition the connection status of an adapter.
+     * @param adapterId The id of the adapter whose connection-status will change.
+     * @param requestBody The command to transition the adapter connection status.
+     * @returns any Success
+     * @throws ApiError
+     */
+    public changeConnectionStatus1(
+        adapterId: string,
+        requestBody: ConnectionStatusTransitionCommand,
+    ): CancelablePromise<any> {
+        return this.httpRequest.request({
+            method: 'PUT',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/connection',
+            path: {
+                'adapterId': adapterId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+
+    /**
+     * Discover a list of available data points
      * Obtain a list of available values accessible via this protocol adapter.
      * @param adapterId The adapter Id.
      * @param root The root to browse.
@@ -99,14 +142,14 @@ export class ProtocolAdaptersService {
      * @returns ValuesTree Success
      * @throws ApiError
      */
-    public listAvailableValues(
+    public discoverDataPoints(
         adapterId: string,
         root?: string,
         depth?: number,
     ): CancelablePromise<ValuesTree> {
         return this.httpRequest.request({
             method: 'GET',
-            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/values',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/discover',
             path: {
                 'adapterId': adapterId,
             },
@@ -182,48 +225,6 @@ export class ProtocolAdaptersService {
             path: {
                 'adapterType': adapterType,
             },
-        });
-    }
-
-    /**
-     * Get the up to date status of a bridge
-     * Get the up to date status of a bridge.
-     * @param adapterId The name of the adapter to query.
-     * @returns ConnectionStatus Success
-     * @throws ApiError
-     */
-    public getConnectionStatus1(
-        adapterId: string,
-    ): CancelablePromise<ConnectionStatus> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/v1/management/protocol-adapters/{adapterId}/connection',
-            path: {
-                'adapterId': adapterId,
-            },
-        });
-    }
-
-    /**
-     * Transition the connection status of an adapter
-     * Transition the connection status of an adapter.
-     * @param adapterId The id of the adapter whose connection-status will change.
-     * @param requestBody The command to transition the adapter connection status.
-     * @returns any Success
-     * @throws ApiError
-     */
-    public changeConnectionStatus1(
-        adapterId: string,
-        requestBody: ConnectionStatusTransitionCommand,
-    ): CancelablePromise<any> {
-        return this.httpRequest.request({
-            method: 'PUT',
-            url: '/api/v1/management/protocol-adapters/{adapterId}/connection',
-            path: {
-                'adapterId': adapterId,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
         });
     }
 
