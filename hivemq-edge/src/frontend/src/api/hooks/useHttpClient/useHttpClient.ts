@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import axios, { AxiosError } from 'axios'
+import { useNavigate } from 'react-router-dom'
 
 import { BaseHttpRequest, CancelablePromise, HiveMqClient, OpenAPIConfig } from '@/api/__generated__'
 import { ApiRequestOptions } from '@/api/__generated__/core/ApiRequestOptions.ts'
@@ -7,11 +8,10 @@ import { request as __request } from '@/api/__generated__/core/request.ts'
 
 import config from '@/config'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
-import { useNavigate } from 'react-router-dom'
 
 const axiosInstance = axios.create()
 
-class AxiosHttpRequestWithInterceptors extends BaseHttpRequest {
+export class AxiosHttpRequestWithInterceptors extends BaseHttpRequest {
   constructor(config: OpenAPIConfig) {
     super(config)
   }
@@ -22,7 +22,7 @@ class AxiosHttpRequestWithInterceptors extends BaseHttpRequest {
 }
 
 export const useHttpClient = () => {
-  const { credentials, logout } = useAuth()
+  const { credentials, logout, login } = useAuth()
   const navigate = useNavigate()
   const [client] = useState<HiveMqClient>(createInstance)
 
@@ -33,7 +33,10 @@ export const useHttpClient = () => {
       function (response) {
         // Any status code that lie within the range of 2xx cause this function to trigger
         // Do something with response data
-
+        const { 'x-bearer-token-reissue': reissuedToken } = response.headers
+        if (reissuedToken) {
+          login({ token: reissuedToken }, () => undefined)
+        }
         return response
       },
       function (error: AxiosError) {
