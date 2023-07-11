@@ -107,8 +107,10 @@ const ProtocolAdapters: FC = () => {
     return (
       <WarningMessage
         image={AdapterEmptyLogo}
+        title={t('protocolAdapter.noDataWarning.title') as string}
         prompt={t('protocolAdapter.noDataWarning.description')}
         alt={t('protocolAdapter.title')}
+        mt={10}
       />
     )
 

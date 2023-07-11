@@ -61,6 +61,7 @@ const ProtocolIntegrationStore: FC = () => {
         image={AdapterEmptyLogo}
         prompt={t('protocolAdapter.noDataWarning.description')}
         alt={t('protocolAdapter.title')}
+        mt={10}
       />
     )
 

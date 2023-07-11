@@ -35,7 +35,13 @@ const Bridges: FC = () => {
   }
   if (isEmpty)
     return (
-      <WarningMessage image={BridgeEmptyLogo} prompt={t('bridge.noDataWarning.description')} alt={t('bridge.title')} />
+      <WarningMessage
+        image={BridgeEmptyLogo}
+        prompt={t('bridge.noDataWarning.description')}
+        title={t('bridge.noDataWarning.title') as string}
+        alt={t('bridge.title')}
+        mt={10}
+      />
     )
 
   return (
