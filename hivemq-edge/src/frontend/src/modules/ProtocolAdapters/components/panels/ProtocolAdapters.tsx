@@ -11,8 +11,6 @@ import {
   Text,
   IconButton,
   useDisclosure,
-  useToast,
-  UseToastOptions,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
@@ -24,32 +22,29 @@ import { ApiError, ConnectionStatus } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDeleteProtocolAdapter.tsx'
 import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.tsx'
-import { ProblemDetails, ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
+import { ProblemDetails } from '@/api/types/http-problem-details.ts'
+
+import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import WarningMessage from '@/components/WarningMessage.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 
-import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
+import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
 const DEFAULT_PER_PAGE = 10
-const DEFAULT_TOAST_OPTION: UseToastOptions = {
-  status: 'success',
-  duration: 3000,
-  isClosable: true,
-  position: 'top-right',
-}
 
 const ProtocolAdapters: FC = () => {
-  const { data, isLoading, isError, error } = useListProtocolAdapters()
-  const isEmpty = useMemo(() => !data || data.length === 0, [data])
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { successToast, errorToast } = useEdgeToast()
+
+  const { data, isLoading, isError, error } = useListProtocolAdapters()
+  const isEmpty = useMemo(() => !data || data.length === 0, [data])
   const [deleteAdapter, setDeleteAdapter] = useState<string | undefined>(undefined)
   const deleteProtocolAdapter = useDeleteProtocolAdapter()
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
-  const createToast = useToast()
   const { data: connections } = useGetAdaptersStatus()
 
   const handleCreateInstance = (type: string | undefined) => {
@@ -76,32 +71,20 @@ const ProtocolAdapters: FC = () => {
     deleteProtocolAdapter
       .mutateAsync(deleteAdapter)
       .then(() => {
-        createToast({
-          ...DEFAULT_TOAST_OPTION,
+        successToast({
           title: t('protocolAdapter.toast.delete.title'),
           description: t('protocolAdapter.toast.delete.description'),
         })
       })
-      .catch((e: ApiError) => {
-        // TODO[NVL] This is duplicated unnecessarily. Generalise
-        const { body } = e
-        createToast({
-          ...DEFAULT_TOAST_OPTION,
-          status: 'error',
-          title: t('protocolAdapter.toast.create.title'),
-          description: (
-            <>
-              <Text>{t('protocolAdapter.toast.create.error')}</Text>
-              {body.errors?.map((e: ProblemDetailsExtended) => (
-                <Text key={e.fieldName as string}>
-                  {e.fieldName as string} : {e.detail}
-                </Text>
-              ))}
-              {(typeof body === 'string' || body instanceof String) && <Text>{body}</Text>}
-            </>
-          ),
-        })
-      })
+      .catch((err: ApiError) =>
+        errorToast(
+          {
+            title: t('protocolAdapter.toast.delete.title'),
+            description: t('protocolAdapter.toast.create.error'),
+          },
+          err
+        )
+      )
   }
 
   if (isError) {

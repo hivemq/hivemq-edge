@@ -40,6 +40,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
   })
 
   const {
+    register,
     formState: { errors },
   } = form
 
@@ -209,11 +210,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                         <FormLabel htmlFor={`${type}.${index}.preserveRetain`}>
                           {t('bridge.subscription.preserveRetain.label')}
                         </FormLabel>
-                        <Controller
-                          name={`${type}.${index}.preserveRetain`}
-                          render={({ field }) => <Switch {...field} id={`${type}.${index}.preserveRetain`} value={1} />}
-                          control={form.control}
-                        />
+                        <Switch {...register(`${type}.${index}.preserveRetain`)} />
                         <FormErrorMessage>{errors[type]?.[index]?.filters?.message}</FormErrorMessage>
                       </FormControl>
 

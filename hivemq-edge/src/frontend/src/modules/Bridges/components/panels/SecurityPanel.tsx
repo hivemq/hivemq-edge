@@ -10,6 +10,7 @@ import { BridgePanelType } from '../../types.ts'
 const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
   const { t } = useTranslation()
   const {
+    register,
     formState: { errors },
   } = form
   const isTlsEnabled = useWatch({ name: 'tlsConfiguration.enabled', control: form.control })
@@ -18,13 +19,7 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
     <Flex flexDirection={'column'} mt={8} maxW={600} gap={4}>
       <FormControl>
         <FormLabel htmlFor={'tlsConfiguration.enabled'}>{t('bridge.security.enabled.label')}</FormLabel>
-        <Controller
-          name={'tlsConfiguration.enabled'}
-          control={form.control}
-          render={({ field: { value, ...rest } }) => (
-            <Switch id={'tlsConfiguration.enabled'} {...rest} value={value ? 'true' : undefined} />
-          )}
-        />
+        <Switch id={'tlsConfiguration.enabled'} {...register('tlsConfiguration.enabled')} />
         <FormHelperText>{t('bridge.security.enabled.helper')}</FormHelperText>
       </FormControl>
 

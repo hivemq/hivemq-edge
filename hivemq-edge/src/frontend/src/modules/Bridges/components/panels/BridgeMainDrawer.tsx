@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 
 import { ApiError, Bridge } from '@/api/__generated__'
+import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 
 import ConnectionPanel from '../panels/ConnectionPanel.tsx'
 import NamePanel from '../panels/NamePanel.tsx'
@@ -122,16 +123,15 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
               </Button>
             )}
             <Flex flexGrow={1} justifyContent={'flex-end'}>
-              <Button
+              <ButtonCTA
                 isDisabled={!form.formState.isValid}
                 isLoading={isSubmitting}
-                type="submit"
-                colorScheme="yellow"
                 variant="solid"
+                type="submit"
                 form="bridge-form"
               >
                 {isNewBridge ? t('bridge.action.create') : t('bridge.action.update')}
-              </Button>
+              </ButtonCTA>
             </Flex>
           </DrawerFooter>
         </DrawerContent>

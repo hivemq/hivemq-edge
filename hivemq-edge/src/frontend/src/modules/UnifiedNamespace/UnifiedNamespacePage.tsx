@@ -1,59 +1,22 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Outlet, useNavigate } from 'react-router-dom'
+import { Box, Flex, SimpleGrid, Skeleton } from '@chakra-ui/react'
+import { BiPlus } from 'react-icons/all'
 
-import PageContainer from '@/components/PageContainer.tsx'
-
-import NamespaceForm from './components/NamespaceForm.tsx'
 import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUnifiedNamespace.tsx'
-import { Box, Flex, Skeleton, Text, useToast, UseToastOptions } from '@chakra-ui/react'
+import { ProblemDetails } from '@/api/types/http-problem-details.ts'
+import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import { ProblemDetails, ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
-import { SubmitHandler } from 'react-hook-form'
-import { ApiError, ISA95ApiBean } from '@/api/__generated__'
-import { useSetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useSetUnifiedNamespace.tsx'
-
-const DEFAULT_TOAST_OPTION: UseToastOptions = {
-  status: 'success',
-  duration: 3000,
-  isClosable: true,
-  position: 'top-right',
-}
+import PageContainer from '@/components/PageContainer.tsx'
+import InfoPanel from '@/modules/UnifiedNamespace/components/panels/InfoPanel.tsx'
+import RecommendationPanel from '@/modules/UnifiedNamespace/components/panels/RecommendationPanel.tsx'
+import PrefixPanel from '@/modules/UnifiedNamespace/components/panels/PrefixPanel.tsx'
 
 const UnifiedNamespacePage: FC = () => {
   const { t } = useTranslation()
   const { data, isError, isLoading, error } = useGetUnifiedNamespace()
-  const setNamespace = useSetUnifiedNamespace()
-  const createToast = useToast()
-
-  const handleOnSubmit: SubmitHandler<ISA95ApiBean> = (data) => {
-    setNamespace
-      .mutateAsync({ requestBody: data })
-      .then(() => {
-        createToast({
-          ...DEFAULT_TOAST_OPTION,
-          title: t('unifiedNamespace.toast.update.title'),
-          description: t('unifiedNamespace.toast.update.description'),
-        })
-      })
-      .catch((err: ApiError) => {
-        const { body } = err
-        createToast({
-          ...DEFAULT_TOAST_OPTION,
-          status: 'error',
-          title: t('unifiedNamespace.toast.update.title'),
-          description: (
-            <>
-              <Text>{t('bridge.toast.update.error')}</Text>
-              {body.errors?.map((e: ProblemDetailsExtended) => (
-                <Text key={e.fieldName as string}>
-                  {e.fieldName as string} : {e.detail}
-                </Text>
-              ))}
-            </>
-          ),
-        })
-      })
-  }
+  const navigate = useNavigate()
 
   if (isError) {
     return (
@@ -72,8 +35,25 @@ const UnifiedNamespacePage: FC = () => {
   }
 
   return (
-    <PageContainer title={t('unifiedNamespace.title') as string} subtitle={t('unifiedNamespace.description') as string}>
-      <NamespaceForm defaultValues={data} onSubmit={handleOnSubmit} />
+    <PageContainer
+      title={t('unifiedNamespace.title') as string}
+      subtitle={t('unifiedNamespace.description') as string}
+      cta={
+        <Flex height={'100%'} justifyContent={'flex-end'} alignItems={'flex-end'} pb={6}>
+          <ButtonCTA leftIcon={<BiPlus />} onClick={() => navigate('/namespace/edit')}>
+            {t('unifiedNamespace.action.define')}
+          </ButtonCTA>
+        </Flex>
+      }
+    >
+      <SimpleGrid mt={8} spacing={6} templateColumns={{ base: 'repeat(1, 1fr)', lg: 'repeat(2, 1fr)' }} gap={6}>
+        <InfoPanel />
+        <SimpleGrid spacing={4} templateRows={{ base: 'repeat(1, 1fr)' }} gap={6}>
+          <RecommendationPanel />
+          <PrefixPanel data={data} />
+        </SimpleGrid>
+      </SimpleGrid>
+      <Outlet />
     </PageContainer>
   )
 }

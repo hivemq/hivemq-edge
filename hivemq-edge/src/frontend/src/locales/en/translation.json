@@ -432,42 +432,72 @@
   },
   "unifiedNamespace": {
     "title": "Unified Namespace",
-    "description": "SA 95 provides a convenient way of structuring data sources in relation to their position within a manufacturing enterprise, hierarchically. ISA 95 recommends following the Enterprise => Site => Area => Line => Cell format",
+    "description": "Set your unified namespace architecture.",
+    "standard": "ISA-95",
+    "action": {
+      "define": "Set up a unified namespace"
+    },
+    "container": {
+      "prefix": {
+        "title": "My namespace prefix"
+      },
+      "info": {
+        "title": "ISA-95 Unified Namespace",
+        "descriptions": [
+          "A Unified Namespace is a middleware solution that allows you to collect data from various industrial systems, add context to it, and transform it into a format that other systems can understand.",
+          "ISA 95 provides a convenient way of structuring data sources in relation to their position within a manufacturing enterprise, hierarchically. "
+        ],
+
+        "link": "Go to hivemq website to know more"
+      },
+      "recommend": {
+        "title": "Recommended format",
+        "by": "By"
+      }
+    },
+    "preview": {
+      "label": "Preview"
+    },
     "enabled": {
       "label": "Enable Unified Namespace",
       "helper": "When enabled, unified namespace will provide tokens that can be used in topics to apply UNS convention to your data."
     },
-    "namespaceGroup": {
-      "legend": "ISA-95 Namespace",
-      "helper": ""
-    },
     "enterprise": {
-      "label": "Enterprise"
+      "label": "Enterprise",
+      "helper": "Help text goes here to explain what it is"
     },
     "site": {
-      "label": "Site"
+      "label": "Site",
+      "helper": "Help text goes here to explain what it is"
     },
     "area": {
-      "label": "Area"
+      "label": "Area",
+      "helper": "Help text goes here to explain what it is"
     },
     "productionLine": {
-      "label": "Production Line"
+      "label": "Production Line",
+      "helper": "Help text goes here to explain what it is"
     },
     "workCell": {
-      "label": "Work Cell"
+      "label": "Work Cell",
+      "helper": "Help text goes here to explain what it is"
     },
     "options": {
       "legend": "Options"
     },
     "prefixAllTopics": {
-      "label": "Prefix all topics",
-      "helper": "MQTT topics will all use the namespace defined"
+      "label": "Add prefix to all topics",
+      "helper": "MQTT topics will use the namespace defined"
     },
+    "submit": { "label": "Submit" },
     "toast": {
       "update": {
         "title": "Updating namespace",
         "description": "We've successfully updated the namespace for you.",
         "error": "There was a problem trying to update the namespace"
+      },
+      "disabled": {
+        "description": "A unified namespace is no longer setup. All namespaces created remain the same but the standard will no longer be in use in this system."
       }
     }
   },
