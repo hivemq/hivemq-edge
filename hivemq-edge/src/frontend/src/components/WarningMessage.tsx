@@ -1,27 +1,29 @@
 import { FC } from 'react'
-import { AbsoluteCenter, Box, Circle, Flex, Image, Text } from '@chakra-ui/react'
+import { Circle, Flex, Heading, Image, Text, type HTMLChakraProps } from '@chakra-ui/react'
 import DefaultLogo from '@/assets/app/bridge-empty.svg'
 
-interface WarningMessageProps {
+interface WarningMessageProps extends HTMLChakraProps<'div'> {
+  title?: string
   image?: string | undefined
   prompt: string
   alt: string
 }
 
-const WarningMessage: FC<WarningMessageProps> = ({ image = DefaultLogo, prompt, alt }) => {
+const WarningMessage: FC<WarningMessageProps> = ({ image = DefaultLogo, prompt, alt, title, ...rest }) => {
   return (
-    <Box w={1} textAlign={'center'}>
-      <AbsoluteCenter axis="both">
-        <Circle size="500px" bg="gray.100">
-          <Flex flexDirection={'column'} alignItems={'center'}>
-            <Image objectFit="cover" maxW={{ base: '150px', md: '100%' }} src={image} alt={alt} />
-            <Text align={'center'} maxW={'400'}>
-              {prompt}
-            </Text>
-          </Flex>
-        </Circle>
-      </AbsoluteCenter>
-    </Box>
+    <Flex flexDirection={'column'} alignItems={'center'} gap={4} {...rest}>
+      {title && (
+        <Heading as={'h2'} size="md" color={'gray.500'}>
+          {title}
+        </Heading>
+      )}
+      <Circle size="335" bg="gray.100">
+        <Image objectFit="cover" src={image} alt={alt} />
+      </Circle>
+      <Text align={'center'} maxW={'400'} color={'gray.600'}>
+        {prompt}
+      </Text>
+    </Flex>
   )
 }
 
