@@ -1,17 +1,61 @@
 import { useState } from 'react'
+import axios, { AxiosError } from 'axios'
+import { useNavigate } from 'react-router-dom'
+
+import { BaseHttpRequest, CancelablePromise, HiveMqClient, OpenAPIConfig } from '@/api/__generated__'
+import { ApiRequestOptions } from '@/api/__generated__/core/ApiRequestOptions.ts'
+import { request as __request } from '@/api/__generated__/core/request.ts'
+
+import config from '@/config'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
-import { HiveMqClient } from '../../__generated__'
-import config from '../../../config'
+
+const axiosInstance = axios.create()
+
+export class AxiosHttpRequestWithInterceptors extends BaseHttpRequest {
+  constructor(config: OpenAPIConfig) {
+    super(config)
+  }
+
+  public override request<T>(options: ApiRequestOptions): CancelablePromise<T> {
+    return __request(this.config, options, axiosInstance)
+  }
+}
 
 export const useHttpClient = () => {
-  const { credentials } = useAuth()
+  const { credentials, logout, login } = useAuth()
+  const navigate = useNavigate()
   const [client] = useState<HiveMqClient>(createInstance)
 
   function createInstance() {
-    return new HiveMqClient({
-      BASE: config.apiBaseUrl,
-      TOKEN: credentials?.token,
-    })
+    // Make sure to clear the interceptors, since axiosInstance is global
+    axiosInstance.interceptors.response.clear()
+    axiosInstance.interceptors.response.use(
+      function (response) {
+        // Any status code that lie within the range of 2xx cause this function to trigger
+        // Do something with response data
+        const { 'x-bearer-token-reissue': reissuedToken } = response.headers
+        if (reissuedToken) {
+          login({ token: reissuedToken }, () => undefined)
+        }
+        return response
+      },
+      function (error: AxiosError) {
+        // Any status codes that falls outside the range of 2xx cause this function to trigger
+        // Do something with response error
+        if (error.response?.status === 401) {
+          logout(() => navigate('/login'))
+        }
+        return Promise.reject(error)
+      }
+    )
+
+    return new HiveMqClient(
+      {
+        BASE: config.apiBaseUrl,
+        TOKEN: credentials?.token,
+      },
+      AxiosHttpRequestWithInterceptors
+    )
   }
 
   return client

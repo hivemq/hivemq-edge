@@ -1,3 +1,4 @@
+/* generated using openapi-typescript-codegen -- do no edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
@@ -7,6 +8,11 @@ export const $Listener = {
         description: {
             type: 'string',
             description: `The extension description`,
+            isNullable: true,
+        },
+        externalHostname: {
+            type: 'string',
+            description: `The external hostname`,
             isNullable: true,
         },
         hostName: {

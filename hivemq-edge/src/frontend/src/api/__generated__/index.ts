@@ -1,3 +1,4 @@
+/* generated using openapi-typescript-codegen -- do no edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
@@ -28,6 +29,7 @@ export type { Extension } from './models/Extension';
 export type { ExtensionList } from './models/ExtensionList';
 export type { FirstUseInformation } from './models/FirstUseInformation';
 export type { GatewayConfiguration } from './models/GatewayConfiguration';
+export type { HealthStatus } from './models/HealthStatus';
 export type { ISA95ApiBean } from './models/ISA95ApiBean';
 export type { JsonNode } from './models/JsonNode';
 export type { Link } from './models/Link';
@@ -66,6 +68,7 @@ export { $Extension } from './schemas/$Extension';
 export { $ExtensionList } from './schemas/$ExtensionList';
 export { $FirstUseInformation } from './schemas/$FirstUseInformation';
 export { $GatewayConfiguration } from './schemas/$GatewayConfiguration';
+export { $HealthStatus } from './schemas/$HealthStatus';
 export { $ISA95ApiBean } from './schemas/$ISA95ApiBean';
 export { $JsonNode } from './schemas/$JsonNode';
 export { $Link } from './schemas/$Link';
