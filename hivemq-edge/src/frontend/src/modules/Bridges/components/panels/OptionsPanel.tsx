@@ -108,7 +108,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
           type="text"
           {...register('clientId', {
             pattern: {
-              value: new RegExp($Bridge.properties.password.pattern),
+              value: new RegExp($Bridge.properties.clientId.pattern),
               message: 'Minimum length should be 4',
             },
           })}
