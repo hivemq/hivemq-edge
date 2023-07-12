@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Controller, useFieldArray } from 'react-hook-form'
+import { CreatableSelect } from 'chakra-react-select'
 import {
   Accordion,
   AccordionItem,
@@ -27,9 +28,9 @@ import {
 } from '@chakra-ui/react'
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons'
 
-import { CreatableSelect } from 'chakra-react-select'
-
-import CustomUserProperties from '../../components/panels/CustomUserProperties.tsx'
+import { $BridgeSubscription } from '@/api/__generated__'
+import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
+import CustomUserProperties from './CustomUserProperties.tsx'
 import { BridgeSubscriptionsProps } from '../../types.ts'
 
 const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
@@ -38,6 +39,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
     control: form.control, // control props comes from useForm (optional: if you are using FormContext)
     name: type, // unique name for your Field Array
   })
+  const getRulesForProperty = useValidationRules()
 
   const {
     register,
@@ -81,10 +83,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                         }}
                         control={form.control}
                         rules={{
-                          required: {
-                            value: true,
-                            message: t('bridge.subscription.filters.error.required') as string,
-                          },
+                          ...getRulesForProperty($BridgeSubscription.properties.filters),
                         }}
                       />
                       {!errors[type]?.[index]?.filters && (
@@ -120,10 +119,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                         }}
                         control={form.control}
                         rules={{
-                          required: {
-                            value: true,
-                            message: t('bridge.subscription.filters.error.required') as string,
-                          },
+                          ...getRulesForProperty($BridgeSubscription.properties.destination),
                         }}
                       />
                       {!errors[type]?.[index]?.filters && (
@@ -172,7 +168,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                             </RadioGroup>
                           )}
                           rules={{
-                            required: { value: true, message: 'This is required.' },
+                            ...getRulesForProperty($BridgeSubscription.properties.maxQoS),
                           }}
                         />
                       </FormControl>
