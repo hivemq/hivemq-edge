@@ -1,10 +1,11 @@
 import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FormControl, FormErrorMessage, FormHelperText, FormLabel, Input } from '@chakra-ui/react'
 
-import { useTranslation } from 'react-i18next'
-import { BridgePanelType } from '@/modules/Bridges/types.ts'
-import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { $Bridge } from '@/api/__generated__'
+import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
+import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
+import { BridgePanelType } from '@/modules/Bridges/types.ts'
 
 const NamePanel: FC<BridgePanelType> = ({ form, isNewBridge = false }) => {
   const { t } = useTranslation()
@@ -13,6 +14,7 @@ const NamePanel: FC<BridgePanelType> = ({ form, isNewBridge = false }) => {
     formState: { errors: validationErrors },
   } = form
   const { data } = useListBridges()
+  const getRulesForProperty = useValidationRules()
 
   return (
     <FormControl isInvalid={!!validationErrors.id} isRequired={isNewBridge}>
@@ -25,11 +27,7 @@ const NamePanel: FC<BridgePanelType> = ({ form, isNewBridge = false }) => {
         autoComplete={'name'}
         placeholder={t('bridge.options.id.placeholder') as string}
         {...register('id', {
-          required: {
-            value: $Bridge.properties.id.isRequired,
-            message: t('bridge.options.id.error.required') as string,
-          },
-          pattern: { value: /^[a-zA-Z0-9_-]+$/, message: t('bridge.options.id.error.pattern') as string },
+          ...getRulesForProperty($Bridge.properties.id),
           validate: {
             notUnique: (value) => {
               if (!isNewBridge) return true

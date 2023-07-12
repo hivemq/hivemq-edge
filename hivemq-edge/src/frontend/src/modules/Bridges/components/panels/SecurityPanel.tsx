@@ -4,6 +4,9 @@ import { Select } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 import { Controller, useWatch } from 'react-hook-form'
 
+import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
+import { $TlsConfiguration } from '@/api/__generated__'
+
 import { CYPHER_SUITES, TLS_PROTOCOLS } from '../../utils/tlsConfiguration.ts'
 import { BridgePanelType } from '../../types.ts'
 
@@ -13,13 +16,20 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
     register,
     formState: { errors },
   } = form
+  const getRulesForProperty = useValidationRules()
+
   const isTlsEnabled = useWatch({ name: 'tlsConfiguration.enabled', control: form.control })
 
   return (
     <Flex flexDirection={'column'} mt={8} maxW={600} gap={4}>
       <FormControl>
         <FormLabel htmlFor={'tlsConfiguration.enabled'}>{t('bridge.security.enabled.label')}</FormLabel>
-        <Switch id={'tlsConfiguration.enabled'} {...register('tlsConfiguration.enabled')} />
+        <Switch
+          id={'tlsConfiguration.enabled'}
+          {...register('tlsConfiguration.enabled', {
+            ...getRulesForProperty($TlsConfiguration.properties.enabled),
+          })}
+        />
         <FormHelperText>{t('bridge.security.enabled.helper')}</FormHelperText>
       </FormControl>
 

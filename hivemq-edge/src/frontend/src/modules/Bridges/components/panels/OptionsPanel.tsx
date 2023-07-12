@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { BridgePanelType } from '@/modules/Bridges/types.ts'
+import { useTranslation } from 'react-i18next'
 import {
   Checkbox,
   Flex,
@@ -14,8 +14,9 @@ import {
   NumberInputField,
   NumberInputStepper,
 } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
 import { $Bridge } from '@/api/__generated__'
+import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
+import { BridgePanelType } from '@/modules/Bridges/types.ts'
 
 const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
   const { t } = useTranslation()
@@ -23,6 +24,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
     register,
     formState: { errors },
   } = form
+  const getRulesForProperty = useValidationRules()
 
   return (
     <Flex flexDirection={'column'} gap={4}>
@@ -36,15 +38,10 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
 
       <FormControl isInvalid={!!errors.keepAlive}>
         <FormLabel htmlFor="keepAlive">{t('bridge.options.keepAlive.label')}</FormLabel>
-        <NumberInput id="keepAlive" step={1} min={0} max={$Bridge.properties.keepAlive.maximum}>
+        <NumberInput id="keepAlive" step={1}>
           <NumberInputField
             {...register('keepAlive', {
-              required: 'This field is required',
-              min: { value: 0, message: 'min should be 0' },
-              max: {
-                value: $Bridge.properties.keepAlive.maximum,
-                message: `max length should be ${$Bridge.properties.keepAlive.maximum}`,
-              },
+              ...getRulesForProperty($Bridge.properties.keepAlive),
             })}
           />
           <NumberInputStepper>
@@ -58,15 +55,10 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
 
       <FormControl>
         <FormLabel htmlFor="sessionExpiry">{t('bridge.options.sessionExpiry.label')}</FormLabel>
-        <NumberInput id="sessionExpiry" step={1} min={1} max={$Bridge.properties.sessionExpiry.maximum}>
+        <NumberInput id="sessionExpiry" step={1} max={$Bridge.properties.sessionExpiry.maximum}>
           <NumberInputField
             {...register('sessionExpiry', {
-              required: 'This field is required',
-              min: { value: 0, message: 'min should be 0' },
-              max: {
-                value: $Bridge.properties.sessionExpiry.maximum,
-                message: `max length should be ${$Bridge.properties.sessionExpiry.maximum}`,
-              },
+              ...getRulesForProperty($Bridge.properties.sessionExpiry),
             })}
           />
           <NumberInputStepper>
@@ -78,7 +70,12 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
       </FormControl>
 
       <FormControl isInvalid={!!errors.loopPreventionEnabled} mt={3}>
-        <Checkbox defaultChecked {...register('loopPreventionEnabled')}>
+        <Checkbox
+          defaultChecked
+          {...register('loopPreventionEnabled', {
+            ...getRulesForProperty($Bridge.properties.loopPreventionEnabled),
+          })}
+        >
           {t('bridge.options.loopPrevention.label')}
         </Checkbox>
         <FormErrorMessage>{errors.loopPreventionEnabled && errors.loopPreventionEnabled.message}</FormErrorMessage>
@@ -86,10 +83,10 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
 
       <FormControl isInvalid={!!errors.loopPreventionHopCount}>
         <FormLabel htmlFor="loopPreventionHopCount">{t('bridge.options.hopCount.label')}</FormLabel>
-        <NumberInput id="loopPreventionHopCount" step={1} min={1} max={100}>
+        <NumberInput id="loopPreventionHopCount" step={1}>
           <NumberInputField
             {...register('loopPreventionHopCount', {
-              min: { value: 1, message: 'min should be 1' },
+              ...getRulesForProperty($Bridge.properties.loopPreventionHopCount),
             })}
           />
           <NumberInputStepper>
@@ -107,10 +104,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
           id="clientId"
           type="text"
           {...register('clientId', {
-            pattern: {
-              value: new RegExp($Bridge.properties.clientId.pattern),
-              message: 'Minimum length should be 4',
-            },
+            ...getRulesForProperty($Bridge.properties.clientId),
           })}
         />
         <FormHelperText> {t('bridge.options.clientid.helper')}</FormHelperText>
