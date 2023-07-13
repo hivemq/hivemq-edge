@@ -48,4 +48,16 @@ describe('SubscriptionsPanel', () => {
     cy.checkAccessibility()
     cy.percySnapshot('Component: SecurityPanel')
   })
+
+  it('should initialise with OpenAPI defaults', () => {
+    cy.mountWithProviders(<TestingComponent onSubmit={cy.stub} defaultValues={mockBridge} />)
+    cy.getByTestId('bridge-subscription-add').click()
+    // force validation to trigger error messages. Better alternative?
+    cy.getByTestId(`form-submit`).click()
+
+    cy.getByTestId(`${MOCK_TYPE}.0.filters`).should('be.visible').find('label').should('have.attr', 'data-invalid')
+
+    cy.get('input[id="remoteSubscriptions.0.filters"').type('my topic{Enter}')
+    cy.getByTestId(`${MOCK_TYPE}.0.destination`).should('be.visible').find('label').should('have.attr', 'data-invalid')
+  })
 })

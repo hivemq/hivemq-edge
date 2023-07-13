@@ -55,7 +55,11 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
               <HStack>
                 <CardBody>
                   <Flex gap={4}>
-                    <FormControl isInvalid={!!errors[type]?.[index]?.filters} isRequired>
+                    <FormControl
+                      data-testid={`${type}.${index}.filters`}
+                      isInvalid={!!errors[type]?.[index]?.filters}
+                      isRequired
+                    >
                       <FormLabel htmlFor={`${type}.${index}.filters`}>
                         {t('bridge.subscription.filters.label')}
                       </FormLabel>
@@ -70,10 +74,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                               value={formatValue}
                               onChange={(values) => onChange(values.map((item) => item.value))}
                               inputId={`${type}.${index}.filters`}
-                              // options={[{ value: 'ddfd', label: 'fgg' }]}
-                              // menuIsOpen={false}
                               isClearable={true}
-                              placeholder={'ddd'}
                               isMulti={true}
                               components={{
                                 DropdownIndicator: null,
@@ -92,7 +93,11 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                       <FormErrorMessage>{errors[type]?.[index]?.filters?.message}</FormErrorMessage>
                     </FormControl>
 
-                    <FormControl isInvalid={!!errors[type]?.[index]?.destination} isRequired>
+                    <FormControl
+                      data-testid={`${type}.${index}.destination`}
+                      isInvalid={!!errors[type]?.[index]?.destination}
+                      isRequired
+                    >
                       <FormLabel htmlFor={`${type}.${index}.destination`}>
                         {t('bridge.subscription.destination.label')}
                       </FormLabel>
@@ -108,7 +113,6 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                               value={formatValue}
                               onChange={(item) => onChange(item?.value)}
                               options={[{ value: '{#}', label: '{#} - original message topic' }]}
-                              // menuIsOpen={false}
                               isClearable={true}
                               isMulti={false}
                               components={{
