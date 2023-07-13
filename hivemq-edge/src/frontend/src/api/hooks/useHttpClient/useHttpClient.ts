@@ -22,7 +22,7 @@ export class AxiosHttpRequestWithInterceptors extends BaseHttpRequest {
 }
 
 export const useHttpClient = () => {
-  const { credentials, logout, login } = useAuth()
+  const { credentials, logout } = useAuth()
   const navigate = useNavigate()
   const [client] = useState<HiveMqClient>(createInstance)
 
@@ -35,7 +35,8 @@ export const useHttpClient = () => {
         // Do something with response data
         const { 'x-bearer-token-reissue': reissuedToken } = response.headers
         if (reissuedToken) {
-          login({ token: reissuedToken }, () => undefined)
+          // TODO[NVL] Deactivating the reissuing, see https://hivemq.kanbanize.com/ctrl_board/57/cards/15303/details/
+          // login({ token: reissuedToken }, () => undefined)
         }
         return response
       },
