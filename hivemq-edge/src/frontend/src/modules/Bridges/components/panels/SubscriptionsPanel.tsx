@@ -122,7 +122,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                           ...getRulesForProperty($BridgeSubscription.properties.destination),
                         }}
                       />
-                      {!errors[type]?.[index]?.filters && (
+                      {!errors[type]?.[index]?.destination && (
                         <FormHelperText>{t('bridge.subscription.destination.helper')}</FormHelperText>
                       )}
                       <FormErrorMessage>{errors[type]?.[index]?.destination?.message}</FormErrorMessage>
