@@ -28,6 +28,7 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Optional;
 
 /**
@@ -51,18 +52,17 @@ public class JWTReissuanceFilterImpl implements ContainerResponseFilter {
     public void filter(final ContainerRequestContext requestContext, final ContainerResponseContext responseContext)
             throws IOException {
         try {
-            String token = null;
+            String token;
             if((token = (String) requestContext.getProperty(BearerTokenAuthenticationHandler.TOKEN)) != null){
                 Optional<Long> millis = tokenVerifier.getExpiryTimeMillis(token);
                 long current = System.currentTimeMillis();
                 if(millis.isPresent()){
                     long expires = millis.get();
-                    if(expires >= (current - MILLIS_BEFORE_EXPIRY_TO_REISSUE)){
-                        String newToken =
-                                tokenGenerator.generateToken((ApiPrincipal) requestContext.getSecurityContext().getUserPrincipal());
-                        responseContext.getHeaders().add(BearerTokenAuthenticationHandler.REISSUE, newToken);
-                        if(logger.isTraceEnabled()){
-                            logger.trace("Adding new JWT Token to Response");
+                    if(expires > current){
+                        if(current >= (expires - MILLIS_BEFORE_EXPIRY_TO_REISSUE)){
+                            String newToken =
+                                    tokenGenerator.generateToken((ApiPrincipal) requestContext.getSecurityContext().getUserPrincipal());
+                            responseContext.getHeaders().add(BearerTokenAuthenticationHandler.REISSUE, newToken);
                         }
                     }
                 }
