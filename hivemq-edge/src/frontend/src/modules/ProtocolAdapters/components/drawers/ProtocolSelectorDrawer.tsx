@@ -22,6 +22,9 @@ interface ProtocolSelectorDrawerProps {
   onSubmit: (data: AdapterType) => void
 }
 
+/**
+ * @deprecated
+ */
 const ProtocolSelectorDrawer: FC<ProtocolSelectorDrawerProps> = ({ isOpen, onClose, onSubmit }) => {
   const { t } = useTranslation()
 
