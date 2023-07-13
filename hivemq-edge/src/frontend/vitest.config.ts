@@ -15,6 +15,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/__test-utils__/setup.ts',
     coverage: {
+      exclude: ['**/src/api/__generated__/**'],
       provider: 'istanbul', // or 'v8'
       reporter: ['text', 'json', 'html', 'lcov'],
     },
