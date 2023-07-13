@@ -141,7 +141,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
               </HStack>
               <CardBody p={0}>
                 <Accordion allowMultiple>
-                  <AccordionItem isDisabled={!!errors[type]?.[index]}>
+                  <AccordionItem isDisabled={!!errors[type]?.[index]} data-testid={`${type}.${index}.advanced`}>
                     <AccordionButton>
                       <AccordionIcon />
                       <Box as="span" flex="1" textAlign="left">
@@ -223,6 +223,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
         })}
         <Box>
           <IconButton
+            data-testid={'bridge-subscription-add'}
             isDisabled={!!errors[type]}
             aria-label={t('bridge.subscription.add')}
             icon={<AddIcon />}
