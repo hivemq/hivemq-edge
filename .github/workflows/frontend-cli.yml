@@ -56,5 +56,10 @@ jobs:
       - name: 🧪 Run Test
         run: pnpm test
 
+#      - name: 🧪 Run Cypress
+#        run: pnpm cypress:run
+
       - name: 🧪 Run Cypress
-        run: pnpm cypress:run
+        uses: cypress-io/github-action@v5
+        with:
+          start: pnpm start
