@@ -24,7 +24,7 @@ jobs:
         working-directory: ./hivemq-edge/src/frontend/
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [18.16.0]
 
     steps:
       - name: 👓 Checkout repository
@@ -33,7 +33,7 @@ jobs:
       - name: 🚚 Setup pnpm
         uses: pnpm/action-setup@v2.0.1
         with:
-          version: 7.0.0
+          version: 8.4.0
 
       - name: 🔻 Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
