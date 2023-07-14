@@ -30,8 +30,10 @@ import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.bridge.BridgeService;
 import com.hivemq.bridge.config.*;
+import com.hivemq.configuration.reader.BridgeConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
+import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -73,21 +75,22 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
 
     @Override
     public Response addBridge(final @NotNull Bridge bridge) {
-        try {
-            ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
-            validateBridge(errorMessages, bridge);
-            if (checkBridgeExists(bridge.getId())) {
-                ApiErrorUtils.addValidationError(errorMessages, "bridge", "Bridge already existed");
-            }
-            if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-                return ApiErrorUtils.badRequest(errorMessages);
-            } else {
+
+        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        validateBridge(errorMessages, bridge);
+        if (checkBridgeExists(bridge.getId())) {
+            ApiErrorUtils.addValidationError(errorMessages, "bridge", "Bridge already existed");
+        }
+        if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
+            return ApiErrorUtils.badRequest(errorMessages);
+        } else {
+            try {
                 MqttBridge mqttBridge = unconvert(bridge);
                 configurationService.bridgeConfiguration().addBridge(mqttBridge);
                 return Response.status(200).build();
+            } finally {
+                executorService.submit(() -> bridgeService.updateBridges());
             }
-        } finally {
-            executorService.submit(() -> bridgeService.updateBridges());
         }
     }
 
@@ -121,21 +124,21 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
 
     @Override
     public Response deleteBridge(final @NotNull String bridgeId) {
-        try {
-            ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
-            ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
-            ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", bridgeId, HiveMQEdgeConstants.ID_REGEX);
-            if (!checkBridgeExists(bridgeId)) {
-                return ApiErrorUtils.notFound(String.format("Bridge not found by id '%s'", bridgeId));
-            }
-            if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
-                return ApiErrorUtils.badRequest(errorMessages);
-            } else {
+        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
+        ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", bridgeId, HiveMQEdgeConstants.ID_REGEX);
+        if (!checkBridgeExists(bridgeId)) {
+            return ApiErrorUtils.notFound(String.format("Bridge not found by id '%s'", bridgeId));
+        }
+        if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
+            return ApiErrorUtils.badRequest(errorMessages);
+        } else {
+            try {
                 configurationService.bridgeConfiguration().removeBridge(bridgeId);
                 return Response.status(200).build();
+            } finally {
+                bridgeService.updateBridges();
             }
-        } finally {
-            bridgeService.updateBridges();
         }
     }
 
@@ -270,6 +273,24 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 bridge.getPort(),
                 1,
                 HiveMQEdgeConstants.MAX_UINT16);
+
+        bridge.getLocalSubscriptions()
+                .stream().forEach(s ->
+                        validateValidSubscribeTopicField(errorMessages, "local-filters", s.getFilters()));
+
+        bridge.getRemoteSubscriptions()
+                .stream().forEach(s ->
+                        validateValidSubscribeTopicField(errorMessages, "remote-filters", s.getFilters()));
+    }
+
+    public static void validateValidSubscribeTopicField(final ApiErrorMessages apiErrorMessages, final String fieldName, final List<String> topicFilters){
+        try {
+            BridgeConfigurator.validateTopicFilters(fieldName, topicFilters);
+        } catch(UnrecoverableException e){
+            ApiErrorUtils.addValidationError(apiErrorMessages,
+                    fieldName,
+                    "Invalid bridge topic filters for subscribing");
+        }
     }
 
 
