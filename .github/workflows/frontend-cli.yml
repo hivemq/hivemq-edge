@@ -1,0 +1,58 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+# 🚧 EXPERIMENTAL : DO NOT MERGE
+
+name: Node.js CI
+
+on:
+  push:
+    branches: [master, alpha]
+    paths:
+      - hivemq-edge/src/frontend/**
+  pull_request:
+    branches: [master, alpha]
+    paths:
+      - hivemq-edge/src/frontend/**
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🚚 Setup pnpm
+        uses: pnpm/action-setup@v2.0.1
+        with:
+          version: 7.0.0
+
+      - name: 🔻 Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: 📦 Install dependencies
+        run: pnpm install
+
+      - name: 🏗️ Build Application
+        run: pnpm run build
+
+      - name: 🧪 Run Prettier
+        run: pnpm lint:prettier
+
+      - name: 🧪 Run ESLint
+        run: pnpm lint:eslint
+
+      - name: 🧪 Run Test
+        run: pnpm test
+
+      - name: 🧪 Run Cypress
+        run: pnpm cypress:run
