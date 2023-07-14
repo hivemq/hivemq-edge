@@ -39,8 +39,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-          cache-dependency-path: './package-lock.json'
+#          cache: 'pnpm'
 
       - name: 📦 Install dependencies
         run: pnpm install
