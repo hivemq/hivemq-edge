@@ -12,8 +12,6 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
 import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
 import AdapterInstanceDrawer from '@/modules/ProtocolAdapters/components/drawers/AdapterInstanceDrawer.tsx'
-import ProtocolSelectorDrawer from '@/modules/ProtocolAdapters/components/drawers/ProtocolSelectorDrawer.tsx'
-import { AdapterType } from '@/modules/ProtocolAdapters/types.ts'
 
 interface AdapterEditorProps {
   isNew?: boolean
@@ -25,7 +23,6 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
   const { successToast, errorToast } = useEdgeToast()
 
   const [adaptorType, setAdaptorType] = useState<string | undefined>(undefined)
-  const { isOpen: isSelectorOpen, onClose: onSelectorClose } = useDisclosure()
   const { isOpen: isInstanceOpen, onOpen: onInstanceOpen, onClose: onInstanceClose } = useDisclosure()
   const createProtocolAdapter = useCreateProtocolAdapter()
   const updateProtocolAdapter = useUpdateProtocolAdapter()
@@ -44,16 +41,6 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
       onInstanceOpen()
     }
   }, [adaptorType, onInstanceOpen])
-
-  const handleSelectorClose = () => {
-    onSelectorClose()
-    navigate('/protocol-adapters')
-  }
-
-  const handleSelectorSubmit: SubmitHandler<AdapterType> = ({ adapterType }) => {
-    setAdaptorType(adapterType)
-    onSelectorClose()
-  }
 
   const handleInstanceClose = () => {
     onInstanceClose()
@@ -122,7 +109,6 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
 
   return (
     <div>
-      <ProtocolSelectorDrawer onClose={handleSelectorClose} isOpen={isSelectorOpen} onSubmit={handleSelectorSubmit} />
       <AdapterInstanceDrawer
         adapterType={adaptorType}
         isNewAdapter={isNew}

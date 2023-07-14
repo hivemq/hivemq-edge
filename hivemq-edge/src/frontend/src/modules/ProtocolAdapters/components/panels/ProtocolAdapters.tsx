@@ -2,23 +2,23 @@ import { FC, useMemo, useState } from 'react'
 import {
   Box,
   Flex,
+  IconButton,
+  Image,
   Menu,
   MenuButton,
-  MenuList,
   MenuItem,
-  Image,
+  MenuList,
   Skeleton,
   Text,
-  IconButton,
   useDisclosure,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
-import { Table, createColumn } from 'react-chakra-pagination'
+import { createColumn, Table } from 'react-chakra-pagination'
 import { ChevronDownIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 
-import { ApiError, ConnectionStatus } from '@/api/__generated__'
+import { Adapter, ApiError, ConnectionStatus } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDeleteProtocolAdapter.tsx'
 import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.tsx'
@@ -35,6 +35,14 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
 const DEFAULT_PER_PAGE = 10
 
+const AdapterStatusContainer: FC<{ id: string }> = ({ id }) => {
+  const { data: connections } = useGetAdaptersStatus()
+
+  const connection = connections?.items?.find((e) => e.id === id)
+
+  return <ConnectionStatusBadge status={connection?.status} />
+}
+
 const ProtocolAdapters: FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -45,20 +53,77 @@ const ProtocolAdapters: FC = () => {
   const [deleteAdapter, setDeleteAdapter] = useState<string | undefined>(undefined)
   const deleteProtocolAdapter = useDeleteProtocolAdapter()
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
-  const { data: connections } = useGetAdaptersStatus()
+  const columns = useMemo(() => {
+    const columnHelper = createColumn<Adapter>()
 
-  const handleCreateInstance = (type: string | undefined) => {
-    navigate('/protocol-adapters/new', { state: { selectedAdapterId: type } })
-  }
+    const handleCreateInstance = (type: string | undefined) => {
+      navigate('/protocol-adapters/new', { state: { selectedAdapterId: type } })
+    }
 
-  const handleEditInstance = (adapterId: string, type: string) => {
-    if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: { selectedAdapterId: type } })
-  }
+    const handleEditInstance = (adapterId: string, type: string) => {
+      if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: { selectedAdapterId: type } })
+    }
 
-  const handleOnDelete = (adapterId: string) => {
-    setDeleteAdapter(adapterId)
-    onConfirmDeleteOpen()
-  }
+    const handleOnDelete = (adapterId: string) => {
+      setDeleteAdapter(adapterId)
+      onConfirmDeleteOpen()
+    }
+
+    return [
+      columnHelper.accessor('id', {
+        cell: (info) => info.getValue(),
+        header: t('protocolAdapter.table.header.name') as string,
+      }),
+      columnHelper.accessor('type', {
+        cell: (info) => info.getValue(),
+        header: t('protocolAdapter.table.header.type') as string,
+      }),
+      columnHelper.accessor('adapterRuntimeInformation.connectionStatus.status', {
+        cell: (info) => <AdapterStatusContainer id={info.row.original.id} />,
+        header: t('protocolAdapter.table.header.status') as string,
+      }),
+      columnHelper.accessor('adapterRuntimeInformation.lastStartedAttemptTime', {
+        cell: (info) => DateTime.fromISO(info.getValue() as string).toRelativeCalendar({ unit: 'minutes' }),
+        header: t('protocolAdapter.table.header.lastStarted') as string,
+        enableSorting: true,
+      }),
+      columnHelper.display({
+        id: 'actions',
+        header: t('protocolAdapter.table.header.actions') as string,
+        sortingFn: undefined,
+        cell: (info) => {
+          const { type, id, adapterRuntimeInformation: { connectionStatus } = {} } = info.row.original
+          return (
+            <Menu>
+              <MenuButton
+                variant="outline"
+                size={'sm'}
+                as={IconButton}
+                icon={<ChevronDownIcon />}
+                aria-label={t('protocolAdapter.table.actions.label') as string}
+              />
+              <MenuList>
+                <MenuItem isDisabled>
+                  {connectionStatus?.status !== ConnectionStatus.status.CONNECTED
+                    ? t('protocolAdapter.table.actions.connect')
+                    : t('protocolAdapter.table.actions.disconnect')}
+                </MenuItem>
+                <MenuItem onClick={() => handleCreateInstance(type)}>
+                  {t('protocolAdapter.table.actions.create')}
+                </MenuItem>
+                <MenuItem onClick={() => handleEditInstance(id, type as string)}>
+                  {t('protocolAdapter.table.actions.edit')}
+                </MenuItem>
+                <MenuItem color={'red.500'} onClick={() => handleOnDelete(id)}>
+                  <Text>{t('protocolAdapter.table.actions.delete')}</Text>
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          )
+        },
+      }),
+    ]
+  }, [navigate, onConfirmDeleteOpen, t])
 
   const handleConfirmOnClose = () => {
     onConfirmDeleteClose()
@@ -113,66 +178,6 @@ const ProtocolAdapters: FC = () => {
         mt={10}
       />
     )
-
-  const columnHelper = createColumn<(typeof data)[0]>()
-  const columns = [
-    columnHelper.accessor('id', {
-      cell: (info) => info.getValue(),
-      header: t('protocolAdapter.table.header.name') as string,
-    }),
-    columnHelper.accessor('type', {
-      cell: (info) => info.getValue(),
-      header: t('protocolAdapter.table.header.type') as string,
-    }),
-    columnHelper.accessor('adapterRuntimeInformation.connectionStatus.status', {
-      cell: (info) => {
-        const { id } = info.row.original
-        const connection = connections?.items?.find((e) => e.id === id)
-        return <ConnectionStatusBadge status={connection?.status} />
-      },
-      header: t('protocolAdapter.table.header.status') as string,
-    }),
-    columnHelper.accessor('adapterRuntimeInformation.lastStartedAttemptTime', {
-      cell: (info) => DateTime.fromISO(info.getValue() as string).toRelativeCalendar({ unit: 'minutes' }),
-      header: t('protocolAdapter.table.header.lastStarted') as string,
-      enableSorting: true,
-    }),
-    columnHelper.display({
-      id: 'actions',
-      header: t('protocolAdapter.table.header.actions') as string,
-      sortingFn: undefined,
-      cell: (info) => {
-        const { type, id, adapterRuntimeInformation: { connectionStatus } = {} } = info.row.original
-        return (
-          <Menu>
-            <MenuButton
-              variant="outline"
-              size={'sm'}
-              as={IconButton}
-              icon={<ChevronDownIcon />}
-              aria-label={t('protocolAdapter.table.actions.label') as string}
-            />
-            <MenuList>
-              <MenuItem isDisabled>
-                {connectionStatus?.status !== ConnectionStatus.status.CONNECTED
-                  ? t('protocolAdapter.table.actions.connect')
-                  : t('protocolAdapter.table.actions.disconnect')}
-              </MenuItem>
-              <MenuItem onClick={() => handleCreateInstance(type)}>
-                {t('protocolAdapter.table.actions.create')}
-              </MenuItem>
-              <MenuItem onClick={() => handleEditInstance(id, type as string)}>
-                {t('protocolAdapter.table.actions.edit')}
-              </MenuItem>
-              <MenuItem color={'red.500'} onClick={() => handleOnDelete(id)}>
-                <Text>{t('protocolAdapter.table.actions.delete')}</Text>
-              </MenuItem>
-            </MenuList>
-          </Menu>
-        )
-      },
-    }),
-  ]
 
   // TODO[NVL] Lib not very customisable; redo
   return (
