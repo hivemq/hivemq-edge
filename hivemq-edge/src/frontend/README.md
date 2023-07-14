@@ -103,7 +103,7 @@ with the following options:
 
 ## Pipeline
 
-See Github actions. Does it work now? XXXX
+See Github actions. Does it work now?
 
 ## Testing
 
