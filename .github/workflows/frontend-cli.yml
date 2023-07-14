@@ -63,11 +63,11 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           working-directory: ./hivemq-edge/src/frontend/
-          start: pnpm start
+          start: pnpm dev
 
       - name: 🧪 Run Cypress Component
         uses: cypress-io/github-action@v5
         with:
           working-directory: ./hivemq-edge/src/frontend/
           component: true
-          start: pnpm start
+          start: pnpm dev
