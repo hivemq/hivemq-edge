@@ -101,6 +101,10 @@ with the following options:
 - `axios` is used for the HTTP client
 - a custom client, to configure individual instances, is created as `HiveMqClient`
 
+## Pipeline
+
+See Github actions
+
 ## Testing
 
 ### Cypress - E2E and Component testing
