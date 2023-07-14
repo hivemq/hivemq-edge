@@ -19,7 +19,9 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    defaults:
+      run:
+        working-directory: ./hivemq-edge/src/frontend/
     strategy:
       matrix:
         node-version: [18.x]
