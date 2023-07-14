@@ -70,13 +70,13 @@ jobs:
         # add the line below to store screenshots only on failures
         # if: failure()
         with:
-          name: cypress-screenshots
-          path: cypress/e2e/screenshots
+          name: cypress-e2e-screenshots
+          path: cypress/screenshots
           if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
       - uses: actions/upload-artifact@v3
         with:
-          name: cypress-videos
-          path: cypress/e2e/videos
+          name: cypress-e2e-videos
+          path: cypress/videos
           if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
 
       - name: 🧪 Run Cypress Component
@@ -91,11 +91,11 @@ jobs:
         # add the line below to store screenshots only on failures
         # if: failure()
         with:
-          name: cypress-screenshots
-          path: cypress/component/screenshots
+          name: cypress-component-screenshots
+          path: cypress/screenshots
           if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
       - uses: actions/upload-artifact@v3
         with:
-          name: cypress-videos
-          path: cypress/component/videos
+          name: cypress-component-videos
+          path: cypress/videos
           if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
