@@ -2,7 +2,7 @@
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 # 🚧 EXPERIMENTAL : DO NOT MERGE
 
-name: Node.js CI
+name: Frontend - React Testing Pyramid
 
 on:
   push:
@@ -71,12 +71,12 @@ jobs:
         # if: failure()
         with:
           name: cypress-e2e-screenshots
-          path: cypress/screenshots
+          path: hivemq-edge/src/frontend/cypress/screenshots
           if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
       - uses: actions/upload-artifact@v3
         with:
           name: cypress-e2e-videos
-          path: cypress/videos
+          path: hivemq-edge/src/frontend/cypress/videos
           if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
 
       - name: 🧪 Run Cypress Component
@@ -92,10 +92,10 @@ jobs:
         # if: failure()
         with:
           name: cypress-component-screenshots
-          path: cypress/screenshots
+          path: hivemq-edge/src/frontend/cypress/screenshots
           if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
       - uses: actions/upload-artifact@v3
         with:
           name: cypress-component-videos
-          path: cypress/videos
+          path: hivemq-edge/src/frontend/cypress/videos
           if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
