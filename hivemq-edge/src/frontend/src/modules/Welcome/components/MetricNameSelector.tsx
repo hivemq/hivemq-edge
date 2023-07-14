@@ -1,10 +1,10 @@
 import { FC, useEffect, useMemo } from 'react'
 import { Select } from 'chakra-react-select'
 import { Box, Button, Flex, FormControl, FormLabel } from '@chakra-ui/react'
-import { BiAddToQueue } from 'react-icons/all'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 
 import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.tsx'
+import { BiAddToQueue } from 'react-icons/bi'
 
 interface MetricNameSelectorForm {
   myTopic: string

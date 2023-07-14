@@ -1,7 +1,7 @@
 import { Link as RouterLink, useRouteError } from 'react-router-dom'
 import { Heading, VStack, Text, Button } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { FaHome } from 'react-icons/all'
+import { FaHome } from 'react-icons/fa'
 
 interface ErrorResponse {
   status: number

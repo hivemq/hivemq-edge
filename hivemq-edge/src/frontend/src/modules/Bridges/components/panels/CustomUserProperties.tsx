@@ -16,7 +16,7 @@ import {
   Tr,
 } from '@chakra-ui/react'
 import { AddIcon } from '@chakra-ui/icons'
-import { MdRemove } from 'react-icons/all'
+import { MdRemove } from 'react-icons/md'
 
 interface CustomUserPropertiesProps extends BridgePanelType {
   type: SubscriptionType

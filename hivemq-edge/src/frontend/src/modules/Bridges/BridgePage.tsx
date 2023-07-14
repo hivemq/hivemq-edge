@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex } from '@chakra-ui/react'
-import { BiAddToQueue } from 'react-icons/all'
+import { BiAddToQueue } from 'react-icons/Bi'
 import { Outlet, useNavigate } from 'react-router-dom'
 
 import PageContainer from '@/components/PageContainer.tsx'

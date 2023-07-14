@@ -2,7 +2,6 @@ import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { Box, Flex, SimpleGrid, Skeleton } from '@chakra-ui/react'
-import { BiPlus } from 'react-icons/all'
 
 import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUnifiedNamespace.tsx'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
@@ -12,6 +11,7 @@ import PageContainer from '@/components/PageContainer.tsx'
 import InfoPanel from '@/modules/UnifiedNamespace/components/panels/InfoPanel.tsx'
 import RecommendationPanel from '@/modules/UnifiedNamespace/components/panels/RecommendationPanel.tsx'
 import PrefixPanel from '@/modules/UnifiedNamespace/components/panels/PrefixPanel.tsx'
+import { BiPlus } from 'react-icons/bi'
 
 const UnifiedNamespacePage: FC = () => {
   const { t } = useTranslation()

@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { Tag, TagLabel, TagLeftIcon } from '@chakra-ui/react'
-import { SiMqtt } from 'react-icons/all'
+import { SiMqtt } from 'react-icons/si'
 
 interface TopicProps {
   topic: string
