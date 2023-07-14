@@ -148,7 +148,7 @@ public class BridgeConfigurator {
         return builder.build();
     }
 
-    private void validateTopicFilters(final @NotNull String name, final @Nullable List<String> filters) {
+    public static void validateTopicFilters(final @NotNull String name, final @Nullable List<String> filters) {
         if (filters == null || filters.isEmpty()) {
             log.error("Topic filters are missing for bridge '{}'.", name);
             throw new UnrecoverableException(false);
