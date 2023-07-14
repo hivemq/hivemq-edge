@@ -111,6 +111,6 @@ See Github actions.
 
 ### Axe - Accessibility testing
 
-### Percy - Visual testing Test
+### Percy - Visual testing
 
 https://percy.io/f896bbdc/hivemq-edge
