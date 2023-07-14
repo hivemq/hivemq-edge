@@ -65,9 +65,37 @@ jobs:
           working-directory: ./hivemq-edge/src/frontend/
           start: pnpm dev
 
+      # after the test run completes store videos and any screenshots
+      - uses: actions/upload-artifact@v3
+        # add the line below to store screenshots only on failures
+        # if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/e2e/screenshots
+          if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
+      - uses: actions/upload-artifact@v3
+        with:
+          name: cypress-videos
+          path: cypress/e2e/videos
+          if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
+
       - name: 🧪 Run Cypress Component
         uses: cypress-io/github-action@v5
         with:
           working-directory: ./hivemq-edge/src/frontend/
           component: true
           start: pnpm dev
+
+      # after the test run completes store videos and any screenshots
+      - uses: actions/upload-artifact@v3
+        # add the line below to store screenshots only on failures
+        # if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/component/screenshots
+          if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
+      - uses: actions/upload-artifact@v3
+        with:
+          name: cypress-videos
+          path: cypress/component/videos
+          if-no-files-found: ignore # 'warn' or 'error' are also available, defaults to `warn`
