@@ -172,9 +172,13 @@ public class ProtocolAdapterManager {
             try {
                 final ProtocolAdapterFactory<?> protocolAdapterFactory =
                         facroryClass.getDeclaredConstructor().newInstance();
-                log.debug("Discovered Protocol Adapter Implementation {}", facroryClass.getName());
                 final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
-                configToAdapterMap.put(information.getProtocolId(), protocolAdapterFactory);
+                if(configToAdapterMap.put(information.getProtocolId(), protocolAdapterFactory) != null){
+                    log.warn("Discovered Duplicate Protocol Adapter Factory {} from Classloader {} (this maybe ok in development mode)",
+                            facroryClass.getName(), facroryClass.getClassLoader());
+                } else {
+                    log.debug("Discovered Protocol Adapter Factory {}", facroryClass.getName());
+                }
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {
                 log.error("Not able to load module, reason: {}", e.getMessage());
