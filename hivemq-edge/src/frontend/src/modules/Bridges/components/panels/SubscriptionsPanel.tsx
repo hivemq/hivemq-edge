@@ -156,7 +156,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
 
                     <AccordionPanel m={1}>
                       <FormControl>
-                        <FormLabel htmlFor={`${type}.${index}.maxQoS`}>
+                        <FormLabel htmlFor={`${type}.${index}.maxQoS`} data-testid={`${type}.${index}.maxQoS`}>
                           {t('bridge.subscription.maxQoS.label')}
                         </FormLabel>
                         <Controller
