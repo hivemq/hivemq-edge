@@ -48,18 +48,53 @@ public class ModuleLoader {
 
     @Inject
     void loadModules() {
-        final File modulesFolder = systemInformation.getModulesFolder();
-
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        loadFromModulesDirectory(contextClassLoader);
+        loadFromWorkspace(contextClassLoader);
+    }
+
+    private void loadFromWorkspace(final ClassLoader parentClassloader){
+        File userDir = new File(System.getProperty("user.dir"));
+        if(userDir.getName().equals("hivemq-edge")){
+            discoverWorkspaceModule(new File(userDir, "modules"), parentClassloader);
+        } else if(userDir.getName().equals("hivemq-edge-composite")){
+            discoverWorkspaceModule(new File(userDir, "../hivemq-edge/modules"), parentClassloader);
+        }
+    }
+
+    private void discoverWorkspaceModule(final File dir, final ClassLoader parentClassloader) {
+        if(dir.exists()){
+            File[] files = dir.listFiles(pathname -> pathname.isDirectory() && pathname.canRead()
+                     && new File(pathname,"build").exists());
+            for (int i = 0; i < files.length; i++){
+                log.debug("Found module workspace directory {}.", files[i].getAbsolutePath());
+                try {
+                    final IsolatedModuleClassloader isolatedClassloader =
+                            new IsolatedModuleClassloader(new URL[]{
+                                    new File(files[i], "build/classes/java/main").toURI().toURL(),
+                                    new File(files[i], "build/resources/main").toURI().toURL()}, parentClassloader);
+                    modules.add(new EdgeModule(files[i], isolatedClassloader));
+                } catch (final IOException ioException) {
+                    log.warn("Exception with reason {} while reading module file {}",
+                            ioException.getMessage(),
+                            files[i].getAbsolutePath());
+                    log.debug("Original exception", ioException);
+                }
+            }
+        }
+    }
+
+    private void loadFromModulesDirectory(final ClassLoader parentClassloader){
+        final File modulesFolder = systemInformation.getModulesFolder();
         final File[] libs = modulesFolder.listFiles();
         if (libs != null) {
             for (final File lib : libs) {
                 try {
                     if (lib.getName().endsWith(".jar")) {
-                        log.debug("Found possible module jar {}.", lib.getAbsolutePath());
+                        log.debug("Found module jar in modules lib {}.", lib.getAbsolutePath());
                         final IsolatedModuleClassloader isolatedClassloader =
-                                new IsolatedModuleClassloader(new URL[]{lib.toURI().toURL()}, contextClassLoader);
-                        modules.add(new EdgeModule(isolatedClassloader));
+                                new IsolatedModuleClassloader(new URL[]{lib.toURI().toURL()}, parentClassloader);
+                        modules.add(new EdgeModule(lib, isolatedClassloader));
                     } else {
                         log.debug("Ignoring non jar file in module folder {}.", lib.getAbsolutePath());
                     }
@@ -77,7 +112,6 @@ public class ModuleLoader {
         final ArrayList<Class<? extends T>> classes = new ArrayList<>();
         for (EdgeModule module : modules) {
             try {
-
                 final Iterable<Class<? extends T>> loaded = classServiceLoader.load(serviceClazz, module.classloader);
                 for (Class<? extends T> foundClass : loaded) {
                     classes.add(foundClass);
@@ -95,14 +129,28 @@ public class ModuleLoader {
 
     public static class EdgeModule {
 
+        private File root;
         private final @NotNull ClassLoader classloader;
 
-        public EdgeModule(final @NotNull ClassLoader classloader) {
+        public EdgeModule(final @NotNull File root, final @NotNull ClassLoader classloader) {
             this.classloader = classloader;
+            this.root = root;
         }
 
         public @NotNull ClassLoader getClassloader() {
             return classloader;
+        }
+
+        public File getRoot(){
+            return root;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("EdgeModule{");
+            sb.append("root=").append(root);
+            sb.append('}');
+            return sb.toString();
         }
     }
 }

@@ -172,9 +172,13 @@ public class ProtocolAdapterManager {
             try {
                 final ProtocolAdapterFactory<?> protocolAdapterFactory =
                         facroryClass.getDeclaredConstructor().newInstance();
-                log.debug("Discovered Protocol Adapter Implementation {}", facroryClass.getName());
                 final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
-                configToAdapterMap.put(information.getProtocolId(), protocolAdapterFactory);
+                if(configToAdapterMap.put(information.getProtocolId(), protocolAdapterFactory) != null){
+                    log.warn("Discovered Duplicate Protocol Adapter Factory {} from Classloader {} (this maybe ok in development mode)",
+                            facroryClass.getName(), facroryClass.getClassLoader());
+                } else {
+                    log.debug("Discovered Protocol Adapter Factory {}", facroryClass.getName());
+                }
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {
                 log.error("Not able to load module, reason: {}", e.getMessage());
@@ -203,35 +207,6 @@ public class ProtocolAdapterManager {
         }
 
         return createAdapterInstanceAndStartInRuntime(adapterType, config);
-//
-//
-//        AdapterInstance instance = createAdapterInstance(adapterType, config);
-//        protocolAdapters.put(adapterId, instance);
-//
-//        //-- Write the protocol adapter back to the main config (through the proxy)
-//        Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
-//        List<Map> adapterList = null;
-//        Object o = mainMap.get(adapterType);
-//        if (o instanceof Map || o == null) {
-//            if (adapterList == null) {
-//                adapterList = new ArrayList<>();
-//            }
-//            if (o != null) {
-//                adapterList.add((Map) o);
-//            }
-//        } else {
-//            adapterList = (List) o;
-//        }
-//
-//        adapterList.add(config);
-//        configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
-//        CompletableFuture<Void> future;
-//        if (start) {
-//            future = start(instance.getAdapter());
-//        } else {
-//            future = CompletableFuture.completedFuture(null);
-//        }
-//        return future;
     }
 
     public CompletableFuture<Void> start(final @NotNull ProtocolAdapter protocolAdapter) {
