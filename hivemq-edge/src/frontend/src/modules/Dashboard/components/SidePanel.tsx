@@ -8,7 +8,7 @@ import NavLinksBlock from './NavLinksBlock.tsx'
 import logo from '@/assets/edge/03-hivemq-industrial-edge-vert.svg'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 import useGetNavItems from '../hooks/useGetNavItems.tsx'
-import { FiLogOut } from 'react-icons/all'
+import { FiLogOut } from 'react-icons/fi'
 
 const SidePanel: FC = () => {
   const items = useGetNavItems()

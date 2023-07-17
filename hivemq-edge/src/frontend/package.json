@@ -28,10 +28,10 @@
     "@chakra-ui/anatomy": "^2.1.1",
     "@chakra-ui/icons": "^2.0.19",
     "@chakra-ui/radio": "^2.0.22",
-    "@chakra-ui/react": "^2.6.1",
+    "@chakra-ui/react": "^2.7.1",
     "@chakra-ui/skip-nav": "^2.0.15",
     "@chakra-ui/utils": "^2.0.14",
-    "@emotion/react": "^11.11.0",
+    "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@fontsource/roboto": "^5.0.3",
     "@monaco-editor/react": "^4.5.1",
@@ -44,7 +44,7 @@
     "axios": "^1.4.0",
     "chakra-react-select": "^4.6.0",
     "form-data": "^4.0.0",
-    "framer-motion": "^10.12.12",
+    "framer-motion": "^10.12.21",
     "i18next": "^22.4.15",
     "luxon": "^3.3.0",
     "react": "^18.2.0",
@@ -52,7 +52,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.43.9",
     "react-i18next": "^12.3.0",
-    "react-icons": "^4.8.0",
+    "react-icons": "^4.10.1",
     "react-router-dom": "^6.11.2"
   },
   "devDependencies": {
@@ -89,7 +89,7 @@
     "stylelint-config-standard-scss": "^9.0.0",
     "typescript": "^5.0.4",
     "vite": "^4.3.9",
-    "vitest": "^0.31.1"
+    "vitest": "^0.33.0"
   },
   "msw": {
     "workerDirectory": "public"

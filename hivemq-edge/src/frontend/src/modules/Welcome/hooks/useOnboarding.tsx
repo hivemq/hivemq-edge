@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { IoLinkOutline } from 'react-icons/all'
+import { IoLinkOutline } from 'react-icons/io5'
 
 export const useOnboarding = () => {
   const { t } = useTranslation()

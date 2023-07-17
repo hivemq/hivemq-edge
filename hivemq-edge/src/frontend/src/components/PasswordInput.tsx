@@ -1,6 +1,5 @@
 import { FC, useState } from 'react'
 import { Button, Input, InputGroup, InputRightElement, InputProps as CUIInputProps } from '@chakra-ui/react'
-import { BiHide, BiShow } from 'react-icons/all'
 
 import {
   FieldValues,
@@ -9,6 +8,7 @@ import {
   // useForm, // don't need this import
 } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { BiHide, BiShow } from 'react-icons/bi'
 
 interface InputProps extends CUIInputProps {
   register: UseFormRegister<FieldValues> // declare register props

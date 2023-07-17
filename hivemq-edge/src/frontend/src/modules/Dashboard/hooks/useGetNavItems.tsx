@@ -2,7 +2,11 @@ import { useTranslation } from 'react-i18next'
 
 import { NavLinksBlockType } from '../types.ts'
 import { useGetConfiguration } from '@/api/hooks/useGatewayPortal/useGetConfiguration.tsx'
-import { BiListUl, BsIntersect, GoLinkExternal, HiOutlinePuzzle, IoHomeOutline, IoLinkOutline } from 'react-icons/all'
+import { IoHomeOutline, IoLinkOutline } from 'react-icons/io5'
+import { BiListUl } from 'react-icons/bi'
+import { BsIntersect } from 'react-icons/bs'
+import { HiOutlinePuzzle } from 'react-icons/hi'
+import { GoLinkExternal } from 'react-icons/go'
 
 const useGetNavItems = (): NavLinksBlockType[] => {
   const { t } = useTranslation()

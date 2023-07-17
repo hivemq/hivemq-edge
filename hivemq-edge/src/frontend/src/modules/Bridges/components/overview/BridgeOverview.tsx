@@ -1,6 +1,8 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BiShare, BsThreeDotsVertical, SiHomebridge } from 'react-icons/all'
+import { SiHomebridge } from 'react-icons/si'
+import { BsThreeDotsVertical } from 'react-icons/bs'
+import { BiShare } from 'react-icons/bi'
 import {
   Avatar,
   Box,

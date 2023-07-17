@@ -101,12 +101,24 @@ with the following options:
 - `axios` is used for the HTTP client
 - a custom client, to configure individual instances, is created as `HiveMqClient`
 
+## Pipeline
+
+A frontend-specific workflow has been added to the repository, see `.github/workflows/frontend-cli.yml`
+
+It contains - and enforces - parts of the testing pyramid for frontend applications:
+
+- Code quality checks (ESLint, Prettier)
+- Interaction testing (Cypress - Component)
+- Scenario testing (Cypress - E2E)
+- Visual testing (Percy - integrated within Cypress)
+- Unit testing (Vitest)
+
 ## Testing
 
 ### Cypress - E2E and Component testing
 
 ### Axe - Accessibility testing
 
-### Percy - Visual testing
+### Percy - Visual testing More Test
 
 https://percy.io/f896bbdc/hivemq-edge
