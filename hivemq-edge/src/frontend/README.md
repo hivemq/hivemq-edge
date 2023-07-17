@@ -103,7 +103,15 @@ with the following options:
 
 ## Pipeline
 
-See Github actions. Does it work now? XXXX
+A frontend-specific workflow has been added to the repository, see `.github/workflows/frontend-cli.yml`
+
+It contains - and enforces - parts of the testing pyramid for frontend applications:
+
+- Code quality checks (ESLint, Prettier)
+- Interaction testing (Cypress - Component)
+- Scenario testing (Cypress - E2E)
+- Visual testing (Percy - integrated within Cypress)
+- Unit testing (Vitest)
 
 ## Testing
 
