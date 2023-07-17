@@ -381,7 +381,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 tls.getKeystoreType(),
                 tls.getTruststoreType(),
                 tls.isVerifyHostname(),
-                tls.getHandshakeTimeout());
+                Math.max(10, tls.getHandshakeTimeout()));
         return tlsConfiguration;
     }
 }
