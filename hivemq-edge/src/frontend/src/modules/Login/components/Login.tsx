@@ -1,18 +1,32 @@
 import { FC } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Box, Button, Flex, FormControl, FormErrorMessage, FormLabel, Heading, Input, Text } from '@chakra-ui/react'
+import {
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
+  Box,
+  Button,
+  Flex,
+  FormControl,
+  FormErrorMessage,
+  FormLabel,
+  Heading,
+  Input,
+  Text,
+} from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import { usePostAuthentication } from '@/api/hooks/usePostAuthentication'
-import { ApiBearerToken, ApiError, UsernamePasswordCredentials } from '@/api/__generated__'
+import { ApiBearerToken, ApiError, FirstUseInformation, UsernamePasswordCredentials } from '@/api/__generated__'
 import { parseJWT } from '@/api/utils.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PasswordInput from '@/components/PasswordInput.tsx'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 
-const Login: FC = () => {
+const Login: FC<{ first?: FirstUseInformation }> = ({ first }) => {
   const auth = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -23,7 +37,14 @@ const Login: FC = () => {
     register,
     setError,
     formState: { errors },
-  } = useForm<UsernamePasswordCredentials>()
+  } = useForm<UsernamePasswordCredentials>({
+    defaultValues:
+      first?.prefillUsername && first?.prefillPassword
+        ? { userName: first.prefillUsername, password: first.prefillPassword }
+        : undefined,
+  })
+
+  console.log('XXXXXXX first', first)
 
   const verifyCredential = (e: ApiBearerToken) => {
     if (!e.token)
@@ -53,6 +74,16 @@ const Login: FC = () => {
   return (
     <main>
       <Flex align="center" flexDirection="column">
+        {(!!first?.firstUseDescription || !!first?.firstUseTitle) && (
+          <Alert status="info" mb={'64px'}>
+            <AlertIcon />
+            <div>
+              <AlertTitle>{first?.firstUseTitle}</AlertTitle>
+              <AlertDescription>{first?.firstUseDescription}</AlertDescription>
+            </div>
+          </Alert>
+        )}
+
         <Heading as={'h1'} mb={6}>
           {t('translation:login.title')}
         </Heading>
@@ -103,9 +134,11 @@ const Login: FC = () => {
             <ErrorMessage type={errors.root?.ApiError.type} message={errors.root?.ApiError.message} />
           )}
         </Box>
-        <Text fontFamily={'heading'} textAlign={'center'}>
-          {t('login.password.support')}
-        </Text>
+        {(!first?.firstUseDescription || !first?.firstUseTitle) && (
+          <Text fontFamily={'heading'} textAlign={'center'}>
+            {t('login.password.support')}
+          </Text>
+        )}
       </Flex>
     </main>
   )
