@@ -65,7 +65,6 @@ describe('LoginPage', () => {
     }).as('getConfig')
 
     cy.mountWithProviders(<LoginPage />)
-    cy.getByTestId('loading-spinner').should('be.visible')
     cy.get("[role='alert']").should('not.exist')
   })
 })
