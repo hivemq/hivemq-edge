@@ -176,9 +176,9 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                         return;
                     }
                 }
-                if(log.isTraceEnabled()){
-                    log.trace("Executing Polling Job {} from Adapter {}", output.getId(), output.getAdapterId());
-                }
+//                if(log.isTraceEnabled()){
+//                    log.trace("Executing Polling Job {} from Adapter {}", output.getId(), output.getAdapterId());
+//                }
                 input.execute();
                 errorCount.set(0);
                 notBefore = 0;

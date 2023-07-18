@@ -121,8 +121,9 @@ public class MessageForwarderImpl implements MessageForwarder {
         singleWriterService.callbackExecutor(queueId).execute(() -> {
             //QoS 0 has no inflight marker
             if (message.getQoS() != QoS.AT_MOST_ONCE) {
+                //-- 15665 - > QoS 0 causes republishing
                 FutureUtils.addExceptionLogger(queuePersistence.get()
-                        .removeInFlightMarker(queueId, message.getUniqueId()));
+                        .removeShared(queueId, message.getUniqueId()));
             }
             continueForwarding(queueId, forwarders.get(forwarderId));
         });
@@ -251,6 +252,7 @@ public class MessageForwarderImpl implements MessageForwarder {
                 notEmptyQueues.remove(queueId);
                 return Futures.immediateFuture(false);
             }
+            log.debug("mqtt-forwarder queue {} has {} messages", queueId, publishes.size());
             for (final PUBLISH publish : publishes) {
                 mqttForwarder.onMessage(publish, queueId);
             }
