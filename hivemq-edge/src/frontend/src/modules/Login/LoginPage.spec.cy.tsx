@@ -10,7 +10,7 @@ describe('LoginPage', () => {
     cy.viewport(800, 900)
   })
 
-  it('should show spinner while loading the first-time bundle', () => {
+  it('should show spinner while loading the first-use payload', () => {
     const mockError = { title: 'This is an error message', code: 404 }
     cy.intercept('/api/v1/frontend/configuration', (req: CyHttpMessages.IncomingHttpRequest) => {
       req.reply({ statusCode: 404, status: 404, body: mockError })
@@ -20,7 +20,7 @@ describe('LoginPage', () => {
     cy.getByTestId('loading-spinner').should('be.visible')
   })
 
-  it('should report error when loading the first-time bundle', () => {
+  it('should report error when loading the first-use payload fails', () => {
     const mockError = { title: 'This is an error message', code: 404 }
     cy.intercept('/api/v1/frontend/configuration', (req: CyHttpMessages.IncomingHttpRequest) => {
       req.reply({ statusCode: 404, status: 404, body: mockError })
@@ -36,12 +36,36 @@ describe('LoginPage', () => {
     })
   })
 
-  it('should show spinner while loading the first-time bundle', () => {
+  it('should show the first-use messages', () => {
     cy.intercept('/api/v1/frontend/configuration', (req: CyHttpMessages.IncomingHttpRequest) => {
       req.reply(mockGatewayConfiguration)
     }).as('getConfig')
 
     cy.mountWithProviders(<LoginPage />)
     cy.getByTestId('loading-spinner').should('be.visible')
+    cy.get("[role='alert'")
+      .eq(0)
+      .should('be.visible')
+      .find("div[data-status='info']")
+      .should('contain.text', 'Welcome To HiveMQ Edge')
+      .should('contain.text', mockGatewayConfiguration.firstUseInformation?.firstUseDescription)
+  })
+
+  it('should show not show the messages', () => {
+    cy.intercept('/api/v1/frontend/configuration', (req: CyHttpMessages.IncomingHttpRequest) => {
+      req.reply({
+        ...mockGatewayConfiguration,
+        firstUseInformation: {
+          prefillUsername: null,
+          prefillPassword: null,
+          firstUseTitle: null,
+          firstUseDescription: null,
+        },
+      })
+    }).as('getConfig')
+
+    cy.mountWithProviders(<LoginPage />)
+    cy.getByTestId('loading-spinner').should('be.visible')
+    cy.get("[role='alert']").should('not.exist')
   })
 })
