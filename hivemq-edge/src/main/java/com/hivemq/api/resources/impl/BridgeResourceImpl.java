@@ -304,7 +304,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 .withPassword(bridge.getPassword())
                 .withClientId(bridge.getClientId() != null && !bridge.getClientId().isBlank() ?
                         bridge.getClientId() :
-                        bridge.getId())
+                        "")
                 .withKeepAlive(bridge.getKeepAlive())
                 .withCleanStart(bridge.isCleanStart())
                 .withPort(bridge.getPort())
