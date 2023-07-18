@@ -50,7 +50,8 @@ public class ModuleLoader {
     void loadModules() {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         loadFromModulesDirectory(contextClassLoader);
-        loadFromWorkspace(contextClassLoader);
+        //TODO - need to load third party deps
+//        loadFromWorkspace(contextClassLoader);
     }
 
     private void loadFromWorkspace(final ClassLoader parentClassloader){
