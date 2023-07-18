@@ -17,9 +17,11 @@ const LoginPage: FC = () => {
         <EdgeAside />
       </Flex>
       <Flex p={8} flex={1} align={'center'} justify={'center'}>
-        {isLoading && <LoaderSpinner />}
-        {isError && error && <ErrorMessage type={error?.statusText} message={error?.body?.title} />}
-        {!isError && !isLoading && <Login first={data?.firstUseInformation} />}
+        <main>
+          {isLoading && <LoaderSpinner />}
+          {isError && error && <ErrorMessage type={error?.statusText} message={error?.body?.title} />}
+          {!isError && !isLoading && <Login first={data?.firstUseInformation} />}
+        </main>
       </Flex>
     </Stack>
   )

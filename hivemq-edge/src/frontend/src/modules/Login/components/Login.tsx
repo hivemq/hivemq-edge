@@ -72,75 +72,73 @@ const Login: FC<{ first?: FirstUseInformation }> = ({ first }) => {
   }
 
   return (
-    <main>
-      <Flex align="center" flexDirection="column">
-        {(!!first?.firstUseDescription || !!first?.firstUseTitle) && (
-          <Alert status="info" mb={'64px'}>
-            <AlertIcon />
-            <div>
-              <AlertTitle>{first?.firstUseTitle}</AlertTitle>
-              <AlertDescription>{first?.firstUseDescription}</AlertDescription>
-            </div>
-          </Alert>
-        )}
+    <Flex align="center" flexDirection="column">
+      {(!!first?.firstUseDescription || !!first?.firstUseTitle) && (
+        <Alert status="info" mb={'64px'}>
+          <AlertIcon />
+          <div>
+            <AlertTitle>{first?.firstUseTitle}</AlertTitle>
+            <AlertDescription>{first?.firstUseDescription}</AlertDescription>
+          </div>
+        </Alert>
+      )}
 
-        <Heading as={'h1'} mb={6}>
-          {t('translation:login.title')}
-        </Heading>
+      <Heading as={'h1'} mb={6}>
+        {t('translation:login.title')}
+      </Heading>
 
-        <Box p={4} maxWidth={450}>
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <FormControl isInvalid={!!errors.userName} isRequired>
-              <FormLabel htmlFor="username">{t('translation:login.username.label')}</FormLabel>
-              <Input
-                autoFocus
-                id="username"
-                placeholder={t('translation:login.username.placeholder') as string}
-                autoComplete="username"
-                {...register('userName', {
-                  required: t('translation:login.username.error.required') as string,
-                })}
-              />
-              <FormErrorMessage>{errors.userName && errors.userName.message}</FormErrorMessage>
-            </FormControl>
-            <FormControl isInvalid={!!errors.password} mt={'2em'} isRequired>
-              <FormLabel htmlFor="password">{t('translation:login.password.label')}</FormLabel>
-              <PasswordInput
-                id="password"
-                name={'password'}
-                placeholder={t('translation:login.password.placeholder') as string}
-                autoComplete={'current-password'}
-                register={register}
-                options={{
-                  required: t('translation:login.password.error.required') as string,
-                }}
-              />
-              <FormErrorMessage>{errors.password && errors.password.message}</FormErrorMessage>
-            </FormControl>
-            <Button
-              data-testid="loginPage-submit"
-              mt={'2em'}
-              type="submit"
-              isLoading={isLoading}
-              colorScheme={'yellow'}
-              variant={'solid'}
-            >
-              {t('translation:login.submit.label')}
-            </Button>
-          </form>
-        </Box>
-        <Box p={4} maxWidth={600}>
-          {errors.root?.ApiError && (
-            <ErrorMessage type={errors.root?.ApiError.type} message={errors.root?.ApiError.message} />
-          )}
-        </Box>
-        {(!first?.firstUseDescription || !first?.firstUseTitle) && (
-          <Text fontFamily={'heading'} textAlign={'center'}>
-            {t('login.password.support')}
-          </Text>
+      <Box p={4} maxWidth={450}>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <FormControl isInvalid={!!errors.userName} isRequired>
+            <FormLabel htmlFor="username">{t('translation:login.username.label')}</FormLabel>
+            <Input
+              autoFocus
+              id="username"
+              placeholder={t('translation:login.username.placeholder') as string}
+              autoComplete="username"
+              {...register('userName', {
+                required: t('translation:login.username.error.required') as string,
+              })}
+            />
+            <FormErrorMessage>{errors.userName && errors.userName.message}</FormErrorMessage>
+          </FormControl>
+          <FormControl isInvalid={!!errors.password} mt={'2em'} isRequired>
+            <FormLabel htmlFor="password">{t('translation:login.password.label')}</FormLabel>
+            <PasswordInput
+              id="password"
+              name={'password'}
+              placeholder={t('translation:login.password.placeholder') as string}
+              autoComplete={'current-password'}
+              register={register}
+              options={{
+                required: t('translation:login.password.error.required') as string,
+              }}
+            />
+            <FormErrorMessage>{errors.password && errors.password.message}</FormErrorMessage>
+          </FormControl>
+          <Button
+            data-testid="loginPage-submit"
+            mt={'2em'}
+            type="submit"
+            isLoading={isLoading}
+            colorScheme={'yellow'}
+            variant={'solid'}
+          >
+            {t('translation:login.submit.label')}
+          </Button>
+        </form>
+      </Box>
+      <Box p={4} maxWidth={600}>
+        {errors.root?.ApiError && (
+          <ErrorMessage type={errors.root?.ApiError.type} message={errors.root?.ApiError.message} />
         )}
-      </Flex>
-    </main>
+      </Box>
+      {(!first?.firstUseDescription || !first?.firstUseTitle) && (
+        <Text fontFamily={'heading'} textAlign={'center'}>
+          {t('login.password.support')}
+        </Text>
+      )}
+    </Flex>
   )
 }
 
