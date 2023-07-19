@@ -1,10 +1,12 @@
 import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Navigate, Outlet } from 'react-router-dom'
-import { AbsoluteCenter, Box, Flex, Spinner } from '@chakra-ui/react'
+import { AbsoluteCenter, Box, Flex } from '@chakra-ui/react'
 import { SkipNavContent, SkipNavLink } from '@chakra-ui/skip-nav'
 
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+
 import SidePanel from './components/SidePanel.tsx'
-import { useTranslation } from 'react-i18next'
 import { useAuth } from '../Auth/hooks/useAuth.ts'
 
 const Dashboard: FC = () => {
@@ -15,7 +17,7 @@ const Dashboard: FC = () => {
     return (
       <Box position="relative" h="100vh">
         <AbsoluteCenter p="4" axis="both">
-          <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="blue.500" size="xl" />
+          <LoaderSpinner />
         </AbsoluteCenter>
       </Box>
     )

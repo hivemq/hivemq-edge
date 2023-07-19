@@ -5,11 +5,12 @@ name: Frontend - React Testing Pyramid
 
 on:
   push:
-    branches: [master, alpha]
+    branches:
+      - "**"        # matches every branch
     paths:
       - hivemq-edge/src/frontend/**
   pull_request:
-    branches: [master, alpha]
+    branches: [master]
     paths:
       - hivemq-edge/src/frontend/**
 env:
@@ -38,7 +39,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-#          cache: 'pnpm'
+      #          cache: 'pnpm'
 
       - name: 📦 Install dependencies
         run: pnpm install
@@ -83,3 +84,7 @@ jobs:
           name: cypress-component-videos
           path: hivemq-edge/src/frontend/cypress/videos
           if-no-files-found: ignore
+
+      - name: 📸 Run Percy visual tests
+        run: pnpm cypress:percy
+

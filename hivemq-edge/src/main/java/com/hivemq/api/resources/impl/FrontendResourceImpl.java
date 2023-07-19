@@ -147,13 +147,17 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
         //-- Populate login prefill
         String prefillUsername = null;
         String prefillPassword = null;
+        String firstUseTitle = null;
+        String firstUseDescription = null;
         if (ApiUtils.hasDefaultUser(configurationService.apiConfiguration().getUserList())) {
             prefillUsername = UsernamePasswordRoles.DEFAULT_USERNAME;
             prefillPassword = UsernamePasswordRoles.DEFAULT_PASSWORD;
+
+            firstUseTitle = "Welcome To HiveMQ Edge";
+            firstUseDescription = "We have determined this is a new installation and have therefore pre-populated the admin credentials with the system defaults. IMPORTANT: Please update the default credentials in your config.xml document.";
         }
 
-        String firstUseTitle = "Welcome To HiveMQ Edge";
-        String firstUseDescription = LoremIpsum.generate(50);
+
 
         return new FirstUseInformation(firstUse, prefillUsername, prefillPassword, firstUseTitle, firstUseDescription);
     }

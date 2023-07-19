@@ -8,7 +8,6 @@ import {
   DrawerContent,
   DrawerCloseButton,
   Flex,
-  Spinner,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
@@ -20,9 +19,12 @@ import validator from '@rjsf/validator-ajv8'
 import { ApiError, Adapter, ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
+
+import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+
 import { ObjectFieldTemplate } from '@/modules/ProtocolAdapters/components/adapters/ObjectFieldTemplate.tsx'
 import useGetUiSchema from '@/modules/ProtocolAdapters/hooks/useGetUISchema.ts'
-import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -74,7 +76,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
         </DrawerHeader>
 
         <DrawerBody>
-          {!schema && <Spinner thickness="4px" speed="0.65s" emptyColor="gray.200" color="brand.500" size="xl" />}
+          {!schema && <LoaderSpinner />}
           {schema && (
             <Form
               id="adapter-instance-form"
