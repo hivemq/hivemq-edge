@@ -43,8 +43,7 @@ const Login: FC<{ first?: FirstUseInformation }> = ({ first }) => {
         ? { userName: first.prefillUsername, password: first.prefillPassword }
         : undefined,
   })
-
-  console.log('XXXXXXX first', first)
+  const showFirstUseMessage = (!!first?.firstUseDescription || !!first?.firstUseTitle) && !errors.root
 
   const verifyCredential = (e: ApiBearerToken) => {
     if (!e.token)
@@ -73,21 +72,28 @@ const Login: FC<{ first?: FirstUseInformation }> = ({ first }) => {
 
   return (
     <Flex align="center" flexDirection="column">
-      {(!!first?.firstUseDescription || !!first?.firstUseTitle) && (
-        <Alert status="info" mb={'64px'}>
-          <AlertIcon />
-          <div>
-            <AlertTitle>{first?.firstUseTitle}</AlertTitle>
-            <AlertDescription>{first?.firstUseDescription}</AlertDescription>
-          </div>
-        </Alert>
-      )}
+      <Box p={4} maxWidth={600}>
+        {showFirstUseMessage && (
+          <Alert status="info">
+            <AlertIcon />
+            <div>
+              <AlertTitle>{first?.firstUseTitle}</AlertTitle>
+              <AlertDescription>{first?.firstUseDescription}</AlertDescription>
+            </div>
+          </Alert>
+        )}
+        {errors.root?.ApiError && (
+          <ErrorMessage type={errors.root?.ApiError.type} message={errors.root?.ApiError.message} />
+        )}
+      </Box>
 
-      <Heading as={'h1'} mb={6}>
-        {t('translation:login.title')}
-      </Heading>
+      <Box width={'100%'} maxWidth={'450px'} p={3}>
+        <Heading as={'h1'} mb={6}>
+          {t('translation:login.title')}
+        </Heading>
+      </Box>
 
-      <Box p={4} maxWidth={450}>
+      <Box p={4} width={'100%'} maxWidth={'450px'}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <FormControl isInvalid={!!errors.userName} isRequired>
             <FormLabel htmlFor="username">{t('translation:login.username.label')}</FormLabel>
@@ -118,7 +124,8 @@ const Login: FC<{ first?: FirstUseInformation }> = ({ first }) => {
           </FormControl>
           <Button
             data-testid="loginPage-submit"
-            mt={'2em'}
+            width={'100%'}
+            mt={'7em'}
             type="submit"
             isLoading={isLoading}
             colorScheme={'yellow'}
@@ -128,11 +135,7 @@ const Login: FC<{ first?: FirstUseInformation }> = ({ first }) => {
           </Button>
         </form>
       </Box>
-      <Box p={4} maxWidth={600}>
-        {errors.root?.ApiError && (
-          <ErrorMessage type={errors.root?.ApiError.type} message={errors.root?.ApiError.message} />
-        )}
-      </Box>
+
       {(!first?.firstUseDescription || !first?.firstUseTitle) && (
         <Text fontFamily={'heading'} textAlign={'center'}>
           {t('login.password.support')}
