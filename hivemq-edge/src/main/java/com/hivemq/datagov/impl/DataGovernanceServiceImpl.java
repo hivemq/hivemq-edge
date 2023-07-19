@@ -134,7 +134,7 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
             governatedMessagesCounter.inc();
             DataGovernanceResult result = context.getResult();
             for(DataGovernancePolicy policy : policies){
-                log.trace("Data-Gov Executing '{}' with Id '{}'", policy.getName(), policy.getId());
+//                log.trace("Data-Gov Executing '{}' with Id '{}'", policy.getName(), policy.getId());
                 policy.execute(context, context.getInput());
             }
             return result;

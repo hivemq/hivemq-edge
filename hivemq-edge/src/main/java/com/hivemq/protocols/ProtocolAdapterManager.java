@@ -172,13 +172,9 @@ public class ProtocolAdapterManager {
             try {
                 final ProtocolAdapterFactory<?> protocolAdapterFactory =
                         facroryClass.getDeclaredConstructor().newInstance();
+                log.debug("Discovered Protocol Adapter Implementation {}", facroryClass.getName());
                 final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
-                if(configToAdapterMap.put(information.getProtocolId(), protocolAdapterFactory) != null){
-                    log.warn("Discovered Duplicate Protocol Adapter Factory {} from Classloader {} (this maybe ok in development mode)",
-                            facroryClass.getName(), facroryClass.getClassLoader());
-                } else {
-                    log.debug("Discovered Protocol Adapter Factory {}", facroryClass.getName());
-                }
+                configToAdapterMap.put(information.getProtocolId(), protocolAdapterFactory);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {
                 log.error("Not able to load module, reason: {}", e.getMessage());
@@ -244,8 +240,9 @@ public class ProtocolAdapterManager {
                 synchronized(lock){
                     Map<String, Object> mainMap =
                             configurationService.protocolAdapterConfigurationService().getAllConfigs();
-                    List<Map> adapterList =
-                            (List<Map>) mainMap.get(adapterInstance.get().getAdapterInformation().getProtocolId());
+                    List<Map> adapterList = getAdapterListForType(adapterInstance.get().getAdapterInformation().getProtocolId());
+//                    List<Map> adapterList =
+//                            (List<Map>) mainMap.get(adapterInstance.get().getAdapterInformation().getProtocolId());
                     if (adapterList != null) {
                         if(adapterList.removeIf(instance -> id.equals(instance.get("id")))){
                             configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
@@ -326,26 +323,32 @@ public class ProtocolAdapterManager {
             protocolAdapters.put(instance.getAdapter().getId(), instance);
 
             //-- Write the protocol adapter back to the main config (through the proxy)
+            List<Map> adapterList = getAdapterListForType(adapterType);
             Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
-            List<Map> adapterList = null;
-            Object o = mainMap.get(adapterType);
-            if (o instanceof Map || o == null) {
-                if (adapterList == null) {
-                    adapterList = new ArrayList<>();
-                }
-                if (o != null) {
-                    adapterList.add((Map) o);
-                }
-                mainMap.put(adapterType, adapterList);
-            } else {
-                adapterList = (List) o;
-            }
-
             adapterList.add(config);
             configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
             CompletableFuture<Void> future = start(instance.getAdapter());
             return future;
         }
+    }
+
+    protected List<Map> getAdapterListForType(final String adapterType){
+
+        Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
+        List<Map> adapterList = null;
+        Object o = mainMap.get(adapterType);
+        if (o instanceof Map || o == null) {
+            if (adapterList == null) {
+                adapterList = new ArrayList<>();
+            }
+            if (o != null) {
+                adapterList.add((Map) o);
+            }
+            mainMap.put(adapterType, adapterList);
+        } else {
+            adapterList = (List) o;
+        }
+        return adapterList;
     }
 
     public static class ProtocolAdapterInputImpl<T extends CustomConfig> implements ProtocolAdapterInput<T> {

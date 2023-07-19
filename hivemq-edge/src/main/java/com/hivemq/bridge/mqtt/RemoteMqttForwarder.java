@@ -100,6 +100,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
     @Override
     public void onMessage(@NotNull final PUBLISH publish, @NotNull final String queueId) {
 
+        log.info("started processing {}@{} for {}", publish.getTopic(), publish.getQoS().getQosNumber(), queueId);
         perBridgeMetrics.getPublishLocalReceivedCounter().inc();
 
         if (!running.get()) {
@@ -175,6 +176,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
     }
 
     private void finishProcessing(@NotNull PUBLISH publish, @NotNull String queueId) {
+        log.info("finished processing {}@{} for {}", publish.getTopic(), publish.getQoS().getQosNumber(), queueId);
         inflightCounter.decrementAndGet();
         if (afterForwardCallback != null) {
             afterForwardCallback.afterMessage(publish, queueId, false);
