@@ -66,8 +66,7 @@ public class Bridge {
             format = "string",
             example = "my-example-client-id",
             nullable = true,
-            maxLength = HiveMQEdgeConstants.MAX_UINT16,
-            pattern = HiveMQEdgeConstants.ID_REGEX)
+            maxLength = HiveMQEdgeConstants.MAX_UINT16)
     private final @NotNull String clientId;
 
     @JsonProperty("keepAlive")
@@ -103,8 +102,7 @@ public class Bridge {
             description = "The username value associated the the MQTT connection.",
             maxLength = HiveMQEdgeConstants.MAX_UINT16,
             format = "string",
-            nullable = true,
-            pattern = HiveMQEdgeConstants.ID_REGEX)
+            nullable = true)
     private final @Nullable String username;
 
     @JsonProperty("password")
@@ -112,16 +110,21 @@ public class Bridge {
             description = "The password value associated the the MQTT connection.",
             maxLength = HiveMQEdgeConstants.MAX_UINT16,
             format = "string",
-            nullable = true,
-            pattern = HiveMQEdgeConstants.ID_REGEX)
+            nullable = true)
     private final @Nullable String password;
 
     @JsonProperty("loopPreventionEnabled")
-    @Schema(description = "Is loop prevention enabled on the connection")
+    @Schema(description = "Is loop prevention enabled on the connection",
+            defaultValue = "true",
+            format = "boolean")
     private final boolean loopPreventionEnabled;
 
     @JsonProperty("loopPreventionHopCount")
-    @Schema(description = "Loop prevention hop count")
+    @Schema(description = "Loop prevention hop count",
+            defaultValue = "1",
+            minimum = "0",
+            maximum = "100",
+            format = "integer")
     private final int loopPreventionHopCount;
 
     @JsonProperty("remoteSubscriptions")
