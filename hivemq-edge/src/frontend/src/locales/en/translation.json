@@ -1,6 +1,6 @@
 {
   "branding": {
-    "appName": "HiveMQ Industrial Edge",
+    "appName": "HiveMQ Edge",
     "company": "HiveMQ"
   },
   "action": {
@@ -44,23 +44,24 @@
   },
   "login": {
     "aside": {
-      "header": "Simple, Fast & Secure Edge Gateway",
-      "subheader": "Plug and play with your Edge devices and unify the data into standards compliant MQTT workload"
+      "header": "Simple, Fast, Secure",
+      "subheader": "Edge Gateway",
+      "tagline": "Plug and play with your Edge devices and unify the data into stands compliant workload."
     },
     "title": "Sign in",
     "username": {
       "label": "Username",
-      "placeholder": "Enter your username",
+      "placeholder": "Enter username",
       "error": {
         "required": "The username is required"
       }
     },
     "password": {
       "label": "Password",
-      "placeholder": "Enter your password",
+      "placeholder": "Enter password",
       "show": "Show password",
       "hide": "Hide password",
-      "support": "Contact your system administrator for access credentials",
+      "support": "Please speak with your system administrator if you don’t know username and password.",
       "error": {
         "required": "The password is required"
       }
