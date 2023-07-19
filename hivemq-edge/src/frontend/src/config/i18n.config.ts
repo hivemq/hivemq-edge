@@ -23,7 +23,7 @@ i18n
   .init({
     resources,
     lng: 'en',
-    debug: true,
+    debug: import.meta.env.MODE === 'development',
     interpolation: {
       escapeValue: false, // react already safes from xss
     },

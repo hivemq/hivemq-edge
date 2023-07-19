@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Controller, useFieldArray } from 'react-hook-form'
+import { CreatableSelect } from 'chakra-react-select'
 import {
   Accordion,
   AccordionItem,
@@ -27,9 +28,9 @@ import {
 } from '@chakra-ui/react'
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons'
 
-import { CreatableSelect } from 'chakra-react-select'
-
-import CustomUserProperties from '../../components/panels/CustomUserProperties.tsx'
+import { $BridgeSubscription } from '@/api/__generated__'
+import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
+import CustomUserProperties from './CustomUserProperties.tsx'
 import { BridgeSubscriptionsProps } from '../../types.ts'
 
 const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
@@ -38,6 +39,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
     control: form.control, // control props comes from useForm (optional: if you are using FormContext)
     name: type, // unique name for your Field Array
   })
+  const getRulesForProperty = useValidationRules()
 
   const {
     register,
@@ -53,7 +55,11 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
               <HStack>
                 <CardBody>
                   <Flex gap={4}>
-                    <FormControl isInvalid={!!errors[type]?.[index]?.filters} isRequired>
+                    <FormControl
+                      data-testid={`${type}.${index}.filters`}
+                      isInvalid={!!errors[type]?.[index]?.filters}
+                      isRequired
+                    >
                       <FormLabel htmlFor={`${type}.${index}.filters`}>
                         {t('bridge.subscription.filters.label')}
                       </FormLabel>
@@ -68,10 +74,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                               value={formatValue}
                               onChange={(values) => onChange(values.map((item) => item.value))}
                               inputId={`${type}.${index}.filters`}
-                              // options={[{ value: 'ddfd', label: 'fgg' }]}
-                              // menuIsOpen={false}
                               isClearable={true}
-                              placeholder={'ddd'}
                               isMulti={true}
                               components={{
                                 DropdownIndicator: null,
@@ -81,10 +84,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                         }}
                         control={form.control}
                         rules={{
-                          required: {
-                            value: true,
-                            message: t('bridge.subscription.filters.error.required') as string,
-                          },
+                          ...getRulesForProperty($BridgeSubscription.properties.filters),
                         }}
                       />
                       {!errors[type]?.[index]?.filters && (
@@ -93,7 +93,11 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                       <FormErrorMessage>{errors[type]?.[index]?.filters?.message}</FormErrorMessage>
                     </FormControl>
 
-                    <FormControl isInvalid={!!errors[type]?.[index]?.destination} isRequired>
+                    <FormControl
+                      data-testid={`${type}.${index}.destination`}
+                      isInvalid={!!errors[type]?.[index]?.destination}
+                      isRequired
+                    >
                       <FormLabel htmlFor={`${type}.${index}.destination`}>
                         {t('bridge.subscription.destination.label')}
                       </FormLabel>
@@ -109,7 +113,6 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                               value={formatValue}
                               onChange={(item) => onChange(item?.value)}
                               options={[{ value: '{#}', label: '{#} - original message topic' }]}
-                              // menuIsOpen={false}
                               isClearable={true}
                               isMulti={false}
                               components={{
@@ -120,13 +123,10 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                         }}
                         control={form.control}
                         rules={{
-                          required: {
-                            value: true,
-                            message: t('bridge.subscription.filters.error.required') as string,
-                          },
+                          ...getRulesForProperty($BridgeSubscription.properties.destination),
                         }}
                       />
-                      {!errors[type]?.[index]?.filters && (
+                      {!errors[type]?.[index]?.destination && (
                         <FormHelperText>{t('bridge.subscription.destination.helper')}</FormHelperText>
                       )}
                       <FormErrorMessage>{errors[type]?.[index]?.destination?.message}</FormErrorMessage>
@@ -145,7 +145,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
               </HStack>
               <CardBody p={0}>
                 <Accordion allowMultiple>
-                  <AccordionItem isDisabled={!!errors[type]?.[index]}>
+                  <AccordionItem isDisabled={!!errors[type]?.[index]} data-testid={`${type}.${index}.advanced`}>
                     <AccordionButton>
                       <AccordionIcon />
                       <Box as="span" flex="1" textAlign="left">
@@ -156,7 +156,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
 
                     <AccordionPanel m={1}>
                       <FormControl>
-                        <FormLabel htmlFor={`${type}.${index}.maxQoS`}>
+                        <FormLabel htmlFor={`${type}.${index}.maxQoS`} data-testid={`${type}.${index}.maxQoS`}>
                           {t('bridge.subscription.maxQoS.label')}
                         </FormLabel>
                         <Controller
@@ -172,7 +172,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                             </RadioGroup>
                           )}
                           rules={{
-                            required: { value: true, message: 'This is required.' },
+                            ...getRulesForProperty($BridgeSubscription.properties.maxQoS),
                           }}
                         />
                       </FormControl>
@@ -210,7 +210,10 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                         <FormLabel htmlFor={`${type}.${index}.preserveRetain`}>
                           {t('bridge.subscription.preserveRetain.label')}
                         </FormLabel>
-                        <Switch {...register(`${type}.${index}.preserveRetain`)} />
+                        <Switch
+                          id={`${type}.${index}.preserveRetain`}
+                          {...register(`${type}.${index}.preserveRetain`)}
+                        />
                         <FormErrorMessage>{errors[type]?.[index]?.filters?.message}</FormErrorMessage>
                       </FormControl>
 
@@ -224,6 +227,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
         })}
         <Box>
           <IconButton
+            data-testid={'bridge-subscription-add'}
             isDisabled={!!errors[type]}
             aria-label={t('bridge.subscription.add')}
             icon={<AddIcon />}

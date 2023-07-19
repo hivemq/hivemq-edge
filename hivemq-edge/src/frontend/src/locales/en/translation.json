@@ -518,5 +518,12 @@
       "header": "Define the subscription pattern",
       "submit": "Add Subscription"
     }
+  },
+  "validation": {
+    "required": "This property is required",
+    "maxLength": "No more than {{ count }} characters allowed for the property",
+    "minimum": "Should be at least {{ count }}",
+    "maximum": "Should not be more than {{ count }}",
+    "pattern": "Should match the regular expression {{ pattern }}"
   }
 }
