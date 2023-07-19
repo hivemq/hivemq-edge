@@ -1,4 +1,4 @@
-= HiveMQ Community Edition Contributing Guidelines
+= HiveMQ Edge Contributing Guidelines
 
 == Introduction
 
