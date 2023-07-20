@@ -101,9 +101,10 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
         Preconditions.checkArgument(context.getResult().getStatus() == DataGovernanceResult.STATUS.SUCCESS,
                 "Can Only Apply Publish On Successful Execution");
         try {
-            log.trace("Data Governance Publishing {} Bytes To {}",
+            log.trace("Data Governance Publishing {} Bytes To {} at QoS {}",
                     context.getResult().getOutput().getPublish().getPayload().length,
-                    context.getResult().getOutput().getPublish().getTopic());
+                    context.getResult().getOutput().getPublish().getTopic(),
+                    context.getResult().getOutput().getPublish().getQoS().getQosNumber());
             return internalPublishService.publish(
                     context.getResult().getOutput().getPublish(), getExecutorForContext(context),
                     context.getResult().getOutput().getClientId());
