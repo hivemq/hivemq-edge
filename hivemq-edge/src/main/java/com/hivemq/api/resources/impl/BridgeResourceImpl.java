@@ -274,6 +274,13 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 1,
                 HiveMQEdgeConstants.MAX_UINT16);
 
+       if(bridge.getLoopPreventionHopCount() != 0){
+           ApiErrorUtils.validateFieldValueBetweenIncl(errorMessages,
+                   "loopPreventionHopCount",
+                   bridge.getLoopPreventionHopCount(),
+                   1, 100);
+       }
+
         bridge.getLocalSubscriptions()
                 .stream().forEach(s ->
                         validateValidSubscribeTopicField(errorMessages, "local-filters", s.getFilters()));
