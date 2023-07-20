@@ -19,6 +19,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 public interface MqttForwarder {
 
@@ -31,6 +32,8 @@ public interface MqttForwarder {
     void stop();
 
     void setCallback(@NotNull MqttForwarder.AfterForwardCallback callback);
+
+    void setExecutorService(@NotNull ExecutorService executorService);
 
     @NotNull String getId();
 

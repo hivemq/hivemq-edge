@@ -51,6 +51,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -64,19 +66,20 @@ public class RemoteMqttForwarder implements MqttForwarder {
     private final @NotNull String id;
     private final @NotNull MqttBridge bridge;
     private final @NotNull LocalSubscription localSubscription;
-    private final @NotNull Mqtt5Client remoteMqttClient;
+    private final @NotNull BridgeMqttClient remoteMqttClient;
     private final @NotNull PerBridgeMetrics perBridgeMetrics;
     private final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler;
     private final AtomicInteger inflightCounter = new AtomicInteger(0);
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private @Nullable MqttForwarder.AfterForwardCallback afterForwardCallback;
+    private @Nullable ExecutorService executorService;
 
     public RemoteMqttForwarder(
             final @NotNull String id,
             final @NotNull MqttBridge bridge,
             final @NotNull LocalSubscription localSubscription,
-            final @NotNull Mqtt5Client remoteMqttClient,
+            final @NotNull BridgeMqttClient remoteMqttClient,
             final @NotNull PerBridgeMetrics perBridgeMetrics,
             final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler) {
         this.id = id;
@@ -100,7 +103,6 @@ public class RemoteMqttForwarder implements MqttForwarder {
     @Override
     public void onMessage(@NotNull final PUBLISH publish, @NotNull final String queueId) {
 
-        log.info("started processing {}@{} for {}", publish.getTopic(), publish.getQoS().getQosNumber(), queueId);
         perBridgeMetrics.getPublishLocalReceivedCounter().inc();
 
         if (!running.get()) {
@@ -141,7 +143,6 @@ public class RemoteMqttForwarder implements MqttForwarder {
                     bridgeInterceptorHandler.interceptOrDelegateOutbound(convertedPublish,
                             MoreExecutors.newDirectExecutorService(),
                             bridge);
-
             Futures.addCallback(publishFuture, new FutureCallback<>() {
                 @Override
                 public void onSuccess(final @NotNull BridgeInterceptorHandler.InterceptorResult result) {
@@ -152,7 +153,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
                                 finishProcessing(publish, queueId);
                                 break;
                             case SUCCESS:
-                                sendPublishToRemote(Objects.requireNonNull(result.getPublish()), queueId);
+                                sendPublishToRemote(Objects.requireNonNull(result.getPublish()), queueId, publish);
                                 break;
                         }
                     } catch (Throwable t) {
@@ -166,7 +167,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
                     handlePublishError(publish, t);
                     finishProcessing(publish, queueId);
                 }
-            }, MoreExecutors.directExecutor());
+            }, executorService);
 
         } catch (Exception e) {
             handlePublishError(publish, e);
@@ -176,7 +177,6 @@ public class RemoteMqttForwarder implements MqttForwarder {
     }
 
     private void finishProcessing(@NotNull PUBLISH publish, @NotNull String queueId) {
-        log.info("finished processing {}@{} for {}", publish.getTopic(), publish.getQoS().getQosNumber(), queueId);
         inflightCounter.decrementAndGet();
         if (afterForwardCallback != null) {
             afterForwardCallback.afterMessage(publish, queueId, false);
@@ -194,24 +194,30 @@ public class RemoteMqttForwarder implements MqttForwarder {
         mqtt5Builder.withOnwardQos(modifiedQoS);
         mqtt5Builder.withRetain(localSubscription.isPreserveRetain() && publish.isRetain());
         mqtt5Builder.withUserProperties(convertUserProperties(publish.getUserProperties(), hopCount));
-        return mqtt5Builder.build();
+        PUBLISH newPublish = mqtt5Builder.build();
+        return newPublish;
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void sendPublishToRemote(
-            @NotNull PUBLISH publish, @NotNull String queueId) {
+            @NotNull PUBLISH publish, @NotNull String queueId, @NotNull PUBLISH origPublish) {
         final Mqtt5Publish mqtt5Publish = convertPublishForClient(publish);
-
-        final CompletableFuture<Mqtt5PublishResult> publishResult = remoteMqttClient.toAsync().publish(mqtt5Publish);
-
-        publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
-            if (throwable != null) {
-                handlePublishError(publish, throwable);
-            } else {
-                perBridgeMetrics.getPublishForwardSuccessCounter().inc();
+        if(remoteMqttClient.isConnected()){
+            final CompletableFuture<Mqtt5PublishResult> publishResult = remoteMqttClient.getMqtt5Client().toAsync().publish(mqtt5Publish);
+            publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
+                if (throwable != null) {
+                    handlePublishError(origPublish, throwable);
+                } else {
+                    perBridgeMetrics.getPublishForwardSuccessCounter().inc();
+                }
+                finishProcessing(origPublish, queueId);
+            });
+        } else {
+            if(log.isTraceEnabled()){
+                log.trace("cannot send publish from {} to disconnected bridge, finishing", queueId);
             }
-            finishProcessing(publish, queueId);
-        });
+            finishProcessing(origPublish, queueId);
+        }
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -356,5 +362,10 @@ public class RemoteMqttForwarder implements MqttForwarder {
     @Override
     public int getInflightCount() {
         return inflightCounter.get();
+    }
+
+    @Override
+    public void setExecutorService(final ExecutorService executorService) {
+        this.executorService = executorService;
     }
 }

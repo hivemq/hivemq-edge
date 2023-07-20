@@ -51,6 +51,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -75,6 +77,7 @@ public class BridgeMqttClient {
     private final @NotNull PerBridgeMetrics perBridgeMetrics;
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicBoolean stopped = new AtomicBoolean(false);
+    private List<MqttForwarder> forwarders = Collections.synchronizedList(new ArrayList<>());
 
     public BridgeMqttClient(
             final @NotNull MqttBridge bridge,
@@ -258,11 +261,16 @@ public class BridgeMqttClient {
             builder.add(new RemoteMqttForwarder(bridge.getId() + "-" + i,
                     bridge,
                     localSubscription,
-                    getMqtt5Client(),
+                    this,
                     perBridgeMetrics,
                     bridgeInterceptorHandler));
         }
-        return builder.build();
+        forwarders.addAll(builder.build());
+        return Collections.unmodifiableList(forwarders);
+    }
+
+    public @NotNull List<MqttForwarder> getActiveForwarders(){
+        return forwarders;
     }
 
     public @NotNull MqttBridge getBridge() {

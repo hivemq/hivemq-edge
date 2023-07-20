@@ -71,9 +71,11 @@ public class BridgeService {
     public synchronized void updateBridges() {
         //add any new bridges
         final long start = System.currentTimeMillis();
-        log.debug("Updating bridges {} active connections from {} configured connections",
-                activeBridges().size(),
-                bridgeConfig.getBridges().size());
+        if(log.isTraceEnabled()){
+            log.trace("Updating bridges {} active connections from {} configured connections",
+                    activeBridges().size(),
+                    bridgeConfig.getBridges().size());
+        }
 
         for (MqttBridge bridge : bridgeConfig.getBridges()) {
             if (bridgeToClientMap.containsKey(bridge.getId())) {
@@ -90,7 +92,9 @@ public class BridgeService {
             }
         }
 
-        log.debug("Updating bridges complete in {}ms", (System.currentTimeMillis() - start));
+        if(log.isTraceEnabled()) {
+            log.trace("Updating bridges complete in {}ms", (System.currentTimeMillis() - start));
+        }
     }
 
     private void stopAllBridges() {
@@ -99,7 +103,7 @@ public class BridgeService {
 
     public synchronized void stopBridge(final @NotNull String bridgeName) {
         final long start = System.currentTimeMillis();
-        log.debug("Stopping MQTT bridge '{}'", bridgeName);
+        log.info("Stopping MQTT bridge '{}'", bridgeName);
         if (bridgeToClientMap.containsKey(bridgeName)) {
             BridgeMqttClient client = bridgeToClientMap.get(bridgeName);
             try {
@@ -107,6 +111,11 @@ public class BridgeService {
             } finally {
                 log.info("Stopped MQTT bridge '{}' in {}ms", bridgeName, (System.currentTimeMillis() - start));
                 bridgeToClientMap.remove(bridgeName);
+                try {
+                    client.getActiveForwarders().forEach(messageForwarder::removeForwarder);
+                } catch(Exception e){
+                    log.error("Error Removing MQTT bridge forwarders for '{}'", bridgeName, e);
+                }
             }
         }
     }

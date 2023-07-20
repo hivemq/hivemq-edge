@@ -16,6 +16,7 @@
 package com.hivemq.bridge;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -61,6 +62,7 @@ public class MessageForwarderImpl implements MessageForwarder {
     private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull Set<String> notEmptyQueues = new ConcurrentSkipListSet<>();
     private final @NotNull Map<String, MqttForwarder> forwarders = new ConcurrentHashMap<>(0);
+    private final @NotNull Map<String, Set<String>> queueIdsForForwarder = new ConcurrentHashMap<>(0);
     private final @NotNull ExecutorService executorService =
             Executors.newScheduledThreadPool(InternalConfigurations.BRIDGE_MESSAGE_FORWARDER_POOL_THREADS_COUNT.get(),
                     ThreadFactoryUtil.create("bridge-message-forwarder-%d"));
@@ -83,19 +85,24 @@ public class MessageForwarderImpl implements MessageForwarder {
         final String clientId = FORWARDER_PREFIX + forwarderId + "#" + hivemqId.get();
         final String shareName = FORWARDER_PREFIX + forwarderId;
 
+        final ImmutableSet.Builder<String> queueIdsBuilder = ImmutableSet.builder();
         for (String topic : mqttForwarder.getTopics()) {
             topicTree.addTopic(clientId,
                     new Topic(topic, QoS.AT_LEAST_ONCE, false, true),
                     SubscriptionFlag.getDefaultFlags(true, true, false),
                     shareName);
             final String queueId = createQueueId(forwarderId, topic);
-            notEmptyQueues.add(queueId);
+            queueIdsBuilder.add(queueId);
         }
+        final ImmutableSet<String> queueIds = queueIdsBuilder.build();
+        mqttForwarder.setExecutorService(executorService);
         mqttForwarder.setCallback((message, queueId, cancelled) -> messageProcessed(message,
                 forwarderId,
                 queueId,
                 cancelled));
         forwarders.put(forwarderId, mqttForwarder);
+        queueIdsForForwarder.put(forwarderId, queueIds);
+        notEmptyQueues.addAll(queueIds);
         mqttForwarder.start();
         checkBuffers();
     }
@@ -110,7 +117,10 @@ public class MessageForwarderImpl implements MessageForwarder {
             notEmptyQueues.remove(queueId);
             queuePersistence.get().clear(queueId, true); //clear up queue
         }
+        queueIdsForForwarder.remove(forwarderId);
         forwarders.get(forwarderId).stop();
+        forwarders.remove(forwarderId);
+
     }
 
     public void messageProcessed(
@@ -233,10 +243,14 @@ public class MessageForwarderImpl implements MessageForwarder {
     @NotNull
     private List<ListenableFuture<Boolean>> pollForBuffer(final @NotNull MqttForwarder mqttForwarder) {
         final ImmutableList.Builder<ListenableFuture<Boolean>> pollFuturesBuilder = ImmutableList.builder();
-        for (final String queueId : notEmptyQueues) {
-            if (mqttForwarder.getInflightCount() <= FORWARDER_POLL_THRESHOLD_MESSAGES) {
-                final ListenableFuture<Boolean> pollFuture = pollForQueue(queueId, mqttForwarder);
-                pollFuturesBuilder.add(pollFuture);
+
+        final Set<String> forwarderNonEmptyQueue = queueIdsForForwarder.get(mqttForwarder.getId());
+        if (forwarderNonEmptyQueue != null) {
+            for (final String queueId : forwarderNonEmptyQueue) {
+                if (mqttForwarder.getInflightCount() <= FORWARDER_POLL_THRESHOLD_MESSAGES) {
+                    final ListenableFuture<Boolean> pollFuture = pollForQueue(queueId, mqttForwarder);
+                    pollFuturesBuilder.add(pollFuture);
+                }
             }
         }
         return pollFuturesBuilder.build();
@@ -252,7 +266,6 @@ public class MessageForwarderImpl implements MessageForwarder {
                 notEmptyQueues.remove(queueId);
                 return Futures.immediateFuture(false);
             }
-            log.debug("mqtt-forwarder queue {} has {} messages", queueId, publishes.size());
             for (final PUBLISH publish : publishes) {
                 mqttForwarder.onMessage(publish, queueId);
             }
