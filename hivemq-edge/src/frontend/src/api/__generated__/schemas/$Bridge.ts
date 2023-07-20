@@ -19,7 +19,6 @@ export const $Bridge = {
             isNullable: true,
             format: 'string',
             maxLength: 65535,
-            pattern: '([a-zA-Z_0-9\\-])*',
         },
         host: {
             type: 'string',
@@ -52,11 +51,13 @@ export const $Bridge = {
         loopPreventionEnabled: {
             type: 'boolean',
             description: `Is loop prevention enabled on the connection`,
+            format: 'boolean',
         },
         loopPreventionHopCount: {
             type: 'number',
             description: `Loop prevention hop count`,
             format: 'int32',
+            maximum: 100,
         },
         password: {
             type: 'string',
@@ -64,7 +65,6 @@ export const $Bridge = {
             isNullable: true,
             format: 'string',
             maxLength: 65535,
-            pattern: '([a-zA-Z_0-9\\-])*',
         },
         port: {
             type: 'number',
@@ -96,7 +96,6 @@ export const $Bridge = {
             isNullable: true,
             format: 'string',
             maxLength: 65535,
-            pattern: '([a-zA-Z_0-9\\-])*',
         },
     },
 } as const;
