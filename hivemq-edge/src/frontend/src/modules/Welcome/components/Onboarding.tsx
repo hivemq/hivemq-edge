@@ -1,16 +1,16 @@
 import { FC } from 'react'
-import { Box, Button, Heading, SimpleGrid, Stack, StackDivider } from '@chakra-ui/react'
+import { Box, Button, Heading, HTMLChakraProps, SimpleGrid, Stack, StackDivider } from '@chakra-ui/react'
 
 import { Card, CardHeader, CardBody, Text } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useOnboarding } from '@/modules/Welcome/hooks/useOnboarding.tsx'
 import { useTranslation } from 'react-i18next'
 
-const Onboarding: FC = () => {
+const Onboarding: FC<HTMLChakraProps<'div'>> = (props) => {
   const { t } = useTranslation()
   const content = useOnboarding()
   return (
-    <Box mt={6}>
+    <Box mt={6} {...props}>
       <Heading>{t('welcome.onboarding.title')}</Heading>
       <SimpleGrid spacing={6} templateColumns="repeat(auto-fill, minmax(30vw, 10fr))">
         {content.map((e) => (

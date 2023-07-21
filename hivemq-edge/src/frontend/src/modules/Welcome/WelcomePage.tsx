@@ -14,7 +14,7 @@ const WelcomePage: FC = () => {
     <PageContainer title={t('welcome.title') as string} subtitle={t('welcome.description') as string}>
       <Flex flexDirection={'column'}>
         <Flex flexDirection={{ base: 'column', lg: 'row' }}>
-          <Onboarding />
+          <Onboarding flex={1} />
           <Center flex={1} m={4}>
             <Image boxSize={400} src={ReactLogo} alt={t('branding.appName') as string} />
           </Center>
