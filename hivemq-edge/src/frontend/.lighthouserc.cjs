@@ -1,5 +1,5 @@
 const TARGET_PERFORMANCE = 0.9
-const TARGET_ACCEPTABILITY = 1
+const TARGET_ACCESSIBILITY = 1
 const TARGET_BEST_PRACTICE = 1
 const TARGET_SEO = 1
 
@@ -23,7 +23,7 @@ module.exports = {
       // preset: 'lighthouse:recommended',
       assertions: {
         'categories:performance': ['error', { minScore: TARGET_PERFORMANCE, aggregationMethod: 'median-run' }],
-        'categories:accessibility': ['error', { minScore: TARGET_ACCEPTABILITY, aggregationMethod: 'pessimistic' }],
+        'categories:accessibility': ['error', { minScore: TARGET_ACCESSIBILITY, aggregationMethod: 'pessimistic' }],
         'categories:best-practices': ['error', { minScore: TARGET_BEST_PRACTICE, aggregationMethod: 'pessimistic' }],
         'categories:seo': ['warn', { minScore: TARGET_SEO, aggregationMethod: 'pessimistic' }],
       },
