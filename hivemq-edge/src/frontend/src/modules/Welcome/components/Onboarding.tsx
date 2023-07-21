@@ -1,19 +1,35 @@
 import { FC } from 'react'
-import { Box, Button, Heading, HTMLChakraProps, SimpleGrid, Stack, StackDivider } from '@chakra-ui/react'
-
-import { Card, CardHeader, CardBody, Text } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
-import { useOnboarding } from '@/modules/Welcome/hooks/useOnboarding.tsx'
 import { useTranslation } from 'react-i18next'
+import {
+  Box,
+  Button,
+  Heading,
+  HTMLChakraProps,
+  SimpleGrid,
+  Stack,
+  StackDivider,
+  Card,
+  CardHeader,
+  CardBody,
+  Text,
+} from '@chakra-ui/react'
 
-const Onboarding: FC<HTMLChakraProps<'div'>> = (props) => {
+import { OnboardingTask } from '@/modules/Welcome/types.ts'
+
+interface OnboardingProps extends HTMLChakraProps<'div'> {
+  tasks: OnboardingTask[]
+}
+
+const Onboarding: FC<OnboardingProps> = (props) => {
   const { t } = useTranslation()
-  const content = useOnboarding()
+  const { tasks } = props
+
   return (
     <Box mt={6} {...props}>
       <Heading>{t('welcome.onboarding.title')}</Heading>
-      <SimpleGrid spacing={6} templateColumns="repeat(auto-fill, minmax(30vw, 10fr))">
-        {content.map((e) => (
+      <SimpleGrid spacing={6} templateColumns="repeat(auto-fill, minmax(33vw, 10fr))">
+        {tasks.map((e) => (
           <Card flex={1} key={e.header}>
             <CardHeader>
               <Heading size="md">{e.header}</Heading>
