@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { IoLinkOutline } from 'react-icons/io5'
+import { OnboardingTask } from '@/modules/Welcome/types.ts'
 
-export const useOnboarding = () => {
+export const useOnboarding = (): OnboardingTask[] => {
   const { t } = useTranslation()
 
   return [
