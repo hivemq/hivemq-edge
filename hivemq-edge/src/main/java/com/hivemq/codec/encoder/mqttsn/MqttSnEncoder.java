@@ -40,7 +40,5 @@ public class MqttSnEncoder extends MessageToByteEncoder<IMqttsnMessage> {
         IMqttsnCodec mqttsnCodec =
                 MqttsnConnectionHelper.getCodecForConnection(MqttsnConnectionHelper.getConnection(ctx));
         out.writeBytes(mqttsnCodec.encode(msg));
-        log.info("Encoding SN message {} to channel", msg.getMessageName());
-
     }
 }

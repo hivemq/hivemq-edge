@@ -91,8 +91,10 @@ public class MqttSnDecoder extends ByteToMessageDecoder {
                     detectProtocolVersion(transcodingContext, bytesMesg);
                 }
 
-                logger.trace("processing inbound {} bytes on connection {}", bytesMesg.length,
-                        transcodingContext.getClientConnection());
+                if(logger.isTraceEnabled()){
+                    logger.trace("processing inbound {} bytes on connection {}", bytesMesg.length,
+                            transcodingContext.getClientConnection());
+                }
 
                 ITranscoder<IMqttsnMessage, Message> transcoder = channelDependencies.getMqttsnToMqttTranscoder();
                 //either transcode the message if the transcoder supports it, or hand it to the pipeline unchanged

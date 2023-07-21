@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Singleton
 public class MqttsnTopicRegistry
         implements IMqttsnTopicRegistry {
-    private static final Logger logger =
+    private static final Logger log =
             LoggerFactory.getLogger(MqttsnTopicRegistry.class);
 
     private final @NotNull MqttsnConfigurationService configurationService;
@@ -59,7 +59,7 @@ public class MqttsnTopicRegistry
         String topicName = null;
         if(topicIdType == MqttsnConstants.TOPIC_SHORT){
             if(topicData.length != 2){
-                logger.warn("invalid size of topic data for short topic");
+                log.warn("Invalid size of topic data for short topic");
                 throw new MqttsnProtocolException("invalid size of topic data for short topic");
             }
             if(topicData[1] == 0x00){
@@ -72,9 +72,8 @@ public class MqttsnTopicRegistry
             int alias = MqttsnWireUtils.read16bit(topicData[0], topicData[1]);
             MqttsnTopicAlias predefinedTopicAlias =
                     configurationService.getPredefinedTopicAliases().get(alias);
-            logger.trace("looking up predefined alias topic by id {} -> {}", alias, predefinedTopicAlias);
             if(predefinedTopicAlias == null){
-                logger.warn("unable to obtain predefined topic alias with value {}", alias);
+                log.warn("Unable to obtain predefined topic alias with value {}", alias);
                 throw new MqttsnProtocolException("unable to obtain predefined topic alias");
             }
             topicName = predefinedTopicAlias.getTopicName();
@@ -82,15 +81,21 @@ public class MqttsnTopicRegistry
         else if(topicIdType == MqttsnConstants.TOPIC_NORMAL){
             if(readNormalAsFullTopic){
                 topicName = new String(topicData, StandardCharsets.UTF_8);
-                logger.trace("considered topicData as String data for normal message (SUBSCRIBE) clientId {} -> {}", clientId, topicName);
+                if(log.isTraceEnabled()){
+                    log.trace("Considered topicData as String data for normal message (SUBSCRIBE) clientId {} -> {}", clientId, topicName);
+                }
             } else {
                 int alias = MqttsnWireUtils.read16bit(topicData[0], topicData[1]);
-                logger.trace("looking up normal topic alias for clientId {} -> {}", clientId, alias);
+                if(log.isTraceEnabled()){
+                    log.trace("Looking up normal topic alias for clientId {} -> {}", clientId, alias);
+                }
                 Map<Integer, MqttsnTopicAlias> normalAliases = sessionRegistrations.get(clientId);
                 if(normalAliases != null){
                     MqttsnTopicAlias registeredAlias = normalAliases.get(alias);
                     if(registeredAlias != null){
-                        logger.info("found matching normal topic alias for clientId {} -> {}", clientId, registeredAlias);
+                        if(log.isTraceEnabled()){
+                            log.trace("Found matching normal topic alias for clientId {} -> {}", clientId, registeredAlias);
+                        }
                         topicName = registeredAlias.getTopicName();
                     }
                 }
@@ -98,7 +103,7 @@ public class MqttsnTopicRegistry
         }
 
         if(topicName == null){
-            logger.warn("unable to determine topic from supplied alias configuration; clientId={}, topicTypeId={}, topicData={}",
+            log.warn("unable to determine topic from supplied alias configuration; clientId={}, topicTypeId={}, topicData={}",
                     clientId, topicIdType, MqttsnWireUtils.toHex(topicData));
             throw new MqttsnProtocolException("unable to determine topic from supplied alias configuration");
         }
@@ -155,11 +160,15 @@ public class MqttsnTopicRegistry
             Optional<MqttsnTopicAlias> alias = readRegisteredTopic(clientId, topicName);
             if (alias.isPresent()) {
                 aliasId = alias.get().getAlias();
-                logger.trace("topic alias already existed for clientId {} ({} -> {})", clientId, topicName, aliasId);
+                if(log.isTraceEnabled()){
+                    log.trace("topic alias already existed for clientId {} ({} -> {})", clientId, topicName, aliasId);
+                }
             } else {
                 aliasId = getNextAvailableUint16(sessionAlias.keySet(), 1);
                 sessionAlias.put(aliasId, new MqttsnTopicAlias(topicName, aliasId, MqttsnTopicAlias.TYPE.NORMAL));
-                logger.trace("registered new topic alias for clientId {} ({} -> {})", clientId, topicName, aliasId);
+                if(log.isTraceEnabled()){
+                    log.trace("registered new topic alias for clientId {} ({} -> {})", clientId, topicName, aliasId);
+                }
             }
         }
 
