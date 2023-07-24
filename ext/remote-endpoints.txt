@@ -1,0 +1,4 @@
+{
+    "configEndpoint" : "https://www.hivemq.com/downloads/hivemq-edge-configuration.json",
+    "usageEndpoint" : "https://www.hivemq.com/usage/"
+}
