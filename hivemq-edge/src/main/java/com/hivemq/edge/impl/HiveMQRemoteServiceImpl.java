@@ -18,8 +18,11 @@ package com.hivemq.edge.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.edge.HiveMQEdgeRemoteConfigurationService;
+import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.edge.HiveMQEdgeRemoteService;
+import com.hivemq.edge.model.HiveMQEdgeEvent;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
+import com.hivemq.edge.utils.HiveMQEdgeEnvironmentUtils;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,32 +35,34 @@ import java.util.Optional;
 /**
  * @author Simon L Johnson
  */
-public class HiveMQRemoteConfigurationServiceImpl implements HiveMQEdgeRemoteConfigurationService, HiveMQShutdownHook {
-
-    static final String URL = "https://www.hivemq.com/downloads/hivemq-edge-configuration.json";
+public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQShutdownHook {
     static final int TIMEOUT = 5000;
     static final int REFRESH = 60000;
-    private static final Logger logger = LoggerFactory.getLogger(HiveMQRemoteConfigurationServiceImpl.class);
-    private @NotNull
-    final ObjectMapper objectMapper;
-    private @NotNull
-    final HiveMQEdgeHttpServiceImpl hiveMQEdgeHttpService;
+    private static final Logger logger = LoggerFactory.getLogger(HiveMQRemoteServiceImpl.class);
+    private @NotNull final ObjectMapper objectMapper;
+    private @NotNull final HiveMQEdgeHttpServiceImpl hiveMQEdgeHttpService;
     private @NotNull HiveMQEdgeRemoteConfiguration localConfiguration;
+    private @NotNull ConfigurationService configurationService;
     private final Object lock = new Object();
 
     @Inject
-    public HiveMQRemoteConfigurationServiceImpl(
-            @NotNull final ObjectMapper objectMapper, @NotNull final ShutdownHooks shutdownHooks) {
-        logger.trace("Initializing HTTP remote service");
+    public HiveMQRemoteServiceImpl(
+            @NotNull final ConfigurationService configurationService,
+            @NotNull final ObjectMapper objectMapper,
+            @NotNull final ShutdownHooks shutdownHooks) {
         final long start = System.currentTimeMillis();
+        this.configurationService = configurationService;
         this.objectMapper = objectMapper;
         this.hiveMQEdgeHttpService = initHttpService();
         shutdownHooks.add(this);
-        logger.trace("Initializing HTTP remote service in {}ms", (System.currentTimeMillis() - start));
+        HiveMQEdgeEvent event = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
+        event.addAll(HiveMQEdgeEnvironmentUtils.generateEnvironmentMap());
+        fireUsageEvent(event);
+        logger.trace("Initialized remote service(s) in {}ms", (System.currentTimeMillis() - start));
     }
 
     protected final @NotNull HiveMQEdgeHttpServiceImpl initHttpService() {
-        return new HiveMQEdgeHttpServiceImpl(objectMapper, URL, TIMEOUT, TIMEOUT, REFRESH);
+        return new HiveMQEdgeHttpServiceImpl(objectMapper, HiveMQEdgeHttpServiceImpl.SERVICE_DISCOVERY_URL, TIMEOUT, TIMEOUT, REFRESH);
     }
 
     @Override
@@ -75,12 +80,20 @@ public class HiveMQRemoteConfigurationServiceImpl implements HiveMQEdgeRemoteCon
         }
     }
 
+    @Override
+    public void fireUsageEvent(final HiveMQEdgeEvent event) {
+        if(configurationService.usageTrackingConfiguration().isUsageTrackingEnabled()){
+            //only queue if its a startup event
+            hiveMQEdgeHttpService.fireEvent(event, event.getEventType() == HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
+        }
+    }
+
     protected void loadLocalConfiguration() {
         try {
             if (localConfiguration == null) {
                 synchronized (lock) {
                     if (localConfiguration == null) {
-                        try (final InputStream is = HiveMQRemoteConfigurationServiceImpl.class.getResourceAsStream(
+                        try (final InputStream is = HiveMQRemoteServiceImpl.class.getResourceAsStream(
                                 "/hivemq-edge-configuration.json")) {
                             localConfiguration = objectMapper.readValue(is, HiveMQEdgeRemoteConfiguration.class);
                             logger.trace("Loaded HiveMQEdge Configuration From Local Classpath {}", localConfiguration);

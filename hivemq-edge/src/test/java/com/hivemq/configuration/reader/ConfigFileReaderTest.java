@@ -56,6 +56,7 @@ public class ConfigFileReaderTest {
                 mock(ApiConfigurator.class),
                 mock(UnsConfigurator.class),
                 mock(DynamicConfigConfigurator.class),
+                mock(UsageTrackingConfigurator.class),
                 mock(ProtocolAdapterConfigurator.class));
         assertThrows(UnrecoverableException.class, configFileReader::applyConfig);
     }
@@ -78,6 +79,7 @@ public class ConfigFileReaderTest {
                 mock(ApiConfigurator.class),
                 mock(UnsConfigurator.class),
                 mock(DynamicConfigConfigurator.class),
+                mock(UsageTrackingConfigurator.class),
                 mock(ProtocolAdapterConfigurator.class));
         assertThrows(UnrecoverableException.class, configFileReader::applyConfig);
     }
@@ -100,6 +102,7 @@ public class ConfigFileReaderTest {
                 mock(ApiConfigurator.class),
                 mock(UnsConfigurator.class),
                 mock(DynamicConfigConfigurator.class),
+                mock(UsageTrackingConfigurator.class),
                 mock(ProtocolAdapterConfigurator.class));
         assertDoesNotThrow(configFileReader::applyConfig);
     }
@@ -140,6 +143,7 @@ public class ConfigFileReaderTest {
                 mock(ApiConfigurator.class),
                 mock(UnsConfigurator.class),
                 mock(DynamicConfigConfigurator.class),
+                mock(UsageTrackingConfigurator.class),
                 mock(ProtocolAdapterConfigurator.class));
         final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
 

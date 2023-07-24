@@ -22,6 +22,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.edge.HiveMQEdgeRemoteService;
+import com.hivemq.edge.model.HiveMQEdgeEvent;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
@@ -62,6 +64,8 @@ public class ProtocolAdapterManager {
     private final @NotNull ModuleServicesImpl moduleServices;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull ModuleLoader moduleLoader;
+    private final @NotNull HiveMQEdgeRemoteService remoteService;
+
     private final @NotNull Object lock = new Object();
 
     @Inject
@@ -70,12 +74,14 @@ public class ProtocolAdapterManager {
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ModuleServicesImpl moduleServices,
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull ModuleLoader moduleLoader) {
+            final @NotNull ModuleLoader moduleLoader,
+            final @NotNull HiveMQEdgeRemoteService remoteService) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
         this.objectMapper = objectMapper;
         this.moduleLoader = moduleLoader;
+        this.remoteService = remoteService;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -219,10 +225,18 @@ public class ProtocolAdapterManager {
                             protocolAdapter.getProtocolAdapterInformation().getName(),
                             output.message);
                     protocolAdapters.remove(protocolAdapter.getId());
+                    HiveMQEdgeEvent adapterCreatedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.ADAPTER_ERROR);
+                    adapterCreatedEvent.addUserData("adapterType",
+                            protocolAdapter.getProtocolAdapterInformation().getProtocolId());
+                    remoteService.fireUsageEvent(adapterCreatedEvent);
                 } else if (output.message != null) {
                     log.info("Protocol adapter {} started: {}",
                             protocolAdapter.getProtocolAdapterInformation().getName(),
                             output.message);
+                    HiveMQEdgeEvent adapterCreatedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.ADAPTER_STARTED);
+                    adapterCreatedEvent.addUserData("adapterType",
+                            protocolAdapter.getProtocolAdapterInformation().getProtocolId());
+                    remoteService.fireUsageEvent(adapterCreatedEvent);
                 }
                 return null;
             });
@@ -241,8 +255,6 @@ public class ProtocolAdapterManager {
                     Map<String, Object> mainMap =
                             configurationService.protocolAdapterConfigurationService().getAllConfigs();
                     List<Map> adapterList = getAdapterListForType(adapterInstance.get().getAdapterInformation().getProtocolId());
-//                    List<Map> adapterList =
-//                            (List<Map>) mainMap.get(adapterInstance.get().getAdapterInformation().getProtocolId());
                     if (adapterList != null) {
                         if(adapterList.removeIf(instance -> id.equals(instance.get("id")))){
                             configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);

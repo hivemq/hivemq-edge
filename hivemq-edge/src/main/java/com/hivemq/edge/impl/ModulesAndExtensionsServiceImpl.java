@@ -17,7 +17,7 @@ package com.hivemq.edge.impl;
 
 import com.hivemq.api.model.components.Extension;
 import com.hivemq.api.model.components.Module;
-import com.hivemq.edge.HiveMQEdgeRemoteConfigurationService;
+import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.HiveMQExtension;
@@ -35,11 +35,11 @@ import java.util.stream.Collectors;
 public class ModulesAndExtensionsServiceImpl implements ModulesAndExtensionsService {
 
     private @NotNull final HiveMQExtensions hiveMQExtensions;
-    private @NotNull final HiveMQEdgeRemoteConfigurationService hiveMQEdgeRemoteConfigurationService;
+    private @NotNull final HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService;
 
     @Inject
     public ModulesAndExtensionsServiceImpl(final @NotNull HiveMQExtensions hiveMQExtensions,
-                                           final @NotNull HiveMQEdgeRemoteConfigurationService hiveMQEdgeRemoteConfigurationService) {
+                                           final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService) {
         this.hiveMQExtensions = hiveMQExtensions;
         this.hiveMQEdgeRemoteConfigurationService = hiveMQEdgeRemoteConfigurationService;
     }

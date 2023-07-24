@@ -79,6 +79,9 @@ public class HiveMQConfigEntity {
     @XmlElementRef(required = false)
     private @NotNull DynamicConfigEntity gateway = new DynamicConfigEntity();
 
+    @XmlElementRef(required = false)
+    private @NotNull UsageTrackingConfigEntity usageTracking = new UsageTrackingConfigEntity();
+
     @XmlElement(name = "protocol-adapters")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
     private @NotNull Map<String, Object> protocolAdapterConfig = new HashMap<>();
@@ -126,4 +129,8 @@ public class HiveMQConfigEntity {
     public @NotNull UnsConfigEntity getUns() { return uns; }
 
     public @NotNull DynamicConfigEntity getGatewayConfig() { return gateway;}
+
+    public @NotNull UsageTrackingConfigEntity getUsageTracking() {
+        return usageTracking;
+    }
 }

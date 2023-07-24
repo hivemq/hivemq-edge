@@ -23,6 +23,8 @@ import com.hivemq.bridge.mqtt.BridgeMqttClient;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.BridgeConfigurationService;
+import com.hivemq.edge.HiveMQEdgeRemoteService;
+import com.hivemq.edge.model.HiveMQEdgeEvent;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.util.Checkpoints;
 import org.slf4j.Logger;
@@ -47,6 +49,8 @@ public class BridgeService {
     private final @NotNull MessageForwarder messageForwarder;
     private final @NotNull BridgeMqttClientFactory bridgeMqttClientFactory;
     private final @NotNull ExecutorService executorService;
+    private final @NotNull HiveMQEdgeRemoteService remoteService;
+
     private final Map<String, BridgeMqttClient> bridgeToClientMap = new ConcurrentHashMap<>(0);
     private final Map<String, Throwable> lastErrors = new ConcurrentHashMap<>(0);
 
@@ -56,11 +60,13 @@ public class BridgeService {
             final @NotNull MessageForwarder messageForwarder,
             final @NotNull BridgeMqttClientFactory bridgeMqttClientFactory,
             final @NotNull ExecutorService executorService,
+            final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull ShutdownHooks shutdownHooks) {
         this.bridgeConfig = bridgeConfig;
         this.messageForwarder = messageForwarder;
         this.bridgeMqttClientFactory = bridgeMqttClientFactory;
         this.executorService = executorService;
+        this.remoteService = remoteService;
         shutdownHooks.add(new BridgeShutdownHook(this));
     }
 
@@ -125,7 +131,6 @@ public class BridgeService {
         Optional<MqttBridge> bridgeOptional = getBridgeByName(bridgeName);
         if (bridgeOptional.isPresent()) {
             MqttBridge bridge = bridgeOptional.get();
-            log.debug("Starting bridge '{}'", bridge);
             final BridgeMqttClient bridgeMqttClient;
             if (!bridgeToClientMap.containsKey(bridgeName)) {
                 bridgeMqttClient = bridgeMqttClientFactory.createRemoteClient(bridge);
@@ -146,6 +151,11 @@ public class BridgeService {
                                 bridge.getPort(),
                                 (System.currentTimeMillis() - start));
                         lastErrors.remove(bridge.getId());
+                        HiveMQEdgeEvent startedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.BRIDGE_STARTED);
+                        startedEvent.addUserData("cloudBridge",
+                                String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
+                        startedEvent.addUserData("name", bridgeName);
+                        remoteService.fireUsageEvent(startedEvent);
                         Checkpoints.checkpoint("mqtt-bridge-connected");
                     }
 
@@ -153,6 +163,12 @@ public class BridgeService {
                     public void onFailure(final Throwable t) {
                         log.error("Unable To Start Bridge '{}'.", bridge.getId(), t);
                         lastErrors.put(bridge.getId(), t);
+                        HiveMQEdgeEvent errorEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.BRIDGE_ERROR);
+                        errorEvent.addUserData("cloudBridge",
+                                String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
+                        errorEvent.addUserData("cause", t.getMessage());
+                        errorEvent.addUserData("name", bridgeName);
+                        remoteService.fireUsageEvent(errorEvent);
                     }
                 }, executorService);
             }

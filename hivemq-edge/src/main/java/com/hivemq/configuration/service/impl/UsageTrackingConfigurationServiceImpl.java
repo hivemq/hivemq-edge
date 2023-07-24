@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge;
+package com.hivemq.configuration.service.impl;
 
-import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
+import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 
 /**
  * @author Simon L Johnson
  */
-public interface HiveMQEdgeRemoteConfigurationService {
+public class UsageTrackingConfigurationServiceImpl implements UsageTrackingConfigurationService {
 
-    HiveMQEdgeRemoteConfiguration getConfiguration();
+    private boolean usageTrackingEnabled;
 
+    @Override
+    public boolean isUsageTrackingEnabled() {
+        return usageTrackingEnabled;
+    }
+
+    @Override
+    public void setTrackingEnabled(final boolean usageTrackingEnabled) {
+        this.usageTrackingEnabled = usageTrackingEnabled;
+    }
 }

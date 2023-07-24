@@ -16,6 +16,7 @@
 package com.hivemq.edge.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.components.Extension;
 import com.hivemq.api.model.components.Module;
@@ -28,6 +29,7 @@ import java.util.Map;
 /**
  * @author Simon L Johnson
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class HiveMQEdgeRemoteConfiguration {
 
     private @JsonProperty("ctas") @NotNull final List<Link> ctas;

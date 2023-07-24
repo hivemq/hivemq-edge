@@ -27,6 +27,7 @@ import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.UnsConfigurationService;
+import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
@@ -37,6 +38,7 @@ import com.hivemq.configuration.service.impl.ProtocolAdapterConfigurationService
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
+import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
 import org.junit.Before;
@@ -64,6 +66,7 @@ public class AbstractConfigurationTest {
     ApiConfigurationService apiConfigurationService;
     UnsConfigurationService unsConfigurationService;
     DynamicConfigurationService dynamicConfigurationService;
+    UsageTrackingConfigurationService usageTrackingConfigurationService;
     ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
 
     @Before
@@ -82,6 +85,7 @@ public class AbstractConfigurationTest {
         apiConfigurationService = new ApiConfigurationServiceImpl();
         unsConfigurationService = new UnsConfigurationServiceImpl();
         dynamicConfigurationService = new GatewayConfigurationServiceImpl();
+        usageTrackingConfigurationService = new UsageTrackingConfigurationServiceImpl();
         protocolAdapterConfigurationService = new ProtocolAdapterConfigurationServiceImpl();
 
         final ConfigurationFile configurationFile = new ConfigurationFile(xmlFile);
@@ -97,6 +101,7 @@ public class AbstractConfigurationTest {
                 new ApiConfigurator(apiConfigurationService),
                 new UnsConfigurator(unsConfigurationService),
                 new DynamicConfigConfigurator(dynamicConfigurationService),
+                new UsageTrackingConfigurator(usageTrackingConfigurationService),
                 new ProtocolAdapterConfigurator(protocolAdapterConfigurationService));
     }
 

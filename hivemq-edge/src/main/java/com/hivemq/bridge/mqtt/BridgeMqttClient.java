@@ -37,6 +37,8 @@ import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5Client;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5ClientBuilder;
+import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
+import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserPropertiesBuilder;
 import com.hivemq.client.mqtt.mqtt5.exceptions.Mqtt5DisconnectException;
 import com.hivemq.client.mqtt.mqtt5.message.connect.connack.Mqtt5ConnAck;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
@@ -44,6 +46,7 @@ import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5RetainHandling;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5Subscription;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck;
 import com.hivemq.configuration.HivemqId;
+import com.hivemq.edge.utils.HiveMQEdgeEnvironmentUtils;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
 import org.slf4j.Logger;
@@ -186,9 +189,12 @@ public class BridgeMqttClient {
         final SettableFuture<Void> resultFuture = SettableFuture.create();
         stopped.set(false);
 
+        final Mqtt5UserPropertiesBuilder mqtt5UserPropertiesBuilder = Mqtt5UserProperties.builder();
+        mqtt5UserPropertiesBuilder.add("edgeToken", HiveMQEdgeEnvironmentUtils.generateInstallationToken());
         final CompletableFuture<Mqtt5ConnAck> connectFuture = mqtt5Client.connectWith()
                 .cleanStart(bridge.isCleanStart())
                 .keepAlive(bridge.getKeepAlive())
+                .userProperties(mqtt5UserPropertiesBuilder.build())
                 .sessionExpiryInterval(bridge.getSessionExpiry())
                 .send();
 

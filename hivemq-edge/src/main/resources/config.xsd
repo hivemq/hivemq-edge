@@ -59,6 +59,7 @@
             </xs:element>
             <xs:element name="uns" type="unsEntity" minOccurs="0"/>
             <xs:element name="dynamic-configuration" type="dynamicConfigEntity" minOccurs="0"/>
+            <xs:element name="usage-tracking" type="usageTrackingEntity" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
 
@@ -1036,7 +1037,11 @@
             <xs:element name="enabled" type="xs:boolean" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
-
+    <xs:complexType name="usageTrackingEntity">
+        <xs:all>
+            <xs:element name="enabled" type="xs:boolean" minOccurs="0"/>
+        </xs:all>
+    </xs:complexType>
     <xs:complexType name="dynamicConfigEntity">
         <xs:all>
             <xs:element name="allow-configuration-export" type="xs:boolean" minOccurs="0"/>

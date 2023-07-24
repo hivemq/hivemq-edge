@@ -32,7 +32,7 @@ import com.hivemq.api.resources.FrontendApi;
 import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.api.utils.LoremIpsum;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.edge.HiveMQEdgeRemoteConfigurationService;
+import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.UsernamePasswordRoles;
@@ -54,14 +54,14 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull ModulesAndExtensionsService modulesAndExtensionsService;
-    private final @NotNull HiveMQEdgeRemoteConfigurationService hiveMQEdgeRemoteConfigurationService;
+    private final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService;
 
     @Inject
     public FrontendResourceImpl(
             final @NotNull ConfigurationService configurationService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull ModulesAndExtensionsService modulesAndExtensionsService,
-            final @NotNull HiveMQEdgeRemoteConfigurationService hiveMQEdgeRemoteConfigurationService) {
+            final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService) {
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.modulesAndExtensionsService = modulesAndExtensionsService;

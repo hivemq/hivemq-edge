@@ -55,6 +55,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull ApiConfigurationService apiConfigurationService;
     private final @NotNull UnsConfigurationService unsConfigurationService;
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
+    private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
     private final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
     private @Nullable ConfigFileReaderWriter configFileReaderWriter;
     private ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -72,6 +73,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             final @NotNull ApiConfigurationService apiConfigurationService,
             final @NotNull UnsConfigurationService unsConfigurationService,
             final @NotNull DynamicConfigurationService dynamicConfigurationService,
+            final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService,
             final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService) {
         this.listenerConfigurationService = listenerConfigurationService;
         this.mqttConfigurationService = mqttConfigurationService;
@@ -83,6 +85,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.apiConfigurationService = apiConfigurationService;
         this.unsConfigurationService = unsConfigurationService;
         this.dynamicConfigurationService = dynamicConfigurationService;
+        this.usageTrackingConfigurationService = usageTrackingConfigurationService;
         this.protocolAdapterConfigurationService = protocolAdapterConfigurationService;
     }
 
@@ -124,6 +127,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public @NotNull DynamicConfigurationService gatewayConfiguration() {
         return dynamicConfigurationService;
+    }
+
+    @Override
+    public UsageTrackingConfigurationService usageTrackingConfiguration() {
+        return usageTrackingConfigurationService;
     }
 
     public @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService() {

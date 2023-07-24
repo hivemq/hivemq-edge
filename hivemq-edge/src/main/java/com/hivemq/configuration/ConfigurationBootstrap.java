@@ -31,6 +31,7 @@ import com.hivemq.configuration.service.impl.ProtocolAdapterConfigurationService
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
+import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
@@ -52,6 +53,7 @@ public class ConfigurationBootstrap {
                         new ApiConfigurationServiceImpl(),
                         new UnsConfigurationServiceImpl(),
                         new GatewayConfigurationServiceImpl(),
+                        new UsageTrackingConfigurationServiceImpl(),
                         new ProtocolAdapterConfigurationServiceImpl());
 
         final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
@@ -67,6 +69,7 @@ public class ConfigurationBootstrap {
                 new ApiConfigurator(configurationService.apiConfiguration()),
                 new UnsConfigurator(configurationService.unsConfiguration()),
                 new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
+                new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
                 new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()));
 
         configFileReader.applyConfig();

@@ -81,6 +81,8 @@ public interface ConfigurationService {
 
     DynamicConfigurationService gatewayConfiguration();
 
+    UsageTrackingConfigurationService usageTrackingConfiguration();
+
     ProtocolAdapterConfigurationService protocolAdapterConfigurationService();
 
     void setConfigFileReaderWriter(ConfigFileReaderWriter configFileReaderWriter);

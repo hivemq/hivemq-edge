@@ -76,6 +76,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull ApiConfigurator apiConfigurator;
     private final @NotNull UnsConfigurator unsConfigurator;
     private final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator;
+    private final @NotNull UsageTrackingConfigurator usageTrackingConfigurator;
     private final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator;
     private HiveMQConfigEntity configEntity;
     private final Object lock = new Object();
@@ -92,6 +93,7 @@ public class ConfigFileReaderWriter {
             final @NotNull ApiConfigurator apiConfigurator,
             final @NotNull UnsConfigurator unsConfigurator,
             final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator,
+            final @NotNull UsageTrackingConfigurator usageTrackingConfigurator,
             final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator) {
 
         this.configurationFile = configurationFile;
@@ -105,6 +107,7 @@ public class ConfigFileReaderWriter {
         this.apiConfigurator = apiConfigurator;
         this.unsConfigurator = unsConfigurator;
         this.dynamicConfigConfigurator = dynamicConfigConfigurator;
+        this.usageTrackingConfigurator = usageTrackingConfigurator;
         this.protocolAdapterConfigurator = protocolAdapterConfigurator;
     }
 
@@ -299,6 +302,7 @@ public class ConfigFileReaderWriter {
         apiConfigurator.setApiConfig(config.getApiConfig());
         unsConfigurator.setUnsConfig(config.getUns());
         dynamicConfigConfigurator.setConfig(config.getGatewayConfig());
+        usageTrackingConfigurator.setConfig(config.getUsageTracking());
     }
 
     public void syncConfiguration() {
