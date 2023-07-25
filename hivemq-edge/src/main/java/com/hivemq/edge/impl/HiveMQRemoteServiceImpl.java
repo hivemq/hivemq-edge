@@ -18,6 +18,7 @@ package com.hivemq.edge.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.model.HiveMQEdgeEvent;
@@ -43,16 +44,20 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
     private @NotNull final HiveMQEdgeHttpServiceImpl hiveMQEdgeHttpService;
     private @NotNull HiveMQEdgeRemoteConfiguration localConfiguration;
     private @NotNull ConfigurationService configurationService;
+    private @NotNull SystemInformation systemInformation;
+
     private final Object lock = new Object();
 
     @Inject
     public HiveMQRemoteServiceImpl(
+            @NotNull final SystemInformation systemInformation,
             @NotNull final ConfigurationService configurationService,
             @NotNull final ObjectMapper objectMapper,
             @NotNull final ShutdownHooks shutdownHooks) {
         final long start = System.currentTimeMillis();
         this.configurationService = configurationService;
         this.objectMapper = objectMapper;
+        this.systemInformation = systemInformation;
         this.hiveMQEdgeHttpService = initHttpService();
         shutdownHooks.add(this);
         HiveMQEdgeEvent event = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
@@ -84,6 +89,7 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
     public void fireUsageEvent(final HiveMQEdgeEvent event) {
         if(configurationService.usageTrackingConfiguration().isUsageTrackingEnabled()){
             //only queue if its a startup event
+            event.setEdgeVersion(systemInformation.getHiveMQVersion());
             hiveMQEdgeHttpService.fireEvent(event, event.getEventType() == HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
         }
     }

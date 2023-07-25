@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.impl;
 
-import ch.qos.logback.core.joran.conditional.ElseAction;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.model.HiveMQEdgeEvent;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
@@ -25,7 +24,6 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
-import com.sun.source.tree.CatchTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

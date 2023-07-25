@@ -17,6 +17,7 @@ package com.hivemq.edge.modules.ioc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
@@ -38,10 +39,11 @@ public class RemoteServiceModule {
 
     @Provides
     @Singleton
-    static @NotNull HiveMQEdgeRemoteService remoteConfigurationService(@NotNull final ConfigurationService configurationService,
+    static @NotNull HiveMQEdgeRemoteService remoteConfigurationService(@NotNull final SystemInformation systemInformation,
+                                                                        @NotNull final ConfigurationService configurationService,
                                                                         @NotNull final ObjectMapper objectMapper,
                                                                        @NotNull final ShutdownHooks shutdownHooks){
-        return new HiveMQRemoteServiceImpl(configurationService, objectMapper, shutdownHooks);
+        return new HiveMQRemoteServiceImpl(systemInformation, configurationService, objectMapper, shutdownHooks);
     }
 
     @Provides

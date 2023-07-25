@@ -25,9 +25,11 @@ public class HiveMQEdgeEvent {
     public final Date created = new Date();
     public final EVENT_TYPE eventType;
     public String installationToken;
+    public String edgeVersion;
 
     public HiveMQEdgeEvent(final EVENT_TYPE eventType) {
         this.eventType = eventType;
+        this.edgeVersion = edgeVersion;
         this.installationToken = HiveMQEdgeEnvironmentUtils.generateInstallationToken();
     }
 
@@ -41,6 +43,14 @@ public class HiveMQEdgeEvent {
 
     public String getInstallationToken() {
         return installationToken;
+    }
+
+    public String getEdgeVersion() {
+        return edgeVersion;
+    }
+
+    public void setEdgeVersion(final String edgeVersion) {
+        this.edgeVersion = edgeVersion;
     }
 
     public Map<String, String> getUserData() {
