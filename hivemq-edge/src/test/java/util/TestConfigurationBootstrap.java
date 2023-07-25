@@ -23,6 +23,7 @@ import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.UnsConfigurationService;
+import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
@@ -34,6 +35,7 @@ import com.hivemq.configuration.service.impl.ProtocolAdapterConfigurationService
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
+import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
 
 /**
@@ -52,6 +54,7 @@ public class TestConfigurationBootstrap {
     private final ApiConfigurationService apiConfigurationService;
     private final UnsConfigurationService unsConfigurationService;
     private final DynamicConfigurationService dynamicConfigurationService;
+    private final UsageTrackingConfigurationService usageTrackingConfigurationService;
     private final ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
 
     public TestConfigurationBootstrap() {
@@ -65,6 +68,7 @@ public class TestConfigurationBootstrap {
         apiConfigurationService = new ApiConfigurationServiceImpl();
         unsConfigurationService = new UnsConfigurationServiceImpl();
         dynamicConfigurationService = new GatewayConfigurationServiceImpl();
+        usageTrackingConfigurationService = new UsageTrackingConfigurationServiceImpl();
         protocolAdapterConfigurationService = new ProtocolAdapterConfigurationServiceImpl();
 
         configurationService = new ConfigurationServiceImpl(listenerConfigurationService,
@@ -77,6 +81,7 @@ public class TestConfigurationBootstrap {
                 apiConfigurationService,
                 unsConfigurationService,
                 dynamicConfigurationService,
+                usageTrackingConfigurationService,
                 protocolAdapterConfigurationService);
     }
 
@@ -138,5 +143,9 @@ public class TestConfigurationBootstrap {
 
     public DynamicConfigurationService getGatewayConfigurationService() {
         return dynamicConfigurationService;
+    }
+
+    public UsageTrackingConfigurationService getUsageTrackingConfigurationService() {
+        return usageTrackingConfigurationService;
     }
 }
