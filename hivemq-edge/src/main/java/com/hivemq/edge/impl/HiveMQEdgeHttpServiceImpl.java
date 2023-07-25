@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.impl;
 
+import ch.qos.logback.core.joran.conditional.ElseAction;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.model.HiveMQEdgeEvent;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
@@ -60,6 +61,8 @@ public class HiveMQEdgeHttpServiceImpl {
     private volatile HiveMQEdgeRemoteConfiguration remoteConfiguration;
     private volatile HiveMQEdgeRemoteServices remoteServices;
     private BlockingQueue<HiveMQEdgeEvent> blockingQueue = new LinkedBlockingDeque<>(100);
+    static final int MAX_ERROR_ATTEMPTS_USAGE_STATS = 10;
+    static final int USAGE_STATS_ERROR_RESET_INTERVAL_MILLIS = 1000 * 60 * 10;
 
     public HiveMQEdgeHttpServiceImpl(
             final @NotNull ObjectMapper mapper,
@@ -116,24 +119,39 @@ public class HiveMQEdgeHttpServiceImpl {
 
     private void initUsage() {
         if(usageClientThread == null){
+            AtomicInteger usageErrorCount = new AtomicInteger();
             usageClientThread = new Thread(() -> {
-                logger.info("Starting Remote HTTP Usage Service..");
+                logger.debug("Starting Remote HTTP Usage Service..");
+                long lastAttempt = 0;
                 while (running) {
                     try {
+                        boolean attempt = true;
                         HiveMQEdgeEvent event = blockingQueue.take();
-                        if(isOnline()){
-                            httpPost(remoteServices.getUsageEndpoint(), Void.class, event);
-                        } else {
-                            blockingQueue.offer(event);
+                        if(usageErrorCount.get() > MAX_ERROR_ATTEMPTS_USAGE_STATS){
+                            if((lastAttempt < (System.currentTimeMillis() - USAGE_STATS_ERROR_RESET_INTERVAL_MILLIS))) {
+                                if (logger.isTraceEnabled()) {
+                                    logger.trace("Error state reset interval exceeded, retry");
+                                }
+                            } else {
+                                attempt = false;
+                            }
+                        }
+                        attempt &= isOnline();
+                        if(attempt){
+                            lastAttempt = System.currentTimeMillis();
+                            httpPost(remoteServices.getUsageEndpoint(), Void.class, event, 1000, 1000);
+                            usageErrorCount.set(0);
                         }
                     }
                     catch (HiveMQEdgeRemoteConnectivityException e) {
-                        logger.warn("Error reporting usage event", e);
+                        usageErrorCount.incrementAndGet();
+                        logger.trace("Communication error {} reporting usage event", usageErrorCount.get(), e);
                     }
                     catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                     }
                     catch(Exception e){
+                        usageErrorCount.incrementAndGet();
                         //-- ensure we only break for unchecked
                     }
                 }
@@ -166,12 +184,18 @@ public class HiveMQEdgeHttpServiceImpl {
 
     public void fireEvent(final HiveMQEdgeEvent event, boolean queueIfOffline){
         try {
-            if(isOnline() || queueIfOffline){
+            boolean process = isOnline() || queueIfOffline;
+            if(logger.isDebugEnabled()){
+                logger.debug("firing event {}, online ? {}", event.getEventType(), process);
+            }
+            if(process){
                 //-- only enqueue data when we know we can drain it (and this may change over time)
                 blockingQueue.offer(event, 50, TimeUnit.MILLISECONDS);
             }
         } catch (InterruptedException e) {
-            logger.info("error encountered enqueueing usage data", e);
+            if(logger.isDebugEnabled()){
+                logger.debug("could not enqueue usage data -> {}", e.getMessage());
+            }
         }
     }
 
@@ -222,8 +246,8 @@ public class HiveMQEdgeHttpServiceImpl {
             HttpResponse response =
                     HttpUrlConnectionClient.head(getHeaders(), remoteServices.getConfigEndpoint(), readTimeoutMillis);
             hasConnectivity = !response.isError();
-            if (logger.isDebugEnabled()) {
-                logger.debug("successfully established connection to http provider {}, online",
+            if (logger.isTraceEnabled()) {
+                logger.trace("successfully established connection to http provider {}, online",
                         serviceDiscoveryEndpoint);
             }
         } catch (IOException e) {
@@ -238,8 +262,8 @@ public class HiveMQEdgeHttpServiceImpl {
     private void loadRemoteServices() {
         try {
             remoteServices = httpGet(SERVICE_DISCOVERY_URL, HiveMQEdgeRemoteServices.class);
-            if (logger.isDebugEnabled()) {
-                logger.debug("successfully established connection to remote service provider {}, online -> {}",
+            if (logger.isTraceEnabled()) {
+                logger.trace("successfully established connection to remote service provider {}, online -> {}",
                         serviceDiscoveryEndpoint, remoteServices);
             }
         } catch (HiveMQEdgeRemoteConnectivityException e) {
@@ -264,8 +288,8 @@ public class HiveMQEdgeHttpServiceImpl {
         try {
             HttpResponse response =
                     HttpUrlConnectionClient.get(getHeaders(), url, connectTimeoutMillis, readTimeoutMillis);
-            if (logger.isDebugEnabled()) {
-                logger.debug("obtaining cloud service object from {} -> {}", url, response);
+            if (logger.isTraceEnabled()) {
+                logger.trace("obtaining cloud service object from {} -> {}", url, response);
             }
             checkResponse(response, true);
             return mapper.readValue(response.getResponseBody(), cls);
@@ -276,7 +300,7 @@ public class HiveMQEdgeHttpServiceImpl {
         }
     }
 
-    private <T> T httpPost(String url, Class<? extends T> cls, Object jsonPostObject)
+    private <T> T httpPost(String url, Class<? extends T> cls, Object jsonPostObject, int connectTimeoutMillis, int readTimeoutMillis)
             throws HiveMQEdgeRemoteConnectivityException {
         try {
             String jsonBody = mapper.writeValueAsString(jsonPostObject);
@@ -284,10 +308,11 @@ public class HiveMQEdgeHttpServiceImpl {
                 Map<String, String> headers = getHeaders();
                 headers.put(HttpConstants.CONTENT_TYPE_HEADER, HttpConstants.JSON_MIME_TYPE);
                 headers.put(HttpConstants.CONTENT_ENCODING_HEADER, HttpConstants.DEFAULT_CHARSET.toString());
+                long start = System.currentTimeMillis();
                 HttpResponse response =
                         HttpUrlConnectionClient.post(headers, url, is, connectTimeoutMillis, readTimeoutMillis);
-                if (logger.isDebugEnabled()) {
-                    logger.debug("post to http service object from {} {} -> {}", url, jsonBody, response);
+                if (logger.isTraceEnabled()) {
+                    logger.trace("post to http service object {} -> {} in {}", url, response.getStatusCode(), System.currentTimeMillis() - start);
                 }
                 if (cls == Void.class) {
                     return null;
@@ -298,7 +323,7 @@ public class HiveMQEdgeHttpServiceImpl {
                 }
             }
         } catch (IOException e) {
-            throw new HiveMQEdgeRemoteConnectivityException("error reading response body;", e);
+            throw new HiveMQEdgeRemoteConnectivityException("error sending request;", e);
         } finally {
             updateLastAttempt();
         }

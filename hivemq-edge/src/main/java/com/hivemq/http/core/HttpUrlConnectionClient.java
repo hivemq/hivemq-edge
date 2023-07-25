@@ -73,6 +73,7 @@ public class HttpUrlConnectionClient {
             connection = (HttpURLConnection) serverAddress.openConnection();
             connection.setRequestMethod("GET");
             connection.setDoOutput(true);
+            connection.setInstanceFollowRedirects(true);
             connection.setReadTimeout(readTimeoutMillis);
             connection.setConnectTimeout(connectTimeoutMillis);
             writeRequestHeaders(headers, connection);
@@ -95,6 +96,7 @@ public class HttpUrlConnectionClient {
             connection.setRequestMethod(httpMethod);
             connection.setDoOutput(true);
             connection.setReadTimeout(readTimeoutMillis);
+            connection.setInstanceFollowRedirects(true);
             connection.setConnectTimeout(connectTimeoutMillis);
             writeRequestHeaders(headers, connection);
             Files.copy(is, connection.getOutputStream(), READ_BUFFER_SIZE);
