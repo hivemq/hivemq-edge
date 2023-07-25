@@ -3,8 +3,8 @@
 == Introduction
 
 Anyone is welcome to participate and contribute to the HiveMQ open source community.
-We encourage people to use the https://github.com/hivemq/hivemq-community-edition/issues[Github issue tracker] and create pull requests.
-The scope of the HiveMQ Edge is to provide
+We encourage people to use the https://github.com/hivemq/hivemq-edge/issues[Github issue tracker] and create pull requests.
+The scope of HiveMQ Edge is to provide
 
 . a high-quality implementation of the MQTT broker specification, and
 . the extension framework enabling the integration of HiveMQ Edge into other applications, and
@@ -16,7 +16,7 @@ We will not accept contributions that would add features that expand the scope o
 It is HiveMQ’s intention to offer commercial products that will add features suited for enterprise deployments of HiveMQ, such as clustering, monitoring tools, enterprise security, technical support, and more.
 We also expect that other companies and open source projects will create extensions of HiveMQ Edge to suit their specific customer requirements.
 If you would like to suggest a new feature, please contact the project team (support@hivemq.com) to discuss if it fits within the project scope.
-If you wish to contribute, we will preferibly accept Bug Fixes, Typos, Documentation, JavaDoc and Logging.
+If you wish to contribute, we will accept primarily Bug Fixes, Typos, Documentation, JavaDoc and Logging.
 
 == Licensing
 
@@ -29,8 +29,7 @@ All files must contain the license header from the link:hivemq-edge/HEADER[heade
 
 == Contributor License Agreement
 
-If you wish to contribute to the HiveMQ Edge, please download, fill out and sign the https://www.hivemq.com/downloads/Contributor_License_Agreement.pdf[Contributor License Agreement].
-Send the signed agreement to (contributing@hivemq.com) with the subject `CLA for Project: HiveMQ Community Edition`.
+If you wish to contribute to HiveMQ Edge, please fill out and sign the https://na4.docusign.net/Member/PowerFormSigning.aspx?PowerFormId=84cc1040-8db3-4598-b7fa-d5618b7eaa59&env=na4&acct=5c4e7f8f-440b-424c-ada4-aef44fd4456b&v=2[Contributor License Agreement].
 Please read this document carefully before signing it and keep a copy for your own records.
 Once we've received your signed CLA, you will be added to the list of contributors and our HiveMQ Development Team will review your contributions.
 
@@ -44,19 +43,19 @@ In case the rights to all intellectual property created by you are maintained by
 
 Please always open an issue in the issue tracker before sending a pull request and wait until someone from the HiveMQ Development Team approves it, before you start working on it.
 This prevents you from working on issues that we will ultimately not accept.
-When you start working on an approved issue, please make it known in the comments that you are going to work on it, so a simulteaneous contribution by someone else can be avoided.
+When you start working on an approved issue, please make it known in the comments that you are going to work on it, so a simultaneous contribution by someone else can be avoided.
 
-After you committed, your contribution will be reviewed by the HiveMQ Development Team.
+After you commit, your contribution will be reviewed by the HiveMQ Development Team.
 We reserve the right to release only reviewed and approved implementations.
 
 ==== Security Issues
 
 Please do not report any security issue to the public issue tracker.
-Please send security issues to security@hivemq.com.
+Please send security issues directly to security@hivemq.com.
 
 ==== Questions
 
-Please refer all your questions about the HiveMQ CE to the https://community.hivemq.com[HiveMQ Community Forum].
+Please refer all your questions about HiveMQ Edge to the https://community.hivemq.com[HiveMQ Community Forum].
 
 Issues consisting of questions or suggestions will be closed immediately.
 
@@ -64,16 +63,16 @@ Issues consisting of questions or suggestions will be closed immediately.
 
 We recommend that you use the https://www.jetbrains.com/idea/download/[IntelliJ] IDE for all development on HiveMQ CE.
 It will automate your process as much as possible.
-Java version 11 is required to build and run HiveMQ CE (we recommend OpenJDK 11).
+Java version 11 is required to build and run HiveMQ Edge (we recommend OpenJDK 11).
 You can check your installed Java version by entering `java -version` on the command line.
 
-First you need to https://help.github.com/en/articles/fork-a-repo[fork] the HiveMQ Community Edition https://github.com/hivemq/hivemq-community-edition[repository].
+First you need to https://help.github.com/en/articles/fork-a-repo[fork] HiveMQ Edge https://github.com/hivemq/hivemq-edge[repository].
 
 Then you can clone the repository:
 
 [source,bash]
 ----
-git clone https://github.com/<your user name>/hivemq-community-edition.git
+git clone https://github.com/<your user name>/hivemq-edge.git
 ----
 
 *Open* the HiveMQ Edge project folder in IntelliJ.
