@@ -108,9 +108,9 @@ public abstract class ApiModule {
     @ElementsIntoSet
     @Singleton
     static Set<IAuthenticationHandler> provideAuthHandlers(
-            final @NotNull BasicAuthenticationHandler basicAuthenticationHandler,
+            /*final @NotNull BasicAuthenticationHandler basicAuthenticationHandler,*/
             final @NotNull BearerTokenAuthenticationHandler bearerTokenAuthenticationHandler) {
-        return Set.of(basicAuthenticationHandler, bearerTokenAuthenticationHandler);
+        return Set.of(bearerTokenAuthenticationHandler);
     }
 
     @Provides
