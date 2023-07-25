@@ -68,7 +68,14 @@ public class TestConfigurationBootstrap {
         apiConfigurationService = new ApiConfigurationServiceImpl();
         unsConfigurationService = new UnsConfigurationServiceImpl();
         dynamicConfigurationService = new GatewayConfigurationServiceImpl();
-        usageTrackingConfigurationService = new UsageTrackingConfigurationServiceImpl();
+
+        //-- Ensure usage reporting is disabled during tests
+        usageTrackingConfigurationService = new UsageTrackingConfigurationServiceImpl() {
+            @Override
+            public boolean isUsageTrackingEnabled() {
+                return false;
+            }
+        };
         protocolAdapterConfigurationService = new ProtocolAdapterConfigurationServiceImpl();
 
         configurationService = new ConfigurationServiceImpl(listenerConfigurationService,
