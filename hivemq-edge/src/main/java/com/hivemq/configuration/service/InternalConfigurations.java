@@ -84,6 +84,8 @@ public class InternalConfigurations {
      */
     public static final AtomicInteger NOT_WRITABLE_QUEUE_SIZE = new AtomicInteger(1000);
 
+    public static AtomicBoolean DEFAULT_USAGE_EVENTS_ENABLED = new AtomicBoolean(true);
+
     /**
      * The limit of unacknowledged messages that hivemq will handle, regardless of the client receive maximum
      */

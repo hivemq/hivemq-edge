@@ -15,8 +15,11 @@
  */
 package com.hivemq.configuration.entity;
 
+import com.hivemq.configuration.service.InternalConfigurations;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /**
@@ -25,7 +28,17 @@ import javax.xml.bind.annotation.XmlRootElement;
 @XmlRootElement(name = "usage-tracking")
 @XmlAccessorType(XmlAccessType.NONE)
 @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
-public class UsageTrackingConfigEntity extends EnabledEntity {
+public class UsageTrackingConfigEntity {
 
+    @XmlElement(name = "enabled", defaultValue = "true")
+    private boolean enabled = InternalConfigurations.DEFAULT_USAGE_EVENTS_ENABLED.get();
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(final boolean enabled) {
+        this.enabled = enabled;
+    }
 
 }
