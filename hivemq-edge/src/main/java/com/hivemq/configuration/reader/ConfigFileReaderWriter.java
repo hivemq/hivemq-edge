@@ -45,6 +45,7 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,8 +56,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -173,16 +177,8 @@ public class ConfigFileReaderWriter {
                 log.debug("Writing configuration file {}", configFile.getAbsolutePath());
                 //write the backup of the file before rewriting
                 if (rollConfig) {
-                    SimpleDateFormat format = new SimpleDateFormat("YYYY-MM-dd_hh-mm-ss");
-                    String copyPath = com.hivemq.util.Files.getFilePathExcludingFile(configFile.getAbsolutePath());
-                    String fileNameExclExt = com.hivemq.util.Files.getFileNameExcludingExtension(configFile.getName());
-                    String fileExtension = com.hivemq.util.Files.getFileExtension(configFile.getName());
-                    String copyFilename =
-                            String.format("%s_%s.%s", fileNameExclExt, format.format(new Date()), fileExtension);
-                    log.debug("Rolling backup of configuration file to {}", copyFilename);
-                    FileUtils.copyFile(configFile, new File(copyPath, copyFilename));
+                    backupConfig(configFile, 5);
                 }
-
                 FileWriter fileWriter = new FileWriter(outputFile.file().get(), StandardCharsets.UTF_8);
                 writeConfigToXML(fileWriter);
             } catch (IOException e) {
@@ -190,6 +186,34 @@ public class ConfigFileReaderWriter {
                 throw new UnrecoverableException(false);
             }
         }
+    }
+
+    protected void backupConfig(@NotNull File configFile, int maxBackFiles) throws IOException {
+        int idx = 0;
+        String fileNameExclExt = com.hivemq.util.Files.getFileNameExcludingExtension(configFile.getName());
+        String fileExtension = com.hivemq.util.Files.getFileExtension(configFile.getName());
+        String copyPath = com.hivemq.util.Files.getFilePathExcludingFile(configFile.getAbsolutePath());
+
+        String copyFilename = null;
+        File copyFile = null;
+        do {
+            copyFilename = String.format("%s_%d.%s", fileNameExclExt, ++idx, fileExtension);
+            copyFile = new File(copyPath, copyFilename);
+        } while(idx < maxBackFiles && copyFile.exists());
+
+        if(copyFile.exists()){
+
+            //-- use the oldest available backup index
+            File[] backupFiles = new File(copyPath).listFiles(child -> child.isFile() &&
+                    child.getName().startsWith(fileNameExclExt) &&
+                    child.getName().endsWith(fileExtension));
+            Arrays.sort(backupFiles, Comparator.comparingLong(File::lastModified));
+            copyFile = backupFiles[0];
+        }
+        if(log.isDebugEnabled()){
+            log.debug("Rolling backup of configuration file to {}", copyFile.getName());
+        }
+        FileUtils.copyFile(configFile, copyFile);
     }
 
     public void writeConfigToXML(@NotNull final Writer writer) {
