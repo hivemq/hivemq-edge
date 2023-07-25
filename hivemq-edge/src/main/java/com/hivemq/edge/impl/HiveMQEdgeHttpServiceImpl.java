@@ -32,6 +32,8 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +86,8 @@ public class HiveMQEdgeHttpServiceImpl {
             while (running) {
                 try {
                     loadRemoteServices();
-                    if(remoteServices != null){
+                    if(remoteServices != null &&
+                            validRemote(remoteServices.getConfigEndpoint())){
                         checkStatus();
                         if (remoteConfiguration == null) {
                             loadConfigurationInternal();
@@ -139,8 +142,10 @@ public class HiveMQEdgeHttpServiceImpl {
                         attempt &= isOnline();
                         if(attempt){
                             lastAttempt = System.currentTimeMillis();
-                            httpPost(remoteServices.getUsageEndpoint(), Void.class, event, 1000, 1000);
-                            usageErrorCount.set(0);
+                            if(validRemote(remoteServices.getUsageEndpoint())){
+                                httpPost(remoteServices.getUsageEndpoint(), Void.class, event, 1000, 1000);
+                                usageErrorCount.set(0);
+                            }
                         }
                     }
                     catch (HiveMQEdgeRemoteConnectivityException e) {
@@ -243,12 +248,16 @@ public class HiveMQEdgeHttpServiceImpl {
 
     private void checkStatus() {
         try {
-            HttpResponse response =
-                    HttpUrlConnectionClient.head(getHeaders(), remoteServices.getConfigEndpoint(), readTimeoutMillis);
-            hasConnectivity = !response.isError();
-            if (logger.isTraceEnabled()) {
-                logger.trace("successfully established connection to http provider {}, online",
-                        serviceDiscoveryEndpoint);
+            if(validRemote(remoteServices.getConfigEndpoint())){
+                HttpResponse response =
+                        HttpUrlConnectionClient.head(getHeaders(), remoteServices.getConfigEndpoint(), readTimeoutMillis);
+                hasConnectivity = !response.isError();
+                if (logger.isTraceEnabled()) {
+                    logger.trace("successfully established connection to http provider {}, online",
+                            serviceDiscoveryEndpoint);
+                }
+            } else {
+                hasConnectivity = false;
             }
         } catch (IOException e) {
             hasConnectivity = false;
@@ -341,6 +350,18 @@ public class HiveMQEdgeHttpServiceImpl {
             throw new HiveMQEdgeRemoteConnectivityException("error in http socket connection", e);
         } finally {
             updateLastAttempt();
+        }
+    }
+
+    private static boolean validRemote(@NotNull String remote){
+        if(remote == null || remote.trim().length() == 0){
+            return false;
+        }
+        try {
+            URL url = new URL(remote);
+            return true;
+        } catch(MalformedURLException e){
+            return false;
         }
     }
 }
