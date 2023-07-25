@@ -18,6 +18,9 @@
         <allow-configuration-export>true</allow-configuration-export>
         <allow-mutable-configuration>true</allow-mutable-configuration>
     </dynamic-configuration>
+    <usage-tracking>
+        <enabled>true</enabled>
+    </usage-tracking>
     <mqtt>
         <queued-messages>
             <max-queue-size>1000</max-queue-size>

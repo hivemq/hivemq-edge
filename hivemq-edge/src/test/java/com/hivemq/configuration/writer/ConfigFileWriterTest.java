@@ -48,6 +48,12 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
 
         String copiedFileContent = FileUtils.readFileToString(tempCopyFile, UTF_8);
         Diff diff = XMLUnit.compareXML(originalXml, copiedFileContent);
+        if(!diff.identical()){
+            System.err.println("xml diff found " + diff);
+//            System.err.println(originalXml);
+//            System.err.println(copiedFileContent);
+        }
         Assert.assertTrue("XML Content Should Match", diff.similar());
+
     }
 }
