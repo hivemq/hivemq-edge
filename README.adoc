@@ -83,7 +83,7 @@ The ideal place for questions or discussions about the HiveMQ Edge Edition is ou
 
 === Quick Start
 
-* Download the latest https://github.com/hivemq/hivemq-edge/releases/download/2023.1/hivemq-edge-2023.1.zip[HiveMQ Edge binary package].
+* Download the latest https://github.com/hivemq/hivemq-edge/releases/download/2023.2/hivemq-edge-2023.2.zip[HiveMQ Edge binary package].
 * Unzip the package.
 * Run the run.sh (Linux/OSX) or run.bat (Windows) in the bin folder of the package.
 
