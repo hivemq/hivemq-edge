@@ -48,12 +48,12 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
 
     @Override
     public @NotNull String getUrl() {
-        return "https://www.hivemq.com/edge/modbus/";
+        return "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#modbus-tcp-adapter";
     }
 
     @Override
     public @NotNull String getVersion() {
-        return "2023.1";
+        return "2023.2";
     }
 
     @Override

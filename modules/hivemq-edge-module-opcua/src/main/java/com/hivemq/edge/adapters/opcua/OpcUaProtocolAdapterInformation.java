@@ -48,12 +48,12 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull String getUrl() {
-        return "https://www.hivemq.com/edge/opc-ua/";
+        return "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#opc-ua-adapter";
     }
 
     @Override
     public @NotNull String getVersion() {
-        return "2023.1";
+        return "2023.2";
     }
 
     @Override
