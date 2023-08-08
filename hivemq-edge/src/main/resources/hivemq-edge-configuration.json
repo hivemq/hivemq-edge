@@ -7,17 +7,16 @@
     "imageUrl" : "",
     "external" : true
   },
-  "cloudLink" : null,
+  "cloudLink" : {
+    "displayText" : "Connect To HiveMQ Cloud",
+    "url" : "https://auth.hivemq.cloud/",
+    "description" : "You should connect your HiveMQ Edge deployment with a HiveMQ Cloud MQTT Broker, which will be the source of truth for your business data.",
+    "target" : "_blank",
+    "imageUrl" : "",
+    "external" : true
+  },
   "ctas" : [],
   "resources" : [
-    {
-      "displayText" : "Power Of Smart Manufacturing",
-      "url" : "https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/",
-      "description" : "",
-      "target" : "",
-      "imageUrl" : "",
-      "external" : true
-    },
     {
       "displayText" : "Power Of Smart Manufacturing",
       "url" : "https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/",
