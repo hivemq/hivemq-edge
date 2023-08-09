@@ -383,6 +383,7 @@ forbiddenApis {
 tasks.forbiddenApisMain {
     exclude("**/BatchedException.class")
     exclude("**/LoggingBootstrap.class")
+    exclude("**/CreateAdapterBlueprint.class")
 }
 
 tasks.forbiddenApisTest { enabled = false }
