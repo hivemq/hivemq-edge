@@ -1,0 +1,1 @@
+zip -d 'module-template.zip' "__MACOSX*"
