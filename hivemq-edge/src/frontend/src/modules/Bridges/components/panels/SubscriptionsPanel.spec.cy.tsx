@@ -53,7 +53,7 @@ describe('SubscriptionsPanel', () => {
         'color-contrast': { enabled: false },
       },
     })
-    cy.percySnapshot('Component: SecurityPanel')
+    cy.percySnapshot('Component: SubscriptionsPanel')
   })
 
   it('should initialise with OpenAPI defaults', () => {

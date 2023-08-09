@@ -18,7 +18,7 @@
     "cypress:run:component": "cypress run --component",
     "cypress:run:e2e": "cypress run --e2e",
     "cypress:run": "npx cypress run --e2e --browser chrome && npx cypress run --component --browser chrome",
-    "cypress:percy": "percy exec -- cypress run",
+    "cypress:percy": "LOCAL_NONCE=$(date '+%s') && PERCY_PARALLEL_NONCE=$LOCAL_NONCE percy exec --parallel -- cypress run --e2e && PERCY_PARALLEL_NONCE=$LOCAL_NONCE percy exec --parallel -- cypress run --component && PERCY_PARALLEL_NONCE=$LOCAL_NONCE percy build:finalize ",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
