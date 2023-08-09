@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: 🚚 Setup pnpm
-        uses: pnpm/action-setup@v2.0.1
+        uses: pnpm/action-setup@v2.2.4
         with:
           version: 8.4.0
 
@@ -87,4 +87,23 @@ jobs:
 
       - name: 📸 Run Percy visual tests
         run: pnpm cypress:percy
+        env:
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 
+      - name: 🚥 Run Lighthouse audits
+        uses: treosh/lighthouse-ci-action@v10
+        id: lighthouse
+        with:
+          temporaryPublicStorage: true # upload lighthouse report to the temporary storage
+          ## budgetPath: ./budget.json # test performance budgets
+          uploadArtifacts: true # save results as an action artifacts
+          configPath: 'hivemq-edge/src/frontend/.lighthouserc.cjs'
+
+      - name: 💾 Job successful feedback
+        if: ${{ success() }}
+        run: |
+          echo '### Lighthouse results 🚦' >> $GITHUB_STEP_SUMMARY
+          echo "Performance: ${{ fromJSON(steps.lighthouse.outputs.manifest)[0].summary.performance }}" >> $GITHUB_STEP_SUMMARY
+          echo "Accessibility: ${{ fromJSON(steps.lighthouse.outputs.manifest)[0].summary.accessibility }}" >> $GITHUB_STEP_SUMMARY
+          echo "Best-practices: ${{ fromJSON(steps.lighthouse.outputs.manifest)[0].summary.best-practices }}" >> $GITHUB_STEP_SUMMARY
+          echo "SEO: ${{ fromJSON(steps.lighthouse.outputs.manifest)[0].summary.seo }}" >> $GITHUB_STEP_SUMMARY

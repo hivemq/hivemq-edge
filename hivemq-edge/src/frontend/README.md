@@ -119,6 +119,6 @@ It contains - and enforces - parts of the testing pyramid for frontend applicati
 
 ### Axe - Accessibility testing
 
-### Percy - Visual testing More Test
+### Percy - Visual testing
 
-https://percy.io/f896bbdc/hivemq-edge
+### Lighthouse - Performance testing
