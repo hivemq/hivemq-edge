@@ -9,6 +9,8 @@ export const useOnboarding = (): OnboardingTask[] => {
   const { t } = useTranslation()
   const { data } = useGetConfiguration()
 
+  if (!data) return []
+
   return [
     {
       header: t('welcome.onboarding.connectDevice.header'),
