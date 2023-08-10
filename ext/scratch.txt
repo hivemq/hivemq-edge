@@ -1,1 +1,5 @@
 zip -d 'module-template.zip' "__MACOSX*"
+
+
+Used to determine if modules should be loaded from the development workspace or the modules directory in HIVEMQ_HOME
+-Dhivemq.edge.workspace.modules=true
