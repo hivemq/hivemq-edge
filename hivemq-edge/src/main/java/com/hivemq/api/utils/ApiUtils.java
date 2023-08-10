@@ -15,8 +15,14 @@
  */
 package com.hivemq.api.utils;
 
+import com.google.common.base.Preconditions;
+import com.hivemq.api.config.ApiListener;
+import com.hivemq.api.config.HttpsListener;
+import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.http.core.UsernamePasswordRoles;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 
 /**
@@ -30,5 +36,42 @@ public class ApiUtils {
                 && UsernamePasswordRoles.DEFAULT_PASSWORD.equals(user.getPassword()))).count() > 0;
         }
         return false;
+    }
+
+    public static String getWebContextRoot(ApiConfigurationService apiConfigurationService, boolean trailingSlash){
+
+        List<ApiListener> listeners = apiConfigurationService.getListeners();
+        if(listeners == null || listeners.isEmpty()){
+            return null;
+        }
+
+        String protocol = null;
+        int port = 80;
+        String host = null;
+
+        for(ApiListener listener : listeners){
+            try {
+                host = getHostName(listener.getBindAddress());
+            } catch(UnknownHostException e){
+                host = listener.getBindAddress();
+            }
+            port = listener.getPort();
+            protocol = listener instanceof HttpsListener ? "https" : "http";
+            break;
+        }
+        if(port == 80 || port == 443){
+            return String.format("%s://%s%s", protocol, host, trailingSlash ? "/" : "");
+        } else {
+            return String.format("%s://%s:%s%s", protocol, host, port + "", trailingSlash ? "/" : "");
+        }
+    }
+
+    public static String getHostName(final String name) throws UnknownHostException {
+        Preconditions.checkNotNull(name);
+        if("0.0.0.0".equals(name)){
+            return InetAddress.getLocalHost().getHostName();
+        }
+        InetAddress host = InetAddress.getByName(name);
+        return host.getHostName();
     }
 }
