@@ -19,6 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.config.HttpsListener;
 import com.hivemq.configuration.service.ApiConfigurationService;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.UsernamePasswordRoles;
 
 import java.net.InetAddress;
@@ -38,7 +39,7 @@ public class ApiUtils {
         return false;
     }
 
-    public static String getWebContextRoot(ApiConfigurationService apiConfigurationService, boolean trailingSlash){
+    public static String getWebContextRoot(final @NotNull ApiConfigurationService apiConfigurationService, final boolean trailingSlash){
 
         List<ApiListener> listeners = apiConfigurationService.getListeners();
         if(listeners == null || listeners.isEmpty()){
@@ -66,7 +67,7 @@ public class ApiUtils {
         }
     }
 
-    public static String getHostName(final String name) throws UnknownHostException {
+    public static String getHostName(final @NotNull String name) throws UnknownHostException {
         Preconditions.checkNotNull(name);
         if("0.0.0.0".equals(name)){
             return InetAddress.getLocalHost().getHostName();
