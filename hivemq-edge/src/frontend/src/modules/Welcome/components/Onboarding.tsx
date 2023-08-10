@@ -14,6 +14,7 @@ import {
   CardBody,
   Text,
 } from '@chakra-ui/react'
+import { BsClipboardCheck } from 'react-icons/bs'
 
 import { OnboardingTask } from '@/modules/Welcome/types.ts'
 
@@ -35,24 +36,28 @@ const Onboarding: FC<OnboardingProps> = (props) => {
               <Heading size="md">{e.header}</Heading>
             </CardHeader>
 
-            <CardBody>
+            <CardBody pt={0}>
               <Stack divider={<StackDivider />} spacing="4">
                 {e.sections.map((s) => (
-                  <Box key={s.title}>
-                    <Text pt="2" fontSize="sm">
-                      {s.title}
-                    </Text>
-                    <Button
-                      variant="link"
-                      as={RouterLink}
-                      to={s.to}
-                      aria-label={s.label}
-                      leftIcon={s.leftIcon}
-                      size="lg"
-                    >
-                      {s.label}
-                    </Button>
-                  </Box>
+                  <Stack key={s.title} spacing={8} direction="row" gap={4}>
+                    <Box>
+                      <BsClipboardCheck />
+                    </Box>
+                    <Box>
+                      <Text fontSize="sm">{s.title}</Text>
+                      <Button
+                        variant="link"
+                        as={RouterLink}
+                        to={s.to}
+                        target={s.isExternal ? '_blank' : undefined}
+                        aria-label={s.label}
+                        leftIcon={s.leftIcon}
+                        size="lg"
+                      >
+                        {s.label}
+                      </Button>
+                    </Box>
+                  </Stack>
                 ))}
               </Stack>
             </CardBody>
