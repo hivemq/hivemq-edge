@@ -74,6 +74,15 @@ tasks.test {
     }
 }
 
+tasks.register<Copy>("copyAllDependencies") {
+    shouldRunAfter("assemble")
+    from(configurations.runtimeClasspath)
+    into("${buildDir}/deps/libs")
+}
+
+tasks.named("assemble") { finalizedBy("copyAllDependencies") }
+
+
 /* ******************** artifacts ******************** */
 
 val releaseBinary: Configuration by configurations.creating {
