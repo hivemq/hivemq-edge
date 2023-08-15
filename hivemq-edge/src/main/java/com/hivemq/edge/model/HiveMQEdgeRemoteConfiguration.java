@@ -39,6 +39,7 @@ public class HiveMQEdgeRemoteConfiguration {
     private @JsonProperty("properties") @NotNull final Map<String, Object> properties;
     private @JsonProperty("cloudLink") @NotNull final Link cloudLink;
     private @JsonProperty("gitHubLink") @NotNull final Link gitHubLink;
+    private @JsonProperty("documentationLink") @NotNull final Link documentationLink;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public HiveMQEdgeRemoteConfiguration(
@@ -48,7 +49,8 @@ public class HiveMQEdgeRemoteConfiguration {
             @JsonProperty("modules") final @NotNull List<Module> modules,
             @JsonProperty("properties") final @NotNull Map<String, Object> properties,
             @JsonProperty("cloudLink") final @NotNull Link cloudLink,
-            @JsonProperty("gitHubLink") final @NotNull Link gitHubLink) {
+            @JsonProperty("gitHubLink") final @NotNull Link gitHubLink,
+            @JsonProperty("documentationLink") final @NotNull Link documentationLink) {
         this.ctas = ctas;
         this.resources = resources;
         this.extensions = extensions;
@@ -56,6 +58,7 @@ public class HiveMQEdgeRemoteConfiguration {
         this.properties = properties;
         this.cloudLink = cloudLink;
         this.gitHubLink = gitHubLink;
+        this.documentationLink = documentationLink;
     }
 
     public List<Link> getCtas() {
@@ -80,6 +83,10 @@ public class HiveMQEdgeRemoteConfiguration {
 
     public Link getGitHubLink() {
         return gitHubLink;
+    }
+
+    public Link getDocumentationLink() {
+        return documentationLink;
     }
 
     public Map<String, Object> getProperties() {

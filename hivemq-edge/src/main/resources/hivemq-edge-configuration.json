@@ -2,8 +2,8 @@
   "gitHubLink" : {
     "displayText" : "HiveMQ Edge GitHub",
     "url" : "https://github.com/hivemq/hivemq-edge",
-    "description" : "",
-    "target" : "",
+    "description" : "HiveMQ Edge is a light-weight open-source MQTT broker, MQTT-SN gateway and modular protocol conversion runtime. It is optimised for Edge deployment architectures.",
+    "target" : "_blank",
     "imageUrl" : "",
     "external" : true
   },
@@ -11,6 +11,14 @@
     "displayText" : "Connect To HiveMQ Cloud",
     "url" : "https://auth.hivemq.cloud/",
     "description" : "You should connect your HiveMQ Edge deployment with a HiveMQ Cloud MQTT Broker, which will be the source of truth for your business data.",
+    "target" : "_blank",
+    "imageUrl" : "",
+    "external" : true
+  },
+  "documentationLink" : {
+    "displayText" : "HiveMQ Edge Documentation",
+    "url" : "https://github.com/hivemq/hivemq-edge/wiki",
+    "description" : "Find out more about HiveMQ Edge",
     "target" : "_blank",
     "imageUrl" : "",
     "external" : true

@@ -1,9 +1,15 @@
 import { useTranslation } from 'react-i18next'
 import { IoLinkOutline } from 'react-icons/io5'
+import { GoLinkExternal } from 'react-icons/go'
+
 import { OnboardingTask } from '@/modules/Welcome/types.ts'
+import { useGetConfiguration } from '@/api/hooks/useGatewayPortal/useGetConfiguration.tsx'
 
 export const useOnboarding = (): OnboardingTask[] => {
   const { t } = useTranslation()
+  const { data } = useGetConfiguration()
+
+  if (!data) return []
 
   return [
     {
@@ -25,6 +31,18 @@ export const useOnboarding = (): OnboardingTask[] => {
           label: t('welcome.onboarding.connectEnterprise.bridge.label'),
           to: '/mqtt-bridges',
           leftIcon: <IoLinkOutline />,
+        },
+      ],
+    },
+    {
+      header: data?.cloudLink?.displayText as string,
+      sections: [
+        {
+          title: data?.cloudLink?.description as string,
+          label: data?.cloudLink?.displayText as string,
+          to: data?.cloudLink?.url as string,
+          isExternal: true,
+          leftIcon: <GoLinkExternal />,
         },
       ],
     },

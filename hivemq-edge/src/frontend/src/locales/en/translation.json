@@ -86,14 +86,14 @@
         },
         "protocolAdapter": {
           "title": "Use HiveMQ Edge modular Protocol adapters to connect to local and network based devices.",
-          "label": "Get Started!"
+          "label": "Use a Protocol Adapter"
         }
       },
       "connectEnterprise": {
         "header": "From HiveMQ Edge to the Enterprise",
         "bridge": {
           "title": "Connect your HiveMQ Edge MQTT Broker to your Enterprise using MQTT Bridge connections.",
-          "label": "Get Started!"
+          "label": "Use a Bridge"
         }
       }
     },

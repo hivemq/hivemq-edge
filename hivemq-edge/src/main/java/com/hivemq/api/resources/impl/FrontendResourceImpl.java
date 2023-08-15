@@ -107,25 +107,15 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     }
 
     protected @NotNull Link getCloudLink() {
-        return new Link("HiveMQ Cloud", "https://hivemq.com/cloud", LoremIpsum.generate(40), null, null, Boolean.TRUE);
+        return hiveMQEdgeRemoteConfigurationService.getConfiguration().getCloudLink();
     }
 
     protected @NotNull Link getGitHubLink() {
-        return new Link("GitHub",
-                "https://github.com/hivemq/hivemq-edge",
-                LoremIpsum.generate(40),
-                null,
-                null,
-                Boolean.TRUE);
+        return hiveMQEdgeRemoteConfigurationService.getConfiguration().getGitHubLink();
     }
 
     protected @NotNull Link getDocumentationLink() {
-        return new Link("Documentation",
-                "https://github.com/hivemq/hivemq-edge/wiki",
-                LoremIpsum.generate(40),
-                null,
-                null,
-                Boolean.TRUE);
+        return hiveMQEdgeRemoteConfigurationService.getConfiguration().getDocumentationLink();
     }
 
     protected @NotNull LinkList getResources() {
@@ -164,7 +154,6 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     protected @NotNull  EnvironmentProperties getEnvironmentProperties() {
         Map<String, String> env = new HashMap<>();
-        env.put("environment-type", "TEST");
         return new EnvironmentProperties(env);
     }
 

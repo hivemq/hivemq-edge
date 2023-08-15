@@ -5,6 +5,7 @@ export interface OnboardingAction {
   label: string
   to: string
   leftIcon: React.ReactElement
+  isExternal?: boolean
 }
 
 export interface OnboardingTask {
