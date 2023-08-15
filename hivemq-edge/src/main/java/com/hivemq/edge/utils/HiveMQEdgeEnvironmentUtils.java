@@ -6,14 +6,29 @@ import java.net.NetworkInterface;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * @author Simon L Johnson
  */
 public class HiveMQEdgeEnvironmentUtils {
 
+    private static volatile UUID sessionToken;
+    private static Object lock = new Object();
+
     public static @NotNull String generateInstallationToken(){
         return HiveMQEdgeEnvironmentUtils.getLocalhostMacAddress();
+    }
+
+    public static @NotNull String getSessionToken(){
+        if(sessionToken == null){
+            synchronized (lock){
+                if(sessionToken == null){
+                    sessionToken = UUID.randomUUID();
+                }
+            }
+        }
+        return sessionToken.toString();
     }
 
     public static @NotNull Map<String, String> generateEnvironmentMap() {

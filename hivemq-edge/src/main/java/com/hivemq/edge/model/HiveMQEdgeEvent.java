@@ -15,6 +15,7 @@ public class HiveMQEdgeEvent {
 
     public enum EVENT_TYPE {
         EDGE_STARTED,
+        EDGE_PING,
         ADAPTER_STARTED,
         ADAPTER_ERROR,
         BRIDGE_STARTED,
@@ -26,11 +27,12 @@ public class HiveMQEdgeEvent {
     public final EVENT_TYPE eventType;
     public String installationToken;
     public String edgeVersion;
+    public String sessionToken;
 
     public HiveMQEdgeEvent(final EVENT_TYPE eventType) {
         this.eventType = eventType;
-        this.edgeVersion = edgeVersion;
         this.installationToken = HiveMQEdgeEnvironmentUtils.generateInstallationToken();
+        this.sessionToken = HiveMQEdgeEnvironmentUtils.getSessionToken();
     }
 
     public Date getCreated() {
@@ -41,12 +43,12 @@ public class HiveMQEdgeEvent {
         return eventType;
     }
 
-    public String getInstallationToken() {
-        return installationToken;
-    }
-
     public String getEdgeVersion() {
         return edgeVersion;
+    }
+
+    public String getSessionToken() {
+        return sessionToken;
     }
 
     public void setEdgeVersion(final String edgeVersion) {
