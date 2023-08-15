@@ -16,10 +16,12 @@
 package com.hivemq.edge.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Preconditions;
 import com.hivemq.edge.model.HiveMQEdgeEvent;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConnectivityException;
 import com.hivemq.edge.model.HiveMQEdgeRemoteServices;
+import com.hivemq.edge.utils.HiveMQEdgeEnvironmentUtils;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.http.core.HttpResponse;
@@ -46,6 +48,7 @@ public class HiveMQEdgeHttpServiceImpl {
     static Logger logger = LoggerFactory.getLogger(HiveMQEdgeHttpServiceImpl.class.getName());
     static final String SERVICE_DISCOVERY_URL = "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/ext/remote-endpoints.txt";
     protected String serviceDiscoveryEndpoint;
+    protected String hiveMqEdgeVersion;
     protected int connectTimeoutMillis;
     protected int readTimeoutMillis;
     protected int retryTimeMillis;
@@ -60,16 +63,22 @@ public class HiveMQEdgeHttpServiceImpl {
     private Object monitor = new Object();
     private volatile HiveMQEdgeRemoteConfiguration remoteConfiguration;
     private volatile HiveMQEdgeRemoteServices remoteServices;
-    private BlockingQueue<HiveMQEdgeEvent> blockingQueue = new LinkedBlockingDeque<>(100);
+    private BlockingQueue<HiveMQEdgeEvent> usageEventQueue = new LinkedBlockingDeque<>(20);
     static final int MAX_ERROR_ATTEMPTS_USAGE_STATS = 10;
     static final int USAGE_STATS_ERROR_RESET_INTERVAL_MILLIS = 1000 * 60 * 10;
 
     public HiveMQEdgeHttpServiceImpl(
+            final @NotNull String hiveMqEdgeVersion,
             final @NotNull ObjectMapper mapper,
             final @NotNull String serviceDiscoveryEndpoint,
             int connectTimeoutMillis,
             int readTimeoutMillis,
             int retryTimeMillis) {
+        Preconditions.checkNotNull(hiveMqEdgeVersion);
+        Preconditions.checkNotNull(mapper);
+        Preconditions.checkNotNull(serviceDiscoveryEndpoint);
+
+        this.hiveMqEdgeVersion = hiveMqEdgeVersion;
         this.mapper = mapper;
         this.serviceDiscoveryEndpoint = serviceDiscoveryEndpoint;
         this.connectTimeoutMillis = connectTimeoutMillis;
@@ -127,7 +136,7 @@ public class HiveMQEdgeHttpServiceImpl {
                 while (running) {
                     try {
                         boolean attempt = true;
-                        HiveMQEdgeEvent event = blockingQueue.take();
+                        HiveMQEdgeEvent event = usageEventQueue.take();
                         if(usageErrorCount.get() > MAX_ERROR_ATTEMPTS_USAGE_STATS){
                             if((lastAttempt < (System.currentTimeMillis() - USAGE_STATS_ERROR_RESET_INTERVAL_MILLIS))) {
                                 if (logger.isTraceEnabled()) {
@@ -193,7 +202,12 @@ public class HiveMQEdgeHttpServiceImpl {
             }
             if(process){
                 //-- only enqueue data when we know we can drain it (and this may change over time)
-                blockingQueue.offer(event, 50, TimeUnit.MILLISECONDS);
+                event.setEdgeVersion(hiveMqEdgeVersion);
+                if(!usageEventQueue.offer(event, 50, TimeUnit.MILLISECONDS)){
+                    if(logger.isDebugEnabled()){
+                        logger.debug("tracking-usage queue blocked, and discarded result");
+                    }
+                }
             }
         } catch (InterruptedException e) {
             if(logger.isDebugEnabled()){
@@ -254,6 +268,8 @@ public class HiveMQEdgeHttpServiceImpl {
                     logger.trace("successfully established connection to http provider {}, online",
                             serviceDiscoveryEndpoint);
                 }
+                HiveMQEdgeEvent event = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.EDGE_PING);
+                fireEvent(event, false);
             } else {
                 hasConnectivity = false;
             }

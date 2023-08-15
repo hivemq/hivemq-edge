@@ -67,7 +67,8 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
     }
 
     protected final @NotNull HiveMQEdgeHttpServiceImpl initHttpService() {
-        return new HiveMQEdgeHttpServiceImpl(objectMapper, HiveMQEdgeHttpServiceImpl.SERVICE_DISCOVERY_URL, TIMEOUT, TIMEOUT, REFRESH);
+        return new HiveMQEdgeHttpServiceImpl(systemInformation.getHiveMQVersion(),
+                objectMapper, HiveMQEdgeHttpServiceImpl.SERVICE_DISCOVERY_URL, TIMEOUT, TIMEOUT, REFRESH);
     }
 
     @Override
@@ -89,7 +90,6 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
     public void fireUsageEvent(final HiveMQEdgeEvent event) {
         if(configurationService.usageTrackingConfiguration().isUsageTrackingEnabled()){
             //only queue if its a startup event
-            event.setEdgeVersion(systemInformation.getHiveMQVersion());
             hiveMQEdgeHttpService.fireEvent(event, event.getEventType() == HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
         }
     }
