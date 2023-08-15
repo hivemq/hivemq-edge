@@ -31,6 +31,7 @@ import com.hivemq.api.model.connection.ConnectionStatusList;
 import com.hivemq.api.model.connection.ConnectionStatusTransitionCommand;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
+import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
@@ -69,13 +70,19 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response getAdapterTypes() {
         final ImmutableList.Builder<ProtocolAdapter> adapters = ImmutableList.builder();
         for (ProtocolAdapterInformation info : protocolAdapterManager.getAllAvailableAdapterTypes().values()) {
+            String logoUrl = info.getLogoUrl();
+            if(Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)){
+                //-- when we're in developer mode, ensure we make the logo urls fully qualified
+                //-- as the FE maybe being run from a different development server.
+              logoUrl = ApiUtils.getWebContextRoot(configurationService.apiConfiguration(), false) + logoUrl;
+            }
             adapters.add(new ProtocolAdapter(info.getProtocolId(),
                     info.getProtocolName(),
                     info.getName(),
                     info.getDescription(),
                     info.getUrl(),
                     info.getVersion(),
-                    info.getLogoUrl(),
+                    logoUrl,
                     info.getAuthor(),
                     protocolAdapterManager.getSchemaManager(info).generateSchemaNode()));
         }
