@@ -29,6 +29,7 @@ import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.resources.FrontendApi;
+import com.hivemq.api.resources.GatewayApi;
 import com.hivemq.api.resources.HealthCheckApi;
 import com.hivemq.api.resources.MetricsApi;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
@@ -36,6 +37,7 @@ import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.api.resources.impl.BridgeResourceImpl;
 import com.hivemq.api.resources.impl.FrontendResourceImpl;
+import com.hivemq.api.resources.impl.GatewayResourceImpl;
 import com.hivemq.api.resources.impl.HealthCheckResourceImpl;
 import com.hivemq.api.resources.impl.MetricsResourceImpl;
 import com.hivemq.api.resources.impl.ProtocolAdaptersResourceImpl;
@@ -82,7 +84,9 @@ public abstract class ApiModule {
     abstract @NotNull UnsApi unsApi(@NotNull UnsResourceImpl unsResource);
 
     @Binds
-    abstract @NotNull FrontendApi gatewayApi(@NotNull FrontendResourceImpl gatewayResource);
+    abstract @NotNull FrontendApi frontendApi(@NotNull FrontendResourceImpl gatewayResource);
+    @Binds
+    abstract @NotNull GatewayApi gatewayApi(@NotNull GatewayResourceImpl gatewayResource);
 
     @Binds
     abstract @NotNull ITokenVerifier tokenVerifier(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);

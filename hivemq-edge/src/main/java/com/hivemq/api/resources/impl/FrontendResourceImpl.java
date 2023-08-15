@@ -152,11 +152,6 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
         return new FirstUseInformation(firstUse, prefillUsername, prefillPassword, firstUseTitle, firstUseDescription);
     }
 
-    protected @NotNull  EnvironmentProperties getEnvironmentProperties() {
-        Map<String, String> env = new HashMap<>();
-        return new EnvironmentProperties(env);
-    }
-
     @Override
     public @NotNull  Response getNotifications() {
 
@@ -182,31 +177,8 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
         return Response.ok(new NotificationList(notifs.build())).build();
     }
 
-    @Override
-    public @NotNull Response getXmlConfiguration() {
-        return Response.ok((StreamingOutput) output -> configurationService.writeConfiguration(new OutputStreamWriter(
-                output))).build();
-    }
-
-    @Override
-    public @NotNull Response getListeners() {
-
-        //-- Netty configured objects
-        ImmutableList.Builder<Listener> builder = new ImmutableList.Builder<>();
-        configurationService.listenerConfiguration()
-                .getListeners()
-                .stream()
-                .map(this::convertListener)
-                .forEachOrdered(builder::add);
-
-        return Response.ok(new ListenerList(builder.build())).build();
-    }
-
-    private Listener convertListener(com.hivemq.configuration.service.entity.Listener listener) {
-        return new Listener(listener.getName(),
-                listener.getBindAddress(),
-                listener.getPort(),
-                listener.getReadableName(),
-                listener.getExternalHostname());
+    protected @NotNull  EnvironmentProperties getEnvironmentProperties() {
+        Map<String, String> env = new HashMap<>();
+        return new EnvironmentProperties(env);
     }
 }
