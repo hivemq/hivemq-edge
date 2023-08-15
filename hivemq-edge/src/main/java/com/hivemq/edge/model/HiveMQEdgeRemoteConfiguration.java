@@ -102,6 +102,7 @@ public class HiveMQEdgeRemoteConfiguration {
         sb.append(", modules=").append(modules);
         sb.append(", properties=").append(properties);
         sb.append(", cloudLink=").append(cloudLink);
+        sb.append(", documentationLink=").append(documentationLink);
         sb.append(", gitHubLink=").append(gitHubLink);
         sb.append('}');
         return sb.toString();
