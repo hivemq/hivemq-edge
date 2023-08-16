@@ -54,13 +54,17 @@ const config: configType = {
 
   features: {
     /**
+     * Enable the workspace flow for the edge
+     */
+    WORKSPACE_FLOW_PANEL: import.meta.env.VITE_FLAG_WORKSPACE_FLOW_PANEL === 'true',
+    /**
      * Show the search and filter panel for the Protocol Adapter
      */
-    PROTOCOL_ADAPTER_FACET: false,
+    PROTOCOL_ADAPTER_FACET: import.meta.env.VITE_FLAG_FACET_SEARCH === 'true',
     /**
      * Show the metrics panel on the dashboard (conditional to first use flag)
      */
-    METRICS_SELECT_PANEL: false,
+    METRICS_SELECT_PANEL: true,
     /**
      * The initial list of metrics
      */
