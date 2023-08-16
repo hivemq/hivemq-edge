@@ -17,6 +17,7 @@
       "title": "HiveMQ Edge",
       "routes": {
         "home": "Home",
+        "workspace": "Workspace",
         "bridges": "MQTT Bridges",
         "protocolAdapters": "Protocol Adapters",
         "eventLogs": "Event logs"
