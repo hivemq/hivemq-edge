@@ -193,9 +193,9 @@ public class JwtAuthenticationProvider implements ITokenGenerator, ITokenVerifie
         }
         catch (InvalidJwtException e){
             if (!e.hasExpired()){
-                log.trace("jwt validation failed, reason {}", e.getMessage());
+                log.error("jwt validation failed, reason {}", e.getMessage());
             } else {
-                log.trace("jwt validation failed, reason {}", e.getMessage());
+                log.trace("jwt expired, reason {}", e.getMessage());
             }
         }
 
