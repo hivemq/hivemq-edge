@@ -37,20 +37,20 @@ It is a Java-based open source MQTT and MQTT-SN broker that fully supports MQTT 
 
 === MQTT Broker
 
-HiveMQ Edge incorperates a fully standards compliant MQTT broker.
+HiveMQ Edge incorporates a fully standards compliant MQTT broker.
 Connect your devices to the broker to subscribe and gain access to data obtained from devices on the Edge.
 
 HiveMQ Edge is compatible with all MQTT 3.x and MQTT 5 clients, including Eclipse Paho and https://github.com/hivemq/hivemq-mqtt-client[HiveMQ MQTT Client].
 
 === MQTT-SN Gateway
 
-HiveMQ Edge incorperates an MQTT-SN gateway allowing constrained devices to access the MQTT broker.
+HiveMQ Edge incorporates an MQTT-SN gateway allowing constrained devices to access the MQTT broker.
 
 MQTT-SN is an optimized version of the MQTT specification designed for use on small, low powered, sensor devices, often running on the edge of the network; typical of the IoT.
 
 === Protocol Adapters
 
-A protocol adapter contributes code to connect to PLCs and coverts the data retrieved from these devices into MQTT messages which are PUBLISHED into the local MQTT broker.
+A protocol adapter contributes code to connect to PLCs and converts the data retrieved from these devices into MQTT messages which are PUBLISHED into the local MQTT broker.
 More Protocol adapters will be added to the project over time.
 
 * OPC UA
@@ -62,7 +62,7 @@ More Protocol adapters will be added to the project over time.
 
 === MQTT Bridging
 
-HiveMQ allows you backhaul your data into an enterprise broker using MQTT bridges.
+HiveMQ allows you to backhaul your data into an enterprise broker using MQTT bridges.
 Connect any number of bridges to transport Edge data upstream. By connecting Edge to enterprise MQTT brokers like https://www.hivemq.com/[HiveMQ] you can build a flexible https://www.hivemq.com/unified-namespace-uns-essentials-iiot-industry-40/[Unified Namespace (UNS)] solution based on open standards.
 
 == Documentation
