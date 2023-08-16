@@ -118,11 +118,17 @@ public class ProtocolAdapterManager {
                 log.error("Protocol adapter for config {} not found", configKey);
                 continue;
             }
+
+            Object adapterXmlElement = configSection.getValue();
             List<Map<String, Object>> adapterConfigs;
-            if (configSection.getValue() instanceof List) {
-                adapterConfigs = (List<Map<String, Object>>) configSection.getValue();
+            if (adapterXmlElement instanceof List) {
+                adapterConfigs = (List<Map<String, Object>>) adapterXmlElement;
+            } else if (adapterXmlElement instanceof Map){
+                adapterConfigs = List.of((Map<String, Object>) adapterXmlElement);
             } else {
-                adapterConfigs = List.of((Map<String, Object>) configSection.getValue());
+                //unknown data structure - continue (bad config)
+                log.warn("found invalid configuration element for adapter {}, skipping", configKey);
+                continue;
             }
 
             final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
