@@ -355,11 +355,11 @@ public class ProtocolAdapterManager {
         Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
         List<Map> adapterList = null;
         Object o = mainMap.get(adapterType);
-        if (o instanceof Map || o == null) {
+        if (o instanceof Map || o instanceof String || o == null) {
             if (adapterList == null) {
                 adapterList = new ArrayList<>();
             }
-            if (o != null) {
+            if (o != null && o instanceof Map) {
                 adapterList.add((Map) o);
             }
             mainMap.put(adapterType, adapterList);
