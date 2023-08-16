@@ -28,6 +28,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import javax.annotation.security.PermitAll;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -62,7 +63,9 @@ public interface FrontendApi {
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull Response getConfiguration();
 
+
     @GET
+    @PermitAll
     @Path("/frontend/notifications")
     @Operation(summary = "Obtain Notifications",
                operationId = "get-notifications",
@@ -81,45 +84,6 @@ public interface FrontendApi {
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull Response getNotifications();
 
-    @GET
-    @Path("/management/system/configuration")
-    @Operation(summary = "Obtain HiveMQ Edge Configuration",
-               operationId = "get-xml-configuration",
-               description = "Obtain gateway configuration.",
-               responses = {
-                       @ApiResponse(responseCode = "200",
-                                    description = "Success",
-                                    content = @Content(mediaType = MediaType.APPLICATION_XML,
-                                                       schema = @Schema(implementation = String.class))),
-                       @ApiResponse(responseCode = "405",
-                                    description = "Error - function not supported",
-                                    content = @Content(mediaType = MediaType.APPLICATION_XML,
-                                                       schema = @Schema(implementation = ApiErrorMessage.class),
-                                                       examples = {
-                                                               @ExampleObject(description = "Export is not allowed from gateway",
-                                                                              name = "export-not-allowed",
-                                                                              summary = "Example export disabled",
-                                                                              value = ApiBodyExamples.EXAMPLE_XML_EXPORT_ERROR_JSON)
-                                                       }))})
-    @Produces(MediaType.APPLICATION_XML)
-    @NotNull Response getXmlConfiguration();
 
-    @GET
-    @Path("/frontend/listeners")
-    @Operation(summary = "Obtain the listeners configured ",
-               operationId = "get-listeners",
-               description = "Obtain listener.",
-               responses = {
-                       @ApiResponse(responseCode = "200",
-                                    description = "Success",
-                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = ListenerList.class),
-                                                       examples = {
-                                                               @ExampleObject(description = "A list of listeners configured in the gateway",
-                                                                              name = "listener-configuration",
-                                                                              summary = "Listener configuration",
-                                                                              value = ApiBodyExamples.EXAMPLE_LISTENER_LIST_JSON)
-                                                       }))})
-    @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response getListeners();
+
 }

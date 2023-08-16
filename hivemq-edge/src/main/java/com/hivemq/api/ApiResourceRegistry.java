@@ -25,6 +25,7 @@ import com.hivemq.api.filter.JWTReissuanceFilterImpl;
 import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.resources.FrontendApi;
+import com.hivemq.api.resources.GatewayApi;
 import com.hivemq.api.resources.HealthCheckApi;
 import com.hivemq.api.resources.MetricsApi;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
@@ -66,6 +67,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     private final @NotNull Lazy<ProtocolAdaptersApi> protocolAdaptersApi;
     private final @NotNull Lazy<UnsApi> unsApi;
     private final @NotNull Lazy<FrontendApi> frontendApi;
+    private final @NotNull Lazy<GatewayApi> gatewayApi;
     private final @NotNull Lazy<RootResource> rootResource;
     private final @NotNull Lazy<Set<IAuthenticationHandler>> authenticationHandlers;
     private final @NotNull Lazy<ITokenGenerator> tokenGenerator;
@@ -81,6 +83,7 @@ public class ApiResourceRegistry extends ResourceConfig {
             final @NotNull Lazy<ProtocolAdaptersApi> protocolAdaptersApi,
             final @NotNull Lazy<UnsApi> unsApi,
             final @NotNull Lazy<FrontendApi> frontendApi,
+            final @NotNull Lazy<GatewayApi> gatewayApi,
             final @NotNull Lazy<RootResource> rootResource,
             final @NotNull Lazy<Set<IAuthenticationHandler>> authenticationHandlers,
             final @NotNull Lazy<ITokenGenerator> tokenGenerator,
@@ -93,6 +96,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         this.protocolAdaptersApi = protocolAdaptersApi;
         this.unsApi = unsApi;
         this.frontendApi = frontendApi;
+        this.gatewayApi = gatewayApi;
         this.rootResource = rootResource;
         this.authenticationHandlers = authenticationHandlers;
         this.tokenGenerator = tokenGenerator;
@@ -127,6 +131,8 @@ public class ApiResourceRegistry extends ResourceConfig {
         register(unsApi.get());
         logger.trace("Initialized unsApi API resources");
         register(frontendApi.get());
+        logger.trace("Initialized frontendApi API resources");
+        register(gatewayApi.get());
         logger.trace("Initialized gatewayApi API resources");
     }
 
