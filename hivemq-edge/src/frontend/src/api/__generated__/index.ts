@@ -93,6 +93,7 @@ export { AuthenticationEndpointService } from './services/AuthenticationEndpoint
 export { BridgesService } from './services/BridgesService';
 export { DefaultService } from './services/DefaultService';
 export { FrontendService } from './services/FrontendService';
+export { GatewayEndpointService } from './services/GatewayEndpointService';
 export { MetricsService } from './services/MetricsService';
 export { MetricsEndpointService } from './services/MetricsEndpointService';
 export { ProtocolAdaptersService } from './services/ProtocolAdaptersService';
