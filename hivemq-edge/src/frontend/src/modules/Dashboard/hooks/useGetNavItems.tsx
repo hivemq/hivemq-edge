@@ -7,10 +7,23 @@ import { BiListUl } from 'react-icons/bi'
 import { BsIntersect } from 'react-icons/bs'
 import { HiOutlinePuzzle } from 'react-icons/hi'
 import { GoLinkExternal } from 'react-icons/go'
+import { FaShareNodes } from 'react-icons/fa6'
+
+import config from '@/config'
 
 const useGetNavItems = (): NavLinksBlockType[] => {
   const { t } = useTranslation()
   const { data } = useGetConfiguration()
+
+  const workspaceLink = config.features.WORKSPACE_FLOW_PANEL
+    ? [
+        {
+          icon: <FaShareNodes />,
+          href: '/edge-flow',
+          label: t('translation:navigation.gateway.routes.workspace') as string,
+        },
+      ]
+    : []
 
   return [
     {
@@ -21,6 +34,7 @@ const useGetNavItems = (): NavLinksBlockType[] => {
           href: '/',
           label: t('translation:navigation.gateway.routes.home') as string,
         },
+        ...workspaceLink,
         {
           icon: <IoLinkOutline />,
           href: '/mqtt-bridges',
