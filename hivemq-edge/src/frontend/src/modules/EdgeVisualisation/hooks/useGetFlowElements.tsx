@@ -20,7 +20,12 @@ export const createEdgeNode = (label: string, positionStorage?: Record<string, X
   return nodeEdge
 }
 
-export const createBridgeNode = (bridge: Bridge, nbBridge: number, positionStorage?: Record<string, XYPosition>) => {
+export const createBridgeNode = (
+  bridge: Bridge,
+  nbBridge: number,
+  maxBridge: number,
+  positionStorage?: Record<string, XYPosition>
+) => {
   const idBridge = `${IdStubs.BRIDGE_NODE}#${bridge.id}`
 
   const nodeBridge: Node<Bridge, NodeTypes.BRIDGE_NODE> = {
@@ -29,7 +34,7 @@ export const createBridgeNode = (bridge: Bridge, nbBridge: number, positionStora
     // @ts-ignore To force a label on the default node
     data: { ...bridge, label: bridge.id },
     position: positionStorage?.[idBridge] ?? {
-      x: POS_EDGE.x + POS_NODE_INC.x * (nbBridge - 1),
+      x: POS_EDGE.x + POS_NODE_INC.x * (nbBridge - (maxBridge - 1) / 2),
       y: POS_EDGE.y + POS_NODE_INC.y,
     },
   }
@@ -55,6 +60,7 @@ export const createBridgeNode = (bridge: Bridge, nbBridge: number, positionStora
 export const createAdapterNode = (
   adapter: Adapter,
   nbAdapter: number,
+  maxAdapter: number,
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idAdapter = `${IdStubs.ADAPTER_NODE}#${adapter.id}`
@@ -64,9 +70,8 @@ export const createAdapterNode = (
     type: NodeTypes.ADAPTER_NODE,
     // @ts-ignore To force a label on the default node
     data: { ...adapter, label: adapter.id },
-    // position: positionStorage?.[idAdapter] ?? { x: POS_EDGE.x + 200 * (nbAdapter - 1), y: POS_EDGE.y - 250 },
     position: positionStorage?.[idAdapter] ?? {
-      x: POS_EDGE.x + POS_NODE_INC.x * (nbAdapter - 1),
+      x: POS_EDGE.x + POS_NODE_INC.x * (nbAdapter - (maxAdapter - 1) / 2),
       y: POS_EDGE.y - POS_NODE_INC.y,
     },
   }
@@ -106,13 +111,13 @@ const useGetFlowElements = () => {
     const nodeEdge = createEdgeNode('Your Edge')
 
     bridges.forEach((bridge, incBridgeNb) => {
-      const { nodeBridge, edgeConnector } = createBridgeNode(bridge, incBridgeNb)
+      const { nodeBridge, edgeConnector } = createBridgeNode(bridge, incBridgeNb, bridges.length)
       nodes.push(nodeBridge)
       edges.push(edgeConnector)
     })
 
     adapters.forEach((adapter, incAdapterNb) => {
-      const { nodeAdapter, edgeConnector } = createAdapterNode(adapter, incAdapterNb)
+      const { nodeAdapter, edgeConnector } = createAdapterNode(adapter, incAdapterNb, adapters.length)
       nodes.push(nodeAdapter)
       edges.push(edgeConnector)
     })
