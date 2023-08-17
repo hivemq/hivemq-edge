@@ -198,9 +198,9 @@ public class HiveMQEdgeMain {
         final HiveMQEdgeMain server = new HiveMQEdgeMain(new SystemInformationImpl(true), new MetricRegistry(), null);
         try {
             server.start(null);
-            log.info("Started HiveMQ in {}ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+            log.info("Started HiveMQ Edge in {}ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
         } catch (final HiveMQEdgeStartupException e) {
-            log.error("HiveMQ Edge start was aborted with error. {}", e.getMessage(), e);
+            log.error("HiveMQ Edge start was aborted with error.", e);
         }
     }
 
