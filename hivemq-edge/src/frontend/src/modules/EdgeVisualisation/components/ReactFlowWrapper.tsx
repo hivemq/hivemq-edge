@@ -6,6 +6,7 @@ import useGetFlowElements from '../hooks/useGetFlowElements.tsx'
 import { NodeTypes } from '../types.ts'
 import NodeEdge from './NodeEdge.tsx'
 import NodeAdapter from './NodeAdapter.tsx'
+import NodeBridge from './NodeBridge.tsx'
 
 const ReactFlowWrapper = () => {
   const { nodes, edges, onNodesChange, onEdgesChange } = useGetFlowElements()
@@ -13,6 +14,7 @@ const ReactFlowWrapper = () => {
     () => ({
       [NodeTypes.EDGE_NODE]: NodeEdge,
       [NodeTypes.ADAPTER_NODE]: NodeAdapter,
+      [NodeTypes.BRIDGE_NODE]: NodeBridge,
     }),
     []
   )
