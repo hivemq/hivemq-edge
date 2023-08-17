@@ -83,8 +83,10 @@ val moduleReleaseBinaries: Configuration by configurations.creating {
 
 dependencies {
     hivemq("com.hivemq:hivemq-edge")
+    // ** module-deps ** //
     edgeModule("com.hivemq:hivemq-edge-module-opcua")
     edgeModule("com.hivemq:hivemq-edge-module-modbus")
+
 }
 
 val hivemqEdgeZip by tasks.registering(Zip::class) {
@@ -101,3 +103,4 @@ val hivemqEdgeZip by tasks.registering(Zip::class) {
         }
     }
 }
+
