@@ -1,12 +1,12 @@
 import { FC } from 'react'
-import { Handle, Position, NodeProps } from 'reactflow'
+import { Handle, NodeProps, Position } from 'reactflow'
 import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
 
 import { Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 
-import GenericNode from './GenericNode.tsx'
+import NodeWrapper from '../parts/NodeWrapper.tsx'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ data: adapter }) => {
   const { data: protocols } = useGetAdapterTypes()
@@ -14,7 +14,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ data: adapter }) => {
 
   return (
     <>
-      <GenericNode p={3}>
+      <NodeWrapper p={3}>
         <VStack>
           <HStack w={'100%'}>
             <Image boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
@@ -24,7 +24,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ data: adapter }) => {
             <ConnectionStatusBadge status={adapter.adapterRuntimeInformation?.connectionStatus?.status} />
           </Box>
         </VStack>
-      </GenericNode>
+      </NodeWrapper>
       <Handle type="source" position={Position.Bottom} id="Bottom" isConnectable={true} />
     </>
   )

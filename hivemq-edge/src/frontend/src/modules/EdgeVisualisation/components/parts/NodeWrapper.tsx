@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { type BoxProps, VStack } from '@chakra-ui/react'
 
-const GenericNode: FC<BoxProps> = ({ children, ...rest }) => {
+const NodeWrapper: FC<BoxProps> = ({ children, ...rest }) => {
   return (
     <VStack
       p={'24px'}
@@ -24,4 +24,4 @@ const GenericNode: FC<BoxProps> = ({ children, ...rest }) => {
   )
 }
 
-export default GenericNode
+export default NodeWrapper

@@ -4,9 +4,9 @@ import 'reactflow/dist/style.css'
 
 import useGetFlowElements from '../hooks/useGetFlowElements.tsx'
 import { NodeTypes } from '../types.ts'
-import NodeEdge from './NodeEdge.tsx'
-import NodeAdapter from './NodeAdapter.tsx'
-import NodeBridge from './NodeBridge.tsx'
+import NodeEdge from './nodes/NodeEdge.tsx'
+import NodeAdapter from './nodes/NodeAdapter.tsx'
+import NodeBridge from './nodes/NodeBridge.tsx'
 
 const ReactFlowWrapper = () => {
   const { nodes, edges, onNodesChange, onEdgesChange } = useGetFlowElements()
