@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Edge, Node, useEdgesState, useNodesState, XYPosition, MarkerType, Position } from 'reactflow'
+import { useTheme, WithCSSVar } from '@chakra-ui/react'
+import { Dict } from '@chakra-ui/utils'
 
-import { Adapter, Bridge } from '@/api/__generated__'
+import { Adapter, Bridge, ConnectionStatus } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 
@@ -27,9 +29,11 @@ export const createBridgeNode = (
   bridge: Bridge,
   nbBridge: number,
   maxBridge: number,
+  theme: WithCSSVar<Dict>,
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idBridge = `${IdStubs.BRIDGE_NODE}#${bridge.id}`
+  const isConnected = bridge.bridgeRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
 
   const nodeBridge: Node<Bridge, NodeTypes.BRIDGE_NODE> = {
     id: idBridge,
@@ -40,6 +44,9 @@ export const createBridgeNode = (
     position: positionStorage?.[idBridge] ?? {
       x: POS_EDGE.x + POS_NODE_INC.x * (nbBridge - (maxBridge - 1) / 2),
       y: POS_EDGE.y + POS_NODE_INC.y,
+    },
+    style: {
+      backgroundColor: 'white',
     },
   }
 
@@ -52,8 +59,13 @@ export const createBridgeNode = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
+      color: isConnected ? theme.colors.green[500] : theme.colors.yellow[500],
     },
-    animated: false,
+    animated: isConnected,
+    style: {
+      strokeWidth: isConnected ? 1.5 : 0.5,
+      stroke: isConnected ? theme.colors.green[500] : theme.colors.yellow[500],
+    },
     // label: bridge.host,
     // type: 'step',
   }
@@ -66,9 +78,11 @@ export const createAdapterNode = (
   adapter: Adapter,
   nbAdapter: number,
   maxAdapter: number,
+  theme: WithCSSVar<Dict>,
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idAdapter = `${IdStubs.ADAPTER_NODE}#${adapter.id}`
+  const isConnected = adapter.adapterRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
 
   const nodeAdapter: Node<Adapter, NodeTypes.ADAPTER_NODE> = {
     id: idAdapter,
@@ -91,9 +105,13 @@ export const createAdapterNode = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      // color: '#000',
+      color: isConnected ? theme.colors.green[500] : theme.colors.yellow[500],
     },
-    animated: false,
+    animated: isConnected,
+    style: {
+      strokeWidth: isConnected ? 1.5 : 0.5,
+      stroke: isConnected ? theme.colors.green[500] : theme.colors.yellow[500],
+    },
     // label: bridge.host,
     // type: 'step',
   }
@@ -105,6 +123,7 @@ const useGetFlowElements = () => {
   const { t } = useTranslation()
   const { data: bridges } = useListBridges()
   const { data: adapters } = useListProtocolAdapters()
+  const theme = useTheme()
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Bridge | Adapter>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
@@ -119,13 +138,13 @@ const useGetFlowElements = () => {
     const nodeEdge = createEdgeNode(t('branding.appName'))
 
     bridges.forEach((bridge, incBridgeNb) => {
-      const { nodeBridge, edgeConnector } = createBridgeNode(bridge, incBridgeNb, bridges.length)
+      const { nodeBridge, edgeConnector } = createBridgeNode(bridge, incBridgeNb, bridges.length, theme)
       nodes.push(nodeBridge)
       edges.push(edgeConnector)
     })
 
     adapters.forEach((adapter, incAdapterNb) => {
-      const { nodeAdapter, edgeConnector } = createAdapterNode(adapter, incAdapterNb, adapters.length)
+      const { nodeAdapter, edgeConnector } = createAdapterNode(adapter, incAdapterNb, adapters.length, theme)
       nodes.push(nodeAdapter)
       edges.push(edgeConnector)
     })
