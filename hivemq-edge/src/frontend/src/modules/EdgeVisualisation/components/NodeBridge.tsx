@@ -4,7 +4,7 @@ import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
 
 import { Bridge } from '@/api/__generated__'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
-import logo from '@/assets/app/bridges.svg'
+import logo from '@/assets/hivemq/05-icon-hivemq-bridge-extension.svg'
 
 import GenericNode from './GenericNode.tsx'
 
