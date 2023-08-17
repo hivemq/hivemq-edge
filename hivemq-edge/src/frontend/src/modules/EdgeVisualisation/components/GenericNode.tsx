@@ -6,9 +6,10 @@ const GenericNode: FC<BoxProps> = ({ children, ...rest }) => {
     <VStack
       p={'24px'}
       borderColor={'#bec3c9'}
-      border={'2px'}
+      border={'1px'}
       _hover={{ bg: '#ebedf0' }}
       _active={{
+        border: '2px',
         bg: '#dddfe2',
         transform: 'scale(0.98)',
         borderColor: '#bec3c9',
