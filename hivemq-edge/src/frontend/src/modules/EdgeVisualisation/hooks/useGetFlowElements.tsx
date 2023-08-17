@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { Edge, Node, useEdgesState, useNodesState, XYPosition, MarkerType } from 'reactflow'
+import { useTranslation } from 'react-i18next'
+import { Edge, Node, useEdgesState, useNodesState, XYPosition, MarkerType, Position } from 'reactflow'
 
 import { Adapter, Bridge } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
@@ -15,6 +16,7 @@ export const createEdgeNode = (label: string, positionStorage?: Record<string, X
     id: IdStubs.EDGE_NODE,
     type: NodeTypes.EDGE_NODE,
     data: { label: label },
+    draggable: false,
     position: positionStorage?.[IdStubs.EDGE_NODE] ?? POS_EDGE,
   }
   return nodeEdge
@@ -95,6 +97,7 @@ export const createAdapterNode = (
 }
 
 const useGetFlowElements = () => {
+  const { t } = useTranslation()
   const { data: bridges } = useListBridges()
   const { data: adapters } = useListProtocolAdapters()
 
@@ -108,7 +111,7 @@ const useGetFlowElements = () => {
     const nodes: Node[] = []
     const edges: Edge[] = []
 
-    const nodeEdge = createEdgeNode('Your Edge')
+    const nodeEdge = createEdgeNode(t('branding.appName'))
 
     bridges.forEach((bridge, incBridgeNb) => {
       const { nodeBridge, edgeConnector } = createBridgeNode(bridge, incBridgeNb, bridges.length)
