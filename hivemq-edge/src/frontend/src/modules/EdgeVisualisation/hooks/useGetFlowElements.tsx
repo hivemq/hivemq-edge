@@ -33,6 +33,7 @@ export const createBridgeNode = (
   const nodeBridge: Node<Bridge, NodeTypes.BRIDGE_NODE> = {
     id: idBridge,
     type: NodeTypes.BRIDGE_NODE,
+    sourcePosition: Position.Top,
     // @ts-ignore To force a label on the default node
     data: { ...bridge, label: bridge.id },
     position: positionStorage?.[idBridge] ?? {
@@ -43,9 +44,10 @@ export const createBridgeNode = (
 
   const edgeConnector: Edge = {
     id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idBridge}`,
-    source: IdStubs.EDGE_NODE,
-    target: idBridge,
-    markerStart: {
+    target: IdStubs.EDGE_NODE,
+    targetHandle: 'Bottom',
+    source: idBridge,
+    markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
@@ -70,6 +72,7 @@ export const createAdapterNode = (
   const nodeAdapter: Node<Adapter, NodeTypes.ADAPTER_NODE> = {
     id: idAdapter,
     type: NodeTypes.ADAPTER_NODE,
+    sourcePosition: Position.Bottom,
     // @ts-ignore To force a label on the default node
     data: { ...adapter, label: adapter.id },
     position: positionStorage?.[idAdapter] ?? {
@@ -81,6 +84,7 @@ export const createAdapterNode = (
   const edgeConnector: Edge = {
     id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idAdapter}`,
     target: IdStubs.EDGE_NODE,
+    targetHandle: 'Top',
     source: idAdapter,
     markerEnd: {
       type: MarkerType.ArrowClosed,
