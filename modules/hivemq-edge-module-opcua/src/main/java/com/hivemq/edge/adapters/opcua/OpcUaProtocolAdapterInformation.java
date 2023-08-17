@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -53,7 +54,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull String getVersion() {
-        return "2023.2";
+        return HiveMQEdgeConstants.VERSION;
     }
 
     @Override

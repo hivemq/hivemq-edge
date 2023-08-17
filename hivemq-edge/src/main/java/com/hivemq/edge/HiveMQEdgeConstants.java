@@ -20,13 +20,13 @@ package com.hivemq.edge;
  */
 public interface HiveMQEdgeConstants {
 
+    //TODO this should be build driven for modules but use single constant for now
+    String VERSION = "2023.3";
     int MAX_ID_LEN = 500;
     String ID_REGEX = "([a-zA-Z_0-9\\-])*";
     int MAX_UINT16 = 65535;
     String MAX_UINT16_String = "65535";
-
     String DEVELOPMENT_MODE = "hivemq.edge.workspace.modules";
-
     String HOSTNAME_REGEX = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
 
     //credits: Regular Expressions Cookbook by Steven Levithan, Jan Goyvaerts
