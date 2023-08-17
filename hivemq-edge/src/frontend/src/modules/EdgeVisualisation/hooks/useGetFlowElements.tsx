@@ -8,8 +8,9 @@ import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 
 import { IdStubs, NodeTypes } from '../types.ts'
 
+const POS_SEPARATOR = 8
 const POS_EDGE: XYPosition = { x: 300, y: 300 }
-const POS_NODE_INC: XYPosition = { x: 150 + 8, y: 100 }
+const POS_NODE_INC: XYPosition = { x: 150 + POS_SEPARATOR, y: 200 }
 
 export const createEdgeNode = (label: string, positionStorage?: Record<string, XYPosition>) => {
   const nodeEdge: Node<unknown, NodeTypes.EDGE_NODE> = {
