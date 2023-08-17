@@ -9,7 +9,7 @@
   },
   "cloudLink" : {
     "displayText" : "Connect To HiveMQ Cloud",
-    "url" : "https://www.hivemq.com/pricing/",
+    "url" : "https://console.hivemq.cloud/?utm_source=HiveMQ+Edge&utm_medium=edge+console+referral+button&utm_campaign=HiveMQ+Cloud+PaaS",
     "description" : "You should connect your HiveMQ Edge deployment with a HiveMQ Cloud MQTT Broker, which will be the source of truth for your business data.",
     "target" : "_blank",
     "imageUrl" : "",
