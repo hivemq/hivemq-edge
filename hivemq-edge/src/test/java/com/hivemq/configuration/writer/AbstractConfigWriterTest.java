@@ -38,6 +38,7 @@ import util.TestConfigurationBootstrap;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 
 import static org.mockito.Mockito.mock;
 
@@ -45,9 +46,6 @@ import static org.mockito.Mockito.mock;
  * @author Simon L Johnson
  */
 public abstract class AbstractConfigWriterTest {
-
-    @TempDir
-    protected File tempDir;
 
     protected ConfigurationService configurationService;
 
@@ -68,13 +66,15 @@ public abstract class AbstractConfigWriterTest {
                 new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                 new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
                 new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()));
+        configFileReader.setDefaultBackupConfig(false);
         return configFileReader;
     }
 
     protected File loadTestConfigFile() throws IOException {
         try (final InputStream is =
                      AbstractConfigWriterTest.class.getResourceAsStream("/test-config.xml")){
-            final File tempFile = new File(tempDir, "original-config.xml");
+            final File tempFile = new File(System.getProperty("java.io.tmpdir"), "original-config.xml");
+            tempFile.deleteOnExit();
             FileUtils.copyInputStreamToFile(is, tempFile);
             return tempFile;
         }

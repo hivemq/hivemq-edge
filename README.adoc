@@ -5,7 +5,7 @@
 </p>
 ++++
 
-= HiveMQ Edge
+== HiveMQ Edge
 
 image:https://img.shields.io/github/actions/workflow/status/hivemq/hivemq-edge/check.yml?branch=master[GitHub Workflow Status (with branch),link=https://github.com/hivemq/hivemq-edge/actions/workflows/check.yml?query=branch%3Amaster]
 

@@ -74,9 +74,6 @@ public class ConfigurationServiceSyncTest extends AbstractConfigWriterTest {
         HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
         configurationService.setConfigFileReaderWriter(configFileReader);
 
-//        String copiedFileContent = FileUtils.readFileToString(tempFile, StandardCharsets.UTF_8);
-//        System.err.println(copiedFileContent);
-
         Map<String, Object> config =
                 configurationService.protocolAdapterConfigurationService().getAllConfigs();
 
