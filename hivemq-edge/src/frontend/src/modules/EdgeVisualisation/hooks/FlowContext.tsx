@@ -8,7 +8,9 @@ export interface EdgeFlowContextType {
 
 const defaultEdgeFlowContext: EdgeFlowOptions = {
   showTopics: true,
-  showMetrics: true,
+  showStatus: true,
+  showMetrics: false,
+  showHosts: true,
 }
 
 export const EdgeFlowContext = createContext<EdgeFlowContextType | null>(null)
