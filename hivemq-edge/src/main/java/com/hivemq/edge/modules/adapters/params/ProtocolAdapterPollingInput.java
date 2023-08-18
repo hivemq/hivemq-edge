@@ -41,6 +41,8 @@ public interface ProtocolAdapterPollingInput {
      */
     void close();
 
+    boolean isClosed();
+
     default int getMaxErrorsBeforeRemoval(){
         return 25;
     }

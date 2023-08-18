@@ -245,6 +245,7 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter {
                 log.warn("error closing/disconnecting from modbus client;", e);
             } finally {
                 modbusClient = null;
+                super.close();
             }
         }
 
