@@ -122,7 +122,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
             Future<?> future = pollingJob.getFuture();
             if(!future.isCancelled()){
                 log.info("Stopping Polling Job {}", pollingJob.getId());
-                if(future.cancel(false)){
+                if(future.cancel(true)){
                     pollingJob.getInput().close();
                 }
             }
