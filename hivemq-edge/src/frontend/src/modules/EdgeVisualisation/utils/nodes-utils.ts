@@ -7,7 +7,7 @@ import { Adapter, Bridge, ConnectionStatus } from '@/api/__generated__'
 import { IdStubs, NodeTypes } from '../types.ts'
 
 const POS_SEPARATOR = 8
-const POS_EDGE: XYPosition = { x: 300, y: 300 }
+const POS_EDGE: XYPosition = { x: 300, y: 200 }
 const POS_NODE_INC: XYPosition = { x: 200 + POS_SEPARATOR, y: 200 }
 
 export const createEdgeNode = (label: string, positionStorage?: Record<string, XYPosition>) => {
@@ -30,21 +30,6 @@ export const createBridgeNode = (
 ) => {
   const idBridge = `${IdStubs.BRIDGE_NODE}#${bridge.id}`
   const isConnected = bridge.bridgeRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
-
-  const idBridgeGroup = `${IdStubs.HOST_GROUP}#${bridge.id}`
-  const nodeBridgeGroup: Node = {
-    id: idBridgeGroup,
-    type: 'group',
-    data: { label: bridge.host },
-    position: positionStorage?.[idBridge] ?? {
-      x: POS_EDGE.x + POS_NODE_INC.x * (nbBridge - (maxBridge - 1) / 2),
-      y: POS_EDGE.y + POS_NODE_INC.y,
-    },
-    style: {
-      width: 250,
-      height: 300,
-    },
-  }
 
   const nodeBridge: Node<Bridge, NodeTypes.BRIDGE_NODE> = {
     id: idBridge,
@@ -70,12 +55,12 @@ export const createBridgeNode = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: isConnected ? theme.colors.green[500] : theme.colors.yellow[500],
+      color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
     },
     animated: isConnected,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
-      stroke: isConnected ? theme.colors.green[500] : theme.colors.yellow[500],
+      stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
     },
   }
 
@@ -104,16 +89,16 @@ export const createBridgeNode = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: isConnected ? theme.colors.green[500] : theme.colors.yellow[500],
+      color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
     },
     animated: isConnected,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
-      stroke: isConnected ? theme.colors.green[500] : theme.colors.yellow[500],
+      stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
     },
   }
 
-  return { nodeBridgeGroup, nodeBridge, edgeConnector, nodeHost, hostConnector }
+  return { nodeBridge, edgeConnector, nodeHost, hostConnector }
 }
 
 export const createAdapterNode = (
@@ -146,12 +131,12 @@ export const createAdapterNode = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: isConnected ? theme.colors.green[500] : theme.colors.yellow[500],
+      color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
     },
     animated: isConnected,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
-      stroke: isConnected ? theme.colors.green[500] : theme.colors.yellow[500],
+      stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
     },
   }
 
