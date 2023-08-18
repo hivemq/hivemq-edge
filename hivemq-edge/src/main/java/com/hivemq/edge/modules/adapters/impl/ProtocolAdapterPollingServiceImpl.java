@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
+import ch.qos.logback.core.joran.conditional.ElseAction;
 import com.google.common.base.Preconditions;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
@@ -51,7 +52,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
     private static long MAX_BACKOFF_MILLIS = 60000 * 10; //-- 10 Mins
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
-    private final @NotNull Map<ProtocolAdapterPollingOutput, MonitoringPollingJob> activePollers =
+    private final @NotNull Map<ProtocolAdapterPollingOutput, MonitoredPollingJob> activePollers =
             new ConcurrentHashMap<>();
 
     @Inject
@@ -85,7 +86,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
         log.info("Scheduling Polling For Adapter {}", adapter.getProtocolAdapterInformation().getProtocolId());
         ProtocolAdapterPollingOutput output = new ProtocolAdapterPollingOutputImpl(adapter.getId(), input);
-        MonitoringPollingJob internalJob = new MonitoringPollingJob(input, output);
+        MonitoredPollingJob internalJob = new MonitoredPollingJob(input, output);
         ScheduledFuture<?> future = scheduledExecutorService.scheduleAtFixedRate(internalJob,
                 input.getInitialDelay(),
                 input.getPeriod(),
@@ -121,7 +122,9 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
             Future<?> future = pollingJob.getFuture();
             if(!future.isCancelled()){
                 log.info("Stopping Polling Job {}", pollingJob.getId());
-                future.cancel(false);
+                if(future.cancel(false)){
+                    pollingJob.getInput().close();
+                }
             }
         }
     }
@@ -151,14 +154,14 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
         return f;
     }
 
-    private class MonitoringPollingJob implements Runnable {
+    private class MonitoredPollingJob implements Runnable {
         private final AtomicInteger errorCount = new AtomicInteger(0);
         private final ProtocolAdapterPollingInput input;
         private final ProtocolAdapterPollingOutput output;
         private volatile long notBefore = 0;
 
-        public MonitoringPollingJob(final ProtocolAdapterPollingInput input,
-                                    final ProtocolAdapterPollingOutput output) {
+        public MonitoredPollingJob(final ProtocolAdapterPollingInput input,
+                                   final ProtocolAdapterPollingOutput output) {
             this.input = input;
             this.output = output;
         }
@@ -176,9 +179,6 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                         return;
                     }
                 }
-//                if(log.isTraceEnabled()){
-//                    log.trace("Executing Polling Job {} from Adapter {}", output.getId(), output.getAdapterId());
-//                }
                 input.execute();
                 errorCount.set(0);
                 notBefore = 0;
@@ -190,15 +190,22 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 }
                 if(input.getMaxErrorsBeforeRemoval() <=
                         errorCount.incrementAndGet()) {
-                    log.warn("Removing Polling Job {} from Adapter {} As Exceeded Error Threshold",
-                            output.getId(), output.getAdapterId());
-                    stopPolling(output);
+                    onTerminalError(e, errorCount.get());
+                    //-- rest the error state
+                    notBefore = 0;
+                    errorCount.set(0);
                 } else {
                     //exp. backoff the network call according to the number of errors
                     long backoff = getBackoff(errorCount.get(), MAX_BACKOFF_MILLIS,true);
                     notBefore = System.currentTimeMillis() + backoff;
                 }
             }
+        }
+
+        protected void onTerminalError(Throwable t, int errorCount){
+            log.warn("Job {} Hit Terminal Error Threshold {} for Adapter {}",
+                    output.getId(), errorCount, output.getAdapterId(), t);
+            stopPolling(output);
         }
     }
 }

@@ -58,4 +58,9 @@ public abstract class ProtocolAdapterPollingInputImpl implements ProtocolAdapter
     public int getMaxErrorsBeforeRemoval() {
         return maxErrorsBeforeRemoval;
     }
+
+    @Override
+    public void close() {
+
+    }
 }
