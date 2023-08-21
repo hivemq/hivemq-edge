@@ -6,7 +6,8 @@ export const QUERY_KEYS = {
   PROTOCOLS: 'protocols',
   ADAPTERS: 'adapters',
   UNIFIED_NAMESPACE: 'unified.namespace',
-  GATEWAY: 'gateway',
+  FRONTEND_CONFIGURATION: 'frontend.configuration',
+  LISTENERS: 'gateway.listeners',
   METRICS: 'metrics',
   METRICS_SAMPLE: 'sample',
 }

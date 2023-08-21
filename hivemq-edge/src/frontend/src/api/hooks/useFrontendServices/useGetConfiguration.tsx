@@ -6,7 +6,7 @@ import { ApiError, GatewayConfiguration } from '@/api/__generated__'
 export const useGetConfiguration = () => {
   const appClient = useHttpClient()
 
-  return useQuery<GatewayConfiguration, ApiError>([QUERY_KEYS.GATEWAY], async () => {
+  return useQuery<GatewayConfiguration, ApiError>([QUERY_KEYS.FRONTEND_CONFIGURATION], async () => {
     const item = await appClient.frontend.getConfiguration()
     return item
   })
