@@ -7,6 +7,7 @@ const config = {
   documentationUrl: import.meta.env.VITE_APP_DOCUMENTATION,
 
   httpClient: {
+    axiosTimeout: 15000,
     pollingRefetchInterval: 5 * 1000,
   },
 
