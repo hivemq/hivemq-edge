@@ -10,6 +10,7 @@ const defaultEdgeFlowContext: EdgeFlowOptions = {
   showTopics: true,
   showStatus: true,
   showMetrics: false,
+  showGateway: true,
   showHosts: true,
 }
 

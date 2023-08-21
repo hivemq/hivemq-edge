@@ -2,7 +2,7 @@ import { Edge, MarkerType, Node, Position, XYPosition } from 'reactflow'
 import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 
-import { Adapter, Bridge, ConnectionStatus } from '@/api/__generated__'
+import { Adapter, Bridge, ConnectionStatus, Listener } from '@/api/__generated__'
 
 import { IdStubs, NodeTypes } from '../types.ts'
 
@@ -40,10 +40,6 @@ export const createBridgeNode = (
       x: POS_EDGE.x + POS_NODE_INC.x * (nbBridge - (maxBridge - 1) / 2),
       y: POS_EDGE.y + POS_NODE_INC.y,
     },
-
-    style: {
-      backgroundColor: 'white',
-    },
   }
 
   const edgeConnector: Edge = {
@@ -74,10 +70,6 @@ export const createBridgeNode = (
       x: POS_EDGE.x + POS_NODE_INC.x * (nbBridge - (maxBridge - 1) / 2),
       y: POS_EDGE.y + POS_NODE_INC.y + 250,
     },
-
-    style: {
-      backgroundColor: 'white',
-    },
   }
 
   const hostConnector: Edge = {
@@ -99,6 +91,39 @@ export const createBridgeNode = (
   }
 
   return { nodeBridge, edgeConnector, nodeHost, hostConnector }
+}
+
+export const createListenerNode = (
+  listener: Listener,
+  nbListener: number,
+  positionStorage?: Record<string, XYPosition>
+) => {
+  const idListener = `${IdStubs.LISTENER_NODE}#${listener.name}`
+
+  const nodeListener: Node<Listener, NodeTypes.LISTENER_NODE> = {
+    id: idListener,
+    type: NodeTypes.LISTENER_NODE,
+    targetPosition: Position.Left,
+    data: listener,
+    position: positionStorage?.[idListener] ?? {
+      x: POS_EDGE.x - POS_NODE_INC.x,
+      y: POS_EDGE.y + 80 * nbListener,
+    },
+  }
+
+  const edgeConnector: Edge = {
+    id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idListener}`,
+    source: IdStubs.EDGE_NODE,
+    targetHandle: 'Listeners',
+    target: idListener,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+    },
+  }
+
+  return { nodeListener, edgeConnector }
 }
 
 export const createAdapterNode = (

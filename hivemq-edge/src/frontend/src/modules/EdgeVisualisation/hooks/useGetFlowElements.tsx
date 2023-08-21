@@ -6,8 +6,9 @@ import { useTheme } from '@chakra-ui/react'
 import { Adapter, Bridge } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
+import { useGetListeners } from '@/api/hooks/useGateway/useGetListeners.tsx'
 
-import { createEdgeNode, createBridgeNode, createAdapterNode } from '../utils/nodes-utils.ts'
+import { createEdgeNode, createBridgeNode, createAdapterNode, createListenerNode } from '../utils/nodes-utils.ts'
 import { useEdgeFlowContext } from '../hooks/useEdgeFlowContext.tsx'
 
 const useGetFlowElements = () => {
@@ -16,6 +17,7 @@ const useGetFlowElements = () => {
   const { data: adapters } = useListProtocolAdapters()
   const theme = useTheme()
   const { options } = useEdgeFlowContext()
+  const { data: listeners } = useGetListeners()
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Bridge | Adapter>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
@@ -28,6 +30,15 @@ const useGetFlowElements = () => {
     const edges: Edge[] = []
 
     const nodeEdge = createEdgeNode(t('branding.appName'))
+
+    listeners?.items?.forEach((listener, nb) => {
+      const { nodeListener, edgeConnector } = createListenerNode(listener, nb)
+
+      if (options.showGateway) {
+        nodes.push(nodeListener)
+        edges.push(edgeConnector)
+      }
+    })
 
     bridges.forEach((bridge, incBridgeNb) => {
       const { nodeBridge, edgeConnector, nodeHost, hostConnector } = createBridgeNode(
