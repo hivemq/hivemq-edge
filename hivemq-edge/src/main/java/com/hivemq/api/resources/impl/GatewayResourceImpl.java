@@ -48,8 +48,9 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
 
     @Override
     public @NotNull Response getXmlConfiguration() {
-        return Response.ok((StreamingOutput) output -> configurationService.writeConfiguration(new OutputStreamWriter(
-                output))).build();
+        return Response.ok((StreamingOutput) output ->
+                configurationService.writeConfiguration(new OutputStreamWriter(
+                    output))).build();
     }
 
     @Override
@@ -57,6 +58,13 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
 
         //-- Netty configured objects
         ImmutableList.Builder<Listener> builder = new ImmutableList.Builder<>();
+        configurationService.listenerConfiguration()
+                .getListeners()
+                .stream()
+                .map(this::convertListener)
+                .forEachOrdered(builder::add);
+
+        //-- Api objects
         configurationService.listenerConfiguration()
                 .getListeners()
                 .stream()
@@ -71,6 +79,49 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
                 listener.getBindAddress(),
                 listener.getPort(),
                 listener.getReadableName(),
-                listener.getExternalHostname());
+                listener.getExternalHostname(),
+                getTransportForListener(listener),
+                getProtocolForListener(listener));
+    }
+
+    private Listener.TRANSPORT getTransportForListener(com.hivemq.configuration.service.entity.Listener listener) {
+        //-- Uses IANA ports to map, otherwise its unknown
+        //-- TODO Add element to config for protocol
+        switch(listener.getPort()){
+            case 8080:
+            case 80:
+            case 3000:
+            case 8443:
+            case 443:
+            case 1883:
+            case 8883:
+                return Listener.TRANSPORT.TCP;
+            case 2442:
+                return Listener.TRANSPORT.UDP;
+            default:
+                return null;
+        }
+    }
+
+    private String getProtocolForListener(com.hivemq.configuration.service.entity.Listener listener) {
+        //-- Uses IANA ports to map, otherwise its unknown
+        //-- TODO Add element to config for protocol
+        switch(listener.getPort()){
+            case 8080:
+            case 80:
+            case 3000:
+                return "http";
+            case 8443:
+            case 443:
+                return "https";
+            case 1883:
+                return "mqtt";
+            case 8883:
+                return "mqtt (secure)";
+            case 2442:
+                return "mqtt-sn";
+            default:
+                return null;
+        }
     }
 }

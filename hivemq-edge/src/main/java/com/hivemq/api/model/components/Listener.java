@@ -28,12 +28,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 public class Listener {
 
+    public enum TRANSPORT {
+        TCP, UDP, DCCP, SCTP, RSVP, QUIC
+    }
+
     @JsonProperty("hostName")
     @Schema(description = "A mandatory ID hostName with the Listener")
     private final @NotNull String hostName;
 
     @JsonProperty("port")
-    @Schema(description = "The extension port")
+    @Schema(description = "The listener port")
     private final @NotNull Integer port;
 
     @JsonProperty("name")
@@ -48,6 +52,13 @@ public class Listener {
     @Schema(description = "The external hostname", nullable = true)
     private final @Nullable String externalHostname;
 
+    @JsonProperty("transport")
+    @Schema(description = "The underlying transport that this listener uses", nullable = true)
+    private final @Nullable TRANSPORT transport;
+
+    @JsonProperty("protocol")
+    @Schema(description = "A protocol that this listener services", nullable = true)
+    private final @Nullable String protocol;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public Listener(
@@ -55,12 +66,16 @@ public class Listener {
             final @NotNull @JsonProperty("hostName") String hostName,
             final @NotNull @JsonProperty("port") Integer port,
             final @Nullable @JsonProperty("description") String description,
-            final @Nullable @JsonProperty("externalHostname") String externalHostname) {
+            final @Nullable @JsonProperty("externalHostname") String externalHostname,
+            final @Nullable @JsonProperty("transport") TRANSPORT transport,
+            final @Nullable @JsonProperty("protocol") String protocol) {
         this.name = name;
         this.description = description;
         this.hostName = hostName;
         this.port = port;
         this.externalHostname = externalHostname;
+        this.transport = transport;
+        this.protocol = protocol;
     }
 
     public @NotNull String getHostName() {
@@ -81,5 +96,13 @@ public class Listener {
 
     public @Nullable String getExternalHostname() {
         return externalHostname;
+    }
+
+    public @Nullable String getProtocol() {
+        return protocol;
+    }
+
+    public @Nullable TRANSPORT getTransport() {
+        return transport;
     }
 }
