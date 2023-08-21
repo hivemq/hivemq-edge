@@ -16,8 +16,7 @@ const NodeEdge: FC<NodeProps> = (props) => {
       </NodeWrapper>
       <Handle type="target" position={Position.Bottom} id="Bottom" isConnectable={false} />
       <Handle type="target" position={Position.Top} id="Top" isConnectable={false} />
-      <Handle type="target" position={Position.Left} id="Left" isConnectable={true} />
-      <Handle type="target" position={Position.Right} id="Right" isConnectable={true} />
+      <Handle type="source" position={Position.Left} id="SRight" isConnectable={true} />
     </>
   )
 }
