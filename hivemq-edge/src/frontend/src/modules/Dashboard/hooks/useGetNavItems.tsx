@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 
 import { NavLinksBlockType } from '../types.ts'
-import { useGetConfiguration } from '@/api/hooks/useGatewayPortal/useGetConfiguration.tsx'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 import { IoHomeOutline, IoLinkOutline } from 'react-icons/io5'
 import { BiListUl } from 'react-icons/bi'
 import { BsIntersect } from 'react-icons/bs'
