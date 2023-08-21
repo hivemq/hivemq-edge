@@ -15,6 +15,7 @@
  */
 package com.hivemq.http;
 
+import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.slf4j.Logger;
@@ -40,15 +41,15 @@ import java.util.stream.Collectors;
 public class JaxrsRequestFilter implements ContainerRequestFilter {
 
     protected final Logger logger = LoggerFactory.getLogger(JaxrsRequestFilter.class);
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE);
 
     @Override
     public void filter(@NotNull final ContainerRequestContext ctx) throws IOException {
         if (DEBUG) {
-            printUriInfo(ctx.getUriInfo());
-            printRequest(ctx.getRequest());
-            printHeaders(ctx.getHeaders());
-            printSecurityContext(ctx.getSecurityContext());
+//            printUriInfo(ctx.getUriInfo());
+//            printRequest(ctx.getRequest());
+//            printHeaders(ctx.getHeaders());
+//            printSecurityContext(ctx.getSecurityContext());
             if (logger.isInfoEnabled()) {
                 logger.info("Http Request [{}] -> [{}]",
                         ctx.getRequest().getMethod(),

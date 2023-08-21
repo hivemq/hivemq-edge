@@ -69,8 +69,11 @@ public class ApiUtils {
 
     public static String getHostName(final @NotNull String name) throws UnknownHostException {
         Preconditions.checkNotNull(name);
-        if("0.0.0.0".equals(name)){
-            return InetAddress.getLocalHost().getHostName();
+        if("127.0.0.1".equals(name) || "0.0.0.0".equals(name)){
+            //with no internet the reverse lookup will block for too long here
+            //so assume localhost
+            return "localhost";
+//            return InetAddress.getLocalHost().getHostName();
         }
         InetAddress host = InetAddress.getByName(name);
         return host.getHostName();

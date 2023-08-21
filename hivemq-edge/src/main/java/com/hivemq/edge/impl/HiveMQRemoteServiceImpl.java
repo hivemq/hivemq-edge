@@ -74,11 +74,10 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
     @Override
     public HiveMQEdgeRemoteConfiguration getConfiguration() {
         Optional<HiveMQEdgeRemoteConfiguration> optional = hiveMQEdgeHttpService.getRemoteConfiguration();
+        logger.debug("Loaded HiveMQ Edge Frontend Configuration Remote Available ? {}", optional.isPresent());
         if (optional.isPresent()) {
-            logger.debug("Loaded HiveMQ Edge Frontend Configuration From Remote");
             return optional.get();
         } else {
-            logger.warn("Loaded HiveMQ Edge Frontend Configuration From Local");
             loadLocalConfiguration();
             if (localConfiguration == null) {
                 throw new RuntimeException("Unable to load remote or local configuration, this is an unexpected error");
