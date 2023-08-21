@@ -7,6 +7,10 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       refetchOnMount: true,
+      networkMode: 'always',
+    },
+    mutations: {
+      networkMode: 'always',
     },
   },
 })
