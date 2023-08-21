@@ -3,12 +3,14 @@ export interface EdgeFlowOptions {
   showStatus: boolean
   showMetrics: boolean
   showHosts: boolean
+  showGateway: boolean
 }
 
 export enum NodeTypes {
   EDGE_NODE = 'EDGE_NODE',
   BRIDGE_NODE = 'BRIDGE_NODE',
   ADAPTER_NODE = 'ADAPTER_NODE',
+  LISTENER_NODE = 'LISTENER_NODE',
 }
 
 export enum IdStubs {
@@ -17,6 +19,7 @@ export enum IdStubs {
   ADAPTER_NODE = 'adapter',
   HOST_NODE = 'host',
   HOST_GROUP = 'group',
+  LISTENER_NODE = 'listener',
   CONNECTOR = 'connect',
 }
 
