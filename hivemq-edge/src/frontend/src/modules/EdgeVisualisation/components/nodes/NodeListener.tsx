@@ -13,8 +13,8 @@ const NodeListener: FC<NodeProps<Listener>> = (props) => {
   const { selected, data } = props
 
   const getLogo = () => {
-    if (data.description?.includes('TCP')) return logoTCP
-    if (data.description?.includes('UDP')) return logoUDP
+    if (data.transport === Listener.transport.TCP) return logoTCP
+    if (data.transport === Listener.transport.UDP) return logoUDP
     return logoGateway
   }
 
