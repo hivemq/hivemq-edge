@@ -1,11 +1,14 @@
 import { FC } from 'react'
-import { type BoxProps, VStack } from '@chakra-ui/react'
+import { type BoxProps, useTheme, VStack } from '@chakra-ui/react'
 
 const NodeWrapper: FC<BoxProps> = ({ children, ...rest }) => {
+  const { colors } = useTheme()
+
   return (
     <VStack
       p={'24px'}
       borderColor={'#bec3c9'}
+      backgroundColor={colors.white}
       border={'1px'}
       _hover={{ bg: '#ebedf0' }}
       _active={{
