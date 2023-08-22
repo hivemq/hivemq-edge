@@ -140,7 +140,7 @@ const ProtocolAdapters: FC = () => {
         },
       }),
     ]
-  }, [navigate, onConfirmDeleteOpen, t])
+  }, [navigate, onConfirmDeleteOpen, t, allAdapters?.items])
 
   const handleConfirmOnClose = () => {
     onConfirmDeleteClose()
