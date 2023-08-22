@@ -31,51 +31,80 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * WARNING - this mapper will attempt to create assume wrapper elements where there are lists of Maps and the attribute name
+ * ends with an 's'. NB: This only happens at level > 1 (the first level objects will not be considered).
+ *
+ * For example; An entry like:
+ *
+ * object -> subscriptions[] -> Map{attributes}
+ *
+ * will yield
+ * <object>
+ *     <subscriptions>
+ *         <subscription>
+ *             <!-- attributes -->
+ *         </subscription>
+ *         <subscription>
+ *  *             <!-- attributes -->
+ *  *         </subscription>
+ *     </subscriptions>
+ * </object>
+ *
+ */
 public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdapter.ElementMap, Map<String, Object>> {
 
     public static class ElementMap {
         @XmlAnyElement
-        public @NotNull List<Element> elements = new ArrayList<Element>();
+        public @NotNull List<Element> elements = new ArrayList<>();
 
     }
 
     @Override
     public ElementMap marshal(final @NotNull Map<String, Object> v) {
+       return marshalInternal(v, null);
+    }
+
+    public ElementMap marshalInternal(final @NotNull Map<String, Object> v, final String parentName) {
         List elements = new ArrayList();
         for (Map.Entry<String, Object> property : v.entrySet()) {
             String key = property.getKey();
-            readChildren(key, property.getValue(), elements);
+            readChildren(key, property.getValue(), elements, parentName);
         }
         ElementMap el = new ElementMap();
         el.elements = elements;
         return el;
     }
 
+    protected void readChildren(final @NotNull String currentKeyName, final @NotNull Object value, final @NotNull List<JAXBElement> currentEl, final String parentName){
 
-    protected void readChildren(final @NotNull String key, final @NotNull Object value, final @NotNull List elements){
+//        System.err.println("---> currentKeyName="+ currentKeyName + ", object=" + value + ", parentName=" + parentName);
+
         if (value instanceof Map) {
-            elements.add(new JAXBElement<>(new QName(key), ElementMap.class, marshal((Map) value)));
+            currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, marshalInternal((Map) value, currentKeyName)));
         }
         else if (value instanceof List) {
             List list = (List) value;
-            if(key.endsWith("s")){
-                //-- create the children onto a shortened key
+            if(parentName != null && currentKeyName.endsWith("s")){
                 List children = new ArrayList();
-                readChildren(shortName(key), list, children);
+                readChildren(shortName(currentKeyName), list, children, currentKeyName);
                 ElementMap elementMap = new ElementMap();
                 elementMap.elements = children;
-                // add the plural
-                elements.add(new JAXBElement<>(new QName(key), ElementMap.class, elementMap));
+                if(!children.isEmpty()){
+                    // add the plural
+                    currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
+                }
             }
             else {
                 for(Object listElement : list) {
                     //-- Recurse point
-                    readChildren(key, listElement, elements);
+                    readChildren(currentKeyName, listElement, currentEl, currentKeyName);
                 }
             }
         }
         else {
-            elements.add(new JAXBElement<>(new QName(key), String.class, value.toString()));
+            currentEl.add(new JAXBElement<>(new QName(currentKeyName), String.class, value.toString()));
         }
     }
 

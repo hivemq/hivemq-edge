@@ -84,6 +84,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator;
     private HiveMQConfigEntity configEntity;
     private final Object lock = new Object();
+    private boolean defaultBackupConfig = true;
 
     public ConfigFileReaderWriter(
             final @NotNull ConfigurationFile configurationFile,
@@ -120,7 +121,11 @@ public class ConfigFileReaderWriter {
     }
 
     public void writeConfig() {
-        writeConfigToXML(configurationFile, true);
+        writeConfigToXML(configurationFile, defaultBackupConfig);
+    }
+
+    public void setDefaultBackupConfig(final boolean defaultBackupConfig) {
+        this.defaultBackupConfig = defaultBackupConfig;
     }
 
     public void writeConfig(@NotNull final ConfigurationFile file, boolean rollConfig) {

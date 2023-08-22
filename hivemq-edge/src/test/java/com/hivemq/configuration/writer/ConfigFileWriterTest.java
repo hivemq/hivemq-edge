@@ -43,7 +43,8 @@ public class ConfigFileWriterTest extends AbstractConfigWriterTest {
         final ConfigFileReaderWriter configFileReader = createFileReaderWriter(tempFile);
         HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
 
-        final File tempCopyFile = new File(tempDir, "copy-config.xml");
+        final File tempCopyFile = new File(System.getProperty("java.io.tmpdir"), "copy-config.xml");
+        tempFile.deleteOnExit();
         configFileReader.writeConfig(new ConfigurationFile(tempCopyFile), false);
 
         String copiedFileContent = FileUtils.readFileToString(tempCopyFile, UTF_8);
