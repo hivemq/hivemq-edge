@@ -135,7 +135,7 @@ public class ProtocolAdapterManager {
             try {
                 Thread.currentThread().setContextClassLoader(protocolAdapterFactory.getClass().getClassLoader());
                 for (Map<String, Object> adapterConfig : adapterConfigs) {
-                    final CustomConfig configObject = protocolAdapterFactory.convertConfigObject(adapterConfig);
+                    final CustomConfig configObject = protocolAdapterFactory.convertConfigObject(objectMapper, adapterConfig);
                     final ProtocolAdapter protocolAdapter =
                             protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                                     new ProtocolAdapterInputImpl(configObject, metricRegistry));
@@ -322,7 +322,7 @@ public class ProtocolAdapterManager {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(protocolAdapterFactory.getClass().getClassLoader());
-            final CustomConfig configObject = protocolAdapterFactory.convertConfigObject(config);
+            final CustomConfig configObject = protocolAdapterFactory.convertConfigObject(objectMapper, config);
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(configObject, metricRegistry));

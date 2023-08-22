@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
@@ -37,13 +38,13 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
     }
 
     @Override
-    public @NotNull SimulationAdapterConfig convertConfigObject(final @NotNull Map<@NotNull String, Object> config) {
-        return SimulationConfigConverter.convertConfig(config);
+    public @NotNull SimulationAdapterConfig convertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull Map<@NotNull String, Object> config) {
+        return SimulationConfigConverter.convertConfig(objectMapper, config);
     }
 
     @Override
-    public Map<String, Object> unconvertConfigObject(final CustomConfig config) {
-        return SimulationConfigConverter.unconvertConfig(config);
+    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final CustomConfig config) {
+        return SimulationConfigConverter.unconvertConfig(objectMapper, config);
     }
 
     @Override

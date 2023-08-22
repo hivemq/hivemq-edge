@@ -16,6 +16,9 @@
 package com.hivemq.edge.adapters.opcua.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.cfg.CoercionAction;
+import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
+import com.fasterxml.jackson.databind.type.LogicalType;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -24,13 +27,15 @@ import java.util.Map;
 
 public class OpcUaConfigConverter {
 
-    public static @NotNull OpcUaAdapterConfig convertConfig(final @NotNull Map<String, Object> config) {
-        final ObjectMapper objectMapper = new ObjectMapper();
+    public static @NotNull OpcUaAdapterConfig convertConfig(final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+//        final ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.coercionConfigFor(LogicalType.POJO).
+                setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
         return objectMapper.convertValue(config, OpcUaAdapterConfig.class);
     }
 
-    public static @NotNull Map<String, Object> unconvertConfig(final @NotNull CustomConfig config) {
-        final ObjectMapper objectMapper = new ObjectMapper();
+    public static @NotNull Map<String, Object> unconvertConfig(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
+//        final ObjectMapper objectMapper = new ObjectMapper();
         //noinspection unchecked
         return objectMapper.convertValue(config, Map.class);
     }
