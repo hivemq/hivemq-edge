@@ -42,6 +42,7 @@ describe('AdapterInstanceDrawer', () => {
     cy.mountWithProviders(
       <AdapterInstanceDrawer
         adapterType={mockProtocolAdapter.id}
+        isNewAdapter={true}
         isOpen={true}
         isSubmitting={false}
         onSubmit={cy.stub().as('onSubmit')}
@@ -62,6 +63,7 @@ describe('AdapterInstanceDrawer', () => {
     cy.mountWithProviders(
       <AdapterInstanceDrawer
         adapterType={mockProtocolAdapter.id}
+        isNewAdapter={true}
         isOpen={true}
         isSubmitting={false}
         onSubmit={cy.stub().as('onSubmit')}
