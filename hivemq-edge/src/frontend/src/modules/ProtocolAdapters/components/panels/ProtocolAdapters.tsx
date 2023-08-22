@@ -2,6 +2,7 @@ import { FC, useMemo, useState } from 'react'
 import {
   Box,
   Flex,
+  HStack,
   IconButton,
   Image,
   Menu,
@@ -18,11 +19,12 @@ import { createColumn, Table } from 'react-chakra-pagination'
 import { ChevronDownIcon } from '@chakra-ui/icons'
 import { useNavigate } from 'react-router-dom'
 
-import { Adapter, ApiError, ConnectionStatus } from '@/api/__generated__'
+import { Adapter, ApiError, ConnectionStatus, ProtocolAdapter } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDeleteProtocolAdapter.tsx'
 import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.tsx'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 
@@ -43,10 +45,22 @@ const AdapterStatusContainer: FC<{ id: string }> = ({ id }) => {
   return <ConnectionStatusBadge status={connection?.status} />
 }
 
+const AdapterTypeContainer: FC<ProtocolAdapter> = (adapter) => {
+  return (
+    <HStack>
+      <Image boxSize="30px" objectFit="scale-down" src={adapter.logoUrl} aria-label={adapter.id} />
+      <Text fontSize={'md'} fontWeight={'500'}>
+        {adapter.name}
+      </Text>
+    </HStack>
+  )
+}
+
 const ProtocolAdapters: FC = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { successToast, errorToast } = useEdgeToast()
+  const { data: allAdapters } = useGetAdapterTypes()
 
   const { data, isLoading, isError, error } = useListProtocolAdapters()
   const isEmpty = useMemo(() => !data || data.length === 0, [data])
@@ -75,7 +89,10 @@ const ProtocolAdapters: FC = () => {
         header: t('protocolAdapter.table.header.name') as string,
       }),
       columnHelper.accessor('type', {
-        cell: (info) => info.getValue(),
+        cell: (info) => {
+          const adapter = allAdapters?.items?.find((e) => e.id === info.row.original.type)
+          return adapter ? <AdapterTypeContainer {...adapter} /> : info.getValue()
+        },
         header: t('protocolAdapter.table.header.type') as string,
       }),
       columnHelper.accessor('adapterRuntimeInformation.connectionStatus.status', {
