@@ -103,7 +103,6 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter {
                 if (modbusClient == null) {
                     log.info("Creating new Instance Of ModbusClient with {}", adapterConfig);
                     modbusClient = new ModbusClient(adapterConfig);
-
                 }
             }
         }
@@ -112,17 +111,10 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter {
 
     @Override
     public CompletableFuture<Void> stop() {
-        if (modbusClient != null) {
-            try {
-                //-- Stop polling jobs
-                protocolAdapterPollingService.getPollingJobsForAdapter(getId()).stream().forEach(
-                        protocolAdapterPollingService::stopPolling);
-                //-- Disconnect client
-                modbusClient.disconnect();
-            } catch (ProtocolAdapterException e) {
-                log.error("Error disconnecting from Modbus Client", e);
-            }
-        }
+
+        //-- Stop polling jobs
+        protocolAdapterPollingService.getPollingJobsForAdapter(getId()).stream().forEach(
+                protocolAdapterPollingService::stopPolling);
         return CompletableFuture.completedFuture(null);
     }
 
@@ -230,12 +222,30 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter {
 
         @Override
         public void execute() throws Exception {
-            if (!modbusClient.isConnected()) {
-                modbusClient.connect();
+            //-- If a previously linked job has terminally disconnected the client
+            //-- we need to ensure any orphaned jobs tidy themselves up properly
+            if(modbusClient != null){
+                if (!modbusClient.isConnected()) {
+                    modbusClient.connect();
+                }
+                ModBusData data = readAddresses(addressRange);
+                if (data != null) {
+                    captured(data);
+                }
             }
-            ModBusData data = readAddresses(addressRange);
-            if (data != null) {
-                captured(data);
+        }
+
+        @Override
+        public void close() {
+            try {
+                if(modbusClient != null){
+                    modbusClient.disconnect();
+                }
+            } catch (ProtocolAdapterException e) {
+                log.warn("error closing/disconnecting from modbus client;", e);
+            } finally {
+                modbusClient = null;
+                super.close();
             }
         }
 

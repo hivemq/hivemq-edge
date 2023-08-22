@@ -36,6 +36,13 @@ public interface ProtocolAdapterPollingInput {
      */
     void execute() throws Exception;
 
+    /**
+     * Called when the job is remove from the pool
+     */
+    void close();
+
+    boolean isClosed();
+
     default int getMaxErrorsBeforeRemoval(){
         return 25;
     }

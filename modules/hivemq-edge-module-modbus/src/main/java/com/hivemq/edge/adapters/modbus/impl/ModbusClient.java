@@ -40,9 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ModbusClient implements IModbusClient {
 
     private final @NotNull ModbusAdapterConfig adapterConfig;
-
     private final Object lock = new Object();
-
     private ModbusTcpMaster modbusClient;
     private AtomicBoolean connected = new AtomicBoolean(false);
 
@@ -162,8 +160,10 @@ public class ModbusClient implements IModbusClient {
 
     @Override
     public boolean disconnect() {
-        if (isConnected()) {
-            getOrCreateClient().disconnect();
+        //-- If the client is manually disconnected before connection established ensure we still call into the client
+        //-- to shut it all down.
+        if (modbusClient != null) {
+            modbusClient.disconnect();
             return true;
         }
         return false;

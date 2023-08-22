@@ -18,8 +18,11 @@ package com.hivemq.edge.modules.adapters.params.impl;
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingInput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import io.reactivex.internal.schedulers.NewThreadWorker;
 
+import java.nio.channels.ClosedByInterruptException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Simon L Johnson
@@ -30,6 +33,7 @@ public abstract class ProtocolAdapterPollingInputImpl implements ProtocolAdapter
     private final long period;
     private final TimeUnit unit;
     private final int maxErrorsBeforeRemoval;
+    protected AtomicBoolean closed = new AtomicBoolean(false);
 
     public ProtocolAdapterPollingInputImpl(final long initialDelay, final long period, final @NotNull TimeUnit unit, final int maxErrorsBeforeRemoval) {
         Preconditions.checkNotNull(unit);
@@ -57,5 +61,15 @@ public abstract class ProtocolAdapterPollingInputImpl implements ProtocolAdapter
     @Override
     public int getMaxErrorsBeforeRemoval() {
         return maxErrorsBeforeRemoval;
+    }
+
+    @Override
+    public void close() {
+        closed.set(true);
+    }
+
+    @Override
+    public boolean isClosed() {
+        return closed.get();
     }
 }
