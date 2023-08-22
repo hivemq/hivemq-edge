@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query'
+import config from '@/config'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -7,6 +8,10 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       refetchOnMount: true,
+      networkMode: config.httpClient.networkMode,
+    },
+    mutations: {
+      networkMode: config.httpClient.networkMode,
     },
   },
 })

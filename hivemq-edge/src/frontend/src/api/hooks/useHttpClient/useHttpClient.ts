@@ -29,6 +29,12 @@ export const useHttpClient = () => {
   function createInstance() {
     // Make sure to clear the interceptors, since axiosInstance is global
     axiosInstance.interceptors.response.clear()
+    axiosInstance.interceptors.request.clear()
+    axiosInstance.interceptors.request.use((internalConfig) => {
+      internalConfig.timeout = config.httpClient.axiosTimeout
+      return internalConfig
+    })
+
     axiosInstance.interceptors.response.use(
       function (response) {
         // Any status code that lie within the range of 2xx cause this function to trigger
