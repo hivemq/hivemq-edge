@@ -22,6 +22,9 @@ public interface HiveMQEdgeConstants {
 
     //TODO this should be build driven for modules but use single constant for now
     String VERSION = "2023.3";
+
+    String VERSION_PROPERTY = "version";
+
     int MAX_ID_LEN = 500;
     String ID_REGEX = "([a-zA-Z_0-9\\-])*";
     int MAX_UINT16 = 65535;

@@ -31,7 +31,9 @@ import com.hivemq.api.model.firstuse.FirstUseInformation;
 import com.hivemq.api.resources.FrontendApi;
 import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.api.utils.LoremIpsum;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -55,17 +57,20 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull ModulesAndExtensionsService modulesAndExtensionsService;
     private final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService;
+    private final @NotNull SystemInformation systemInformation;
 
     @Inject
     public FrontendResourceImpl(
             final @NotNull ConfigurationService configurationService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull ModulesAndExtensionsService modulesAndExtensionsService,
-            final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService) {
+            final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService,
+            final @NotNull SystemInformation systemInformation) {
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.modulesAndExtensionsService = modulesAndExtensionsService;
         this.hiveMQEdgeRemoteConfigurationService = hiveMQEdgeRemoteConfigurationService;
+        this.systemInformation = systemInformation;
     }
 
     @Override
@@ -179,6 +184,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
 
     protected @NotNull  EnvironmentProperties getEnvironmentProperties() {
         Map<String, String> env = new HashMap<>();
+        env.put(HiveMQEdgeConstants.VERSION_PROPERTY, systemInformation.getHiveMQVersion());
         return new EnvironmentProperties(env);
     }
 }
