@@ -7,7 +7,7 @@ const lorem =
 export const mockGatewayConfiguration: GatewayConfiguration = {
   environment: {
     properties: {
-      'environment-type': 'TEST',
+      version: '2023.version',
     },
   },
   cloudLink: {
