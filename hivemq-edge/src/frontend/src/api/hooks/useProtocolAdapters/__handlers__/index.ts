@@ -88,7 +88,7 @@ export const mockAdapterConfig: Record<string, Record<string, unknown>> = {}
 
 export const mockAdapter: Adapter = {
   id: 'my-id',
-  type: 'string',
+  type: 'simulation-adapter',
   config: mockAdapterConfig,
 }
 
