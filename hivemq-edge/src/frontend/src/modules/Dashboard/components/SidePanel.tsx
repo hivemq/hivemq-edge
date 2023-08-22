@@ -25,7 +25,7 @@ const SidePanel: FC = () => {
         <Box p={4} m={'auto'} mb={10}>
           <Image src={logo} alt={t('branding.company') as string} boxSize="200px" />
           {configuration && (
-            <Text fontSize="xs" textAlign={'center'}>
+            <Text data-testid="edge-release" fontSize="xs" textAlign={'center'}>
               [ {configuration.environment?.properties?.version} ]
             </Text>
           )}
