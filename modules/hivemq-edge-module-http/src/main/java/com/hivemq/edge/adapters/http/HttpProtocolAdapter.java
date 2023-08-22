@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.http;
 
 import com.codahale.metrics.MetricRegistry;
+import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.adapters.http.impl.HttpConnectorImpl;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
@@ -30,16 +31,28 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.http.core.HttpConstants;
+import com.hivemq.http.core.HttpUtils;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -47,9 +60,9 @@ import java.util.concurrent.TimeUnit;
 public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConfig> {
 
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
-    private final @NotNull Object lock = new Object();
-    private volatile @Nullable IHttpClient client;
-    private @Nullable Map<HttpData.TYPE, HttpData> lastSamples = new HashMap<>();
+    private volatile Object lock = new Object();
+    private AtomicBoolean connected = new AtomicBoolean(false);
+    private HttpClient httpClient = null;
 
     public HttpProtocolAdapter(final @NotNull ProtocolAdapterInformation adapterInformation,
                              final @NotNull HttpAdapterConfig adapterConfig,
@@ -62,17 +75,14 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
             bindServices(input.moduleServices());
-            initStartAttempt();
-            if (client == null) {
-                createClient();
+            if(httpClient == null){
+                synchronized (lock) {
+                    if (httpClient == null) {
+                        initializeHttpRequest(adapterConfig);
+                        output.startedSuccessfully("Successfully connected");
+                    }
+                }
             }
-
-//            if (adapterConfig.getSubscriptions() != null) {
-//                for (HttpAdapterConfig.Subscription subscription : adapterConfig.getSubscriptions()) {
-//                    subscribeInternal(subscription);
-//                }
-//            }
-            output.startedSuccessfully("Successfully connected");
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             output.failStart(e, e.getMessage());
@@ -80,48 +90,42 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
         }
     }
 
-    private IHttpClient createClient() {
-        if (client == null) {
-            synchronized (lock) {
-                if (client == null) {
-                    log.info("Creating new Instance Of Http Connector with {}", adapterConfig);
-                    client = new HttpConnectorImpl(adapterConfig);
-                }
-            }
-        }
-        return client;
-    }
-
     @Override
     public CompletableFuture<Void> stop() {
-        if (client != null) {
-            try {
-                //-- Stop polling jobs
-                protocolAdapterPollingService.getPollingJobsForAdapter(getId()).stream().forEach(
-                        protocolAdapterPollingService::stopPolling);
-                //-- Disconnect client
-                client.disconnect();
-            } catch (ProtocolAdapterException e) {
-                log.error("Error disconnecting from Http Client", e);
-            }
+        try {
+            //-- Stop polling jobs
+            protocolAdapterPollingService.getPollingJobsForAdapter(getId()).stream().forEach(
+                    protocolAdapterPollingService::stopPolling);
+        } finally {
+            connected.set(false);
+            httpClient = null;
         }
         return CompletableFuture.completedFuture(null);
     }
 
-    private void startPolling(final @NotNull Poller poller) {
-        protocolAdapterPollingService.schedulePolling(this, poller);
+    protected void initializeHttpRequest(@NotNull final HttpAdapterConfig config){
+        initStartAttempt();
+        if(HttpUtils.validHttpOrHttpsUrl(config.getUrl())){
+            //initialize client
+            httpClient = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .connectTimeout(Duration.ofSeconds(config.getHttpConnectTimeout()))
+                    .build();
+            connected.set(true);
+            startPolling(new HttpRequestPoller(config));
+        } else {
+            connected.set(false);
+            setLastErrorMessage("Invalid URL supplied");
+        }
+    }
+
+    private void startPolling(final @NotNull HttpRequestPoller httpRequestPoller) {
+        protocolAdapterPollingService.schedulePolling(this, httpRequestPoller);
     }
 
     @Override
     public CompletableFuture<Void> close() {
         return stop();
-    }
-
-
-    protected void subscribeInternal(final @NotNull HttpAdapterConfig.Subscription subscription) {
-        if (subscription != null) {
-            startPolling(new Poller(null, subscription));
-        }
     }
 
     @Override
@@ -133,27 +137,21 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
 
     @Override
     public @NotNull Status status() {
-        return client != null && client.isConnected() ? Status.CONNECTED : Status.DISCONNECTED;
+        return connected.get() ? Status.CONNECTED : Status.DISCONNECTED;
+    }
+
+    private static final boolean isSuccessStatusCode(final int statusCode){
+        return statusCode >= 200 && statusCode <= 299;
     }
 
     protected void captured(final @NotNull HttpData data) throws ProtocolAdapterException {
-        boolean publishData = true;
-        if (adapterConfig.getPublishChangedDataOnly()) {
-            HttpData previousSample = lastSamples.put(data.getType(), data);
-            if (previousSample != null) {
-                byte[] sample = previousSample.getData();
-                publishData = !Objects.deepEquals(data.getData(), sample);
-            }
-        }
+        boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) || !adapterConfig.isHttpPublishSuccessStatusCodeOnly();
         if (publishData) {
-
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
                     .withTopic(data.getTopic())
-                    .withPayload(convertToJson(data.getData()))
-                    .withQoS(data.getQos().getQosNumber());
-
+                    .withPayload(convertToJson(data))
+                    .withQoS(data.getQos());
             final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
-
             publishFuture.thenAccept(publishReturnCode -> {
                 protocolAdapterMetricsHelper.incrementReadPublishSuccess();
             }).exceptionally(throwable -> {
@@ -164,47 +162,108 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
         }
     }
 
+    class HttpRequestPoller extends ProtocolAdapterPollingInputImpl {
 
-    class Poller extends ProtocolAdapterPollingInputImpl {
+        private final HttpAdapterConfig config;
 
-        private final HttpData.TYPE type;
-        private final HttpAdapterConfig.Subscription subscription;
-
-        public Poller(final @NotNull HttpData.TYPE type, final @NotNull HttpAdapterConfig.Subscription subscription) {
-            super(adapterConfig.getPublishingInterval(),
-                    adapterConfig.getPublishingInterval(),
+        public HttpRequestPoller(final @NotNull HttpAdapterConfig config) {
+            super(config.getPublishingInterval(),
+                    config.getPublishingInterval(),
                     TimeUnit.MILLISECONDS,
-                    adapterConfig.getMaxPollingErrorsBeforeRemoval());
-            this.type = type;
-            this.subscription = subscription;
-        }
-
-        public HttpData.TYPE getType() {
-            return type;
+                    config.getMaxPollingErrorsBeforeRemoval());
+            this.config = config;
         }
 
         @Override
         public void execute() throws Exception {
-            if (!client.isConnected()) {
-                client.connect();
-            }
-            HttpData data = readTag();
+            HttpData data = executeHttpRequest(config);
             if (data != null) {
                 captured(data);
             }
         }
-
-        protected HttpData createData() {
-            HttpData data = new HttpData(type,
-                    subscription.getDestination(),
-                    QoS.valueOf(subscription.getQos()));
-            return data;
-        }
-
-        protected HttpData readTag() throws ProtocolAdapterException {
-            //TODO complete me
-            return createData();
-        }
     }
 
+    protected HttpData executeHttpRequest(@NotNull final HttpAdapterConfig config)
+            throws IOException, InterruptedException {
+        if(httpClient != null){
+            switch (config.getHttpRequestMethod()){
+                case GET:
+                    return httpGet(config);
+                case POST:
+                    return httpPost(config);
+                case PUT:
+                    return httpPut(config);
+            }
+        }
+        return null;
+    }
+
+    protected HttpData httpPut(@NotNull final HttpAdapterConfig config)
+            throws IOException, InterruptedException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .PUT(HttpRequest.BodyPublishers.ofString(config.getHttpRequestBody()));
+        builder.header(HttpConstants.CONTENT_TYPE_HEADER,
+                config.getHttpRequestBodyContentType().getContentType());
+        return executeInternal(config, builder);
+    }
+
+    protected HttpData httpPost(@NotNull final HttpAdapterConfig config)
+            throws IOException, InterruptedException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .POST(HttpRequest.BodyPublishers.ofString(config.getHttpRequestBody()));
+        builder.header(HttpConstants.CONTENT_TYPE_HEADER,
+                config.getHttpRequestBodyContentType().getContentType());
+        return executeInternal(config, builder);
+    }
+
+    protected HttpData httpGet(@NotNull final HttpAdapterConfig config)
+            throws IOException, InterruptedException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .GET();
+        return executeInternal(config, builder);
+    }
+
+    protected HttpData executeInternal(@NotNull final HttpAdapterConfig config, @NotNull final HttpRequest.Builder builder)
+            throws IOException, InterruptedException {
+        builder.uri(URI.create(config.getUrl()));
+        builder.setHeader(HttpConstants.USER_AGENT_HEADER,
+                String.format(HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE, HiveMQEdgeConstants.VERSION));
+        if(config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()){
+            config.getHttpHeaders().stream().
+                    forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
+        }
+        HttpRequest request = builder.build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        String responseContentType = response.headers().firstValue(HttpConstants.CONTENT_TYPE_HEADER).orElse(null);
+        String bodyData = response.body() == null ? null : response.body();
+        Object payloadData = null;
+        //-- if the content type is json, then apply the JSON to the output data,
+        //-- else encode using base64 (as we dont know what the content is).
+        if(bodyData != null){
+            if(HttpConstants.JSON_MIME_TYPE.equals(responseContentType)) {
+                try {
+                    payloadData = objectMapper.readTree(bodyData);
+                } catch (Exception e){
+                    log.warn("Error encountered marshalling HTTP response data to json", e);
+                    if(log.isDebugEnabled()){
+                        log.debug("Invalid json data was [{}]", bodyData);
+                    }
+                }
+            } else {
+                if(responseContentType == null){
+                    responseContentType = HttpConstants.PLAIN_MIME_TYPE;
+                }
+                String base64 = Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
+                payloadData = String.format(HttpConstants.BASE64_ENCODED_VALUE, responseContentType, base64);
+            }
+        }
+
+        HttpData data = new HttpData(
+                response.statusCode(),
+                responseContentType,
+                payloadData,
+                config.getDestination(),
+                config.getQos());
+        return data;
+    }
 }

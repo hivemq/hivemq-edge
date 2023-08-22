@@ -15,64 +15,51 @@
  */
 package com.hivemq.edge.adapters.http.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.message.QoS;
-
-import java.util.Arrays;
 
 /**
  * @author HiveMQ Adapter Generator
  */
 public class HttpData {
 
-    public enum TYPE {
-        BYTE_ARRAY
-    }
-
-    private byte[] data;
-    private final long systemTime;
-    private final TYPE type;
+    private Object data;
+    private final String contentType;
     private String topic;
-    private QoS qos;
+    private int qos;
+    private int httpStatusCode;
 
-    public HttpData(final @NotNull TYPE type, final String topic, final QoS qos) {
-        this.type = type;
-        this.systemTime = System.currentTimeMillis();
+    public HttpData(final int httpStatusCode,
+                    final @NotNull String contentType,
+                    final @NotNull Object data,
+                    final @NotNull String topic,
+                    final @NotNull int qos) {
+        this.contentType = contentType;
+        this.httpStatusCode = httpStatusCode;
         this.topic = topic;
         this.qos = qos;
+        this.data = data;
     }
 
-    public long getSystemTime() {
-        return systemTime;
+    public String getContentType() {
+        return contentType;
     }
 
-    public TYPE getType() {
-        return type;
+    public int getHttpStatusCode() {
+        return httpStatusCode;
     }
 
-    public byte[] getData() {
+    public Object getData() {
         return data;
     }
 
+    @JsonIgnore
     public String getTopic() {
         return topic;
     }
 
-    public QoS getQos() {
+    @JsonIgnore
+    public int getQos() {
         return qos;
-    }
-
-    public void setData(byte[] data) {
-        this.data = data;
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("HttpData{");
-        sb.append("systemTime=").append(systemTime);
-        sb.append(", type=").append(type);
-        sb.append(", data=").append(Arrays.toString(data));
-        sb.append('}');
-        return sb.toString();
     }
 }

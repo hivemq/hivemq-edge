@@ -1,7 +1,6 @@
 import { UIGroup } from '@/modules/ProtocolAdapters/types.ts'
 import { useTranslation } from 'react-i18next'
 import { UiSchema } from '@rjsf/utils'
-import {registerSymbol} from "superjson";
 
 const useGetUiSchema = (isNewAdapter = true) => {
   const { t } = useTranslation()
@@ -10,7 +9,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'coreFields',
       title: t('protocolAdapter.uiSchema.groups.coreFields'),
-      children: ['id', 'port', 'host', 'uri', 'pollingIntervalMillis', 'url'],
+      children: ['id', 'port', 'host', 'uri', 'url', 'pollingIntervalMillis'],
     },
     {
       id: 'subFields',
@@ -25,7 +24,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'publishing',
       title: t('protocolAdapter.uiSchema.groups.publishing'),
-      children: ['maxPollingErrorsBeforeRemoval', 'publishingInterval', 'publishChangedDataOnly'],
+      children: ['maxPollingErrorsBeforeRemoval', 'publishChangedDataOnly', 'publishingInterval','destination','qos'],
     },
     {
       id: 'authentication',
@@ -35,7 +34,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'http',
       title: t('protocolAdapter.uiSchema.groups.http'),
-      children: ['httpRequestMethod', 'httpHeaders'],
+      children: ['httpRequestMethod', 'httpRequestBodyContentType', 'httpRequestBody','httpHeaders', 'httpConnectTimeout', 'httpPublishSuccessStatusCodeOnly'],
     }
   ]
 
@@ -50,24 +49,23 @@ const useGetUiSchema = (isNewAdapter = true) => {
     id: {
       'ui:disabled': !isNewAdapter,
     },
-
-    // pollingIntervalMillis: {
-    //   'ui:widget': 'range',
-    // },
     port: {
       'ui:widget': 'updown',
     },
+    httpRequestBody : {
+      "ui:widget": "textarea"
+    },
+    'ui:order': ['id', 'host', 'port', '*', 'subscriptions'],
     subscriptions: {
       items: {
         'ui:order': ['node', 'holding-registers', 'mqtt-topic', 'destination', 'qos', '*'],
-      }
+      },
     },
     auth: {
       basic: {
         'ui:order': ['username', 'password', '*'],
       },
     },
-    'ui:order': ['id', 'host', 'port', '*', 'subscriptions','publishingInterval', 'maxPollingErrorsBeforeRemoval','publishChangedDataOnly'],
   }
 
   return uiSchema

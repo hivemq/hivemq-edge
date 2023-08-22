@@ -15,7 +15,10 @@
  */
 package com.hivemq.http.core;
 
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Base64;
 import java.util.HashMap;
@@ -87,6 +90,15 @@ public class HttpUtils {
             }
         }
         return map;
+    }
+
+    public static boolean validHttpOrHttpsUrl(@NotNull final String url){
+        try {
+            new URL(url);
+            return true;
+        } catch(Exception e){
+        }
+        return false;
     }
 
 

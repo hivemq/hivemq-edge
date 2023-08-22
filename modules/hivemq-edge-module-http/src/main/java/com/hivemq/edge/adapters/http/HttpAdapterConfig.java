@@ -20,33 +20,89 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.http.core.HttpConstants;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@JsonPropertyOrder({"url", "httpRequestMethod", "httpHeaders"})
+@JsonPropertyOrder({"url",
+                    "destination",
+                    "qos",
+                    "httpRequestMethod",
+                    "httpConnectTimeout",
+                    "httpRequestBodyContentType",
+                    "httpRequestBody",
+                    "httpPublishSuccessStatusCodeOnly",
+                    "httpHeaders"})
 public class HttpAdapterConfig extends AbstractProtocolAdapterConfig {
+
+    public enum HttpMethod {
+        GET, POST, PUT
+    }
+
+    public enum HttpContentType {
+        JSON(HttpConstants.JSON_MIME_TYPE),
+        PLAIN(HttpConstants.PLAIN_MIME_TYPE),
+        HTML(HttpConstants.HTML_MIME_TYPE),
+        XML("application/xml"),
+        YAML("application/yaml");
+
+        HttpContentType(String contentType){
+            this.contentType = contentType;
+        }
+
+        final String contentType;
+
+        public String getContentType() {
+            return contentType;
+        }
+    }
 
     @JsonProperty("url")
     @ModuleConfigField(title = "URL",
             description = "The url of the http request you would like to make",
+            stringPattern = HttpConstants.HTTP_URL_REGEX,
             required = true)
     private @NotNull String url;
 
-//    @JsonProperty("httpRequestMethod")
-//    @ModuleConfigField(title = "HTTP Request Method")
-//    private @NotNull HttpRequestMethod httpRequestMethod =
-//            new HttpRequestMethod(HttpRequestMethod.HttpMethod.GET);
+    @JsonProperty(value = "destination", required = true)
+    @ModuleConfigField(title = "Destination Topic",
+                       description = "The topic to publish data on",
+                       required = true,
+                       format = ModuleConfigField.FieldType.MQTT_TOPIC)
+    private @Nullable String destination;
 
-    enum HttpMethod {
-        GET, POST, PUT
-    }
+    @JsonProperty(value = "qos", required = true)
+    @ModuleConfigField(title = "QoS",
+                       description = "MQTT Quality of Service level",
+                       required = true,
+                       numberMin = 0,
+                       numberMax = 2,
+                       defaultValue = "0")
+    private int qos = 0;
 
-    @JsonProperty("method")
+    @JsonProperty("httpRequestMethod")
     @ModuleConfigField(title = "Http Method",
-                       description = "Http method associated with the request")
-    private @NotNull HttpAdapterConfig.HttpMethod method = HttpAdapterConfig.HttpMethod.GET;
+                       description = "Http method associated with the request",
+                       defaultValue = "GET")
+    private @NotNull HttpAdapterConfig.HttpMethod httpRequestMethod = HttpAdapterConfig.HttpMethod.GET;
 
+    @JsonProperty("httpRequestBodyContentType")
+    @ModuleConfigField(title = "Http Request Content Type",
+                       description = "Content Type associated with the request",
+                       defaultValue = "JSON")
+    private @NotNull HttpAdapterConfig.HttpContentType httpRequestBodyContentType = HttpContentType.JSON;
+
+    @JsonProperty("httpRequestBody")
+    @ModuleConfigField(title = "Http Request Body",
+                       description = "The body to include in the HTTP request")
+    private @NotNull String httpRequestBody;
+
+    @JsonProperty("httpConnectTimeout")
+    @ModuleConfigField(title = "Http Connection Timeout",
+                       description = "Timeout (in second) to apply to the HTTP Request", required = true, defaultValue = "10")
+    private @NotNull Integer httpConnectTimeout = 10;
 
     @JsonProperty("httpHeaders")
     @ModuleConfigField(title = "HTTP Headers",
@@ -68,63 +124,58 @@ public class HttpAdapterConfig extends AbstractProtocolAdapterConfig {
             defaultValue = "10")
     private int maxPollingErrorsBeforeRemoval = DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL;
 
-    @JsonProperty("publishChangedDataOnly")
-    @ModuleConfigField(title = "Only publish data items that have changed since last poll",
+    @JsonProperty("httpPublishSuccessStatusCodeOnly")
+    @ModuleConfigField(title = "Only publish data when HTTP response code is successful ( 200 - 299 )",
             defaultValue = "true",
             format = ModuleConfigField.FieldType.BOOLEAN)
-    private boolean publishChangedDataOnly = true;
-
-//    @JsonProperty("subscriptions")
-//    @ModuleConfigField(title = "Subscriptions",
-//            description = "Map your sensor data to MQTT Topics")
-//    private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+    private boolean httpPublishSuccessStatusCodeOnly = true;
 
     public HttpAdapterConfig() {
     }
 
-    public boolean getPublishChangedDataOnly() {
-        return publishChangedDataOnly;
+    public boolean isHttpPublishSuccessStatusCodeOnly() {
+        return httpPublishSuccessStatusCodeOnly;
     }
 
     public int getMaxPollingErrorsBeforeRemoval() {
         return maxPollingErrorsBeforeRemoval;
     }
 
-
     public int getPublishingInterval() {
         return publishingInterval;
     }
 
-//    public @NotNull HttpRequestMethod getHttpRequestMethod() {
-//        return httpRequestMethod;
-//    }
-
-//    public @NotNull List<Subscription> getSubscriptions() {
-//        return subscriptions;
-//    }
+    public @NotNull HttpMethod getHttpRequestMethod() {
+        return httpRequestMethod;
+    }
 
     public @NotNull List<HttpHeader> getHttpHeaders() {
         return httpHeaders;
     }
 
-//    public static class HttpRequestMethod {
-//        enum HttpMethod {
-//            GET, POST, PUT
-//        }
-//
-//        @JsonProperty("method")
-//        @ModuleConfigField(title = "Http Method",
-//                           description = "Http method associated with the request")
-//        private @NotNull HttpMethod method;
-//
-//        public HttpRequestMethod(@NotNull final HttpMethod method) {
-//            this.method = method;
-//        }
-//
-//        public @NotNull HttpMethod getMethod() {
-//            return method;
-//        }
-//    }
+    public HttpContentType getHttpRequestBodyContentType() {
+        return httpRequestBodyContentType;
+    }
+
+    public String getHttpRequestBody() {
+        return httpRequestBody;
+    }
+
+    public Integer getHttpConnectTimeout() {
+        return httpConnectTimeout;
+    }
+
+    public @NotNull String getUrl() {
+        return url;
+    }
+
+    public String getDestination() {
+        return destination;
+    }
+
+    public int getQos() {
+        return qos;
+    }
 
     public static class HttpHeader {
 
@@ -152,17 +203,6 @@ public class HttpAdapterConfig extends AbstractProtocolAdapterConfig {
 
         public @NotNull String getValue() {
             return value;
-        }
-    }
-
-    public static class Subscription extends AbstractProtocolAdapterConfig.Subscription {
-
-        @JsonProperty("tag-name")
-        private @NotNull String tagName;
-
-
-        public @NotNull String getTagName() {
-            return tagName;
         }
     }
 }

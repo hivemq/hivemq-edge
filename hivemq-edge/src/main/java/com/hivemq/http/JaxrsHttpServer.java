@@ -170,7 +170,8 @@ public class JaxrsHttpServer {
         resources.register(objectMapperProvider);
 
         //-- Add the Custom Filter which optionally adds request debug
-        resources.register(new JaxrsRequestFilter());
+//        resources.register(new JaxrsRequestFilter());
+        resources.register(new JaxrsResponseFilter());
         resources.register(new CorsFilter());
 
         //-- Register the injectors via a Bridge (Jersey uses HK2 so need to bridge to Guice)
