@@ -16,7 +16,12 @@ interface ConnectionStatusBadgeProps {
 
 const ConnectionStatusBadge: FC<ConnectionStatusBadgeProps> = ({ status }) => {
   return (
-    <Badge variant="solid" colorScheme={statusMapping[status || 'ERROR'].color} borderRadius={15}>
+    <Badge
+      variant="solid"
+      colorScheme={statusMapping[status || 'ERROR'].color}
+      borderRadius={15}
+      data-testid={'connection-status'}
+    >
       {statusMapping[status || 'ERROR'].text}
     </Badge>
   )
