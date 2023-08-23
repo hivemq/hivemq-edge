@@ -7,7 +7,7 @@ import {
   ProtocolAdaptersList,
 } from '@/api/__generated__'
 import { rest } from 'msw'
-import status = ConnectionStatus.status
+import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
 
 export const mockJSONSchema: JsonNode = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -78,11 +78,11 @@ export const mockAdapterConfig: Record<string, Record<string, unknown>> = {
   pollingIntervalMillis: 10000,
   subscriptions: [
     {
-      destination: 'topic/test/1',
+      destination: MOCK_TOPIC_REF1,
       qos: 0,
     },
     {
-      destination: 'topic/test/2',
+      destination: MOCK_TOPIC_REF2,
       qos: 0,
     },
   ],
@@ -96,9 +96,7 @@ export const mockAdapter: Adapter = {
     lastStartedAttemptTime: '2023-08-21T11:51:24.234+01',
     numberOfDaemonProcesses: 0,
     connectionStatus: {
-      status: status.CONNECTED,
-      id: 'my-id',
-      type: 'adapter',
+      status: ConnectionStatus.status.CONNECTED,
     },
   },
 }

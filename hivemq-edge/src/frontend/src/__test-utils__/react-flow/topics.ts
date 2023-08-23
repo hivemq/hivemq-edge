@@ -1,3 +1,5 @@
+export const MOCK_TOPIC_ALL = '#'
+export const MOCK_TOPIC_BRIDGE_DESTINATION = 'prefix/{#}/bridge/${bridge.name}'
 export const MOCK_TOPIC_REF1 = 'root/topic/ref/1'
 export const MOCK_TOPIC_REF2 = 'root/topic/ref/2'
 export const MOCK_TOPIC_ACT1 = 'root/topic/act/1'
