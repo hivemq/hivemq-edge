@@ -16,8 +16,11 @@ const defaultEdgeFlowContext: EdgeFlowOptions = {
 
 export const EdgeFlowContext = createContext<EdgeFlowContextType | null>(null)
 
-export const EdgeFlowProvider: FunctionComponent<PropsWithChildren> = ({ children }) => {
-  const [options, setOptions] = useState<EdgeFlowOptions>(defaultEdgeFlowContext)
+export const EdgeFlowProvider: FunctionComponent<PropsWithChildren<{ defaults?: Partial<EdgeFlowOptions> }>> = ({
+  children,
+  defaults,
+}) => {
+  const [options, setOptions] = useState<EdgeFlowOptions>({ ...defaultEdgeFlowContext, ...defaults })
 
   return <EdgeFlowContext.Provider value={{ options, setOptions }}>{children}</EdgeFlowContext.Provider>
 }
