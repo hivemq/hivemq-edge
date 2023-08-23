@@ -16,14 +16,16 @@
 package com.hivemq.edge.modules.config;
 
 import com.hivemq.edge.HiveMQEdgeConstants;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /** Marker interface **/
 
 public interface CustomConfig {
 
-    String ID_PATTERN = HiveMQEdgeConstants.ID_REGEX;
     int PORT_MIN = 1;
     int PORT_MAX = HiveMQEdgeConstants.MAX_UINT16;
     int DEFAULT_PUBLISHING_INTERVAL = 1000;
     int DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL = 10;
+
+    @NotNull String getId();
 }

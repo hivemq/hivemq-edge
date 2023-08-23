@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.opcua;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
@@ -25,17 +25,7 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OpcUaAdapterConfig implements CustomConfig {
-
-    @JsonProperty("id")
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = "[a-z0-9_\\-].+",
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
-    private @NotNull String id;
+public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
 
     @JsonProperty("uri")
     @ModuleConfigField(title = "OPC-UA Server URI",
@@ -63,14 +53,6 @@ public class OpcUaAdapterConfig implements CustomConfig {
             final @NotNull String id, final @NotNull String uri) {
         this.id = id;
         this.uri = uri;
-    }
-
-    public @NotNull String getId() {
-        return id;
-    }
-
-    public void setId(final @NotNull String id) {
-        this.id = id;
     }
 
     public @NotNull String getUri() {
