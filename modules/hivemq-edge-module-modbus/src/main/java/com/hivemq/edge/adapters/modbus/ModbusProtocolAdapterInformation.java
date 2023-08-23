@@ -15,16 +15,20 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import com.hivemq.edge.HiveMQEdgeConstants;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
+import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformation {
+import java.util.List;
+
+public class ModbusProtocolAdapterInformation
+        extends AbstractProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new ModbusProtocolAdapterInformation();
 
-    private ModbusProtocolAdapterInformation() {
+    protected ModbusProtocolAdapterInformation() {
     }
 
     @Override
@@ -53,18 +57,8 @@ public class ModbusProtocolAdapterInformation implements ProtocolAdapterInformat
     }
 
     @Override
-    public @NotNull String getVersion() {
-        return HiveMQEdgeConstants.VERSION;
-    }
-
-    @Override
-    public @NotNull String getLogoUrl() {
-        return "/images/modbus-icon.png";
-    }
-
-    @Override
-    public @NotNull String getAuthor() {
-        return "HiveMQ";
+    public List<ProtocolAdapterConstants.TAG> getTags() {
+        return List.of(ProtocolAdapterConstants.TAG.TCP, ProtocolAdapterConstants.TAG.ETHERNET);
     }
 
     @Override

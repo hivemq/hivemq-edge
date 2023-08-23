@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.modbus;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -25,17 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ModbusAdapterConfig implements CustomConfig {
-
-    @JsonProperty("id")
-    @ModuleConfigField(title = "Identifier",
-            description = "Unique identifier for this protocol adapter",
-            format = ModuleConfigField.FieldType.IDENTIFIER,
-            required = true,
-            stringPattern = ID_PATTERN,
-            stringMinLength = 1,
-            stringMaxLength = 1024)
-    private @NotNull String id;
+public class ModbusAdapterConfig extends AbstractProtocolAdapterConfig {
 
     @JsonProperty("port")
     @ModuleConfigField(title = "Port",
@@ -89,10 +80,6 @@ public class ModbusAdapterConfig implements CustomConfig {
         return maxPollingErrorsBeforeRemoval;
     }
 
-    public @NotNull String getId() {
-        return id;
-    }
-
     public int getPort() {
         return port;
     }
@@ -109,50 +96,12 @@ public class ModbusAdapterConfig implements CustomConfig {
         return subscriptions;
     }
 
-
-    public static class Subscription {
-
+    public static class Subscription extends AbstractProtocolAdapterConfig.Subscription {
         @JsonProperty("holding-registers")
         private @NotNull AddressRange holdingRegisters;
 
-//        @JsonProperty("input-registers")
-//        private @NotNull AddressRange inputRegisters;
-//
-//        @JsonProperty("coils")
-//        private @NotNull AddressRange coils;
-
-        @JsonProperty("destination")
-        @ModuleConfigField(title = "Destination MQTT topic",
-                description = "The MQTT topic to publish to",
-                format = ModuleConfigField.FieldType.MQTT_TOPIC,
-                required = true)
-        private @NotNull String destination;
-
-        @JsonProperty("qos")
-        @ModuleConfigField(title = "MQTT QoS",
-                description = "MQTT quality of service level",
-                numberMin = 0,
-                numberMax = 2,
-                defaultValue = "0")
-        private @NotNull int qos = 0;
-
-//        public @NotNull AddressRange getInputRegisters() {
-//            return inputRegisters;
-//        }
-
         public @NotNull AddressRange getHoldingRegisters() {
             return holdingRegisters;
-        }
-//        public @NotNull AddressRange getCoils() {
-//            return coils;
-//        }
-
-        public @NotNull String getDestination() {
-            return destination;
-        }
-
-        public int getQos() {
-            return qos;
         }
     }
 

@@ -1697,6 +1697,9 @@ components:
         author:
           type: string
           description: The author of the adapter
+        category:
+          type: string
+          description: The category of the adapter
         configSchema:
           $ref: '#/components/schemas/JsonNode'
         description:
@@ -1704,6 +1707,10 @@ components:
           description: The description
         id:
           type: string
+          description: The id assigned to the protocol adapter type
+        installed:
+          type: boolean
+          description: Is the adapter installed?
         logoUrl:
           type: string
           description: The logo of the adapter
@@ -1713,6 +1720,12 @@ components:
         protocol:
           type: string
           description: The supported protocol
+        tags:
+          type: array
+          description: The search tags associated with this adapter
+          items:
+            type: string
+            description: The search tags associated with this adapter
         url:
           type: string
           description: The url of the adapter

@@ -15,9 +15,12 @@
  */
 package com.hivemq.edge.modules.api.adapters;
 
+import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+import java.util.List;
 
 public interface ProtocolAdapterInformation {
 
@@ -36,6 +39,10 @@ public interface ProtocolAdapterInformation {
     @NotNull String getLogoUrl();
 
     @NotNull String getAuthor();
+
+    @Nullable ProtocolAdapterConstants.CATEGORY getCategory();
+
+    @Nullable List<ProtocolAdapterConstants.TAG> getTags();
 
     @NotNull Class<? extends CustomConfig> getConfigClass();
 

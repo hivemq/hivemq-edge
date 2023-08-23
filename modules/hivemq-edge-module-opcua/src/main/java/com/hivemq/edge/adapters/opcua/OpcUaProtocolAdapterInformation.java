@@ -15,12 +15,13 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.hivemq.edge.HiveMQEdgeConstants;
+import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformation {
+public class OpcUaProtocolAdapterInformation
+        extends AbstractProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new OpcUaProtocolAdapterInformation();
 
@@ -53,18 +54,8 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
     }
 
     @Override
-    public @NotNull String getVersion() {
-        return HiveMQEdgeConstants.VERSION;
-    }
-
-    @Override
     public @NotNull String getLogoUrl() {
         return "/images/opc-ua-icon.jpg";
-    }
-
-    @Override
-    public @NotNull String getAuthor() {
-        return "HiveMQ";
     }
 
     @Override

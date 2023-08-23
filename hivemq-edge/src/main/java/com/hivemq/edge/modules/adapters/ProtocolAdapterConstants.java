@@ -20,6 +20,20 @@ package com.hivemq.edge.modules.adapters;
  */
 public interface ProtocolAdapterConstants {
 
+    enum TAG {
+        UDP,
+        TCP,
+        SERIAL,
+        ETHERNET
+    }
+
+    enum CATEGORY {
+        INDUSTRIAL,
+        BUILDING,
+        TRANSPORTATION,
+        SIMULATION
+    }
+
     String ADAPTER_NAME_TOKEN = "adapter.name";
     String ADAPTER_VERSION_TOKEN = "adapter.version";
     String ADAPTER_CLASS_TOKEN = "adapter.class";

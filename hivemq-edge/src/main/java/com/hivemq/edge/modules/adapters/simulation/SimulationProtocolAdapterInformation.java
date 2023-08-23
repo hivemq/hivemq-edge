@@ -15,27 +15,17 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
-import com.hivemq.HiveMQEdgeGateway;
+import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.util.ManifestUtils;
 
-import static com.hivemq.configuration.info.SystemInformationImpl.DEVELOPMENT_VERSION;
-
-public class SimulationProtocolAdapterInformation implements ProtocolAdapterInformation {
+public class SimulationProtocolAdapterInformation
+        extends AbstractProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new SimulationProtocolAdapterInformation();
-    private final @NotNull String hivemqVersion;
 
     private SimulationProtocolAdapterInformation() {
-        final String versionFromManifest =
-                ManifestUtils.getValueFromManifest(HiveMQEdgeGateway.class, "HiveMQ-Edge-Version");
-        if (versionFromManifest == null || versionFromManifest.length() < 1) {
-            hivemqVersion = DEVELOPMENT_VERSION;
-        } else {
-            hivemqVersion = versionFromManifest;
-        }
     }
 
     @Override
@@ -59,23 +49,8 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
     }
 
     @Override
-    public @NotNull String getUrl() {
-        return "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#simulation-adapter";
-    }
-
-    @Override
-    public @NotNull String getVersion() {
-        return hivemqVersion;
-    }
-
-    @Override
     public @NotNull String getLogoUrl() {
         return "/images/hivemq-icon.png";
-    }
-
-    @Override
-    public @NotNull String getAuthor() {
-        return "HiveMQ";
     }
 
     @Override

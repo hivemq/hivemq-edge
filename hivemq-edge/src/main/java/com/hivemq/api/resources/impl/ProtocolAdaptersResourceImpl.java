@@ -89,6 +89,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     info.getVersion(),
                     logoUrl,
                     info.getAuthor(),
+                    true,
+                    info == null ? null : info.getCategory().toString().toLowerCase(),
+                    info.getTags() == null ? null : info.getTags().stream().
+                            map(Enum::toString).collect(Collectors.toList()),
                     protocolAdapterManager.getSchemaManager(info).generateSchemaNode()));
         }
         return Response.status(200).entity(new ProtocolAdaptersList(adapters.build())).build();

@@ -18,11 +18,15 @@ package com.hivemq.api.model.adapters;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.util.List;
 
 public class ProtocolAdapter {
 
     @JsonProperty("id")
+    @Schema(description = "The id assigned to the protocol adapter type")
     private final @NotNull String id;
 
     @JsonProperty("protocol")
@@ -53,6 +57,18 @@ public class ProtocolAdapter {
     @Schema(description = "The author of the adapter")
     private final @NotNull String author;
 
+    @JsonProperty("installed")
+    @Schema(description = "Is the adapter installed?")
+    private final @NotNull Boolean installed;
+
+    @JsonProperty("category")
+    @Schema(description = "The category of the adapter")
+    private final @NotNull String category;
+
+    @JsonProperty("tags")
+    @Schema(description = "The search tags associated with this adapter")
+    private final @NotNull List<String> tags;
+
     @JsonProperty("configSchema")
     @Schema(description = "JSONSchema in the \'https://json-schema.org/draft/2020-12/schema\' format, which describes the configuration requirements for the adapter.")
     private final @NotNull JsonNode configSchema;
@@ -66,6 +82,9 @@ public class ProtocolAdapter {
             @JsonProperty("version") final @NotNull String version,
             @JsonProperty("logoUrl") final @NotNull String logoUrl,
             @JsonProperty("author") final @NotNull String author,
+            @JsonProperty("installed") final @Nullable  Boolean installed,
+            @JsonProperty("category") final @Nullable  String category,
+            @JsonProperty("tags") final @Nullable  List<String> tags,
             @JsonProperty("configSchema") final @NotNull JsonNode configSchema) {
         this.id = id;
         this.protocol = protocol;
@@ -75,6 +94,9 @@ public class ProtocolAdapter {
         this.version = version;
         this.logoUrl = logoUrl;
         this.author = author;
+        this.installed = installed;
+        this.category = category;
+        this.tags = tags;
         this.configSchema = configSchema;
     }
 
@@ -112,5 +134,17 @@ public class ProtocolAdapter {
 
     public @NotNull JsonNode getConfigSchema() {
         return configSchema;
+    }
+
+    public @Nullable Boolean getInstalled() {
+        return installed;
+    }
+
+    public @Nullable List<String> getTags() {
+        return tags;
+    }
+
+    public @Nullable String getCategory() {
+        return category;
     }
 }

@@ -50,7 +50,8 @@ public class LogLevelModifier extends TurboFilter {
         if (level == Level.DEBUG) {
             if (logger.getName().startsWith("com.github.victools.jsonschema") ||
                     logger.getName().startsWith("org.jose4j")) {
-                logger.trace(marker, format, params);
+                //Actually we dont want this at all its far too noisy
+//                logger.trace(marker, format, params);
                 return FilterReply.DENY;
             }
         }
