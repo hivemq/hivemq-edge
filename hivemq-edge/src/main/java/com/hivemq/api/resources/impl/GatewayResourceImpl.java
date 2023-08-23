@@ -17,6 +17,8 @@ package com.hivemq.api.resources.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.config.ApiListener;
+import com.hivemq.api.config.HttpsListener;
 import com.hivemq.api.model.components.*;
 import com.hivemq.api.resources.FrontendApi;
 import com.hivemq.api.resources.GatewayApi;
@@ -26,6 +28,7 @@ import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import org.glassfish.jersey.internal.util.collection.StringIgnoreCaseKeyComparator;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
@@ -65,10 +68,10 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
                 .forEachOrdered(builder::add);
 
         //-- Api objects
-        configurationService.listenerConfiguration()
+        configurationService.apiConfiguration()
                 .getListeners()
                 .stream()
-                .map(this::convertListener)
+                .map(this::convertApiListener)
                 .forEachOrdered(builder::add);
 
         return Response.ok(new ListenerList(builder.build())).build();
@@ -80,33 +83,28 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
                 listener.getPort(),
                 listener.getReadableName(),
                 listener.getExternalHostname(),
-                getTransportForListener(listener),
-                getProtocolForListener(listener));
+                getTransportForPort(listener.getPort()),
+                getProtocolForPort(listener.getPort()));
     }
 
-    private Listener.TRANSPORT getTransportForListener(com.hivemq.configuration.service.entity.Listener listener) {
-        //-- Uses IANA ports to map, otherwise its unknown
-        //-- TODO Add element to config for protocol
-        switch(listener.getPort()){
-            case 8080:
-            case 80:
-            case 3000:
-            case 8443:
-            case 443:
-            case 1883:
-            case 8883:
-                return Listener.TRANSPORT.TCP;
-            case 2442:
-                return Listener.TRANSPORT.UDP;
-            default:
-                return null;
-        }
+    private Listener convertApiListener(ApiListener listener) {
+
+        String protocol = getProtocolForPort(listener.getPort());
+        String listenerName = String.format("%s-listener-%s", protocol, listener.getPort());
+
+        return new Listener(listenerName,
+                listener.getBindAddress(),
+                listener.getPort(),
+                String.format("Api %s Listener", protocol.toLowerCase()), null,
+                getTransportForPort(listener.getPort()),
+                getProtocolForPort(listener.getPort()));
     }
 
-    private String getProtocolForListener(com.hivemq.configuration.service.entity.Listener listener) {
+
+    private String getProtocolForPort(int port) {
         //-- Uses IANA ports to map, otherwise its unknown
         //-- TODO Add element to config for protocol
-        switch(listener.getPort()){
+        switch(port){
             case 8080:
             case 80:
             case 3000:
@@ -120,6 +118,25 @@ public class GatewayResourceImpl extends AbstractApi implements GatewayApi {
                 return "mqtt (secure)";
             case 2442:
                 return "mqtt-sn";
+            default:
+                return null;
+        }
+    }
+
+    private Listener.TRANSPORT getTransportForPort(int port) {
+        //-- Uses IANA ports to map, otherwise its unknown
+        //-- TODO Add element to config for protocol
+        switch(port){
+            case 8080:
+            case 80:
+            case 3000:
+            case 8443:
+            case 443:
+            case 1883:
+            case 8883:
+                return Listener.TRANSPORT.TCP;
+            case 2442:
+                return Listener.TRANSPORT.UDP;
             default:
                 return null;
         }
