@@ -79,7 +79,7 @@ public class ProtocolAdapterManager {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
-        this.objectMapper = objectMapper;
+        this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
         this.moduleLoader = moduleLoader;
         this.remoteService = remoteService;
     }
@@ -202,27 +202,6 @@ public class ProtocolAdapterManager {
         return startFuture;
     }
 
-    protected AdapterInstance createAdapterInstance(final String adapterType, final @NotNull Map<String, Object> config){
-
-        ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
-        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader(protocolAdapterFactory.getClass().getClassLoader());
-            final CustomConfig configObject = protocolAdapterFactory.convertConfigObject(config);
-            final ProtocolAdapter protocolAdapter =
-                    protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
-                            new ProtocolAdapterInputImpl(configObject, metricRegistry));
-            AdapterInstance instance = new AdapterInstance(protocolAdapter,
-                    protocolAdapterFactory,
-                    protocolAdapterFactory.getInformation(),
-                    configObject);
-            protocolAdapters.put(instance.getAdapter().getId(), instance);
-            return instance;
-        } finally {
-            Thread.currentThread().setContextClassLoader(contextClassLoader);
-        }
-    }
-
     public synchronized CompletableFuture<Void> addAdapter(
             final @NotNull String adapterType,
             final @NotNull String adapterId,
@@ -306,7 +285,27 @@ public class ProtocolAdapterManager {
         return new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterInformation);
     }
 
+    protected AdapterInstance createAdapterInstance(final String adapterType, final @NotNull Map<String, Object> config){
+
+        ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
+        final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(protocolAdapterFactory.getClass().getClassLoader());
+            final CustomConfig configObject = protocolAdapterFactory.convertConfigObject(objectMapper, config);
+            final ProtocolAdapter protocolAdapter =
+                    protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
+                            new ProtocolAdapterInputImpl(configObject, metricRegistry));
+            return new AdapterInstance(protocolAdapter,
+                            protocolAdapterFactory,
+                            protocolAdapterFactory.getInformation(),
+                            configObject);
+        } finally {
+            Thread.currentThread().setContextClassLoader(contextClassLoader);
+        }
+    }
+
     protected CompletableFuture<Void> addAdapterAndStartInRuntime(final String adapterType, final @NotNull Map<String, Object> config){
+
         synchronized(lock){
             AdapterInstance instance = createAdapterInstance(adapterType, config);
 

@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.api.adapters;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterInput;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -27,9 +28,9 @@ public interface ProtocolAdapterFactory<E extends CustomConfig> {
 
     @NotNull ProtocolAdapter createAdapter(@NotNull ProtocolAdapterInformation adapterInformation, @NotNull ProtocolAdapterInput<E> input);
 
-    @NotNull E convertConfigObject(final @NotNull Map<String, Object> config);
+    @NotNull E convertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config);
 
-    @NotNull Map<String, Object> unconvertConfigObject(final CustomConfig config);
+    @NotNull Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final CustomConfig config);
 
     @NotNull Class<E> getConfigClass();
 }

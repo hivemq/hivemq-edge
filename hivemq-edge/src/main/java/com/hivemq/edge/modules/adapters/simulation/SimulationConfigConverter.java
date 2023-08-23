@@ -23,13 +23,11 @@ import java.util.Map;
 
 public class SimulationConfigConverter {
 
-    public static @NotNull SimulationAdapterConfig convertConfig(final @NotNull Map<String, Object> config) {
-        final ObjectMapper objectMapper = new ObjectMapper();
+    public static @NotNull SimulationAdapterConfig convertConfig(final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         return objectMapper.convertValue(config, SimulationAdapterConfig.class);
     }
 
-    public static @NotNull Map<String, Object> unconvertConfig(final @NotNull CustomConfig config) {
-        final ObjectMapper objectMapper = new ObjectMapper();
+    public static @NotNull Map<String, Object> unconvertConfig(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
         return objectMapper.convertValue(config, Map.class);
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.resources.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
@@ -41,6 +42,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.protocols.AdapterInstance;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.ProtocolAdapterUtils;
 import com.hivemq.protocols.params.NodeTreeImpl;
 import com.networknt.schema.ValidationMessage;
 
@@ -57,13 +59,16 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
+    private final @NotNull ObjectMapper objectMapper;
 
     @Inject
     public ProtocolAdaptersResourceImpl(
             final @NotNull ConfigurationService configurationService,
-            final @NotNull ProtocolAdapterManager protocolAdapterManager) {
+            final @NotNull ProtocolAdapterManager protocolAdapterManager,
+            final @NotNull ObjectMapper objectMapper) {
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
+        this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
     }
 
     @Override
@@ -143,7 +148,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         Map<String, Object> configObject;
         try {
             Thread.currentThread().setContextClassLoader(value.getAdapterFactory().getClass().getClassLoader());
-            configObject = value.getAdapterFactory().unconvertConfigObject(value.getConfigObject());
+            configObject = value.getAdapterFactory().unconvertConfigObject(objectMapper, value.getConfigObject());
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }

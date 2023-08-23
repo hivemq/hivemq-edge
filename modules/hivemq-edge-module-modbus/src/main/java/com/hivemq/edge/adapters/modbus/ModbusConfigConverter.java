@@ -23,13 +23,13 @@ import java.util.Map;
 
 public class ModbusConfigConverter {
 
-    public static @NotNull ModbusAdapterConfig convertConfig(final @NotNull Map<String, Object> config) {
-        final ObjectMapper objectMapper = new ObjectMapper();
+    public static @NotNull ModbusAdapterConfig convertConfig(final @NotNull ObjectMapper objectMapper,
+                                                             final @NotNull Map<String, Object> config) {
         return objectMapper.convertValue(config, ModbusAdapterConfig.class);
     }
 
-    public static @NotNull Map<String, Object> unconvertConfig(final @NotNull CustomConfig config) {
-        final ObjectMapper objectMapper = new ObjectMapper();
+    public static @NotNull Map<String, Object> unconvertConfig(final @NotNull ObjectMapper objectMapper,
+                                                               final @NotNull CustomConfig config) {
         //noinspection unchecked
         return objectMapper.convertValue(config, Map.class);
     }
