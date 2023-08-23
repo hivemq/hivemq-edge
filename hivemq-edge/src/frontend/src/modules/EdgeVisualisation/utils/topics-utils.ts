@@ -1,8 +1,9 @@
 import { Adapter, Bridge, BridgeSubscription } from '@/api/__generated__'
 
-import { OpcUaClient } from '../types/opc-ua-client'
-import { Modbus } from '../types/modbus'
-import { Simulation } from '../types/simulation'
+import { OpcUaClient } from '@/api/__generated__/adapters/opc-ua-client'
+import { Modbus } from '@/api/__generated__/adapters/modbus'
+import { Simulation } from '@/api/__generated__/adapters/simulation'
+
 import { TopicFilter } from '../types.ts'
 
 export const getAdapterTopics = (adapter: Adapter): TopicFilter[] => {
