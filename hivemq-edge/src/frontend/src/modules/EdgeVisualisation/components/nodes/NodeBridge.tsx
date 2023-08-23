@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { Handle, Position, NodeProps } from 'reactflow'
 import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
 
 import { Bridge } from '@/api/__generated__'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
@@ -12,6 +13,7 @@ import { getBridgeTopics } from '../../utils/topics-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
 
 const NodeBridge: FC<NodeProps<Bridge>> = ({ data: bridge }) => {
+  const { t } = useTranslation()
   const topics = getBridgeTopics(bridge)
   const { options } = useEdgeFlowContext()
 
@@ -22,7 +24,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ data: bridge }) => {
           {options.showTopics && <TopicsContainer topics={topics.remote} />}
 
           <HStack w={'100%'}>
-            <Image boxSize="20px" objectFit="scale-down" src={logo} />
+            <Image boxSize="20px" objectFit="scale-down" src={logo} alt={t('workspace.node.bridge') as string} />
             <Text flex={1}>{bridge.id} </Text>
           </HStack>
           <Box flex={1}>
