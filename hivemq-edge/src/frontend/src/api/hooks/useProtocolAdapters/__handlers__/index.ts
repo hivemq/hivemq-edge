@@ -1,16 +1,18 @@
-import { Adapter, AdaptersList, JsonNode, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
+import {
+  Adapter,
+  AdaptersList,
+  ConnectionStatus,
+  JsonNode,
+  ProtocolAdapter,
+  ProtocolAdaptersList,
+} from '@/api/__generated__'
 import { rest } from 'msw'
+import status = ConnectionStatus.status
 
 export const mockJSONSchema: JsonNode = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   type: 'object',
   properties: {
-    host: {
-      type: 'string',
-      title: 'host',
-      description: 'Host to connect to',
-      format: 'hostname',
-    },
     id: {
       type: 'string',
       title: 'Identifier',
@@ -28,15 +30,8 @@ export const mockJSONSchema: JsonNode = {
       minimum: 100,
       maximum: 86400000,
     },
-    port: {
-      type: 'integer',
-      title: 'Port',
-      description: 'Port to connect to',
-      minimum: 1,
-      maximum: 65535,
-    },
     subscriptions: {
-      title: 'subscriptions',
+      title: 'Subscriptions',
       description: 'List of subscriptions for the simulation',
       type: 'array',
       items: {
@@ -44,52 +39,68 @@ export const mockJSONSchema: JsonNode = {
         properties: {
           destination: {
             type: 'string',
-            title: 'destination',
+            title: 'Destination Topic',
             description: 'The topic to publish data on',
-            format: 'mqtt-topic',
-          },
-          filter: {
-            type: 'string',
-            title: 'filter',
-            description: 'The local simulation filter topic',
             format: 'mqtt-topic',
           },
           qos: {
             type: 'integer',
-            title: 'MQTT QoS',
+            title: 'QoS',
             description: 'MQTT quality of service level',
             default: 0,
             minimum: 0,
             maximum: 2,
           },
         },
-        required: ['destination', 'filter', 'qos'],
-        title: 'subscriptions',
+        required: ['destination', 'qos'],
+        title: 'Subscriptions',
         description: 'List of subscriptions for the simulation',
       },
     },
   },
-  required: ['host', 'id', 'port', 'subscriptions'],
+  required: ['id', 'subscriptions'],
 }
 
 export const mockProtocolAdapter: ProtocolAdapter = {
-  id: 'simulation-adapter',
-  protocol: 'Simulation Server',
-  name: 'Simulation Server Protocol Adapter',
-  description: 'Simulates traffic from an edge device.',
-  url: 'https://www.hivemq.com/edge/simulation/',
-  version: '1.0.0',
-  logoUrl: 'https://www.hivemq.com/img/svg/hivemq-header-logo.svg',
+  id: 'simulation',
+  protocol: 'Simulation',
+  name: 'Simulated Edge Device',
+  description: 'Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.',
+  url: 'https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#simulation-adapter',
+  version: 'Development Snapshot',
+  logoUrl: 'http://localhost:8080/images/hivemq-icon.png',
   author: 'HiveMQ',
   configSchema: mockJSONSchema,
 }
 
-export const mockAdapterConfig: Record<string, Record<string, unknown>> = {}
+export const mockAdapterConfig: Record<string, Record<string, unknown>> = {
+  id: 'my-id',
+  pollingIntervalMillis: 10000,
+  subscriptions: [
+    {
+      destination: 'topic/test/1',
+      qos: 0,
+    },
+    {
+      destination: 'topic/test/2',
+      qos: 0,
+    },
+  ],
+} as never
 
 export const mockAdapter: Adapter = {
   id: 'my-id',
-  type: 'simulation-adapter',
+  type: 'simulation',
   config: mockAdapterConfig,
+  adapterRuntimeInformation: {
+    lastStartedAttemptTime: '2023-08-21T11:51:24.234+01',
+    numberOfDaemonProcesses: 0,
+    connectionStatus: {
+      status: status.CONNECTED,
+      id: 'my-id',
+      type: 'adapter',
+    },
+  },
 }
 
 export const handlers = [
