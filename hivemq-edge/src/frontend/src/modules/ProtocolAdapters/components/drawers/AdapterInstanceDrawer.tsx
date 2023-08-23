@@ -63,7 +63,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
     const { config } = allAdapters?.find((e) => e.id === adapterId) || {}
     return config
   }, [allAdapters, adapterId, isNewAdapter])
-  const uiSchema = useGetUiSchema()
+  const uiSchema = useGetUiSchema(isNewAdapter)
 
   const onValidate = (data: IChangeEvent<Adapter, RJSFSchema>) => {
     if (data.formData) onSubmit(data.formData)
