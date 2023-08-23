@@ -25,7 +25,9 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ data: bridge }) => {
 
           <HStack w={'100%'}>
             <Image boxSize="20px" objectFit="scale-down" src={logo} alt={t('workspace.node.bridge') as string} />
-            <Text flex={1}>{bridge.id} </Text>
+            <Text flex={1} data-testid={'bridge-node-name'}>
+              {bridge.id}
+            </Text>
           </HStack>
           <Box flex={1}>
             <ConnectionStatusBadge status={bridge.bridgeRuntimeInformation?.connectionStatus?.status} />
