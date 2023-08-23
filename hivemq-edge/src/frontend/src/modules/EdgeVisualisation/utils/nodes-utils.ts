@@ -5,6 +5,7 @@ import { Dict } from '@chakra-ui/utils'
 import { Adapter, Bridge, ConnectionStatus, Listener } from '@/api/__generated__'
 
 import { IdStubs, NodeTypes } from '../types.ts'
+import { getAdapterTopics, getBridgeTopics } from '../utils/topics-utils.ts'
 
 const POS_SEPARATOR = 8
 const POS_EDGE: XYPosition = { x: 300, y: 200 }
@@ -30,6 +31,7 @@ export const createBridgeNode = (
 ) => {
   const idBridge = `${IdStubs.BRIDGE_NODE}#${bridge.id}`
   const isConnected = bridge.bridgeRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
+  const { local, remote } = getBridgeTopics(bridge)
 
   const nodeBridge: Node<Bridge, NodeTypes.BRIDGE_NODE> = {
     id: idBridge,
@@ -53,7 +55,7 @@ export const createBridgeNode = (
       height: 20,
       color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
     },
-    animated: isConnected,
+    animated: isConnected && !!remote.length,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
       stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
@@ -83,7 +85,7 @@ export const createBridgeNode = (
       height: 20,
       color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
     },
-    animated: isConnected,
+    animated: isConnected && !!local.length,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
       stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
@@ -135,6 +137,7 @@ export const createAdapterNode = (
 ) => {
   const idAdapter = `${IdStubs.ADAPTER_NODE}#${adapter.id}`
   const isConnected = adapter.adapterRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
+  const topics = getAdapterTopics(adapter)
 
   const nodeAdapter: Node<Adapter, NodeTypes.ADAPTER_NODE> = {
     id: idAdapter,
@@ -158,7 +161,7 @@ export const createAdapterNode = (
       height: 20,
       color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
     },
-    animated: isConnected,
+    animated: isConnected && !!topics.length,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
       stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
