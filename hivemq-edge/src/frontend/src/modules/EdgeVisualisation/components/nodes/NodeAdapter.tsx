@@ -22,8 +22,10 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ data: adapter }) => {
       <NodeWrapper p={2}>
         <VStack>
           <HStack w={'100%'}>
-            <Image boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
-            <Text flex={1}>{adapter.id} </Text>
+            <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
+            <Text flex={1} data-testid={'adapter-node-name'}>
+              {adapter.id}
+            </Text>
           </HStack>
           <Box flex={1}>
             <ConnectionStatusBadge status={adapter.adapterRuntimeInformation?.connectionStatus?.status} />
