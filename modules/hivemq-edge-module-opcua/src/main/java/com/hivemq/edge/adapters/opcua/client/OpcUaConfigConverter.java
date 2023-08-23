@@ -29,10 +29,6 @@ import java.util.Map;
 public class OpcUaConfigConverter {
 
     public static @NotNull OpcUaAdapterConfig convertConfig(@NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-
-        objectMapper = objectMapper.copy();
-        objectMapper.coercionConfigFor(LogicalType.POJO).
-                setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
         return objectMapper.convertValue(config, OpcUaAdapterConfig.class);
     }
 

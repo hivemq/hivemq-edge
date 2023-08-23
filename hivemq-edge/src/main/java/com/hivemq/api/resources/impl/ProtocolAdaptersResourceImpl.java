@@ -42,6 +42,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.protocols.AdapterInstance;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.ProtocolAdapterUtils;
 import com.hivemq.protocols.params.NodeTreeImpl;
 import com.networknt.schema.ValidationMessage;
 
@@ -67,7 +68,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull ObjectMapper objectMapper) {
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
-        this.objectMapper = objectMapper;
+        this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
     }
 
     @Override
