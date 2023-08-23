@@ -1,7 +1,8 @@
 import { UIGroup } from '@/modules/ProtocolAdapters/types.ts'
 import { useTranslation } from 'react-i18next'
+import { UiSchema } from '@rjsf/utils'
 
-const useGetUiSchema = () => {
+const useGetUiSchema = (isNewAdapter = true) => {
   const { t } = useTranslation()
 
   const groups: UIGroup[] = [
@@ -28,12 +29,18 @@ const useGetUiSchema = () => {
     },
   ]
 
-  const uiSchema = {
+  const uiSchema: UiSchema = {
     'ui:groups': groups,
 
     'ui:submitButtonOptions': {
       norender: true,
     },
+
+    // TODO[NVL] Make sure only the top-level id is disabled. See 16318
+    id: {
+      'ui:disabled': !isNewAdapter,
+    },
+
     // pollingIntervalMillis: {
     //   'ui:widget': 'range',
     // },

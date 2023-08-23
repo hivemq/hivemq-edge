@@ -46,6 +46,8 @@ import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5RetainHandling;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5Subscription;
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck;
 import com.hivemq.configuration.HivemqId;
+import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.utils.HiveMQEdgeEnvironmentUtils;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
@@ -74,6 +76,7 @@ public class BridgeMqttClient {
 
     private final @NotNull MqttBridge bridge;
     private final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler;
+    private final @NotNull SystemInformation systemInformation;
     private final @NotNull HivemqId hivemqId;
     private final @NotNull Mqtt5AsyncClient mqtt5Client;
     private final @NotNull ListeningExecutorService executorService;
@@ -83,15 +86,18 @@ public class BridgeMqttClient {
     private List<MqttForwarder> forwarders = Collections.synchronizedList(new ArrayList<>());
 
     public BridgeMqttClient(
+            final @NotNull SystemInformation systemInformation,
             final @NotNull MqttBridge bridge,
             final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler,
             final @NotNull HivemqId hivemqId,
             final @NotNull MetricRegistry metricRegistry) {
+
+        this.hivemqId = hivemqId;
+        this.systemInformation = systemInformation;
         this.bridge = bridge;
         this.bridgeInterceptorHandler = bridgeInterceptorHandler;
         this.mqtt5Client = createClient();
         executorService = MoreExecutors.newDirectExecutorService();
-        this.hivemqId = hivemqId;
         perBridgeMetrics = new PerBridgeMetrics(bridge.getId(), metricRegistry);
     }
 
@@ -190,7 +196,8 @@ public class BridgeMqttClient {
         stopped.set(false);
 
         final Mqtt5UserPropertiesBuilder mqtt5UserPropertiesBuilder = Mqtt5UserProperties.builder();
-        mqtt5UserPropertiesBuilder.add("edgeToken", HiveMQEdgeEnvironmentUtils.generateInstallationToken());
+        mqtt5UserPropertiesBuilder.add(HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY,
+                String.format(HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE, systemInformation.getHiveMQVersion()));
         final CompletableFuture<Mqtt5ConnAck> connectFuture = mqtt5Client.connectWith()
                 .cleanStart(bridge.isCleanStart())
                 .keepAlive(bridge.getKeepAlive())

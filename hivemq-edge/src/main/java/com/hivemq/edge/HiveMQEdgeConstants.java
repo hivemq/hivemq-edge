@@ -24,6 +24,8 @@ public interface HiveMQEdgeConstants {
     String VERSION = "2023.3";
 
     String VERSION_PROPERTY = "version";
+    String CLIENT_AGENT_PROPERTY = "client-agent";
+    String CLIENT_AGENT_PROPERTY_VALUE = "HiveMQ-Edge; %s";
 
     int MAX_ID_LEN = 500;
     String ID_REGEX = "([a-zA-Z_0-9\\-])*";

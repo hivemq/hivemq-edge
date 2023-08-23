@@ -8,6 +8,9 @@ import {
   DrawerContent,
   DrawerCloseButton,
   Flex,
+  Text,
+  Image,
+  HStack,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
@@ -49,10 +52,10 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   const { data: allAdapters } = useListProtocolAdapters()
   const { adapterId } = useParams()
 
-  const schema = useMemo(() => {
+  const { schema, name, logo } = useMemo(() => {
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
     const { configSchema } = adapter || {}
-    return configSchema
+    return { schema: configSchema, name: adapter?.name, logo: adapter?.logoUrl }
   }, [data, adapterType])
 
   const defaultValues = useMemo(() => {
@@ -60,7 +63,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
     const { config } = allAdapters?.find((e) => e.id === adapterId) || {}
     return config
   }, [allAdapters, adapterId, isNewAdapter])
-  const uiSchema = useGetUiSchema()
+  const uiSchema = useGetUiSchema(isNewAdapter)
 
   const onValidate = (data: IChangeEvent<Adapter, RJSFSchema>) => {
     if (data.formData) onSubmit(data.formData)
@@ -70,36 +73,49 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
     <Drawer closeOnOverlayClick={false} size={'lg'} isOpen={isOpen} placement="right" onClose={onClose}>
       <DrawerOverlay />
       <DrawerContent aria-label={t('protocolAdapter.drawer.label') as string}>
-        <DrawerCloseButton />
-        <DrawerHeader id={'adapter-instance-header'} borderBottomWidth="1px">
-          {isNewAdapter ? t('protocolAdapter.drawer.title.create') : t('protocolAdapter.drawer.title.update')}
-        </DrawerHeader>
+        {!schema && <LoaderSpinner />}
+        {schema && (
+          <>
+            <DrawerCloseButton />
+            <DrawerHeader id={'adapter-instance-header'} borderBottomWidth="1px">
+              <Text>
+                {isNewAdapter ? t('protocolAdapter.drawer.title.create') : t('protocolAdapter.drawer.title.update')}
+              </Text>
+              <HStack>
+                <Image boxSize="30px" objectFit="scale-down" src={logo} aria-label={name} />
+                <Text fontSize={'md'} fontWeight={'500'}>
+                  {name}
+                </Text>
+              </HStack>
+            </DrawerHeader>
+            <DrawerBody>
+              {schema && (
+                <>
+                  <Form
+                    id="adapter-instance-form"
+                    schema={schema}
+                    uiSchema={uiSchema}
+                    templates={{ ObjectFieldTemplate }}
+                    liveValidate
+                    onSubmit={onValidate}
+                    validator={validator}
+                    showErrorList={'bottom'}
+                    onError={(errors) => console.log('XXXXXXX', errors)}
+                    formData={defaultValues}
+                  />
+                </>
+              )}
+            </DrawerBody>
 
-        <DrawerBody>
-          {!schema && <LoaderSpinner />}
-          {schema && (
-            <Form
-              id="adapter-instance-form"
-              schema={schema}
-              uiSchema={uiSchema}
-              templates={{ ObjectFieldTemplate }}
-              liveValidate
-              onSubmit={onValidate}
-              validator={validator}
-              showErrorList={'bottom'}
-              onError={(errors) => console.log('XXXXXXX', errors)}
-              formData={defaultValues}
-            />
-          )}
-        </DrawerBody>
-
-        <DrawerFooter borderTopWidth="1px">
-          <Flex flexGrow={1} justifyContent={'flex-end'}>
-            <ButtonCTA type="submit" form="adapter-instance-form">
-              {isNewAdapter ? t('protocolAdapter.action.create') : t('protocolAdapter.action.update')}
-            </ButtonCTA>
-          </Flex>
-        </DrawerFooter>
+            <DrawerFooter borderTopWidth="1px">
+              <Flex flexGrow={1} justifyContent={'flex-end'}>
+                <ButtonCTA type="submit" form="adapter-instance-form">
+                  {isNewAdapter ? t('protocolAdapter.action.create') : t('protocolAdapter.action.update')}
+                </ButtonCTA>
+              </Flex>
+            </DrawerFooter>
+          </>
+        )}
       </DrawerContent>
     </Drawer>
   )

@@ -1,8 +1,10 @@
 package com.hivemq.edge.utils;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import io.netty.util.internal.MacAddressUtil;
 
 import java.net.NetworkInterface;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +19,7 @@ public class HiveMQEdgeEnvironmentUtils {
     private static Object lock = new Object();
 
     public static @NotNull String generateInstallationToken(){
-        return HiveMQEdgeEnvironmentUtils.getLocalhostMacAddress();
+        return HiveMQEdgeEnvironmentUtils.getDefaultMachineId();
     }
 
     public static @NotNull String getSessionToken(){
@@ -43,19 +45,10 @@ public class HiveMQEdgeEnvironmentUtils {
         return map;
     }
 
-    public static String getLocalhostMacAddress(){
+    public static String getDefaultMachineId(){
         try {
-            final Enumeration<NetworkInterface> ei = NetworkInterface.getNetworkInterfaces();
-            while (ei.hasMoreElements()) {
-                final byte[] mac = ei.nextElement().getHardwareAddress();
-                if (mac != null) {
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < mac.length; i++)
-                        sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
-                    //-- just return the first hardware address found
-                    return sb.toString();
-                }
-            }
+            return MacAddressUtil.formatAddress(
+                    MacAddressUtil.defaultMachineId()).toUpperCase();
         } catch(Exception e){
         }
         return "<unknown>";
