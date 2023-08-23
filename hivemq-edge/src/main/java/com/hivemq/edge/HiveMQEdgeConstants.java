@@ -21,7 +21,7 @@ package com.hivemq.edge;
 public interface HiveMQEdgeConstants {
 
     //TODO this should be build driven for modules but use single constant for now
-    String VERSION = "2023.3";
+    String VERSION = "2023.4";
 
     String VERSION_PROPERTY = "version";
     String CLIENT_AGENT_PROPERTY = "client-agent";
