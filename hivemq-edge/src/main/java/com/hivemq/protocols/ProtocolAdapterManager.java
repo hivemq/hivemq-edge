@@ -44,6 +44,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.validation.Path;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -295,10 +296,14 @@ public class ProtocolAdapterManager {
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(configObject, metricRegistry));
-            return new AdapterInstance(protocolAdapter,
-                            protocolAdapterFactory,
-                            protocolAdapterFactory.getInformation(),
-                            configObject);
+
+            AdapterInstance instance = new AdapterInstance(protocolAdapter,
+                    protocolAdapterFactory,
+                    protocolAdapterFactory.getInformation(),
+                    configObject);
+            protocolAdapters.put(instance.getAdapter().getId(), instance);
+            return instance;
+
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
