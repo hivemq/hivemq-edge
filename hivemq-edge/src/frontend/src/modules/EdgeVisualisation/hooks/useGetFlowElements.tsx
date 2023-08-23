@@ -17,7 +17,8 @@ const useGetFlowElements = () => {
   const { data: adapters } = useListProtocolAdapters()
   const theme = useTheme()
   const { options } = useEdgeFlowContext()
-  const { data: listeners } = useGetListeners()
+  const { data: listenerList } = useGetListeners()
+  const { items: listeners } = listenerList || {}
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Bridge | Adapter>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
@@ -31,7 +32,7 @@ const useGetFlowElements = () => {
 
     const nodeEdge = createEdgeNode(t('branding.appName'))
 
-    listeners?.items?.forEach((listener, nb) => {
+    listeners?.forEach((listener, nb) => {
       const { nodeListener, edgeConnector } = createListenerNode(listener, nb)
 
       if (options.showGateway) {
@@ -63,7 +64,7 @@ const useGetFlowElements = () => {
 
     setNodes([nodeEdge, ...nodes])
     setEdges([...edges])
-  }, [bridges, adapters, setNodes, setEdges, t, options, theme])
+  }, [bridges, adapters, listeners, setNodes, setEdges, t, options, theme])
 
   return { nodes, edges, onNodesChange, onEdgesChange }
 }
