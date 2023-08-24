@@ -25,8 +25,17 @@ export const $Listener = {
         },
         port: {
             type: 'number',
-            description: `The extension port`,
+            description: `The listener port`,
             format: 'int32',
+        },
+        protocol: {
+            type: 'string',
+            description: `A protocol that this listener services`,
+            isNullable: true,
+        },
+        transport: {
+            type: 'Enum',
+            isNullable: true,
         },
     },
 } as const;
