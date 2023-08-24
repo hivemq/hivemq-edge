@@ -509,7 +509,9 @@
   "workspace": {
     "node": {
       "edge": "Node: HiveMQ Edge",
-      "bridge": "Node: HiveMQ Bridge"
+      "bridge": "Node: HiveMQ Bridge",
+      "adapter": "Node: Adapter",
+      "gateway": "Node: Gateway"
     }
   },
   "modals": {
