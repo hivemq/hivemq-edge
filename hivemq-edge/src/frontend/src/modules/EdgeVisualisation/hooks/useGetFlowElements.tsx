@@ -13,15 +13,15 @@ import { useEdgeFlowContext } from '../hooks/useEdgeFlowContext.tsx'
 
 const useGetFlowElements = () => {
   const { t } = useTranslation()
-  const { data: bridges } = useListBridges()
-  const { data: adapters } = useListProtocolAdapters()
   const theme = useTheme()
   const { options } = useEdgeFlowContext()
+  const { data: bridges } = useListBridges()
+  const { data: adapters } = useListProtocolAdapters()
   const { data: listenerList } = useGetListeners()
-  const { items: listeners } = listenerList || {}
-
   const [nodes, setNodes, onNodesChange] = useNodesState<Bridge | Adapter>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
+
+  const { items: listeners } = listenerList || {}
 
   useEffect(() => {
     if (!bridges) return
