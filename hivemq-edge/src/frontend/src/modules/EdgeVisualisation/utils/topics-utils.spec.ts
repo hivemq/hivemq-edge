@@ -14,12 +14,29 @@ describe('getBridgeTopics', () => {
 
     expect(actual).toStrictEqual(expected)
   })
+
+  it('should handle empty subscriptions', async () => {
+    const actual = getBridgeTopics({ ...mockBridge, localSubscriptions: undefined, remoteSubscriptions: undefined })
+    const expected: { local: TopicFilter[]; remote: TopicFilter[] } = {
+      local: [],
+      remote: [],
+    }
+
+    expect(actual).toStrictEqual(expected)
+  })
 })
 
 describe('getAdapterTopics', () => {
   it('should extract topics from adapters', async () => {
     const actual = getAdapterTopics(mockAdapter)
     const expected: TopicFilter[] = [{ topic: 'root/topic/ref/1' }, { topic: 'root/topic/ref/2' }]
+
+    expect(actual).toStrictEqual(expected)
+  })
+
+  it('should handle empty subscriptions', async () => {
+    const actual = getAdapterTopics({ ...mockAdapter, config: { ...mockAdapter.config, subscriptions: [] } })
+    const expected: TopicFilter[] = []
 
     expect(actual).toStrictEqual(expected)
   })
