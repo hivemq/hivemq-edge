@@ -9,7 +9,7 @@ import NodeAdapter from './NodeAdapter.tsx'
 
 describe('NodeAdapter', () => {
   beforeEach(() => {
-    cy.viewport(400, 800)
+    cy.viewport(400, 400)
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
   })
 

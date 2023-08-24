@@ -9,7 +9,7 @@ import { MOCK_TOPIC_ACT1, MOCK_TOPIC_ALL } from '@/__test-utils__/react-flow/top
 
 describe('NodeBridge', () => {
   beforeEach(() => {
-    cy.viewport(400, 800)
+    cy.viewport(400, 400)
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
   })
 
