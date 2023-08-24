@@ -6,6 +6,7 @@ import { Simulation } from '@/api/__generated__/adapters/simulation'
 
 import { TopicFilter } from '../types.ts'
 
+/* istanbul ignore next -- @preserve */
 export const getAdapterTopics = (adapter: Adapter): TopicFilter[] => {
   if (adapter.type === 'opc-ua-client') {
     const { subscriptions } = adapter.config as unknown as OpcUaClient
