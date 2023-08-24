@@ -8,8 +8,10 @@ import logoGateway from '@/assets/app/gateway.svg'
 
 import NodeWrapper from '../parts/NodeWrapper.tsx'
 import { Listener } from '@/api/__generated__'
+import { useTranslation } from 'react-i18next'
 
 const NodeListener: FC<NodeProps<Listener>> = (props) => {
+  const { t } = useTranslation()
   const { selected, data } = props
 
   const getLogo = () => {
@@ -21,7 +23,7 @@ const NodeListener: FC<NodeProps<Listener>> = (props) => {
   return (
     <>
       <NodeWrapper p={2} borderRadius={60} backgroundColor={selected ? '#dddfe2' : 'white'} alignContent={'center'}>
-        <Image src={getLogo()} alt={'Edge'} boxSize="48px" />
+        <Image src={getLogo()} alt={t('workspace.node.gateway') as string} boxSize="48px" />
       </NodeWrapper>
       <Handle type="target" position={Position.Right} id="Listeners" isConnectable={false} />
     </>
