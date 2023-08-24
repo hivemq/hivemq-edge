@@ -68,7 +68,7 @@ export const createBridgeNode = (
     type: 'output',
     targetPosition: Position.Top,
     data: { label: bridge.host },
-    position: positionStorage?.[idBridge] ?? {
+    position: positionStorage?.[idBridgeHost] ?? {
       x: POS_EDGE.x + POS_NODE_INC.x * (nbBridge - (maxBridge - 1) / 2),
       y: POS_EDGE.y + POS_NODE_INC.y + 250,
     },
