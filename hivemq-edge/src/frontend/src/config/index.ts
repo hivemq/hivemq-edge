@@ -14,6 +14,7 @@ interface configType {
   }
 
   features: {
+    WORKSPACE_FLOW_PANEL: boolean
     PROTOCOL_ADAPTER_FACET: boolean
     METRICS_SELECT_PANEL: boolean
     METRICS_DEFAULTS: string[]
