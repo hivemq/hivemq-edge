@@ -24,8 +24,33 @@ export type Listener = {
      */
     name?: string;
     /**
-     * The extension port
+     * The listener port
      */
     port?: number;
+    /**
+     * A protocol that this listener services
+     */
+    protocol?: string | null;
+    /**
+     * The underlying transport that this listener uses
+     */
+    transport?: Listener.transport | null;
 };
+
+export namespace Listener {
+
+    /**
+     * The underlying transport that this listener uses
+     */
+    export enum transport {
+        TCP = 'TCP',
+        UDP = 'UDP',
+        DCCP = 'DCCP',
+        SCTP = 'SCTP',
+        RSVP = 'RSVP',
+        QUIC = 'QUIC',
+    }
+
+
+}
 

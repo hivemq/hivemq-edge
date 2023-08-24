@@ -34,7 +34,7 @@ export type { ISA95ApiBean } from './models/ISA95ApiBean';
 export type { JsonNode } from './models/JsonNode';
 export type { Link } from './models/Link';
 export type { LinkList } from './models/LinkList';
-export type { Listener } from './models/Listener';
+export { Listener } from './models/Listener';
 export type { ListenerList } from './models/ListenerList';
 export type { Metric } from './models/Metric';
 export type { MetricList } from './models/MetricList';
