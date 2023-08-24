@@ -26,7 +26,7 @@ export const createBridgeNode = (
   bridge: Bridge,
   nbBridge: number,
   maxBridge: number,
-  theme: WithCSSVar<Dict>,
+  theme: Partial<WithCSSVar<Dict>>,
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idBridge = `${IdStubs.BRIDGE_NODE}#${bridge.id}`
@@ -132,7 +132,7 @@ export const createAdapterNode = (
   adapter: Adapter,
   nbAdapter: number,
   maxAdapter: number,
-  theme: WithCSSVar<Dict>,
+  theme: Partial<WithCSSVar<Dict>>,
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idAdapter = `${IdStubs.ADAPTER_NODE}#${adapter.id}`
