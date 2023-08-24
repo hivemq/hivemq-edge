@@ -19,7 +19,7 @@ const TopicsContainer: FC<NodeTopicsProps> = ({ topics }) => {
         ))}
       </VStack>
       {topics.length > MAX_TOPICS && (
-        <Tag size={'sm'}>
+        <Tag size={'sm'} data-testid={'topics-show-more'}>
           <TagLabel>+{topics.length - MAX_TOPICS}</TagLabel>
         </Tag>
       )}
