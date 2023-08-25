@@ -1,5 +1,8 @@
 package com.hivemq.tools;
 
+import com.google.common.base.Preconditions;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -18,6 +21,9 @@ import java.util.zip.ZipFile;
  * @author Simon L Johnson
  */
 public class CreateAdapterBlueprint {
+
+    static final String ADAPTER_TEMPLATE = "ext/polling-adapter-template.zip";
+    static final String MODULES_DIR = "modules";
 
     private final Map<String, String> replacements;
     private final File zipFile;
@@ -73,7 +79,7 @@ public class CreateAdapterBlueprint {
         File destFile = new File(destinationDir, resultName);
         String destDirPath = destinationDir.getCanonicalPath();
         String destFilePath = destFile.getCanonicalPath();
-        if (!destFilePath.startsWith(destDirPath + File.separator)) {
+        if (!destFilePath.startsWith(destDirPath + java.io.File.separator)) {
             throw new IOException("Entry is outside of the target dir: " + zipEntry.getName());
         }
         return destFile;
@@ -98,11 +104,23 @@ public class CreateAdapterBlueprint {
         String moduleDirectory = null;
         String adapterName = null;
 
+        File edgeHome = detectEdgeHomeDir();
+
         try (Scanner input = new Scanner(System.in)) {
             PrintStream output = System.out;
-            templateFile = captureMandatoryFilePath(input, output, "Please specify path to template zip file (must exist)");
-            moduleDirectory = captureMandatoryFilePath(input, output, "Please specify path to output module directory (must exist)");
+            if(edgeHome == null){
+                edgeHome = new File(captureMandatoryFilePath(input, output, "Please specify path to hivemq-edge project"));
+            }
+
+            if(edgeHome.exists()){
+                output.println("Detected your edge home as '"+edgeHome.getAbsolutePath()+"', running relative to this location");
+                moduleDirectory = new File(edgeHome, MODULES_DIR).getAbsolutePath();
+                templateFile = new File(edgeHome, ADAPTER_TEMPLATE).getAbsolutePath();
+            } else {
+                throw new FileNotFoundException("Unable to locate HIVEMQ_EDGE development home");
+            }
             adapterName = captureMandatoryString(input, output, "Please specify the name of your adapter (alpha-numeric)");
+
         } catch (Exception e) {
             System.err.println("A fatal error was encountered: " + e.getMessage());
             e.printStackTrace(System.err);
@@ -114,14 +132,41 @@ public class CreateAdapterBlueprint {
             System.exit(1);
         }
 
+        String adapterModuleName = adapterName.toLowerCase();
         Map<String, String> map = new HashMap<>();
         map.put("nameUC", upperCaseFirst(adapterName.toLowerCase()));
-        map.put("nameLC", adapterName.toLowerCase());
+        map.put("nameLC", adapterModuleName);
         File zipFile = new File(templateFile);
         File outputDirectory = new File(moduleDirectory);
         CreateAdapterBlueprint blueprint = new CreateAdapterBlueprint(map, zipFile, outputDirectory);
         blueprint.run();
-        System.out.println("New module generated " + outputDirectory.getAbsolutePath());
+
+        //-- add gradle configuration
+        insertTextAtLocation(new File(edgeHome, "build.gradle.kts"),
+                String.format("\tedgeModule(\"com.hivemq:hivemq-edge-module-%s\")", adapterModuleName), 86);
+        insertTextAtLocation(new File(edgeHome, "settings.gradle.kts"),
+                String.format("includeBuild(\"./modules/hivemq-edge-module-%s\")", adapterModuleName), 7);
+    }
+
+    protected static File detectEdgeHomeDir(){
+        File edgeHome = null;
+        File file = new File(System.getProperty("user.dir"));
+        if(file.exists() && file.isDirectory()){
+            if("hivemq-edge-composite".equals(file.getName())){
+                edgeHome = new File(com.hivemq.util.Files.getFilePathExcludingFile(file.getAbsolutePath()), "hivemq-edge");
+            } else if("hivemq-edge".equals(file.getName())){
+                //-- check if we are at the hivemq-edge root or in the nested project
+                if(new File(file, "hivemq-edge").exists()){
+                    edgeHome = file;
+                } else {
+                    File f = new File(com.hivemq.util.Files.getFilePathExcludingFile(file.getAbsolutePath()));
+                    if(f.exists()){
+                        edgeHome = f;
+                    }
+                }
+            }
+        }
+        return edgeHome;
     }
 
     protected static String captureMandatoryString(Scanner input, PrintStream output, String question){
@@ -160,5 +205,31 @@ public class CreateAdapterBlueprint {
         char[] chars = str.toCharArray();
         chars[0] = Character.toUpperCase(chars[0]);
         return new String(chars);
+    }
+
+    public static void insertTextAtLocation(final @NotNull File textFile, final @NotNull String text, int lineNumber) throws IOException {
+        Preconditions.checkNotNull(textFile);
+        Preconditions.checkNotNull(text);
+        if(!textFile.canRead()){
+            throw new FileNotFoundException("file not found " + textFile.getAbsolutePath());
+        }
+        File tmpFile = new File(textFile.getParentFile(), textFile.getName() + ".tmp");
+        try(BufferedReader reader = new BufferedReader(new FileReader(textFile))){
+            try(FileWriter writer = new FileWriter(tmpFile)){
+                int line = 0;
+                String textLine = reader.readLine();
+                while(textLine != null){
+                    if(++line == lineNumber){
+                        writer.write(text);
+                        writer.write(System.lineSeparator());
+                    }
+                    writer.write(textLine);
+                    writer.write(System.lineSeparator());
+                    textLine = reader.readLine();
+                }
+                writer.flush();
+            }
+        }
+        tmpFile.renameTo(textFile);
     }
 }
