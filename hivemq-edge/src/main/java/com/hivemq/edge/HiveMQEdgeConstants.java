@@ -23,6 +23,8 @@ public interface HiveMQEdgeConstants {
     //TODO this should be build driven for modules but use single constant for now
     String VERSION = "2023.4";
 
+    String MUTABLE_CONFIGURAION_ENABLED = "mutable.configuration.enabled";
+    String CONFIGURATION_EXPORT_ENABLED = "configuration.export.enabled";
     String VERSION_PROPERTY = "version";
     String CLIENT_AGENT_PROPERTY = "client-agent";
     String CLIENT_AGENT_PROPERTY_VALUE = "HiveMQ-Edge; %s";
