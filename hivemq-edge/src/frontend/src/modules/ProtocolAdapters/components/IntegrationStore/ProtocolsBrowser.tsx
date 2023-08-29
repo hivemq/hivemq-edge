@@ -30,7 +30,13 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate })
             <AdapterTypeSummary key={e.id} adapter={e} searchQuery={facet?.search} />
           </CardBody>
           <CardFooter p={2}>
-            <Button variant={'outline'} size={'sm'} rightIcon={<ArrowForwardIcon />} onClick={() => onCreate?.(e.id)}>
+            <Button
+              data-testid={'protocol-create-adapter'}
+              variant={'outline'}
+              size={'sm'}
+              rightIcon={<ArrowForwardIcon />}
+              onClick={() => onCreate?.(e.id)}
+            >
               {t('protocolAdapter.action.createInstance')}
             </Button>
           </CardFooter>
