@@ -356,9 +356,10 @@
         "placeholder": "Search for a protocol",
         "clear": "Clear"
       },
-      "categories": {
-        "label": "Categories",
-        "allFilters": "All"
+      "filter": {
+        "allFilters": "No filter",
+        "category": "Categories",
+        "tags": "Tags"
       }
     },
     "store": {
