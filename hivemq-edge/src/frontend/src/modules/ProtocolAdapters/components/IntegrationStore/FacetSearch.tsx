@@ -57,7 +57,7 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ facet, onChange }) => {
   }
 
   return (
-    <Flex flexDirection={'column'} gap={4} w={'250px'}>
+    <Flex flexDirection={'column'} gap={4} maxW={'250px'} minW={'fit-content'}>
       <FormControl>
         <FormLabel>{t('protocolAdapter.facet.search.label')}</FormLabel>
         <InputGroup>
