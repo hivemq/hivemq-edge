@@ -23,19 +23,19 @@ const AdapterTypeSummary: FC<AdapterTypeSummaryProps> = ({ adapter, searchQuery 
     <Flex m={0}>
       <Image boxSize="100px" objectFit="scale-down" src={adapter.logoUrl} aria-label={adapter.id} />
       <Box ml="3">
-        <Text fontWeight="bold">
+        <Text fontWeight="bold" data-testid={'protocol-name'}>
           <AdapterHighlight query={searchQuery || ''}>{adapter.name || ''}</AdapterHighlight>
-          <Badge ml="1" colorScheme="green">
+          <Badge ml="1" colorScheme="green" data-testid={'protocol-version'}>
             {adapter.version}
           </Badge>
         </Text>
-        <Text fontSize="sm">
+        <Text fontSize="sm" data-testid={'protocol-type'}>
           {t('protocolAdapter.overview.type')} {adapter.protocol}
         </Text>
-        <Text fontSize="sm">
+        <Text fontSize="sm" data-testid={'protocol-author'}>
           {t('protocolAdapter.overview.author')} {adapter.author}
         </Text>
-        <Text fontSize="sm">
+        <Text fontSize="sm" data-testid={'protocol-description'}>
           <AdapterHighlight query={searchQuery || ''}>{adapter.description || ''}</AdapterHighlight>
         </Text>
         <Box mt={2}>
