@@ -9,6 +9,10 @@ export const $ProtocolAdapter = {
             type: 'string',
             description: `The author of the adapter`,
         },
+        category: {
+            type: 'string',
+            description: `The category of the adapter`,
+        },
         configSchema: {
             type: 'JsonNode',
         },
@@ -18,6 +22,11 @@ export const $ProtocolAdapter = {
         },
         id: {
             type: 'string',
+            description: `The id assigned to the protocol adapter type`,
+        },
+        installed: {
+            type: 'boolean',
+            description: `Is the adapter installed?`,
         },
         logoUrl: {
             type: 'string',
@@ -30,6 +39,13 @@ export const $ProtocolAdapter = {
         protocol: {
             type: 'string',
             description: `The supported protocol`,
+        },
+        tags: {
+            type: 'array',
+            contains: {
+                type: 'string',
+                description: `The search tags associated with this adapter`,
+            },
         },
         url: {
             type: 'string',
