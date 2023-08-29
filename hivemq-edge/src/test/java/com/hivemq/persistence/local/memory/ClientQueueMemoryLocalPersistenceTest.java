@@ -31,7 +31,7 @@ import com.hivemq.mqtt.message.pubrel.PUBREL;
 import com.hivemq.persistence.local.memory.ClientQueueMemoryLocalPersistence.PublishWithRetained;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
-import com.hivemq.util.ObjectMemoryEstimation;
+import com.hivemq.util.MemoryEstimator;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -828,9 +828,9 @@ public class ClientQueueMemoryLocalPersistenceTest {
         persistence.add("client1", false, publish2, 100L, DISCARD, false, 0);
         persistence.add("client1", false, publish3, 100L, DISCARD, false, 0);
 
-        final int size = new PublishWithRetained(publish1, false).getEstimatedSize() + ObjectMemoryEstimation.linkedListNodeOverhead() +
-                new PublishWithRetained(publish2, false).getEstimatedSize() + ObjectMemoryEstimation.linkedListNodeOverhead() +
-                new PublishWithRetained(publish3, false).getEstimatedSize() + ObjectMemoryEstimation.linkedListNodeOverhead();
+        final int size = new PublishWithRetained(publish1, false).getEstimatedSize() + MemoryEstimator.LINKED_LIST_NODE_OVERHEAD +
+                new PublishWithRetained(publish2, false).getEstimatedSize() + MemoryEstimator.LINKED_LIST_NODE_OVERHEAD +
+                new PublishWithRetained(publish3, false).getEstimatedSize() + MemoryEstimator.LINKED_LIST_NODE_OVERHEAD;
 
         assertEquals(size, gauge.getValue().longValue());
 
@@ -843,7 +843,7 @@ public class ClientQueueMemoryLocalPersistenceTest {
         verify(payloadPersistence, times(2)).decrementReferenceCounter(anyLong());
 
         assertTrue(gauge.getValue() > 0);
-        assertEquals(new PublishWithRetained(messages.get(0), false).getEstimatedSize() + ObjectMemoryEstimation.linkedListNodeOverhead(), gauge.getValue().longValue());
+        assertEquals(new PublishWithRetained(messages.get(0), false).getEstimatedSize() + MemoryEstimator.LINKED_LIST_NODE_OVERHEAD, gauge.getValue().longValue());
     }
 
     @Test

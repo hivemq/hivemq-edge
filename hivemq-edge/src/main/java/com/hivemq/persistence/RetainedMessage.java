@@ -24,7 +24,7 @@ import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
-import com.hivemq.util.ObjectMemoryEstimation;
+import com.hivemq.util.MemoryEstimator;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -136,24 +136,24 @@ public class RetainedMessage {
         }
         int size = 0;
         // The payload size is not calculated because the payload is removed before the message is stored
-        size += ObjectMemoryEstimation.enumSize(); // QoS
-        size += ObjectMemoryEstimation.longWrapperSize(); // Payload ID
-        size += ObjectMemoryEstimation.longSize(); // expiry interval
+        size += MemoryEstimator.ENUM_OVERHEAD; // QoS
+        size += MemoryEstimator.LONG_WRAPPER_SIZE; // Payload ID
+        size += MemoryEstimator.LONG_SIZE; // expiry interval
 
         size += 24; //User Properties Overhead
         for (final MqttUserProperty userProperty : getUserProperties().asList()) {
             size += 24; //UserProperty Object Overhead
-            size += ObjectMemoryEstimation.stringSize(userProperty.getName());
-            size += ObjectMemoryEstimation.stringSize(userProperty.getValue());
+            size += MemoryEstimator.stringSize(userProperty.getName());
+            size += MemoryEstimator.stringSize(userProperty.getValue());
         }
 
-        size += ObjectMemoryEstimation.stringSize(responseTopic);
-        size += ObjectMemoryEstimation.stringSize(contentType);
-        size += ObjectMemoryEstimation.byteArraySize(correlationData);
+        size += MemoryEstimator.stringSize(responseTopic);
+        size += MemoryEstimator.stringSize(contentType);
+        size += MemoryEstimator.byteArraySize(correlationData);
 
-        size += ObjectMemoryEstimation.enumSize(); // Payload format indicator
-        size += ObjectMemoryEstimation.longSize(); // timestamp
-        size += ObjectMemoryEstimation.intSize(); // size
+        size += MemoryEstimator.ENUM_OVERHEAD; // Payload format indicator
+        size += MemoryEstimator.LONG_SIZE; // timestamp
+        size += MemoryEstimator.INT_SIZE; // size
 
         sizeInMemory = size;
         return sizeInMemory;

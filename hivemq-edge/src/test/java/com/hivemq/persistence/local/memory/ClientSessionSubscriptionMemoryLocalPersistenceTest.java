@@ -28,7 +28,7 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.persistence.IterablePersistenceEntry;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.util.LocalPersistenceFileUtil;
-import com.hivemq.util.ObjectMemoryEstimation;
+import com.hivemq.util.MemoryEstimator;
 import net.jodah.concurrentunit.Waiter;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
@@ -91,10 +91,10 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
 
         int size = 0;
         for (final Topic subscription : subscriptions) {
-            size += ObjectMemoryEstimation.objectRefSize();
+            size += MemoryEstimator.OBJECT_REF_SIZE;
             size += subscription.getEstimatedSize();
         }
-        size += ObjectMemoryEstimation.stringSize("clientid");
+        size += MemoryEstimator.stringSize("clientid");
         size += IterablePersistenceEntry.getFixedSize();
 
         assertEquals(size, value.intValue());
@@ -134,10 +134,10 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
 
         int size = 0;
         for (final Topic subscription : subscriptions) {
-            size += ObjectMemoryEstimation.objectRefSize();
+            size += MemoryEstimator.OBJECT_REF_SIZE;
             size += subscription.getEstimatedSize();
         }
-        size += ObjectMemoryEstimation.stringSize("clientid");
+        size += MemoryEstimator.stringSize("clientid");
         size += IterablePersistenceEntry.getFixedSize();
 
         assertEquals(size, value.intValue());
@@ -463,10 +463,10 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
 
         int size = 0;
         for (final Topic subscription : subs) {
-            size += ObjectMemoryEstimation.objectRefSize();
+            size += MemoryEstimator.OBJECT_REF_SIZE;
             size += subscription.getEstimatedSize();
         }
-        size += ObjectMemoryEstimation.stringSize("client");
+        size += MemoryEstimator.stringSize("client");
         size += IterablePersistenceEntry.getFixedSize();
 
         assertEquals(size, value.intValue());
@@ -544,10 +544,10 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
         for (final Map.Entry<String, Set<Topic>> entry : all.entrySet()) {
             assertEquals(2, entry.getValue().size());
             for (final Topic topic : entry.getValue()) {
-                size += ObjectMemoryEstimation.objectRefSize();
+                size += MemoryEstimator.OBJECT_REF_SIZE;
                 size += topic.getEstimatedSize();
             }
-            size += ObjectMemoryEstimation.stringSize(entry.getKey());
+            size += MemoryEstimator.stringSize(entry.getKey());
             size += IterablePersistenceEntry.getFixedSize();
         }
         final Long value = (Long) metricRegistry.getGauges()

@@ -34,7 +34,7 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.pubrel.PUBREL;
 import com.hivemq.persistence.clientqueue.ClientQueueLocalPersistence;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
-import com.hivemq.util.ObjectMemoryEstimation;
+import com.hivemq.util.MemoryEstimator;
 import com.hivemq.util.Strings;
 import com.hivemq.util.ThreadPreConditions;
 import org.slf4j.Logger;
@@ -733,9 +733,9 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
      */
     private void increaseQos0MessagesMemory(final int size) {
         if (size < 0) {
-            qos0MessagesMemory.addAndGet(size - ObjectMemoryEstimation.linkedListNodeOverhead());
+            qos0MessagesMemory.addAndGet(size - MemoryEstimator.LINKED_LIST_NODE_OVERHEAD);
         } else {
-            qos0MessagesMemory.addAndGet(size + ObjectMemoryEstimation.linkedListNodeOverhead());
+            qos0MessagesMemory.addAndGet(size + MemoryEstimator.LINKED_LIST_NODE_OVERHEAD);
         }
     }
 
@@ -744,9 +744,9 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
      */
     private void increaseMessagesMemory(final int size) {
         if (size < 0) {
-            totalMemorySize.addAndGet(size - ObjectMemoryEstimation.linkedListNodeOverhead());
+            totalMemorySize.addAndGet(size - MemoryEstimator.LINKED_LIST_NODE_OVERHEAD);
         } else {
-            totalMemorySize.addAndGet(size + ObjectMemoryEstimation.linkedListNodeOverhead());
+            totalMemorySize.addAndGet(size + MemoryEstimator.LINKED_LIST_NODE_OVERHEAD);
         }
     }
 
@@ -755,9 +755,9 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
      */
     private void increaseClientQos0MessagesMemory(final @NotNull Messages messages, final int size) {
         if (size < 0) {
-            messages.qos0Memory += size - ObjectMemoryEstimation.linkedListNodeOverhead();
+            messages.qos0Memory += size - MemoryEstimator.LINKED_LIST_NODE_OVERHEAD;
         } else {
-            messages.qos0Memory += size + ObjectMemoryEstimation.linkedListNodeOverhead();
+            messages.qos0Memory += size + MemoryEstimator.LINKED_LIST_NODE_OVERHEAD;
         }
         if (messages.qos0Memory < 0) {
             messages.qos0Memory = 0;
@@ -867,8 +867,8 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
 
         int getEstimatedSize() {
             return getEstimatedSizeInMemory()  // publish
-                    + ObjectMemoryEstimation.objectShellSize() // the object itself
-                    + ObjectMemoryEstimation.booleanSize(); // retain flag
+                    + MemoryEstimator.OBJECT_SHELL_SIZE // the object itself
+                    + MemoryEstimator.BOOLEAN_SIZE; // retain flag
         }
     }
 
@@ -888,8 +888,8 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
 
         private int getEstimatedSize() {
             return getEstimatedSizeInMemory()  // publish
-                    + ObjectMemoryEstimation.objectShellSize() // the object itself
-                    + ObjectMemoryEstimation.booleanSize(); // retain flag
+                    + MemoryEstimator.OBJECT_SHELL_SIZE // the object itself
+                    + MemoryEstimator.BOOLEAN_SIZE; // retain flag
         }
     }
 }
