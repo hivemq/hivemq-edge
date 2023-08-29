@@ -338,6 +338,9 @@
       "title": "No protocol adapters are configured",
       "description": "Protocol adapters allow you to connect your HiveMQ Edge installation to local or remote devices. View your installed protocol adapters to create new connections."
     },
+    "noFilterWarning": {
+      "description": "No protocol adapters matching your criteria"
+    },
     "tabs": {
       "adapters": "Protocol Adapters Instances",
       "protocols": "Installed Protocol Adapters"
