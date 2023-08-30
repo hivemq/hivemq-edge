@@ -11,7 +11,7 @@ describe('AdapterTypeSummary', () => {
   it('should render properly', () => {
     cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} />)
 
-    cy.getByTestId('protocol-name').should('contain.text', 'Simulation Server Protocol Adapter')
+    cy.getByTestId('protocol-name').should('contain.text', 'Simulated Edge Device')
     cy.getByTestId('protocol-version').should('contain.text', '1.0.0')
     cy.getByTestId('protocol-type').should('contain.text', 'Simulation Server')
     cy.getByTestId('protocol-author').should('contain.text', 'HiveMQ')
@@ -30,7 +30,7 @@ describe('AdapterTypeSummary', () => {
   })
 
   it('should render the in-text search highlight', () => {
-    cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} searchQuery={'Server Protocol'} />)
+    cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} searchQuery={'Simulated Edge'} />)
 
     cy.getByTestId('protocol-name').find('mark').should('contain.text', 'Server Protocol')
   })
