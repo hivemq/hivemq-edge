@@ -62,6 +62,23 @@ export const themeHiveMQ = extendTheme({
   },
 
   colors: {
+    status: {
+      connected: {
+        500: '#38A169',
+      },
+      disconnected: {
+        500: '#718096',
+      },
+      connecting: {
+        500: '#CBD5E0',
+      },
+      disconnecting: {
+        500: '#CBD5E0',
+      },
+      error: {
+        500: '#E53E3E',
+      },
+    },
     // Based on 20-scale palette. One in two, omitting #fff
     brand: {
       50: '#ffffff',

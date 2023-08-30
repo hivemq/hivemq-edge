@@ -11,12 +11,16 @@
     "previous": "Previous",
     "next": "Next"
   },
+  "hivemq": {
+    "topic": "Topic"
+  },
   "navigation": {
     "mainPage": "Main content",
     "gateway": {
       "title": "HiveMQ Edge",
       "routes": {
         "home": "Home",
+        "workspace": "Workspace",
         "bridges": "MQTT Bridges",
         "protocolAdapters": "Protocol Adapters",
         "eventLogs": "Event logs"
@@ -500,6 +504,14 @@
       "disabled": {
         "description": "A unified namespace is no longer setup. All namespaces created remain the same but the standard will no longer be in use in this system."
       }
+    }
+  },
+  "workspace": {
+    "node": {
+      "edge": "Node: HiveMQ Edge",
+      "bridge": "Node: HiveMQ Bridge",
+      "adapter": "Node: Adapter",
+      "gateway": "Node: Gateway"
     }
   },
   "modals": {

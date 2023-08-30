@@ -3,7 +3,7 @@ import { IoLinkOutline } from 'react-icons/io5'
 import { GoLinkExternal } from 'react-icons/go'
 
 import { OnboardingTask } from '@/modules/Welcome/types.ts'
-import { useGetConfiguration } from '@/api/hooks/useGatewayPortal/useGetConfiguration.tsx'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 
 export const useOnboarding = (): OnboardingTask[] => {
   const { t } = useTranslation()

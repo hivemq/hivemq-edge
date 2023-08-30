@@ -3,7 +3,7 @@
 import LoginPage from '@/modules/Login/LoginPage.tsx'
 // @ts-ignore an import is not working
 import { CyHttpMessages } from 'cypress/types/net-stubbing'
-import { mockGatewayConfiguration } from '@/api/hooks/useGatewayPortal/__handlers__'
+import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
 import { GatewayConfiguration } from '@/api/__generated__'
 
 const mockNoPayload: GatewayConfiguration = {

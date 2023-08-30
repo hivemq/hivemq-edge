@@ -12,6 +12,7 @@ import UnifiedNamespacePage from '@/modules/UnifiedNamespace/UnifiedNamespacePag
 import WelcomePage from '@/modules/Welcome/WelcomePage.tsx'
 import LoginPage from '@/modules/Login/LoginPage.tsx'
 import UnifiedNamespaceEditor from '@/modules/UnifiedNamespace/components/UnifiedNamespaceEditor.tsx'
+import EdgeFlowPage from '@/modules/EdgeVisualisation/EdgeFlowPage.tsx'
 
 export const routes = createBrowserRouter(
   [
@@ -53,6 +54,10 @@ export const routes = createBrowserRouter(
               element: <AdapterController />,
             },
           ],
+        },
+        {
+          path: 'edge-flow/',
+          element: <EdgeFlowPage />,
         },
         {
           path: 'event-logs/',

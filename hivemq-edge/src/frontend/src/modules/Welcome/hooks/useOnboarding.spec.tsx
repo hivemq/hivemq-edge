@@ -7,7 +7,7 @@ import '@/config/i18n.config.ts'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import queryClient from '@/api/queryClient.ts'
-import { handlers as handlerGatewayConfiguration } from '@/api/hooks/useGatewayPortal/__handlers__'
+import { handlers as handlerGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
 import { useOnboarding } from './useOnboarding.tsx'
