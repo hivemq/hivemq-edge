@@ -12,10 +12,13 @@ describe('AdapterTypeSummary', () => {
     cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} />)
 
     cy.getByTestId('protocol-name').should('contain.text', 'Simulated Edge Device')
-    cy.getByTestId('protocol-version').should('contain.text', '1.0.0')
-    cy.getByTestId('protocol-type').should('contain.text', 'Simulation Server')
+    cy.getByTestId('protocol-version').should('contain.text', 'Development Snapshot')
+    cy.getByTestId('protocol-type').should('contain.text', 'Simulation')
     cy.getByTestId('protocol-author').should('contain.text', 'HiveMQ')
-    cy.getByTestId('protocol-description').should('contain.text', 'Simulates traffic from an edge device')
+    cy.getByTestId('protocol-description').should(
+      'contain.text',
+      'Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.'
+    )
 
     cy.get('a').each(($a) => {
       const documentation = $a.text()
@@ -32,7 +35,7 @@ describe('AdapterTypeSummary', () => {
   it('should render the in-text search highlight', () => {
     cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} searchQuery={'Simulated Edge'} />)
 
-    cy.getByTestId('protocol-name').find('mark').should('contain.text', 'Server Protocol')
+    cy.getByTestId('protocol-name').find('mark').should('contain.text', 'Simulated Edge')
   })
 
   it('should be accessible', () => {
