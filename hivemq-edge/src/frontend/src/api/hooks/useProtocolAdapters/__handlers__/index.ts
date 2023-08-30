@@ -71,6 +71,8 @@ export const mockProtocolAdapter: ProtocolAdapter = {
   logoUrl: 'http://localhost:8080/images/hivemq-icon.png',
   author: 'HiveMQ',
   configSchema: mockJSONSchema,
+  category: 'industrial',
+  tags: ['tag1', 'tag2', 'tag3'],
 }
 
 export const mockAdapterConfig: Record<string, Record<string, unknown>> = {
