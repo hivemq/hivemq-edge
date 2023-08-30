@@ -15,7 +15,6 @@
  */
 package com.hivemq.util;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.netty.buffer.ByteBuf;
 
@@ -134,8 +133,7 @@ public class Strings {
      * @param bytes the long value to convert
      * @return the human readable converted String
      */
-    @VisibleForTesting
-    public static String convertBytes(final long bytes) {
+    public static String toHumanReadableFormat(final long bytes) {
         final long kbDivisor = 1024L;
         final long mbDivisor = kbDivisor * kbDivisor;
         final long gbDivisor = mbDivisor * kbDivisor;

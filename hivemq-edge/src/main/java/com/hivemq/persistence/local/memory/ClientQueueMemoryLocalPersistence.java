@@ -128,7 +128,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         } else {
             maxHardLimit = maxHeap / hardLimitDivisor;
         }
-        log.debug("{} allocated for qos 0 inflight messages", Strings.convertBytes(maxHardLimit));
+        log.debug("{} allocated for qos 0 inflight messages", Strings.toHumanReadableFormat(maxHardLimit));
         return maxHardLimit;
     }
 
