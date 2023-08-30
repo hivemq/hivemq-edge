@@ -27,7 +27,7 @@ describe('applyFacets', () => {
     { a: { filter: { value: 'tag1', key: 'tags' } }, b: mockProtocolAdapter, desc: 'a proper tag', expected: true },
 
     { a: { search: undefined }, b: mockProtocolAdapter, desc: 'undefined search term', expected: true },
-    { a: { search: 'Server Protocol Adapter' }, b: mockProtocolAdapter, desc: 'a term in the name', expected: true },
+    { a: { search: 'Edge Device' }, b: mockProtocolAdapter, desc: 'a term in the name', expected: true },
     { a: { search: 'from an edge' }, b: mockProtocolAdapter, desc: 'a term in the description', expected: true },
   ])('should returns TRUE with $desc', ({ a, b, expected }) => {
     expect(applyFacets(a)(b)).toBe(expected)
