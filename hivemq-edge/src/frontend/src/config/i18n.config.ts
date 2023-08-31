@@ -2,11 +2,13 @@ import { initReactI18next } from 'react-i18next'
 import i18n from 'i18next'
 import Pseudo from 'i18next-pseudo'
 
-import en from '../locales/en/translation.json'
+import main_en from '../locales/en/translation.json'
+import component_en from '../locales/en/components.json'
 
 const resources = {
   en: {
-    translation: { ...en },
+    translation: { ...main_en },
+    components: { ...component_en },
   },
 }
 
@@ -22,6 +24,8 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
+    ns: ['translation', 'components'],
+    defaultNS: 'translation',
     lng: 'en',
     debug: import.meta.env.MODE === 'development',
     interpolation: {

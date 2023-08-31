@@ -1,0 +1,11 @@
+{
+  "pagination": {
+    "goFirstPage": "Go to the first page",
+    "goPreviousPage": "Go to the previous page",
+    "goNextPage": "Go to the next page",
+    "goLastPage": "Go to the last page",
+    "pageOf": "Page {{ page }} of {{ max }}",
+    "goPage": "Go to page",
+    "perPage": "Items per page"
+  }
+}
