@@ -185,6 +185,13 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     protected @NotNull  EnvironmentProperties getEnvironmentProperties() {
         Map<String, String> env = new HashMap<>();
         env.put(HiveMQEdgeConstants.VERSION_PROPERTY, systemInformation.getHiveMQVersion());
+
+        env.put(HiveMQEdgeConstants.MUTABLE_CONFIGURAION_ENABLED,
+                String.valueOf(configurationService.gatewayConfiguration().isMutableConfigurationEnabled()));
+
+        env.put(HiveMQEdgeConstants.CONFIGURATION_EXPORT_ENABLED,
+                String.valueOf(configurationService.gatewayConfiguration().isConfigurationExportEnabled()));
+
         return new EnvironmentProperties(env);
     }
 }
