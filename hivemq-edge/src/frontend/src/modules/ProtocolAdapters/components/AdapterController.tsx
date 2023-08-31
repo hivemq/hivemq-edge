@@ -104,7 +104,13 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
         )
     }
 
-    handleInstanceClose()
+    onInstanceClose()
+    navigate('/protocol-adapters', {
+      state: {
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        selectedAdapter: { isNew: isNew, adapterId: id },
+      },
+    })
   }
 
   return (
