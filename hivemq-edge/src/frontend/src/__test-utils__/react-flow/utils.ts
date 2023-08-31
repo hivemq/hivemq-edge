@@ -2,6 +2,7 @@ import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 import { XYPosition } from 'reactflow'
 import { IdStubs } from '@/modules/EdgeVisualisation/types.ts'
+import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
 export const MOCK_THEME: Partial<WithCSSVar<Dict>> = {
   colors: {
@@ -30,5 +31,5 @@ export const MOCK_LOCAL_STORAGE: Record<string, XYPosition> = {
   [`${IdStubs.BRIDGE_NODE}#bridge-id-01`]: { x: 2, y: 2 },
   [`${IdStubs.HOST_NODE}#bridge-id-01`]: { x: 3, y: 3 },
   [`${IdStubs.LISTENER_NODE}#tcp-listener-1883`]: { x: 1, y: 1 },
-  [`${IdStubs.ADAPTER_NODE}#my-id`]: { x: 1, y: 1 },
+  [`${IdStubs.ADAPTER_NODE}#${MOCK_ADAPTER_ID}`]: { x: 1, y: 1 },
 }

@@ -13,3 +13,6 @@ export const MOCK_NAMESPACE: ISA95ApiBean = {
   productionLine: MOCK_BREADCRUMB[3],
   workCell: MOCK_BREADCRUMB[4],
 }
+
+export const MOCK_BRIDGE_ID = 'first-bridge'
+export const MOCK_ADAPTER_ID = 'my-adapter'

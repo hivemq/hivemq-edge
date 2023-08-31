@@ -2,6 +2,7 @@ import { expect } from 'vitest'
 import { Edge, Node, Position } from 'reactflow'
 
 import { MOCK_LOCAL_STORAGE, MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
+import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
@@ -154,13 +155,13 @@ describe('createAdapterNode', () => {
       edgeConnector: Edge
     } = {
       nodeAdapter: expect.objectContaining({
-        id: 'adapter#my-id',
+        id: `adapter#${MOCK_ADAPTER_ID}`,
         sourcePosition: Position.Bottom,
         type: NodeTypes.ADAPTER_NODE,
       }),
       edgeConnector: expect.objectContaining({
-        id: 'connect-edge-adapter#my-id',
-        source: 'adapter#my-id',
+        id: `connect-edge-adapter#${MOCK_ADAPTER_ID}`,
+        source: `adapter#${MOCK_ADAPTER_ID}`,
         animated: true,
         target: 'edge',
       }),
@@ -176,7 +177,7 @@ describe('createAdapterNode', () => {
       edgeConnector: Edge
     } = {
       nodeAdapter: expect.objectContaining({
-        id: 'adapter#my-id',
+        id: `adapter#${MOCK_ADAPTER_ID}`,
         position: {
           x: 1,
           y: 1,
