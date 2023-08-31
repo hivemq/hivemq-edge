@@ -64,7 +64,7 @@ const PaginatedTable = <T,>({
   return (
     <>
       <TableContainer>
-        <TableUI variant="simple" size="sm">
+        <TableUI variant="simple">
           <Thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <Tr key={headerGroup.id}>
