@@ -6,7 +6,7 @@ import { FiLogOut } from 'react-icons/fi'
 
 import NavLinksBlock from './NavLinksBlock.tsx'
 
-import { useGetConfiguration } from '@/api/hooks/useGatewayPortal/useGetConfiguration.tsx'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 import logo from '@/assets/edge/03-hivemq-industrial-edge-vert.svg'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 

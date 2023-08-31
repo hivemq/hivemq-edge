@@ -13,12 +13,23 @@ export type ProtocolAdapter = {
      * The author of the adapter
      */
     author?: string;
+    /**
+     * The category of the adapter
+     */
+    category?: string;
     configSchema?: JsonNode;
     /**
      * The description
      */
     description?: string;
+    /**
+     * The id assigned to the protocol adapter type
+     */
     id?: string;
+    /**
+     * Is the adapter installed?
+     */
+    installed?: boolean;
     /**
      * The logo of the adapter
      */
@@ -31,6 +42,10 @@ export type ProtocolAdapter = {
      * The supported protocol
      */
     protocol?: string;
+    /**
+     * The search tags associated with this adapter
+     */
+    tags?: Array<string>;
     /**
      * The url of the adapter
      */

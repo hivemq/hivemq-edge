@@ -1,4 +1,4 @@
-import { ChangeEvent, Dispatch, FC, SetStateAction, useMemo } from 'react'
+import { ChangeEvent, FC, useMemo } from 'react'
 import {
   Flex,
   FormControl,
@@ -14,96 +14,131 @@ import {
   CloseButton,
 } from '@chakra-ui/react'
 import { SearchIcon } from '@chakra-ui/icons'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
-import { ProtocolFacetType } from '@/modules/ProtocolAdapters/types.ts'
 import { useTranslation } from 'react-i18next'
+
+import { ProtocolAdapter } from '@/api/__generated__'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+
+import { ProtocolFacetType } from '../../types.ts'
 
 interface SearchFilterAdaptersProps {
   facet: ProtocolFacetType | undefined
-  setFacet: Dispatch<SetStateAction<ProtocolFacetType | undefined>>
+  onChange?: (value: ProtocolFacetType) => void
 }
 
-const FacetSearch: FC<SearchFilterAdaptersProps> = ({ facet, setFacet }) => {
+const FacetSearch: FC<SearchFilterAdaptersProps> = ({ facet, onChange }) => {
   const { t } = useTranslation()
   const { data } = useGetAdapterTypes()
-  const categories = useMemo(() => {
-    return Array.from(new Set(data?.items?.map((e) => e.protocol)))
+
+  const { categories, tags } = useMemo(() => {
+    // const categories = Array.from(new Set(data?.items?.map((e) => e.category) || []))
+    const categories =
+      data?.items?.reduce((acc, cur) => {
+        cur?.category
+        return cur?.category ? Array.from(new Set([...acc, cur.category])) : acc
+      }, [] as string[]) || []
+    const tags =
+      data?.items?.reduce((acc, cur) => {
+        return Array.from(new Set([...acc, ...(cur?.tags || [])]))
+      }, [] as string[]) || []
+    return { categories, tags }
   }, [data])
 
   const handleChangeSearch = (event: ChangeEvent<HTMLInputElement>) => {
-    setFacet((old) => {
-      const { filter } = old || {}
-      return { search: event.target.value, filter }
-    })
+    onChange?.({ search: event.target.value })
   }
 
   const handleClearSearch = () => {
-    setFacet((old) => {
-      const { filter } = old || {}
-      return { search: undefined, filter }
-    })
+    onChange?.({ search: null })
   }
 
-  const handleFilter = (filter: { key: string; value: string } | undefined) => {
-    setFacet((old) => {
-      const { search } = old || {}
-      return { search, filter: filter }
-    })
+  const handleFilter = (filter: { key: keyof ProtocolAdapter; value: string } | null) => {
+    onChange?.({ filter: filter })
   }
 
   return (
-    <Flex flexDirection={'column'} gap={4}>
-      <div>
-        <FormControl>
-          <FormLabel>{t('protocolAdapter.facet.search.label')}</FormLabel>
-          <InputGroup>
-            <InputLeftElement pointerEvents="none">
-              <SearchIcon color="green.500" />
-            </InputLeftElement>
-            <Input
-              placeholder={t('protocolAdapter.facet.search.placeholder') as string}
-              onChange={handleChangeSearch}
-              value={facet?.search || ''}
+    <Flex flexDirection={'column'} gap={4} maxW={'250px'} minW={'fit-content'}>
+      <FormControl>
+        <FormLabel>{t('protocolAdapter.facet.search.label')}</FormLabel>
+        <InputGroup>
+          <InputLeftElement pointerEvents="none">
+            <SearchIcon />
+          </InputLeftElement>
+          <Input
+            id={'facet-search-input'}
+            placeholder={t('protocolAdapter.facet.search.placeholder') as string}
+            onChange={handleChangeSearch}
+            value={facet?.search || ''}
+          />
+          <InputRightElement>
+            <CloseButton
+              id={'facet-search-clear'}
+              onClick={handleClearSearch}
+              aria-label={t('protocolAdapter.facet.search.clear') as string}
             />
-            <InputRightElement>
-              <CloseButton onClick={handleClearSearch} aria-label={t('protocolAdapter.facet.search.clear') as string} />
-            </InputRightElement>
-          </InputGroup>
-        </FormControl>
-      </div>
-      <div>
-        <Flex flexDirection={'column'}>
-          <div>{t('protocolAdapter.facet.categories.label')}</div>
-          <Box pb={4} pt={4}>
-            <List spacing={3}>
-              <ListItem>
+          </InputRightElement>
+        </InputGroup>
+      </FormControl>
+
+      <Flex flexDirection={'column'}>
+        <Box pb={4} pt={4}>
+          <List spacing={3}>
+            <ListItem>
+              <Button
+                data-testid={`facet-filter-clear`}
+                justifyContent={'flex-start'}
+                variant={!facet?.filter ? 'outline' : 'ghost'}
+                aria-pressed={!facet?.filter}
+                size="sm"
+                w={'100%'}
+                onClick={() => handleFilter(null)}
+              >
+                {t('protocolAdapter.facet.filter.allFilters')}
+              </Button>
+            </ListItem>
+          </List>
+        </Box>
+        <div>{t('protocolAdapter.facet.filter.category')}</div>
+        <Box pb={4} pt={4}>
+          <List spacing={3}>
+            {categories.map((item) => (
+              <ListItem key={item}>
                 <Button
+                  data-testid={`facet-filter-category-${item}`}
                   justifyContent={'flex-start'}
-                  variant={facet?.filter === undefined ? 'outline' : 'ghost'}
+                  variant={facet?.filter?.value === item ? 'outline' : 'ghost'}
+                  aria-pressed={facet?.filter?.value === item}
                   size="sm"
                   w={'100%'}
-                  onClick={() => handleFilter(undefined)}
+                  onClick={() => handleFilter({ value: item, key: 'category' })}
                 >
-                  {t('protocolAdapter.facet.categories.allFilters')}
+                  {item}
                 </Button>
               </ListItem>
-              {categories.map((item) => (
-                <ListItem key={item}>
-                  <Button
-                    justifyContent={'flex-start'}
-                    variant={facet?.filter?.value === item ? 'outline' : 'ghost'}
-                    size="sm"
-                    w={'100%'}
-                    onClick={() => handleFilter({ value: item || '', key: 'protocol' })}
-                  >
-                    {item}
-                  </Button>
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-        </Flex>
-      </div>
+            ))}
+          </List>
+        </Box>
+        <div>{t('protocolAdapter.facet.filter.tags')}</div>
+        <Box pb={4} pt={4}>
+          <List spacing={3}>
+            {tags.map((item) => (
+              <ListItem key={item}>
+                <Button
+                  data-testid={`facet-filter-tag-${item}`}
+                  justifyContent={'flex-start'}
+                  variant={facet?.filter?.value === item ? 'outline' : 'ghost'}
+                  size="sm"
+                  w={'100%'}
+                  onClick={() => handleFilter({ value: item, key: 'tags' })}
+                  aria-pressed={facet?.filter?.value === item}
+                >
+                  {item}
+                </Button>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Flex>
     </Flex>
   )
 }

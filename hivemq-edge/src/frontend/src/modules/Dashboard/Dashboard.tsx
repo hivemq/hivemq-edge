@@ -32,7 +32,7 @@ const Dashboard: FC = () => {
       <main>
         <Flex flexDirection="row" h={'100vh'}>
           <SidePanel />
-          <Flex w={'100vw'} flexGrow={1}>
+          <Flex w={'100vw'} flexGrow={1} overflowY={'auto'}>
             <SkipNavContent />
             <Outlet />
           </Flex>

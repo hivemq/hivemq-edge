@@ -51,8 +51,6 @@ describe('AdapterInstanceDrawer', () => {
     )
 
     cy.get('#root_id').type('my-id')
-    cy.get('#root_host').type('my-host')
-    cy.get('#root_port').type('1234')
 
     cy.get('button[type="submit"]').click()
     cy.get('@onSubmit').should('have.been.called')

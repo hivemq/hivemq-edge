@@ -3,7 +3,7 @@
 // @ts-ignore an import is not working
 import { CyHttpMessages } from 'cypress/types/net-stubbing'
 import { mockAuthApi, mockValidCredentials } from '@/api/hooks/usePostAuthentication/__handlers__'
-import { mockGatewayConfiguration } from '@/api/hooks/useGatewayPortal/__handlers__'
+import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
 import { loginPage } from '../../pages/Login/LoginPage.ts'
 
 describe('Login Page', () => {

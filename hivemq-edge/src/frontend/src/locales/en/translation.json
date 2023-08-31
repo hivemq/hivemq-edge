@@ -11,12 +11,16 @@
     "previous": "Previous",
     "next": "Next"
   },
+  "hivemq": {
+    "topic": "Topic"
+  },
   "navigation": {
     "mainPage": "Main content",
     "gateway": {
       "title": "HiveMQ Edge",
       "routes": {
         "home": "Home",
+        "workspace": "Workspace",
         "bridges": "MQTT Bridges",
         "protocolAdapters": "Protocol Adapters",
         "eventLogs": "Event logs"
@@ -334,6 +338,9 @@
       "title": "No protocol adapters are configured",
       "description": "Protocol adapters allow you to connect your HiveMQ Edge installation to local or remote devices. View your installed protocol adapters to create new connections."
     },
+    "noFilterWarning": {
+      "description": "No protocol adapters matching your criteria"
+    },
     "tabs": {
       "adapters": "Protocol Adapters Instances",
       "protocols": "Installed Protocol Adapters"
@@ -352,9 +359,10 @@
         "placeholder": "Search for a protocol",
         "clear": "Clear"
       },
-      "categories": {
-        "label": "Categories",
-        "allFilters": "All"
+      "filter": {
+        "allFilters": "No filter",
+        "category": "Categories",
+        "tags": "Tags"
       }
     },
     "store": {
@@ -500,6 +508,14 @@
       "disabled": {
         "description": "A unified namespace is no longer setup. All namespaces created remain the same but the standard will no longer be in use in this system."
       }
+    }
+  },
+  "workspace": {
+    "node": {
+      "edge": "Node: HiveMQ Edge",
+      "bridge": "Node: HiveMQ Bridge",
+      "adapter": "Node: Adapter",
+      "gateway": "Node: Gateway"
     }
   },
   "modals": {
