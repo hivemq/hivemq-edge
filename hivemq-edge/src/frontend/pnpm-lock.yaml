@@ -49,6 +49,9 @@ dependencies:
   '@tanstack/react-query-devtools':
     specifier: ^4.29.7
     version: 4.29.7(@tanstack/react-query@4.29.7)(react-dom@18.2.0)(react@18.2.0)
+  '@tanstack/react-table':
+    specifier: ^8.9.3
+    version: 8.9.3(react-dom@18.2.0)(react@18.2.0)
   axios:
     specifier: ^1.4.0
     version: 1.4.0
@@ -70,9 +73,6 @@ dependencies:
   react:
     specifier: ^18.2.0
     version: 18.2.0
-  react-chakra-pagination:
-    specifier: ^2.1.0
-    version: 2.1.0(@chakra-ui/react@2.7.1)(@chakra-ui/system@2.5.8)(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(framer-motion@10.12.21)(react-dom@18.2.0)(react@18.2.0)
   react-dom:
     specifier: ^18.2.0
     version: 18.2.0(react@18.2.0)
@@ -6480,29 +6480,6 @@ packages:
     resolution: {integrity: sha512-ARhCpm70fzdcvNQfPoy49IaanKkTlRWF2JMzqhcJbhSFRZv7nPTvZJdcY7301IPmvW+/p0RgIWnQDLJxifsQ7g==}
     engines: {node: '>=8'}
     dev: true
-
-  /react-chakra-pagination@2.1.0(@chakra-ui/react@2.7.1)(@chakra-ui/system@2.5.8)(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(framer-motion@10.12.21)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-jCf0S58BV87EjR6fAbunNU8qJhyvVgloE02Rm3oRUKXmR3TGcUV4NptFaQG5I700xVDHoNFImLpfqr0aXWtHSQ==}
-    peerDependencies:
-      '@chakra-ui/react': ^2.7.0
-      '@emotion/react': ^11.11.1
-      '@emotion/styled': ^11.11.0
-      framer-motion: ^10.12.16
-      react: ^18.2.0
-      react-dom: ^18.2.0
-    dependencies:
-      '@chakra-ui/icons': 2.0.19(@chakra-ui/system@2.5.8)(react@18.2.0)
-      '@chakra-ui/react': 2.7.1(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.0.28)(framer-motion@10.12.21)(react-dom@18.2.0)(react@18.2.0)
-      '@emotion/react': 11.11.1(@types/react@18.0.28)(react@18.2.0)
-      '@emotion/styled': 11.11.0(@emotion/react@11.11.1)(@types/react@18.0.28)(react@18.2.0)
-      '@tanstack/react-table': 8.9.3(react-dom@18.2.0)(react@18.2.0)
-      csstype: 3.1.2
-      framer-motion: 10.12.21(react-dom@18.2.0)(react@18.2.0)
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-    transitivePeerDependencies:
-      - '@chakra-ui/system'
-    dev: false
 
   /react-clientside-effect@1.2.6(react@18.2.0):
     resolution: {integrity: sha512-XGGGRQAKY+q25Lz9a/4EPqom7WRjz3z9R2k4jhVKA/puQFH/5Nt27vFZYql4m4NVNdUvX8PS3O7r/Zzm7cjUlg==}
