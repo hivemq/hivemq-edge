@@ -17,7 +17,7 @@ import {
 import { Table as TableUI, Thead, Tbody, Tr, Th, Td, TableContainer, Text } from '@chakra-ui/react'
 
 import * as React from 'react'
-import Pagination from '@/components/Chakra/PaginatedTable/components/Pagination.tsx'
+import PaginationBar from '@/components/Chakra/PaginatedTable/components/PaginationBar.tsx'
 
 interface PaginatedTableProps<T> {
   data: Array<T>
@@ -104,7 +104,7 @@ const PaginatedTable = <T,>({
           </Tbody>
         </TableUI>
       </TableContainer>
-      <Pagination table={table} pageSizes={pageSizes} />
+      <PaginationBar table={table} pageSizes={pageSizes} />
     </>
   )
 }
