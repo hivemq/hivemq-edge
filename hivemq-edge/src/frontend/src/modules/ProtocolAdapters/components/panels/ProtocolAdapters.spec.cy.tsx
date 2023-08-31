@@ -9,7 +9,7 @@ describe('ProtocolAdapters', () => {
     cy.viewport(800, 900)
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocols')
     cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
-    cy.intercept('api/v1/management/protocol-adapters/status', { items: [mockAdapterConnectionStatus] })
+    cy.intercept('api/v1/management/protocol-adapters/status', { items: [mockAdapterConnectionStatus] }).as('getStatus')
   })
 
   it('should be accessible', () => {
@@ -17,6 +17,7 @@ describe('ProtocolAdapters', () => {
     cy.mountWithProviders(<ProtocolAdapters />)
     cy.wait('@getAdapters')
     cy.wait('@getProtocols')
+    cy.wait('@getStatus')
 
     cy.checkAccessibility()
     cy.percySnapshot('Component: ProtocolAdapters')
