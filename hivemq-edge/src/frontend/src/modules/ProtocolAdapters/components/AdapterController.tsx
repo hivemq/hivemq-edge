@@ -44,7 +44,7 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
 
   const handleInstanceClose = () => {
     onInstanceClose()
-    navigate('/protocol-adapters', { state: { protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters } })
+    navigate('/protocol-adapters', { state: { protocolAdapterTabIndex: ProtocolAdapterTabIndex.protocols } })
   }
 
   const handleInstanceSubmit: SubmitHandler<Adapter> = (props) => {
