@@ -1,5 +1,6 @@
-import { Bridge, BridgeList } from '@/api/__generated__'
+import { Bridge, BridgeList, ConnectionStatus } from '@/api/__generated__'
 import { rest } from 'msw'
+import { MOCK_TOPIC_ACT1, MOCK_TOPIC_ALL, MOCK_TOPIC_BRIDGE_DESTINATION } from '@/__test-utils__/react-flow/topics.ts'
 
 export const mockBridge: Bridge = {
   host: 'my.h0st.org',
@@ -9,6 +10,25 @@ export const mockBridge: Bridge = {
   sessionExpiry: 0,
   cleanStart: true,
   clientId: 'my-client-id',
+  bridgeRuntimeInformation: {
+    connectionStatus: {
+      status: ConnectionStatus.status.CONNECTED,
+    },
+  },
+  localSubscriptions: [
+    {
+      filters: [MOCK_TOPIC_ALL],
+      destination: MOCK_TOPIC_BRIDGE_DESTINATION,
+      maxQoS: 0,
+    },
+  ],
+  remoteSubscriptions: [
+    {
+      filters: [MOCK_TOPIC_ACT1],
+      destination: MOCK_TOPIC_BRIDGE_DESTINATION,
+      maxQoS: 0,
+    },
+  ],
 }
 
 export const handlers = [

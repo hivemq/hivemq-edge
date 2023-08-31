@@ -40,6 +40,7 @@ export const useHttpClient = () => {
         // Any status code that lie within the range of 2xx cause this function to trigger
         // Do something with response data
         const { 'x-bearer-token-reissue': reissuedToken } = response.headers
+        /* istanbul ignore if -- @preserve */
         if (reissuedToken) {
           // TODO[NVL] Deactivating the reissuing, see https://hivemq.kanbanize.com/ctrl_board/57/cards/15303/details/
           // login({ token: reissuedToken }, () => undefined)

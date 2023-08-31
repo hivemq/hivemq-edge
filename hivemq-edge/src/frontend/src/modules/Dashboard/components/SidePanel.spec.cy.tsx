@@ -2,7 +2,7 @@
 
 import SidePanel from '@/modules/Dashboard/components/SidePanel.tsx'
 
-import { mockGatewayConfiguration } from '@/api/hooks/useGatewayPortal/__handlers__'
+import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
 
 describe('SidePanel', () => {
   beforeEach(() => {

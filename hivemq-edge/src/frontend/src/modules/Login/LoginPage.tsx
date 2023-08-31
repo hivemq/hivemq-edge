@@ -4,7 +4,7 @@ import { Box, Flex, Image, Stack } from '@chakra-ui/react'
 import logo from '@/assets/edge/01-hivemq-industrial-edge.svg'
 import bgImage from '@/assets/app/background-sidepanel.svg'
 
-import { useGetConfiguration } from '@/api/hooks/useGatewayPortal/useGetConfiguration.tsx'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
