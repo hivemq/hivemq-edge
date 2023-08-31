@@ -36,6 +36,7 @@ import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import PaginatedTable from '@/components/Chakra/PaginatedTable/PaginatedTable.tsx'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
+import { compareStatus } from '../../utils/pagination-utils.ts'
 
 const DEFAULT_PER_PAGE = 10
 
@@ -103,6 +104,11 @@ const ProtocolAdapters: FC = () => {
         accessorFn: (row) => row.adapterRuntimeInformation?.connectionStatus?.status,
         id: 'status',
         cell: (info) => <AdapterStatusContainer id={info.row.original.id} />,
+        sortingFn: (rowA, rowB) =>
+          compareStatus(
+            rowA.original.adapterRuntimeInformation?.connectionStatus?.status,
+            rowB.original.adapterRuntimeInformation?.connectionStatus?.status
+          ),
       },
       {
         accessorFn: (row) => row.adapterRuntimeInformation?.lastStartedAttemptTime,
