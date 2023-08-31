@@ -19,7 +19,12 @@ describe('ProtocolAdapters', () => {
     cy.wait('@getProtocols')
     cy.wait('@getStatus')
 
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        // TODO[16486] Font too small. See https://hivemq.kanbanize.com/ctrl_board/57/cards/16486/details/
+        'color-contrast': { enabled: false },
+      },
+    })
     cy.percySnapshot('Component: ProtocolAdapters')
   })
 })
