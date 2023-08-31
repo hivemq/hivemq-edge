@@ -1,7 +1,6 @@
 import { FC } from 'react'
 import { Table } from '@tanstack/react-table'
 import {
-  Box,
   ButtonGroup,
   Flex,
   FormControl,
@@ -14,91 +13,79 @@ import {
   NumberInputField,
   NumberInputStepper,
   Select,
+  Text,
 } from '@chakra-ui/react'
 import { type IconButtonProps } from '@chakra-ui/react'
 import { MdArrowLeft, MdArrowRight } from 'react-icons/md'
 import { BiSkipNext, BiSkipPrevious } from 'react-icons/bi'
+import { useTranslation } from 'react-i18next'
 
 interface PaginationProps<T> {
   table: Table<T>
   pageSizes: number[]
-  onFirstPage?: () => void
-  onPreviousPage?: () => void
-  onGoPage?: (n: number) => void
-  onNextPage?: () => void
-  onLastPage?: () => void
 }
 
-const PaginationButton: FC<IconButtonProps> = ({ children, ...rest }) => (
-  <IconButton {...rest} size={'sm'} fontSize={'24px'}>
-    {children}
-  </IconButton>
-)
+const PaginationButton: FC<IconButtonProps> = (props) => <IconButton {...props} size={'sm'} fontSize={'24px'} />
 
-const PaginationBar = <T,>({
-  table,
-  pageSizes,
-  onFirstPage = () => table.setPageIndex(0),
-  onPreviousPage = () => table.previousPage(),
-  onGoPage = (n: number) => table.setPageIndex(n),
-  onNextPage = () => table.nextPage(),
-  onLastPage = () => table.setPageIndex(table.getPageCount() - 1),
-}: PaginationProps<T>) => {
+const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
+  const { t } = useTranslation()
   return (
     <HStack gap={8} mt={4}>
-      <Box>
-        <ButtonGroup isAttached variant={'ghost'}>
-          <PaginationButton
-            icon={<BiSkipPrevious />}
-            onClick={onFirstPage}
-            aria-label={'sss'}
-            isDisabled={!table.getCanPreviousPage()}
-          ></PaginationButton>
-          <PaginationButton
-            icon={<MdArrowLeft />}
-            onClick={onPreviousPage}
-            aria-label={'sss'}
-            isDisabled={!table.getCanPreviousPage()}
-          >
-            <MdArrowLeft />
-          </PaginationButton>
+      <ButtonGroup isAttached variant={'ghost'}>
+        <PaginationButton
+          icon={<BiSkipPrevious />}
+          onClick={() => table.setPageIndex(0)}
+          aria-label={t('pagination.goFirstPage', { ns: 'components' })}
+          isDisabled={!table.getCanPreviousPage()}
+        />
+        <PaginationButton
+          icon={<MdArrowLeft />}
+          onClick={() => table.previousPage()}
+          aria-label={t('components:pagination.goPreviousPage')}
+          isDisabled={!table.getCanPreviousPage()}
+        />
+        <PaginationButton
+          icon={<MdArrowRight />}
+          onClick={() => table.nextPage()}
+          aria-label={t('components:pagination.goNextPage')}
+          isDisabled={!table.getCanNextPage()}
+        />
+        <PaginationButton
+          icon={<BiSkipNext />}
+          onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+          aria-label={t('components:pagination.goLastPage')}
+          isDisabled={!table.getCanNextPage()}
+        />
+      </ButtonGroup>
 
-          <PaginationButton onClick={onNextPage} aria-label={'sss'} isDisabled={!table.getCanNextPage()}>
-            <MdArrowRight />
-          </PaginationButton>
-          <PaginationButton onClick={onLastPage} aria-label={'sss'} isDisabled={!table.getCanNextPage()}>
-            <BiSkipNext />
-          </PaginationButton>
-        </ButtonGroup>
-      </Box>
+      <Text fontSize={'md'} whiteSpace={'nowrap'}>
+        {t('components:pagination.pageOf', {
+          page: table.getState().pagination.pageIndex + 1,
+          max: table.getPageCount(),
+        })}
+      </Text>
 
-      <HStack>
-        <FormControl display={'flex'} alignItems={'center'}>
-          <FormLabel mb={0}>
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()} | Go to page
-          </FormLabel>
-          <NumberInput
-            size="sm"
-            maxWidth={'80px'}
-            defaultValue={table.getState().pagination.pageIndex + 1}
-            min={1}
-            max={table.getPageCount()}
-            onChange={(e) => {
-              const page = Number(e) - 1
-              onGoPage(page)
-            }}
-          >
-            <NumberInputField />
-            <NumberInputStepper>
-              <NumberIncrementStepper />
-              <NumberDecrementStepper />
-            </NumberInputStepper>
-          </NumberInput>
-        </FormControl>
-      </HStack>
-      <Flex flex={1} justifyContent={'flex-end'}>
+      <FormControl display={'flex'} alignItems={'center'} w={'inherit'}>
+        <FormLabel mb={0}>{t('components:pagination.goPage')}</FormLabel>
+        <NumberInput
+          size="sm"
+          maxWidth={'80px'}
+          defaultValue={table.getState().pagination.pageIndex + 1}
+          min={1}
+          max={table.getPageCount()}
+          onChange={(e) => table.setPageIndex(Number(e) - 1)}
+        >
+          <NumberInputField />
+          <NumberInputStepper>
+            <NumberIncrementStepper />
+            <NumberDecrementStepper />
+          </NumberInputStepper>
+        </NumberInput>
+      </FormControl>
+
+      <Flex flex={1}>
         <FormControl display={'flex'} alignItems={'baseline'} justifyContent={'flex-end'}>
-          <FormLabel>Items per page</FormLabel>
+          <FormLabel> {t('components:pagination.perPage')}</FormLabel>
           <Select
             maxWidth={'80px'}
             size={'sm'}
