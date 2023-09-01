@@ -1,26 +1,11 @@
 import { FC, useMemo, useState } from 'react'
-import {
-  Box,
-  Flex,
-  HStack,
-  IconButton,
-  Image,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
-  Skeleton,
-  Text,
-  useDisclosure,
-  useTheme,
-} from '@chakra-ui/react'
+import { Box, Flex, HStack, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
 import { ColumnDef, Row } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
-import { ChevronDownIcon } from '@chakra-ui/icons'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { Adapter, ApiError, ConnectionStatus, ProtocolAdapter } from '@/api/__generated__'
+import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDeleteProtocolAdapter.tsx'
 import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.tsx'
@@ -36,7 +21,9 @@ import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
+
 import { compareStatus } from '../../utils/pagination-utils.ts'
+import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
 
 const DEFAULT_PER_PAGE = 10
 
@@ -121,33 +108,14 @@ const ProtocolAdapters: FC = () => {
         header: t('protocolAdapter.table.header.actions') as string,
         sortingFn: undefined,
         cell: (info) => {
-          const { type, id, adapterRuntimeInformation: { connectionStatus } = {} } = info.row.original
+          // const { type, id, adapterRuntimeInformation: { connectionStatus } = {} } = info.row.original
           return (
-            <Menu>
-              <MenuButton
-                variant="outline"
-                size={'sm'}
-                as={IconButton}
-                icon={<ChevronDownIcon />}
-                aria-label={t('protocolAdapter.table.actions.label') as string}
-              />
-              <MenuList>
-                <MenuItem isDisabled>
-                  {connectionStatus?.status !== ConnectionStatus.status.CONNECTED
-                    ? t('protocolAdapter.table.actions.connect')
-                    : t('protocolAdapter.table.actions.disconnect')}
-                </MenuItem>
-                <MenuItem onClick={() => handleCreateInstance(type)}>
-                  {t('protocolAdapter.table.actions.create')}
-                </MenuItem>
-                <MenuItem onClick={() => handleEditInstance(id, type as string)}>
-                  {t('protocolAdapter.table.actions.edit')}
-                </MenuItem>
-                <MenuItem color={'red.500'} onClick={() => handleOnDelete(id)}>
-                  <Text>{t('protocolAdapter.table.actions.delete')}</Text>
-                </MenuItem>
-              </MenuList>
-            </Menu>
+            <AdapterActionMenu
+              adapter={info.row.original}
+              onCreate={handleCreateInstance}
+              onEdit={handleEditInstance}
+              onDelete={handleOnDelete}
+            />
           )
         },
       },
