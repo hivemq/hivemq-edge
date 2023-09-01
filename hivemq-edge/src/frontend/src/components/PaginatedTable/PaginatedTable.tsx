@@ -54,9 +54,6 @@ const PaginatedTable = <T,>({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    debugTable: true,
-    debugHeaders: false,
-    debugColumns: false,
   })
 
   return (

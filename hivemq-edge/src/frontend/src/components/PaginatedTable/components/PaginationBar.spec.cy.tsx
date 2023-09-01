@@ -22,7 +22,7 @@ const MOCK_TABLE: Partial<Table<Adapter>> = {
   nextPage: () => undefined,
 }
 
-describe('LoaderSpinner', () => {
+describe('PaginationBar', () => {
   beforeEach(() => {
     cy.viewport(800, 150)
 
@@ -69,6 +69,6 @@ describe('LoaderSpinner', () => {
     // @ts-ignore force mocked partial object
     cy.mountWithProviders(<PaginationBar table={MOCK_TABLE} pageSizes={MOCK_PAGE_SIZES} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: Query Loader Spinner')
+    cy.percySnapshot('Component: PaginationBar')
   })
 })
