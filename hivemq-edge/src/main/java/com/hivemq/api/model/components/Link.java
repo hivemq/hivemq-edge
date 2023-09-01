@@ -34,7 +34,7 @@ public class Link {
     private final @NotNull String url;
 
     @JsonProperty("displayText")
-    @Schema(description = "The link display text", required = true)
+    @Schema(description = "The link display text", nullable = true)
     private final @NotNull String displayText;
 
     @JsonProperty("description")
