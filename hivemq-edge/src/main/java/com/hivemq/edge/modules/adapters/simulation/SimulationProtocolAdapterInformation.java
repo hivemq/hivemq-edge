@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
+import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.CustomConfig;
@@ -51,6 +52,11 @@ public class SimulationProtocolAdapterInformation
     @Override
     public @NotNull String getLogoUrl() {
         return "/images/hivemq-icon.png";
+    }
+
+    @Override
+    public ProtocolAdapterConstants.CATEGORY getCategory() {
+        return ProtocolAdapterConstants.CATEGORY.SIMULATION;
     }
 
     @Override

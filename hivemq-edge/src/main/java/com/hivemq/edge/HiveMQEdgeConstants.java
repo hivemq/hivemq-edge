@@ -30,7 +30,9 @@ public interface HiveMQEdgeConstants {
     String CLIENT_AGENT_PROPERTY_VALUE = "HiveMQ-Edge; %s";
 
     int MAX_ID_LEN = 500;
+    int MAX_NAME_LEN = 256;
     String ID_REGEX = "([a-zA-Z_0-9\\-])*";
+    String NAME_REGEX = "^([a-zA-Z_0-9\\- ])*$";
     int MAX_UINT16 = 65535;
     String MAX_UINT16_String = "65535";
     String DEVELOPMENT_MODE = "hivemq.edge.workspace.modules";

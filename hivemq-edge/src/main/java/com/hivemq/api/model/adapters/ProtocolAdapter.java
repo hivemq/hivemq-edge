@@ -63,7 +63,7 @@ public class ProtocolAdapter {
 
     @JsonProperty("category")
     @Schema(description = "The category of the adapter")
-    private final @NotNull String category;
+    private final @NotNull ProtocolAdapterCategory category;
 
     @JsonProperty("tags")
     @Schema(description = "The search tags associated with this adapter")
@@ -82,8 +82,8 @@ public class ProtocolAdapter {
             @JsonProperty("version") final @NotNull String version,
             @JsonProperty("logoUrl") final @NotNull String logoUrl,
             @JsonProperty("author") final @NotNull String author,
-            @JsonProperty("installed") final @Nullable  Boolean installed,
-            @JsonProperty("category") final @Nullable  String category,
+            @JsonProperty("installed") final @Nullable Boolean installed,
+            @JsonProperty("category") final @Nullable ProtocolAdapterCategory category,
             @JsonProperty("tags") final @Nullable  List<String> tags,
             @JsonProperty("configSchema") final @NotNull JsonNode configSchema) {
         this.id = id;
@@ -144,7 +144,7 @@ public class ProtocolAdapter {
         return tags;
     }
 
-    public @Nullable String getCategory() {
+    public @Nullable ProtocolAdapterCategory getCategory() {
         return category;
     }
 }
