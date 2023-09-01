@@ -27,9 +27,12 @@ public class Files {
 
     static final String PERIOD = ".";
 
+    private Files() {
+        //This is a utility class, don't instantiate it!
+    }
 
     /**
-     * Given a file path, will return the name of the file determind by the last
+     * Given a file path, will return the name of the file determined by the last
      * location of the File.separator
      *
      * @param filePath - the file path e.g. /some/file/location.txt
@@ -62,22 +65,29 @@ public class Files {
 
 
     /**
-     * Given a file path, will return the extention of the file determined by the last
+     * Given a file path, will return the extension of the file determined by the last
      * location of a period character
      *
      * @param filePath - the file path e.g. /some/file/location.txt
-     * @return fileName - the fileName e.g. .txt
+     * @return fileName - the fileName e.g. txt
      */
     public static String getFileExtension(@NotNull final String filePath){
         Preconditions.checkNotNull(filePath);
-        int idx = filePath.lastIndexOf(PERIOD);
+        String name = getFileName(filePath);
+        int idx = name.lastIndexOf(PERIOD);
         String ext = null;
         if(idx > -1){
-            ext = filePath.substring(idx + 1);
+            ext = name.substring(idx + 1);
         }
         return ext;
     }
 
+    /**
+     * Given a file path, will return the directory of the file, determined by
+     * the last location of the File.separator
+     * @param filePath - the file path e.g. /some/file/location.txt
+     * @return the directory of the file e.g. /some/file
+     */
     public static String getFilePathExcludingFile(@NotNull String filePath){
         Preconditions.checkNotNull(filePath);
         int idx = filePath.lastIndexOf(File.separator);
@@ -86,13 +96,4 @@ public class Files {
         }
         return filePath;
     }
-
-//    public static void main(String[] args) {
-//        System.err.println(getFileName("/some/pa.th/somefile.txt"));
-//        System.err.println(getFileNameExcludingExtension("/some/pa.th/somefile.txt"));
-//        System.err.println(getFileNameExcludingExtension("somefile.txt"));
-//        System.err.println(getFileNameExcludingExtension("/somefile.txt"));
-//        System.err.println(getFilePathExcludingFile("some/pa.th/somefile.txt"));
-//        System.err.println(getFileExtension("some/pa.th/somefile.txt"));
-//    }
 }
