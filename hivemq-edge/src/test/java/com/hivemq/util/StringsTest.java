@@ -17,6 +17,7 @@ package com.hivemq.util;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Before;
@@ -126,5 +127,30 @@ public class StringsTest {
     @Test(expected = NullPointerException.class)
     public void test_create_prefixed_bytes_null_buffer() throws Exception {
         Strings.createPrefixedBytesFromString("string", null);
+    }
+
+    @Test
+    public void test_to_human_readable_B() {
+        assertEquals("1023 B", Strings.toHumanReadableFormat(1023L));
+    }
+
+    @Test
+    public void test_to_human_readable_KB() {
+        assertEquals("1.11 KB", Strings.toHumanReadableFormat(1024L + 110L));
+    }
+
+    @Test
+    public void test_to_human_readable_MB() {
+        assertEquals("1.11 MB", Strings.toHumanReadableFormat(1024L * 1024L + 110 * 1024L));
+    }
+
+    @Test
+    public void test_to_human_readable_GB() {
+        assertEquals("1.11 GB", Strings.toHumanReadableFormat(1024L * 1024L * 1024L + 110 * 1024L * 1024L));
+    }
+
+    @Test
+    public void test_to_human_readable_TB() {
+        assertEquals("1.11 TB", Strings.toHumanReadableFormat(1024L * 1024L * 1024L * 1024L + 110 * 1024L * 1024L * 1024L));
     }
 }
