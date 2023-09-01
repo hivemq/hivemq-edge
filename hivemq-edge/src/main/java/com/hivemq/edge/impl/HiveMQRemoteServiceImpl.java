@@ -68,7 +68,8 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
 
     protected final @NotNull HiveMQEdgeHttpServiceImpl initHttpService() {
         return new HiveMQEdgeHttpServiceImpl(systemInformation.getHiveMQVersion(),
-                objectMapper, HiveMQEdgeHttpServiceImpl.SERVICE_DISCOVERY_URL, TIMEOUT, TIMEOUT, REFRESH);
+                objectMapper, HiveMQEdgeHttpServiceImpl.SERVICE_DISCOVERY_URL, TIMEOUT, TIMEOUT, REFRESH,
+                configurationService.usageTrackingConfiguration().isUsageTrackingEnabled());
     }
 
     @Override

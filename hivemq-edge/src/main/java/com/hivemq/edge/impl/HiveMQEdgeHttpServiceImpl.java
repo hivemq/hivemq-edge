@@ -55,6 +55,8 @@ public class HiveMQEdgeHttpServiceImpl {
     protected AtomicInteger errorCount = new AtomicInteger();
     protected long lastRequestTime;
 
+    protected final boolean activateUsage;
+
     protected ObjectMapper mapper;
     protected volatile boolean hasConnectivity;
     private Thread cloudClientThread;
@@ -73,7 +75,8 @@ public class HiveMQEdgeHttpServiceImpl {
             final @NotNull String serviceDiscoveryEndpoint,
             int connectTimeoutMillis,
             int readTimeoutMillis,
-            int retryTimeMillis) {
+            int retryTimeMillis,
+            boolean activateUsage) {
         Preconditions.checkNotNull(hiveMqEdgeVersion);
         Preconditions.checkNotNull(mapper);
         Preconditions.checkNotNull(serviceDiscoveryEndpoint);
@@ -84,6 +87,7 @@ public class HiveMQEdgeHttpServiceImpl {
         this.connectTimeoutMillis = connectTimeoutMillis;
         this.readTimeoutMillis = readTimeoutMillis;
         this.retryTimeMillis = Math.max(2000, retryTimeMillis);
+        this.activateUsage = activateUsage;
         initMonitor();
     }
 
@@ -99,7 +103,7 @@ public class HiveMQEdgeHttpServiceImpl {
                         if (remoteConfiguration == null) {
                             loadConfigurationInternal();
                         }
-                        if(usageClientThread == null){
+                        if(activateUsage && usageClientThread == null){
                             initUsage();
                         }
                     }
@@ -179,7 +183,9 @@ public class HiveMQEdgeHttpServiceImpl {
         remoteConfiguration = null;
         remoteServices = null;
         try {
-            usageClientThread.interrupt();
+            if(usageClientThread != null){
+                usageClientThread.interrupt();
+            }
         } catch(Exception e){
         } finally {
             usageClientThread = null;
@@ -196,22 +202,23 @@ public class HiveMQEdgeHttpServiceImpl {
 
     public void fireEvent(final HiveMQEdgeEvent event, boolean queueIfOffline){
         try {
+            if(!activateUsage) return;
             boolean process = isOnline() || queueIfOffline;
-            if(logger.isDebugEnabled()){
-                logger.debug("firing event {}, online ? {}", event.getEventType(), process);
+            if(logger.isTraceEnabled()){
+                logger.trace("Firing event {}, online ? {}", event.getEventType(), process);
             }
             if(process){
                 //-- only enqueue data when we know we can drain it (and this may change over time)
                 event.setEdgeVersion(hiveMqEdgeVersion);
                 if(!usageEventQueue.offer(event, 50, TimeUnit.MILLISECONDS)){
-                    if(logger.isDebugEnabled()){
-                        logger.debug("tracking-usage queue blocked, and discarded result");
+                    if(logger.isTraceEnabled()){
+                        logger.trace("Tracking-usage queue blocked, and discarded result");
                     }
                 }
             }
         } catch (InterruptedException e) {
             if(logger.isDebugEnabled()){
-                logger.debug("could not enqueue usage data -> {}", e.getMessage());
+                logger.debug("Could not enqueue usage data -> {}", e.getMessage());
             }
         }
     }
@@ -268,8 +275,10 @@ public class HiveMQEdgeHttpServiceImpl {
                     logger.trace("successfully established connection to http provider {}, online",
                             serviceDiscoveryEndpoint);
                 }
-                HiveMQEdgeEvent event = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.EDGE_PING);
-                fireEvent(event, false);
+                if(hasConnectivity && activateUsage){
+                    HiveMQEdgeEvent event = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.EDGE_PING);
+                    fireEvent(event, false);
+                }
             } else {
                 hasConnectivity = false;
             }
