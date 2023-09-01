@@ -20,7 +20,7 @@ import com.hivemq.extensions.packets.pubrel.PubrelPacketImpl;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.reason.Mqtt5PubRelReasonCode;
-import com.hivemq.util.ObjectMemoryEstimation;
+import com.hivemq.util.MemoryEstimator;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -93,12 +93,12 @@ public class PUBRELTest {
         final int userPropertiesSize =
                 3 * (
                         24 + // overhead
-                                ObjectMemoryEstimation.stringSize("userx") +
-                                ObjectMemoryEstimation.stringSize("valuex")
+                                MemoryEstimator.stringSize("userx") +
+                                MemoryEstimator.stringSize("valuex")
                 );
 
         final String reasonString = "reasonString";
-        final int reasonStringSize = ObjectMemoryEstimation.stringSize(reasonString);
+        final int reasonStringSize = MemoryEstimator.stringSize(reasonString);
 
         final PUBREL pubrel1 = new PUBREL(1);
         final PUBREL pubrel2 = new PUBREL(1, 100L, 100L);
@@ -115,12 +115,12 @@ public class PUBRELTest {
                 100L,
                 100L);
 
-        final int fixedSize = ObjectMemoryEstimation.objectShellSize() +
-                ObjectMemoryEstimation.intSize() + // sizeInMemory
-                ObjectMemoryEstimation.intSize() + // packet id
-                ObjectMemoryEstimation.enumSize() + // reason code
-                ObjectMemoryEstimation.longWrapperSize() + //publish timestamp
-                ObjectMemoryEstimation.longWrapperSize() + //expiry interval
+        final int fixedSize = MemoryEstimator.OBJECT_SHELL_SIZE +
+                MemoryEstimator.INT_SIZE + // sizeInMemory
+                MemoryEstimator.INT_SIZE + // packet id
+                MemoryEstimator.ENUM_OVERHEAD + // reason code
+                MemoryEstimator.LONG_WRAPPER_SIZE + //publish timestamp
+                MemoryEstimator.LONG_WRAPPER_SIZE + //expiry interval
                 24; //user props overhead
 
         final int pubrel3Size = fixedSize + reasonStringSize + userPropertiesSize;

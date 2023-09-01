@@ -17,7 +17,7 @@ package com.hivemq.persistence;
 
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.util.ObjectMemoryEstimation;
+import com.hivemq.util.MemoryEstimator;
 
 /**
  * @author Lukas Brandl
@@ -57,12 +57,12 @@ public class PersistenceEntry<T extends Sizable> implements Sizable {
             return sizeInMemory;
         }
 
-        int size = ObjectMemoryEstimation.objectShellSize();
-        size += ObjectMemoryEstimation.longSize(); // timestamp
-        size += ObjectMemoryEstimation.intSize(); // sizeInMemory
+        int size = MemoryEstimator.OBJECT_SHELL_SIZE;
+        size += MemoryEstimator.LONG_SIZE; // timestamp
+        size += MemoryEstimator.INT_SIZE; // sizeInMemory
 
         // contained object
-        size += ObjectMemoryEstimation.objectRefSize();
+        size += MemoryEstimator.OBJECT_REF_SIZE;
         size += object.getEstimatedSize();
 
         sizeInMemory = size;

@@ -35,7 +35,7 @@ import com.hivemq.persistence.exception.InvalidSessionExpiryIntervalException;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
-import com.hivemq.util.ObjectMemoryEstimation;
+import com.hivemq.util.MemoryEstimator;
 import com.hivemq.util.ThreadPreConditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -215,7 +215,7 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
             final PersistenceEntry<ClientSession> newEntry = new PersistenceEntry<>(usedSession, timestamp);
             currentMemorySize.addAndGet(newEntry.getEstimatedSize());
             if (addClientIdSize) {
-                currentMemorySize.addAndGet(ObjectMemoryEstimation.stringSize(clientId));
+                currentMemorySize.addAndGet(MemoryEstimator.stringSize(clientId));
             }
 
             return newEntry;
@@ -240,7 +240,7 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
                 // we create a tombstone here which will be removed at next cleanup
                 final ClientSession clientSession = new ClientSession(false, SESSION_EXPIRE_ON_DISCONNECT);
                 final PersistenceEntry<ClientSession> persistenceEntry = new PersistenceEntry<>(clientSession, timestamp);
-                currentMemorySize.addAndGet(persistenceEntry.getEstimatedSize() + ObjectMemoryEstimation.stringSize(clientId));
+                currentMemorySize.addAndGet(persistenceEntry.getEstimatedSize() + MemoryEstimator.stringSize(clientId));
                 return persistenceEntry;
             }
 
@@ -295,7 +295,7 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
                 sessionsCount.decrementAndGet();
             }
             removeWillReference(clientSession);
-            currentMemorySize.addAndGet(-(remove.getEstimatedSize() + ObjectMemoryEstimation.stringSize(clientId)));
+            currentMemorySize.addAndGet(-(remove.getEstimatedSize() + MemoryEstimator.stringSize(clientId)));
         }
     }
 
@@ -327,7 +327,7 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
                 }
                 eventLog.clientSessionExpired(timestamp + sessionExpiryInterval * 1000, entry.getKey());
                 expiredClientIds.add(entry.getKey());
-                currentMemorySize.addAndGet(-(storedEntry.getEstimatedSize() + ObjectMemoryEstimation.stringSize(entry.getKey())));
+                currentMemorySize.addAndGet(-(storedEntry.getEstimatedSize() + MemoryEstimator.stringSize(entry.getKey())));
                 iterator.remove();
             }
         }

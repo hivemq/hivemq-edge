@@ -21,7 +21,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 /**
  * @author Lukas Brandl
  */
-public class ObjectMemoryEstimation {
+public class MemoryEstimator {
 
     public static final int OBJECT_SHELL_SIZE = 12; //Class Pointer (4), Flags (4), Locks (4)
     public static final int OBJECT_REF_SIZE = 4;
@@ -37,10 +37,18 @@ public class ObjectMemoryEstimation {
     public static final int CHAR_SIZE = 2;
     public static final int BOOLEAN_SIZE = 1;
 
-    public static int enumSize() {
-        return ENUM_OVERHEAD;
+    private MemoryEstimator() {
+        //This is a utility class, don't instantiate it!
     }
 
+    /**
+     * Computes the size of a String.
+     * This size is computed as STRING_OVERHEAD plus the size of each character (defined by CHAR_SIZE)
+     * in the string
+     *
+     * @param string the input string
+     * @return the size of the string
+     */
     public static int stringSize(@Nullable final String string) {
         if (string == null) {
             return 0;
@@ -51,6 +59,13 @@ public class ObjectMemoryEstimation {
         return size;
     }
 
+    /**
+     * Computes the size of an array of bytes.
+     * This size is computed as ARRAY_OVERHEAD plus the length of the array.
+     *
+     * @param array the input array of bytes
+     * @return the size of the array of bytes
+     */
     public static int byteArraySize(@Nullable final byte[] array) {
         if (array == null) {
             return 0;
@@ -61,51 +76,22 @@ public class ObjectMemoryEstimation {
         return size;
     }
 
+    /**
+     * Computes the size of an {@link ImmutableIntArray}
+     * This size is computed as ARRAY_OVERHEAD plus 2 * INT_SIZE plus the size of each int in the array (defined by INT_SIZE)
+     *
+     * @param array the input {@link ImmutableIntArray}
+     * @return the size of the {@link ImmutableIntArray}
+     */
     public static int immutableIntArraySize(@Nullable final ImmutableIntArray array) {
         if (array == null) {
             return 0;
         }
 
         int size = ARRAY_OVERHEAD;
-        size += intSize(); // start;
-        size += intSize(); // end;
+        size += INT_SIZE; // start;
+        size += INT_SIZE; // end;
         size += array.length() * INT_SIZE;
         return size;
-    }
-
-    public static int longWrapperSize() {
-        return LONG_WRAPPER_SIZE;
-    }
-
-    public static int intWrapperSize() {
-        return INT_WRAPPER_SIZE;
-    }
-
-    public static int longSize() {
-        return LONG_SIZE;
-    }
-
-    public static int intSize() {
-        return INT_SIZE;
-    }
-
-    public static int booleanSize() {
-        return BOOLEAN_SIZE;
-    }
-
-    public static int objectShellSize() {
-        return OBJECT_SHELL_SIZE;
-    }
-
-    public static int objectRefSize() {
-        return OBJECT_REF_SIZE;
-    }
-
-    public static int collectionOverhead() {
-        return COLLECTION_OVERHEAD;
-    }
-
-    public static int linkedListNodeOverhead() {
-        return LINKED_LIST_NODE_OVERHEAD;
     }
 }

@@ -30,7 +30,7 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.persistence.IterablePersistenceEntry;
 import com.hivemq.persistence.local.ClientSessionSubscriptionLocalPersistence;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
-import com.hivemq.util.ObjectMemoryEstimation;
+import com.hivemq.util.MemoryEstimator;
 import com.hivemq.util.ThreadPreConditions;
 
 import javax.inject.Inject;
@@ -101,7 +101,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
             if (oldEntry == null) {
                 final IterablePersistenceEntry<ImmutableSet<Topic>> newEntry = new IterablePersistenceEntry<>(topics, timestamp);
                 currentMemorySize.addAndGet(newEntry.getEstimatedSize());
-                currentMemorySize.addAndGet(ObjectMemoryEstimation.stringSize(client));
+                currentMemorySize.addAndGet(MemoryEstimator.stringSize(client));
                 return newEntry;
             }
             currentMemorySize.addAndGet(-oldEntry.getEstimatedSize());
@@ -143,7 +143,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
             boolean remaining = false;
             for (final Topic topic : entry.getObject()) {
                 if (topics.contains(topic.getTopic())) {
-                    currentMemorySize.addAndGet(-(topic.getEstimatedSize() + ObjectMemoryEstimation.objectRefSize()));
+                    currentMemorySize.addAndGet(-(topic.getEstimatedSize() + MemoryEstimator.OBJECT_REF_SIZE));
                     continue;
                 }
                 remaining = true;
@@ -151,7 +151,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
             }
             if (!remaining) {
                 currentMemorySize.addAndGet(-IterablePersistenceEntry.getFixedSize());
-                currentMemorySize.addAndGet(-ObjectMemoryEstimation.stringSize(client));
+                currentMemorySize.addAndGet(-MemoryEstimator.stringSize(client));
                 return null;
             }
             return new IterablePersistenceEntry<>(remainingTopicsBuilder.build(), timestamp);
@@ -170,7 +170,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
             return;
         }
         currentMemorySize.addAndGet(-remove.getEstimatedSize());
-        currentMemorySize.addAndGet(-ObjectMemoryEstimation.stringSize(client));
+        currentMemorySize.addAndGet(-MemoryEstimator.stringSize(client));
     }
 
     @Override

@@ -29,7 +29,7 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttMessageWithUserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
-import com.hivemq.util.ObjectMemoryEstimation;
+import com.hivemq.util.MemoryEstimator;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -415,34 +415,34 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
             return sizeInMemory;
         }
         int size = 0;
-        size += ObjectMemoryEstimation.objectShellSize(); // the publish himself
-        size += ObjectMemoryEstimation.intSize(); // sizeInMemory
-        size += ObjectMemoryEstimation.longSize(); // timestamp
-        size += ObjectMemoryEstimation.stringSize(topic);
-        size += ObjectMemoryEstimation.byteArraySize(payload);
-        size += ObjectMemoryEstimation.byteArraySize(correlationData);
-        size += ObjectMemoryEstimation.stringSize(responseTopic);
-        size += ObjectMemoryEstimation.stringSize(uniqueId);
-        size += ObjectMemoryEstimation.stringSize(hivemqId);
-        size += ObjectMemoryEstimation.stringSize(contentType);
+        size += MemoryEstimator.OBJECT_SHELL_SIZE; // the publish himself
+        size += MemoryEstimator.INT_SIZE; // sizeInMemory
+        size += MemoryEstimator.LONG_SIZE; // timestamp
+        size += MemoryEstimator.stringSize(topic);
+        size += MemoryEstimator.byteArraySize(payload);
+        size += MemoryEstimator.byteArraySize(correlationData);
+        size += MemoryEstimator.stringSize(responseTopic);
+        size += MemoryEstimator.stringSize(uniqueId);
+        size += MemoryEstimator.stringSize(hivemqId);
+        size += MemoryEstimator.stringSize(contentType);
 
         size += 24; //User Properties Overhead
         final ImmutableList<MqttUserProperty> userProperties = getUserProperties().asList();
         for (int i = 0; i < userProperties.size(); i++) {
             final MqttUserProperty userProperty = userProperties.get(i);
             size += 24; //UserProperty Object Overhead
-            size += ObjectMemoryEstimation.stringSize(userProperty.getName());
-            size += ObjectMemoryEstimation.stringSize(userProperty.getValue());
+            size += MemoryEstimator.stringSize(userProperty.getName());
+            size += MemoryEstimator.stringSize(userProperty.getValue());
         }
-        size += ObjectMemoryEstimation.booleanSize(); // duplicateDelivery
-        size += ObjectMemoryEstimation.booleanSize(); // retain
-        size += ObjectMemoryEstimation.booleanSize(); // isNewTopicAlias
-        size += ObjectMemoryEstimation.longSize(); // messageExpiryInterval
-        size += ObjectMemoryEstimation.longSize(); // publishId
-        size += ObjectMemoryEstimation.longWrapperSize(); // payloadId
-        size += ObjectMemoryEstimation.enumSize(); // QoS
-        size += ObjectMemoryEstimation.enumSize(); // payloadFormatIndicator
-        size += ObjectMemoryEstimation.immutableIntArraySize(subscriptionIdentifiers);
+        size += MemoryEstimator.BOOLEAN_SIZE; // duplicateDelivery
+        size += MemoryEstimator.BOOLEAN_SIZE; // retain
+        size += MemoryEstimator.BOOLEAN_SIZE; // isNewTopicAlias
+        size += MemoryEstimator.LONG_SIZE; // messageExpiryInterval
+        size += MemoryEstimator.LONG_SIZE; // publishId
+        size += MemoryEstimator.LONG_WRAPPER_SIZE; // payloadId
+        size += MemoryEstimator.ENUM_OVERHEAD; // QoS
+        size += MemoryEstimator.ENUM_OVERHEAD; // payloadFormatIndicator
+        size += MemoryEstimator.immutableIntArraySize(subscriptionIdentifiers);
 
         sizeInMemory = size;
         return sizeInMemory;

@@ -28,7 +28,7 @@ import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.Sizable;
 import com.hivemq.util.Bytes;
-import com.hivemq.util.ObjectMemoryEstimation;
+import com.hivemq.util.MemoryEstimator;
 
 /**
  * @author Silvio Giebl
@@ -229,25 +229,25 @@ public class MqttWillPublish implements Sizable {
             return sizeInMemory;
         }
         int size = 0;
-        size += ObjectMemoryEstimation.objectShellSize(); // the will himself
-        size += ObjectMemoryEstimation.intSize(); // sizeInMemory
-        size += ObjectMemoryEstimation.stringSize(topic);
-        size += ObjectMemoryEstimation.byteArraySize(payload);
-        size += ObjectMemoryEstimation.byteArraySize(correlationData);
-        size += ObjectMemoryEstimation.stringSize(responseTopic);
-        size += ObjectMemoryEstimation.stringSize(hivemqId);
-        size += ObjectMemoryEstimation.stringSize(contentType);
+        size += MemoryEstimator.OBJECT_SHELL_SIZE; // the will himself
+        size += MemoryEstimator.INT_SIZE; // sizeInMemory
+        size += MemoryEstimator.stringSize(topic);
+        size += MemoryEstimator.byteArraySize(payload);
+        size += MemoryEstimator.byteArraySize(correlationData);
+        size += MemoryEstimator.stringSize(responseTopic);
+        size += MemoryEstimator.stringSize(hivemqId);
+        size += MemoryEstimator.stringSize(contentType);
 
         size += 24; //User Properties Overhead
         for (final MqttUserProperty userProperty : getUserProperties().asList()) {
             size += 24; //UserProperty Object Overhead
-            size += ObjectMemoryEstimation.stringSize(userProperty.getName());
-            size += ObjectMemoryEstimation.stringSize(userProperty.getValue());
+            size += MemoryEstimator.stringSize(userProperty.getName());
+            size += MemoryEstimator.stringSize(userProperty.getValue());
         }
-        size += ObjectMemoryEstimation.longSize(); // messageExpiryInterval
-        size += ObjectMemoryEstimation.enumSize(); // QoS
-        size += ObjectMemoryEstimation.enumSize(); // payloadFormatIndicator
-        size += ObjectMemoryEstimation.longSize(); // will delay interval
+        size += MemoryEstimator.LONG_SIZE; // messageExpiryInterval
+        size += MemoryEstimator.ENUM_OVERHEAD; // QoS
+        size += MemoryEstimator.ENUM_OVERHEAD; // payloadFormatIndicator
+        size += MemoryEstimator.LONG_SIZE; // will delay interval
 
         sizeInMemory = size;
         return sizeInMemory;
