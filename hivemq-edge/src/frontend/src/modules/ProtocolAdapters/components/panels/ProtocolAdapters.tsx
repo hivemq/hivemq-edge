@@ -33,7 +33,7 @@ import ErrorMessage from '@/components/ErrorMessage.tsx'
 import WarningMessage from '@/components/WarningMessage.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
-import PaginatedTable from '@/components/Chakra/PaginatedTable/PaginatedTable.tsx'
+import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import { compareStatus } from '../../utils/pagination-utils.ts'

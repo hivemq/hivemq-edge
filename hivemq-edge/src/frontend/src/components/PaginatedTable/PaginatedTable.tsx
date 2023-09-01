@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, CSSProperties } from 'react'
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -13,11 +13,9 @@ import {
   Row,
   useReactTable,
 } from '@tanstack/react-table'
-
 import { Table as TableUI, Thead, Tbody, Tr, Th, Td, TableContainer, Text } from '@chakra-ui/react'
 
-import * as React from 'react'
-import PaginationBar from '@/components/Chakra/PaginatedTable/components/PaginationBar.tsx'
+import PaginationBar from './components/PaginationBar.tsx'
 
 interface PaginatedTableProps<T> {
   data: Array<T>
@@ -26,7 +24,7 @@ interface PaginatedTableProps<T> {
   /**
    * Define row styles
    */
-  getRowStyles?: (row: Row<T>) => React.CSSProperties
+  getRowStyles?: (row: Row<T>) => CSSProperties
 }
 
 const DEFAULT_PAGE_SIZES = [5, 10, 20, 30, 40, 50]
