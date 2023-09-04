@@ -16,7 +16,7 @@ import {
 import { SearchIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
-import { ProtocolAdapter } from '@/api/__generated__'
+import { ProtocolAdapter, ProtocolAdapterCategory } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 
 import { ProtocolFacetType } from '../../types.ts'
@@ -34,9 +34,11 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ facet, onChange }) => {
     // const categories = Array.from(new Set(data?.items?.map((e) => e.category) || []))
     const categories =
       data?.items?.reduce((acc, cur) => {
-        cur?.category
-        return cur?.category ? Array.from(new Set([...acc, cur.category])) : acc
-      }, [] as string[]) || []
+        if (!cur?.category) return acc
+        const setSoFar = acc.map((e) => e.name)
+        if (setSoFar.includes(cur.category.name)) return acc
+        return [...acc, cur.category]
+      }, [] as ProtocolAdapterCategory[]) || []
     const tags =
       data?.items?.reduce((acc, cur) => {
         return Array.from(new Set([...acc, ...(cur?.tags || [])]))
@@ -102,17 +104,17 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ facet, onChange }) => {
         <Box pb={4} pt={4}>
           <List spacing={3}>
             {categories.map((item) => (
-              <ListItem key={item}>
+              <ListItem key={item.name}>
                 <Button
                   data-testid={`facet-filter-category-${item}`}
                   justifyContent={'flex-start'}
-                  variant={facet?.filter?.value === item ? 'outline' : 'ghost'}
-                  aria-pressed={facet?.filter?.value === item}
+                  variant={facet?.filter?.value === item.name ? 'outline' : 'ghost'}
+                  aria-pressed={facet?.filter?.value === item.name}
                   size="sm"
                   w={'100%'}
-                  onClick={() => handleFilter({ value: item, key: 'category' })}
+                  onClick={() => handleFilter({ value: item.name, key: 'category' })}
                 >
-                  {item}
+                  {item.displayName}
                 </Button>
               </ListItem>
             ))}
