@@ -1,7 +1,7 @@
 import { createContext, Dispatch, FunctionComponent, PropsWithChildren, SetStateAction, useState } from 'react'
 import { useDisclosure, UseDisclosureReturn } from '@chakra-ui/react'
 
-import { EdgeFlowGrouping, EdgeFlowOptions } from '../types.ts'
+import { EdgeFlowGrouping, EdgeFlowOptions, EdgeFlowLayout } from '../types.ts'
 
 export interface EdgeFlowContextType {
   options: EdgeFlowOptions
@@ -19,9 +19,10 @@ const defaultEdgeFlowContext: EdgeFlowOptions = {
   showMonitoringOnEdge: false,
 }
 
-const defaultEdgeFloeGrouping: EdgeFlowGrouping = {
+const defaultEdgeFlowGrouping: EdgeFlowGrouping = {
   keys: [],
-  showGroups: true,
+  showGroups: false,
+  layout: EdgeFlowLayout.HORIZONTAL,
 }
 
 export const EdgeFlowContext = createContext<EdgeFlowContextType | null>(null)
@@ -31,7 +32,7 @@ export const EdgeFlowProvider: FunctionComponent<PropsWithChildren<{ defaults?: 
   defaults,
 }) => {
   const [options, setOptions] = useState<EdgeFlowOptions>({ ...defaultEdgeFlowContext, ...defaults })
-  const [groups, setGroups] = useState<EdgeFlowGrouping>(defaultEdgeFloeGrouping)
+  const [groups, setGroups] = useState<EdgeFlowGrouping>(defaultEdgeFlowGrouping)
   const optionDrawer = useDisclosure()
 
   return (
