@@ -515,11 +515,33 @@
     }
   },
   "workspace": {
+    "configuration": {
+      "header": "Workspace configuration",
+      "content": {
+        "header": "Topology Graph: Content",
+        "prompt": "Select the contents to be displayed on the workspace",
+        "showTopics": "Topics",
+        "showStatus": "Status indicators",
+        "showMonitoringOnEdge": "Observability from the links",
+        "showHosts": "Hosts",
+        "showGateway": "Gateways"
+      },
+      "layout": {
+        "header": "Topology Graph: Layout",
+        "prompt": "Select the clustering attributes, in order of application"
+      }
+    },
     "node": {
       "edge": "Node: HiveMQ Edge",
       "bridge": "Node: HiveMQ Bridge",
       "adapter": "Node: Adapter",
-      "gateway": "Node: Gateway"
+      "gateway": "Node: Gateway",
+      "group": "Node: Group"
+    },
+    "grouping": {
+      "by_type": "By type",
+      "by_subscriptionCardinality": "By subscription count",
+      "by_runtimeDuration": "By duration"
     }
   },
   "modals": {
