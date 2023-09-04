@@ -8,6 +8,7 @@ import {
 } from '@/api/__generated__'
 import { rest } from 'msw'
 import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
+import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
 export const mockJSONSchema: JsonNode = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -76,7 +77,7 @@ export const mockProtocolAdapter: ProtocolAdapter = {
 }
 
 export const mockAdapterConfig: Record<string, Record<string, unknown>> = {
-  id: 'my-id',
+  id: MOCK_ADAPTER_ID,
   pollingIntervalMillis: 10000,
   subscriptions: [
     {
@@ -91,7 +92,7 @@ export const mockAdapterConfig: Record<string, Record<string, unknown>> = {
 } as never
 
 export const mockAdapter: Adapter = {
-  id: 'my-id',
+  id: MOCK_ADAPTER_ID,
   type: 'simulation',
   config: mockAdapterConfig,
   adapterRuntimeInformation: {

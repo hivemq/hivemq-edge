@@ -26,6 +26,7 @@
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 //
 import { getByTestId } from './commands/getByTestId.ts'
+import { getByAriaLabel } from './commands/getByAriaLabel.ts'
 import { checkAccessibility } from './commands/checkAccessibility.ts'
 
 declare global {
@@ -34,9 +35,11 @@ declare global {
     interface Chainable {
       checkAccessibility: typeof checkAccessibility
       getByTestId: typeof getByTestId
+      getByAriaLabel: typeof getByAriaLabel
     }
   }
 }
 
 Cypress.Commands.add('getByTestId', getByTestId)
+Cypress.Commands.add('getByAriaLabel', getByAriaLabel)
 Cypress.Commands.add('checkAccessibility', checkAccessibility)

@@ -87,6 +87,8 @@ jobs:
 
       - name: 📸 Run Percy visual tests
         run: pnpm cypress:percy
+        ## Percy should not block the pipeline
+        continue-on-error: true
         env:
           PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
 

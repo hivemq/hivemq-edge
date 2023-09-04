@@ -49,7 +49,7 @@ describe('SubscriptionsPanel', () => {
 
     cy.checkAccessibility(undefined, {
       rules: {
-        // TODO[NVL] Font too small, creating accessibility issues. Need fix
+        // TODO[16486] Font too small. See https://hivemq.kanbanize.com/ctrl_board/57/cards/16486/details/
         'color-contrast': { enabled: false },
       },
     })

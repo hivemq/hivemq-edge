@@ -2,6 +2,7 @@
 
 import AdapterInstanceDrawer from './AdapterInstanceDrawer.tsx'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
 describe('AdapterInstanceDrawer', () => {
   beforeEach(() => {
@@ -50,7 +51,7 @@ describe('AdapterInstanceDrawer', () => {
       />
     )
 
-    cy.get('#root_id').type('my-id')
+    cy.get('#root_id').type(MOCK_ADAPTER_ID)
 
     cy.get('button[type="submit"]').click()
     cy.get('@onSubmit').should('have.been.called')
