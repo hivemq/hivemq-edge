@@ -72,6 +72,10 @@ public class Module {
     @Schema(description = "The logo link", nullable = true)
     private final @Nullable Link logoUrl;
 
+    @JsonProperty("moduleType")
+    @Schema(description = "The type of the module", nullable = true)
+    private final @Nullable String moduleType;
+
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public Module(
             @NotNull @JsonProperty("id") final String id,
@@ -82,6 +86,7 @@ public class Module {
             @NotNull @JsonProperty("author") final String author,
             @NotNull @JsonProperty("priority") final Integer priority,
             @NotNull @JsonProperty("installed") final Boolean installed,
+            @NotNull @JsonProperty("moduleType") final String moduleType,
             @Nullable @JsonProperty("documentationLink") final Link documentationLink,
             @Nullable @JsonProperty("provisioningLink") final Link provisioningLink) {
         this.id = id;
@@ -92,6 +97,7 @@ public class Module {
         this.author = author;
         this.priority = priority;
         this.installed = installed;
+        this.moduleType = moduleType;
         this.documentationLink = documentationLink;
         this.provisioningLink = provisioningLink;
     }
@@ -134,6 +140,10 @@ public class Module {
 
     public Link getLogoUrl() {
         return logoUrl;
+    }
+
+    public String getModuleType() {
+        return moduleType;
     }
 
     @Override
