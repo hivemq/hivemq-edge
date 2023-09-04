@@ -1,9 +1,10 @@
 import { FC, useMemo, useState } from 'react'
-import { Box, Flex, HStack, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
+import { Box, Flex, HStack, IconButton, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
 import { ColumnDef, Row } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { FaShareNodes } from 'react-icons/fa6'
 
 import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
@@ -74,6 +75,10 @@ const ProtocolAdapters: FC = () => {
       onConfirmDeleteOpen()
     }
 
+    const handleViewWorkspace = (adapterId: string, type: string) => {
+      if (adapterId) navigate(`/edge-flow`, { state: { selectedAdapter: { adapterId, type } } })
+    }
+
     return [
       {
         accessorKey: 'id',
@@ -108,19 +113,32 @@ const ProtocolAdapters: FC = () => {
         header: t('protocolAdapter.table.header.actions') as string,
         sortingFn: undefined,
         cell: (info) => {
-          // const { type, id, adapterRuntimeInformation: { connectionStatus } = {} } = info.row.original
+          const { id, type } = info.row.original
+          const { selectedAdapter } = state || {}
           return (
-            <AdapterActionMenu
-              adapter={info.row.original}
-              onCreate={handleCreateInstance}
-              onEdit={handleEditInstance}
-              onDelete={handleOnDelete}
-            />
+            <>
+              <AdapterActionMenu
+                adapter={info.row.original}
+                onCreate={handleCreateInstance}
+                onEdit={handleEditInstance}
+                onDelete={handleOnDelete}
+                onViewWorkspace={handleViewWorkspace}
+              />
+              {id === selectedAdapter?.adapterId && (
+                <IconButton
+                  size={'sm'}
+                  ml={2}
+                  onClick={() => handleViewWorkspace(type as string, id)}
+                  aria-label={t('bridge.subscription.delete')}
+                  icon={<FaShareNodes />}
+                />
+              )}
+            </>
           )
         },
       },
     ]
-  }, [navigate, onConfirmDeleteOpen, t, allAdapters?.items])
+  }, [state, navigate, onConfirmDeleteOpen, t, allAdapters?.items])
 
   const handleConfirmOnClose = () => {
     onConfirmDeleteClose()

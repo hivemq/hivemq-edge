@@ -392,6 +392,7 @@
       "actions": {
         "label": "Actions",
         "connect": "Connect",
+        "workspace": "View on workspace",
         "disconnect": "Disconnect",
         "create": "Create similar",
         "edit": "Edit",
