@@ -9,7 +9,8 @@ import { getAdapterTopics, getBridgeTopics } from '../utils/topics-utils.ts'
 
 const POS_SEPARATOR = 8
 const POS_EDGE: XYPosition = { x: 300, y: 200 }
-const POS_NODE_INC: XYPosition = { x: 200 + POS_SEPARATOR, y: 200 }
+const POS_NODE_INC: XYPosition = { x: 150 + POS_SEPARATOR, y: 300 }
+const MAX_ADAPTERS = 10
 
 export const createEdgeNode = (label: string, positionStorage?: Record<string, XYPosition>) => {
   const nodeEdge: Node<unknown, NodeTypes.EDGE_NODE> = {
@@ -134,7 +135,7 @@ export const createListenerNode = (
 export const createAdapterNode = (
   adapter: Adapter,
   nbAdapter: number,
-  maxAdapter: number,
+  _: number,
   theme: Partial<WithCSSVar<Dict>>,
   positionStorage?: Record<string, XYPosition>
 ) => {
@@ -142,14 +143,17 @@ export const createAdapterNode = (
   const isConnected = adapter.adapterRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
   const topics = getAdapterTopics(adapter)
 
+  const posX = nbAdapter % MAX_ADAPTERS
+  const posY = Math.floor(nbAdapter / MAX_ADAPTERS) + 1
+
   const nodeAdapter: Node<Adapter, NodeTypes.ADAPTER_NODE> = {
     id: idAdapter,
     type: NodeTypes.ADAPTER_NODE,
     sourcePosition: Position.Bottom,
     data: adapter,
     position: positionStorage?.[idAdapter] ?? {
-      x: POS_EDGE.x + POS_NODE_INC.x * (nbAdapter - (maxAdapter - 1) / 2),
-      y: POS_EDGE.y - POS_NODE_INC.y,
+      x: POS_EDGE.x + POS_NODE_INC.x * (posX - (MAX_ADAPTERS - 1) / 2),
+      y: POS_EDGE.y - (POS_NODE_INC.y * posY) / 1.5,
     },
   }
 
