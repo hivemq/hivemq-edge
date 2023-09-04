@@ -29,9 +29,11 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ data: bridge }) => {
               {bridge.id}
             </Text>
           </HStack>
-          <Box flex={1}>
-            <ConnectionStatusBadge status={bridge.bridgeRuntimeInformation?.connectionStatus?.status} />
-          </Box>
+          {options.showStatus && (
+            <Box flex={1}>
+              <ConnectionStatusBadge status={bridge.bridgeRuntimeInformation?.connectionStatus?.status} />
+            </Box>
+          )}
           {options.showTopics && <TopicsContainer topics={topics.local} />}
         </VStack>
       </NodeWrapper>

@@ -27,9 +27,11 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ data: adapter }) => {
               {adapter.id}
             </Text>
           </HStack>
-          <Box flex={1}>
-            <ConnectionStatusBadge status={adapter.adapterRuntimeInformation?.connectionStatus?.status} />
-          </Box>
+          {options.showStatus && (
+            <Box flex={1}>
+              <ConnectionStatusBadge status={adapter.adapterRuntimeInformation?.connectionStatus?.status} />
+            </Box>
+          )}
           {options.showTopics && <TopicsContainer topics={topics} />}
         </VStack>
       </NodeWrapper>
