@@ -28,7 +28,7 @@ const MonitoringEdge: FC<EdgeProps> = ({
   return (
     <>
       <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
-      {options.showObservabilityEdge && (
+      {options.showMonitoringOnEdge && (
         <EdgeLabelRenderer>
           <div
             style={{

@@ -1,10 +1,9 @@
 export interface EdgeFlowOptions {
   showTopics: boolean
   showStatus: boolean
-  showMetrics: boolean
   showHosts: boolean
   showGateway: boolean
-  showObservabilityEdge: boolean
+  showMonitoringOnEdge: boolean
 }
 
 export interface EdgeFlowGrouping {

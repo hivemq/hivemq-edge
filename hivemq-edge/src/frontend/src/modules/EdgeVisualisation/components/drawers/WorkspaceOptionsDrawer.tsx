@@ -24,10 +24,9 @@ const WorkspaceOptionsDrawer: FC = () => {
   const optionKeys: (keyof EdgeFlowOptions)[] = [
     'showTopics',
     'showStatus',
-    'showMetrics',
     'showGateway',
     'showHosts',
-    'showObservabilityEdge',
+    'showMonitoringOnEdge',
   ]
   const initValues = optionKeys.filter((option) => {
     const keyOption = option as keyof EdgeFlowOptions
@@ -57,10 +56,7 @@ const WorkspaceOptionsDrawer: FC = () => {
               <Stack direction={'column'}>
                 <Checkbox value="showTopics">Topics</Checkbox>
                 <Checkbox value="showStatus">Status</Checkbox>
-                <Checkbox value="showMetrics" isDisabled>
-                  Metrics
-                </Checkbox>
-                <Checkbox value="showObservabilityEdge">Observability on links</Checkbox>
+                <Checkbox value="showMonitoringOnEdge">Monitoring on links</Checkbox>
                 <Checkbox value="showHosts">Hosts</Checkbox>
                 <Checkbox value="showGateway">Gateway</Checkbox>
               </Stack>

@@ -14,10 +14,9 @@ export interface EdgeFlowContextType {
 const defaultEdgeFlowContext: EdgeFlowOptions = {
   showTopics: true,
   showStatus: true,
-  showMetrics: false,
   showGateway: false,
   showHosts: false,
-  showObservabilityEdge: false,
+  showMonitoringOnEdge: false,
 }
 
 const defaultEdgeFloeGrouping: EdgeFlowGrouping = {
