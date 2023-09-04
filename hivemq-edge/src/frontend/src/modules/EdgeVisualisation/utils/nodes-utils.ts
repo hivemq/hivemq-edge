@@ -4,7 +4,7 @@ import { Dict } from '@chakra-ui/utils'
 
 import { Adapter, Bridge, ConnectionStatus, Listener } from '@/api/__generated__'
 
-import { IdStubs, NodeTypes } from '../types.ts'
+import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getAdapterTopics, getBridgeTopics } from '../utils/topics-utils.ts'
 
 const POS_SEPARATOR = 8
@@ -49,6 +49,7 @@ export const createBridgeNode = (
     target: IdStubs.EDGE_NODE,
     targetHandle: 'Bottom',
     source: idBridge,
+    type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -79,6 +80,7 @@ export const createBridgeNode = (
     target: idBridgeHost,
     sourceHandle: 'Bottom',
     source: idBridge,
+    type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -118,6 +120,7 @@ export const createListenerNode = (
     source: IdStubs.EDGE_NODE,
     targetHandle: 'Listeners',
     target: idListener,
+    type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -155,6 +158,7 @@ export const createAdapterNode = (
     target: IdStubs.EDGE_NODE,
     targetHandle: 'Top',
     source: idAdapter,
+    type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
