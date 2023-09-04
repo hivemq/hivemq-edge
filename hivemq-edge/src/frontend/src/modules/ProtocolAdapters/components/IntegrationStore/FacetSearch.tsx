@@ -106,7 +106,7 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ facet, onChange }) => {
             {categories.map((item) => (
               <ListItem key={item.name}>
                 <Button
-                  data-testid={`facet-filter-category-${item}`}
+                  data-testid={`facet-filter-category-${item.name}`}
                   justifyContent={'flex-start'}
                   variant={facet?.filter?.value === item.name ? 'outline' : 'ghost'}
                   aria-pressed={facet?.filter?.value === item.name}

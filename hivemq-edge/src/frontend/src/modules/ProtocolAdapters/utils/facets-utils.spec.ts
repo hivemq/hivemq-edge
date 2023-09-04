@@ -19,7 +19,7 @@ describe('applyFacets', () => {
     { a: { filter: undefined }, b: mockProtocolAdapter, desc: 'undefined filter', expected: true },
     { a: { filter: { value: '', key: 'category' } }, b: mockProtocolAdapter, desc: 'empty value', expected: true },
     {
-      a: { filter: { value: 'industrial', key: 'category' } },
+      a: { filter: { value: 'INDUSTRIAL', key: 'category' } },
       b: mockProtocolAdapter,
       desc: 'a proper category',
       expected: true,

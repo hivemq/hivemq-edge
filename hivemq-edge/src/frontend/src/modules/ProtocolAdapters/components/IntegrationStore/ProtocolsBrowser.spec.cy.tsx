@@ -2,12 +2,37 @@
 
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import ProtocolsBrowser from '@/modules/ProtocolAdapters/components/IntegrationStore/ProtocolsBrowser.tsx'
+import { ProtocolAdapter } from '@/api/__generated__'
 
-const MOCK_ADAPTERS = [
-  { ...mockProtocolAdapter, id: 'simulation1', name: 'Simulation Server 1', category: 'cat1', tags: ['tag1'] },
-  { ...mockProtocolAdapter, id: 'simulation2', name: 'Simulation Server 2', category: 'cat2', tags: ['tag2'] },
-  { ...mockProtocolAdapter, id: 'simulation3', name: 'Fake Simulation Server 3', category: 'cat1', tags: ['tag3'] },
-  { ...mockProtocolAdapter, id: 'simulation4', name: 'Simulation Server 4', category: 'cat3', tags: ['tag2'] },
+const MOCK_ADAPTERS: ProtocolAdapter[] = [
+  {
+    ...mockProtocolAdapter,
+    id: 'simulation1',
+    name: 'Simulation Server 1',
+    category: { name: 'cat1', displayName: 'cat1' },
+    tags: ['tag1'],
+  },
+  {
+    ...mockProtocolAdapter,
+    id: 'simulation2',
+    name: 'Simulation Server 2',
+    category: { name: 'cat2', displayName: 'cat2' },
+    tags: ['tag2'],
+  },
+  {
+    ...mockProtocolAdapter,
+    id: 'simulation3',
+    name: 'Fake Simulation Server 3',
+    category: { name: 'cat1', displayName: 'cat1' },
+    tags: ['tag3'],
+  },
+  {
+    ...mockProtocolAdapter,
+    id: 'simulation4',
+    name: 'Simulation Server 4',
+    category: { name: 'cat3', displayName: 'cat3' },
+    tags: ['tag2'],
+  },
 ]
 
 describe('ProtocolsBrowser', () => {
