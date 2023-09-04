@@ -8,17 +8,14 @@ import { EdgeTypes, NodeTypes } from '../types.ts'
 import useGetFlowElements from '../hooks/useGetFlowElements.tsx'
 
 import CanvasControls from './controls/CanvasControls.tsx'
-import NodeEdge from './nodes/NodeEdge.tsx'
-import NodeAdapter from './nodes/NodeAdapter.tsx'
-import NodeBridge from './nodes/NodeBridge.tsx'
-import NodeListener from './nodes/NodeListener.tsx'
+import { NodeListener, NodeAdapter, NodeGroup, NodeBridge, NodeEdge } from './nodes/'
 import MonitoringEdge from './edges/MonitoringEdge.tsx'
-import NodeGroup from '@/modules/EdgeVisualisation/components/nodes/NodeGroup.tsx'
 
 const ReactFlowWrapper = () => {
   const { nodes, edges, onNodesChange, onEdgesChange } = useGetFlowElements()
   const nodeTypes = useMemo(
     () => ({
+      [NodeTypes.CLUSTER_NODE]: NodeGroup,
       [NodeTypes.EDGE_NODE]: NodeEdge,
       [NodeTypes.ADAPTER_NODE]: NodeAdapter,
       [NodeTypes.BRIDGE_NODE]: NodeBridge,
