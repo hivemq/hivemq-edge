@@ -86,7 +86,7 @@ public class Module {
             @NotNull @JsonProperty("author") final String author,
             @NotNull @JsonProperty("priority") final Integer priority,
             @NotNull @JsonProperty("installed") final Boolean installed,
-            @NotNull @JsonProperty("moduleType") final String moduleType,
+            @Nullable @JsonProperty("moduleType") final String moduleType,
             @Nullable @JsonProperty("documentationLink") final Link documentationLink,
             @Nullable @JsonProperty("provisioningLink") final Link provisioningLink) {
         this.id = id;
