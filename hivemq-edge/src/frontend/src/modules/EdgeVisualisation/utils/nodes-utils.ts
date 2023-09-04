@@ -29,7 +29,7 @@ export const createBridgeNode = (
   theme: Partial<WithCSSVar<Dict>>,
   positionStorage?: Record<string, XYPosition>
 ) => {
-  const idBridge = `${IdStubs.BRIDGE_NODE}#${bridge.id}`
+  const idBridge = `${IdStubs.BRIDGE_NODE}@${bridge.id}`
   const isConnected = bridge.bridgeRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
   const { local, remote } = getBridgeTopics(bridge)
 
@@ -62,7 +62,7 @@ export const createBridgeNode = (
     },
   }
 
-  const idBridgeHost = `${IdStubs.HOST_NODE}#${bridge.id}`
+  const idBridgeHost = `${IdStubs.HOST_NODE}@${bridge.id}`
   const nodeHost: Node = {
     id: idBridgeHost,
     type: 'output',
@@ -75,7 +75,7 @@ export const createBridgeNode = (
   }
 
   const hostConnector: Edge = {
-    id: `${IdStubs.CONNECTOR}-${IdStubs.HOST_NODE}#${bridge.id}`,
+    id: `${IdStubs.CONNECTOR}-${IdStubs.HOST_NODE}@${bridge.id}`,
     target: idBridgeHost,
     sourceHandle: 'Bottom',
     source: idBridge,
@@ -100,7 +100,7 @@ export const createListenerNode = (
   nbListener: number,
   positionStorage?: Record<string, XYPosition>
 ) => {
-  const idListener = `${IdStubs.LISTENER_NODE}#${listener.name}`
+  const idListener = `${IdStubs.LISTENER_NODE}@${listener.name}`
 
   const nodeListener: Node<Listener, NodeTypes.LISTENER_NODE> = {
     id: idListener,
@@ -135,7 +135,7 @@ export const createAdapterNode = (
   theme: Partial<WithCSSVar<Dict>>,
   positionStorage?: Record<string, XYPosition>
 ) => {
-  const idAdapter = `${IdStubs.ADAPTER_NODE}#${adapter.id}`
+  const idAdapter = `${IdStubs.ADAPTER_NODE}@${adapter.id}`
   const isConnected = adapter.adapterRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
   const topics = getAdapterTopics(adapter)
 
