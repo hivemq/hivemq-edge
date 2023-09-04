@@ -25,6 +25,7 @@ import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdapterRuntimeInformation;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
+import com.hivemq.api.model.adapters.ProtocolAdapterCategory;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
 import com.hivemq.api.model.connection.ConnectionStatus;
@@ -35,6 +36,7 @@ import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
@@ -90,7 +92,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     logoUrl,
                     info.getAuthor(),
                     true,
-                    info == null ? null : info.getCategory().toString().toLowerCase(),
+                    info == null ? null : convertApiCategory(info.getCategory()),
                     info.getTags() == null ? null : info.getTags().stream().
                             map(Enum::toString).collect(Collectors.toList()),
                     protocolAdapterManager.getSchemaManager(info).generateSchemaNode()));
@@ -344,5 +346,17 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             builder.add(status);
         }
         return Response.status(200).entity(new ConnectionStatusList(builder.build())).build();
+    }
+
+
+    /**
+     * Convert category from internal enum to external API tranport model.
+     * @param category the category enum to convert
+     */
+    public static ProtocolAdapterCategory convertApiCategory(ProtocolAdapterConstants.CATEGORY category){
+        return new ProtocolAdapterCategory(category.name(),
+                category.getDisplayName(),
+                category.getDescription(),
+                category.getImage());
     }
 }

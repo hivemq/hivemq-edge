@@ -28,10 +28,31 @@ public interface ProtocolAdapterConstants {
     }
 
     enum CATEGORY {
-        INDUSTRIAL,
-        BUILDING,
-        TRANSPORTATION,
-        SIMULATION
+        INDUSTRIAL("Industrial","Industrial, typically field bus protocols.", null),
+        BUILDING_AUTOMATION("Building Automation","Protocols related to building automation",  null),
+        SIMULATION("Simulation","Simulation protocols, that emulate real world devices", null);
+
+        CATEGORY(final String displayName, final String description, final String image){
+            this.displayName = displayName;
+            this.image = image;
+            this.description = description;
+        }
+
+        final String displayName;
+        final String description;
+        final String image;
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public String getImage() {
+            return image;
+        }
     }
 
     String ADAPTER_NAME_TOKEN = "adapter.name";
