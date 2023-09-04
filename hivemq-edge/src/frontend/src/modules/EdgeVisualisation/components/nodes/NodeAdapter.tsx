@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { Handle, NodeProps, Position } from 'reactflow'
 import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
+import { useNavigate } from 'react-router-dom'
 
 import { Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
@@ -11,16 +12,17 @@ import TopicsContainer from '../parts/TopicsContainer.tsx'
 import { getAdapterTopics } from '../../utils/topics-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
 
-const NodeAdapter: FC<NodeProps<Adapter>> = ({ data: adapter }) => {
+const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter }) => {
   const { data: protocols } = useGetAdapterTypes()
   const adapterProtocol = protocols?.items?.find((e) => e.id === adapter.type)
   const topics = getAdapterTopics(adapter)
   const { options } = useEdgeFlowContext()
+  const navigate = useNavigate()
 
   return (
     <>
       <NodeWrapper p={2}>
-        <VStack>
+        <VStack onDoubleClick={() => navigate(`/edge-flow/node/${id}`)}>
           <HStack w={'100%'}>
             <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
             <Text flex={1} data-testid={'adapter-node-name'}>
