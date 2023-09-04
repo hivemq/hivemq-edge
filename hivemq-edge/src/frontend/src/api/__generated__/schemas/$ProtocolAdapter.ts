@@ -10,8 +10,7 @@ export const $ProtocolAdapter = {
             description: `The author of the adapter`,
         },
         category: {
-            type: 'string',
-            description: `The category of the adapter`,
+            type: 'ProtocolAdapterCategory',
         },
         configSchema: {
             type: 'JsonNode',
