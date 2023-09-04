@@ -25,8 +25,8 @@ describe('useEdgeFlowContext', () => {
     expect(result.current.options).toEqual<EdgeFlowOptions>({
       showTopics: true,
       showStatus: true,
-      showMetrics: false,
       showGateway: true,
+      showMonitoringOnEdge: false,
       showHosts: true,
     })
   })
