@@ -7,11 +7,14 @@ import { EdgeFlowGrouping, NodeTypes } from '@/modules/EdgeVisualisation/types.t
 import { Adapter, Bridge } from '@/api/__generated__'
 
 export const groupingAttributes = [
-  { name: 'Type', key: (d: Node<Adapter>) => d.data.type },
-  { name: 'Subscription count', key: (d: Node<Adapter>) => !!d.data.config?.subscriptions.length },
+  { key: 'type', function: (d: Node<Adapter>) => d.data.type },
   {
-    name: 'Runtime duration',
-    key: (d: Node<Adapter>) => {
+    key: 'subscriptionCardinality',
+    function: (d: Node<Adapter>) => !!d.data.config?.subscriptions.length,
+  },
+  {
+    key: 'runtimeDuration',
+    function: (d: Node<Adapter>) => {
       // TODO[NVL] Can we breakt time down in unit groups ?
       const gg = d.data.adapterRuntimeInformation?.lastStartedAttemptTime
 
@@ -30,10 +33,11 @@ export const applyLayout = (nodes: Node<Bridge | Adapter>[], groupOption: EdgeFl
 export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOption: EdgeFlowGrouping): Node[] => {
   const allAdapters = nodes.filter((e) => e.type === NodeTypes.ADAPTER_NODE) as Node<Adapter>[]
   const groupKeys = [
+    // This key is mandatory in order to handle adapter grouping
     (d: Node<Adapter>) => d.type,
-    groupingAttributes[0].key,
-    // groupingAttributes[1].key,
-    // groupingAttributes[2].key,
+    groupingAttributes[1].function,
+    // groupingAttributes[1].function,
+    // groupingAttributes[2].function,
   ] as const
   const groups = group(allAdapters, ...groupKeys)
 

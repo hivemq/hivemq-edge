@@ -69,7 +69,7 @@ const WorkspaceOptionsDrawer: FC = () => {
             <Select
               isMulti
               name="adapters"
-              options={groupingAttributes.map((e) => ({ value: e.key, label: e.name, color: '#fff' }))}
+              options={groupingAttributes.map((e) => ({ value: e.key, label: e.key }))}
               onChange={(e) => console.log('XXXXX val', e)}
               placeholder="Select some keys"
               closeMenuOnSelect={true}
