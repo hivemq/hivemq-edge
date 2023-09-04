@@ -2,6 +2,7 @@ import { FC, useEffect, useMemo } from 'react'
 import { Select } from 'chakra-react-select'
 import { Box, Button, Flex, FormControl, FormLabel } from '@chakra-ui/react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.tsx'
 import { BiAddToQueue } from 'react-icons/bi'
@@ -16,6 +17,7 @@ interface MetricNameSelectorProps {
 }
 
 const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit }) => {
+  const { t } = useTranslation()
   const { data } = useGetMetrics()
   const {
     handleSubmit,
@@ -42,7 +44,7 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit }) => {
       style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}
     >
       <FormControl>
-        <FormLabel htmlFor={'tlsConfiguration.protocols'}>Select a metric to display</FormLabel>
+        <FormLabel htmlFor={'tlsConfiguration.protocols'}>{t('welcome.metrics.select')}</FormLabel>
         <Flex>
           <Box flex={1}>
             <Controller
@@ -73,7 +75,7 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit }) => {
           </Box>
 
           <Button isDisabled={!isValid} rightIcon={<BiAddToQueue />} type="submit" form="namespace-form">
-            Add to dashboard
+            {t('welcome.metrics.display')}
           </Button>
         </Flex>
       </FormControl>

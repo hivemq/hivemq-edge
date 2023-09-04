@@ -102,8 +102,10 @@
       }
     },
     "metrics": {
-      "com.hivemq.messages.incoming.connect.count": "Incoming messages (count)",
-      "com.hivemq.subscriptions.overall.current": "Overall subscriptions (current)"
+      "select": "Select a metric to display",
+      "display": "Add to panel",
+      "com.hivemq.edge.messages.incoming.connect.count": "Incoming messages (count)",
+      "com.hivemq.edge.subscriptions.overall.current": "Overall subscriptions (current)"
     }
   },
   "bridge": {
