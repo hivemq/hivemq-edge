@@ -4,6 +4,12 @@ export interface EdgeFlowOptions {
   showMetrics: boolean
   showHosts: boolean
   showGateway: boolean
+  showObservabilityEdge: boolean
+}
+
+export interface EdgeFlowGrouping {
+  keys: string[]
+  showGroups: boolean
 }
 
 export enum NodeTypes {
@@ -11,6 +17,10 @@ export enum NodeTypes {
   BRIDGE_NODE = 'BRIDGE_NODE',
   ADAPTER_NODE = 'ADAPTER_NODE',
   LISTENER_NODE = 'LISTENER_NODE',
+}
+
+export enum EdgeTypes {
+  REPORT_EDGE = 'REPORT_EDGE',
 }
 
 export enum IdStubs {
