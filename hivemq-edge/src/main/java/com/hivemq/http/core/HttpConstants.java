@@ -26,6 +26,9 @@ public interface HttpConstants {
         GET, POST, HEAD, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH
     }
 
+    String HTTP = "http";
+    String HTTPS = "https";
+    String PROTOCOL_SEP = "://";
     String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
     String CONTENT_TYPE_HEADER = "Content-Type";

@@ -16,6 +16,7 @@
 package com.hivemq.api.model.components;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -28,6 +29,7 @@ import java.util.Objects;
  *
  * @author Simon L Johnson
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Module {
 
     @JsonProperty("id")
@@ -35,51 +37,63 @@ public class Module {
     private final @NotNull String id;
 
     @JsonProperty("version")
-    @Schema(description = "The extension version")
+    @Schema(description = "The module version")
     private final @NotNull String version;
 
     @JsonProperty("name")
-    @Schema(description = "The extension name")
+    @Schema(description = "The module name")
     private final @NotNull String name;
 
     @JsonProperty("description")
-    @Schema(description = "The extension description", nullable = true)
+    @Schema(description = "The module description", nullable = true)
     private final @Nullable String description;
 
     @JsonProperty("author")
-    @Schema(description = "The extension author")
+    @Schema(description = "The module author")
     private final @NotNull String author;
 
     @JsonProperty("priority")
-    @Schema(description = "The extension priority")
+    @Schema(description = "The module priority")
     private final @NotNull Integer priority;
 
     @JsonProperty("installed")
-    @Schema(description = "Is the extension installed", nullable = true)
+    @Schema(description = "Is the module installed", nullable = true)
     private final @Nullable Boolean installed;
 
-    @JsonProperty("link")
-    @Schema(description = "The extension link", nullable = true)
-    private final @Nullable Link link;
+    @JsonProperty("documentationLink")
+    @Schema(description = "The module documentation link", nullable = true)
+    private final @Nullable Link documentationLink;
+
+    @JsonProperty("provisioningLink")
+    @Schema(description = "The module provisioning link", nullable = true)
+    private final @Nullable Link provisioningLink;
+
+    @JsonProperty("logoUrl")
+    @Schema(description = "The logo link", nullable = true)
+    private final @Nullable Link logoUrl;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public Module(
             @NotNull @JsonProperty("id") final String id,
             @NotNull @JsonProperty("version") final String version,
             @NotNull @JsonProperty("name") final String name,
+            @Nullable @JsonProperty("logoUrl") final Link logoUrl,
             @Nullable @JsonProperty("description") final String description,
             @NotNull @JsonProperty("author") final String author,
             @NotNull @JsonProperty("priority") final Integer priority,
             @NotNull @JsonProperty("installed") final Boolean installed,
-            @Nullable @JsonProperty("link") final Link link) {
+            @Nullable @JsonProperty("documentationLink") final Link documentationLink,
+            @Nullable @JsonProperty("provisioningLink") final Link provisioningLink) {
         this.id = id;
         this.version = version;
         this.name = name;
+        this.logoUrl = logoUrl;
         this.description = description;
         this.author = author;
         this.priority = priority;
         this.installed = installed;
-        this.link = link;
+        this.documentationLink = documentationLink;
+        this.provisioningLink = provisioningLink;
     }
 
     public String getId() {
@@ -110,8 +124,16 @@ public class Module {
         return installed;
     }
 
-    public Link getLink() {
-        return link;
+    public Link getDocumentationLink() {
+        return documentationLink;
+    }
+
+    public Link getProvisioningLink() {
+        return provisioningLink;
+    }
+
+    public Link getLogoUrl() {
+        return logoUrl;
     }
 
     @Override
@@ -137,7 +159,8 @@ public class Module {
         sb.append(", author='").append(author).append('\'');
         sb.append(", priority=").append(priority);
         sb.append(", installed=").append(installed);
-        sb.append(", link=").append(link);
+        sb.append(", documentationLink=").append(documentationLink);
+        sb.append(", provisioningLink=").append(provisioningLink);
         sb.append('}');
         return sb.toString();
     }

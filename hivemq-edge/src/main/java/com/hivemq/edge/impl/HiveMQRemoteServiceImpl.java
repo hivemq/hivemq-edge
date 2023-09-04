@@ -34,16 +34,21 @@ import java.io.InputStream;
 import java.util.Optional;
 
 /**
+ * A service that (optionally) connects to remote endpoints to provision configuration
+ * that helps/augments the runtime. Also provides endpoints for tracking usage to allow
+ * HiveMQ to provide a better open-source product.
+ *
  * @author Simon L Johnson
  */
 public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQShutdownHook {
+
+    static final String LOCAL_RESOURCE_CONFIGURATION = "/hivemq-edge-configuration.json";
     static final int TIMEOUT = 5000;
     static final int REFRESH = 60000;
     private static final Logger logger = LoggerFactory.getLogger(HiveMQRemoteServiceImpl.class);
     private @NotNull final ObjectMapper objectMapper;
-    private @NotNull final HiveMQEdgeHttpServiceImpl hiveMQEdgeHttpService;
+    private @NotNull HiveMQEdgeHttpServiceImpl hiveMQEdgeHttpService;
     private @NotNull HiveMQEdgeRemoteConfiguration localConfiguration;
-    private @NotNull ConfigurationService configurationService;
     private @NotNull SystemInformation systemInformation;
 
     private final Object lock = new Object();
@@ -54,63 +59,77 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
             @NotNull final ConfigurationService configurationService,
             @NotNull final ObjectMapper objectMapper,
             @NotNull final ShutdownHooks shutdownHooks) {
-        final long start = System.currentTimeMillis();
-        this.configurationService = configurationService;
         this.objectMapper = objectMapper;
         this.systemInformation = systemInformation;
-        this.hiveMQEdgeHttpService = initHttpService();
-        shutdownHooks.add(this);
-        HiveMQEdgeEvent event = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
-        event.addAll(HiveMQEdgeEnvironmentUtils.generateEnvironmentMap());
-        fireUsageEvent(event);
-        logger.trace("Initialized remote service(s) in {}ms", (System.currentTimeMillis() - start));
+
+        //-- We should only init the remote service (and thus the overhead of the threads) when
+        //-- remote tracking is enabled.
+        if(configurationService.usageTrackingConfiguration().isUsageTrackingEnabled()){
+            initHttpService();
+            shutdownHooks.add(this);
+        }
     }
 
-    protected final @NotNull HiveMQEdgeHttpServiceImpl initHttpService() {
-        return new HiveMQEdgeHttpServiceImpl(systemInformation.getHiveMQVersion(),
-                objectMapper, HiveMQEdgeHttpServiceImpl.SERVICE_DISCOVERY_URL, TIMEOUT, TIMEOUT, REFRESH,
-                configurationService.usageTrackingConfiguration().isUsageTrackingEnabled());
-    }
-
-    @Override
-    public HiveMQEdgeRemoteConfiguration getConfiguration() {
-        Optional<HiveMQEdgeRemoteConfiguration> optional = hiveMQEdgeHttpService.getRemoteConfiguration();
-        logger.debug("Loaded HiveMQ Edge Frontend Configuration Remote Available ? {}", optional.isPresent());
-        if (optional.isPresent()) {
-            return optional.get();
-        } else {
-            loadLocalConfiguration();
-            if (localConfiguration == null) {
-                throw new RuntimeException("Unable to load remote or local configuration, this is an unexpected error");
+    protected final void initHttpService() {
+        try {
+            HiveMQEdgeEvent event = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
+            event.addAll(HiveMQEdgeEnvironmentUtils.generateEnvironmentMap());
+            fireUsageEvent(event);
+            hiveMQEdgeHttpService = new HiveMQEdgeHttpServiceImpl(systemInformation.getHiveMQVersion(),
+                    objectMapper, HiveMQEdgeHttpServiceImpl.SERVICE_DISCOVERY_URL, TIMEOUT, TIMEOUT, REFRESH,
+                    true);
+        } finally {
+            if(logger.isTraceEnabled()){
+                logger.trace("Initialized remote HTTP service(s), usage tracking enabled (this can be disabled in configuration)");
             }
-            return localConfiguration;
         }
     }
 
     @Override
+    public HiveMQEdgeRemoteConfiguration getConfiguration() {
+        //-- If enabled (and available), load the configuration from a remote endpoint, else
+        //-- load the config from the local classpath
+        Optional<HiveMQEdgeRemoteConfiguration> optional = readConfigurationFromRemote();
+        return optional.orElse(loadLocalConfiguration());
+    }
+
+    @Override
     public void fireUsageEvent(final HiveMQEdgeEvent event) {
-        if(configurationService.usageTrackingConfiguration().isUsageTrackingEnabled()){
+        if(hiveMQEdgeHttpService != null){
             //only queue if its a startup event
             hiveMQEdgeHttpService.fireEvent(event, event.getEventType() == HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
         }
     }
 
-    protected void loadLocalConfiguration() {
+    protected HiveMQEdgeRemoteConfiguration loadLocalConfiguration() {
         try {
             if (localConfiguration == null) {
                 synchronized (lock) {
                     if (localConfiguration == null) {
-                        try (final InputStream is = HiveMQRemoteServiceImpl.class.getResourceAsStream(
-                                "/hivemq-edge-configuration.json")) {
+                        try (final InputStream is = HiveMQRemoteServiceImpl.class.getResourceAsStream(LOCAL_RESOURCE_CONFIGURATION)) {
                             localConfiguration = objectMapper.readValue(is, HiveMQEdgeRemoteConfiguration.class);
-                            logger.trace("Loaded HiveMQEdge Configuration From Local Classpath {}", localConfiguration);
+                            if(logger.isTraceEnabled()){
+                                logger.trace("Loaded HiveMQEdge Configuration From Local Classpath {}", localConfiguration);
+                            }
                         }
                     }
                 }
             }
+            return localConfiguration;
         } catch (IOException e) {
             logger.error("Error Loading HiveMQEdge Configuration From Local Classpath", e);
+            throw new RuntimeException("Error Loading HiveMQEdge Configuration from Classpath");
         }
+    }
+
+    protected @NotNull Optional<HiveMQEdgeRemoteConfiguration> readConfigurationFromRemote(){
+        Optional<HiveMQEdgeRemoteConfiguration> remoteConfiguration = hiveMQEdgeHttpService != null ?
+                hiveMQEdgeHttpService.getRemoteConfiguration() : Optional.empty();
+        if(logger.isTraceEnabled()){
+            logger.trace("Loaded HiveMQ Edge Configuration Remote Available ? {}",
+                    hiveMQEdgeHttpService != null && remoteConfiguration.isPresent());
+        }
+        return remoteConfiguration;
     }
 
     @Override
@@ -121,7 +140,9 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
     @Override
     public void run() {
         try {
-            hiveMQEdgeHttpService.stop();
+            if(hiveMQEdgeHttpService != null) {
+                hiveMQEdgeHttpService.stop();
+            }
         } catch (Exception e) {
             logger.error("Error shutting down remote configuration service", e);
         }
