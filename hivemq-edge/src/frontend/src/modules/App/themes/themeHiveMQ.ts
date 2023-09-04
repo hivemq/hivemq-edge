@@ -1,6 +1,6 @@
 // Theming with Chakra UI is based on the Styled System Theme Specification
 // Extend the theme to include custom colors, fonts, etc
-import { defineStyleConfig, extendTheme } from '@chakra-ui/react'
+import { defineStyleConfig, extendTheme, theme as baseTheme } from '@chakra-ui/react'
 import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/700.css'
 import { statTheme } from './Stat'
@@ -32,23 +32,6 @@ export const formStyles = {
   },
 }
 
-// export const theme = {
-//     styles: {
-//         global: {
-//             'html, body': {
-//                 color: 'gray.600',
-//                 lineHeight: 'tall',
-//             },
-//             h5: {
-//                 fontSize: "12px"
-//             },
-//             a: {
-//                 color: 'teal.500',
-//             },
-//         },
-//     },
-// }
-
 export const themeHiveMQ = extendTheme({
   fonts: {
     heading: `'Roboto', sans-serif`,
@@ -63,21 +46,11 @@ export const themeHiveMQ = extendTheme({
 
   colors: {
     status: {
-      connected: {
-        500: '#38A169',
-      },
-      disconnected: {
-        500: '#718096',
-      },
-      connecting: {
-        500: '#CBD5E0',
-      },
-      disconnecting: {
-        500: '#CBD5E0',
-      },
-      error: {
-        500: '#E53E3E',
-      },
+      connected: baseTheme.colors.green,
+      disconnected: baseTheme.colors.gray,
+      connecting: baseTheme.colors.orange,
+      disconnecting: baseTheme.colors.orange,
+      error: baseTheme.colors.red,
     },
     // Based on 20-scale palette. One in two, omitting #fff
     brand: {
