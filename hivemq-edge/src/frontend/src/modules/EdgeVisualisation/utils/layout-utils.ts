@@ -3,10 +3,15 @@ import { group } from 'd3-array'
 import { hierarchy, pack } from 'd3-hierarchy'
 import { DateTime } from 'luxon'
 
-import { EdgeFlowGrouping, NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { EdgeFlowGrouping, EdgeFlowLayout, NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 import { Adapter, Bridge } from '@/api/__generated__'
 
-export const groupingAttributes = [
+type ClusterFunction = (d: Node<Adapter>) => string | boolean | number | undefined
+interface ClusterFunctionCatalog {
+  key: string
+  function: ClusterFunction
+}
+export const groupingAttributes: ClusterFunctionCatalog[] = [
   { key: 'type', function: (d: Node<Adapter>) => d.data.type },
   {
     key: 'subscriptionCardinality',
@@ -25,9 +30,14 @@ export const groupingAttributes = [
   },
 ]
 
+const groupingAttributesAsObject = groupingAttributes.reduce<{ [key: string]: ClusterFunction }>(
+  (a, c) => ({ ...a, [c.key]: c.function }),
+  {}
+)
+
 export const applyLayout = (nodes: Node<Bridge | Adapter>[], groupOption: EdgeFlowGrouping): Node[] => {
-  // TODO[NVL] Any other layout we might want to try ?
-  return computeCirclePacking(nodes, groupOption)
+  if (groupOption.layout === EdgeFlowLayout.CIRCLE_PACKING) return computeCirclePacking(nodes, groupOption)
+  return nodes
 }
 
 export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOption: EdgeFlowGrouping): Node[] => {
@@ -35,15 +45,15 @@ export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOptio
   const groupKeys = [
     // This key is mandatory in order to handle adapter grouping
     (d: Node<Adapter>) => d.type,
-    groupingAttributes[1].function,
+    ...groupOption.keys.map((e) => groupingAttributesAsObject[e]),
+    // groupingAttributes[1].function,
     // groupingAttributes[1].function,
     // groupingAttributes[2].function,
   ] as const
+  // @ts-ignore
   const groups = group(allAdapters, ...groupKeys)
 
   const groupedAdapters = groups.get(NodeTypes.ADAPTER_NODE)
-
-  console.log('XXXXXXX groups', groups)
 
   const workspaceLayout = pack()
     .size([2000, 1000])
@@ -61,11 +71,11 @@ export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOptio
       })
   )
 
-  console.log('XXXXXXX root', root.leaves())
-
+  // @ts-ignore
   const mapping = root.leaves().reduce((a, v) => ({ ...a, [v.data.id]: { x: v.x, y: v.y } }), {})
 
   const reloc = nodes.map<Node>((e) => {
+    // @ts-ignore
     const pos: XYPosition = mapping[e.id]
     if (!pos) return e
     return { ...e, position: { x: pos.x - 600 - 60, y: pos.y - 800 - 40 } }
@@ -77,6 +87,7 @@ export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOptio
     const grpNodes: Node<string>[] =
       root.children?.map<Node>((e, n) => {
         e.leaves().forEach((e) => {
+          // @ts-ignore
           e.data.parentNode = `AAAAA${n}`
         })
         return {
