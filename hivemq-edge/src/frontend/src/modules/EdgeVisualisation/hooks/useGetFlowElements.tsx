@@ -9,12 +9,13 @@ import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { useGetListeners } from '@/api/hooks/useGateway/useGetListeners.tsx'
 
 import { createEdgeNode, createBridgeNode, createAdapterNode, createListenerNode } from '../utils/nodes-utils.ts'
+import { applyLayout } from '../utils/layout-utils.ts'
 import { useEdgeFlowContext } from '../hooks/useEdgeFlowContext.tsx'
 
 const useGetFlowElements = () => {
   const { t } = useTranslation()
   const theme = useTheme()
-  const { options } = useEdgeFlowContext()
+  const { options, groups } = useEdgeFlowContext()
   const { data: bridges } = useListBridges()
   const { data: adapters } = useListProtocolAdapters()
   const { data: listenerList } = useGetListeners()
@@ -62,9 +63,9 @@ const useGetFlowElements = () => {
       edges.push(edgeConnector)
     })
 
-    setNodes([nodeEdge, ...nodes])
+    setNodes([nodeEdge, ...applyLayout(nodes, groups)])
     setEdges([...edges])
-  }, [bridges, adapters, listeners, setNodes, setEdges, t, options, theme])
+  }, [bridges, adapters, listeners, groups, setNodes, setEdges, t, options, theme])
 
   return { nodes, edges, onNodesChange, onEdgesChange }
 }
