@@ -74,7 +74,7 @@ export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOptio
   const createGroupNodes = () => {
     if (!groupOption.showGroups) return []
 
-    const grpNodes =
+    const grpNodes: Node<string>[] =
       root.children?.map<Node>((e, n) => {
         e.leaves().forEach((e) => {
           e.data.parentNode = `AAAAA${n}`
@@ -82,7 +82,7 @@ export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOptio
         return {
           id: `AAAAA${n}`,
           type: NodeTypes.CLUSTER_NODE,
-          data: { label: `AAAAA${n}` },
+          data: `AAAAA${n}`,
           position: { x: e.x - 600 - e.r, y: e.y - 800 - e.r },
           style: {
             width: 2 * e.r,
