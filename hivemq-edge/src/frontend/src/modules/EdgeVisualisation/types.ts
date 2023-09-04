@@ -6,7 +6,13 @@ export interface EdgeFlowOptions {
   showMonitoringOnEdge: boolean
 }
 
+export enum EdgeFlowLayout {
+  HORIZONTAL = 'HORIZONTAL',
+  CIRCLE_PACKING = 'CIRCLE_PACKING',
+}
+
 export interface EdgeFlowGrouping {
+  layout: EdgeFlowLayout
   keys: string[]
   showGroups: boolean
 }
