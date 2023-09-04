@@ -17,6 +17,7 @@ export enum NodeTypes {
   BRIDGE_NODE = 'BRIDGE_NODE',
   ADAPTER_NODE = 'ADAPTER_NODE',
   LISTENER_NODE = 'LISTENER_NODE',
+  CLUSTER_NODE = 'CLUSTER_NODE',
 }
 
 export enum EdgeTypes {
