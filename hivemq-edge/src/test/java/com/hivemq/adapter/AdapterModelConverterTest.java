@@ -25,4 +25,6 @@ public class AdapterModelConverterTest {
         assertNotNull(apiCategory.getDescription(), "Category Description should not be null");
         assertNull(apiCategory.getImage(), "Category Image should be null");
     }
+
+
 }

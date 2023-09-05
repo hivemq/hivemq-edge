@@ -39,24 +39,37 @@ public class ProtocolAdapterMetricsHelper {
     }
 
     protected void initRegistry(){
-        publishSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish") + SUCCESS_COUNT);
-        publishFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish") + FAILED_COUNT);
-        connectionSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection") + SUCCESS_COUNT);
-        connectionFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection") + FAILED_COUNT);
+        publishSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish", true) + SUCCESS_COUNT);
+        publishFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish", true) + FAILED_COUNT);
+        connectionSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection", true) + SUCCESS_COUNT);
+        connectionFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection", true) + FAILED_COUNT);
     }
 
+    /**
+     * Use to indicate a read from the adapter has been successfully PUBLISHed
+     */
     public void incrementReadPublishSuccess(){
         publishSuccessCounter.inc();
     }
 
+    /**
+     * Use to indicate a read from the adapter has failed
+     */
     public void incrementReadPublishFailure(){
-        publishSuccessCounter.inc();
+        publishFailedCounter.inc();
     }
 
+
+    /**
+     * Use to indicate a connection attempt to the device has failed
+     */
     public void incrementConnectionFailure(){
         connectionFailedCounter.inc();
     }
 
+    /**
+     * Use to indicate a connection attempt to the device has succeeded
+     */
     public void incrementConnectionSuccess(){
         connectionSuccessCounter.inc();
     }
@@ -67,10 +80,19 @@ public class ProtocolAdapterMetricsHelper {
      */
     public void increment(final @NotNull String metricName){
         Preconditions.checkNotNull(metricName);
-        metricRegistry.counter(createAdapterMetricsNamespace(metricName)).inc();
+        metricRegistry.counter(createAdapterMetricsNamespace(metricName, false)).inc();
     }
 
-    protected String createAdapterMetricsNamespace(String suffix){
+    /**
+     * Create a deterministic prefix for use in the metrics registry.
+     *
+     * Example format of the namespace:
+     * com.hivemq.edge.protocol-adapters.[test-type].[test-id].[suffix](.) with optional trailing period
+     * @param suffix - the suffix to append to the namespace
+     * @param trailingPeriod - should the namespace by suffixed with a trailing period
+     * @return a namespace string for use in the metrics registry
+     */
+    protected String createAdapterMetricsNamespace(@NotNull final String suffix, final boolean trailingPeriod){
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(HiveMQMetrics.PROTOCOL_ADAPTER_PREFIX);
         stringBuilder.append(protocolAdapterType);
@@ -78,7 +100,9 @@ public class ProtocolAdapterMetricsHelper {
         stringBuilder.append(protocolAdapterId);
         stringBuilder.append(PERIOD);
         stringBuilder.append(suffix);
-        stringBuilder.append(PERIOD);
+        if(trailingPeriod){
+            stringBuilder.append(PERIOD);
+        }
         return stringBuilder.toString();
     }
 }
