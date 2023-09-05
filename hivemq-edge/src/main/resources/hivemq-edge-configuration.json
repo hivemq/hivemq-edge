@@ -35,6 +35,45 @@
     }
   ],
   "extensions" : [],
-  "modules" : [],
+  "modules" : [
+    {
+      "id" : "modbus",
+      "version" : "2023.4",
+      "name" : "ModBus to MQTT Protocol Adapter",
+      "description" : "Connects HiveMQ Edge to existing ModBus devices, bringing data from coils & registers into MQTT.",
+      "author" : "HiveMQ",
+      "documentationLink" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#modbus",
+        "external" : true
+      },
+      "provisioningLink" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/releases",
+        "external" : true
+      },
+      "logoUrl" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/blob/2148fd3ea515bbf0b49306938f87cdd540f3b8cb/hivemq-edge/src/main/resources/httpd/images/modbus-icon.png",
+        "external" : true
+      }
+    },
+    {
+      "id" : "opc-ua-client",
+      "version" : "2023.4",
+      "name" : "OPC-UA to MQTT Protocol Adapter",
+      "description" : "Connects HiveMQ Edge to existing OPC-UA services as a client and enables a seamless exchange of data between MQTT and OPC-UA.",
+      "author" : "HiveMQ",
+      "documentationLink" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#opc-ua",
+        "external" : true
+      },
+      "provisioningLink" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/releases",
+        "external" : true
+      },
+      "logoUrl" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/blob/2148fd3ea515bbf0b49306938f87cdd540f3b8cb/hivemq-edge/src/main/resources/httpd/images/opc-ua-icon.jpg",
+        "external" : true
+      }
+    }
+  ],
   "properties" : {  }
 }

@@ -15,15 +15,14 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
-import ch.qos.logback.core.joran.conditional.ElseAction;
 import com.google.common.base.Preconditions;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingOutput;
 import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingOutputImpl;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +44,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
+ * The polling service provides utility to track and invoke adapter
+ * data acquisition attempts. It provides a mechanism to handle
+ * errors and back off the attempts until a maximum number of
+ * retries occurs, at which point a terminal failure callback
+ * is invoked and the instance is removed from the schedule and close
+ * is called on the input instance (probably closing the underlying
+ * resource according to the implementation).
+ *
  * @author Simon L Johnson
  */
 public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPollingService {
@@ -84,7 +91,9 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     public ProtocolAdapterPollingOutput schedulePolling(final @NotNull ProtocolAdapter adapter,
                                                          final @NotNull ProtocolAdapterPollingInput input){
 
-        log.info("Scheduling Polling For Adapter {}", adapter.getProtocolAdapterInformation().getProtocolId());
+        if(log.isTraceEnabled()){
+            log.trace("Scheduling Polling For Adapter {}", adapter.getProtocolAdapterInformation().getProtocolId());
+        }
         ProtocolAdapterPollingOutput output = new ProtocolAdapterPollingOutputImpl(adapter.getId(), input);
         MonitoredPollingJob internalJob = new MonitoredPollingJob(input, output);
         ScheduledFuture<?> future = scheduledExecutorService.scheduleAtFixedRate(internalJob,
@@ -148,7 +157,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
         //-- This will backoff up to a max of about a day (unless the max provided is less)
         long f = (long) (Math.pow(2, Math.min(errorCount, 20)) * 100);
         if(addFuzziness){
-            f += ThreadLocalRandom.current().nextInt(0, (int) f);
+            f += ThreadLocalRandom.current().nextInt(0, errorCount * 100);
         }
         f =  Math.min(f, max);
         return f;

@@ -1607,30 +1607,38 @@ components:
       properties:
         author:
           type: string
-          description: The extension author
+          description: The module author
         description:
           type: string
-          description: The extension description
+          description: The module description
           nullable: true
+        documentationLink:
+          $ref: '#/components/schemas/Link'
         id:
           type: string
           description: A mandatory ID associated with the Module
         installed:
           type: boolean
-          description: Is the extension installed
+          description: Is the module installed
           nullable: true
-        link:
+        logoUrl:
           $ref: '#/components/schemas/Link'
+        moduleType:
+          type: string
+          description: The type of the module
+          nullable: true
         name:
           type: string
-          description: The extension name
+          description: The module name
         priority:
           type: integer
           format: int32
-          description: The extension priority
+          description: The module priority
+        provisioningLink:
+          $ref: '#/components/schemas/Link'
         version:
           type: string
-          description: The extension version
+          description: The module version
     ModuleList:
       type: object
       description: The modules available for installation
@@ -1719,6 +1727,9 @@ components:
         protocol:
           type: string
           description: The supported protocol
+        provisioningUrl:
+          type: string
+          description: The provisioning url of the adapter
         tags:
           type: array
           description: The search tags associated with this adapter

@@ -25,9 +25,9 @@ import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdapterRuntimeInformation;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
-import com.hivemq.api.model.adapters.ProtocolAdapterCategory;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
+import com.hivemq.api.model.components.Module;
 import com.hivemq.api.model.connection.ConnectionStatus;
 import com.hivemq.api.model.connection.ConnectionStatusList;
 import com.hivemq.api.model.connection.ConnectionStatusTransitionCommand;
@@ -36,7 +36,7 @@ import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
+import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
@@ -50,6 +50,7 @@ import com.networknt.schema.ValidationMessage;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -59,15 +60,18 @@ import java.util.stream.Collectors;
 
 public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
 
+    private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull ObjectMapper objectMapper;
 
     @Inject
     public ProtocolAdaptersResourceImpl(
+            final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull ConfigurationService configurationService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull ObjectMapper objectMapper) {
+        this.remoteService = remoteService;
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
@@ -75,29 +79,22 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAdapterTypes() {
-        final ImmutableList.Builder<ProtocolAdapter> adapters = ImmutableList.builder();
-        for (ProtocolAdapterInformation info : protocolAdapterManager.getAllAvailableAdapterTypes().values()) {
-            String logoUrl = info.getLogoUrl();
-            if(Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)){
-                //-- when we're in developer mode, ensure we make the logo urls fully qualified
-                //-- as the FE maybe being run from a different development server.
-              logoUrl = ApiUtils.getWebContextRoot(configurationService.apiConfiguration(), false) + logoUrl;
-            }
-            adapters.add(new ProtocolAdapter(info.getProtocolId(),
-                    info.getProtocolName(),
-                    info.getName(),
-                    info.getDescription(),
-                    info.getUrl(),
-                    info.getVersion(),
-                    logoUrl,
-                    info.getAuthor(),
-                    true,
-                    info == null ? null : convertApiCategory(info.getCategory()),
-                    info.getTags() == null ? null : info.getTags().stream().
-                            map(Enum::toString).collect(Collectors.toList()),
-                    protocolAdapterManager.getSchemaManager(info).generateSchemaNode()));
-        }
-        return Response.status(200).entity(new ProtocolAdaptersList(adapters.build())).build();
+
+        //-- Obtain the adapters installed by the runtime (these will be marked as installed = true).
+        Set<ProtocolAdapter> installedAdapters = protocolAdapterManager.getAllAvailableAdapterTypes().
+                values().
+                stream().
+                map(installedAdapter -> ProtocolAdapterApiUtils.convertInstalledAdapterType(
+                        protocolAdapterManager, installedAdapter, configurationService)).
+                collect(Collectors.toSet());
+
+        //-- Obtain the remote modules and perform a selective union on the two sets
+        remoteService.getConfiguration().getModules().stream().
+                map(m -> ProtocolAdapterApiUtils.convertModuleAdapterType(m, configurationService)).
+                filter(p -> !installedAdapters.contains(p)).forEach(installedAdapters::add);
+
+        return Response.status(200).entity(new ProtocolAdaptersList(
+                new ArrayList<>(installedAdapters))).build();
     }
 
     @Override
@@ -291,7 +288,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ApiErrorUtils.badRequest(errorMessages);
         } else {
-            return Response.status(200).entity(getConnectionStatusInternal(adapterId)).build();
+            return Response.status(200).entity(
+                    getConnectionStatusInternal(adapterId)).build();
         }
     }
 
@@ -346,17 +344,5 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             builder.add(status);
         }
         return Response.status(200).entity(new ConnectionStatusList(builder.build())).build();
-    }
-
-
-    /**
-     * Convert category from internal enum to external API tranport model.
-     * @param category the category enum to convert
-     */
-    public static ProtocolAdapterCategory convertApiCategory(ProtocolAdapterConstants.CATEGORY category){
-        return new ProtocolAdapterCategory(category.name(),
-                category.getDisplayName(),
-                category.getDescription(),
-                category.getImage());
     }
 }
