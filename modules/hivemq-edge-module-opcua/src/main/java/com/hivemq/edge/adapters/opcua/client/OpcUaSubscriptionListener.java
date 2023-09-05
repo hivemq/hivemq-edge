@@ -15,9 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.codahale.metrics.MetricRegistry;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.metrics.HiveMQMetrics;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -27,15 +26,15 @@ import java.util.function.Consumer;
 
 public class OpcUaSubscriptionListener implements UaSubscriptionManager.SubscriptionListener {
 
-    private final @NotNull MetricRegistry metricRegistry;
+    private final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
     private final @NotNull String adapterId;
     private final @NotNull Consumer<UaSubscription> recreateSubscriptionsCallback;
 
     public OpcUaSubscriptionListener(
-            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper,
             final @NotNull String adapterId,
             final @NotNull Consumer<UaSubscription> recreateSubscriptionsCallback) {
-        this.metricRegistry = metricRegistry;
+        this.protocolAdapterMetricsHelper = protocolAdapterMetricsHelper;
         this.adapterId = adapterId;
         this.recreateSubscriptionsCallback = recreateSubscriptionsCallback;
     }
@@ -43,19 +42,13 @@ public class OpcUaSubscriptionListener implements UaSubscriptionManager.Subscrip
     @Override
     public void onKeepAlive(final @NotNull UaSubscription subscription, final @NotNull DateTime publishTime) {
         UaSubscriptionManager.SubscriptionListener.super.onKeepAlive(subscription, publishTime);
-        metricRegistry.counter(HiveMQMetrics.PROTOCOL_ADAPTER_PREFIX +
-                "opcua.client." +
-                adapterId +
-                ".subscription.keepalive.count").inc();
+        protocolAdapterMetricsHelper.increment("subscription.keepalive.count");
     }
 
     @Override
     public void onSubscriptionTransferFailed(
             final @NotNull UaSubscription subscription, final @NotNull StatusCode statusCode) {
-        metricRegistry.counter(HiveMQMetrics.PROTOCOL_ADAPTER_PREFIX +
-                "opcua.client." +
-                adapterId +
-                ".subscription.transfer.failed.count").inc();
+        protocolAdapterMetricsHelper.increment("subscription.transfer.failed.count");
         recreateSubscriptionsCallback.accept(subscription);
     }
 }

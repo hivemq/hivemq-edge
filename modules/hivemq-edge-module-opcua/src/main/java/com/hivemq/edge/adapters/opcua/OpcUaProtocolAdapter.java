@@ -22,8 +22,11 @@ import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
-import com.hivemq.edge.modules.adapters.params.*;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.adapters.params.NodeType;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -58,9 +61,8 @@ import java.util.function.BiConsumer;
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-public class OpcUaProtocolAdapter extends AbstractProtocolAdapter implements ProtocolAdapter {
+public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterConfig> {
     private static final Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
-    private final @NotNull OpcUaAdapterConfig adapterConfig;
     private @Nullable OpcUaClient opcUaClient;
     private @NotNull Status status = Status.DISCONNECTED;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap = new ConcurrentHashMap<>();
@@ -69,13 +71,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter implements Pro
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull OpcUaAdapterConfig adapterConfig,
             final @NotNull MetricRegistry metricRegistry) {
-        super(adapterInformation, metricRegistry);
-        this.adapterConfig = adapterConfig;
-    }
-
-    @Override
-    public @NotNull String getId() {
-        return adapterConfig.getId();
+        super(adapterInformation, adapterConfig, metricRegistry);
     }
 
     @Override
@@ -190,7 +186,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter implements Pro
 
     @NotNull
     private OpcUaSubscriptionListener createSubscriptionListener(@NotNull ProtocolAdapterStartInput input) {
-        return new OpcUaSubscriptionListener(metricRegistry, adapterConfig.getId(), (subscription) -> {
+        return new OpcUaSubscriptionListener(protocolAdapterMetricsHelper, adapterConfig.getId(), (subscription) -> {
             //re-create a subscription on failure
             final OpcUaAdapterConfig.Subscription subscriptionConfig =
                     subscriptionMap.get(subscription.getSubscriptionId());
@@ -262,7 +258,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter implements Pro
                             resultFuture,
                             opcUaClient,
                             subscriptionMap,
-                            metricRegistry,
+                            protocolAdapterMetricsHelper,
                             adapterConfig.getId()));
 
 

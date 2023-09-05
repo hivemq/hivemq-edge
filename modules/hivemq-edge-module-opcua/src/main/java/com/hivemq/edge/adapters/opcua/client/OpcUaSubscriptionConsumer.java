@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua.client;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaException;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -48,7 +49,7 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
     private final @NotNull CompletableFuture<Void> resultFuture;
     private final @NotNull OpcUaClient opcUaClient;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap;
-    private final @NotNull MetricRegistry metricRegistry;
+    private final @NotNull ProtocolAdapterMetricsHelper metricsHelper;
     private final @NotNull String adapterId;
 
     public OpcUaSubscriptionConsumer(
@@ -58,7 +59,7 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
             final @NotNull CompletableFuture<Void> resultFuture,
             final @NotNull OpcUaClient opcUaClient,
             final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap,
-            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull ProtocolAdapterMetricsHelper metricsHelper,
             final @NotNull String adapterId) {
         this.subscription = subscription;
         this.readValueId = readValueId;
@@ -66,7 +67,7 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
         this.resultFuture = resultFuture;
         this.opcUaClient = opcUaClient;
         this.subscriptionMap = subscriptionMap;
-        this.metricRegistry = metricRegistry;
+        this.metricsHelper = metricsHelper;
         this.adapterId = adapterId;
     }
 
@@ -91,7 +92,7 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
                         adapterPublishService,
                         opcUaClient,
                         readValueId.getNodeId(),
-                        metricRegistry,
+                        metricsHelper,
                         adapterId));
 
         uaSubscription.createMonitoredItems(TimestampsToReturn.Both, List.of(request), onItemCreated)

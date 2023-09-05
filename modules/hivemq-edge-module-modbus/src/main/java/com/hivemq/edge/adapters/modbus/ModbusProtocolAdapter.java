@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
@@ -25,7 +24,6 @@ import com.hivemq.edge.modules.adapters.params.NodeTree;
 import com.hivemq.edge.modules.adapters.params.NodeType;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingOutput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingInputImpl;
@@ -33,45 +31,28 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class ModbusProtocolAdapter extends AbstractProtocolAdapter {
+public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapterConfig> {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
-    private final @NotNull ModbusAdapterConfig adapterConfig;
     private final @NotNull Object lock = new Object();
     private volatile @Nullable IModbusClient modbusClient;
-    private @Nullable List<ProtocolAdapterPollingOutput> active = new ArrayList<>();
     private @Nullable Map<ModBusData.TYPE, ModBusData> lastSamples = new HashMap<>();
-    private final @NotNull Counter publishSuccessCounter;
-    private final @NotNull Counter publishFailedCounter;
 
-    public ModbusProtocolAdapter(final @NotNull ProtocolAdapterInformation adapterInformation,
-                                 final @NotNull ModbusAdapterConfig adapterConfig,
-                                 final @NotNull MetricRegistry metricRegistry) {
-        super(adapterInformation, metricRegistry);
-        this.adapterConfig = adapterConfig;
-
-        final String adapterPrefix =
-                HiveMQMetrics.PROTOCOL_ADAPTER_PREFIX + "modbus.tcp." + adapterConfig.getId() + ".read.publish.";
-        publishSuccessCounter = metricRegistry.counter(adapterPrefix + "success.count");
-        publishFailedCounter = metricRegistry.counter(adapterPrefix + "failed.count");
-    }
-
-    @Override
-    public @NotNull String getId() {
-        return adapterConfig.getId();
+    public ModbusProtocolAdapter(
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ModbusAdapterConfig adapterConfig,
+            final @NotNull MetricRegistry metricRegistry) {
+        super(adapterInformation, adapterConfig, metricRegistry);
     }
 
     @Override
@@ -175,10 +156,10 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter {
             final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
 
             publishFuture.thenAccept(publishReturnCode -> {
-                publishSuccessCounter.inc();
+                protocolAdapterMetricsHelper.incrementReadPublishSuccess();
             }).exceptionally(throwable -> {
                 log.warn("Error Publishing ModBus Payload", throwable);
-                publishFailedCounter.inc();
+                protocolAdapterMetricsHelper.incrementReadPublishFailure();
                 return null;
             });
         }

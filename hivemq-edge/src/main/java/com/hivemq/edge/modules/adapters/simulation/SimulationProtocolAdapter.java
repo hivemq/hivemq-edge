@@ -17,8 +17,6 @@ package com.hivemq.edge.modules.adapters.simulation;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
 import com.hivemq.edge.modules.adapters.params.NodeTree;
 import com.hivemq.edge.modules.adapters.params.NodeType;
@@ -28,6 +26,8 @@ import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingOutput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingInputImpl;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
@@ -41,23 +41,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
-public class SimulationProtocolAdapter extends AbstractProtocolAdapter {
+public class SimulationProtocolAdapter extends AbstractProtocolAdapter<SimulationAdapterConfig> {
     private static final Logger log = LoggerFactory.getLogger(SimulationProtocolAdapter.class);
-    private final @NotNull SimulationAdapterConfig adapterConfig;
     private @NotNull Status status = Status.DISCONNECTED;
-    private volatile @Nullable List<ProtocolAdapterPollingOutput> active = new ArrayList<>();
 
     public SimulationProtocolAdapter(
             @NotNull final ProtocolAdapterInformation adapterInformation,
             @NotNull final SimulationAdapterConfig adapterConfig,
             @NotNull final MetricRegistry metricRegistry) {
-        super(adapterInformation, metricRegistry);
-        this.adapterConfig = adapterConfig;
-    }
-
-    @Override
-    public @NotNull String getId() {
-        return adapterConfig.getId();
+        super(adapterInformation, adapterConfig, metricRegistry);
     }
 
     @Override
@@ -138,8 +130,9 @@ public class SimulationProtocolAdapter extends AbstractProtocolAdapter {
         final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
 
         publishFuture.thenAccept(publishReturnCode -> {
-            metricRegistry.counter(getProtocolAdapterInformation().getProtocolId()).inc();
+            protocolAdapterMetricsHelper.incrementReadPublishSuccess();
         }).exceptionally(throwable -> {
+            protocolAdapterMetricsHelper.incrementReadPublishFailure();
             log.warn("Error Publishing Simulation Payload", throwable);
             return null;
         });

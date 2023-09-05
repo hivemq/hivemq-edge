@@ -15,15 +15,13 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaStringPayloadConverter;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.util.Bytes;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -45,8 +43,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull OpcUaClient opcUaClient;
     private final @NotNull NodeId nodeId;
-    private final @NotNull Counter publishSuccessCounter;
-    private final @NotNull Counter publishFailedCounter;
+    private final @NotNull ProtocolAdapterMetricsHelper metricsHelper;
     private final @NotNull String adapterId;
 
     public OpcUaDataValueConsumer(
@@ -54,18 +51,14 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull OpcUaClient opcUaClient,
             final @NotNull NodeId nodeId,
-            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull ProtocolAdapterMetricsHelper metricsHelper,
             final @NotNull String adapterId) {
         this.subscription = subscription;
         this.adapterPublishService = adapterPublishService;
         this.opcUaClient = opcUaClient;
         this.nodeId = nodeId;
         this.adapterId = adapterId;
-
-        final String adapterPrefix =
-                HiveMQMetrics.PROTOCOL_ADAPTER_PREFIX + "opcua.client." + this.adapterId + ".read.publish.";
-        publishSuccessCounter = metricRegistry.counter(adapterPrefix + "success.count");
-        publishFailedCounter = metricRegistry.counter(adapterPrefix + "failed.count");
+        this.metricsHelper = metricsHelper;
     }
 
     @Override
@@ -98,9 +91,9 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
             final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
 
             publishFuture.thenAccept(publishReturnCode -> {
-                publishSuccessCounter.inc();
+                metricsHelper.incrementReadPublishSuccess();
             }).exceptionally(throwable -> {
-                publishFailedCounter.inc();
+                metricsHelper.incrementReadPublishFailure();
                 return null;
             });
 
