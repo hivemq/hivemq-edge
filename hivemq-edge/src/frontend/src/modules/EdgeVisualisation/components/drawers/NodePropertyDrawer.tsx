@@ -10,6 +10,8 @@ import {
   DrawerOverlay,
   useDisclosure,
 } from '@chakra-ui/react'
+
+import DisclaimerWIP from '@/components/DisclaimerWIP.tsx'
 import Metrics from '@/modules/Welcome/components/Metrics.tsx'
 
 const NodePropertyDrawer: FC = () => {
@@ -43,7 +45,15 @@ const NodePropertyDrawer: FC = () => {
         </DrawerHeader>
 
         <DrawerBody>
-          <Metrics />
+          <VStack gap={4} alignItems={'stretch'}>
+            <DisclaimerWIP />
+            <Metrics />
+
+            <Box padding={6} boxShadow="md" bg="white">
+              <SkeletonCircle size="10" />
+              <SkeletonText mt="4" noOfLines={4} spacing="4" skeletonHeight="2" />
+            </Box>
+          </VStack>
         </DrawerBody>
       </DrawerContent>
     </Drawer>

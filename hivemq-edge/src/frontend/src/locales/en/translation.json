@@ -44,7 +44,10 @@
   },
   "error": {
     "backHome": "Back to Home",
-    "notfound": { "heading": "Sorry, an unexpected error has occurred" }
+    "notfound": { "heading": "Sorry, an unexpected error has occurred" },
+    "wip": {
+      "message": "This is a work in progress. Be patient with us"
+    }
   },
   "login": {
     "aside": {
