@@ -347,15 +347,15 @@
       "description": "No protocol adapters matching your criteria"
     },
     "tabs": {
-      "adapters": "Protocol Adapters Instances",
-      "protocols": "Installed Protocol Adapters"
+      "adapters": "Active Adapters",
+      "protocols": "Protocol Adapter Catalog"
     },
     "protocols": {
-      "adapterCount_zero": "There are no adapter protocol defined. Please check your configuration",
-      "adapterCount_one": "{{count}} adapter type",
-      "adapterCount_other": "{{count}} adapter types",
-      "description_zero": "There are no adapter protocol defined. Please check your configuration",
-      "description_one": "Select the adapter type to start creating your adapter",
+      "adapterCount_zero": "There are no protocol adapter defined. Please check your configuration",
+      "adapterCount_one": "{{count}} protocol adapter",
+      "adapterCount_other": "{{count}} protocol adapters",
+      "description_zero": "There are no protocol adapter defined. Please check your configuration",
+      "description_one": "Select the protocol to start creating your adapter",
       "description_other": "Select one of the following $t(protocolAdapter.protocols.adapterCount, {\"count\": {{count}} }) to start creating your adapter"
     },
     "facet": {
@@ -389,7 +389,7 @@
       },
       "header": {
         "name": "Name",
-        "type": "Type",
+        "type": "Protocol",
         "status": "Status",
         "lastStarted": "Last started",
         "actions": "Actions"
