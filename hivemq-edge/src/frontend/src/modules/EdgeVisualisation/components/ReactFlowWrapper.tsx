@@ -41,6 +41,7 @@ const ReactFlowWrapper = () => {
       onNodesChange={onNodesChange}
       edges={edges}
       onEdgesChange={onEdgesChange}
+      fitView
     >
       <Background />
       <CanvasControls />
