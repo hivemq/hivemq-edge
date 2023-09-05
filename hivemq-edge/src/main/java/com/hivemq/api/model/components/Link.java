@@ -21,6 +21,8 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.Objects;
+
 /**
  * Bean to transport Link details across the API
  * @author Simon L Johnson
@@ -53,7 +55,7 @@ public class Link {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public Link(
-            @NotNull @JsonProperty("displayText") final String displayText,
+            @Nullable @JsonProperty("displayText") final String displayText,
             @NotNull @JsonProperty("url") final String url,
             @Nullable @JsonProperty("description") final String description,
             @Nullable @JsonProperty("target") final String target,
@@ -102,5 +104,23 @@ public class Link {
         sb.append(", external=").append(external);
         sb.append('}');
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final Link link = (Link) o;
+        return url.equals(link.url) &&
+                Objects.equals(displayText, link.displayText) &&
+                Objects.equals(description, link.description) &&
+                Objects.equals(target, link.target) &&
+                Objects.equals(imageUrl, link.imageUrl) &&
+                Objects.equals(external, link.external);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url, displayText, description, target, imageUrl, external);
     }
 }
