@@ -19,34 +19,49 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
+import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 /**
+ * The abstract adapter contains the baseline coupling and basic lifecycle operations of
+ * a given protocol adapter in the system.
+ *
+ * It will provide services to manage polling, publishing and standardised metrics which
+ * will provide a cohesive runtime lifecycle of all the running instances
+ *
  * @author Simon L Johnson
  */
-public abstract class AbstractProtocolAdapter implements ProtocolAdapter {
+public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterConfig> implements ProtocolAdapter {
 
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
+
     protected final @NotNull ObjectMapper objectMapper;
-    protected final @NotNull MetricRegistry metricRegistry;
 
     protected @Nullable ProtocolAdapterPublishService adapterPublishService;
     protected @Nullable ProtocolAdapterPollingService protocolAdapterPollingService;
+    protected @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
+    protected @NotNull T adapterConfig;
     protected @Nullable Long lastStartAttemptTime;
     protected @Nullable String lastErrorMessage;
 
     public AbstractProtocolAdapter(final @NotNull ProtocolAdapterInformation adapterInformation,
+                                   final @NotNull T adapterConfig,
                                    final @NotNull MetricRegistry metricRegistry) {
         Preconditions.checkNotNull(adapterInformation);
+        Preconditions.checkNotNull(adapterConfig);
+        Preconditions.checkNotNull(metricRegistry);
         this.adapterInformation = adapterInformation;
-        this.metricRegistry = metricRegistry;
+        this.adapterConfig = adapterConfig;
+        this.protocolAdapterMetricsHelper = new ProtocolAdapterMetricsHelper(adapterInformation.getProtocolId(),
+                adapterConfig.getId(), metricRegistry);
         this.objectMapper = new ObjectMapper();
     }
 
@@ -93,4 +108,14 @@ public abstract class AbstractProtocolAdapter implements ProtocolAdapter {
     public String getLastErrorMessage() {
         return lastErrorMessage;
     }
+
+    public T getAdapterConfig() {
+        return adapterConfig;
+    }
+
+    @Override
+    public @NotNull String getId() {
+        return adapterConfig.getId();
+    }
+
 }
