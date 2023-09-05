@@ -1,6 +1,7 @@
 import { UIGroup } from '@/modules/ProtocolAdapters/types.ts'
 import { useTranslation } from 'react-i18next'
 import { UiSchema } from '@rjsf/utils'
+import {registerSymbol} from "superjson";
 
 const useGetUiSchema = (isNewAdapter = true) => {
   const { t } = useTranslation()
@@ -9,9 +10,13 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'coreFields',
       title: t('protocolAdapter.uiSchema.groups.coreFields'),
-      children: ['id', 'port', 'host', 'uri', 'pollingIntervalMillis'],
+      children: ['id', 'port', 'host', 'uri', 'pollingIntervalMillis', 'url'],
     },
-    { id: 'subFields', title: 'Subscription', children: ['subscriptions'] },
+    {
+      id: 'subFields',
+      title: 'Subscription',
+      children: ['subscriptions']
+    },
     {
       id: 'security',
       title: t('protocolAdapter.uiSchema.groups.security'),
@@ -20,13 +25,18 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'publishing',
       title: t('protocolAdapter.uiSchema.groups.publishing'),
-      children: ['maxPollingErrorsBeforeRemoval', 'publishChangedDataOnly', 'publishingInterval'],
+      children: ['maxPollingErrorsBeforeRemoval', 'publishingInterval', 'publishChangedDataOnly'],
     },
     {
       id: 'authentication',
       title: t('protocolAdapter.uiSchema.groups.authentication'),
       children: ['auth'],
     },
+    {
+      id: 'http',
+      title: t('protocolAdapter.uiSchema.groups.http'),
+      children: ['httpRequestMethod', 'httpHeaders'],
+    }
   ]
 
   const uiSchema: UiSchema = {
@@ -47,17 +57,17 @@ const useGetUiSchema = (isNewAdapter = true) => {
     port: {
       'ui:widget': 'updown',
     },
-    'ui:order': ['id', 'host', 'port', '*', 'subscriptions'],
     subscriptions: {
       items: {
         'ui:order': ['node', 'holding-registers', 'mqtt-topic', 'destination', 'qos', '*'],
-      },
+      }
     },
     auth: {
       basic: {
         'ui:order': ['username', 'password', '*'],
       },
     },
+    'ui:order': ['id', 'host', 'port', '*', 'subscriptions','publishingInterval', 'maxPollingErrorsBeforeRemoval','publishChangedDataOnly'],
   }
 
   return uiSchema

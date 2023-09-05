@@ -1,0 +1,168 @@
+/*
+ * Copyright 2023-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.hivemq.edge.adapters.http;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@JsonPropertyOrder({"url", "httpRequestMethod", "httpHeaders"})
+public class HttpAdapterConfig extends AbstractProtocolAdapterConfig {
+
+    @JsonProperty("url")
+    @ModuleConfigField(title = "URL",
+            description = "The url of the http request you would like to make",
+            required = true)
+    private @NotNull String url;
+
+//    @JsonProperty("httpRequestMethod")
+//    @ModuleConfigField(title = "HTTP Request Method")
+//    private @NotNull HttpRequestMethod httpRequestMethod =
+//            new HttpRequestMethod(HttpRequestMethod.HttpMethod.GET);
+
+    enum HttpMethod {
+        GET, POST, PUT
+    }
+
+    @JsonProperty("method")
+    @ModuleConfigField(title = "Http Method",
+                       description = "Http method associated with the request")
+    private @NotNull HttpAdapterConfig.HttpMethod method = HttpAdapterConfig.HttpMethod.GET;
+
+
+    @JsonProperty("httpHeaders")
+    @ModuleConfigField(title = "HTTP Headers",
+                       description = "HTTP headers to be added to your requests")
+    private @NotNull List<HttpHeader> httpHeaders = new ArrayList<>();
+
+    @JsonProperty("publishingInterval")
+    @ModuleConfigField(title = "Polling interval [ms]",
+            description = "Time in millisecond that this URL will be called",
+            numberMin = 1,
+            required = true,
+            defaultValue = "1000")
+    private int publishingInterval = DEFAULT_PUBLISHING_INTERVAL; //1 second
+
+    @JsonProperty("maxPollingErrorsBeforeRemoval")
+    @ModuleConfigField(title = "Max. Polling Errors",
+            description = "Max. errors polling the endpoint before the polling daemon is stopped",
+            numberMin = 3,
+            defaultValue = "10")
+    private int maxPollingErrorsBeforeRemoval = DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL;
+
+    @JsonProperty("publishChangedDataOnly")
+    @ModuleConfigField(title = "Only publish data items that have changed since last poll",
+            defaultValue = "true",
+            format = ModuleConfigField.FieldType.BOOLEAN)
+    private boolean publishChangedDataOnly = true;
+
+//    @JsonProperty("subscriptions")
+//    @ModuleConfigField(title = "Subscriptions",
+//            description = "Map your sensor data to MQTT Topics")
+//    private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+
+    public HttpAdapterConfig() {
+    }
+
+    public boolean getPublishChangedDataOnly() {
+        return publishChangedDataOnly;
+    }
+
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return maxPollingErrorsBeforeRemoval;
+    }
+
+
+    public int getPublishingInterval() {
+        return publishingInterval;
+    }
+
+//    public @NotNull HttpRequestMethod getHttpRequestMethod() {
+//        return httpRequestMethod;
+//    }
+
+//    public @NotNull List<Subscription> getSubscriptions() {
+//        return subscriptions;
+//    }
+
+    public @NotNull List<HttpHeader> getHttpHeaders() {
+        return httpHeaders;
+    }
+
+//    public static class HttpRequestMethod {
+//        enum HttpMethod {
+//            GET, POST, PUT
+//        }
+//
+//        @JsonProperty("method")
+//        @ModuleConfigField(title = "Http Method",
+//                           description = "Http method associated with the request")
+//        private @NotNull HttpMethod method;
+//
+//        public HttpRequestMethod(@NotNull final HttpMethod method) {
+//            this.method = method;
+//        }
+//
+//        public @NotNull HttpMethod getMethod() {
+//            return method;
+//        }
+//    }
+
+    public static class HttpHeader {
+
+        @JsonProperty("name")
+        @ModuleConfigField(title = "Http Header Name",
+                           description = "The name of the HTTP header")
+        private String name;
+
+        @JsonProperty("value")
+        @ModuleConfigField(title = "Http Header Value",
+                           description = "The value of the HTTP header")
+        private String value;
+
+        public HttpHeader() {
+        }
+
+        public HttpHeader(@NotNull final String name, @NotNull final String value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        public @NotNull String getName() {
+            return name;
+        }
+
+        public @NotNull String getValue() {
+            return value;
+        }
+    }
+
+    public static class Subscription extends AbstractProtocolAdapterConfig.Subscription {
+
+        @JsonProperty("tag-name")
+        private @NotNull String tagName;
+
+
+        public @NotNull String getTagName() {
+            return tagName;
+        }
+    }
+}
