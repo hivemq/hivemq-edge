@@ -1,34 +1,46 @@
 import { FC, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useNodes } from 'reactflow'
 import {
+  Box,
+  Button,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
   DrawerContent,
+  DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
+  Flex,
+  SkeletonCircle,
+  SkeletonText,
   useDisclosure,
+  VStack,
 } from '@chakra-ui/react'
 
 import DisclaimerWIP from '@/components/DisclaimerWIP.tsx'
 import Metrics from '@/modules/Welcome/components/Metrics.tsx'
+import { EditIcon } from '@chakra-ui/icons'
+import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
 
 const NodePropertyDrawer: FC = () => {
-  const { nodeId, nodeType } = useParams()
+  const { t } = useTranslation()
+  const nodes = useNodes()
+  const { nodeId } = useParams()
+  const selected = nodes.find((e) => e.id === nodeId)
   const navigate = useNavigate()
 
-  const nodes = useNodes()
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   useEffect(() => {
-    const selected = nodes.filter((e) => e.id === nodeId)
-    if (!nodeId || !selected) {
-      navigate('/edge-flow')
+    if (!nodes.length) return
+    if (!selected || !nodeId) {
+      navigate('/edge-flow', { replace: true })
       return
     }
     onOpen()
-  }, [onOpen, navigate, nodeId])
+  }, [navigate, nodeId, nodes.length, onOpen, selected])
 
   const handleClose = () => {
     onClose()
@@ -40,10 +52,7 @@ const NodePropertyDrawer: FC = () => {
       <DrawerOverlay />
       <DrawerContent>
         <DrawerCloseButton />
-        <DrawerHeader>
-          {nodeType}: {nodeId}
-        </DrawerHeader>
-
+        <DrawerHeader>{t('workspace.observability.adapter.header')}</DrawerHeader>
         <DrawerBody>
           <VStack gap={4} alignItems={'stretch'}>
             <DisclaimerWIP />
@@ -55,6 +64,26 @@ const NodePropertyDrawer: FC = () => {
             </Box>
           </VStack>
         </DrawerBody>
+        <DrawerFooter borderTopWidth="1px">
+          <Flex flexGrow={1} justifyContent={'flex-start'}>
+            <Button
+              data-testid={'protocol-create-adapter'}
+              variant={'outline'}
+              size={'sm'}
+              rightIcon={<EditIcon />}
+              onClick={() =>
+                navigate('/protocol-adapters', {
+                  state: {
+                    protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+                    selectedAdapter: { isNew: false, adapterId: nodeId },
+                  },
+                })
+              }
+            >
+              {t('workspace.observability.adapter.modify')}
+            </Button>
+          </Flex>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )
