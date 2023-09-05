@@ -41,6 +41,10 @@ export type ProtocolAdapter = {
      */
     protocol?: string;
     /**
+     * The provisioning url of the adapter
+     */
+    provisioningUrl?: string;
+    /**
      * The search tags associated with this adapter
      */
     tags?: Array<string>;

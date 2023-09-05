@@ -10,32 +10,38 @@ import type { Link } from './Link';
  */
 export type Module = {
     /**
-     * The extension author
+     * The module author
      */
     author?: string;
     /**
-     * The extension description
+     * The module description
      */
     description?: string | null;
+    documentationLink?: Link;
     /**
      * A mandatory ID associated with the Module
      */
     id?: string;
     /**
-     * Is the extension installed
+     * Is the module installed
      */
     installed?: boolean | null;
-    link?: Link;
+    logoUrl?: Link;
     /**
-     * The extension name
+     * The type of the module
+     */
+    moduleType?: string | null;
+    /**
+     * The module name
      */
     name?: string;
     /**
-     * The extension priority
+     * The module priority
      */
     priority?: number;
+    provisioningLink?: Link;
     /**
-     * The extension version
+     * The module version
      */
     version?: string;
 };
