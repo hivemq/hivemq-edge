@@ -545,6 +545,12 @@
       "by_type": "By type",
       "by_subscriptionCardinality": "By subscription count",
       "by_runtimeDuration": "By duration"
+    },
+    "observability": {
+      "adapter": {
+        "header": "Adapter Observability",
+        "modify": "Modify the adapter"
+      }
     }
   },
   "modals": {
