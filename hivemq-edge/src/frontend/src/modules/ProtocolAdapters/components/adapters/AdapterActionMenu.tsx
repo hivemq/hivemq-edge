@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { IconButton, Menu, MenuButton, MenuItem, MenuList, Text } from '@chakra-ui/react'
+import { IconButton, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Text } from '@chakra-ui/react'
 import { ChevronDownIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
@@ -10,9 +10,10 @@ interface AdapterActionMenuProps {
   onCreate?: (type: string | undefined) => void
   onEdit?: (id: string, type: string) => void
   onDelete?: (id: string) => void
+  onViewWorkspace?: (id: string, type: string) => void
 }
 
-const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEdit, onDelete }) => {
+const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEdit, onDelete, onViewWorkspace }) => {
   const { t } = useTranslation()
 
   const { type, id, adapterRuntimeInformation: { connectionStatus } = {} } = adapter
@@ -31,6 +32,10 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEd
             ? t('protocolAdapter.table.actions.connect')
             : t('protocolAdapter.table.actions.disconnect')}
         </MenuItem>
+        <MenuItem data-testid={'adapter-action-workspace'} onClick={() => onViewWorkspace?.(id, type as string)}>
+          {t('protocolAdapter.table.actions.workspace')}
+        </MenuItem>
+        <MenuDivider />
         <MenuItem data-testid={'adapter-action-create'} onClick={() => onCreate?.(type as string)}>
           {t('protocolAdapter.table.actions.create')}
         </MenuItem>

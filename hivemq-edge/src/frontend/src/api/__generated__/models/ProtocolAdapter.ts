@@ -4,6 +4,7 @@
 /* eslint-disable */
 
 import type { JsonNode } from './JsonNode';
+import type { ProtocolAdapterCategory } from './ProtocolAdapterCategory';
 
 /**
  * List of result items that are returned by this endpoint
@@ -13,10 +14,7 @@ export type ProtocolAdapter = {
      * The author of the adapter
      */
     author?: string;
-    /**
-     * The category of the adapter
-     */
-    category?: string;
+    category?: ProtocolAdapterCategory;
     configSchema?: JsonNode;
     /**
      * The description

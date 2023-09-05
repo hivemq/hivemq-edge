@@ -5,7 +5,7 @@ export const applyFacets = (facet: ProtocolFacetType): ((e: ProtocolAdapter) => 
   return (adapter) => {
     const isFilterUnset = !facet.filter?.value
     const isCategoryMatching = Boolean(
-      (facet.filter?.key === 'category' && adapter.category === facet.filter?.value) ||
+      (facet.filter?.key === 'category' && adapter.category?.name === facet.filter?.value) ||
         (facet.filter?.key === 'tags' && adapter.tags?.includes(facet.filter?.value))
     )
     const isSearchUnset = !facet.search
