@@ -128,7 +128,7 @@ const ProtocolAdapters: FC = () => {
                 <IconButton
                   size={'sm'}
                   ml={2}
-                  onClick={() => handleViewWorkspace(type as string, id)}
+                  onClick={() => handleViewWorkspace(id, type as string)}
                   aria-label={t('bridge.subscription.delete')}
                   icon={<WorkspaceIcon />}
                 />
@@ -207,7 +207,7 @@ const ProtocolAdapters: FC = () => {
         columns={columns}
         getRowStyles={(row: Row<Adapter>) => {
           const { selectedAdapter } = state || {}
-          return row.original.id === selectedAdapter?.adapterId ? { backgroundColor: colors.brand[100] } : {}
+          return row.original.id === selectedAdapter?.adapterId ? { backgroundColor: colors.blue[50] } : {}
         }}
       />
 
