@@ -15,6 +15,7 @@ import {
   Flex,
   SkeletonCircle,
   SkeletonText,
+  Text,
   useDisclosure,
   VStack,
 } from '@chakra-ui/react'
@@ -23,6 +24,7 @@ import DisclaimerWIP from '@/components/DisclaimerWIP.tsx'
 import Metrics from '@/modules/Welcome/components/Metrics.tsx'
 import { EditIcon } from '@chakra-ui/icons'
 import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
+import { Adapter } from '@/api/__generated__'
 
 const NodePropertyDrawer: FC = () => {
   const { t } = useTranslation()
@@ -52,7 +54,9 @@ const NodePropertyDrawer: FC = () => {
       <DrawerOverlay />
       <DrawerContent>
         <DrawerCloseButton />
-        <DrawerHeader>{t('workspace.observability.adapter.header')}</DrawerHeader>
+        <DrawerHeader>
+          <Text>{t('workspace.observability.adapter.header')}</Text>
+        </DrawerHeader>
         <DrawerBody>
           <VStack gap={4} alignItems={'stretch'}>
             <DisclaimerWIP />
@@ -75,7 +79,7 @@ const NodePropertyDrawer: FC = () => {
                 navigate('/protocol-adapters', {
                   state: {
                     protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
-                    selectedAdapter: { isNew: false, adapterId: nodeId },
+                    selectedAdapter: { isNew: false, adapterId: (selected?.data as Adapter).id },
                   },
                 })
               }
