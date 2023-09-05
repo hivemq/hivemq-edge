@@ -26,6 +26,7 @@ public interface HttpConstants {
         GET, POST, HEAD, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH
     }
 
+    String SLASH = "/";
     String HTTP = "http";
     String HTTPS = "https";
     String PROTOCOL_SEP = "://";

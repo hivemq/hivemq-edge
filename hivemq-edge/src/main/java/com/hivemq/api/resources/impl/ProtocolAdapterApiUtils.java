@@ -79,7 +79,7 @@ public class ProtocolAdapterApiUtils {
             //-- when we're in developer mode, ensure we make the logo urls fully qualified
             //-- as the FE maybe being run from a different development server.
             if(!logoUrl.startsWith(HttpConstants.HTTP)){
-                logoUrl = ApiUtils.getWebContextRoot(configurationService.apiConfiguration(), false) + logoUrl;
+                logoUrl = ApiUtils.getWebContextRoot(configurationService.apiConfiguration(), !logoUrl.startsWith(HttpConstants.SLASH)) + logoUrl;
             }
         }
         return logoUrl;
