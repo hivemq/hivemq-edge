@@ -135,7 +135,7 @@ export const createListenerNode = (
 export const createAdapterNode = (
   adapter: Adapter,
   nbAdapter: number,
-  _: number,
+  maxAdapter: number,
   theme: Partial<WithCSSVar<Dict>>,
   positionStorage?: Record<string, XYPosition>
 ) => {
@@ -145,6 +145,7 @@ export const createAdapterNode = (
 
   const posX = nbAdapter % MAX_ADAPTERS
   const posY = Math.floor(nbAdapter / MAX_ADAPTERS) + 1
+  const deltaX = Math.floor((Math.min(MAX_ADAPTERS, maxAdapter) - 1) / 2)
 
   const nodeAdapter: Node<Adapter, NodeTypes.ADAPTER_NODE> = {
     id: idAdapter,
@@ -152,7 +153,7 @@ export const createAdapterNode = (
     sourcePosition: Position.Bottom,
     data: adapter,
     position: positionStorage?.[idAdapter] ?? {
-      x: POS_EDGE.x + POS_NODE_INC.x * (posX - (MAX_ADAPTERS - 1) / 2),
+      x: POS_EDGE.x + POS_NODE_INC.x * (posX - deltaX),
       y: POS_EDGE.y - (POS_NODE_INC.y * posY) / 1.5,
     },
   }
