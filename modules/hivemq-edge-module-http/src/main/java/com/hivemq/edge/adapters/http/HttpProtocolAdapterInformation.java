@@ -36,7 +36,7 @@ public class HttpProtocolAdapterInformation
 
     @Override
     public @NotNull String getProtocolName() {
-        return "Http or Https over TCP";
+        return "HTTP(s) over TCP";
     }
 
     @Override
