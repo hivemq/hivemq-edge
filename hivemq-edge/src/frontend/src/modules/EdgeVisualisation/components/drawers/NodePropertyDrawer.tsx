@@ -18,12 +18,10 @@ import {
 } from '@chakra-ui/react'
 import { EditIcon } from '@chakra-ui/icons'
 
-import DisclaimerWIP from '@/components/DisclaimerWIP.tsx'
-import Skeleton from '@/components/Skeleton.tsx'
-
 import { Adapter } from '@/api/__generated__'
 import Metrics from '@/modules/Welcome/components/Metrics.tsx'
 import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
+
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 
 const NodePropertyDrawer: FC = () => {
@@ -61,9 +59,7 @@ const NodePropertyDrawer: FC = () => {
         </DrawerHeader>
         <DrawerBody>
           <VStack gap={4} alignItems={'stretch'}>
-            <DisclaimerWIP />
             <Metrics initMetrics={getDefaultMetricsFor(selected)} />
-            <Skeleton />
           </VStack>
         </DrawerBody>
         <DrawerFooter borderTopWidth="1px">

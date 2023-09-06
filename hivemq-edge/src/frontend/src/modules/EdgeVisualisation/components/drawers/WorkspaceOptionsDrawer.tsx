@@ -19,10 +19,8 @@ import {
 } from '@chakra-ui/react'
 import { Select } from 'chakra-react-select'
 
-import DisclaimerWIP from '@/components/DisclaimerWIP.tsx'
-
-import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
 import { EdgeFlowOptions, EdgeFlowLayout } from '../../types.ts'
+import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
 import { groupingAttributes } from '../../utils/layout-utils.ts'
 
 const WorkspaceOptionsDrawer: FC = () => {
@@ -49,8 +47,6 @@ const WorkspaceOptionsDrawer: FC = () => {
 
         <DrawerBody>
           <VStack gap={4}>
-            <DisclaimerWIP />
-
             <FormControl as="fieldset" borderWidth="1px" p={2}>
               <FormLabel as="legend">{t('workspace.configuration.content.header')}</FormLabel>
               <CheckboxGroup
