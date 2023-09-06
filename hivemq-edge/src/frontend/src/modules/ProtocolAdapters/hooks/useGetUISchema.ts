@@ -14,7 +14,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'subFields',
       title: 'Subscription',
-      children: ['subscriptions']
+      children: ['subscriptions'],
     },
     {
       id: 'security',
@@ -24,7 +24,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'publishing',
       title: t('protocolAdapter.uiSchema.groups.publishing'),
-      children: ['maxPollingErrorsBeforeRemoval', 'publishChangedDataOnly', 'publishingInterval','destination','qos'],
+      children: ['maxPollingErrorsBeforeRemoval', 'publishChangedDataOnly', 'publishingInterval', 'destination', 'qos'],
     },
     {
       id: 'authentication',
@@ -34,8 +34,15 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'http',
       title: t('protocolAdapter.uiSchema.groups.http'),
-      children: ['httpRequestMethod', 'httpRequestBodyContentType', 'httpRequestBody','httpHeaders', 'httpConnectTimeout', 'httpPublishSuccessStatusCodeOnly'],
-    }
+      children: [
+        'httpRequestMethod',
+        'httpRequestBodyContentType',
+        'httpRequestBody',
+        'httpHeaders',
+        'httpConnectTimeout',
+        'httpPublishSuccessStatusCodeOnly',
+      ],
+    },
   ]
 
   const uiSchema: UiSchema = {
@@ -52,8 +59,8 @@ const useGetUiSchema = (isNewAdapter = true) => {
     port: {
       'ui:widget': 'updown',
     },
-    httpRequestBody : {
-      "ui:widget": "textarea"
+    httpRequestBody: {
+      'ui:widget': 'textarea',
     },
     'ui:order': ['id', 'host', 'port', '*', 'subscriptions'],
     subscriptions: {
