@@ -1,0 +1,17 @@
+<modbus>
+    <port>502</port>
+    <host>some-ip-address</host>
+    <id>modbus-real</id>
+    <publishChangedDataOnly>true</publishChangedDataOnly>
+    <publishingInterval>500</publishingInterval>
+    <subscriptions>
+        <subscription>
+            <holding-registers>
+                <startIdx>0</startIdx>
+                <endIdx>1</endIdx>
+            </holding-registers>
+            <destination>test</destination>
+        </subscription>
+    </subscriptions>
+    <maxPollingErrorsBeforeRemoval>5</maxPollingErrorsBeforeRemoval>
+</modbus>

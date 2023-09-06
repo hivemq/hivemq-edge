@@ -21,6 +21,7 @@ import com.github.victools.jsonschema.generator.FieldScope;
 import com.github.victools.jsonschema.generator.MemberScope;
 import com.github.victools.jsonschema.generator.MethodScope;
 import com.github.victools.jsonschema.generator.Module;
+import com.github.victools.jsonschema.generator.Option;
 import com.github.victools.jsonschema.generator.OptionPreset;
 import com.github.victools.jsonschema.generator.SchemaGenerationContext;
 import com.github.victools.jsonschema.generator.SchemaGenerator;
@@ -40,10 +41,12 @@ import java.math.BigDecimal;
 public class CustomConfigSchemaGenerator {
 
     public @NotNull JsonNode generateJsonSchema(final @NotNull Class<? extends CustomConfig> clazz) {
-        SchemaGeneratorConfigBuilder configBuilder = new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12,
-                OptionPreset.PLAIN_JSON).with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
-                JacksonOption.INCLUDE_ONLY_JSONPROPERTY_ANNOTATED_METHODS,
-                JacksonOption.RESPECT_JSONPROPERTY_ORDER)).with(new ModuleConfigSchemaGeneratorModule());
+        SchemaGeneratorConfigBuilder configBuilder =
+                new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON).
+                    with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,
+                        JacksonOption.INCLUDE_ONLY_JSONPROPERTY_ANNOTATED_METHODS,
+                        JacksonOption.RESPECT_JSONPROPERTY_ORDER)).
+                    with(new ModuleConfigSchemaGeneratorModule());
         SchemaGeneratorConfig config = configBuilder.build();
         SchemaGenerator generator = new SchemaGenerator(config);
         return generator.generateSchema(clazz);

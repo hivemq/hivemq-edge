@@ -9,9 +9,13 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'coreFields',
       title: t('protocolAdapter.uiSchema.groups.coreFields'),
-      children: ['id', 'port', 'host', 'uri', 'pollingIntervalMillis'],
+      children: ['id', 'port', 'host', 'uri', 'url', 'pollingIntervalMillis'],
     },
-    { id: 'subFields', title: 'Subscription', children: ['subscriptions'] },
+    {
+      id: 'subFields',
+      title: 'Subscription',
+      children: ['subscriptions']
+    },
     {
       id: 'security',
       title: t('protocolAdapter.uiSchema.groups.security'),
@@ -20,13 +24,18 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'publishing',
       title: t('protocolAdapter.uiSchema.groups.publishing'),
-      children: ['maxPollingErrorsBeforeRemoval', 'publishChangedDataOnly', 'publishingInterval'],
+      children: ['maxPollingErrorsBeforeRemoval', 'publishChangedDataOnly', 'publishingInterval','destination','qos'],
     },
     {
       id: 'authentication',
       title: t('protocolAdapter.uiSchema.groups.authentication'),
       children: ['auth'],
     },
+    {
+      id: 'http',
+      title: t('protocolAdapter.uiSchema.groups.http'),
+      children: ['httpRequestMethod', 'httpRequestBodyContentType', 'httpRequestBody','httpHeaders', 'httpConnectTimeout', 'httpPublishSuccessStatusCodeOnly'],
+    }
   ]
 
   const uiSchema: UiSchema = {
@@ -40,12 +49,11 @@ const useGetUiSchema = (isNewAdapter = true) => {
     id: {
       'ui:disabled': !isNewAdapter,
     },
-
-    // pollingIntervalMillis: {
-    //   'ui:widget': 'range',
-    // },
     port: {
       'ui:widget': 'updown',
+    },
+    httpRequestBody : {
+      "ui:widget": "textarea"
     },
     'ui:order': ['id', 'host', 'port', '*', 'subscriptions'],
     subscriptions: {

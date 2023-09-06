@@ -31,8 +31,10 @@ public interface HttpConstants {
     String HTTPS = "https";
     String PROTOCOL_SEP = "://";
     String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    String HTTP_URL_REGEX = "https?:\\/\\/(?:w{1,3}\\.)?[^\\s.]+(?:\\.[a-z]+)*(?::\\d+)?((?:\\/\\w+)|(?:-\\w+))*\\/?(?![^<]*(?:<\\/\\w+>|\\/?>))";
     Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
     String CONTENT_TYPE_HEADER = "Content-Type";
+    String USER_AGENT_HEADER = "User-Agent";
     String CONTENT_ENCODING_HEADER = "Content-Encoding";
     String LOCATION_HEADER = "Location";
     String AUTH_HEADER = "Authorization";
@@ -43,6 +45,7 @@ public interface HttpConstants {
     String HTML_MIME_TYPE = "text/html";
     String PLAIN_MIME_TYPE = "text/plain";
     String JSON_MIME_TYPE = "application/json";
+    String BASE64_ENCODED_VALUE = "data:%s;base64,%s";
     String DEFAULT_MIME_TYPE = HTML_MIME_TYPE;
 
     int SC_CONTINUE = 100;

@@ -24,10 +24,13 @@ public interface ProtocolAdapterConstants {
         UDP,
         TCP,
         SERIAL,
-        ETHERNET
+        INTERNET,
+        WEB,
+        IOT
     }
 
     enum CATEGORY {
+        CONNECTIVITY("Connectivity","A standard connectivity based protocol, typically web standard.", null),
         INDUSTRIAL("Industrial","Industrial, typically field bus protocols.", null),
         BUILDING_AUTOMATION("Building Automation","Protocols related to building automation",  null),
         SIMULATION("Simulation","Simulation protocols, that emulate real world devices", null);

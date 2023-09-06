@@ -58,7 +58,7 @@ public class ModbusProtocolAdapterInformation
 
     @Override
     public List<ProtocolAdapterConstants.TAG> getTags() {
-        return List.of(ProtocolAdapterConstants.TAG.TCP, ProtocolAdapterConstants.TAG.ETHERNET);
+        return List.of(ProtocolAdapterConstants.TAG.TCP);
     }
 
     @Override
