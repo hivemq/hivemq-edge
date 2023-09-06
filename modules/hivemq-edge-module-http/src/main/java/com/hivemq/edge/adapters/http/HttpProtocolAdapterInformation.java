@@ -51,7 +51,7 @@ public class HttpProtocolAdapterInformation
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to arbitrary web endpoint URLs via HTTP, consuming structured JSON or plain data.";
+        return "Connects HiveMQ Edge to arbitrary web endpoint URLs via HTTP(s), consuming structured JSON or plain data.";
     }
 
     @Override
