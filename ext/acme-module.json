@@ -1,0 +1,19 @@
+{
+  "id" : "acme",
+  "version" : "2023.7 COMING SOON",
+  "name" : "Acme Mobile to MQTT Protocol Adapter",
+  "description" : "Connects HiveMQ Edge to existing ACME devices.",
+  "author" : "HiveMQ",
+  "documentationLink" : {
+    "url" : "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#acme",
+    "external" : true
+  },
+  "provisioningLink" : {
+    "url" : "https://github.com/hivemq/hivemq-edge/releases",
+    "external" : true
+  },
+  "logoUrl" : {
+    "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/acme-logo.jpg",
+    "external" : true
+  }
+}

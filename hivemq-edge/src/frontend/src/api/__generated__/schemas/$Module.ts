@@ -7,12 +7,15 @@ export const $Module = {
     properties: {
         author: {
             type: 'string',
-            description: `The extension author`,
+            description: `The module author`,
         },
         description: {
             type: 'string',
-            description: `The extension description`,
+            description: `The module description`,
             isNullable: true,
+        },
+        documentationLink: {
+            type: 'Link',
         },
         id: {
             type: 'string',
@@ -20,24 +23,32 @@ export const $Module = {
         },
         installed: {
             type: 'boolean',
-            description: `Is the extension installed`,
+            description: `Is the module installed`,
             isNullable: true,
         },
-        link: {
+        logoUrl: {
             type: 'Link',
+        },
+        moduleType: {
+            type: 'string',
+            description: `The type of the module`,
+            isNullable: true,
         },
         name: {
             type: 'string',
-            description: `The extension name`,
+            description: `The module name`,
         },
         priority: {
             type: 'number',
-            description: `The extension priority`,
+            description: `The module priority`,
             format: 'int32',
+        },
+        provisioningLink: {
+            type: 'Link',
         },
         version: {
             type: 'string',
-            description: `The extension version`,
+            description: `The module version`,
         },
     },
 } as const;

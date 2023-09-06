@@ -7,7 +7,7 @@ export const useGetAdaptersStatus = () => {
   const appClient = useHttpClient()
 
   return useQuery(
-    [QUERY_KEYS.PROTOCOLS, 'connection.status'],
+    [QUERY_KEYS.ADAPTERS, QUERY_KEYS.CONNECTION_STATUS],
     async () => {
       const item = await appClient.protocolAdapters.status1()
       return item

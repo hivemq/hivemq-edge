@@ -72,6 +72,7 @@ export const mockProtocolAdapter: ProtocolAdapter = {
   logoUrl: 'http://localhost:8080/images/hivemq-icon.png',
   author: 'HiveMQ',
   configSchema: mockJSONSchema,
+  installed: true,
   category: {
     description: 'Industrial, typically field bus protocols.',
     displayName: 'Industrial',

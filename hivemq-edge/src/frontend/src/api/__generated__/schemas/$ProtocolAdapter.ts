@@ -39,6 +39,10 @@ export const $ProtocolAdapter = {
             type: 'string',
             description: `The supported protocol`,
         },
+        provisioningUrl: {
+            type: 'string',
+            description: `The provisioning url of the adapter`,
+        },
         tags: {
             type: 'array',
             contains: {

@@ -78,7 +78,7 @@
     }
   },
   "welcome": {
-    "title": "Welcome to HiveMQ",
+    "title": "Welcome to HiveMQ Edge",
     "description": "Connect from and to any device and send streams of data to your enterprise.",
     "onboarding": {
       "title": "Get data flowing",

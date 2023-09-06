@@ -25,7 +25,7 @@ const AdapterTypeSummary: FC<AdapterTypeSummaryProps> = ({ adapter, searchQuery 
       <Box ml="3">
         <Text fontWeight="bold" data-testid={'protocol-name'}>
           <AdapterHighlight query={searchQuery || ''}>{adapter.name || ''}</AdapterHighlight>
-          <Badge ml="1" colorScheme="green" data-testid={'protocol-version'}>
+          <Badge ml="1" colorScheme="brand" variant={'solid'} data-testid={'protocol-version'}>
             {adapter.version}
           </Badge>
         </Text>
