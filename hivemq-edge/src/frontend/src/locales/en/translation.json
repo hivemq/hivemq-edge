@@ -428,7 +428,7 @@
         "coreFields": "Settings",
         "security": "Security",
         "publishing": "Publishing",
-        "http": "Http",
+        "http": "HTTP",
         "authentication": "Authentication"
       }
     }
