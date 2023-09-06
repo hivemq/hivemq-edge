@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useNodes } from 'reactflow'
 import {
-  Box,
   Button,
   Drawer,
   DrawerBody,
@@ -13,18 +12,19 @@ import {
   DrawerHeader,
   DrawerOverlay,
   Flex,
-  SkeletonCircle,
-  SkeletonText,
   Text,
   useDisclosure,
   VStack,
 } from '@chakra-ui/react'
+import { EditIcon } from '@chakra-ui/icons'
 
 import DisclaimerWIP from '@/components/DisclaimerWIP.tsx'
-import Metrics from '@/modules/Welcome/components/Metrics.tsx'
-import { EditIcon } from '@chakra-ui/icons'
-import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
+import Skeleton from '@/components/Skeleton.tsx'
+
 import { Adapter } from '@/api/__generated__'
+import Metrics from '@/modules/Welcome/components/Metrics.tsx'
+import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
+import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 
 const NodePropertyDrawer: FC = () => {
   const { t } = useTranslation()
@@ -49,6 +49,8 @@ const NodePropertyDrawer: FC = () => {
     navigate('/edge-flow')
   }
 
+  if (!selected) return null
+
   return (
     <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={handleClose}>
       <DrawerOverlay />
@@ -60,12 +62,8 @@ const NodePropertyDrawer: FC = () => {
         <DrawerBody>
           <VStack gap={4} alignItems={'stretch'}>
             <DisclaimerWIP />
-            <Metrics />
-
-            <Box padding={6} boxShadow="md" bg="white">
-              <SkeletonCircle size="10" />
-              <SkeletonText mt="4" noOfLines={4} spacing="4" skeletonHeight="2" />
-            </Box>
+            <Metrics initMetrics={getDefaultMetricsFor(selected)} />
+            <Skeleton />
           </VStack>
         </DrawerBody>
         <DrawerFooter borderTopWidth="1px">
