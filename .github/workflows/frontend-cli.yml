@@ -39,7 +39,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
-      #          cache: 'pnpm'
 
       - name: 📦 Install dependencies
         run: pnpm install
@@ -86,11 +85,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: 📸 Run Percy visual tests
-        run: pnpm cypress:percy
-        ## Percy should not block the pipeline
-        continue-on-error: true
-        env:
-          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+        run: echo "Check the Percy tests on the other workflow"
 
       - name: 🚥 Run Lighthouse audits
         uses: treosh/lighthouse-ci-action@v10
