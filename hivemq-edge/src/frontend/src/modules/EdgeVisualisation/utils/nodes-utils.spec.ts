@@ -49,27 +49,27 @@ describe('createBridgeNode', () => {
       hostConnector: Edge
     } = {
       nodeBridge: expect.objectContaining({
-        id: 'bridge#bridge-id-01',
+        id: 'bridge@bridge-id-01',
         sourcePosition: Position.Top,
         type: NodeTypes.BRIDGE_NODE,
       }),
 
       nodeHost: expect.objectContaining({
-        id: 'host#bridge-id-01',
+        id: 'host@bridge-id-01',
         targetPosition: Position.Top,
         type: 'output',
       }),
       hostConnector: expect.objectContaining({
-        id: 'connect-host#bridge-id-01',
+        id: 'connect-host@bridge-id-01',
         markerEnd: expect.objectContaining({}),
-        source: 'bridge#bridge-id-01',
-        target: 'host#bridge-id-01',
+        source: 'bridge@bridge-id-01',
+        target: 'host@bridge-id-01',
         sourceHandle: 'Bottom',
       }),
       edgeConnector: expect.objectContaining({
-        id: 'connect-edge-bridge#bridge-id-01',
+        id: 'connect-edge-bridge@bridge-id-01',
         markerEnd: expect.objectContaining({}),
-        source: 'bridge#bridge-id-01',
+        source: 'bridge@bridge-id-01',
         target: 'edge',
         targetHandle: 'Bottom',
       }),
@@ -87,18 +87,18 @@ describe('createBridgeNode', () => {
       hostConnector: Edge
     } = {
       nodeBridge: expect.objectContaining({
-        id: 'bridge#bridge-id-01',
+        id: 'bridge@bridge-id-01',
         position: {
-          x: 2,
-          y: 2,
+          x: 426.5,
+          y: 500,
         },
       }),
 
       nodeHost: expect.objectContaining({
-        id: 'host#bridge-id-01',
+        id: 'host@bridge-id-01',
         position: {
-          x: 3,
-          y: 3,
+          x: 426.5,
+          y: 750,
         },
       }),
       hostConnector: expect.objectContaining({}),
@@ -117,7 +117,7 @@ describe('createListenerNode', () => {
       edgeConnector: Edge
     } = {
       nodeListener: expect.objectContaining({
-        id: 'listener#tcp-listener-1883',
+        id: 'listener@tcp-listener-1883',
         targetPosition: Position.Left,
         type: NodeTypes.LISTENER_NODE,
       }),
@@ -134,10 +134,10 @@ describe('createListenerNode', () => {
       edgeConnector: Edge
     } = {
       nodeListener: expect.objectContaining({
-        id: 'listener#tcp-listener-1883',
+        id: 'listener@tcp-listener-1883',
         position: {
-          x: 1,
-          y: 1,
+          x: 47,
+          y: 280,
         },
       }),
       edgeConnector: expect.objectContaining({}),
@@ -155,13 +155,13 @@ describe('createAdapterNode', () => {
       edgeConnector: Edge
     } = {
       nodeAdapter: expect.objectContaining({
-        id: `adapter#${MOCK_ADAPTER_ID}`,
+        id: `adapter@${MOCK_ADAPTER_ID}`,
         sourcePosition: Position.Bottom,
         type: NodeTypes.ADAPTER_NODE,
       }),
       edgeConnector: expect.objectContaining({
-        id: `connect-edge-adapter#${MOCK_ADAPTER_ID}`,
-        source: `adapter#${MOCK_ADAPTER_ID}`,
+        id: `connect-edge-adapter@${MOCK_ADAPTER_ID}`,
+        source: `adapter@${MOCK_ADAPTER_ID}`,
         animated: true,
         target: 'edge',
       }),
@@ -177,10 +177,10 @@ describe('createAdapterNode', () => {
       edgeConnector: Edge
     } = {
       nodeAdapter: expect.objectContaining({
-        id: `adapter#${MOCK_ADAPTER_ID}`,
+        id: `adapter@${MOCK_ADAPTER_ID}`,
         position: {
-          x: 1,
-          y: 1,
+          x: 553,
+          y: 0,
         },
       }),
       edgeConnector: expect.objectContaining({}),

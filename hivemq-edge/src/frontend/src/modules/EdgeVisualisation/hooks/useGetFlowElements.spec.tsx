@@ -16,7 +16,12 @@ import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 
 // [Vitest] Mocking hooks
-vi.mock('@chakra-ui/react', () => ({ useTheme: vi.fn<[], Partial<WithCSSVar<Dict>>>(() => MOCK_THEME) }))
+vi.mock('@chakra-ui/react', async () => {
+  const actual = await vi.importActual('@chakra-ui/react')
+
+  // @ts-ignore
+  return { ...actual, useTheme: vi.fn<[], Partial<WithCSSVar<Dict>>>(() => MOCK_THEME) }
+})
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
   <QueryClientProvider client={queryClient}>
@@ -48,8 +53,8 @@ describe('useGetFlowElements', () => {
       expect(!!nodes.length).toBeTruthy()
     })
 
-    expect(result.current.nodes).toHaveLength(5)
-    expect(result.current.edges).toHaveLength(4)
+    expect(result.current.nodes).toHaveLength(3)
+    expect(result.current.edges).toHaveLength(2)
   })
 
   it('should be used in the right context', async () => {
