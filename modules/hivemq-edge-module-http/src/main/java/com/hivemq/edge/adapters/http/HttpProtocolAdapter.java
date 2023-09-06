@@ -109,6 +109,7 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
             //initialize client
             httpClient = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
+                    .followRedirects(HttpClient.Redirect.NORMAL)
                     .connectTimeout(Duration.ofSeconds(config.getHttpConnectTimeout()))
                     .build();
             connected.set(true);
