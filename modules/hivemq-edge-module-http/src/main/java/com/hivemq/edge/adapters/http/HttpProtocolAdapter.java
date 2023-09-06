@@ -17,7 +17,6 @@ package com.hivemq.edge.adapters.http;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.HiveMQEdgeConstants;
-import com.hivemq.edge.adapters.http.impl.HttpConnectorImpl;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
@@ -30,11 +29,9 @@ import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingInputI
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.http.core.HttpUtils;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
-import com.hivemq.mqtt.message.QoS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,11 +42,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.time.temporal.TemporalUnit;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;

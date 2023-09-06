@@ -15,10 +15,13 @@
  */
 package com.hivemq.edge.adapters.http;
 
+import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+
+import java.util.List;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -33,7 +36,7 @@ public class HttpProtocolAdapterInformation
 
     @Override
     public @NotNull String getProtocolName() {
-        return "Http TCP";
+        return "Http or Https over TCP";
     }
 
     @Override
@@ -43,12 +46,24 @@ public class HttpProtocolAdapterInformation
 
     @Override
     public @NotNull String getName() {
-        return "Http to MQTT Protocol Adapter";
+        return "HTTP(s) to MQTT Protocol Adapter";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to existing Http devices, bringing data from the PLC into MQTT.";
+        return "Connects HiveMQ Edge to arbitrary web endpoint URLs via HTTP, consuming structured JSON or plain data.";
+    }
+
+    @Override
+    public ProtocolAdapterConstants.CATEGORY getCategory() {
+        return ProtocolAdapterConstants.CATEGORY.CONNECTIVITY;
+    }
+
+    @Override
+    public List<ProtocolAdapterConstants.TAG> getTags() {
+        return List.of(ProtocolAdapterConstants.TAG.INTERNET,
+                ProtocolAdapterConstants.TAG.TCP,
+                ProtocolAdapterConstants.TAG.WEB);
     }
 
     @Override
