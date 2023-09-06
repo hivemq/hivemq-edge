@@ -10,6 +10,7 @@ import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import NodeWrapper from '../parts/NodeWrapper.tsx'
 import TopicsContainer from '../parts/TopicsContainer.tsx'
 import { getAdapterTopics } from '../../utils/topics-utils.ts'
+import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) => {
@@ -27,7 +28,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
 
   return (
     <>
-      <NodeWrapper p={2} {...(selected ? { ...selectedStyle } : {})}>
+      <NodeWrapper p={2} {...(selected ? { ...selectedStyle } : {})} w={CONFIG_ADAPTER_WIDTH}>
         <VStack onDoubleClick={() => navigate(`/edge-flow/node/${id}`)}>
           <HStack w={'100%'}>
             <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />

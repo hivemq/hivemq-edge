@@ -7,9 +7,11 @@ import { Adapter, Bridge, ConnectionStatus, Listener } from '@/api/__generated__
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getAdapterTopics, getBridgeTopics } from '../utils/topics-utils.ts'
 
+export const CONFIG_ADAPTER_WIDTH = 245
+
 const POS_SEPARATOR = 8
 const POS_EDGE: XYPosition = { x: 300, y: 200 }
-const POS_NODE_INC: XYPosition = { x: 150 + POS_SEPARATOR, y: 300 }
+const POS_NODE_INC: XYPosition = { x: 245 + POS_SEPARATOR, y: 300 }
 const MAX_ADAPTERS = 10
 
 export const createEdgeNode = (label: string, positionStorage?: Record<string, XYPosition>) => {

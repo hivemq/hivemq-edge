@@ -3,8 +3,10 @@ import { group } from 'd3-array'
 import { hierarchy, pack } from 'd3-hierarchy'
 import { DateTime } from 'luxon'
 
-import { EdgeFlowGrouping, EdgeFlowLayout, NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { EdgeFlowGrouping, EdgeFlowLayout, IdStubs, NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 import { Adapter, Bridge } from '@/api/__generated__'
+
+import { CONFIG_ADAPTER_WIDTH } from './nodes-utils.ts'
 
 type ClusterFunction = (d: Node<Adapter>) => string | boolean | number | undefined
 interface ClusterFunctionCatalog {
@@ -57,8 +59,8 @@ export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOptio
 
   const workspaceLayout = pack()
     .size([2000, 1000])
-    .padding(20)
-    .radius(() => 60)
+    .padding(10)
+    .radius(() => CONFIG_ADAPTER_WIDTH)
 
   const hierarchyAdapters = hierarchy(groupedAdapters)
 
