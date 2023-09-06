@@ -19,7 +19,7 @@ export const useSetConnectionStatus = () => {
 
   return useMutation<string, ApiError, SetConnectionStatusProps>(setConnectionStatus, {
     onSuccess: () => {
-      // queryClient.invalidateQueries(['bridges', variables.name, 'connection.status'])
+      // queryClient.invalidateQueries(['bridges', variables.name, QUERY_KEYS.CONNECTION_STATUS])
       queryClient.invalidateQueries([QUERY_KEYS.BRIDGES])
     },
   })
