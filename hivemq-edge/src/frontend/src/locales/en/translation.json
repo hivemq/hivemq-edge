@@ -106,9 +106,7 @@
     },
     "metrics": {
       "select": "Select a metric to display",
-      "display": "Add to panel",
-      "com.hivemq.edge.messages.incoming.connect.count": "Incoming messages (count)",
-      "com.hivemq.edge.subscriptions.overall.current": "Overall subscriptions (current)"
+      "display": "Add to panel"
     }
   },
   "bridge": {
@@ -355,8 +353,8 @@
       "adapterCount_one": "{{count}} protocol adapter",
       "adapterCount_other": "{{count}} protocol adapters",
       "description_zero": "There are no protocol adapter defined. Please check your configuration",
-      "description_one": "Select the protocol to start creating your adapter",
-      "description_other": "Select one of the following $t(protocolAdapter.protocols.adapterCount, {\"count\": {{count}} }) to start creating your adapter"
+      "description_one": "Select the protocol to start creating your connection",
+      "description_other": "Select one of the following $t(protocolAdapter.protocols.adapterCount, {\"count\": {{count}} }) to start creating your connection"
     },
     "facet": {
       "search": {
@@ -531,7 +529,7 @@
       },
       "layout": {
         "header": "Topology Graph: Layout",
-        "prompt": "Select the clustering attributes, in order of application"
+        "prompt": "Select the grouping attributes, in order of application"
       }
     },
     "node": {
@@ -541,7 +539,12 @@
       "gateway": "Node: Gateway",
       "group": "Node: Group"
     },
+    "layout": {
+      "HORIZONTAL": "Horizontal",
+      "CIRCLE_PACKING": "Circle Packing"
+    },
     "grouping": {
+      "title": "Grouping",
       "by_type": "By type",
       "by_subscriptionCardinality": "By subscription count",
       "by_runtimeDuration": "By duration"
@@ -577,5 +580,20 @@
     "minimum": "Should be at least {{ count }}",
     "maximum": "Should not be more than {{ count }}",
     "pattern": "Should match the regular expression {{ pattern }}"
+  },
+  "metrics": {
+    "protocolAdapters": {
+      "connection.success.count": "Connection success (count)",
+      "connection.failed.count": "Connection failed (count)",
+      "read.publish.failed.count": "Publish failed (count)",
+      "read.publish.success.count": "Publish success (count)"
+    },
+    "bridge": {
+      "publish.loop-hops-exceeded.count": "",
+      "publish.count": "",
+      "publish.failed.count": "",
+      "publish.excluded.count": ""
+    },
+    "messages.retained.current": "Message retained"
   }
 }

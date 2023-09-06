@@ -87,14 +87,14 @@ const WorkspaceOptionsDrawer: FC = () => {
                   onChange={(v) => setGroups((old) => ({ ...old, layout: v as EdgeFlowLayout }))}
                 >
                   <Stack direction="row">
-                    <Radio value={EdgeFlowLayout.HORIZONTAL}>Horizontal</Radio>
-                    <Radio value={EdgeFlowLayout.CIRCLE_PACKING}>Cluster</Radio>
+                    <Radio value={EdgeFlowLayout.HORIZONTAL}>{t('workspace.layout.HORIZONTAL')}</Radio>
+                    <Radio value={EdgeFlowLayout.CIRCLE_PACKING}>{t('workspace.layout.CIRCLE_PACKING')}</Radio>
                   </Stack>
                 </RadioGroup>
               </FormControl>
 
               <FormControl mt={4} isDisabled={groups.layout !== EdgeFlowLayout.CIRCLE_PACKING}>
-                <FormLabel>Clustering</FormLabel>
+                <FormLabel>{t('workspace.grouping.title')}</FormLabel>
                 <Select
                   colorScheme="brand"
                   isMulti
