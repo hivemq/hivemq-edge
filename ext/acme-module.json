@@ -13,7 +13,7 @@
     "external" : true
   },
   "logoUrl" : {
-    "url" : "https://github.com/hivemq/hivemq-edge/blob/aa6bff9461c9e7e906be6cc181204c8a01176e0f/hivemq-edge/src/main/resources/httpd/images/acme-logo.jpg",
+    "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/acme-logo.jpg",
     "external" : true
   }
 }
