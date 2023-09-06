@@ -103,9 +103,12 @@ with the following options:
 
 ## Pipeline
 
-A frontend-specific workflow has been added to the repository, see `.github/workflows/frontend-cli.yml`
+Two frontend-specific workflows have been added to the repository
 
-It contains - and enforces - parts of the testing pyramid for frontend applications:
+- `.github/workflows/frontend-cli.yml` for the main CI/CD pipeline
+- `.github/workflows/frontend-visual.yml` for visual testing (Percy)
+
+Together. they contain - and enforce - parts of the testing pyramid for frontend applications:
 
 - Code quality checks (ESLint, Prettier)
 - Interaction testing (Cypress - Component)
