@@ -112,6 +112,29 @@ describe('ProtocolsBrowser', () => {
     cy.get('@createAdapter').should('have.been.calledWith', 'simulation3')
   })
 
+  it('should render non-installed adapters', () => {
+    const mockOnCreate = cy.stub()
+
+    cy.mountWithProviders(
+      <ProtocolsBrowser
+        items={[
+          ...MOCK_ADAPTERS.slice(0, 2),
+          {
+            ...mockProtocolAdapter,
+            id: 'simulation-soon',
+            name: 'Simulation Server Preview',
+            version: 'Available Soon',
+            installed: undefined,
+          },
+        ]}
+        facet={{ search: undefined }}
+        onCreate={mockOnCreate}
+      />
+    )
+    cy.getByTestId('protocol-name').should('have.length', 3)
+    cy.getByTestId('protocol-create-adapter').should('have.length', 2)
+  })
+
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
