@@ -11,7 +11,7 @@ export const useGetBridgeConnectionStatus = (name: string | undefined) => {
   const appClient = useHttpClient()
 
   return useQuery(
-    [QUERY_KEYS.BRIDGES, name, 'connection.status'],
+    [QUERY_KEYS.BRIDGES, name, QUERY_KEYS.CONNECTION_STATUS],
     async () => {
       const item = await appClient.bridges.getConnectionStatus(name as string)
       return item
