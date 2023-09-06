@@ -8,7 +8,6 @@ import config from '@/config'
 interface MetricsProps {
   id?: string
   initMetrics?: string[]
-  filter?: {}
 }
 
 const Metrics: FC<MetricsProps> = ({ initMetrics }) => {
