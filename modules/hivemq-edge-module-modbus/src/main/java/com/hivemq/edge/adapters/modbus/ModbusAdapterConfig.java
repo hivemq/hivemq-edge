@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
@@ -98,6 +99,8 @@ public class ModbusAdapterConfig extends AbstractProtocolAdapterConfig {
 
     public static class Subscription extends AbstractProtocolAdapterConfig.Subscription {
         @JsonProperty("holding-registers")
+        @ModuleConfigField(title = "Holding Registers",
+                           description = "Define the start and end index values for your holding registers")
         private @NotNull AddressRange holdingRegisters;
 
         public @NotNull AddressRange getHoldingRegisters() {
@@ -105,6 +108,7 @@ public class ModbusAdapterConfig extends AbstractProtocolAdapterConfig {
         }
     }
 
+    @JsonPropertyOrder({"startIdx", "endIdx"})
     public static class AddressRange {
 
         public AddressRange() {
