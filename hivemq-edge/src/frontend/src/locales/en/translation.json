@@ -330,7 +330,7 @@
       "update": "Update",
       "validate": "Validate",
       "instantiate": "Instantiate",
-      "createInstance": "Create new adapter"
+      "createInstance": "Create new connection"
     },
     "overview": {
       "type": "Type:",
