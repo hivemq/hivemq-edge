@@ -40,9 +40,17 @@ const Sample: FC<SampleProps> = ({ metricName }) => {
 
   if (!metricName) return null
 
+  // TODO[NVL] Not the best approach. Use props
+  const splitMetricName = metricName.split('.')
+  const [, , , , type, id] = splitMetricName.splice(0, 6)
+  const suffix = splitMetricName.join('.')
+
   return (
     <Stat variant="hivemq">
-      <StatLabel isTruncated>{t(`welcome.metrics.${metricName}`)}</StatLabel>
+      <StatLabel isTruncated>
+        {type} - {id}
+      </StatLabel>
+      <StatLabel isTruncated>{t(`metrics.protocolAdapters.${suffix}`)}</StatLabel>
       <StatNumber>
         {isLoading && <Spinner />}
         {!!error && <NotAllowedIcon color="red.100" />}

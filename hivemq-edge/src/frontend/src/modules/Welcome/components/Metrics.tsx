@@ -7,10 +7,12 @@ import config from '@/config'
 
 interface MetricsProps {
   id?: string
+  initMetrics?: string[]
+  filter?: {}
 }
 
-const Metrics: FC<MetricsProps> = () => {
-  const [metrics, setMetrics] = useState<string[]>(config.features.METRICS_DEFAULTS)
+const Metrics: FC<MetricsProps> = ({ initMetrics }) => {
+  const [metrics, setMetrics] = useState<string[]>(initMetrics || [])
   const showSelector = config.features.METRICS_SELECT_PANEL
 
   return (
