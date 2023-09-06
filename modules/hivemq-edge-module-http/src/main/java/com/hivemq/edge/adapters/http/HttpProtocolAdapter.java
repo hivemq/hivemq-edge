@@ -252,7 +252,7 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
             }
         }
 
-        HttpData data = new HttpData(
+        HttpData data = new HttpData(adapterConfig.getUrl(),
                 response.statusCode(),
                 responseContentType,
                 payloadData,

@@ -55,6 +55,11 @@ public class HttpProtocolAdapterInformation
     }
 
     @Override
+    public String getVersion() {
+        return super.getVersion() + " (BETA)";
+    }
+
+    @Override
     public ProtocolAdapterConstants.CATEGORY getCategory() {
         return ProtocolAdapterConstants.CATEGORY.CONNECTIVITY;
     }
