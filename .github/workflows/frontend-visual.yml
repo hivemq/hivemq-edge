@@ -4,7 +4,6 @@
 name: Frontend - Visual Testing (Percy)
 
 on:
-  push:
   pull_request:
     branches: [master]
     paths:
