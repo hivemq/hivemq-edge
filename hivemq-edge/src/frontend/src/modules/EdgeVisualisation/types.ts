@@ -34,7 +34,7 @@ export enum IdStubs {
   BRIDGE_NODE = 'bridge',
   ADAPTER_NODE = 'adapter',
   HOST_NODE = 'host',
-  HOST_GROUP = 'group',
+  GROUP_NODE = 'group',
   LISTENER_NODE = 'listener',
   CONNECTOR = 'connect',
 }
