@@ -179,3 +179,19 @@ export const createAdapterNode = (
 
   return { nodeAdapter, edgeConnector }
 }
+
+export const getDefaultMetricsFor = (node: Node): string[] => {
+  if (NodeTypes.ADAPTER_NODE === node.type) {
+    const data = node.data as Adapter
+    const suffix = 'com.hivemq.edge.protocol-adapters'
+    const prefix = 'read.publish.success.count'
+    return [`${suffix}.${data.type}.${data.id}.${prefix}`]
+  }
+  if (NodeTypes.BRIDGE_NODE === node.type) {
+    const data = node.data as Bridge
+    const suffix = 'com.hivemq.edge.bridge'
+    const prefix = 'publish.count'
+    return [`${suffix}.${data.id}.${prefix}`]
+  }
+  return [] as string[]
+}
