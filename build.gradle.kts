@@ -1,5 +1,3 @@
-import groovyjarjarpicocli.CommandLine.OverwrittenOptionException
-
 group = "com.hivemq"
 
 tasks.register("clean") {
