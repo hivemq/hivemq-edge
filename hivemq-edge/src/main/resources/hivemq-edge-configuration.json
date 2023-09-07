@@ -38,7 +38,7 @@
   "modules" : [
     {
       "id" : "modbus",
-      "version" : "2023.4",
+      "version" : "2023.5",
       "name" : "ModBus to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing ModBus devices, bringing data from coils & registers into MQTT.",
       "author" : "HiveMQ",
@@ -57,7 +57,7 @@
     },
     {
       "id" : "opc-ua-client",
-      "version" : "2023.4",
+      "version" : "2023.5",
       "name" : "OPC-UA to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing OPC-UA services as a client and enables a seamless exchange of data between MQTT and OPC-UA.",
       "author" : "HiveMQ",
@@ -75,13 +75,13 @@
       }
     },
     {
-      "id" : "acme",
-      "version" : "2023.7 COMING SOON",
-      "name" : "Acme Mobile to MQTT Protocol Adapter",
-      "description" : "Connects HiveMQ Edge to existing ACME devices.",
+      "id" : "http",
+      "version" : "2023.5 (BETA)",
+      "name" : "HTTP(s) to MQTT Protocol Adapter",
+      "description" : "Connects HiveMQ Edge to arbitrary web endpoint URLs via HTTP(s), consuming structured JSON or plain data.",
       "author" : "HiveMQ",
       "documentationLink" : {
-        "url" : "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#acme",
+        "url" : "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#http",
         "external" : true
       },
       "provisioningLink" : {
@@ -89,7 +89,7 @@
         "external" : true
       },
       "logoUrl" : {
-        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/acme-logo.jpg",
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/http-logo.png",
         "external" : true
       }
     }

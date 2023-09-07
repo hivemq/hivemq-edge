@@ -10,7 +10,10 @@ Step 9 - Update "version" property in ~all hivemq-edge/modules/${moduleName}/gra
 Step 10 - Update "version" property in hivemq-edge-composite/gradle.properties
 Step 11 - Update "version" property in hivemq-edge-extension-sdk/gradle.properties
 Step 12 - Update "hivemq-edge-extension-sdk.version" property in hivemq-edge-composite/gradle.properties
-Step 13 - Update VERSION field in HiveMQEdgeConstants (this is where the module versions are derived - for now)
+Step 13(a) - Update VERSION field in HiveMQEdgeConstants (this is where the module versions are derived - for now)
+Step 13(b) - Ensure any ~new protocol adapter definitions are added to the "modules" array hivemq-edge/src/resources/hivemq-edge-configuration.json remote config file
+Step 13(c) - Update all the "version" attributes in each of the objects in the "modules" array in the hivemq-edge/src/resources/hivemq-edge-configuration.json file (this surfaces these modules up to legacy installations)
+
 Step 14 - Run a full gradle refresh on your workspace (this may take a few seconds)
 Step 15 - Execute "./gradlew :hiveMqEdgeZip" at the terminal whilst in the ./hivemq-edge project
 Step 16 - Copy to the hivemq-edge-<version>.zip from the ./hivemq-edge/build/distributions directory to a convenient location on your machine and extract the zip
