@@ -4,12 +4,15 @@ import { Dict } from '@chakra-ui/utils'
 
 import { Adapter, Bridge, ConnectionStatus, Listener } from '@/api/__generated__'
 
-import { IdStubs, NodeTypes } from '../types.ts'
+import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getAdapterTopics, getBridgeTopics } from '../utils/topics-utils.ts'
+
+export const CONFIG_ADAPTER_WIDTH = 245
 
 const POS_SEPARATOR = 8
 const POS_EDGE: XYPosition = { x: 300, y: 200 }
-const POS_NODE_INC: XYPosition = { x: 200 + POS_SEPARATOR, y: 200 }
+const POS_NODE_INC: XYPosition = { x: 245 + POS_SEPARATOR, y: 300 }
+const MAX_ADAPTERS = 10
 
 export const createEdgeNode = (label: string, positionStorage?: Record<string, XYPosition>) => {
   const nodeEdge: Node<unknown, NodeTypes.EDGE_NODE> = {
@@ -29,7 +32,7 @@ export const createBridgeNode = (
   theme: Partial<WithCSSVar<Dict>>,
   positionStorage?: Record<string, XYPosition>
 ) => {
-  const idBridge = `${IdStubs.BRIDGE_NODE}#${bridge.id}`
+  const idBridge = `${IdStubs.BRIDGE_NODE}@${bridge.id}`
   const isConnected = bridge.bridgeRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
   const { local, remote } = getBridgeTopics(bridge)
 
@@ -49,6 +52,7 @@ export const createBridgeNode = (
     target: IdStubs.EDGE_NODE,
     targetHandle: 'Bottom',
     source: idBridge,
+    type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -62,7 +66,7 @@ export const createBridgeNode = (
     },
   }
 
-  const idBridgeHost = `${IdStubs.HOST_NODE}#${bridge.id}`
+  const idBridgeHost = `${IdStubs.HOST_NODE}@${bridge.id}`
   const nodeHost: Node = {
     id: idBridgeHost,
     type: 'output',
@@ -75,10 +79,11 @@ export const createBridgeNode = (
   }
 
   const hostConnector: Edge = {
-    id: `${IdStubs.CONNECTOR}-${IdStubs.HOST_NODE}#${bridge.id}`,
+    id: `${IdStubs.CONNECTOR}-${IdStubs.HOST_NODE}@${bridge.id}`,
     target: idBridgeHost,
     sourceHandle: 'Bottom',
     source: idBridge,
+    type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -100,7 +105,7 @@ export const createListenerNode = (
   nbListener: number,
   positionStorage?: Record<string, XYPosition>
 ) => {
-  const idListener = `${IdStubs.LISTENER_NODE}#${listener.name}`
+  const idListener = `${IdStubs.LISTENER_NODE}@${listener.name}`
 
   const nodeListener: Node<Listener, NodeTypes.LISTENER_NODE> = {
     id: idListener,
@@ -118,6 +123,7 @@ export const createListenerNode = (
     source: IdStubs.EDGE_NODE,
     targetHandle: 'Listeners',
     target: idListener,
+    type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -135,9 +141,13 @@ export const createAdapterNode = (
   theme: Partial<WithCSSVar<Dict>>,
   positionStorage?: Record<string, XYPosition>
 ) => {
-  const idAdapter = `${IdStubs.ADAPTER_NODE}#${adapter.id}`
+  const idAdapter = `${IdStubs.ADAPTER_NODE}@${adapter.id}`
   const isConnected = adapter.adapterRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
   const topics = getAdapterTopics(adapter)
+
+  const posX = nbAdapter % MAX_ADAPTERS
+  const posY = Math.floor(nbAdapter / MAX_ADAPTERS) + 1
+  const deltaX = Math.floor((Math.min(MAX_ADAPTERS, maxAdapter) - 1) / 2)
 
   const nodeAdapter: Node<Adapter, NodeTypes.ADAPTER_NODE> = {
     id: idAdapter,
@@ -145,8 +155,8 @@ export const createAdapterNode = (
     sourcePosition: Position.Bottom,
     data: adapter,
     position: positionStorage?.[idAdapter] ?? {
-      x: POS_EDGE.x + POS_NODE_INC.x * (nbAdapter - (maxAdapter - 1) / 2),
-      y: POS_EDGE.y - POS_NODE_INC.y,
+      x: POS_EDGE.x + POS_NODE_INC.x * (posX - deltaX),
+      y: POS_EDGE.y - (POS_NODE_INC.y * posY) / 1.5,
     },
   }
 
@@ -155,6 +165,7 @@ export const createAdapterNode = (
     target: IdStubs.EDGE_NODE,
     targetHandle: 'Top',
     source: idAdapter,
+    type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -169,4 +180,20 @@ export const createAdapterNode = (
   }
 
   return { nodeAdapter, edgeConnector }
+}
+
+export const getDefaultMetricsFor = (node: Node): string[] => {
+  if (NodeTypes.ADAPTER_NODE === node.type) {
+    const data = node.data as Adapter
+    const suffix = 'com.hivemq.edge.protocol-adapters'
+    const prefix = 'read.publish.success.count'
+    return [`${suffix}.${data.type}.${data.id}.${prefix}`]
+  }
+  if (NodeTypes.BRIDGE_NODE === node.type) {
+    const data = node.data as Bridge
+    const suffix = 'com.hivemq.edge.bridge'
+    const prefix = 'publish.count'
+    return [`${suffix}.${data.id}.${prefix}`]
+  }
+  return [] as string[]
 }

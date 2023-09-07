@@ -13,6 +13,7 @@ import WelcomePage from '@/modules/Welcome/WelcomePage.tsx'
 import LoginPage from '@/modules/Login/LoginPage.tsx'
 import UnifiedNamespaceEditor from '@/modules/UnifiedNamespace/components/UnifiedNamespaceEditor.tsx'
 import EdgeFlowPage from '@/modules/EdgeVisualisation/EdgeFlowPage.tsx'
+import NodePropertyDrawer from '@/modules/EdgeVisualisation/components/drawers/NodePropertyDrawer.tsx'
 
 export const routes = createBrowserRouter(
   [
@@ -58,6 +59,12 @@ export const routes = createBrowserRouter(
         {
           path: 'edge-flow/',
           element: <EdgeFlowPage />,
+          children: [
+            {
+              path: ':nodeType/:nodeId',
+              element: <NodePropertyDrawer />,
+            },
+          ],
         },
         {
           path: 'event-logs/',

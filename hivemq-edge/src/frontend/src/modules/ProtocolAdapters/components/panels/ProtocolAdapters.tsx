@@ -4,7 +4,6 @@ import { ColumnDef, Row } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { FaShareNodes } from 'react-icons/fa6'
 
 import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
@@ -20,6 +19,7 @@ import WarningMessage from '@/components/WarningMessage.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
@@ -128,9 +128,9 @@ const ProtocolAdapters: FC = () => {
                 <IconButton
                   size={'sm'}
                   ml={2}
-                  onClick={() => handleViewWorkspace(type as string, id)}
+                  onClick={() => handleViewWorkspace(id, type as string)}
                   aria-label={t('bridge.subscription.delete')}
-                  icon={<FaShareNodes />}
+                  icon={<WorkspaceIcon />}
                 />
               )}
             </>
@@ -207,7 +207,7 @@ const ProtocolAdapters: FC = () => {
         columns={columns}
         getRowStyles={(row: Row<Adapter>) => {
           const { selectedAdapter } = state || {}
-          return row.original.id === selectedAdapter?.adapterId ? { backgroundColor: colors.brand[100] } : {}
+          return row.original.id === selectedAdapter?.adapterId ? { backgroundColor: colors.blue[50] } : {}
         }}
       />
 

@@ -44,7 +44,10 @@
   },
   "error": {
     "backHome": "Back to Home",
-    "notfound": { "heading": "Sorry, an unexpected error has occurred" }
+    "notfound": { "heading": "Sorry, an unexpected error has occurred" },
+    "wip": {
+      "message": "This is a work in progress. Be patient with us"
+    }
   },
   "login": {
     "aside": {
@@ -102,8 +105,8 @@
       }
     },
     "metrics": {
-      "com.hivemq.messages.incoming.connect.count": "Incoming messages (count)",
-      "com.hivemq.subscriptions.overall.current": "Overall subscriptions (current)"
+      "select": "Select a metric to display",
+      "display": "Add to panel"
     }
   },
   "bridge": {
@@ -327,7 +330,7 @@
       "update": "Update",
       "validate": "Validate",
       "instantiate": "Instantiate",
-      "createInstance": "Create new adapter"
+      "createInstance": "Create new connection"
     },
     "overview": {
       "type": "Type:",
@@ -342,16 +345,16 @@
       "description": "No protocol adapters matching your criteria"
     },
     "tabs": {
-      "adapters": "Protocol Adapters Instances",
-      "protocols": "Installed Protocol Adapters"
+      "adapters": "Active Adapters",
+      "protocols": "Protocol Adapter Catalog"
     },
     "protocols": {
-      "adapterCount_zero": "There are no adapter protocol defined. Please check your configuration",
-      "adapterCount_one": "{{count}} adapter type",
-      "adapterCount_other": "{{count}} adapter types",
-      "description_zero": "There are no adapter protocol defined. Please check your configuration",
-      "description_one": "Select the adapter type to start creating your adapter",
-      "description_other": "Select one of the following $t(protocolAdapter.protocols.adapterCount, {\"count\": {{count}} }) to start creating your adapter"
+      "adapterCount_zero": "There are no protocol adapter defined. Please check your configuration",
+      "adapterCount_one": "{{count}} protocol adapter",
+      "adapterCount_other": "{{count}} protocol adapters",
+      "description_zero": "There are no protocol adapter defined. Please check your configuration",
+      "description_one": "Select the protocol to start creating your connection",
+      "description_other": "Select one of the following $t(protocolAdapter.protocols.adapterCount, {\"count\": {{count}} }) to start creating your connection"
     },
     "facet": {
       "search": {
@@ -384,7 +387,7 @@
       },
       "header": {
         "name": "Name",
-        "type": "Type",
+        "type": "Protocol",
         "status": "Status",
         "lastStarted": "Last started",
         "actions": "Actions"
@@ -513,11 +516,44 @@
     }
   },
   "workspace": {
+    "configuration": {
+      "header": "Workspace configuration",
+      "content": {
+        "header": "Topology Graph: Content",
+        "prompt": "Select the contents to be displayed on the workspace",
+        "showTopics": "Topics",
+        "showStatus": "Status indicators",
+        "showMonitoringOnEdge": "Observability from the links",
+        "showHosts": "Hosts",
+        "showGateway": "Gateways"
+      },
+      "layout": {
+        "header": "Topology Graph: Layout",
+        "prompt": "Select the grouping attributes, in order of application"
+      }
+    },
     "node": {
       "edge": "Node: HiveMQ Edge",
       "bridge": "Node: HiveMQ Bridge",
       "adapter": "Node: Adapter",
-      "gateway": "Node: Gateway"
+      "gateway": "Node: Gateway",
+      "group": "Node: Group"
+    },
+    "layout": {
+      "HORIZONTAL": "Horizontal",
+      "CIRCLE_PACKING": "Circle Packing"
+    },
+    "grouping": {
+      "title": "Grouping",
+      "by_type": "By type",
+      "by_subscriptionCardinality": "By subscription count",
+      "by_runtimeDuration": "By duration"
+    },
+    "observability": {
+      "adapter": {
+        "header": "Adapter Observability",
+        "modify": "Modify the adapter"
+      }
     }
   },
   "modals": {
@@ -544,5 +580,20 @@
     "minimum": "Should be at least {{ count }}",
     "maximum": "Should not be more than {{ count }}",
     "pattern": "Should match the regular expression {{ pattern }}"
+  },
+  "metrics": {
+    "protocolAdapters": {
+      "connection.success.count": "Connection success (count)",
+      "connection.failed.count": "Connection failed (count)",
+      "read.publish.failed.count": "Publish failed (count)",
+      "read.publish.success.count": "Publish success (count)"
+    },
+    "bridge": {
+      "publish.loop-hops-exceeded.count": "",
+      "publish.count": "",
+      "publish.failed.count": "",
+      "publish.excluded.count": ""
+    },
+    "messages.retained.current": "Message retained"
   }
 }

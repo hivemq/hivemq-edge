@@ -52,12 +52,24 @@ dependencies:
   '@tanstack/react-table':
     specifier: ^8.9.3
     version: 8.9.3(react-dom@18.2.0)(react@18.2.0)
+  '@types/d3-array':
+    specifier: ^3.0.7
+    version: 3.0.7
+  '@types/d3-hierarchy':
+    specifier: ^3.1.3
+    version: 3.1.3
   axios:
     specifier: ^1.4.0
     version: 1.4.0
   chakra-react-select:
     specifier: ^4.6.0
     version: 4.6.0(@chakra-ui/form-control@2.0.18)(@chakra-ui/icon@3.0.16)(@chakra-ui/layout@2.2.0)(@chakra-ui/media-query@3.2.12)(@chakra-ui/menu@2.1.15)(@chakra-ui/spinner@2.0.13)(@chakra-ui/system@2.5.8)(@emotion/react@11.11.1)(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+  d3-array:
+    specifier: ^3.2.4
+    version: 3.2.4
+  d3-hierarchy:
+    specifier: ^3.1.2
+    version: 3.1.2
   form-data:
     specifier: ^4.0.0
     version: 4.0.0
@@ -2667,8 +2679,8 @@ packages:
     resolution: {integrity: sha512-XW/Aa8APYr6jSVVA1y/DEIZX0/GMKLEVekNG727R8cs56ahETkRAy/3DR7+fJyh7oUgGwNQaRfXCun0+KbWY7Q==}
     dev: true
 
-  /@types/d3-array@3.0.5:
-    resolution: {integrity: sha512-Qk7fpJ6qFp+26VeQ47WY0mkwXaiq8+76RJcncDEfMc2ocRzXLO67bLFRNI4OX1aGBoPzsM5Y2T+/m1pldOgD+A==}
+  /@types/d3-array@3.0.7:
+    resolution: {integrity: sha512-4/Q0FckQ8TBjsB0VdGFemJOG8BLXUB2KKlL0VmZ+eOYeOnTb/wDRQqYWpBmQ6IlvWkXwkYiot+n9Px2aTJ7zGQ==}
     dev: false
 
   /@types/d3-axis@3.0.2:
@@ -2694,7 +2706,7 @@ packages:
   /@types/d3-contour@3.0.2:
     resolution: {integrity: sha512-k6/bGDoAGJZnZWaKzeB+9glgXCYGvh6YlluxzBREiVo8f/X2vpTEdgPy9DN7Z2i42PZOZ4JDhVdlTSTSkLDPlQ==}
     dependencies:
-      '@types/d3-array': 3.0.5
+      '@types/d3-array': 3.0.7
       '@types/geojson': 7946.0.10
     dev: false
 
@@ -2740,8 +2752,8 @@ packages:
       '@types/geojson': 7946.0.10
     dev: false
 
-  /@types/d3-hierarchy@3.1.2:
-    resolution: {integrity: sha512-9hjRTVoZjRFR6xo8igAJyNXQyPX6Aq++Nhb5ebrUF414dv4jr2MitM2fWiOY475wa3Za7TOS2Gh9fmqEhLTt0A==}
+  /@types/d3-hierarchy@3.1.3:
+    resolution: {integrity: sha512-GpSK308Xj+HeLvogfEc7QsCOcIxkDwLhFYnOoohosEzOqv7/agxwvJER1v/kTC+CY1nfazR0F7gnHo7GE41/fw==}
     dev: false
 
   /@types/d3-interpolate@3.0.1:
@@ -2814,7 +2826,7 @@ packages:
   /@types/d3@7.4.0:
     resolution: {integrity: sha512-jIfNVK0ZlxcuRDKtRS/SypEyOQ6UHaFQBKv032X45VvxSJ6Yi5G9behy9h6tNTHTDGh5Vq+KbmBjUWLgY4meCA==}
     dependencies:
-      '@types/d3-array': 3.0.5
+      '@types/d3-array': 3.0.7
       '@types/d3-axis': 3.0.2
       '@types/d3-brush': 3.0.2
       '@types/d3-chord': 3.0.2
@@ -2829,7 +2841,7 @@ packages:
       '@types/d3-force': 3.0.4
       '@types/d3-format': 3.0.1
       '@types/d3-geo': 3.0.3
-      '@types/d3-hierarchy': 3.1.2
+      '@types/d3-hierarchy': 3.1.3
       '@types/d3-interpolate': 3.0.1
       '@types/d3-path': 3.0.0
       '@types/d3-polygon': 3.0.0
@@ -4071,6 +4083,13 @@ packages:
       yauzl: 2.10.0
     dev: true
 
+  /d3-array@3.2.4:
+    resolution: {integrity: sha512-tdQAmyA18i4J7wprpYq8ClcxZy3SC31QMeByyCFyRt7BVHdREQZ5lpzoe5mFEYZUWe+oq8HBvk9JjpibyEV4Jg==}
+    engines: {node: '>=12'}
+    dependencies:
+      internmap: 2.0.3
+    dev: false
+
   /d3-color@3.1.0:
     resolution: {integrity: sha512-zg/chbXyeBtMQ1LbD/WSoW2DpC3I0mpmPdW+ynRTj/x2DAWYrIY7qeZIHidozwV24m4iavr15lNwIwLxRmOxhA==}
     engines: {node: '>=12'}
@@ -4091,6 +4110,11 @@ packages:
 
   /d3-ease@3.0.1:
     resolution: {integrity: sha512-wR/XK3D3XcLIZwpbvQwQ5fK+8Ykds1ip7A2Txe0yxncXSdq1L9skcG7blcedkOX+ZcgxGAmLX1FrRGbADwzi0w==}
+    engines: {node: '>=12'}
+    dev: false
+
+  /d3-hierarchy@3.1.2:
+    resolution: {integrity: sha512-FX/9frcub54beBdugHjDCdikxThEqjnR93Qt7PvQTOHxyiNCAlvMrHhclk3cD5VeAaq9fxmfRp+CnWw9rEMBuA==}
     engines: {node: '>=12'}
     dev: false
 
@@ -5235,6 +5259,11 @@ packages:
       has: 1.0.3
       side-channel: 1.0.4
     dev: true
+
+  /internmap@2.0.3:
+    resolution: {integrity: sha512-5Hh7Y1wQbvY5ooGgPbDaL5iYLAPzMTUrjMulskHLH6wnv/A+1q5rgEaiuqEjB+oxGXIVZs1FF+R/KPN3ZSQYYg==}
+    engines: {node: '>=12'}
+    dev: false
 
   /invariant@2.2.4:
     resolution: {integrity: sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA==}

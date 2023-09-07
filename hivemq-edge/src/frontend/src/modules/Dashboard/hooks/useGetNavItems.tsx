@@ -1,15 +1,16 @@
 import { useTranslation } from 'react-i18next'
-
-import { NavLinksBlockType } from '../types.ts'
-import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 import { IoHomeOutline, IoLinkOutline } from 'react-icons/io5'
 import { BiListUl } from 'react-icons/bi'
 import { BsIntersect } from 'react-icons/bs'
 import { HiOutlinePuzzle } from 'react-icons/hi'
 import { GoLinkExternal } from 'react-icons/go'
-import { FaShareNodes } from 'react-icons/fa6'
+
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 
 import config from '@/config'
+import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
+
+import { NavLinksBlockType } from '../types.ts'
 
 const useGetNavItems = (): NavLinksBlockType[] => {
   const { t } = useTranslation()
@@ -18,7 +19,7 @@ const useGetNavItems = (): NavLinksBlockType[] => {
   const workspaceLink = config.features.WORKSPACE_FLOW_PANEL
     ? [
         {
-          icon: <FaShareNodes />,
+          icon: <WorkspaceIcon boxSize={4} />,
           href: '/edge-flow',
           label: t('translation:navigation.gateway.routes.workspace') as string,
         },

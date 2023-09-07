@@ -23,11 +23,11 @@ describe('useEdgeFlowContext', () => {
   it('should return the canvas options', () => {
     const { result } = renderHook(() => useEdgeFlowContext(), { wrapper })
     expect(result.current.options).toEqual<EdgeFlowOptions>({
+      showGateway: false,
+      showHosts: false,
+      showMonitoringOnEdge: false,
       showTopics: true,
       showStatus: true,
-      showMetrics: false,
-      showGateway: true,
-      showHosts: true,
     })
   })
 })
