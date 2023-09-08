@@ -45,6 +45,11 @@ public class SimulationProtocolAdapterInformation
     }
 
     @Override
+    public boolean supportsDiscovery() {
+        return false;
+    }
+
+    @Override
     public @NotNull String getDescription() {
         return "Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.";
     }

@@ -40,6 +40,7 @@ public class ProtocolAdapterApiUtils {
                 logoUrl,
                 null,
                 info.getAuthor(),
+                info.supportsDiscovery(),
                 true,
                 info == null ? null : convertApiCategory(info.getCategory()),
                 info.getTags() == null ? null : info.getTags().stream().
@@ -66,6 +67,7 @@ public class ProtocolAdapterApiUtils {
                 logoUrl,
                 provisioningUrl,
                 module.getAuthor(),
+                false,
                 false,
                 null,
                 null,

@@ -66,6 +66,10 @@ public class ProtocolAdapter {
     @Schema(description = "Is the adapter installed?")
     private final @NotNull Boolean installed;
 
+    @JsonProperty("supportsDiscovery")
+    @Schema(description = "Does this protocol adapter type support discovery?")
+    private final @NotNull Boolean supportsDiscovery;
+
     @JsonProperty("category")
     @Schema(description = "The category of the adapter")
     private final @NotNull ProtocolAdapterCategory category;
@@ -88,6 +92,7 @@ public class ProtocolAdapter {
             @JsonProperty("logoUrl") final @NotNull String logoUrl,
             @JsonProperty("provisioningUrl") final @Nullable String provisioningUrl,
             @JsonProperty("author") final @NotNull String author,
+            @JsonProperty("supportsDiscovery") final @NotNull Boolean supportsDiscovery,
             @JsonProperty("installed") final @Nullable Boolean installed,
             @JsonProperty("category") final @Nullable ProtocolAdapterCategory category,
             @JsonProperty("tags") final @Nullable  List<String> tags,
@@ -101,6 +106,7 @@ public class ProtocolAdapter {
         this.logoUrl = logoUrl;
         this.provisioningUrl = provisioningUrl;
         this.author = author;
+        this.supportsDiscovery = supportsDiscovery;
         this.installed = installed;
         this.category = category;
         this.tags = tags;
@@ -145,6 +151,10 @@ public class ProtocolAdapter {
 
     public @NotNull JsonNode getConfigSchema() {
         return configSchema;
+    }
+
+    public Boolean getSupportsDiscovery() {
+        return supportsDiscovery;
     }
 
     public @Nullable Boolean getInstalled() {

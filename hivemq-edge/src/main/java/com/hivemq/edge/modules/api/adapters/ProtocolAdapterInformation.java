@@ -44,6 +44,10 @@ public interface ProtocolAdapterInformation {
 
     @Nullable List<ProtocolAdapterConstants.TAG> getTags();
 
+    default boolean supportsDiscovery(){
+        return true;
+    }
+
     @NotNull Class<? extends CustomConfig> getConfigClass();
 
     default @Nullable String getConfigJsonSchema() {

@@ -21,6 +21,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
+import com.hivemq.edge.modules.adapters.params.NodeTree;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
@@ -29,6 +32,8 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * The abstract adapter contains the baseline coupling and basic lifecycle operations of
@@ -39,7 +44,8 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
  *
  * @author Simon L Johnson
  */
-public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterConfig> implements ProtocolAdapter {
+public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterConfig>
+        implements ProtocolAdapter {
 
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
 
@@ -48,6 +54,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected @Nullable ProtocolAdapterPublishService adapterPublishService;
     protected @Nullable ProtocolAdapterPollingService protocolAdapterPollingService;
     protected @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
+
     protected @NotNull T adapterConfig;
     protected @Nullable Long lastStartAttemptTime;
     protected @Nullable String lastErrorMessage;
@@ -105,11 +112,22 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     }
 
     @Override
+    public CompletableFuture<Void> discoverValues(final @NotNull ProtocolAdapterDiscoveryInput input,
+                                                  final @NotNull ProtocolAdapterDiscoveryOutput output) {
+
+        if(!getProtocolAdapterInformation().supportsDiscovery()){
+            return CompletableFuture.failedFuture(new UnsupportedOperationException("Adapter type does not support discovery"));
+        } else {
+            return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    @Override
     public String getLastErrorMessage() {
         return lastErrorMessage;
     }
 
-    public T getAdapterConfig() {
+    public @NotNull T getAdapterConfig() {
         return adapterConfig;
     }
 
