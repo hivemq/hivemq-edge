@@ -81,4 +81,13 @@ public class AdapterModelConverterTest {
             assertEquals("http://localhost:8080/mylogo.png", resultLogoUrl, "logos should be fully qualified and contain correct uri separation");
         }
     }
+
+    @Test
+    void testProtocolAdapterDiscoveryEnabled() {
+
+        ConfigurationService configurationService = mock(ConfigurationService.class);
+        Module testModule = ModuleModelTests.createTestModule();
+        ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule,configurationService);
+        assertEquals(false, adapter.getSupportsDiscovery(), "Adapter should not support discovery");
+    }
 }

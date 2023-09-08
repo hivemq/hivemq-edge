@@ -16,6 +16,8 @@
 package com.hivemq.edge.modules.api.adapters;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -44,6 +46,10 @@ public interface ProtocolAdapterInformation {
 
     @Nullable List<ProtocolAdapterConstants.TAG> getTags();
 
+    /**
+     * When enabled, API & UI will allow a call to the @{link} {@link ProtocolAdapter#discoverValues(ProtocolAdapterDiscoveryInput, ProtocolAdapterDiscoveryOutput)}
+     * method. It is then up to the adapter to support discovery.
+     */
     default boolean supportsDiscovery(){
         return true;
     }

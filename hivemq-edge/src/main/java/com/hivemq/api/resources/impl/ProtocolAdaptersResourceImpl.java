@@ -170,6 +170,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.notFound("Adapter not found");
         }
 
+        if(!instance.get().getAdapterInformation().supportsDiscovery()){
+            return ApiErrorUtils.badRequest("Adapter does not support discovery");
+        }
+
         final ProtocolAdapterDiscoveryOutputImpl output = new ProtocolAdapterDiscoveryOutputImpl();
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
