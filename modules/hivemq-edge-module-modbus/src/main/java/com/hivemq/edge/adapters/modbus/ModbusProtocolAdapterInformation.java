@@ -33,7 +33,7 @@ public class ModbusProtocolAdapterInformation
 
     @Override
     public @NotNull String getProtocolName() {
-        return "ModBus TCP";
+        return "Modbus TCP";
     }
 
     @Override
@@ -43,12 +43,12 @@ public class ModbusProtocolAdapterInformation
 
     @Override
     public @NotNull String getName() {
-        return "ModBus to MQTT Protocol Adapter";
+        return "Modbus to MQTT Protocol Adapter";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to existing ModBus devices, bringing data from coils & registers into MQTT.";
+        return "Connects HiveMQ Edge to existing Modbus devices, bringing data from coils & registers into MQTT.";
     }
 
     @Override
