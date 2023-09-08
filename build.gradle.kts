@@ -91,6 +91,7 @@ dependencies {
 }
 
 val hivemqEdgeZip by tasks.registering(Zip::class) {
+
     group = "distribution"
     description = "Bundles the complete distribution including modules"
     archiveFileName.set("hivemq-edge-${project.version}.zip")

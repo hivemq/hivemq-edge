@@ -22,13 +22,28 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.List;
 
+/**
+ * A metadata object that describes the Adapter type into the platform. Will also give an indication
+ * to the features and allows it to be categorized in the UI / API.
+ */
 public interface ProtocolAdapterInformation {
 
+    /**
+     * The technically correct protocol name as defined by the standard, for example "Http" or "Mqtt".
+     */
     @NotNull String getProtocolName();
 
+    /**
+     * Protocol ID that will be used by the platform to group types, search and categories.
+     * NOTE: The format of this ID is important, it must be alpha-numeric without spaces and unique
+     * within the system.
+     */
     @NotNull String getProtocolId();
 
-    @NotNull String getName();
+    /**
+     * The visual name to display in the protocol adapter catalog for example "HTTP(s) to MQTT Protocol Adapter"
+     */
+    @NotNull String getDisplayName();
 
     @NotNull String getDescription();
 
@@ -43,6 +58,15 @@ public interface ProtocolAdapterInformation {
     @Nullable ProtocolAdapterConstants.CATEGORY getCategory();
 
     @Nullable List<ProtocolAdapterConstants.TAG> getTags();
+
+    /**
+     * Get the capabilities associated with the adapter. For more information on capabilities, please
+     * refer to the {@link ProtocolAdapterCapability} descriptions.
+     * @return
+     */
+    default byte getCapabilities(){
+        return ProtocolAdapterCapability.READ | ProtocolAdapterCapability.DISCOVER;
+    }
 
     @NotNull Class<? extends CustomConfig> getConfigClass();
 

@@ -189,7 +189,9 @@ public interface ProtocolAdaptersApi {
                                                                @ExampleObject(description = "An example discovery request.",
                                                                               name = "discover",
                                                                               value = ApiBodyExamples.EXAMPLE_DISCOVERY)
-                                                       }))})
+                                                       })),
+                       @ApiResponse(responseCode = "400",
+                                    description = "Protocol adapter does not support discovery")})
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull Response discoverValues(
             @NotNull @Parameter(name = "adapterId",

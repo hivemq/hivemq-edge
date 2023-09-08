@@ -123,18 +123,11 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
     }
 
     @Override
-    public CompletableFuture<Void> discoverValues(final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
-        //-- Do the discovery of registers and coils, only for root level
-        final NodeTree nodeTree = output.getNodeTree();
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
     public @NotNull Status status() {
         return connected.get() ? Status.CONNECTED : Status.DISCONNECTED;
     }
 
-    private static final boolean isSuccessStatusCode(final int statusCode){
+    private static boolean isSuccessStatusCode(final int statusCode){
         return statusCode >= 200 && statusCode <= 299;
     }
 

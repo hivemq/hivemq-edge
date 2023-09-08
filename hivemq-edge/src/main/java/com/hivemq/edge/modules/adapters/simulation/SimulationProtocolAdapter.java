@@ -99,22 +99,6 @@ public class SimulationProtocolAdapter extends AbstractProtocolAdapter<Simulatio
     }
 
     @Override
-    public CompletableFuture<Void> discoverValues(
-            @NotNull ProtocolAdapterDiscoveryInput input,
-            @NotNull ProtocolAdapterDiscoveryOutput output) {
-        final NodeTree nodeTree = output.getNodeTree();
-        if (nodeTree == null) {
-            final String rootId = "my-simulation-server";
-            nodeTree.addNode(rootId, "My Simulation Server", "", null, NodeType.FOLDER, false);
-            for (int i = 0; i < 100; i++) {
-                String id = String.format("my-simulation-path-%d", ThreadLocalRandom.current().nextInt(1, 1000));
-                nodeTree.addNode(id, id, "", rootId, NodeType.OBJECT, true);
-            }
-        }
-        return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
     public @NotNull Status status() {
         return status;
     }

@@ -1,6 +1,7 @@
 package com.hivemq.api.resources.impl;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdapterCategory;
 import com.hivemq.api.model.components.Module;
@@ -8,11 +9,13 @@ import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.protocols.ProtocolAdapterManager;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -23,17 +26,25 @@ import java.util.stream.Collectors;
  */
 public class ProtocolAdapterApiUtils {
 
+    /**
+     * Convert between the internal system representation of a ProtocolAdapter type and its API based sibling.
+     * This decoupling allows for flexibility when internal model changes would otherwise impact API support
+     * @return The instance to be sent across the API
+     */
     public static ProtocolAdapter convertInstalledAdapterType(final @NotNull ProtocolAdapterManager adapterManager,
                                                               final @NotNull ProtocolAdapterInformation info,
                                                               final @NotNull ConfigurationService configurationService){
+
+        Preconditions.checkNotNull(adapterManager);
+        Preconditions.checkNotNull(info);
+        Preconditions.checkNotNull(configurationService);
         String logoUrl = info.getLogoUrl();
         if(logoUrl != null){
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
         }
-
         return new ProtocolAdapter(info.getProtocolId(),
                 info.getProtocolName(),
-                info.getName(),
+                info.getDisplayName(),
                 info.getDescription(),
                 info.getUrl(),
                 info.getVersion(),
@@ -41,13 +52,21 @@ public class ProtocolAdapterApiUtils {
                 null,
                 info.getAuthor(),
                 true,
+                getCapabilities(info),
                 info == null ? null : convertApiCategory(info.getCategory()),
                 info.getTags() == null ? null : info.getTags().stream().
                         map(Enum::toString).collect(Collectors.toList()),
                 adapterManager.getSchemaManager(info).generateSchemaNode());
     }
 
+    /**
+     * Convert between the internal system representation of a Module type and its API protocol adapter type.
+     * @return The instance to be sent across the API
+     */
     public static ProtocolAdapter convertModuleAdapterType(final @NotNull Module module, final @NotNull ConfigurationService configurationService){
+
+        Preconditions.checkNotNull(module);
+        Preconditions.checkNotNull(configurationService);
 
         String logoUrl = module.getLogoUrl() == null ? null : module.getLogoUrl().getUrl();
         String documentationUrl = module.getDocumentationLink() == null ? null : module.getDocumentationLink().getUrl();
@@ -67,6 +86,7 @@ public class ProtocolAdapterApiUtils {
                 provisioningUrl,
                 module.getAuthor(),
                 false,
+                List.of(),
                 null,
                 null,
                 null);
@@ -79,10 +99,31 @@ public class ProtocolAdapterApiUtils {
             //-- when we're in developer mode, ensure we make the logo urls fully qualified
             //-- as the FE maybe being run from a different development server.
             if(!logoUrl.startsWith(HttpConstants.HTTP)){
-                logoUrl = ApiUtils.getWebContextRoot(configurationService.apiConfiguration(), !logoUrl.startsWith(HttpConstants.SLASH)) + logoUrl;
+                logoUrl = ApiUtils.getWebContextRoot(configurationService.apiConfiguration(),
+                        !logoUrl.startsWith(HttpConstants.SLASH)) + logoUrl;
             }
         }
         return logoUrl;
+    }
+
+    /**
+     * Obtain a list of supported capabilities of this adapter.
+     * @param info
+     * @return
+     */
+    public static List<ProtocolAdapter.Capability> getCapabilities(final @NotNull ProtocolAdapterInformation info){
+        Preconditions.checkNotNull(info);
+        ImmutableList.Builder builder = ImmutableList.<ProtocolAdapter.Capability>builder();
+        if(ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.READ)){
+            builder.add(ProtocolAdapter.Capability.READ);
+        }
+        if(ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.WRITE)){
+            builder.add(ProtocolAdapter.Capability.WRITE);
+        }
+        if(ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.DISCOVER)){
+            builder.add(ProtocolAdapter.Capability.DISCOVER);
+        }
+        return builder.build();
     }
 
     /**

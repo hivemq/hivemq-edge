@@ -39,6 +39,7 @@ import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -170,10 +171,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.notFound("Adapter not found");
         }
 
+        final AdapterInstance adapterInstance = instance.get();
+        if(!ProtocolAdapterCapability.supportsCapability(adapterInstance.getAdapterInformation(),
+                ProtocolAdapterCapability.DISCOVER)){
+            return ApiErrorUtils.badRequest("Adapter does not support discovery");
+        }
         final ProtocolAdapterDiscoveryOutputImpl output = new ProtocolAdapterDiscoveryOutputImpl();
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
-            AdapterInstance adapterInstance = instance.get();
             Thread.currentThread()
                     .setContextClassLoader(adapterInstance.getAdapterFactory().getClass().getClassLoader());
             adapterInstance.getAdapter().discoverValues(new ProtocolAdapterDiscoveryInput() {

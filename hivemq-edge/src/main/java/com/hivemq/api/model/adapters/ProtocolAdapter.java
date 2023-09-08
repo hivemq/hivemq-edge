@@ -21,10 +21,23 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import javax.print.DocFlavor;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * The API representation of a Protocol Adapter type.
+ */
 public class ProtocolAdapter {
+
+    public enum Capability {
+        @Schema(description = "The adapter is able to read tags or values from the connected device")
+        READ,
+        @Schema(description = "The adapter is able to write values to tags on the connected device")
+        WRITE,
+        @Schema(description = "The adapter is able to discover tags from the connected device")
+        DISCOVER
+    }
 
     @JsonProperty("id")
     @Schema(description = "The id assigned to the protocol adapter type")
@@ -74,6 +87,10 @@ public class ProtocolAdapter {
     @Schema(description = "The search tags associated with this adapter")
     private final @NotNull List<String> tags;
 
+    @JsonProperty("capabilities")
+    @Schema(description = "The capabilities of this adapter")
+    private final @NotNull List<Capability> capabilities;
+
     @JsonProperty("configSchema")
     @Schema(description = "JSONSchema in the \'https://json-schema.org/draft/2020-12/schema\' format, which describes the configuration requirements for the adapter.")
     private final @NotNull JsonNode configSchema;
@@ -89,6 +106,7 @@ public class ProtocolAdapter {
             @JsonProperty("provisioningUrl") final @Nullable String provisioningUrl,
             @JsonProperty("author") final @NotNull String author,
             @JsonProperty("installed") final @Nullable Boolean installed,
+            @JsonProperty("capabilities") final @NotNull List<Capability> capabilities,
             @JsonProperty("category") final @Nullable ProtocolAdapterCategory category,
             @JsonProperty("tags") final @Nullable  List<String> tags,
             @JsonProperty("configSchema") final @NotNull JsonNode configSchema) {
@@ -101,6 +119,7 @@ public class ProtocolAdapter {
         this.logoUrl = logoUrl;
         this.provisioningUrl = provisioningUrl;
         this.author = author;
+        this.capabilities = capabilities;
         this.installed = installed;
         this.category = category;
         this.tags = tags;
@@ -145,6 +164,10 @@ public class ProtocolAdapter {
 
     public @NotNull JsonNode getConfigSchema() {
         return configSchema;
+    }
+
+    public List<Capability> getCapabilities() {
+        return capabilities;
     }
 
     public @Nullable Boolean getInstalled() {

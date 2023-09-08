@@ -44,7 +44,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.validation.Path;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -177,7 +176,7 @@ public class ProtocolAdapterManager {
             startFuture.thenApply(input -> {
                 if (!output.startedSuccessfully) {
                     log.warn("Protocol adapter {} could not be started, reason: {}",
-                            protocolAdapter.getProtocolAdapterInformation().getName(),
+                            protocolAdapter.getProtocolAdapterInformation().getDisplayName(),
                             output.message);
                     HiveMQEdgeEvent adapterCreatedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.ADAPTER_ERROR);
                     adapterCreatedEvent.addUserData("adapterType",
@@ -185,7 +184,7 @@ public class ProtocolAdapterManager {
                     remoteService.fireUsageEvent(adapterCreatedEvent);
                 } else if (output.message != null) {
                     log.info("Protocol adapter {} started: {}",
-                            protocolAdapter.getProtocolAdapterInformation().getName(),
+                            protocolAdapter.getProtocolAdapterInformation().getDisplayName(),
                             output.message);
                     HiveMQEdgeEvent adapterCreatedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.ADAPTER_STARTED);
                     adapterCreatedEvent.addUserData("adapterType",
@@ -195,7 +194,7 @@ public class ProtocolAdapterManager {
                 return null;
             }).exceptionally(throwable -> {
                 log.warn("Protocol adapter failed {} could not be initd, reason: {}",
-                        protocolAdapter.getProtocolAdapterInformation().getName(),
+                        protocolAdapter.getProtocolAdapterInformation().getDisplayName(),
                         output.message);
                 return null;
             });;

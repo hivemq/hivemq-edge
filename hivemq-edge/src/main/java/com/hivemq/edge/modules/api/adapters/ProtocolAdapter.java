@@ -81,6 +81,8 @@ public interface ProtocolAdapter {
 
     @Nullable String getLastErrorMessage();
 
+
+
     enum Status {
         CONNECTED,
         DISCONNECTED,
