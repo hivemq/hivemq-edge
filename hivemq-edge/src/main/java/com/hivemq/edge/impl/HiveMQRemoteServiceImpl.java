@@ -72,12 +72,12 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
 
     protected final void initHttpService() {
         try {
-            HiveMQEdgeEvent event = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
-            event.addAll(HiveMQEdgeEnvironmentUtils.generateEnvironmentMap());
-            fireUsageEvent(event);
             hiveMQEdgeHttpService = new HiveMQEdgeHttpServiceImpl(systemInformation.getHiveMQVersion(),
                     objectMapper, HiveMQEdgeHttpServiceImpl.SERVICE_DISCOVERY_URL, TIMEOUT, TIMEOUT, REFRESH,
                     true);
+            HiveMQEdgeEvent event = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
+            event.addAll(HiveMQEdgeEnvironmentUtils.generateEnvironmentMap());
+            fireUsageEvent(event);
         } finally {
             if(logger.isTraceEnabled()){
                 logger.trace("Initialized remote HTTP service(s), usage tracking enabled (this can be disabled in configuration)");
