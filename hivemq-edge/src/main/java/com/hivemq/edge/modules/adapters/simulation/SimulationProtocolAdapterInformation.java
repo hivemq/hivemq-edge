@@ -17,6 +17,7 @@ package com.hivemq.edge.modules.adapters.simulation;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -40,13 +41,8 @@ public class SimulationProtocolAdapterInformation
     }
 
     @Override
-    public @NotNull String getName() {
+    public @NotNull String getDisplayName() {
         return "Simulated Edge Device";
-    }
-
-    @Override
-    public boolean supportsDiscovery() {
-        return false;
     }
 
     @Override
@@ -62,6 +58,11 @@ public class SimulationProtocolAdapterInformation
     @Override
     public ProtocolAdapterConstants.CATEGORY getCategory() {
         return ProtocolAdapterConstants.CATEGORY.SIMULATION;
+    }
+
+    @Override
+    public byte getCapabilities() {
+        return ProtocolAdapterCapability.READ;
     }
 
     @Override

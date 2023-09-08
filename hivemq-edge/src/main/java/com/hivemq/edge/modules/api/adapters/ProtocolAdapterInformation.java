@@ -16,21 +16,34 @@
 package com.hivemq.edge.modules.api.adapters;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.List;
 
+/**
+ * A metadata object that describes the Adapter type into the platform. Will also give an indication
+ * to the features and allows it to be categorized in the UI / API.
+ */
 public interface ProtocolAdapterInformation {
 
+    /**
+     * The technically correct protocol name as defined by the standard, for example "Http" or "Mqtt".
+     */
     @NotNull String getProtocolName();
 
+    /**
+     * Protocol ID that will be used by the platform to group types, search and categories.
+     * NOTE: The format of this ID is important, it must be alpha-numeric without spaces and unique
+     * within the system.
+     */
     @NotNull String getProtocolId();
 
-    @NotNull String getName();
+    /**
+     * The visual name to display in the protocol adapter catalog for example "HTTP(s) to MQTT Protocol Adapter"
+     */
+    @NotNull String getDisplayName();
 
     @NotNull String getDescription();
 
@@ -47,11 +60,12 @@ public interface ProtocolAdapterInformation {
     @Nullable List<ProtocolAdapterConstants.TAG> getTags();
 
     /**
-     * When enabled, API & UI will allow a call to the @{link} {@link ProtocolAdapter#discoverValues(ProtocolAdapterDiscoveryInput, ProtocolAdapterDiscoveryOutput)}
-     * method. It is then up to the adapter to support discovery.
+     * Get the capabilities associated with the adapter. For more information on capabilities, please
+     * refer to the {@link ProtocolAdapterCapability} descriptions.
+     * @return
      */
-    default boolean supportsDiscovery(){
-        return true;
+    default byte getCapabilities(){
+        return ProtocolAdapterCapability.READ | ProtocolAdapterCapability.DISCOVER;
     }
 
     @NotNull Class<? extends CustomConfig> getConfigClass();

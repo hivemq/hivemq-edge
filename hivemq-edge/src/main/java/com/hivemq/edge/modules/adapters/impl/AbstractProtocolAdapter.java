@@ -26,6 +26,7 @@ import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
@@ -48,9 +49,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         implements ProtocolAdapter {
 
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
-
     protected final @NotNull ObjectMapper objectMapper;
-
     protected @Nullable ProtocolAdapterPublishService adapterPublishService;
     protected @Nullable ProtocolAdapterPollingService protocolAdapterPollingService;
     protected @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
@@ -76,6 +75,12 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         return adapterInformation;
     }
 
+    /**
+     * Converts the supplied object into a valid JSON document which wraps a new timestamp and the
+     * supplied object as the value
+     * @param data - The data you wish to wrap into the standard JSONB envelope
+     * @return a valid JSON document encoded to UTF-8 with the supplied value wrapped as an attribute on the envelope
+     */
     public byte[] convertToJson(final @NotNull Object data) throws ProtocolAdapterException {
         try {
             Preconditions.checkNotNull(data);
@@ -114,8 +119,8 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     @Override
     public CompletableFuture<Void> discoverValues(final @NotNull ProtocolAdapterDiscoveryInput input,
                                                   final @NotNull ProtocolAdapterDiscoveryOutput output) {
-
-        if(!getProtocolAdapterInformation().supportsDiscovery()){
+        if(ProtocolAdapterCapability.supportsCapability(
+                getProtocolAdapterInformation(), ProtocolAdapterCapability.DISCOVER)){
             return CompletableFuture.failedFuture(new UnsupportedOperationException("Adapter type does not support discovery"));
         } else {
             return CompletableFuture.completedFuture(null);
@@ -130,7 +135,6 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     public @NotNull T getAdapterConfig() {
         return adapterConfig;
     }
-
     @Override
     public @NotNull String getId() {
         return adapterConfig.getId();

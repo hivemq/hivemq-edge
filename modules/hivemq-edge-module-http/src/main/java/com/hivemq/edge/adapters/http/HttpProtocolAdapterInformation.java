@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.http;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
@@ -45,7 +46,7 @@ public class HttpProtocolAdapterInformation
     }
 
     @Override
-    public @NotNull String getName() {
+    public @NotNull String getDisplayName() {
         return "HTTP(s) to MQTT Protocol Adapter";
     }
 
@@ -62,6 +63,11 @@ public class HttpProtocolAdapterInformation
     @Override
     public ProtocolAdapterConstants.CATEGORY getCategory() {
         return ProtocolAdapterConstants.CATEGORY.CONNECTIVITY;
+    }
+
+    @Override
+    public byte getCapabilities() {
+        return ProtocolAdapterCapability.READ;
     }
 
     @Override

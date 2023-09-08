@@ -39,7 +39,7 @@ public class OpcUaProtocolAdapterInformation
     }
 
     @Override
-    public @NotNull String getName() {
+    public @NotNull String getDisplayName() {
         return "OPC-UA to MQTT Protocol Adapter";
     }
 

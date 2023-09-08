@@ -838,6 +838,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValuesTree'
           description: Success
+        "400":
+          description: Protocol adapter does not support discovery
       summary: Discover a list of available data points
       tags:
       - Protocol Adapters
@@ -1705,6 +1707,16 @@ components:
         author:
           type: string
           description: The author of the adapter
+        capabilities:
+          type: array
+          description: The capabilities of this adapter
+          items:
+            type: string
+            description: The capabilities of this adapter
+            enum:
+            - READ
+            - WRITE
+            - DISCOVER
         category:
           $ref: '#/components/schemas/ProtocolAdapterCategory'
         configSchema:
@@ -1730,9 +1742,6 @@ components:
         provisioningUrl:
           type: string
           description: The provisioning url of the adapter
-        supportsDiscovery:
-          type: boolean
-          description: Does this protocol adapter type support discovery?
         tags:
           type: array
           description: The search tags associated with this adapter

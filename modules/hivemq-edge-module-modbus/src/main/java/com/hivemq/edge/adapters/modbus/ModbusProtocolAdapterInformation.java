@@ -42,7 +42,7 @@ public class ModbusProtocolAdapterInformation
     }
 
     @Override
-    public @NotNull String getName() {
+    public @NotNull String getDisplayName() {
         return "ModBus to MQTT Protocol Adapter";
     }
 

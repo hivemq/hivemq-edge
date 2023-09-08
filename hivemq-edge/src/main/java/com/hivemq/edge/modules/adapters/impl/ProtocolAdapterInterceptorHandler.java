@@ -177,7 +177,7 @@ public class ProtocolAdapterInterceptorHandler {
 
         return ImmutableMap.<String, String>builder()
                 .put(ProtocolAdapterConstants.ADAPTER_NAME_TOKEN,
-                        protocolAdapter.getProtocolAdapterInformation().getName())
+                        protocolAdapter.getProtocolAdapterInformation().getDisplayName())
                 .put(ProtocolAdapterConstants.ADAPTER_PROTOCOL_ID_TOKEN,
                         protocolAdapter.getProtocolAdapterInformation().getProtocolId())
                 .put(ProtocolAdapterConstants.ADAPTER_INSTANCE_ID_TOKEN, protocolAdapter.getId())
