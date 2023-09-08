@@ -28,8 +28,13 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
 
   return (
     <>
-      <NodeWrapper p={2} {...(selected ? { ...selectedStyle } : {})} w={CONFIG_ADAPTER_WIDTH}>
-        <VStack onDoubleClick={() => navigate(`/edge-flow/node/${id}`)}>
+      <NodeWrapper
+        p={2}
+        {...(selected ? { ...selectedStyle } : {})}
+        w={CONFIG_ADAPTER_WIDTH}
+        onDoubleClick={() => navigate(`/edge-flow/node/${id}`)}
+      >
+        <VStack>
           <HStack w={'100%'}>
             <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
             <Text flex={1} data-testid={'adapter-node-name'}>

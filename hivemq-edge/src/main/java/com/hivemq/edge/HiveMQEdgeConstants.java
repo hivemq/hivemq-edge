@@ -21,7 +21,7 @@ package com.hivemq.edge;
 public interface HiveMQEdgeConstants {
 
     //TODO this should be build driven for modules but use single constant for now
-    String VERSION = "2023.4";
+    String VERSION = "2023.5";
 
     String MUTABLE_CONFIGURAION_ENABLED = "mutable.configuration.enabled";
     String CONFIGURATION_EXPORT_ENABLED = "configuration.export.enabled";
