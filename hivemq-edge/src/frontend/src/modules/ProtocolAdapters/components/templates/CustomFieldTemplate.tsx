@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { FieldTemplateProps, getTemplate, getUiOptions } from '@rjsf/utils'
-import { FormControl, FormErrorMessage, FormHelperText } from '@chakra-ui/react'
+
+import { RenderFieldTemplate } from './__internals/RenderFieldTemplate.tsx'
 
 /**
  * This is a redesign of the original ChakraUI template for fields.
@@ -10,14 +11,13 @@ import { FormControl, FormErrorMessage, FormHelperText } from '@chakra-ui/react'
  *  - use FormErrorMessage and FormHelperText appropriately
  *  - both help text and error message are mutually exclusive
  */
-const CustomFieldTemplate: FC<FieldTemplateProps> = (props) => {
+export const CustomFieldTemplate: FC<FieldTemplateProps> = (props) => {
   const {
     id,
     children,
     classNames,
     style,
     disabled,
-    displayLabel,
     hidden,
     label,
     onDropPropertyClick,
@@ -25,11 +25,6 @@ const CustomFieldTemplate: FC<FieldTemplateProps> = (props) => {
     readonly,
     registry,
     required,
-    rawErrors = [],
-    errors,
-    help,
-    description,
-    rawDescription,
     schema,
     uiSchema,
   } = props
@@ -60,17 +55,7 @@ const CustomFieldTemplate: FC<FieldTemplateProps> = (props) => {
       uiSchema={uiSchema}
       registry={registry}
     >
-      <FormControl isRequired={required} isInvalid={rawErrors && rawErrors.length > 0}>
-        {children}
-        {rawErrors && rawErrors.length > 0 ? (
-          <FormErrorMessage mt={0}>{errors}</FormErrorMessage>
-        ) : (
-          <FormHelperText>{displayLabel && rawDescription ? description : null}</FormHelperText>
-        )}
-        {help}
-      </FormControl>
+      <RenderFieldTemplate {...props} children={children} />
     </WrapIfAdditionalTemplate>
   )
 }
-
-export default CustomFieldTemplate
