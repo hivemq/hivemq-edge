@@ -26,8 +26,9 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
-import { ObjectFieldTemplate } from '@/modules/ProtocolAdapters/components/adapters/ObjectFieldTemplate.tsx'
-import useGetUiSchema from '@/modules/ProtocolAdapters/hooks/useGetUISchema.ts'
+import { ObjectFieldTemplate } from '../../components/adapters/ObjectFieldTemplate.tsx'
+import useGetUiSchema from '../../hooks/useGetUISchema.ts'
+import { customValidate } from '../../utils/validation-utils.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -102,6 +103,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                     showErrorList={'bottom'}
                     onError={(errors) => console.log('XXXXXXX', errors)}
                     formData={defaultValues}
+                    customValidate={customValidate(schema, allAdapters, t)}
                   />
                 </>
               )}

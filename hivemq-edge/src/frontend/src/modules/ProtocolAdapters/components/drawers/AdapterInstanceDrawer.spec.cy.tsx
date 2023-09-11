@@ -1,8 +1,9 @@
 /// <reference types="cypress" />
 
-import AdapterInstanceDrawer from './AdapterInstanceDrawer.tsx'
-import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
+import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+
+import AdapterInstanceDrawer from './AdapterInstanceDrawer.tsx'
 
 describe('AdapterInstanceDrawer', () => {
   beforeEach(() => {
