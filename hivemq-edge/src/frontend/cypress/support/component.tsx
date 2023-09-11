@@ -27,7 +27,7 @@ import { ChakraProvider, VisuallyHidden } from '@chakra-ui/react'
 import { QueryClientProvider } from '@tanstack/react-query'
 
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
-import { themeHiveMQ } from '@/modules/App/themes/themeHiveMQ.ts'
+import { themeHiveMQ } from '@/modules/Theme/themeHiveMQ.ts'
 import queryClient from '@/api/queryClient.ts'
 import '@/config/i18n.config.ts'
 

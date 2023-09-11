@@ -4,9 +4,9 @@ import { defineStyleConfig, extendTheme, theme as baseTheme } from '@chakra-ui/r
 import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/700.css'
 
-import { statTheme } from './Stat'
-import { drawerTheme } from './Drawer.ts'
-import { formControlTheme } from './FormControl.ts'
+import { statTheme } from './styles/Stat'
+import { drawerTheme } from './styles/Drawer.ts'
+import { formControlTheme } from './styles/FormControl.ts'
 
 const Button = defineStyleConfig({
   defaultProps: {
