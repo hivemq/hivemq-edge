@@ -1,32 +1,17 @@
-import { useEffect, useMemo } from 'react'
-import ReactFlow, { Background, ReactFlowState, useStore } from 'reactflow'
-import { Outlet, useLocation } from 'react-router-dom'
+import { useMemo } from 'react'
+import ReactFlow, { Background } from 'reactflow'
+import { Outlet } from 'react-router-dom'
 
 import 'reactflow/dist/style.css'
 
 import { EdgeTypes, NodeTypes } from '../types.ts'
 import useGetFlowElements from '../hooks/useGetFlowElements.tsx'
 
+import StatusListener from './controls/StatusListener.tsx'
 import CanvasControls from './controls/CanvasControls.tsx'
+import SelectionListener from './controls/SelectionListener.tsx'
 import { NodeListener, NodeAdapter, NodeGroup, NodeBridge, NodeEdge } from './nodes/'
 import MonitoringEdge from './edges/MonitoringEdge.tsx'
-
-const addSelectedNodesState = (state: ReactFlowState) => (nodeIds: string[]) => state.addSelectedNodes(nodeIds)
-
-const SelectionListener = () => {
-  const { state } = useLocation()
-  const addSelectedNodes = useStore(addSelectedNodesState)
-
-  useEffect(() => {
-    const { selectedAdapter } = state || {}
-    const { adapterId, type } = selectedAdapter || {}
-    if (!adapterId || !type) return
-
-    addSelectedNodes([`adapter@${adapterId}`])
-  }, [addSelectedNodes, state])
-
-  return null
-}
 
 const ReactFlowWrapper = () => {
   const { nodes, edges, onNodesChange, onEdgesChange } = useGetFlowElements()
@@ -61,6 +46,7 @@ const ReactFlowWrapper = () => {
       fitView
     >
       <SelectionListener />
+      <StatusListener />
       <Background />
       <CanvasControls />
       <Outlet />
