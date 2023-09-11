@@ -31,8 +31,8 @@ public interface HiveMQEdgeConstants {
 
     int MAX_ID_LEN = 500;
     int MAX_NAME_LEN = 256;
-    String ID_REGEX = "([a-zA-Z_0-9\\-])*";
-    String NAME_REGEX = "^([a-zA-Z_0-9\\- ])*$";
+    String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+    String NAME_REGEX = "^[A-Za-z0-9-_](?:[A-Za-z0-9_ -]*[A-Za-z0-9_-])$"; //-- alpha-num with spaces, underscore and hyphen (but NOT starting or ending with spaces)
     int MAX_UINT16 = 65535;
     String MAX_UINT16_String = "65535";
     String DEVELOPMENT_MODE = "hivemq.edge.workspace.modules";
