@@ -579,7 +579,12 @@
     "maxLength": "No more than {{ count }} characters allowed for the property",
     "minimum": "Should be at least {{ count }}",
     "maximum": "Should not be more than {{ count }}",
-    "pattern": "Should match the regular expression {{ pattern }}"
+    "pattern": "Should match the regular expression {{ pattern }}",
+    "jsonSchema": {
+      "identifier": {
+        "unique": "must be unique"
+      }
+    }
   },
   "metrics": {
     "protocolAdapters": {
