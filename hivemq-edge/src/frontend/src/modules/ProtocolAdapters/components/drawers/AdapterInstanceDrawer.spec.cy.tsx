@@ -1,6 +1,5 @@
 /// <reference types="cypress" />
 
-import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import AdapterInstanceDrawer from './AdapterInstanceDrawer.tsx'
@@ -52,7 +51,7 @@ describe('AdapterInstanceDrawer', () => {
       />
     )
 
-    cy.get('#root_id').type(MOCK_ADAPTER_ID)
+    cy.get('#root_id').type('a new identifier')
 
     cy.get('button[type="submit"]').click()
     cy.get('@onSubmit').should('have.been.called')
