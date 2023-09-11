@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { Flex, FormControl, FormHelperText, FormLabel, Input, HStack, Switch } from '@chakra-ui/react'
+import { FormControl, FormHelperText, FormLabel, Input, HStack, Switch } from '@chakra-ui/react'
 import { Select } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 import { Controller, useWatch } from 'react-hook-form'
@@ -21,7 +21,7 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
   const isTlsEnabled = useWatch({ name: 'tlsConfiguration.enabled', control: form.control })
 
   return (
-    <Flex flexDirection={'column'} mt={8} maxW={600} gap={4}>
+    <FormControl variant={'hivemq'} flexGrow={1} display={'flex'} flexDirection={'column'} gap={4} as={'fieldset'}>
       <FormControl>
         <FormLabel htmlFor={'tlsConfiguration.enabled'}>{t('bridge.security.enabled.label')}</FormLabel>
         <Switch
@@ -188,7 +188,7 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
           </FormControl>
         </>
       )}
-    </Flex>
+    </FormControl>
   )
 }
 

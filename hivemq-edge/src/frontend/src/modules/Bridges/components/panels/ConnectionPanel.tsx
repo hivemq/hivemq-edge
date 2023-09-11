@@ -27,31 +27,28 @@ const ConnectionPanel: FC<BridgePanelType> = ({ form }) => {
   } = form
 
   return (
-    <Flex flexDirection={'column'} w={'80%'} m={'auto'} mt={1} mb={4} maxW={600} gap={4}>
-      <Flex>
-        <Box flexGrow={1}>
-          <FormControl isInvalid={!!errors.host} isRequired>
-            <FormLabel htmlFor="host">{t('bridge.connection.host')}</FormLabel>
-            <Input id="host" type="text" required {...register('host', getRulesForProperty($Bridge.properties.host))} />
-            <FormErrorMessage>{errors.host && errors.host.message}</FormErrorMessage>
-          </FormControl>
-        </Box>
-        <Box flexGrow={0}>
-          <FormControl isInvalid={!!errors.port} isRequired>
-            <FormLabel htmlFor="port">{t('bridge.connection.port')}</FormLabel>
-            <NumberInput allowMouseWheel focusInputOnChange w={'100px'} id="port" step={1} min={1}>
-              <NumberInputField {...register('port', getRulesForProperty($Bridge.properties.port))} />
-              <NumberInputStepper>
-                <NumberIncrementStepper />
-                <NumberDecrementStepper />
-              </NumberInputStepper>
-            </NumberInput>
-            <FormErrorMessage>{errors.port && errors.port.message}</FormErrorMessage>
-          </FormControl>
-        </Box>
-      </Flex>
+    <Flex flexDirection={'column'} m={'auto'} mt={4} mb={4} gap={4}>
+      <FormControl variant={'hivemq'} flex={1} display={'flex'} gap={4} as={'fieldset'}>
+        <FormControl isInvalid={!!errors.host} isRequired>
+          <FormLabel htmlFor="host">{t('bridge.connection.host')}</FormLabel>
+          <Input id="host" type="text" required {...register('host', getRulesForProperty($Bridge.properties.host))} />
+          <FormErrorMessage>{errors.host && errors.host.message}</FormErrorMessage>
+        </FormControl>
 
-      <Flex gap={2}>
+        <FormControl isInvalid={!!errors.port} isRequired w={'unset'}>
+          <FormLabel htmlFor="port">{t('bridge.connection.port')}</FormLabel>
+          <NumberInput allowMouseWheel focusInputOnChange w={'100px'} id="port" step={1} min={1}>
+            <NumberInputField {...register('port', getRulesForProperty($Bridge.properties.port))} />
+            <NumberInputStepper>
+              <NumberIncrementStepper />
+              <NumberDecrementStepper />
+            </NumberInputStepper>
+          </NumberInput>
+          <FormErrorMessage>{errors.port && errors.port.message}</FormErrorMessage>
+        </FormControl>
+      </FormControl>
+
+      <FormControl variant={'hivemq'} flexGrow={1} display={'flex'} gap={4} as={'fieldset'}>
         <Box flexGrow={1}>
           <FormControl isInvalid={!!errors.username}>
             <FormLabel htmlFor="username">{t('bridge.connection.username')}</FormLabel>
@@ -76,7 +73,7 @@ const ConnectionPanel: FC<BridgePanelType> = ({ form }) => {
             <FormErrorMessage>{errors.password && errors.password.message}</FormErrorMessage>
           </FormControl>
         </Box>
-      </Flex>
+      </FormControl>
       {/*<Flex justifyContent={'flex-end'}>*/}
       {/*  <Button isDisabled size={'sm'} variant="outline" leftIcon={<FaConnectdevelop />}>*/}
       {/*    {t('bridge.connection.testConnection')}*/}

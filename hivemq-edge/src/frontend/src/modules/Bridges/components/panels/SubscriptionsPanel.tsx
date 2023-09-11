@@ -51,7 +51,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
       <VStack spacing={4} align="stretch" mt={4}>
         {fields.map((field, index) => {
           return (
-            <Card shadow="md" borderWidth="1px" flexDirection={'column'} key={field.id}>
+            <Card shadow="xs" flexDirection={'column'} key={field.id}>
               <HStack>
                 <CardBody>
                   <Flex gap={4}>

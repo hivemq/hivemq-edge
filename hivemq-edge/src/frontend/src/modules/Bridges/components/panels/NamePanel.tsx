@@ -17,7 +17,7 @@ const NamePanel: FC<BridgePanelType> = ({ form, isNewBridge = false }) => {
   const getRulesForProperty = useValidationRules()
 
   return (
-    <FormControl isInvalid={!!validationErrors.id} isRequired={isNewBridge}>
+    <FormControl as={'fieldset'} variant={'hivemq'} isInvalid={!!validationErrors.id} isRequired={isNewBridge}>
       <FormLabel htmlFor="name">{t('bridge.options.id.label')}</FormLabel>
       <Input
         isDisabled={!isNewBridge}
