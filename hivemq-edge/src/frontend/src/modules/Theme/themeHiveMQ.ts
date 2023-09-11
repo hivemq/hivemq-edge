@@ -7,6 +7,7 @@ import '@fontsource/roboto/700.css'
 import { statTheme } from './styles/Stat'
 import { drawerTheme } from './styles/Drawer.ts'
 import { formControlTheme } from './styles/FormControl.ts'
+import { formErrorMessageTheme } from './styles/FormErrorMessage.ts'
 
 const Button = defineStyleConfig({
   defaultProps: {
@@ -99,5 +100,6 @@ export const themeHiveMQ = extendTheme({
     Stat: statTheme,
     Drawer: drawerTheme,
     Form: formControlTheme,
+    FormErrorMessage: formErrorMessageTheme,
   },
 })
