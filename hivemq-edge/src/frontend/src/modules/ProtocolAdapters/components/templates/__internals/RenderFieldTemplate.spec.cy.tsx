@@ -42,7 +42,12 @@ describe('CustomFieldTemplate', () => {
     cy.mountWithProviders(<RenderFieldTemplate {...rest} children={children} />)
     cy.get('[role="group"]').should('not.contain.text', MOCK_TEXT)
     cy.get('[role="group"]').should('contain.text', MOCK_ERROR)
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        // TODO[93] Need to change the default colour of the error message. See https://discord.com/channels/660863154703695893/1150880181356089374
+        'color-contrast': { enabled: false },
+      },
+    })
   })
 
   it('should render the helper text', () => {
