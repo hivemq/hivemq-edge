@@ -26,6 +26,7 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
+import CustomFieldTemplate from '../templates/CustomFieldTemplate.tsx'
 import { ObjectFieldTemplate } from '../../components/adapters/ObjectFieldTemplate.tsx'
 import useGetUiSchema from '../../hooks/useGetUISchema.ts'
 import { customValidate } from '../../utils/validation-utils.ts'
@@ -96,7 +97,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                     id="adapter-instance-form"
                     schema={schema}
                     uiSchema={uiSchema}
-                    templates={{ ObjectFieldTemplate }}
+                    templates={{ ObjectFieldTemplate, FieldTemplate: CustomFieldTemplate }}
                     liveValidate
                     onSubmit={onValidate}
                     validator={validator}
