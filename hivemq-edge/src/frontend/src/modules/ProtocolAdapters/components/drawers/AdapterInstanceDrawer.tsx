@@ -27,7 +27,7 @@ import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
 import { CustomFieldTemplate } from '../templates/CustomFieldTemplate.tsx'
-import { ObjectFieldTemplate } from '../../components/adapters/ObjectFieldTemplate.tsx'
+import { ObjectFieldTemplate } from '../../components/templates/ObjectFieldTemplate.tsx'
 import useGetUiSchema from '../../hooks/useGetUISchema.ts'
 import { customValidate } from '../../utils/validation-utils.ts'
 
