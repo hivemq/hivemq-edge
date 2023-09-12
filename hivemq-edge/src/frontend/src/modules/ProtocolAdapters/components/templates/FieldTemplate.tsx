@@ -11,7 +11,7 @@ import { RenderFieldTemplate } from './__internals/RenderFieldTemplate.tsx'
  *  - use FormErrorMessage and FormHelperText appropriately
  *  - both help text and error message are mutually exclusive
  */
-export const CustomFieldTemplate: FC<FieldTemplateProps> = (props) => {
+export const FieldTemplate: FC<FieldTemplateProps> = (props) => {
   const {
     id,
     children,
