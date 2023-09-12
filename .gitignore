@@ -15,3 +15,6 @@ out/
 /src/website/*
 /website/
 /ext/reporting.sql
+/hivemq-edge/src/distribution/log/event.log
+/hivemq-edge/src/distribution/log/hivemq.log
+/hivemq-edge/src/distribution/log/migration.log

@@ -17,6 +17,7 @@ package com.hivemq.configuration.ioc;
 
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.reader.ConfigurationFile;
+import com.hivemq.edge.HiveMQEdgeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,15 +31,21 @@ import java.io.File;
 public class ConfigurationFileProvider {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigurationFileProvider.class);
+    private static String DEFAULT_CONFIG_FILENAME = "config.xml";
 
 
     public static ConfigurationFile get(final SystemInformation systemInformation) {
 
         final File configFileFolder = systemInformation.getConfigFolder();
-
         final boolean configFolderOk = checkConfigFolder(configFileFolder);
 
-        final File configFile = new File(configFileFolder, "config.xml");
+        String configFilename = DEFAULT_CONFIG_FILENAME;
+        //-- allow a custom config filename to be used when running in development mode
+        if(System.getProperty(HiveMQEdgeConstants.CONFIG_FILE_NAME) != null){
+            configFilename = System.getProperty(HiveMQEdgeConstants.CONFIG_FILE_NAME);
+        }
+
+        final File configFile = new File(configFileFolder, configFilename);
 
         boolean configFileOk = false;
         if (configFolderOk) {
