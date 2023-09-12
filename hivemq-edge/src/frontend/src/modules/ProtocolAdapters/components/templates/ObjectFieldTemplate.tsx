@@ -8,7 +8,7 @@ import {
   titleId,
 } from '@rjsf/utils'
 import { Box, Card, CardBody, CardHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
-import { UIGroup } from '@/modules/ProtocolAdapters/types.ts'
+import { UITab } from '@/modules/ProtocolAdapters/types.ts'
 
 export const ObjectFieldTemplate = <
   T = never,
@@ -22,8 +22,8 @@ export const ObjectFieldTemplate = <
   const TitleFieldTemplate = getTemplate<'TitleFieldTemplate', T, S, F>('TitleFieldTemplate', registry, options)
 
   // @ts-ignore Type will need to be corrected
-  const { groups }: { groups: UIGroup[] } = options
-  if (!groups) {
+  const { tabs }: { tabs: UITab[] } = options
+  if (!tabs) {
     return (
       <Card m={2}>
         <CardHeader p={2}>
@@ -51,14 +51,14 @@ export const ObjectFieldTemplate = <
   }
 
   // TODO[NVL] Not efficient. Build a cluster
-  const allGrouped = groups.map((e) => e.children).flat()
+  const allGrouped = tabs.map((e) => e.properties).flat()
 
   return (
     <>
       <Tabs>
         <TabList>
-          {groups.map((e) => {
-            const filteredProps = properties.filter((p) => e.children.includes(p.name))
+          {tabs.map((e) => {
+            const filteredProps = properties.filter((p) => e.properties.includes(p.name))
             if (!filteredProps.length) return null
             return (
               <Tab fontSize="md" fontWeight={'semibold'} key={e.id}>
@@ -69,8 +69,8 @@ export const ObjectFieldTemplate = <
         </TabList>
 
         <TabPanels>
-          {groups.map((e) => {
-            const filteredProps = properties.filter((p) => e.children.includes(p.name))
+          {tabs.map((e) => {
+            const filteredProps = properties.filter((p) => e.properties.includes(p.name))
             if (!filteredProps.length) return null
             return (
               <TabPanel key={e.id} p={0} pt={'1px'} mb={6}>

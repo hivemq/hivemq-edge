@@ -17,10 +17,10 @@ export interface ProtocolFacetType {
   filter?: { key: keyof ProtocolAdapter; value: string } | null
 }
 
-export interface UIGroup {
+export interface UITab {
   id: string
   title: string
-  children: string[]
+  properties: string[]
 }
 
 export type AdapterConfig = NonNullable<Adapter['config']>
