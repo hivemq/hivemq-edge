@@ -39,25 +39,25 @@ public class ISA95ApiBean {
     @JsonProperty("workCell")
     @Schema(name = "workCell",
             description = "The workCell",
-            nullable = true, pattern = "^[a-zA-Z0-9 -_]*")
+            nullable = true, pattern = "^[a-zA-Z0-9 -_]*$")
     private final @Nullable String workCell;
 
     @JsonProperty("productionLine")
     @Schema(name = "productionLine",
             description = "The productionLine",
-            nullable = true, pattern = "^[a-zA-Z0-9 -_]*")
+            nullable = true, pattern = "^[a-zA-Z0-9 -_]*$")
     private final @Nullable String productionLine;
 
     @JsonProperty("area")
     @Schema(name = "area",
             description = "The area",
-            nullable = true, pattern = "^[a-zA-Z0-9 -_]*")
+            nullable = true, pattern = "^[a-zA-Z0-9 -_]*$")
     private final @Nullable String area;
 
     @JsonProperty("site")
     @Schema(name = "site",
             description = "The site",
-            nullable = true, pattern = "^[a-zA-Z0-9 -_]*")
+            nullable = true, pattern = "^[a-zA-Z0-9 -_]*$")
     private final @Nullable String site;
 
     @JsonProperty("enterprise")

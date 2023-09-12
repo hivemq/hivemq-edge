@@ -22,25 +22,38 @@ import java.util.regex.Pattern;
  */
 public class ApiValidation {
 
-    static final String ALPHA_NUM = "[A-Za-z0-9]";
-    static final String ALPHA_NUM_SPACES = "[A-Za-z0-9 ]";
+    static final String ALPHA_NUM = "^[A-Za-z0-9]*$";
+    static final String ALPHA_NUM_SPACES = "^[A-Za-z0-9\\s]*$";
+    static final String ALPHA_NUM_SPACES_AND_DASHES = "^[A-Za-z0-9\\s-_]*$";
     static Pattern alphaNumPattern = Pattern.compile(ALPHA_NUM);
     static Pattern alphaNumSpacesPattern = Pattern.compile(ALPHA_NUM_SPACES);
+    static Pattern alphaNumSpacesAndDashesPattern = Pattern.compile(ALPHA_NUM_SPACES_AND_DASHES);
+
+    public static boolean validAlphaNumericSpacesAndDashes(final String value, final boolean allowEmptyOrNull){
+        if(allowEmptyOrNull){
+            if(value == null || "".equals(value)) return true;
+        } else {
+            if(value == null || "".equals(value)) return false;
+        }
+        return alphaNumSpacesAndDashesPattern.matcher(value).matches();
+    }
 
     public static boolean validAlphaNumericSpaces(final String value, final boolean allowEmptyOrNull){
         if(allowEmptyOrNull){
-            if(value == null) return true;
-            if("".equals(value)) return true;
+            if(value == null || "".equals(value)) return true;
+        } else {
+            if(value == null || "".equals(value)) return false;
         }
-        return !alphaNumSpacesPattern.matcher(value).matches();
+        return alphaNumSpacesPattern.matcher(value).matches();
     }
 
     public static boolean validAlphaNumeric(final String value, final boolean allowEmptyOrNull){
         if(allowEmptyOrNull){
-            if(value == null) return true;
-            if("".equals(value)) return true;
+            if(value == null || "".equals(value)) return true;
+        } else {
+            if(value == null || "".equals(value)) return false;
         }
-        return !alphaNumPattern.matcher(value).matches();
+        return alphaNumPattern.matcher(value).matches();
     }
 
 }
