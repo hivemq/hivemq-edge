@@ -84,7 +84,9 @@ export const ObjectFieldTemplate = <
         {properties
           .filter((e) => !allGrouped.includes(e.name))
           .map((prop) => (
-            <Box key={prop.content.key}>{prop.content}</Box>
+            <Box _first={{ marginTop: '24px' }} _notLast={{ marginBottom: '24px' }} key={prop.content.key}>
+              {prop.content}
+            </Box>
           ))}
       </Tabs>
     </>
