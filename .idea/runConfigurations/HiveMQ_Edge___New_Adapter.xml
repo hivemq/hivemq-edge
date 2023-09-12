@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="HiveMQ Edge - New Adapter" type="Application" factoryName="Application">
-    <option name="ALTERNATIVE_JRE_PATH" value="11" />
+    <option name="ALTERNATIVE_JRE_PATH" value="BUNDLED" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="MAIN_CLASS_NAME" value="com.hivemq.tools.CreateAdapterBlueprint" />
     <module name="com.hivemq.hivemq-edge.main" />
