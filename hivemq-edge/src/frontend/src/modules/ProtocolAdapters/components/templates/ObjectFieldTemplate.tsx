@@ -7,7 +7,7 @@ import {
   StrictRJSFSchema,
   titleId,
 } from '@rjsf/utils'
-import { Box, Card, CardBody, CardHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
+import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
 import { UITab } from '@/modules/ProtocolAdapters/types.ts'
 
 export const ObjectFieldTemplate = <
@@ -25,28 +25,24 @@ export const ObjectFieldTemplate = <
   const { tabs }: { tabs: UITab[] } = options
   if (!tabs) {
     return (
-      <Card m={2}>
-        <CardHeader p={2}>
-          {title && (
-            <TitleFieldTemplate
-              id={titleId<T>(idSchema)}
-              title={title}
-              required={required}
-              schema={schema}
-              uiSchema={uiSchema}
-              registry={registry}
-            />
-          )}
-          {description}
-        </CardHeader>
-        <CardBody p={2}>
-          {properties.map((prop) => (
-            <Box _notLast={{ marginBottom: '24px' }} className="x0" key={prop.content.key}>
-              {prop.content}
-            </Box>
-          ))}
-        </CardBody>
-      </Card>
+      <Box>
+        {title && (
+          <TitleFieldTemplate
+            id={titleId<T>(idSchema)}
+            title={title}
+            required={required}
+            schema={schema}
+            uiSchema={uiSchema}
+            registry={registry}
+          />
+        )}
+        {description}
+        {properties.map((prop) => (
+          <Box _notLast={{ marginBottom: '24px' }} className="x0" key={prop.content.key}>
+            {prop.content}
+          </Box>
+        ))}
+      </Box>
     )
   }
 
