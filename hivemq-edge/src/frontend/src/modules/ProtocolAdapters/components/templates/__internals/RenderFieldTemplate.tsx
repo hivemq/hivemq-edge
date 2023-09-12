@@ -19,7 +19,7 @@ export const RenderFieldTemplate: FC<FieldTemplateProps> = ({
   }
 
   return (
-    <FormControl isRequired={required} isInvalid={rawErrors && rawErrors.length > 0}>
+    <FormControl variant={'hivemq'} isRequired={required} isInvalid={rawErrors && rawErrors.length > 0}>
       {children}
       {rawErrors && rawErrors.length > 0 ? (
         <FormErrorMessage>{errors}</FormErrorMessage>
