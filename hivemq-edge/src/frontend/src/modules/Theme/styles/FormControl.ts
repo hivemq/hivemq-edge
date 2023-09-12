@@ -9,6 +9,10 @@ const hivemq = definePartsStyle({
     padding: 4,
     borderRadius: 6,
     borderWidth: 1,
+
+    h5: {
+      fontSize: 'lg',
+    },
   },
 })
 
