@@ -22,7 +22,7 @@ export const RenderFieldTemplate: FC<FieldTemplateProps> = ({
     <FormControl variant={'hivemq'} isRequired={required} isInvalid={rawErrors && rawErrors.length > 0}>
       {children}
       {rawErrors && rawErrors.length > 0 ? (
-        <FormErrorMessage>{errors}</FormErrorMessage>
+        errors
       ) : (
         <FormHelperText>{displayLabel && rawDescription ? description : null}</FormHelperText>
       )}
