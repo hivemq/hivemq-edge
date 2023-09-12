@@ -7,7 +7,7 @@ import {
   StrictRJSFSchema,
   titleId,
 } from '@rjsf/utils'
-import { Card, CardBody, CardHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
+import { Box, Card, CardBody, CardHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
 import { UIGroup } from '@/modules/ProtocolAdapters/types.ts'
 
 export const ObjectFieldTemplate = <
@@ -41,9 +41,9 @@ export const ObjectFieldTemplate = <
         </CardHeader>
         <CardBody p={2}>
           {properties.map((prop) => (
-            <div className="x0" key={prop.content.key}>
+            <Box _notLast={{ marginBottom: '24px' }} className="x0" key={prop.content.key}>
               {prop.content}
-            </div>
+            </Box>
           ))}
         </CardBody>
       </Card>
@@ -70,13 +70,13 @@ export const ObjectFieldTemplate = <
             if (!filteredProps.length) return null
             return (
               <TabPanel key={e.id} p={0} pt={'1px'} mb={6}>
-                <Card variant={'outline'} borderTopStyle={'none'} p={2}>
-                  <CardBody p={2}>
-                    {filteredProps.map((prop) => (
-                      <div key={prop.content.key}>{prop.content}</div>
-                    ))}
-                  </CardBody>
-                </Card>
+                <>
+                  {filteredProps.map((prop) => (
+                    <Box _first={{ marginTop: '24px' }} _notLast={{ marginBottom: '24px' }} key={prop.content.key}>
+                      {prop.content}
+                    </Box>
+                  ))}
+                </>
               </TabPanel>
             )
           })}
@@ -84,7 +84,7 @@ export const ObjectFieldTemplate = <
         {properties
           .filter((e) => !allGrouped.includes(e.name))
           .map((prop) => (
-            <div key={prop.content.key}>{prop.content}</div>
+            <Box key={prop.content.key}>{prop.content}</Box>
           ))}
       </Tabs>
     </>
