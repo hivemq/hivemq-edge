@@ -59,19 +59,19 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
 
         //-- Ensure we apply all validation
         ApiErrorUtils.validateRequiredEntity(errorMessages, "isa95", isa95);
-        if(!ApiValidation.validAlphaNumericSpaces(isa95.getEnterprise(), true)){
+        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getEnterprise(), true)){
             ApiErrorUtils.addValidationError(errorMessages, "enterprise", "Must be a valid alpha-numeric string with spaces");
         }
-        if(!ApiValidation.validAlphaNumericSpaces(isa95.getArea(), true)){
+        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getArea(), true)){
             ApiErrorUtils.addValidationError(errorMessages, "area", "Must be a valid alpha-numeric string with spaces");
         }
-        if(!ApiValidation.validAlphaNumericSpaces(isa95.getSite(), true)){
+        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getSite(), true)){
             ApiErrorUtils.addValidationError(errorMessages, "site", "Must be a valid alpha-numeric string with spaces");
         }
-        if(!ApiValidation.validAlphaNumericSpaces(isa95.getProductionLine(), true)){
+        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getProductionLine(), true)){
             ApiErrorUtils.addValidationError(errorMessages, "productionLine", "Must be a valid alpha-numeric string with spaces");
         }
-        if(!ApiValidation.validAlphaNumericSpaces(isa95.getWorkCell(), true)){
+        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getWorkCell(), true)){
             ApiErrorUtils.addValidationError(errorMessages, "workCell", "Must be a valid alpha-numeric string with spaces");
         }
 
