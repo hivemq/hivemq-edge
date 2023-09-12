@@ -57,7 +57,7 @@ export const ObjectFieldTemplate = <
             const filteredProps = properties.filter((p) => e.properties.includes(p.name))
             if (!filteredProps.length) return null
             return (
-              <Tab fontSize="md" fontWeight={'semibold'} key={e.id}>
+              <Tab fontSize="md" key={e.id}>
                 {e.title}
               </Tab>
             )
