@@ -55,12 +55,16 @@ export const ObjectFieldTemplate = <
 
   return (
     <>
-      <Tabs variant="enclosed">
+      <Tabs>
         <TabList>
           {groups.map((e) => {
             const filteredProps = properties.filter((p) => e.children.includes(p.name))
             if (!filteredProps.length) return null
-            return <Tab key={e.id}>{e.title}</Tab>
+            return (
+              <Tab fontSize="md" fontWeight={'semibold'} key={e.id}>
+                {e.title}
+              </Tab>
+            )
           })}
         </TabList>
 
