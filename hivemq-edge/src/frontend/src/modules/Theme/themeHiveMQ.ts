@@ -3,7 +3,11 @@
 import { defineStyleConfig, extendTheme, theme as baseTheme } from '@chakra-ui/react'
 import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/700.css'
-import { statTheme } from './Stat'
+
+import { statTheme } from './styles/Stat'
+import { drawerTheme } from './styles/Drawer.ts'
+import { formControlTheme } from './styles/FormControl.ts'
+import { formErrorMessageTheme } from './styles/FormErrorMessage.ts'
 
 const Button = defineStyleConfig({
   defaultProps: {
@@ -17,17 +21,38 @@ export const formStyles = {
   baseStyle: {
     container: {
       label: {
-        fontWeight: 'bold',
+        fontWeight: 'medium',
       },
       h5: {
         fontSize: 'lg',
       },
-      p: {
-        margin: '4px',
-        '.chakra-text': {
-          fontSize: 'sm',
-        },
+      // p: {
+      //   margin: '4px',
+      //   '.chakra-text': {
+      //     fontSize: 'sm',
+      //   },
+      // },
+    },
+  },
+}
+
+export const TestStyles = {
+  parts: ['container', 'requiredIndicator', 'helperText'],
+  baseStyle: {
+    container: {
+      backgroundColor: 'red',
+      label: {
+        fontWeight: 'medium',
       },
+      h5: {
+        fontSize: 'lg',
+      },
+      // p: {
+      //   margin: '4px',
+      //   '.chakra-text': {
+      //     fontSize: 'sm',
+      //   },
+      // },
     },
   },
 }
@@ -38,11 +63,11 @@ export const themeHiveMQ = extendTheme({
     body: `'Roboto', sans-serif`,
   },
 
-  fontSizes: {
-    lg: '16px',
-    md: '14px',
-    sm: '12px',
-  },
+  // fontSizes: {
+  //   lg: '16px',
+  //   md: '14px',
+  //   sm: '12px',
+  // },
 
   colors: {
     status: {
@@ -73,6 +98,8 @@ export const themeHiveMQ = extendTheme({
   components: {
     Button,
     Stat: statTheme,
-    Form: formStyles,
+    Drawer: drawerTheme,
+    Form: formControlTheme,
+    FormErrorMessage: formErrorMessageTheme,
   },
 })

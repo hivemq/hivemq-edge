@@ -2,7 +2,6 @@ import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Checkbox,
-  Flex,
   FormControl,
   FormErrorMessage,
   FormHelperText,
@@ -27,7 +26,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
   const getRulesForProperty = useValidationRules()
 
   return (
-    <Flex flexDirection={'column'} gap={4}>
+    <FormControl variant={'hivemq'} flexGrow={1} display={'flex'} flexDirection={'column'} gap={4} as={'fieldset'}>
       <FormControl isInvalid={!!errors.cleanStart}>
         <Checkbox defaultChecked {...register('cleanStart')}>
           {t('bridge.options.cleanStart.label')}
@@ -110,7 +109,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
         <FormHelperText> {t('bridge.options.clientid.helper')}</FormHelperText>
         <FormErrorMessage>{errors.clientId && errors.clientId.message}</FormErrorMessage>
       </FormControl>
-    </Flex>
+    </FormControl>
   )
 }
 

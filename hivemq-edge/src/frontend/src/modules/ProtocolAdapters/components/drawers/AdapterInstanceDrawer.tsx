@@ -26,8 +26,10 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
-import { ObjectFieldTemplate } from '@/modules/ProtocolAdapters/components/adapters/ObjectFieldTemplate.tsx'
-import useGetUiSchema from '@/modules/ProtocolAdapters/hooks/useGetUISchema.ts'
+import { FieldTemplate } from '../templates/FieldTemplate.tsx'
+import { ObjectFieldTemplate } from '../../components/templates/ObjectFieldTemplate.tsx'
+import useGetUiSchema from '../../hooks/useGetUISchema.ts'
+import { customValidate } from '../../utils/validation-utils.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -70,7 +72,14 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   }
 
   return (
-    <Drawer closeOnOverlayClick={false} size={'lg'} isOpen={isOpen} placement="right" onClose={onClose}>
+    <Drawer
+      variant={'hivemq'}
+      closeOnOverlayClick={false}
+      size={'lg'}
+      isOpen={isOpen}
+      placement="right"
+      onClose={onClose}
+    >
       <DrawerOverlay />
       <DrawerContent aria-label={t('protocolAdapter.drawer.label') as string}>
         {!schema && <LoaderSpinner />}
@@ -95,13 +104,14 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                     id="adapter-instance-form"
                     schema={schema}
                     uiSchema={uiSchema}
-                    templates={{ ObjectFieldTemplate }}
+                    templates={{ ObjectFieldTemplate, FieldTemplate }}
                     liveValidate
                     onSubmit={onValidate}
                     validator={validator}
                     showErrorList={'bottom'}
                     onError={(errors) => console.log('XXXXXXX', errors)}
                     formData={defaultValues}
+                    customValidate={customValidate(schema, allAdapters, t)}
                   />
                 </>
               )}

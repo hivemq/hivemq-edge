@@ -1,5 +1,5 @@
 import { UseFormReturn, FieldValues } from 'react-hook-form'
-import { ProtocolAdapter } from '@/api/__generated__'
+import { Adapter, ProtocolAdapter } from '@/api/__generated__'
 
 export type SubscriptionType = 'remoteSubscriptions' | 'localSubscriptions'
 
@@ -17,8 +17,10 @@ export interface ProtocolFacetType {
   filter?: { key: keyof ProtocolAdapter; value: string } | null
 }
 
-export interface UIGroup {
+export interface UITab {
   id: string
   title: string
-  children: string[]
+  properties: string[]
 }
+
+export type AdapterConfig = NonNullable<Adapter['config']>

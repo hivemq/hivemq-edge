@@ -61,7 +61,14 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
 
   return (
     <>
-      <Drawer closeOnOverlayClick={false} size={'lg'} isOpen={isOpen} placement="right" onClose={onClose}>
+      <Drawer
+        variant={'hivemq'}
+        closeOnOverlayClick={false}
+        size={'lg'}
+        isOpen={isOpen}
+        placement="right"
+        onClose={onClose}
+      >
         <DrawerOverlay />
         <DrawerContent aria-label={t('bridge.drawer.label') as string}>
           <DrawerCloseButton />
