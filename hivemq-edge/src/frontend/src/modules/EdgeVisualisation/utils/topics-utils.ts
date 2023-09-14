@@ -1,10 +1,13 @@
-import { Adapter, Bridge, BridgeSubscription } from '@/api/__generated__'
+import { Adapter, Bridge, BridgeSubscription, ProtocolAdapter } from '@/api/__generated__'
+import { GenericObjectType, RJSFSchema } from '@rjsf/utils'
 
 import { OpcUaClient } from '@/api/__generated__/adapters/opc-ua-client'
 import { Modbus } from '@/api/__generated__/adapters/modbus'
 import { Simulation } from '@/api/__generated__/adapters/simulation'
 
 import { TopicFilter } from '../types.ts'
+
+const TOPIC_PATH_ITEMS_TOKEN = '*'
 
 /* istanbul ignore next -- @preserve */
 export const getAdapterTopics = (adapter: Adapter): TopicFilter[] => {
@@ -41,4 +44,68 @@ export const getBridgeTopics = (bridge: Bridge): { local: TopicFilter[]; remote:
     local: subsToTopics(bridge.localSubscriptions),
     remote: subsToTopics(bridge.remoteSubscriptions),
   }
+}
+
+export const flattenObject = (input: RJSFSchema, root = '') => {
+  let result: Record<string, unknown> = {}
+  for (const key in input) {
+    const newKey = root ? `${root}.${key}` : key
+    if (typeof input[key] === 'object' && !Array.isArray(input[key])) {
+      result = { ...result, ...flattenObject(input[key], newKey) }
+    } else {
+      result[newKey] = input[key]
+    }
+  }
+  return result
+}
+
+export const getTopicPaths = (configSchema: RJSFSchema) => {
+  const flattenSchema = flattenObject(configSchema)
+  return (
+    Object.entries(flattenSchema)
+      // Only interested in topics, internally defined by the string format `format: 'mqtt-topic'`
+      .filter(([k, v]) => k.endsWith('format') && v === 'mqtt-topic')
+      .map(([path]) =>
+        path
+          // The root of the path will always be "properties" [?]
+          .replace('properties.', '')
+          // The leaf of the path will always be "format"
+          .replace('.format', '')
+          // A `type: 'array'` property will have a `items: { properties: {}}` pattern [?]
+          .replace(/items\.properties/gi, TOPIC_PATH_ITEMS_TOKEN)
+      )
+  )
+}
+
+const getTopicsFromPath = (path: string, instance: RJSFSchema): string[] => {
+  /* istanbul ignore next -- @preserve */
+  if (!path.length) {
+    console.log('Warning! Is this really happening?')
+    return []
+  }
+  const [property, ...rest] = path.split('.')
+
+  if (!rest.length) return [instance?.[property]]
+  if (property === TOPIC_PATH_ITEMS_TOKEN) {
+    const res: string[] = []
+
+    for (const item of instance as RJSFSchema[]) {
+      const gg = getTopicsFromPath(rest.join('.'), item)
+      res.push(...gg)
+    }
+    return res
+  }
+  return getTopicsFromPath(rest.join('.'), instance?.[property])
+}
+
+export const discoverAdapterTopics = (protocol: ProtocolAdapter, instance: GenericObjectType): string[] => {
+  const paths = getTopicPaths(protocol.configSchema as RJSFSchema)
+  const topics: string[] = []
+
+  paths.forEach((path) => {
+    const gg = getTopicsFromPath(path, instance)
+    topics.push(...gg)
+  })
+
+  return topics
 }
