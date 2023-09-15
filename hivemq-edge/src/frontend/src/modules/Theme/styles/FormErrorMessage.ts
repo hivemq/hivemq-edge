@@ -5,7 +5,8 @@ const { defineMultiStyleConfig, definePartsStyle } = createMultiStyleConfigHelpe
 
 const hivemq = definePartsStyle({
   text: {
-    color: 'red.700',
+    // Fix "color-contrast" (WCAG)
+    color: 'red.600',
   },
 })
 
