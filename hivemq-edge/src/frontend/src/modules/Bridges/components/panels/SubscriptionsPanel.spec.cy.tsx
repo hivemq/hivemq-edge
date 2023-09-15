@@ -49,7 +49,7 @@ describe('SubscriptionsPanel', () => {
 
     cy.checkAccessibility(undefined, {
       rules: {
-        // TODO[NVL] Font too small.
+        // TODO[#111] Color-contrast fixed but still not passing. Flaky with expandable panel
         'color-contrast': { enabled: false },
       },
     })
