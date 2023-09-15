@@ -2,7 +2,7 @@
 
 import { FieldTemplateProps } from '@rjsf/utils'
 import { RenderFieldTemplate } from './RenderFieldTemplate.tsx'
-import { FormLabel, Input, Text } from '@chakra-ui/react'
+import { FormErrorMessage, FormLabel, Input } from '@chakra-ui/react'
 
 const MOCK_TEXT = 'You will have to type something'
 const MOCK_ERROR = 'This is an error message'
@@ -15,7 +15,7 @@ const makeMockProps = (props: Partial<FieldTemplateProps>): Partial<FieldTemplat
         <Input value={'a dumb value'} />
       </>
     ),
-    errors: <Text>{props.rawErrors?.join(', ')}</Text>,
+    errors: <FormErrorMessage>{props.rawErrors?.join(', ')}</FormErrorMessage>,
     description: <div>{props.rawDescription}</div>,
   }
 }
