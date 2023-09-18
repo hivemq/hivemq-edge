@@ -62,7 +62,7 @@ public class HttpAdapterConfig extends AbstractProtocolAdapterConfig {
     @JsonProperty("url")
     @ModuleConfigField(title = "URL",
             description = "The url of the http request you would like to make",
-            stringPattern = HttpConstants.HTTP_URL_REGEX,
+            format = ModuleConfigField.FieldType.URI,
             required = true)
     private @NotNull String url;
 
