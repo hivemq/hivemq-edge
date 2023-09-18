@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<hivemq xsi:schemaLocation="config.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <protocol-adapters>
+        <http>
+            <qos>0</qos>
+            <httpRequestMethod>GET</httpRequestMethod>
+            <httpConnectTimeout>10</httpConnectTimeout>
+            <httpRequestBodyContentType>JSON</httpRequestBodyContentType>
+            <httpPublishSuccessStatusCodeOnly>true</httpPublishSuccessStatusCodeOnly>
+            <httpHeaders>
+                <httpHeader>
+                    <name>foo 1</name>
+                    <value>bar 1</value>
+                </httpHeader>
+                <httpHeader>
+                    <name>foo 2</name>
+                    <value>bar 2</value>
+                </httpHeader>
+            </httpHeaders>
+            <publishingInterval>1000</publishingInterval>
+            <maxPollingErrorsBeforeRemoval>10</maxPollingErrorsBeforeRemoval>
+            <url>http://192.168.0.02:777/?asdasd=asdasd</url>
+            <destination>asdasdasd</destination>
+            <id>asdasdasd</id>
+        </http>
+    </protocol-adapters>
+</hivemq>

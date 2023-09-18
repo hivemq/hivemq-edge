@@ -213,6 +213,11 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
     protected HttpData executeInternal(@NotNull final HttpAdapterConfig config, @NotNull final HttpRequest.Builder builder)
             throws IOException, InterruptedException {
         builder.uri(URI.create(config.getUrl()));
+        //-- Ensure we apply a reasonable timeout so we don't hang threads
+        Integer timeout = config.getHttpConnectTimeout();
+        timeout = timeout == null ? HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS : timeout;
+        timeout = Math.max(timeout, HttpAdapterConstants.MAX_TIMEOUT_SECONDS);
+        builder.timeout(Duration.ofSeconds(timeout));
         builder.setHeader(HttpConstants.USER_AGENT_HEADER,
                 String.format(HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE, HiveMQEdgeConstants.VERSION));
         if(config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()){

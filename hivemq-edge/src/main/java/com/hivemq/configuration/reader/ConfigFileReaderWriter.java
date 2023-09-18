@@ -82,7 +82,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator;
     private final @NotNull UsageTrackingConfigurator usageTrackingConfigurator;
     private final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator;
-    private HiveMQConfigEntity configEntity;
+    protected HiveMQConfigEntity configEntity;
     private final Object lock = new Object();
     private boolean defaultBackupConfig = true;
 
@@ -341,7 +341,7 @@ public class ConfigFileReaderWriter {
         protocolAdapterConfigurator.syncConfigs(configEntity.getProtocolAdapterConfig());
     }
 
-    private Schema loadSchema() throws IOException, SAXException {
+    protected Schema loadSchema() throws IOException, SAXException {
         final URL resource = ConfigFileReaderWriter.class.getResource("/" + XSD_SCHEMA);
         if (resource != null) {
             try (final InputStream is = uncachedStream(resource)) {
