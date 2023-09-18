@@ -15,6 +15,8 @@ public class ProtocolAdapterUtils {
         ObjectMapper copyObjectMapper = objectMapper.copy();
         copyObjectMapper.coercionConfigFor(LogicalType.POJO).
                 setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
+        copyObjectMapper.coercionConfigFor(LogicalType.Collection).
+                setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
         return copyObjectMapper;
     }
 }

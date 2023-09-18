@@ -61,9 +61,9 @@ public class HttpAdapterConfig extends AbstractProtocolAdapterConfig {
 
     @JsonProperty("url")
     @ModuleConfigField(title = "URL",
-            description = "The url of the http endpoint",
-            format = ModuleConfigField.FieldType.URI,
-            required = true)
+                       description = "The url of the http request you would like to make",
+                       stringPattern = HttpConstants.HTTP_URL_REGEX,
+                       required = true)
     private @NotNull String url;
 
     @JsonProperty(value = "destination", required = true)
@@ -101,8 +101,8 @@ public class HttpAdapterConfig extends AbstractProtocolAdapterConfig {
 
     @JsonProperty("httpConnectTimeout")
     @ModuleConfigField(title = "Http Connection Timeout",
-                       description = "Timeout (in second) to apply to the HTTP Request", required = true, defaultValue = "10")
-    private @NotNull Integer httpConnectTimeout = 10;
+                       description = "Timeout (in second) to wait for the HTTP Request to complete", required = true, defaultValue = HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS + "")
+    private @NotNull Integer httpConnectTimeout = HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 
     @JsonProperty("httpHeaders")
     @ModuleConfigField(title = "HTTP Headers",
@@ -111,23 +111,23 @@ public class HttpAdapterConfig extends AbstractProtocolAdapterConfig {
 
     @JsonProperty("publishingInterval")
     @ModuleConfigField(title = "Polling interval [ms]",
-            description = "Time in millisecond that this URL will be called",
-            numberMin = 1,
-            required = true,
-            defaultValue = "1000")
+                       description = "Time in millisecond that this URL will be called",
+                       numberMin = 1,
+                       required = true,
+                       defaultValue = "1000")
     private int publishingInterval = DEFAULT_PUBLISHING_INTERVAL; //1 second
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
-            description = "Max. errors polling the endpoint before the polling daemon is stopped",
-            numberMin = 3,
-            defaultValue = "10")
+                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
+                       numberMin = 3,
+                       defaultValue = "10")
     private int maxPollingErrorsBeforeRemoval = DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL;
 
     @JsonProperty("httpPublishSuccessStatusCodeOnly")
     @ModuleConfigField(title = "Only publish data when HTTP response code is successful ( 200 - 299 )",
-            defaultValue = "true",
-            format = ModuleConfigField.FieldType.BOOLEAN)
+                       defaultValue = "true",
+                       format = ModuleConfigField.FieldType.BOOLEAN)
     private boolean httpPublishSuccessStatusCodeOnly = true;
 
     public HttpAdapterConfig() {
