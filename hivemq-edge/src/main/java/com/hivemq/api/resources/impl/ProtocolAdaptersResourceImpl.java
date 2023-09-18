@@ -331,8 +331,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 protocolAdapterManager.getSchemaManager(information).validateObject(adapter.getConfig());
         errors.stream()
                 .forEach(e -> ApiErrorUtils.addValidationError(apiErrorMessages,
-                        e.getPath(),
-                        e.getMessage() + ", args=" + Arrays.toString(e.getArguments()) + ", type=" + e.getType()));
+                        e.getPath(), e.getMessage()));
     }
 
     @Override
