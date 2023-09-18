@@ -46,7 +46,7 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.Status.CONNECTED, protocolAdapter.status());
+        assertEquals(ProtocolAdapter.Status.CONNECTED, protocolAdapter.getConnectionStatus());
     }
 
     @Test
@@ -61,7 +61,7 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.Status.CONNECTED, protocolAdapter.status());
+        assertEquals(ProtocolAdapter.Status.CONNECTED, protocolAdapter.getConnectionStatus());
     }
 
     @Test
@@ -78,7 +78,7 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.Status.CONNECTED, protocolAdapter.status());
+        assertEquals(ProtocolAdapter.Status.CONNECTED, protocolAdapter.getConnectionStatus());
     }
 
     @Test
@@ -94,7 +94,7 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.Status.CONNECTED, protocolAdapter.status());
+        assertEquals(ProtocolAdapter.Status.CONNECTED, protocolAdapter.getConnectionStatus());
     }
 
 

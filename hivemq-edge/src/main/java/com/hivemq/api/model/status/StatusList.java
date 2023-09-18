@@ -13,34 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.model.connection;
+package com.hivemq.api.model.status;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.util.List;
 
 /**
  * @author Simon L Johnson
  */
-public class ConnectionStatusTransitionCommand {
-
-    public enum COMMAND {
-        CONNECT,
-        DISCONNECT,
-        RESTART
-    }
-
-    @JsonProperty("command")
-    @Schema(description = "The command to perform on the target connection.")
-    private final @NotNull COMMAND command;
+public class StatusList extends ItemsResponse<Status> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public ConnectionStatusTransitionCommand(@NotNull @JsonProperty("command") final COMMAND command){
-        this.command = command;
-    }
-
-    public COMMAND getCommand() {
-        return command;
+    public StatusList(
+            @JsonProperty("items") final @NotNull List<@NotNull Status> items) {
+        super(items);
     }
 }

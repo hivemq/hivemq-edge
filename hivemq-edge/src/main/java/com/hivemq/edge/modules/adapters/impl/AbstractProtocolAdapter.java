@@ -19,6 +19,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.hivemq.api.model.status.Status;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.adapters.params.NodeTree;
@@ -57,6 +58,9 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected @NotNull T adapterConfig;
     protected @Nullable Long lastStartAttemptTime;
     protected @Nullable String lastErrorMessage;
+    protected @Nullable volatile Object lock = new Object();
+    protected @Nullable volatile RuntimeStatus runtimeStatus = RuntimeStatus.STOPPED;
+    protected @Nullable volatile ConnectionStatus connectionStatus = ConnectionStatus.STATELESS;
 
     public AbstractProtocolAdapter(final @NotNull ProtocolAdapterInformation adapterInformation,
                                    final @NotNull T adapterConfig,
@@ -127,6 +131,31 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         }
     }
 
+    protected void setConnectionStatus(@NotNull final ConnectionStatus connectionStatus){
+        Preconditions.checkNotNull(connectionStatus);
+        synchronized (lock){
+            this.connectionStatus = connectionStatus;
+        }
+    }
+
+    protected void setErrorConnectionStatus(@NotNull final String errorMessage){
+        Preconditions.checkNotNull(errorMessage);
+        synchronized (lock){
+            this.connectionStatus = ConnectionStatus.ERROR;
+            setErrorConnectionStatus(errorMessage);
+        }
+    }
+
+    protected void setRuntimeStatus(@NotNull final RuntimeStatus runtimeStatus){
+        Preconditions.checkNotNull(runtimeStatus);
+        synchronized (lock){
+            this.runtimeStatus = runtimeStatus;
+            if(runtimeStatus == RuntimeStatus.STARTED){
+                initStartAttempt();
+            }
+        }
+    }
+
     @Override
     public String getLastErrorMessage() {
         return lastErrorMessage;
@@ -140,4 +169,13 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         return adapterConfig.getId();
     }
 
+    @Override
+    public ConnectionStatus getConnectionStatus() {
+        return connectionStatus;
+    }
+
+    @Override
+    public RuntimeStatus getRuntimeStatus() {
+        return runtimeStatus;
+    }
 }

@@ -21,8 +21,6 @@ import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishInboundInterceptor;
-import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishInboundInterceptorProvider;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -73,7 +71,9 @@ public interface ProtocolAdapter {
 
     @NotNull ProtocolAdapterInformation getProtocolAdapterInformation();
 
-    @NotNull Status status();
+    @NotNull ConnectionStatus getConnectionStatus();
+
+    @NotNull RuntimeStatus getRuntimeStatus();
 
     @Nullable Long getTimeOfLastStartAttempt();
 
@@ -82,10 +82,16 @@ public interface ProtocolAdapter {
     @Nullable String getLastErrorMessage();
 
 
+    enum RuntimeStatus {
+        STARTED,
+        STOPPED
+    }
 
-    enum Status {
+    enum ConnectionStatus {
         CONNECTED,
         DISCONNECTED,
+        STATELESS,
+        UNKNOWN,
         ERROR
     }
 }

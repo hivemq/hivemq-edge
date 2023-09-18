@@ -18,9 +18,9 @@ package com.hivemq.api.resources;
 import com.hivemq.api.model.ApiBodyExamples;
 import com.hivemq.api.model.bridge.Bridge;
 import com.hivemq.api.model.bridge.BridgeList;
-import com.hivemq.api.model.connection.ConnectionStatus;
-import com.hivemq.api.model.connection.ConnectionStatusList;
-import com.hivemq.api.model.connection.ConnectionStatusTransitionCommand;
+import com.hivemq.api.model.status.Status;
+import com.hivemq.api.model.status.StatusList;
+import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -130,37 +130,37 @@ public interface BridgeApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = ConnectionStatus.class),
+                                                       schema = @Schema(implementation = Status.class),
                                                        examples = {
                                                                @ExampleObject(description = "Example response with CONNECTED status.",
                                                                               name = "bridge-connection-status-result",
                                                                               summary = "Bridge Connection Status Result",
                                                                               value = ApiBodyExamples.EXAMPLE_CONNECTION_STATUS_JSON)
                                                        }))})
-    Response getConnectionStatus(@Parameter(name = "bridgeId",
+    Response getStatus(@Parameter(name = "bridgeId",
                                             description = "The name of the bridge to query.",
                                             required = true,
                                             in = ParameterIn.PATH)
                                  @PathParam("bridgeId") @NotNull final String bridgeId) ;
 
     @PUT
-    @Path("/{bridgeId: ([a-zA-Z_0-9\\-])*}/connection-status")
-    @Operation(summary = "Transition the connection status of a bridge",
+    @Path("/{bridgeId: ([a-zA-Z_0-9\\-])*}/status")
+    @Operation(summary = "Transition the runtime status of a bridge",
                description = "Transition the connection status of a bridge.",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success")})
-    Response changeConnectionStatus(
+    Response changeStatus(
             @Parameter(name = "bridgeId",
-                       description = "The id of the bridge whose connection-status will change.",
+                       description = "The id of the bridge whose runtime-status will change.",
                        required = true,
                        in = ParameterIn.PATH)
             final @PathParam("bridgeId") String bridgeId,
             @Parameter(name = "command",
-                       description = "The command to transition the bridge connection status.",
+                       description = "The command to transition the bridge runtime status.",
                        required = true,
                        in = ParameterIn.DEFAULT)
-            final @NotNull ConnectionStatusTransitionCommand command);
+            final @NotNull StatusTransitionCommand command);
 
 
     @GET
@@ -193,7 +193,7 @@ public interface BridgeApi {
                        @ApiResponse(responseCode = "200",
                                     description = "The Connection Details Verification Result.",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = ConnectionStatusList.class),
+                                                       schema = @Schema(implementation = StatusList.class),
                                                        examples = {
                                                                @ExampleObject(description = "Example connection status list.",
                                                                               name = "example-connection-status",

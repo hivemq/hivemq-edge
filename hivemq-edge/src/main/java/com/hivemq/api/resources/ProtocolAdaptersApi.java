@@ -20,9 +20,9 @@ import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
-import com.hivemq.api.model.connection.ConnectionStatus;
-import com.hivemq.api.model.connection.ConnectionStatusList;
-import com.hivemq.api.model.connection.ConnectionStatusTransitionCommand;
+import com.hivemq.api.model.status.Status;
+import com.hivemq.api.model.status.StatusList;
+import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.Operation;
@@ -206,44 +206,44 @@ public interface ProtocolAdaptersApi {
                                  in = ParameterIn.QUERY) @QueryParam("depth") Integer depth);
 
     @GET
-    @Path("/adapters/{adapterId: ([a-zA-Z_0-9\\-])*}/connection")
+    @Path("/adapters/{adapterId: ([a-zA-Z_0-9\\-])*}/status")
     @Operation(summary = "Get the up to date status of a bridge",
                description = "Get the up to date status of a bridge.",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = ConnectionStatus.class),
+                                                       schema = @Schema(implementation = Status.class),
                                                        examples = {
                                                                @ExampleObject(description = "Example connection status.",
                                                                               name = "example-connection-status",
                                                                               summary = "Example connection status",
                                                                               value = ApiBodyExamples.EXAMPLE_CONNECTION_STATUS_JSON)
                                                        }))})
-    Response getConnectionStatus(@Parameter(name = "adapterId",
+    Response getStatus(@Parameter(name = "adapterId",
                                             description = "The name of the adapter to query.",
                                             required = true,
                                             in = ParameterIn.PATH)
                                  @PathParam("adapterId") @NotNull final String adapterId) ;
 
     @PUT
-    @Path("/adapters/{adapterId: ([a-zA-Z_0-9\\-])*}/connection")
-    @Operation(summary = "Transition the connection status of an adapter",
-               description = "Transition the connection status of an adapter.",
+    @Path("/adapters/{adapterId: ([a-zA-Z_0-9\\-])*}/status")
+    @Operation(summary = "Transition the runtime status of an adapter",
+               description = "Transition the runtime status of an adapter.",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success")})
-    Response changeConnectionStatus(
+    Response changeStatus(
             @Parameter(name = "adapterId",
-                       description = "The id of the adapter whose connection-status will change.",
+                       description = "The id of the adapter whose runtime status will change.",
                        required = true,
                        in = ParameterIn.PATH)
             final @PathParam("adapterId") String adapterId,
             @Parameter(name = "command",
-                       description = "The command to transition the adapter connection status.",
+                       description = "The command to transition the adapter runtime status.",
                        required = true,
                        in = ParameterIn.DEFAULT)
-            final @NotNull ConnectionStatusTransitionCommand command);
+            final @NotNull StatusTransitionCommand command);
 
     @GET
     @Path("/status")
@@ -254,7 +254,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "200",
                                     description = "The Connection Details Verification Result.",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = ConnectionStatusList.class),
+                                                       schema = @Schema(implementation = StatusList.class),
                                                        examples = {
                                                                @ExampleObject(description = "Example connection status list.",
                                                                               name = "example-connection-status",
