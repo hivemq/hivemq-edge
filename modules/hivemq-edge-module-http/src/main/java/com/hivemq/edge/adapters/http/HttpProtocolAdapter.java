@@ -79,6 +79,7 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             output.failStart(e, e.getMessage());
+            setRuntimeStatus(RuntimeStatus.STOPPED);
             return CompletableFuture.failedFuture(e);
         }
     }
@@ -105,10 +106,9 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
                     .followRedirects(HttpClient.Redirect.NORMAL)
                     .connectTimeout(Duration.ofSeconds(config.getHttpConnectTimeout()))
                     .build();
-            connected.set(true);
+            setRuntimeStatus(RuntimeStatus.STARTED);
             startPolling(new HttpRequestPoller(config));
         } else {
-            connected.set(false);
             setLastErrorMessage("Invalid URL supplied");
         }
     }
@@ -120,11 +120,6 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
     @Override
     public CompletableFuture<Void> close() {
         return stop();
-    }
-
-    @Override
-    public @NotNull Status status() {
-        return connected.get() ? Status.CONNECTED : Status.DISCONNECTED;
     }
 
     private static boolean isSuccessStatusCode(final int statusCode){

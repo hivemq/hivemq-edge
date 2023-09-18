@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.model.connection;
+package com.hivemq.api.model.status;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,28 +23,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 /**
  * @author Simon L Johnson
  */
-public class ConnectionDetails {
+public class StatusTransitionCommand {
 
-    @JsonProperty("hostAddress")
-    @Schema(description = "A mandatory hostAddress. Either a hostname or IPV4/IPv6 representation of a connection.")
-    private final @NotNull String hostAddress;
+    public enum COMMAND {
+        START,
+        STOP,
+        RESTART
+    }
 
-    @JsonProperty("port")
-    @Schema(description = "A mandatory port.")
-    private final @NotNull Integer port;
+    @JsonProperty("command")
+    @Schema(description = "The command to perform on the target connection.")
+    private final @NotNull COMMAND command;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public ConnectionDetails(@NotNull @JsonProperty("hostAddress") final String hostAddress,
-                             @NotNull @JsonProperty("port") final Integer port) {
-        this.hostAddress = hostAddress;
-        this.port = port;
+    public StatusTransitionCommand(@NotNull @JsonProperty("command") final COMMAND command){
+        this.command = command;
     }
 
-    public Integer getPort() {
-        return port;
-    }
-
-    public String getHostAddress() {
-        return hostAddress;
+    public COMMAND getCommand() {
+        return command;
     }
 }

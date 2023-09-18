@@ -64,7 +64,6 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterConfig> {
     private static final Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
     private @Nullable OpcUaClient opcUaClient;
-    private @NotNull Status status = Status.DISCONNECTED;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap = new ConcurrentHashMap<>();
 
     public OpcUaProtocolAdapter(
@@ -102,7 +101,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
 
             }).exceptionally(throwable -> {
                 log.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
-                status = Status.ERROR;
+                setRuntimeStatus(RuntimeStatus.STOPPED);
                 output.failStart(throwable, throwable.getMessage());
                 resultFuture.completeExceptionally(throwable);
                 return null;
@@ -120,15 +119,17 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
     public @NotNull CompletableFuture<Void> stop() {
         try {
             if (opcUaClient == null) {
-                status = Status.DISCONNECTED;
+                setConnectionStatus(ConnectionStatus.DISCONNECTED);
                 return CompletableFuture.completedFuture(null);
             }
 
             return opcUaClient.disconnect().thenAccept(client -> {
-                status = Status.DISCONNECTED;
+                setConnectionStatus(ConnectionStatus.DISCONNECTED);
             });
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
+        } finally {
+            setRuntimeStatus(RuntimeStatus.STOPPED);
         }
     }
 
@@ -175,11 +176,6 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
     }
 
     @Override
-    public @NotNull Status status() {
-        return status;
-    }
-
-    @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return OpcUaProtocolAdapterInformation.INSTANCE;
     }
@@ -204,7 +200,6 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
             @NotNull final ProtocolAdapterPublishService adapterPublishService) {
         //noinspection ConstantValue
         if (adapterConfig.getSubscriptions() == null || adapterConfig.getSubscriptions().isEmpty()) {
-            status = Status.CONNECTED;
             return CompletableFuture.completedFuture(null);
         }
 
@@ -216,11 +211,11 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
         }
 
         CompletableFuture.allOf(subscribeFutures.build().toArray(new CompletableFuture[]{})).thenApply(unused -> {
-            status = Status.CONNECTED;
+            setConnectionStatus(ConnectionStatus.CONNECTED);
             resultFuture.complete(null);
             return null;
         }).exceptionally(throwable -> {
-            status = Status.ERROR;
+            setErrorConnectionStatus(throwable.getMessage());
             resultFuture.completeExceptionally(throwable);
             return null;
         });
@@ -235,6 +230,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
                 new OpcUaClientConfigurator(adapterConfig));
         //Decoding a struct with custom DataType requires a DataTypeManager, so we register one that updates each time a session is activated.
         opcUaClient.addSessionInitializer(new DataTypeDictionarySessionInitializer(new GenericBsdParser()));
+        setRuntimeStatus(RuntimeStatus.STARTED);
     }
 
     private @NotNull CompletableFuture<Void> subscribeToNode(

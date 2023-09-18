@@ -168,7 +168,7 @@ public class ProtocolAdapterManager {
     public CompletableFuture<Void> start(final @NotNull ProtocolAdapter protocolAdapter) {
         Preconditions.checkNotNull(protocolAdapter);
         CompletableFuture<Void> startFuture;
-        if (protocolAdapter.status() == ProtocolAdapter.Status.CONNECTED) {
+        if (protocolAdapter.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STARTED) {
             startFuture = CompletableFuture.completedFuture(null);
         } else {
             final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();

@@ -17,12 +17,13 @@ package com.hivemq.api.model.bridge;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.api.model.connection.ConnectionStatus;
+import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.core.TlsConfiguration;
 import com.hivemq.bridge.config.*;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.statistics.entity.Statistic;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -139,9 +140,9 @@ public class Bridge {
     @Schema(description = "tlsConfiguration associated with the bridge", nullable = true)
     private final @Nullable TlsConfiguration tlsConfiguration;
 
-    @JsonProperty("bridgeRuntimeInformation")
-    @Schema(description = "bridgeRuntimeInformation associated with the bridge", nullable = true)
-    private final @Nullable BridgeRuntimeInformation bridgeRuntimeInformation;
+    @JsonProperty("runtimeStatus")
+    @Schema(description = "runtimeStatus associated with the bridge", nullable = true)
+    private final @Nullable Status runtimeStatus;
 
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -160,7 +161,7 @@ public class Bridge {
             @NotNull @JsonProperty("remoteSubscriptions") final List<BridgeSubscription> remoteSubscriptions,
             @NotNull @JsonProperty("localSubscriptions") final List<BridgeSubscription> localSubscriptions,
             @Nullable @JsonProperty("tlsConfiguration") final TlsConfiguration tlsConfiguration,
-            @Nullable @JsonProperty("bridgeRuntimeInformation") final BridgeRuntimeInformation bridgeRuntimeInformation) {
+            @Nullable @JsonProperty("runtimeStatus") final Status runtimeStatus) {
         this.id = id;
         this.host = host;
         this.port = port;
@@ -175,11 +176,11 @@ public class Bridge {
         this.remoteSubscriptions = remoteSubscriptions;
         this.localSubscriptions = localSubscriptions;
         this.tlsConfiguration = tlsConfiguration;
-        this.bridgeRuntimeInformation = bridgeRuntimeInformation;
+        this.runtimeStatus = runtimeStatus;
     }
 
-    public BridgeRuntimeInformation getBridgeRuntimeInformation() {
-        return bridgeRuntimeInformation;
+    public Status getRuntimeStatus() {
+        return runtimeStatus;
     }
 
     public String getId() {
@@ -344,9 +345,8 @@ public class Bridge {
         }
     }
 
-    public static Bridge convert(MqttBridge mqttBridge, ConnectionStatus status, String lastError) {
+    public static Bridge convert(MqttBridge mqttBridge, Status status) {
 
-        BridgeRuntimeInformation runtimeInformation = new BridgeRuntimeInformation(status, lastError);
         Bridge bridge = new Bridge(mqttBridge.getId(),
                 mqttBridge.getHost(),
                 mqttBridge.getPort(),
@@ -366,7 +366,7 @@ public class Bridge {
                         .stream()
                         .map(m -> convertSubscription(m))
                         .collect(Collectors.toList()),
-                convertTls(mqttBridge.getBridgeTls()), runtimeInformation);
+                convertTls(mqttBridge.getBridgeTls()), status);
         return bridge;
     }
 

@@ -458,7 +458,7 @@ paths:
                       id: cloud
                       type: bridge
               schema:
-                $ref: '#/components/schemas/ConnectionStatusList'
+                $ref: '#/components/schemas/StatusList'
           description: The Connection Details Verification Result.
       summary: Get the status of all the bridges in the system.
       tags:
@@ -567,7 +567,7 @@ paths:
   /api/v1/management/bridges/{bridgeId}/connection-status:
     get:
       description: Get the up to date status of a bridge.
-      operationId: getConnectionStatus
+      operationId: getStatus
       parameters:
       - description: The name of the bridge to query.
         in: path
@@ -588,16 +588,17 @@ paths:
                     id: cloud
                     type: bridge
               schema:
-                $ref: '#/components/schemas/ConnectionStatus'
+                $ref: '#/components/schemas/Status'
           description: Success
       summary: Get the up to date status of a bridge
       tags:
       - Bridges
+  /api/v1/management/bridges/{bridgeId}/status:
     put:
       description: Transition the connection status of a bridge.
-      operationId: changeConnectionStatus
+      operationId: changeStatus
       parameters:
-      - description: The id of the bridge whose connection-status will change.
+      - description: The id of the bridge whose runtime-status will change.
         in: path
         name: bridgeId
         required: true
@@ -607,13 +608,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ConnectionStatusTransitionCommand'
-        description: The command to transition the bridge connection status.
+              $ref: '#/components/schemas/StatusTransitionCommand'
+        description: The command to transition the bridge runtime status.
         required: true
       responses:
         "200":
           description: Success
-      summary: Transition the connection status of a bridge
+      summary: Transition the runtime status of a bridge
       tags:
       - Bridges
   /api/v1/management/protocol-adapters/adapters:
@@ -733,58 +734,6 @@ paths:
       summary: Update an adapter
       tags:
       - Protocol Adapters
-  /api/v1/management/protocol-adapters/adapters/{adapterId}/connection:
-    get:
-      description: Get the up to date status of a bridge.
-      operationId: getConnectionStatus_1
-      parameters:
-      - description: The name of the adapter to query.
-        in: path
-        name: adapterId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              examples:
-                example-connection-status:
-                  description: Example connection status.
-                  summary: Example connection status
-                  value:
-                    status: CONNECTED
-                    id: cloud
-                    type: bridge
-              schema:
-                $ref: '#/components/schemas/ConnectionStatus'
-          description: Success
-      summary: Get the up to date status of a bridge
-      tags:
-      - Protocol Adapters
-    put:
-      description: Transition the connection status of an adapter.
-      operationId: changeConnectionStatus_1
-      parameters:
-      - description: The id of the adapter whose connection-status will change.
-        in: path
-        name: adapterId
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConnectionStatusTransitionCommand'
-        description: The command to transition the adapter connection status.
-        required: true
-      responses:
-        "200":
-          description: Success
-      summary: Transition the connection status of an adapter
-      tags:
-      - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterId}/discover:
     get:
       description: Obtain a list of available values accessible via this protocol
@@ -843,6 +792,58 @@ paths:
       summary: Discover a list of available data points
       tags:
       - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/status:
+    get:
+      description: Get the up to date status of a bridge.
+      operationId: getStatus_1
+      parameters:
+      - description: The name of the adapter to query.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                example-connection-status:
+                  description: Example connection status.
+                  summary: Example connection status
+                  value:
+                    status: CONNECTED
+                    id: cloud
+                    type: bridge
+              schema:
+                $ref: '#/components/schemas/Status'
+          description: Success
+      summary: Get the up to date status of a bridge
+      tags:
+      - Protocol Adapters
+    put:
+      description: Transition the runtime status of an adapter.
+      operationId: changeStatus_1
+      parameters:
+      - description: The id of the adapter whose runtime status will change.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusTransitionCommand'
+        description: The command to transition the adapter runtime status.
+        required: true
+      responses:
+        "200":
+          description: Success
+      summary: Transition the runtime status of an adapter
+      tags:
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
     post:
       description: Add adapter to the system.
@@ -885,7 +886,7 @@ paths:
                       id: cloud
                       type: bridge
               schema:
-                $ref: '#/components/schemas/ConnectionStatusList'
+                $ref: '#/components/schemas/StatusList'
           description: The Connection Details Verification Result.
       summary: Get the status of all the adapters in the system.
       tags:
@@ -1077,8 +1078,6 @@ components:
     Adapter:
       type: object
       properties:
-        adapterRuntimeInformation:
-          $ref: '#/components/schemas/AdapterRuntimeInformation'
         config:
           type: object
           additionalProperties:
@@ -1092,29 +1091,14 @@ components:
             \ characters with spaces and hyphens."
           maxLength: 500
           minLength: 1
-          pattern: "([a-zA-Z_0-9\\-])*"
+          pattern: "^([a-zA-Z_0-9-_])*$"
+        runtimeStatus:
+          $ref: '#/components/schemas/Status'
         type:
           type: string
           description: The adapter type associated with this instance
       required:
       - id
-    AdapterRuntimeInformation:
-      type: object
-      description: Information associated with the runtime of this adapter
-      properties:
-        connectionStatus:
-          $ref: '#/components/schemas/ConnectionStatus'
-        errorMessage:
-          type: string
-          description: An error message associated with the connection
-        lastStartedAttemptTime:
-          type: string
-          format: date-time
-          description: Time last start attempt time
-        numberOfDaemonProcesses:
-          type: integer
-          format: int32
-          description: The number of daemon processes associated with this instance
     AdaptersList:
       type: object
       properties:
@@ -1144,8 +1128,6 @@ components:
     Bridge:
       type: object
       properties:
-        bridgeRuntimeInformation:
-          $ref: '#/components/schemas/BridgeRuntimeInformation'
         cleanStart:
           type: boolean
           format: boolean
@@ -1170,7 +1152,7 @@ components:
             \ characters with spaces and hyphens."
           maxLength: 500
           minLength: 1
-          pattern: "([a-zA-Z_0-9\\-])*"
+          pattern: "^([a-zA-Z_0-9-_])*$"
         keepAlive:
           type: integer
           format: int32
@@ -1212,6 +1194,8 @@ components:
           description: remoteSubscriptions associated with the bridge
           items:
             $ref: '#/components/schemas/BridgeSubscription'
+        runtimeStatus:
+          $ref: '#/components/schemas/Status'
         sessionExpiry:
           type: integer
           format: int32
@@ -1257,16 +1241,6 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Bridge'
-    BridgeRuntimeInformation:
-      type: object
-      description: bridgeRuntimeInformation associated with the bridge
-      nullable: true
-      properties:
-        connectionStatus:
-          $ref: '#/components/schemas/ConnectionStatus'
-        errorMessage:
-          type: string
-          description: An error message associated with the connection
     BridgeSubscription:
       type: object
       description: localSubscriptions associated with the bridge
@@ -1314,42 +1288,6 @@ components:
       - destination
       - filters
       - maxQoS
-    ConnectionStatus:
-      type: object
-      description: The current status of the connection
-      properties:
-        id:
-          type: string
-          description: The identifier of the object
-        status:
-          type: string
-          description: A mandatory status field.
-          enum:
-          - CONNECTED
-          - DISCONNECTED
-          - CONNECTING
-          - DISCONNECTING
-        type:
-          type: string
-          description: The type of the object
-    ConnectionStatusList:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/ConnectionStatus'
-    ConnectionStatusTransitionCommand:
-      type: object
-      properties:
-        command:
-          type: string
-          description: The command to perform on the target connection.
-          enum:
-          - CONNECT
-          - DISCONNECT
-          - RESTART
     DataPoint:
       type: object
       properties:
@@ -1473,7 +1411,7 @@ components:
           type: string
           description: The area
           nullable: true
-          pattern: "^[a-zA-Z0-9 -_]*"
+          pattern: "^[a-zA-Z0-9 -_]*$"
         enabled:
           type: boolean
           description: Should UNS be available
@@ -1489,17 +1427,17 @@ components:
           type: string
           description: The productionLine
           nullable: true
-          pattern: "^[a-zA-Z0-9 -_]*"
+          pattern: "^[a-zA-Z0-9 -_]*$"
         site:
           type: string
           description: The site
           nullable: true
-          pattern: "^[a-zA-Z0-9 -_]*"
+          pattern: "^[a-zA-Z0-9 -_]*$"
         workCell:
           type: string
           description: The workCell
           nullable: true
-          pattern: "^[a-zA-Z0-9 -_]*"
+          pattern: "^[a-zA-Z0-9 -_]*$"
     JsonNode:
       type: object
       description: "JSONSchema in the 'https://json-schema.org/draft/2020-12/schema'\
@@ -1777,7 +1715,7 @@ components:
           description: The unique name of the category to be used in API communication.
           maxLength: 256
           minLength: 1
-          pattern: "^([a-zA-Z_0-9\\- ])*$"
+          pattern: "^[A-Za-z0-9-_](?:[A-Za-z0-9_ -]*[A-Za-z0-9_-])$"
       required:
       - displayName
       - name
@@ -1789,6 +1727,60 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/ProtocolAdapter'
+    Status:
+      type: object
+      description: Information associated with the runtime of this adapter
+      properties:
+        connectionStatus:
+          type: string
+          description: A mandatory connection status field.
+          enum:
+          - CONNECTED
+          - DISCONNECTED
+          - STATELESS
+          - UNKNOWN
+          - ERROR
+        id:
+          type: string
+          description: The identifier of the object
+        lastActivity:
+          type: string
+          format: date-time
+          description: The datetime of the last activity through this connection
+        message:
+          type: string
+          description: A message associated with the state of a connection
+        runtimeStatus:
+          type: string
+          description: A object status field.
+          enum:
+          - STARTED
+          - STOPPED
+        startedAt:
+          type: string
+          format: date-time
+          description: The datetime of the last activity through this connection
+        type:
+          type: string
+          description: The type of the object
+    StatusList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Status'
+    StatusTransitionCommand:
+      type: object
+      properties:
+        command:
+          type: string
+          description: The command to perform on the target connection.
+          enum:
+          - START
+          - STOP
+          - RESTART
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge
