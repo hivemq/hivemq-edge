@@ -100,6 +100,6 @@ export const themeHiveMQ = extendTheme({
     Stat: statTheme,
     Drawer: drawerTheme,
     Form: formControlTheme,
-    FormErrorMessage: formErrorMessageTheme,
+    FormError: formErrorMessageTheme,
   },
 })

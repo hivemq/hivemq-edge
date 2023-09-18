@@ -2,7 +2,7 @@
 
 import { FieldTemplateProps } from '@rjsf/utils'
 import { RenderFieldTemplate } from './RenderFieldTemplate.tsx'
-import { FormLabel, Input, Text } from '@chakra-ui/react'
+import { FormErrorMessage, FormLabel, Input } from '@chakra-ui/react'
 
 const MOCK_TEXT = 'You will have to type something'
 const MOCK_ERROR = 'This is an error message'
@@ -15,7 +15,7 @@ const makeMockProps = (props: Partial<FieldTemplateProps>): Partial<FieldTemplat
         <Input value={'a dumb value'} />
       </>
     ),
-    errors: <Text>{props.rawErrors?.join(', ')}</Text>,
+    errors: <FormErrorMessage>{props.rawErrors?.join(', ')}</FormErrorMessage>,
     description: <div>{props.rawDescription}</div>,
   }
 }
@@ -42,12 +42,7 @@ describe('CustomFieldTemplate', () => {
     cy.mountWithProviders(<RenderFieldTemplate {...rest} children={children} />)
     cy.get('[role="group"]').should('not.contain.text', MOCK_TEXT)
     cy.get('[role="group"]').should('contain.text', MOCK_ERROR)
-    cy.checkAccessibility(undefined, {
-      rules: {
-        // TODO[93] Need to change the default colour of the error message. See https://discord.com/channels/660863154703695893/1150880181356089374
-        'color-contrast': { enabled: false },
-      },
-    })
+    cy.checkAccessibility()
   })
 
   it('should render the helper text', () => {
