@@ -475,6 +475,9 @@
     "action": {
       "define": "Set up a unified namespace"
     },
+    "error": {
+      "loading": "We cannot load your namespace for the time being. Please try again later"
+    },
     "container": {
       "prefix": {
         "title": "My namespace prefix"
