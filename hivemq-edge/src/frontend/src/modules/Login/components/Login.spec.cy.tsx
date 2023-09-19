@@ -2,7 +2,7 @@
 
 import Login from '@/modules/Login/components/Login.tsx'
 
-describe('<Login />', () => {
+describe('Login', () => {
   beforeEach(() => {
     cy.viewport(800, 900)
   })
@@ -30,6 +30,6 @@ describe('<Login />', () => {
     cy.injectAxe()
     cy.mountWithProviders(<Login />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: Onboarding')
+    cy.percySnapshot('Component: Login')
   })
 })
