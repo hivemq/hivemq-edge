@@ -1,5 +1,5 @@
 import { FC, useMemo } from 'react'
-import { Box, Button, Card, CardBody, CardFooter, SimpleGrid } from '@chakra-ui/react'
+import { Box, Button, Card, CardBody, CardFooter, SimpleGrid, Skeleton } from '@chakra-ui/react'
 import { ArrowForwardIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
@@ -15,9 +15,10 @@ interface ProtocolsBrowserProps {
   items: ProtocolAdapter[]
   facet: ProtocolFacetType | undefined
   onCreate?: (adapterId: string | undefined) => void
+  isLoading?: boolean
 }
 
-const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate }) => {
+const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, isLoading }) => {
   const { t } = useTranslation()
   const filteredAdapters = useMemo(() => {
     if (!facet) return items
@@ -41,20 +42,22 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate })
       {filteredAdapters?.map((e) => (
         <Card key={e.id} minW={'300px'}>
           <CardBody p={2}>
-            <AdapterTypeSummary key={e.id} adapter={e} searchQuery={facet?.search} />
+            <AdapterTypeSummary key={e.id} adapter={e} searchQuery={facet?.search} isLoading={isLoading} />
           </CardBody>
           <CardFooter p={2}>
-            {!!e.installed && (
-              <Button
-                data-testid={'protocol-create-adapter'}
-                variant={'outline'}
-                size={'sm'}
-                rightIcon={<ArrowForwardIcon />}
-                onClick={() => onCreate?.(e.id)}
-              >
-                {t('protocolAdapter.action.createInstance')}
-              </Button>
-            )}
+            <Skeleton isLoaded={!isLoading}>
+              {!!e.installed && (
+                <Button
+                  data-testid={'protocol-create-adapter'}
+                  variant={'outline'}
+                  size={'sm'}
+                  rightIcon={<ArrowForwardIcon />}
+                  onClick={() => onCreate?.(e.id)}
+                >
+                  {t('protocolAdapter.action.createInstance')}
+                </Button>
+              )}
+            </Skeleton>
           </CardFooter>
         </Card>
       ))}
