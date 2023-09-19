@@ -87,6 +87,7 @@
     "description": "Connect from and to any device and send streams of data to your enterprise.",
     "onboarding": {
       "title": "Get data flowing",
+      "errorLoading": "We cannot load the onboarding tasks. Please try again later.",
       "connectDevice": {
         "header": "From Devices To HiveMQ Edge",
         "readMore": {
@@ -100,6 +101,13 @@
       },
       "connectEnterprise": {
         "header": "From HiveMQ Edge to the Enterprise",
+        "bridge": {
+          "title": "Connect your HiveMQ Edge MQTT Broker to your Enterprise using MQTT Bridge connections.",
+          "label": "Use a Bridge"
+        }
+      },
+      "connectCloud": {
+        "header": "Connect To HiveMQ Cloud\n",
         "bridge": {
           "title": "Connect your HiveMQ Edge MQTT Broker to your Enterprise using MQTT Bridge connections.",
           "label": "Use a Bridge"

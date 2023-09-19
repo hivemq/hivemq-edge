@@ -3,9 +3,9 @@ import { Link as RouterLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   Box,
+  BoxProps,
   Button,
   Heading,
-  HTMLChakraProps,
   SimpleGrid,
   Stack,
   StackDivider,
@@ -13,56 +13,70 @@ import {
   CardHeader,
   CardBody,
   Text,
+  Skeleton,
 } from '@chakra-ui/react'
 import { BsClipboardCheck } from 'react-icons/bs'
 
-import { OnboardingTask } from '@/modules/Welcome/types.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
+import { OnboardingFetchType } from '@/modules/Welcome/hooks/useOnboarding.tsx'
 
-interface OnboardingProps extends HTMLChakraProps<'div'> {
-  tasks: OnboardingTask[]
+interface OnboardingProps extends BoxProps {
+  tasks: OnboardingFetchType
 }
 
-const Onboarding: FC<OnboardingProps> = (props) => {
+const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
   const { t } = useTranslation()
-  const { tasks } = props
+  const { data, error } = tasks
 
   return (
     <Box mt={6} {...props}>
       <Heading>{t('welcome.onboarding.title')}</Heading>
       <SimpleGrid spacing={6} templateColumns="repeat(auto-fill, minmax(33vw, 10fr))">
-        {tasks.map((e) => (
-          <Card flex={1} key={e.header}>
-            <CardHeader>
-              <Heading size="md">{e.header}</Heading>
-            </CardHeader>
+        {data &&
+          data.map((e) => (
+            <Card flex={1} key={e.header}>
+              <CardHeader>
+                <Skeleton isLoaded={!e.isLoading}>
+                  <Heading size="md">{e.header}</Heading>
+                </Skeleton>
+              </CardHeader>
 
-            <CardBody pt={0}>
-              <Stack divider={<StackDivider />} spacing="4">
-                {e.sections.map((s) => (
-                  <Stack key={s.title} spacing={8} direction="row" gap={4}>
-                    <Box>
-                      <BsClipboardCheck />
-                    </Box>
-                    <Box>
-                      <Text fontSize="sm">{s.title}</Text>
-                      <Button
-                        variant="link"
-                        as={RouterLink}
-                        to={s.to}
-                        target={s.isExternal ? '_blank' : undefined}
-                        aria-label={s.label}
-                        leftIcon={s.leftIcon}
-                        size="lg"
-                      >
-                        {s.label}
-                      </Button>
-                    </Box>
-                  </Stack>
-                ))}
-              </Stack>
-            </CardBody>
+              <CardBody pt={0}>
+                <Stack divider={<StackDivider />} spacing="4">
+                  {e.sections.map((s) => (
+                    <Stack key={s.title} spacing={8} direction="row" gap={4}>
+                      <Skeleton isLoaded={!e.isLoading}>
+                        <Box>
+                          <BsClipboardCheck />
+                        </Box>
+                      </Skeleton>
+                      <Skeleton isLoaded={!e.isLoading}>
+                        <Box>
+                          <Text fontSize="sm">{s.title}</Text>
+                          <Button
+                            variant="link"
+                            as={RouterLink}
+                            to={s.to}
+                            target={s.isExternal ? '_blank' : undefined}
+                            aria-label={s.label}
+                            leftIcon={s.leftIcon}
+                            size="lg"
+                          >
+                            {s.label}
+                          </Button>
+                        </Box>
+                      </Skeleton>
+                    </Stack>
+                  ))}
+                </Stack>
+              </CardBody>
+            </Card>
+          ))}
+        {!!error && (
+          <Card flex={1} m={1}>
+            <ErrorMessage type={error?.message} message={t('welcome.onboarding.errorLoading') as string} />
           </Card>
-        ))}
+        )}
       </SimpleGrid>
     </Box>
   )
