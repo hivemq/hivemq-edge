@@ -75,6 +75,8 @@
     },
     "submit": { "label": "Sign in" },
     "error": {
+      "defaultCredentials": "We cannot load your default credentials. Please try again later",
+      "verifyCredentials": "We cannot verify your credentials. Please try again later",
       "tokenType": "Authentication Token",
       "tokenInvalid": "There is a problem with your credentials. Contact us",
       "tokenExpired": "Your credentials have expired. Contact us"

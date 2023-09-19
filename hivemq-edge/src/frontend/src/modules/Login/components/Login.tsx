@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useEffect } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -26,12 +26,12 @@ import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PasswordInput from '@/components/PasswordInput.tsx'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 
-const Login: FC<{ first?: FirstUseInformation }> = ({ first }) => {
+const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }> = ({ first, preLoadError }) => {
   const auth = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
-  const { isLoading, mutateAsync: submitCredentials } = usePostAuthentication()
+  const { isLoading, isError, error, mutateAsync: submitCredentials } = usePostAuthentication()
   const {
     handleSubmit,
     register,
@@ -69,6 +69,21 @@ const Login: FC<{ first?: FirstUseInformation }> = ({ first }) => {
         setError('root.ApiError', { type: e.message, message: e.body.title })
       })
   }
+
+  useEffect(() => {
+    if (!isError) return
+
+    setError('root.ApiError', { type: error.message, message: error.body?.title || t('login.error.verifyCredentials') })
+  }, [isError, error, setError, t])
+
+  useEffect(() => {
+    if (!preLoadError) return
+
+    setError('root.ApiError', {
+      type: preLoadError.message,
+      message: preLoadError.body?.title || t('login.error.defaultCredentials'),
+    })
+  }, [preLoadError, setError, t])
 
   return (
     <Flex align="center" flexDirection="column">
