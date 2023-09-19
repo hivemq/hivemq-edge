@@ -36,7 +36,7 @@ const Bridges: FC = () => {
 
   if (isLoading) {
     return (
-      <Flex flexDirection={'row'} flexWrap={'wrap'} gap={'20px'}>
+      <Flex mt={8} flexDirection={'row'} flexWrap={'wrap'} gap={'20px'}>
         <BridgeCard {...mockBridge} isLoading />
       </Flex>
     )
