@@ -132,6 +132,9 @@
       "update": "Update the bridge",
       "submitting": "Submitting"
     },
+    "error": {
+      "loading": "We cannot load your bridges for the time being. Please try again later"
+    },
     "toast": {
       "delete": {
         "title": "Deleting Bridge",
@@ -346,6 +349,10 @@
       "type": "Type:",
       "author": "Author:",
       "documentation": "Documentation:"
+    },
+    "loading": {
+      "protocolAdapters": "Loading Protocol Adapters ...",
+      "activeAdapters": "Loading Active Adapters ..."
     },
     "noDataWarning": {
       "title": "No protocol adapters are configured",

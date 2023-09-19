@@ -1,6 +1,6 @@
 import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+
 import {
   Card,
   CardBody,
@@ -13,6 +13,7 @@ import {
   Box,
   HStack,
   Text,
+  Skeleton,
 } from '@chakra-ui/react'
 import { EditIcon } from '@chakra-ui/icons'
 
@@ -23,9 +24,12 @@ import ConnectionSummary from './ConnectionSummary.tsx'
 import { useGetBridgesStatus } from '@/api/hooks/useConnection/useGetBridgesStatus.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 
-const BridgeCard: FC<Bridge> = (props) => {
+const BridgeCard: FC<Bridge & { isLoading?: boolean; onNavigate?: (route: string) => void }> = ({
+  isLoading,
+  onNavigate,
+  ...props
+}) => {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   // const { isFetching } = useGetBridgeConnectionStatus(props.id)
   const { isFetching, data: connections } = useGetBridgesStatus()
@@ -38,45 +42,53 @@ const BridgeCard: FC<Bridge> = (props) => {
   return (
     <Card direction={{ base: 'column', md: 'column' }} mt={0} overflow="hidden" variant="outline">
       <HStack>
-        <Image boxSize="100px" src={BridgeLogo} alt={t('bridge.title') as string} />
+        <Skeleton isLoaded={!isLoading}>
+          <Image boxSize="100px" src={BridgeLogo} alt={t('bridge.title') as string} />
+        </Skeleton>
         <Stack>
-          <CardHeader display={'flex'} pb={0} w={300}>
-            <Heading size="md" flexGrow={1} m={'auto'}>
-              {props.id}
-            </Heading>
+          <Skeleton isLoaded={!isLoading}>
+            <CardHeader display={'flex'} pb={0} w={300}>
+              <Heading size="md" flexGrow={1} m={'auto'} data-testid={'bridge-name'}>
+                {props.id}
+              </Heading>
 
-            <IconButton
-              variant="ghost"
-              aria-label={t('bridge.subscription.edit')}
-              icon={<EditIcon />}
-              onClick={() => navigate(`/mqtt-bridges/${props.id}`)}
-            />
-          </CardHeader>
-          <CardBody py={0}>
-            <ConnectionSummary {...props} />
-          </CardBody>
+              <IconButton
+                variant="ghost"
+                aria-label={t('bridge.subscription.edit')}
+                icon={<EditIcon />}
+                onClick={() => onNavigate?.(`/mqtt-bridges/${props.id}`)}
+              />
+            </CardHeader>
+          </Skeleton>
+          <Skeleton isLoaded={!isLoading}>
+            <CardBody py={0}>
+              <ConnectionSummary {...props} />
+            </CardBody>
+          </Skeleton>
         </Stack>
       </HStack>
-      <CardFooter flexDirection={'row'} gap={2}>
-        <Box>
-          <span
-            style={{
-              display: 'inline-block',
-              marginLeft: '.2rem',
-              marginRight: '.2rem',
-              width: `.5rem`,
-              height: '.5rem',
-              background: isFetching ? 'lightgrey' : 'transparent',
-              transition: !isFetching ? 'all .3s ease' : 'none',
-              borderRadius: '100%',
-            }}
-          />
-          <Text as={'span'} mr={2}>
-            {t('bridge.status.label')}
-          </Text>
-          <ConnectionStatusBadge status={data?.status} />
-        </Box>
-      </CardFooter>
+      <Skeleton mt={2} isLoaded={!isLoading}>
+        <CardFooter flexDirection={'row'} gap={2}>
+          <Box>
+            <span
+              style={{
+                display: 'inline-block',
+                marginLeft: '.2rem',
+                marginRight: '.2rem',
+                width: `.5rem`,
+                height: '.5rem',
+                background: isFetching ? 'lightgrey' : 'transparent',
+                transition: !isFetching ? 'all .3s ease' : 'none',
+                borderRadius: '100%',
+              }}
+            />
+            <Text as={'span'} mr={2}>
+              {t('bridge.status.label')}
+            </Text>
+            <ConnectionStatusBadge status={data?.status} />
+          </Box>
+        </CardFooter>
+      </Skeleton>
     </Card>
   )
 }

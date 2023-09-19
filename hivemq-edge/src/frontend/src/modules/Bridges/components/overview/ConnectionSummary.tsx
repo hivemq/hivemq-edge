@@ -38,7 +38,7 @@ const ConnectionSummary: FC<BridgeConnection> = ({ host, port, clientId, localSu
         </Tr>
         <Tr>
           <Td px={0}>{t('bridge.subscription.type', { context: 'local', count: localSubscriptions?.length || 0 })}</Td>
-          <Td px={0} isNumeric>
+          <Td px={0} isNumeric data-testid={'bridge-local-subscriptions'}>
             {localSubscriptions?.length || 0}
           </Td>
         </Tr>
@@ -46,7 +46,7 @@ const ConnectionSummary: FC<BridgeConnection> = ({ host, port, clientId, localSu
           <Td px={0}>
             {t('bridge.subscription.type', { context: 'remote', count: remoteSubscriptions?.length || 0 })}
           </Td>
-          <Td px={0} isNumeric>
+          <Td px={0} isNumeric data-testid={'bridge-remote-subscriptions'}>
             {remoteSubscriptions?.length || 0}
           </Td>
         </Tr>
