@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 import { Handle, NodeProps, Position } from 'reactflow'
 import { Box, HStack, Image, Text, VStack, type BoxProps } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom'
@@ -9,16 +9,21 @@ import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 
 import NodeWrapper from '../parts/NodeWrapper.tsx'
 import TopicsContainer from '../parts/TopicsContainer.tsx'
-import { getAdapterTopics } from '../../utils/topics-utils.ts'
+import { discoverAdapterTopics } from '../../utils/topics-utils.ts'
 import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
+import { TopicFilter } from '@/modules/EdgeVisualisation/types.ts'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) => {
   const { data: protocols } = useGetAdapterTypes()
   const adapterProtocol = protocols?.items?.find((e) => e.id === adapter.type)
-  const topics = getAdapterTopics(adapter)
   const { options } = useEdgeFlowContext()
   const navigate = useNavigate()
+  const topics = useMemo<TopicFilter[]>(() => {
+    if (!adapterProtocol) return []
+    if (!adapter.config) return []
+    return discoverAdapterTopics(adapterProtocol, adapter.config).map((e) => ({ topic: e }))
+  }, [adapter.config, adapterProtocol])
 
   const selectedStyle: Partial<BoxProps> = {
     boxShadow: 'dark-lg',
