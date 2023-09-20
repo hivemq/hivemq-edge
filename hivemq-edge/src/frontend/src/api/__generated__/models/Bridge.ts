@@ -52,11 +52,11 @@ export type Bridge = {
      * remoteSubscriptions associated with the bridge
      */
     remoteSubscriptions?: Array<BridgeSubscription>;
-    runtimeStatus?: Status;
     /**
      * The sessionExpiry associated the the MQTT connection.
      */
     sessionExpiry: number;
+    status?: Status;
     tlsConfiguration?: TlsConfiguration;
     /**
      * The username value associated the the MQTT connection.

@@ -5,7 +5,7 @@
 export const $Status = {
     description: `Information associated with the runtime of this adapter`,
     properties: {
-        connectionStatus: {
+        connection: {
             type: 'Enum',
         },
         id: {
@@ -21,12 +21,12 @@ export const $Status = {
             type: 'string',
             description: `A message associated with the state of a connection`,
         },
-        runtimeStatus: {
+        runtime: {
             type: 'Enum',
         },
         startedAt: {
             type: 'string',
-            description: `The datetime of the last activity through this connection`,
+            description: `The datetime the object was 'started' in the system.`,
             format: 'date-time',
         },
         type: {

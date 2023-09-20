@@ -10,7 +10,7 @@ export type Status = {
     /**
      * A mandatory connection status field.
      */
-    connectionStatus?: Status.connectionStatus;
+    connection?: Status.connection;
     /**
      * The identifier of the object
      */
@@ -26,9 +26,9 @@ export type Status = {
     /**
      * A object status field.
      */
-    runtimeStatus?: Status.runtimeStatus;
+    runtime?: Status.runtime;
     /**
-     * The datetime of the last activity through this connection
+     * The datetime the object was 'started' in the system.
      */
     startedAt?: string;
     /**
@@ -42,7 +42,7 @@ export namespace Status {
     /**
      * A mandatory connection status field.
      */
-    export enum connectionStatus {
+    export enum connection {
         CONNECTED = 'CONNECTED',
         DISCONNECTED = 'DISCONNECTED',
         STATELESS = 'STATELESS',
@@ -53,7 +53,7 @@ export namespace Status {
     /**
      * A object status field.
      */
-    export enum runtimeStatus {
+    export enum runtime {
         STARTED = 'STARTED',
         STOPPED = 'STOPPED',
     }

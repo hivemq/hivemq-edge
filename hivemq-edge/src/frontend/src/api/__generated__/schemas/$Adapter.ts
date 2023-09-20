@@ -23,7 +23,7 @@ export const $Adapter = {
             minLength: 1,
             pattern: '^([a-zA-Z_0-9-_])*$',
         },
-        runtimeStatus: {
+        status: {
             type: 'Status',
         },
         type: {
