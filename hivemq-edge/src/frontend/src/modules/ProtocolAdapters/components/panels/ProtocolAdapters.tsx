@@ -1,5 +1,5 @@
 import { FC, useMemo, useState } from 'react'
-import { Box, Flex, HStack, IconButton, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
+import { Box, HStack, IconButton, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
 import { ColumnDef, Row } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
@@ -25,6 +25,7 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
 import { compareStatus } from '../../utils/pagination-utils.ts'
 import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
+import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 const DEFAULT_PER_PAGE = 10
 
@@ -54,12 +55,13 @@ const ProtocolAdapters: FC = () => {
   const { successToast, errorToast } = useEdgeToast()
   const { colors } = useTheme()
 
-  const { data: allAdapters } = useGetAdapterTypes()
-  const { data, isLoading, isError, error } = useListProtocolAdapters()
-  const isEmpty = useMemo(() => !data || data.length === 0, [data])
+  const { data: allAdapters, isError: isErrorAllAdapters, error: errorAllAdapters } = useGetAdapterTypes()
+  const { data: adapters, isLoading, isError, error } = useListProtocolAdapters()
   const [deleteAdapter, setDeleteAdapter] = useState<string | undefined>(undefined)
   const deleteProtocolAdapter = useDeleteProtocolAdapter()
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
+
+  const safeData: Adapter[] = adapters ? adapters : [mockAdapter, mockAdapter, mockAdapter, mockAdapter]
 
   const columns = useMemo<ColumnDef<Adapter>[]>(() => {
     const handleCreateInstance = (type: string | undefined) => {
@@ -83,19 +85,30 @@ const ProtocolAdapters: FC = () => {
       {
         accessorKey: 'id',
         header: t('protocolAdapter.table.header.name') as string,
+        cell: (info) => {
+          return <Skeleton isLoaded={!isLoading}>{info.row.original.id}</Skeleton>
+        },
       },
       {
         accessorKey: 'type',
         cell: (info) => {
           const adapter = allAdapters?.items?.find((e) => e.id === info.row.original.type)
-          return adapter ? <AdapterTypeContainer {...adapter} /> : info.getValue()
+          return (
+            <Skeleton isLoaded={!isLoading}>
+              {adapter ? <AdapterTypeContainer {...adapter} /> : <>info.getValue()</>}
+            </Skeleton>
+          )
         },
         header: t('protocolAdapter.table.header.type') as string,
       },
       {
         accessorFn: (row) => row.adapterRuntimeInformation?.connectionStatus?.status,
         id: 'status',
-        cell: (info) => <AdapterStatusContainer id={info.row.original.id} />,
+        cell: (info) => (
+          <Skeleton isLoaded={!isLoading}>
+            <AdapterStatusContainer id={info.row.original.id} />
+          </Skeleton>
+        ),
         sortingFn: (rowA, rowB) =>
           compareStatus(
             rowA.original.adapterRuntimeInformation?.connectionStatus?.status,
@@ -105,7 +118,11 @@ const ProtocolAdapters: FC = () => {
       {
         accessorFn: (row) => row.adapterRuntimeInformation?.lastStartedAttemptTime,
         id: 'lastStartedAttemptTime',
-        cell: (info) => DateTime.fromISO(info.getValue() as string).toRelativeCalendar({ unit: 'minutes' }),
+        cell: (info) => (
+          <Skeleton isLoaded={!isLoading}>
+            {DateTime.fromISO(info.getValue() as string).toRelativeCalendar({ unit: 'minutes' })}
+          </Skeleton>
+        ),
         header: t('protocolAdapter.table.header.lastStarted') as string,
       },
       {
@@ -116,7 +133,7 @@ const ProtocolAdapters: FC = () => {
           const { id, type } = info.row.original
           const { selectedAdapter } = state || {}
           return (
-            <>
+            <Skeleton isLoaded={!isLoading}>
               <AdapterActionMenu
                 adapter={info.row.original}
                 onCreate={handleCreateInstance}
@@ -133,12 +150,12 @@ const ProtocolAdapters: FC = () => {
                   icon={<WorkspaceIcon />}
                 />
               )}
-            </>
+            </Skeleton>
           )
         },
       },
     ]
-  }, [state, navigate, onConfirmDeleteOpen, t, allAdapters?.items])
+  }, [t, navigate, onConfirmDeleteOpen, isLoading, allAdapters?.items, state])
 
   const handleConfirmOnClose = () => {
     onConfirmDeleteClose()
@@ -167,23 +184,18 @@ const ProtocolAdapters: FC = () => {
       )
   }
 
-  if (isError) {
+  if (isError || isErrorAllAdapters) {
     return (
-      <Box mt={8}>
-        <ErrorMessage type={error?.message} message={(error?.body as ProblemDetails)?.title} />
+      <Box mt={'20%'} mx={'20%'} alignItems={'center'}>
+        <ErrorMessage
+          type={errorAllAdapters ? errorAllAdapters.message : error?.message}
+          message={(error?.body as ProblemDetails)?.title || (t('protocolAdapter.error.loading') as string)}
+        />
       </Box>
     )
   }
 
-  if (isLoading) {
-    return (
-      <Flex flexDirection={'row'} flexWrap={'wrap'} gap={'20px'}>
-        <Skeleton width={250} height={100}></Skeleton>
-      </Flex>
-    )
-  }
-
-  if (isEmpty || !data)
+  if (safeData.length === 0)
     return (
       <WarningMessage
         image={AdapterEmptyLogo}
@@ -197,13 +209,15 @@ const ProtocolAdapters: FC = () => {
   return (
     <>
       <Text>
-        {t('protocolAdapter.table.pagination.summary', {
-          count: Math.min(DEFAULT_PER_PAGE, data.length),
-          total: data.length,
-        })}
+        {!isLoading
+          ? t('protocolAdapter.table.pagination.summary', {
+              count: Math.min(DEFAULT_PER_PAGE, safeData.length),
+              total: safeData.length,
+            })
+          : t('protocolAdapter.loading.activeAdapters')}
       </Text>
       <PaginatedTable<Adapter>
-        data={data}
+        data={safeData}
         columns={columns}
         getRowStyles={(row: Row<Adapter>) => {
           const { selectedAdapter } = state || {}

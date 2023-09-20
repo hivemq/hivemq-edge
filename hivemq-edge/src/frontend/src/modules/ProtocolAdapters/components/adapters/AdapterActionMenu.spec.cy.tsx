@@ -72,6 +72,6 @@ describe('AdapterActionMenu', () => {
     cy.injectAxe()
     cy.mountWithProviders(<AdapterActionMenu adapter={mockAdapter} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: AdapterTypeSummary')
+    cy.percySnapshot('Component: AdapterActionMenu')
   })
 })

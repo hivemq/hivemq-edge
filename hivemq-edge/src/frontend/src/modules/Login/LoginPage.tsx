@@ -5,7 +5,6 @@ import logo from '@/assets/edge/01-hivemq-industrial-edge.svg'
 import bgImage from '@/assets/app/background-sidepanel.svg'
 
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
-import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
 import Login from './components/Login.tsx'
@@ -13,7 +12,7 @@ import EdgeAside from './components/EdgeAside.tsx'
 import { useTranslation } from 'react-i18next'
 
 const LoginPage: FC = () => {
-  const { data, isLoading, isError, error } = useGetConfiguration()
+  const { data, isLoading, error } = useGetConfiguration()
   const { t } = useTranslation()
 
   return (
@@ -34,8 +33,7 @@ const LoginPage: FC = () => {
           </Box>
           <div>
             {isLoading && <LoaderSpinner />}
-            {isError && error && <ErrorMessage type={error?.statusText} message={error?.body?.title} />}
-            {!isError && !isLoading && <Login first={data?.firstUseInformation} />}
+            {!isLoading && <Login first={data?.firstUseInformation} preLoadError={error} />}
           </div>
           <Box flex={1}></Box>
         </Flex>

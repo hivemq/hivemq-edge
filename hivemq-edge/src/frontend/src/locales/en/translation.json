@@ -75,6 +75,8 @@
     },
     "submit": { "label": "Sign in" },
     "error": {
+      "defaultCredentials": "We cannot load your default credentials. Please try again later",
+      "verifyCredentials": "We cannot verify your credentials. Please try again later",
       "tokenType": "Authentication Token",
       "tokenInvalid": "There is a problem with your credentials. Contact us",
       "tokenExpired": "Your credentials have expired. Contact us"
@@ -85,6 +87,7 @@
     "description": "Connect from and to any device and send streams of data to your enterprise.",
     "onboarding": {
       "title": "Get data flowing",
+      "errorLoading": "We cannot load the onboarding tasks. Please try again later.",
       "connectDevice": {
         "header": "From Devices To HiveMQ Edge",
         "readMore": {
@@ -98,6 +101,13 @@
       },
       "connectEnterprise": {
         "header": "From HiveMQ Edge to the Enterprise",
+        "bridge": {
+          "title": "Connect your HiveMQ Edge MQTT Broker to your Enterprise using MQTT Bridge connections.",
+          "label": "Use a Bridge"
+        }
+      },
+      "connectCloud": {
+        "header": "Connect To HiveMQ Cloud\n",
         "bridge": {
           "title": "Connect your HiveMQ Edge MQTT Broker to your Enterprise using MQTT Bridge connections.",
           "label": "Use a Bridge"
@@ -121,6 +131,9 @@
       "create": "Create the bridge",
       "update": "Update the bridge",
       "submitting": "Submitting"
+    },
+    "error": {
+      "loading": "We cannot load your bridges for the time being. Please try again later"
     },
     "toast": {
       "delete": {
@@ -337,8 +350,19 @@
       "author": "Author:",
       "documentation": "Documentation:"
     },
+    "error": {
+      "loading": "We cannot load your adapters for the time being. Please try again later"
+    },
+    "loading": {
+      "protocolAdapters": "Loading Protocol Adapters ...",
+      "activeAdapters": "Loading Active Adapters ..."
+    },
+    "noTypeWarning": {
+      "title": "No protocol adapters are available",
+      "description": "Protocol adapters allow you to connect your HiveMQ Edge installation to local or remote devices. View your installed protocol adapters to create new connections."
+    },
     "noDataWarning": {
-      "title": "No protocol adapters are configured",
+      "title": "No active adapters are configured",
       "description": "Protocol adapters allow you to connect your HiveMQ Edge installation to local or remote devices. View your installed protocol adapters to create new connections."
     },
     "noFilterWarning": {
@@ -450,6 +474,9 @@
     "standard": "ISA-95",
     "action": {
       "define": "Set up a unified namespace"
+    },
+    "error": {
+      "loading": "We cannot load your namespace for the time being. Please try again later"
     },
     "container": {
       "prefix": {

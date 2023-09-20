@@ -34,18 +34,16 @@ describe('useOnboarding()', () => {
     const { result } = renderHook(() => useOnboarding(), { wrapper })
 
     await waitFor(() => {
-      expect(result.current).toHaveLength(3)
+      const { data } = result.current
+      expect(data?.[2].isLoading).toEqual(false)
     })
 
-    expect(result.current[0].sections).toHaveLength(1)
-    expect(result.current[1].sections).toHaveLength(1)
-    expect(result.current[0].sections).toEqual(
-      expect.arrayContaining([expect.objectContaining({ to: '/protocol-adapters' })])
-    )
-    expect(result.current[1].sections).toEqual(
-      expect.arrayContaining([expect.objectContaining({ to: '/mqtt-bridges' })])
-    )
-    expect(result.current[2].sections).toEqual(
+    const { data } = result.current
+    expect(data?.[0].sections).toHaveLength(1)
+    expect(data?.[1].sections).toHaveLength(1)
+    expect(data?.[0].sections).toEqual(expect.arrayContaining([expect.objectContaining({ to: '/protocol-adapters' })]))
+    expect(data?.[1].sections).toEqual(expect.arrayContaining([expect.objectContaining({ to: '/mqtt-bridges' })]))
+    expect(data?.[2].sections).toEqual(
       expect.arrayContaining([expect.objectContaining({ to: 'https://hivemq.com/cloud' })])
     )
   })

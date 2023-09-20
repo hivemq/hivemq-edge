@@ -11,4 +11,5 @@ export interface OnboardingAction {
 export interface OnboardingTask {
   header: string
   sections: OnboardingAction[]
+  isLoading?: boolean
 }

@@ -16,8 +16,6 @@ describe('ProtocolAdapters', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ProtocolAdapters />)
     cy.wait('@getAdapters')
-    cy.wait('@getProtocols')
-    cy.wait('@getStatus')
 
     cy.checkAccessibility()
     cy.percySnapshot('Component: ProtocolAdapters')

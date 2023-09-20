@@ -4,14 +4,32 @@ import { GoLinkExternal } from 'react-icons/go'
 
 import { OnboardingTask } from '@/modules/Welcome/types.ts'
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
+import { ApiError } from '@/api/__generated__'
 
-export const useOnboarding = (): OnboardingTask[] => {
+export interface OnboardingFetchType {
+  data?: OnboardingTask[]
+  error?: ApiError | null
+}
+
+export const useOnboarding = (): OnboardingFetchType => {
   const { t } = useTranslation()
-  const { data } = useGetConfiguration()
+  const { data, isLoading, isError, error } = useGetConfiguration()
 
-  if (!data) return []
+  const cloud: OnboardingTask = {
+    isLoading: isLoading,
+    header: data?.cloudLink?.displayText || t('welcome.onboarding.connectCloud.header'),
+    sections: [
+      {
+        title: data?.cloudLink?.description as string,
+        label: data?.cloudLink?.displayText as string,
+        to: data?.cloudLink?.url as string,
+        isExternal: true,
+        leftIcon: <GoLinkExternal />,
+      },
+    ],
+  }
 
-  return [
+  const tasks: OnboardingTask[] = [
     {
       header: t('welcome.onboarding.connectDevice.header'),
       sections: [
@@ -34,17 +52,12 @@ export const useOnboarding = (): OnboardingTask[] => {
         },
       ],
     },
-    {
-      header: data?.cloudLink?.displayText as string,
-      sections: [
-        {
-          title: data?.cloudLink?.description as string,
-          label: data?.cloudLink?.displayText as string,
-          to: data?.cloudLink?.url as string,
-          isExternal: true,
-          leftIcon: <GoLinkExternal />,
-        },
-      ],
-    },
   ]
+
+  if (isLoading || !isError) tasks.push(cloud)
+
+  return {
+    error,
+    data: tasks,
+  }
 }

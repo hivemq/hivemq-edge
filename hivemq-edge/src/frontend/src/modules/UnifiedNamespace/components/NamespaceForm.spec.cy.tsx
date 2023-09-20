@@ -37,7 +37,7 @@ describe('NamespaceForm', () => {
     )
   })
 
-  it.only('should change options', () => {
+  it('should change options', () => {
     const mockOnSubmit = cy.stub().as('onSubmit')
 
     cy.mountWithProviders(
