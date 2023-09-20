@@ -13,8 +13,8 @@ const disconnectedBridge: NodeProps<Bridge> = {
   ...MOCK_NODE_BRIDGE,
   data: {
     ...MOCK_NODE_BRIDGE.data,
-    runtimeStatus: {
-      connectionStatus: Status.connectionStatus.DISCONNECTED,
+    status: {
+      connection: Status.connection.DISCONNECTED,
     },
   },
 }
@@ -22,8 +22,8 @@ const disconnectedAdapter: NodeProps<Adapter> = {
   ...MOCK_NODE_ADAPTER,
   data: {
     ...MOCK_NODE_ADAPTER.data,
-    runtimeStatus: {
-      connectionStatus: Status.connectionStatus.DISCONNECTED,
+    status: {
+      connection: Status.connection.DISCONNECTED,
     },
   },
 }
@@ -42,35 +42,31 @@ const validationSuite: Suite[] = [
   {
     nodes: [],
     status: [
-      { connectionStatus: Status.connectionStatus.DISCONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'one' },
-      { connectionStatus: Status.connectionStatus.DISCONNECTED, type: NodeTypes.ADAPTER_NODE, id: 'two' },
+      { connection: Status.connection.DISCONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'one' },
+      { connection: Status.connection.DISCONNECTED, type: NodeTypes.ADAPTER_NODE, id: 'two' },
     ],
     expected: [],
   },
   {
     // @ts-ignore
-    nodes: [disconnectedBridge, disconnectedAdapter],
-    status: [
-      { connectionStatus: Status.connectionStatus.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' },
-    ],
+    nodes: [{ ...disconnectedBridge }, disconnectedAdapter],
+    status: [{ connection: Status.connection.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' }],
     // @ts-ignore
     expected: [disconnectedBridge, disconnectedAdapter],
   },
   {
     // @ts-ignore
     nodes: [MOCK_NODE_LISTENER],
-    status: [
-      { connectionStatus: Status.connectionStatus.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' },
-    ],
+    status: [{ connection: Status.connection.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' }],
     // @ts-ignore
     expected: [MOCK_NODE_LISTENER],
   },
   {
     // @ts-ignore
-    nodes: [disconnectedBridge, disconnectedAdapter],
+    nodes: [{ ...disconnectedBridge }, disconnectedAdapter],
     status: [
-      { connectionStatus: Status.connectionStatus.DISCONNECTED, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
-      { connectionStatus: Status.connectionStatus.DISCONNECTED, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
+      { connection: Status.connection.DISCONNECTED, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
+      { connection: Status.connection.DISCONNECTED, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
     ],
     // @ts-ignore
     expected: [disconnectedBridge, disconnectedAdapter],
@@ -79,14 +75,14 @@ const validationSuite: Suite[] = [
     // @ts-ignore
     nodes: [disconnectedBridge, disconnectedAdapter],
     status: [
-      { connectionStatus: Status.connectionStatus.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
-      { connectionStatus: Status.connectionStatus.CONNECTED, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
+      { connection: Status.connection.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
+      { connection: Status.connection.CONNECTED, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
     ],
     expected: expect.arrayContaining([
       expect.objectContaining({
         data: expect.objectContaining({
-          runtimeStatus: expect.objectContaining({
-            connectionStatus: Status.connectionStatus.CONNECTED,
+          status: expect.objectContaining({
+            connection: Status.connection.CONNECTED,
           }),
         }),
       }),

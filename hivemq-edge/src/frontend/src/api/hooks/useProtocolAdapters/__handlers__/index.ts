@@ -93,9 +93,9 @@ export const mockAdapter: Adapter = {
   id: MOCK_ADAPTER_ID,
   type: 'simulation',
   config: mockAdapterConfig,
-  runtimeStatus: {
+  status: {
     startedAt: '2023-08-21T11:51:24.234+01',
-    connectionStatus: Status.connectionStatus.CONNECTED,
+    connection: Status.connection.CONNECTED,
   },
 }
 

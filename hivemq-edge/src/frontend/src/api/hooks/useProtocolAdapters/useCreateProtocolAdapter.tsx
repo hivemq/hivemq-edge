@@ -21,7 +21,7 @@ export const useCreateProtocolAdapter = () => {
     onMutate: (a) => {
       queryClient.setQueryData<StatusList>([QUERY_KEYS.ADAPTERS, QUERY_KEYS.CONNECTION_STATUS], (old) => {
         const optimisticUpdate: Status = {
-          connectionStatus: Status.connectionStatus.DISCONNECTED,
+          connection: Status.connection.DISCONNECTED,
           id: a.requestBody.id,
           type: a.requestBody.type,
         }

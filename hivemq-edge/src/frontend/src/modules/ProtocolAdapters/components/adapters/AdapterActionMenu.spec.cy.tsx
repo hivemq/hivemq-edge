@@ -32,9 +32,9 @@ describe('AdapterActionMenu', () => {
   it('should render disconnected status properly', () => {
     const adapter: Adapter = {
       ...mockAdapter,
-      runtimeStatus: {
-        ...mockAdapter.runtimeStatus,
-        connectionStatus: Status.connectionStatus.DISCONNECTED,
+      status: {
+        ...mockAdapter.status,
+        connection: Status.connection.DISCONNECTED,
       },
     }
     cy.mountWithProviders(<AdapterActionMenu adapter={adapter} />)

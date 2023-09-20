@@ -34,10 +34,10 @@ const BridgeOverview: FC<Bridge> = (props) => {
   const { isLoading, isError, mutateAsync } = useSetConnectionStatus()
   const deleteBridge = useDeleteBridge()
 
-  const { connectionStatus } = props.runtimeStatus || {}
-  const isCtaDisabled = isError || !connectionStatus
+  const { connection } = props.status || {}
+  const isCtaDisabled = isError || !connection
   const isCtaLoading = isLoading
-  const isCtaConnected = connectionStatus === Status.connectionStatus.CONNECTED
+  const isCtaConnected = connection === Status.connection.CONNECTED
 
   const deleteContent = () => (
     <CardBody>

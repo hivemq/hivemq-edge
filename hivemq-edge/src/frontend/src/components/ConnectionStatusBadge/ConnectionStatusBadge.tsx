@@ -3,18 +3,19 @@ import { Status } from '@/api/__generated__'
 import { Badge } from '@chakra-ui/react'
 
 const statusMapping = {
-  [Status.connectionStatus.ERROR]: { text: 'error', color: 'status.error' },
-  [Status.connectionStatus.CONNECTED]: { text: 'Connected', color: 'status.connected' },
-  [Status.connectionStatus.DISCONNECTED]: { text: 'Disconnected', color: 'status.disconnected' },
-  [Status.connectionStatus.STATELESS]: { text: 'Stateless', color: 'status.connected' },
-  [Status.connectionStatus.UNKNOWN]: { text: 'Disconnecting', color: 'status.disconnecting' },
+  [Status.connection.ERROR]: { text: 'error', color: 'status.error' },
+  [Status.connection.CONNECTED]: { text: 'Connected', color: 'status.connected' },
+  [Status.connection.DISCONNECTED]: { text: 'Disconnected', color: 'status.disconnected' },
+  [Status.connection.STATELESS]: { text: 'Stateless', color: 'status.connected' },
+  [Status.connection.UNKNOWN]: { text: 'Disconnecting', color: 'status.disconnecting' },
 }
 
 interface ConnectionStatusBadgeProps {
-  status?: Status.connectionStatus
+  status?: Status.connection
 }
 
 const ConnectionStatusBadge: FC<ConnectionStatusBadgeProps> = ({ status }) => {
+  console.log('XXXXX st', status)
   return (
     <Badge
       variant="subtle"

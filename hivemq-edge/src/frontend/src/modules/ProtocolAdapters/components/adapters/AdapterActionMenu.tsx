@@ -16,7 +16,7 @@ interface AdapterActionMenuProps {
 const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEdit, onDelete, onViewWorkspace }) => {
   const { t } = useTranslation()
 
-  const { type, id, runtimeStatus: { connectionStatus } = {} } = adapter
+  const { type, id, status: { connection } = {} } = adapter
   return (
     <Menu>
       <MenuButton
@@ -28,7 +28,7 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEd
       />
       <MenuList>
         <MenuItem isDisabled data-testid={'adapter-action-connect'}>
-          {connectionStatus !== Status.connectionStatus.CONNECTED
+          {connection !== Status.connection.CONNECTED
             ? t('protocolAdapter.table.actions.connect')
             : t('protocolAdapter.table.actions.disconnect')}
         </MenuItem>
