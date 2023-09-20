@@ -22,9 +22,9 @@ import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.model.bridge.Bridge;
 import com.hivemq.api.model.bridge.BridgeList;
-import com.hivemq.api.model.connection.ConnectionStatus;
-import com.hivemq.api.model.connection.ConnectionStatusList;
-import com.hivemq.api.model.connection.ConnectionStatusTransitionCommand;
+import com.hivemq.api.model.status.Status;
+import com.hivemq.api.model.status.StatusList;
+import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.core.TlsConfiguration;
 import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.utils.ApiErrorUtils;
@@ -68,7 +68,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         logger.trace("Bridge API listing events at {}", System.currentTimeMillis());
         List<MqttBridge> bridges = configurationService.bridgeConfiguration().getBridges();
         BridgeList list = new BridgeList(bridges.stream()
-                .map(m -> Bridge.convert(m, getConnectionStatusInternal(m.getId()), getLastErrorInternal(m.getId())))
+                .map(m -> Bridge.convert(m, getStatusInternal(m.getId())))
                 .collect(Collectors.toList()));
         return Response.status(200).entity(list).build();
     }
@@ -114,8 +114,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
             if (bridge.isPresent()) {
                 MqttBridge mqttBridge = bridge.get();
                 return Response.ok(Bridge.convert(mqttBridge,
-                        getConnectionStatusInternal(bridgeId),
-                        getLastErrorInternal(bridgeId))).build();
+                        getStatusInternal(bridgeId))).build();
             } else {
                 return ApiErrorUtils.notFound(String.format("Bridge not found by id '%s'", bridgeId));
             }
@@ -143,7 +142,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     @Override
-    public Response changeConnectionStatus(final String bridgeId, final ConnectionStatusTransitionCommand command) {
+    public Response changeStatus(final String bridgeId, final StatusTransitionCommand command) {
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
@@ -156,10 +155,10 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
             return ApiErrorUtils.badRequest(errorMessages);
         } else {
             switch (command.getCommand()) {
-                case CONNECT:
+                case START:
                     bridgeService.startBridge(bridgeId);
                     break;
-                case DISCONNECT:
+                case STOP:
                     bridgeService.stopBridge(bridgeId);
                     break;
                 case RESTART:
@@ -196,7 +195,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     @Override
-    public Response getConnectionStatus(final @NotNull String bridgeId) {
+    public Response getStatus(final @NotNull String bridgeId) {
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
@@ -207,32 +206,31 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ApiErrorUtils.badRequest(errorMessages);
         } else {
-            return Response.status(200).entity(getConnectionStatusInternal(bridgeId)).build();
+            return Response.status(200).entity(getStatusInternal(bridgeId)).build();
         }
     }
 
     @Override
     public Response status() {
         //-- Bridges
-        ImmutableList.Builder<ConnectionStatus> builder = new ImmutableList.Builder<>();
+        ImmutableList.Builder<Status> builder = new ImmutableList.Builder<>();
         List<MqttBridge> bridges = configurationService.bridgeConfiguration().getBridges();
         for (MqttBridge bridge : bridges) {
-            boolean connected = bridgeService.isConnected(bridge.getId());
-            ConnectionStatus status = new ConnectionStatus(connected ?
-                    ConnectionStatus.STATUS.CONNECTED :
-                    ConnectionStatus.STATUS.DISCONNECTED, bridge.getId(), ApiConstants.BRIDGE_TYPE);
-            builder.add(status);
+            builder.add(getStatusInternal(bridge.getId()));
         }
-        return Response.status(200).entity(new ConnectionStatusList(builder.build())).build();
+        return Response.status(200).entity(new StatusList(builder.build())).build();
     }
 
-    protected ConnectionStatus getConnectionStatusInternal(final @NotNull String bridgeId) {
+    protected Status getStatusInternal(final @NotNull String bridgeId) {
 
         Preconditions.checkNotNull(bridgeId);
         boolean connected = bridgeService.isConnected(bridgeId);
-        ConnectionStatus status = new ConnectionStatus(connected ?
-                ConnectionStatus.STATUS.CONNECTED :
-                ConnectionStatus.STATUS.DISCONNECTED, bridgeId, ApiConstants.BRIDGE_TYPE);
+        Status status = connected ?
+                Status.connected(ApiConstants.BRIDGE_TYPE, bridgeId) :
+                Status.disconnected(ApiConstants.BRIDGE_TYPE, bridgeId);
+        if(!connected){
+            status.setMessage(getLastErrorInternal(bridgeId));
+        }
         return status;
     }
 

@@ -34,7 +34,7 @@ const AdapterStatusContainer: FC<{ id: string }> = ({ id }) => {
 
   const connection = connections?.items?.find((e) => e.id === id)
 
-  return <ConnectionStatusBadge status={connection?.status} />
+  return <ConnectionStatusBadge status={connection?.connection} />
 }
 
 const AdapterTypeContainer: FC<ProtocolAdapter> = (adapter) => {
@@ -102,21 +102,17 @@ const ProtocolAdapters: FC = () => {
         header: t('protocolAdapter.table.header.type') as string,
       },
       {
-        accessorFn: (row) => row.adapterRuntimeInformation?.connectionStatus?.status,
+        accessorFn: (row) => row.status?.connection,
         id: 'status',
         cell: (info) => (
           <Skeleton isLoaded={!isLoading}>
             <AdapterStatusContainer id={info.row.original.id} />
           </Skeleton>
         ),
-        sortingFn: (rowA, rowB) =>
-          compareStatus(
-            rowA.original.adapterRuntimeInformation?.connectionStatus?.status,
-            rowB.original.adapterRuntimeInformation?.connectionStatus?.status
-          ),
+        sortingFn: (rowA, rowB) => compareStatus(rowA.original.status?.connection, rowB.original.status?.connection),
       },
       {
-        accessorFn: (row) => row.adapterRuntimeInformation?.lastStartedAttemptTime,
+        accessorFn: (row) => row.status?.startedAt,
         id: 'lastStartedAttemptTime',
         cell: (info) => (
           <Skeleton isLoaded={!isLoading}>

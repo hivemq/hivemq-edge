@@ -13,23 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.model.connection;
+package com.hivemq.api.model.status;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.List;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * @author Simon L Johnson
  */
-public class ConnectionStatusList extends ItemsResponse<ConnectionStatus> {
+public class ConnectionDetails {
+
+    @JsonProperty("hostAddress")
+    @Schema(description = "A mandatory hostAddress. Either a hostname or IPV4/IPv6 representation of a connection.")
+    private final @NotNull String hostAddress;
+
+    @JsonProperty("port")
+    @Schema(description = "A mandatory port.")
+    private final @NotNull Integer port;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public ConnectionStatusList(
-            @JsonProperty("items") final @NotNull List<@NotNull ConnectionStatus> items) {
-        super(items);
+    public ConnectionDetails(@NotNull @JsonProperty("hostAddress") final String hostAddress,
+                             @NotNull @JsonProperty("port") final Integer port) {
+        this.hostAddress = hostAddress;
+        this.port = port;
+    }
+
+    public Integer getPort() {
+        return port;
+    }
+
+    public String getHostAddress() {
+        return hostAddress;
     }
 }

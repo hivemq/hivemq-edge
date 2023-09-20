@@ -31,7 +31,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ data: bridge }) => {
           </HStack>
           {options.showStatus && (
             <Box flex={1}>
-              <ConnectionStatusBadge status={bridge.bridgeRuntimeInformation?.connectionStatus?.status} />
+              <ConnectionStatusBadge status={bridge.status?.connection} />
             </Box>
           )}
           {options.showTopics && <TopicsContainer topics={topics.local} />}

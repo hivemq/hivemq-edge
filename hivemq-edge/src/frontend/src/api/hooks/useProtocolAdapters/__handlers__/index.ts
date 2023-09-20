@@ -1,11 +1,4 @@
-import {
-  Adapter,
-  AdaptersList,
-  ConnectionStatus,
-  JsonNode,
-  ProtocolAdapter,
-  ProtocolAdaptersList,
-} from '@/api/__generated__'
+import { Adapter, AdaptersList, JsonNode, ProtocolAdapter, ProtocolAdaptersList, Status } from '@/api/__generated__'
 import { rest } from 'msw'
 import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
@@ -100,12 +93,9 @@ export const mockAdapter: Adapter = {
   id: MOCK_ADAPTER_ID,
   type: 'simulation',
   config: mockAdapterConfig,
-  adapterRuntimeInformation: {
-    lastStartedAttemptTime: '2023-08-21T11:51:24.234+01',
-    numberOfDaemonProcesses: 0,
-    connectionStatus: {
-      status: ConnectionStatus.status.CONNECTED,
-    },
+  status: {
+    startedAt: '2023-08-21T11:51:24.234+01',
+    connection: Status.connection.CONNECTED,
   },
 }
 

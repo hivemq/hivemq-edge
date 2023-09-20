@@ -60,11 +60,9 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
             bindServices(input.moduleServices());
-            initStartAttempt();
             if (modbusClient == null) {
                 createClient();
             }
-
             if (adapterConfig.getSubscriptions() != null) {
                 for (ModbusAdapterConfig.Subscription subscription : adapterConfig.getSubscriptions()) {
                     subscribeInternal(subscription);
@@ -73,6 +71,7 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
             output.startedSuccessfully("Successfully connected");
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
+            stop();
             output.failStart(e, e.getMessage());
             return CompletableFuture.failedFuture(e);
         }
@@ -84,6 +83,7 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
                 if (modbusClient == null) {
                     log.info("Creating new Instance Of ModbusClient with {}", adapterConfig);
                     modbusClient = new ModbusClient(adapterConfig);
+                    setRuntimeStatus(RuntimeStatus.STARTED);
                 }
             }
         }
@@ -93,6 +93,7 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
     @Override
     public CompletableFuture<Void> stop() {
 
+        setRuntimeStatus(RuntimeStatus.STOPPED);
         //-- Stop polling jobs
         protocolAdapterPollingService.getPollingJobsForAdapter(getId()).stream().forEach(
                 protocolAdapterPollingService::stopPolling);
@@ -130,11 +131,6 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
         addAddresses(nodeTree, "coils", 1, 256, 16);
 
         return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public @NotNull Status status() {
-        return modbusClient != null && modbusClient.isConnected() ? Status.CONNECTED : Status.DISCONNECTED;
     }
 
     protected void captured(ModBusData data) throws ProtocolAdapterException {
@@ -205,14 +201,20 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
         public void execute() throws Exception {
             //-- If a previously linked job has terminally disconnected the client
             //-- we need to ensure any orphaned jobs tidy themselves up properly
-            if(modbusClient != null){
-                if (!modbusClient.isConnected()) {
-                    modbusClient.connect();
+            try {
+                if(modbusClient != null){
+                    if (!modbusClient.isConnected()) {
+                        modbusClient.connect();
+                    }
+                    ModBusData data = readAddresses(addressRange);
+                    setConnectionStatus(ConnectionStatus.CONNECTED);
+                    if (data != null) {
+                        captured(data);
+                    }
                 }
-                ModBusData data = readAddresses(addressRange);
-                if (data != null) {
-                    captured(data);
-                }
+            } catch(Exception e){
+                setConnectionStatus(ConnectionStatus.ERROR);
+                throw e;
             }
         }
 
@@ -220,6 +222,7 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
         public void close() {
             try {
                 if(modbusClient != null){
+                    setConnectionStatus(ConnectionStatus.DISCONNECTED);
                     modbusClient.disconnect();
                 }
             } catch (ProtocolAdapterException e) {

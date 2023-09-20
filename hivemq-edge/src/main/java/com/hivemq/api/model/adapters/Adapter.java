@@ -17,6 +17,7 @@ package com.hivemq.api.model.adapters;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.api.model.status.Status;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -46,25 +47,25 @@ public class Adapter {
             description = "The adapter configuration associated with this instance")
     private final @NotNull Map<String, Object>  config;
 
-    @JsonProperty("adapterRuntimeInformation")
-    @Schema(name = "adapterRuntimeInformation",
+    @JsonProperty("status")
+    @Schema(name = "status",
             description = "Information associated with the runtime of this adapter")
-    private final @Nullable AdapterRuntimeInformation adapterRuntimeInformation;
+    private final @Nullable Status status;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public Adapter(
             @JsonProperty("id") final @NotNull String id,
             @JsonProperty("type") final @NotNull String protocolAdapterType,
             @JsonProperty("config") final @NotNull Map<String, Object>  config,
-            @JsonProperty("adapterRuntimeInformation") final @Nullable AdapterRuntimeInformation adapterRuntimeInformation) {
+            @JsonProperty("status") final @Nullable Status status) {
         this.id = id;
         this.protocolAdapterType = protocolAdapterType;
         this.config = config;
-        this.adapterRuntimeInformation = adapterRuntimeInformation;
+        this.status = status;
     }
 
-    public @Nullable AdapterRuntimeInformation getAdapterRuntimeInformation() {
-        return adapterRuntimeInformation;
+    public @Nullable Status getStatus() {
+        return status;
     }
 
     public @NotNull String getId() {
@@ -78,21 +79,4 @@ public class Adapter {
     public @NotNull Map<String, Object>  getConfig() {
         return config;
     }
-
-
-//    public static class AdapterConfiguration {
-//
-//        @JsonProperty("map")
-//        public Map<String, Object> ;
-//
-//
-//        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-//        public AdapterConfiguration(@JsonProperty("map")  final Map<String, Object> map) {
-//            this.map = map;
-//        }
-//
-//        public Map<String, Object> getMap() {
-//            return map;
-//        }
-//    }
 }

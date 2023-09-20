@@ -4,9 +4,6 @@
 /* eslint-disable */
 export const $Adapter = {
     properties: {
-        adapterRuntimeInformation: {
-            type: 'AdapterRuntimeInformation',
-        },
         config: {
             type: 'dictionary',
             contains: {
@@ -24,7 +21,10 @@ export const $Adapter = {
             format: 'string',
             maxLength: 500,
             minLength: 1,
-            pattern: '([a-zA-Z_0-9\\-])*',
+            pattern: '^([a-zA-Z_0-9-_])*$',
+        },
+        status: {
+            type: 'Status',
         },
         type: {
             type: 'string',

@@ -9,6 +9,12 @@ export const $ProtocolAdapter = {
             type: 'string',
             description: `The author of the adapter`,
         },
+        capabilities: {
+            type: 'array',
+            contains: {
+                type: 'Enum',
+            },
+        },
         category: {
             type: 'ProtocolAdapterCategory',
         },

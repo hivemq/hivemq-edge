@@ -85,7 +85,7 @@ const BridgeCard: FC<Bridge & { isLoading?: boolean; onNavigate?: (route: string
             <Text as={'span'} mr={2}>
               {t('bridge.status.label')}
             </Text>
-            <ConnectionStatusBadge status={data?.status} />
+            <ConnectionStatusBadge status={data?.connection} />
           </Box>
         </CardFooter>
       </Skeleton>

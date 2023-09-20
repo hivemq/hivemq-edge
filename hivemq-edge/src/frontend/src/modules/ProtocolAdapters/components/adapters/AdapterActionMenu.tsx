@@ -3,7 +3,7 @@ import { IconButton, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Text } f
 import { ChevronDownIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
-import { Adapter, ConnectionStatus } from '@/api/__generated__'
+import { Adapter, Status } from '@/api/__generated__'
 
 interface AdapterActionMenuProps {
   adapter: Adapter
@@ -16,7 +16,7 @@ interface AdapterActionMenuProps {
 const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEdit, onDelete, onViewWorkspace }) => {
   const { t } = useTranslation()
 
-  const { type, id, adapterRuntimeInformation: { connectionStatus } = {} } = adapter
+  const { type, id, status: { connection } = {} } = adapter
   return (
     <Menu>
       <MenuButton
@@ -28,7 +28,7 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEd
       />
       <MenuList>
         <MenuItem isDisabled data-testid={'adapter-action-connect'}>
-          {connectionStatus?.status !== ConnectionStatus.status.CONNECTED
+          {connection !== Status.connection.CONNECTED
             ? t('protocolAdapter.table.actions.connect')
             : t('protocolAdapter.table.actions.disconnect')}
         </MenuItem>

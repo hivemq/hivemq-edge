@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Adapter, ApiError, ConnectionStatus, ConnectionStatusList } from '../../__generated__'
+import { Adapter, ApiError, StatusList, Status } from '../../__generated__'
 
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
@@ -19,9 +19,9 @@ export const useCreateProtocolAdapter = () => {
 
   return useMutation<unknown, ApiError, CreateProtocolAdapterProps>(createProtocolAdapter, {
     onMutate: (a) => {
-      queryClient.setQueryData<ConnectionStatusList>([QUERY_KEYS.ADAPTERS, QUERY_KEYS.CONNECTION_STATUS], (old) => {
-        const optimisticUpdate: ConnectionStatus = {
-          status: ConnectionStatus.status.CONNECTING,
+      queryClient.setQueryData<StatusList>([QUERY_KEYS.ADAPTERS, QUERY_KEYS.CONNECTION_STATUS], (old) => {
+        const optimisticUpdate: Status = {
+          connection: Status.connection.DISCONNECTED,
           id: a.requestBody.id,
           type: a.requestBody.type,
         }

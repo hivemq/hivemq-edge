@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { ConnectionStatus } from '@/api/__generated__'
+import { Status } from '@/api/__generated__'
 import ConnectionStatusBadge from './ConnectionStatusBadge.tsx'
 
 describe('ConnectionStatusBadge', () => {
@@ -12,10 +12,11 @@ describe('ConnectionStatusBadge', () => {
 
   const selectors = [
     { status: undefined },
-    { status: ConnectionStatus.status.CONNECTED },
-    { status: ConnectionStatus.status.DISCONNECTED },
-    { status: ConnectionStatus.status.CONNECTING },
-    { status: ConnectionStatus.status.DISCONNECTING },
+    { status: Status.connection.CONNECTED },
+    { status: Status.connection.DISCONNECTED },
+    { status: Status.connection.STATELESS },
+    { status: Status.connection.UNKNOWN },
+    { status: Status.connection.ERROR },
   ]
   it.each(selectors)(
     (selector) => `should render and be accessible for ${selector.status}`,

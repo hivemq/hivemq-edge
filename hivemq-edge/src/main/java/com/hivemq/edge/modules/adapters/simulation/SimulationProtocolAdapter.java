@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.adapters.simulation;
 
 import com.codahale.metrics.MetricRegistry;
+import com.hivemq.api.model.status.Status;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
 import com.hivemq.edge.modules.adapters.params.NodeTree;
@@ -43,7 +44,6 @@ import java.util.concurrent.TimeUnit;
 
 public class SimulationProtocolAdapter extends AbstractProtocolAdapter<SimulationAdapterConfig> {
     private static final Logger log = LoggerFactory.getLogger(SimulationProtocolAdapter.class);
-    private @NotNull Status status = Status.DISCONNECTED;
 
     public SimulationProtocolAdapter(
             @NotNull final ProtocolAdapterInformation adapterInformation,
@@ -53,34 +53,41 @@ public class SimulationProtocolAdapter extends AbstractProtocolAdapter<Simulatio
     }
 
     @Override
+    public ConnectionStatus getConnectionStatus() {
+        return ConnectionStatus.STATELESS;
+    }
+
+    @Override
     public CompletableFuture<Void> start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
             bindServices(input.moduleServices());
-            initStartAttempt();
+            setRuntimeStatus(RuntimeStatus.STARTED);
             if (adapterConfig.getSubscriptions() != null) {
                 for (SimulationAdapterConfig.Subscription subscription : adapterConfig.getSubscriptions()) {
                     subscribeInternal(subscription);
                 }
             }
             output.startedSuccessfully("Successfully connected");
-            status = Status.CONNECTED;
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             output.failStart(e, e.getMessage());
+            setRuntimeStatus(RuntimeStatus.STOPPED);
             return CompletableFuture.failedFuture(e);
         }
     }
 
     @Override
     public CompletableFuture<Void> stop() {
-        //-- Stop polling jobs
-        protocolAdapterPollingService.getPollingJobsForAdapter(getId())
-                .stream()
-                .forEach(protocolAdapterPollingService::stopPolling);
-        //-- Disconnect client
-        status = Status.DISCONNECTED;
-        return CompletableFuture.completedFuture(null);
+        try {
+            //-- Stop polling jobs
+            protocolAdapterPollingService.getPollingJobsForAdapter(getId())
+                    .stream()
+                    .forEach(protocolAdapterPollingService::stopPolling);
+            return CompletableFuture.completedFuture(null);
+        } finally {
+            setRuntimeStatus(RuntimeStatus.STOPPED);
+        }
     }
 
     private void startPolling(final @NotNull SimulationPoller poller) {
@@ -96,11 +103,6 @@ public class SimulationProtocolAdapter extends AbstractProtocolAdapter<Simulatio
         if (subscription != null) {
             startPolling(new SimulationPoller(subscription));
         }
-    }
-
-    @Override
-    public @NotNull Status status() {
-        return status;
     }
 
     protected void captured(SimulationData data) throws ProtocolAdapterException {

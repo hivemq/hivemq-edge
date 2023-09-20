@@ -4,9 +4,6 @@
 /* eslint-disable */
 export const $Bridge = {
     properties: {
-        bridgeRuntimeInformation: {
-            type: 'BridgeRuntimeInformation',
-        },
         cleanStart: {
             type: 'boolean',
             description: `The cleanStart value associated the the MQTT connection.`,
@@ -33,7 +30,7 @@ export const $Bridge = {
             format: 'string',
             maxLength: 500,
             minLength: 1,
-            pattern: '([a-zA-Z_0-9\\-])*',
+            pattern: '^([a-zA-Z_0-9-_])*$',
         },
         keepAlive: {
             type: 'number',
@@ -86,6 +83,9 @@ export const $Bridge = {
             isRequired: true,
             format: 'int32',
             maximum: 4294967295,
+        },
+        status: {
+            type: 'Status',
         },
         tlsConfiguration: {
             type: 'TlsConfiguration',

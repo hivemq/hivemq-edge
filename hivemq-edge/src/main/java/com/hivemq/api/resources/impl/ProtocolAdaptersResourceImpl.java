@@ -22,18 +22,16 @@ import com.hivemq.api.AbstractApi;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.model.adapters.Adapter;
-import com.hivemq.api.model.adapters.AdapterRuntimeInformation;
+import com.hivemq.api.model.adapters.AdapterStatusModelConversionUtils;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
 import com.hivemq.api.model.adapters.ValuesTree;
-import com.hivemq.api.model.components.Module;
-import com.hivemq.api.model.connection.ConnectionStatus;
-import com.hivemq.api.model.connection.ConnectionStatusList;
-import com.hivemq.api.model.connection.ConnectionStatusTransitionCommand;
+import com.hivemq.api.model.status.Status;
+import com.hivemq.api.model.status.StatusList;
+import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
-import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
@@ -52,7 +50,6 @@ import com.networknt.schema.ValidationMessage;
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -141,13 +138,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
 
     private @NotNull Adapter convertToAdapter(final @NotNull AdapterInstance value) {
-        AdapterRuntimeInformation runtimeInformation =
-                new AdapterRuntimeInformation(value.getAdapter().getTimeOfLastStartAttempt() == null ?
-                        null :
-                        value.getAdapter().getTimeOfLastStartAttempt(),
-                        value.getAdapter().getNumberOfDaemonProcessed(),
-                        value.getAdapter().getLastErrorMessage(),
-                        getConnectionStatusInternal(value.getAdapter().getId()));
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         Map<String, Object> configObject;
         try {
@@ -159,7 +149,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return new Adapter(value.getAdapter().getId(),
                 value.getAdapterInformation().getProtocolId(),
                 configObject,
-                runtimeInformation);
+                getStatusInternal(value.getAdapter().getId()));
     }
 
     @Override
@@ -258,7 +248,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public Response changeConnectionStatus(final String adapterId, final ConnectionStatusTransitionCommand command) {
+    public Response changeStatus(final String adapterId, final StatusTransitionCommand command) {
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", adapterId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", adapterId, HiveMQEdgeConstants.ID_REGEX);
@@ -270,9 +260,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.badRequest(errorMessages);
         } else {
             switch (command.getCommand()) {
-                case CONNECT:
+                case START:
                     break;
-                case DISCONNECT:
+                case STOP:
                     break;
                 case RESTART:
                     break;
@@ -282,7 +272,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public Response getConnectionStatus(final @NotNull String adapterId) {
+    public Response getStatus(final @NotNull String adapterId) {
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", adapterId, false);
@@ -294,21 +284,19 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.badRequest(errorMessages);
         } else {
             return Response.status(200).entity(
-                    getConnectionStatusInternal(adapterId)).build();
+                    getStatusInternal(adapterId)).build();
         }
     }
 
-    protected ConnectionStatus getConnectionStatusInternal(final @NotNull String adapterId) {
-        Optional<AdapterInstance> optional = protocolAdapterManager.getAdapterById(adapterId);
-        boolean connected = false;
-        if (optional.isPresent()) {
-            connected = optional.get().getAdapter().status() ==
-                    com.hivemq.edge.modules.api.adapters.ProtocolAdapter.Status.CONNECTED;
+    protected Status getStatusInternal(final @NotNull String adapterId) {
+        Optional<AdapterInstance> optionalAdapterInstance = protocolAdapterManager.getAdapterById(adapterId);
+        if (optionalAdapterInstance.isPresent()) {
+            return AdapterStatusModelConversionUtils.getAdapterStatus(
+                    optionalAdapterInstance.get().getAdapter());
         }
-        ConnectionStatus status = new ConnectionStatus(connected ?
-                ConnectionStatus.STATUS.CONNECTED :
-                ConnectionStatus.STATUS.DISCONNECTED, adapterId, ApiConstants.ADAPTER_TYPE);
-        return status;
+        else {
+            return Status.unknown(ApiConstants.ADAPTER_TYPE, adapterId);
+        }
     }
 
     protected void validateAdapterSchema(
@@ -321,7 +309,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     "Unable to find adapter type by supplied adapterTypeId");
             return;
         }
-
         if (adapter.getConfig() == null) {
             ApiErrorUtils.addValidationError(apiErrorMessages, "config", "Config must be supplied on the adapter");
             return;
@@ -336,17 +323,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public Response status() {
-        //-- Bridges
-        ImmutableList.Builder<ConnectionStatus> builder = new ImmutableList.Builder<>();
+        ImmutableList.Builder<Status> builder = new ImmutableList.Builder<>();
         Map<String, AdapterInstance> adapters = protocolAdapterManager.getProtocolAdapters();
         for (AdapterInstance instance : adapters.values()) {
-            boolean connected = instance.getAdapter().status() ==
-                    com.hivemq.edge.modules.api.adapters.ProtocolAdapter.Status.CONNECTED;
-            ConnectionStatus status = new ConnectionStatus(connected ?
-                    ConnectionStatus.STATUS.CONNECTED :
-                    ConnectionStatus.STATUS.DISCONNECTED, instance.getAdapter().getId(), ApiConstants.ADAPTER_TYPE);
-            builder.add(status);
+            builder.add(AdapterStatusModelConversionUtils.getAdapterStatus(instance.getAdapter()));
         }
-        return Response.status(200).entity(new ConnectionStatusList(builder.build())).build();
+        return Response.status(200).entity(new StatusList(builder.build())).build();
     }
 }

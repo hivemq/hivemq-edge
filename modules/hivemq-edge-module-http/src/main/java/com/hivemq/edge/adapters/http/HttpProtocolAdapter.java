@@ -61,6 +61,7 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
                              final @NotNull HttpAdapterConfig adapterConfig,
                              final @NotNull MetricRegistry metricRegistry) {
         super(adapterInformation, adapterConfig, metricRegistry);
+        setConnectionStatus(ConnectionStatus.STATELESS);
     }
 
     @Override
@@ -79,6 +80,7 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             output.failStart(e, e.getMessage());
+            setRuntimeStatus(RuntimeStatus.STOPPED);
             return CompletableFuture.failedFuture(e);
         }
     }
@@ -105,10 +107,9 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
                     .followRedirects(HttpClient.Redirect.NORMAL)
                     .connectTimeout(Duration.ofSeconds(config.getHttpConnectTimeout()))
                     .build();
-            connected.set(true);
+            setRuntimeStatus(RuntimeStatus.STARTED);
             startPolling(new HttpRequestPoller(config));
         } else {
-            connected.set(false);
             setLastErrorMessage("Invalid URL supplied");
         }
     }
@@ -122,17 +123,13 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
         return stop();
     }
 
-    @Override
-    public @NotNull Status status() {
-        return connected.get() ? Status.CONNECTED : Status.DISCONNECTED;
-    }
-
     private static boolean isSuccessStatusCode(final int statusCode){
         return statusCode >= 200 && statusCode <= 299;
     }
 
     protected void captured(final @NotNull HttpData data) throws ProtocolAdapterException {
         boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) || !adapterConfig.isHttpPublishSuccessStatusCodeOnly();
+        setConnectionStatus(isSuccessStatusCode(data.getHttpStatusCode()) ? ConnectionStatus.STATELESS : ConnectionStatus.ERROR);
         if (publishData) {
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
                     .withTopic(data.getTopic())

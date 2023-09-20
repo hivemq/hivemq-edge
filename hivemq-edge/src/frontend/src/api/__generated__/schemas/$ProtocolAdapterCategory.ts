@@ -29,7 +29,7 @@ export const $ProtocolAdapterCategory = {
             format: 'string',
             maxLength: 256,
             minLength: 1,
-            pattern: '^([a-zA-Z_0-9\\- ])*$',
+            pattern: '^[A-Za-z0-9-_](?:[A-Za-z0-9_ -]*[A-Za-z0-9_-])$',
         },
     },
 } as const;

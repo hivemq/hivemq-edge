@@ -20,7 +20,7 @@ import {
   MenuItem,
 } from '@chakra-ui/react'
 
-import { Bridge, ConnectionStatus, ConnectionStatusTransitionCommand } from '@/api/__generated__'
+import { Bridge, Status, StatusTransitionCommand } from '@/api/__generated__'
 import { useSetConnectionStatus } from '@/api/hooks/useGetBridges/useSetConnectionStatus.tsx'
 import { useDeleteBridge } from '@/api/hooks/useGetBridges/useDeleteBridge.tsx'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
@@ -34,11 +34,10 @@ const BridgeOverview: FC<Bridge> = (props) => {
   const { isLoading, isError, mutateAsync } = useSetConnectionStatus()
   const deleteBridge = useDeleteBridge()
 
-  const { status } = props.bridgeRuntimeInformation?.connectionStatus || {}
-  const isCtaDisabled = isError || !status
-  const isCtaLoading =
-    isLoading || status === ConnectionStatus.status.DISCONNECTING || status === ConnectionStatus.status.CONNECTING
-  const isCtaConnected = status === ConnectionStatus.status.CONNECTED
+  const { connection } = props.status || {}
+  const isCtaDisabled = isError || !connection
+  const isCtaLoading = isLoading
+  const isCtaConnected = connection === Status.connection.CONNECTED
 
   const deleteContent = () => (
     <CardBody>
@@ -82,9 +81,7 @@ const BridgeOverview: FC<Bridge> = (props) => {
             mutateAsync({
               name: props.id as string,
               requestBody: {
-                command: isCtaConnected
-                  ? ConnectionStatusTransitionCommand.command.DISCONNECT
-                  : ConnectionStatusTransitionCommand.command.CONNECT,
+                command: isCtaConnected ? StatusTransitionCommand.command.STOP : StatusTransitionCommand.command.START,
               },
             })
           }

@@ -23,7 +23,7 @@ export const groupingAttributes: ClusterFunctionCatalog[] = [
     key: 'runtimeDuration',
     function: (d: Node<Adapter>) => {
       // TODO[NVL] Can we breakt time down in unit groups ?
-      const gg = d.data.adapterRuntimeInformation?.lastStartedAttemptTime
+      const gg = d.data.status?.startedAt
 
       if (!gg) return 0
       const ss = DateTime.fromISO(gg).toMillis()
