@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { ConnectionStatus } from '@/api/__generated__'
+import { Adapter, Status } from '@/api/__generated__'
 import AdapterActionMenu from '@/modules/ProtocolAdapters/components/adapters/AdapterActionMenu.tsx'
 
 describe('AdapterActionMenu', () => {
@@ -30,11 +30,11 @@ describe('AdapterActionMenu', () => {
   })
 
   it('should render disconnected status properly', () => {
-    const adapter = {
+    const adapter: Adapter = {
       ...mockAdapter,
-      adapterRuntimeInformation: {
-        ...mockAdapter.adapterRuntimeInformation,
-        connectionStatus: { status: ConnectionStatus.status.DISCONNECTED },
+      runtimeStatus: {
+        ...mockAdapter.runtimeStatus,
+        connectionStatus: Status.connectionStatus.DISCONNECTED,
       },
     }
     cy.mountWithProviders(<AdapterActionMenu adapter={adapter} />)
