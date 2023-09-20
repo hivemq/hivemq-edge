@@ -1,7 +1,7 @@
 import { expect } from 'vitest'
 import { Node, NodeProps } from 'reactflow'
 
-import { Adapter, ConnectionStatus } from '@/api/__generated__'
+import { Adapter, Status } from '@/api/__generated__'
 
 import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_LISTENER } from '@/__test-utils__/react-flow/nodes.ts'
 import { updateNodeStatus } from '@/modules/EdgeVisualisation/utils/status-utils.ts'
@@ -15,7 +15,7 @@ const disconnectedBridge: NodeProps = {
     ...MOCK_NODE_BRIDGE.data,
     bridgeRuntimeInformation: {
       connectionStatus: {
-        status: ConnectionStatus.status.DISCONNECTED,
+        status: Status.connectionStatus.DISCONNECTED,
       },
     },
   },
@@ -26,7 +26,7 @@ const disconnectedAdapter: NodeProps<Adapter> = {
     ...MOCK_NODE_ADAPTER.data,
     adapterRuntimeInformation: {
       connectionStatus: {
-        status: ConnectionStatus.status.DISCONNECTED,
+        status: Status.connectionStatus.DISCONNECTED,
       },
     },
   },
@@ -34,7 +34,7 @@ const disconnectedAdapter: NodeProps<Adapter> = {
 
 interface Suite {
   nodes: Node[]
-  status: ConnectionStatus[]
+  status: Status[]
   expected: Node[]
 }
 const validationSuite: Suite[] = [
@@ -46,22 +46,26 @@ const validationSuite: Suite[] = [
   {
     nodes: [],
     status: [
-      { status: ConnectionStatus.status.DISCONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'one' },
-      { status: ConnectionStatus.status.DISCONNECTED, type: NodeTypes.ADAPTER_NODE, id: 'two' },
+      { connectionStatus: Status.connectionStatus.DISCONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'one' },
+      { connectionStatus: Status.connectionStatus.DISCONNECTED, type: NodeTypes.ADAPTER_NODE, id: 'two' },
     ],
     expected: [],
   },
   {
     // @ts-ignore
     nodes: [disconnectedBridge, disconnectedAdapter],
-    status: [{ status: ConnectionStatus.status.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' }],
+    status: [
+      { connectionStatus: Status.connectionStatus.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' },
+    ],
     // @ts-ignore
     expected: [disconnectedBridge, disconnectedAdapter],
   },
   {
     // @ts-ignore
     nodes: [MOCK_NODE_LISTENER],
-    status: [{ status: ConnectionStatus.status.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' }],
+    status: [
+      { connectionStatus: Status.connectionStatus.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' },
+    ],
     // @ts-ignore
     expected: [MOCK_NODE_LISTENER],
   },
@@ -69,8 +73,8 @@ const validationSuite: Suite[] = [
     // @ts-ignore
     nodes: [disconnectedBridge, disconnectedAdapter],
     status: [
-      { status: ConnectionStatus.status.DISCONNECTED, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
-      { status: ConnectionStatus.status.DISCONNECTED, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
+      { connectionStatus: Status.connectionStatus.DISCONNECTED, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
+      { connectionStatus: Status.connectionStatus.DISCONNECTED, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
     ],
     // @ts-ignore
     expected: [disconnectedBridge, disconnectedAdapter],
@@ -79,14 +83,14 @@ const validationSuite: Suite[] = [
     // @ts-ignore
     nodes: [disconnectedBridge, disconnectedAdapter],
     status: [
-      { status: ConnectionStatus.status.CONNECTING, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
-      { status: ConnectionStatus.status.CONNECTING, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
+      { connectionStatus: Status.connectionStatus.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
+      { connectionStatus: Status.connectionStatus.CONNECTED, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
     ],
     expected: expect.arrayContaining([
       expect.objectContaining({
         data: expect.objectContaining({
           bridgeRuntimeInformation: expect.objectContaining({
-            connectionStatus: expect.objectContaining({ status: ConnectionStatus.status.CONNECTING }),
+            connectionStatus: expect.objectContaining({ status: Status.connectionStatus.CONNECTED }),
           }),
         }),
       }),

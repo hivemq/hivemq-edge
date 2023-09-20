@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ApiError, ConnectionStatusTransitionCommand } from '../../__generated__'
+import { ApiError, StatusTransitionCommand } from '../../__generated__'
 
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
 
 interface SetConnectionStatusProps {
   name: string
-  requestBody: ConnectionStatusTransitionCommand
+  requestBody: StatusTransitionCommand
 }
 
 export const useSetConnectionStatus = () => {
@@ -14,7 +14,7 @@ export const useSetConnectionStatus = () => {
   const queryClient = useQueryClient()
 
   const setConnectionStatus = ({ name, requestBody }: SetConnectionStatusProps) => {
-    return appClient.bridges.changeConnectionStatus(name, requestBody)
+    return appClient.bridges.changeStatus(name, requestBody)
   }
 
   return useMutation<string, ApiError, SetConnectionStatusProps>(setConnectionStatus, {

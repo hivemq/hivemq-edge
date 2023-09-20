@@ -2,7 +2,7 @@ import { Edge, MarkerType, Node, Position, XYPosition } from 'reactflow'
 import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 
-import { Adapter, Bridge, ConnectionStatus, Listener } from '@/api/__generated__'
+import { Adapter, Bridge, Status, Listener } from '@/api/__generated__'
 
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getAdapterTopics, getBridgeTopics } from '../utils/topics-utils.ts'
@@ -33,7 +33,7 @@ export const createBridgeNode = (
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idBridge = `${IdStubs.BRIDGE_NODE}@${bridge.id}`
-  const isConnected = bridge.bridgeRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
+  const isConnected = bridge.runtimeStatus?.connectionStatus === Status.connectionStatus.CONNECTED
   const { local, remote } = getBridgeTopics(bridge)
 
   const nodeBridge: Node<Bridge, NodeTypes.BRIDGE_NODE> = {
@@ -142,7 +142,7 @@ export const createAdapterNode = (
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idAdapter = `${IdStubs.ADAPTER_NODE}@${adapter.id}`
-  const isConnected = adapter.adapterRuntimeInformation?.connectionStatus?.status === ConnectionStatus.status.CONNECTED
+  const isConnected = adapter.runtimeStatus?.connectionStatus === Status.connectionStatus.CONNECTED
   const topics = getAdapterTopics(adapter)
 
   const posX = nbAdapter % MAX_ADAPTERS

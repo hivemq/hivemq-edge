@@ -74,7 +74,7 @@ const BridgeCard: FC<Bridge> = (props) => {
           <Text as={'span'} mr={2}>
             {t('bridge.status.label')}
           </Text>
-          <ConnectionStatusBadge status={data?.status} />
+          <ConnectionStatusBadge status={data?.connectionStatus} />
         </Box>
       </CardFooter>
     </Card>
