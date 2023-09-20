@@ -45,13 +45,13 @@ public class Status {
         STOPPED
     }
 
-    @JsonProperty("connectionStatus")
+    @JsonProperty("connection")
     @Schema(description = "A mandatory connection status field.")
-    private final @NotNull CONNECTION_STATUS connectionStatus;
+    private final @NotNull CONNECTION_STATUS connection;
 
-    @JsonProperty("runtimeStatus")
+    @JsonProperty("runtime")
     @Schema(description = "A object status field.")
-    private final @NotNull RUNTIME_STATUS runtimeStatus;
+    private final @NotNull RUNTIME_STATUS runtime;
 
     @JsonProperty("id")
     @Schema(description = "The identifier of the object")
@@ -80,24 +80,20 @@ public class Status {
     private final @NotNull String type;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public Status(@NotNull @JsonProperty("runtimeStatus") final RUNTIME_STATUS runtimeStatus,
-                  @NotNull @JsonProperty("connectionStatus") final CONNECTION_STATUS connectionStatus,
+    public Status(@NotNull @JsonProperty("runtime") final RUNTIME_STATUS runtime,
+                  @NotNull @JsonProperty("connection") final CONNECTION_STATUS connection,
                   @NotNull @JsonProperty("id") final String id,
                   @NotNull @JsonProperty("type") final String type,
                   @Nullable @JsonProperty("startedAt") final Long startedAt,
                   @Nullable @JsonProperty("lastActivity") final Long lastActivity,
                   @Nullable @JsonProperty("message") final String message) {
-        this.runtimeStatus = runtimeStatus;
-        this.connectionStatus = connectionStatus;
+        this.runtime = runtime;
+        this.connection = connection;
         this.id = id;
         this.type = type;
         this.startedAt = startedAt;
         this.lastActivity = lastActivity;
         this.message = message;
-    }
-
-    public CONNECTION_STATUS getConnectionStatus() {
-        return connectionStatus;
     }
 
     public String getMessage() {
@@ -106,10 +102,6 @@ public class Status {
 
     public Long getLastActivity() {
         return lastActivity;
-    }
-
-    public RUNTIME_STATUS getRuntimeStatus() {
-        return runtimeStatus;
     }
 
     public Long getStartedAt() {
@@ -134,6 +126,14 @@ public class Status {
 
     public void setStartedAt(@Nullable final Long startedAt) {
         this.startedAt = startedAt;
+    }
+
+    public CONNECTION_STATUS getConnection() {
+        return connection;
+    }
+
+    public RUNTIME_STATUS getRuntime() {
+        return runtime;
     }
 
     public static Status unknown(@NotNull final String connectionType, @NotNull final String entityId){
