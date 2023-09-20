@@ -62,7 +62,7 @@ public class Status {
     private @Nullable String message;
 
     @JsonProperty("startedAt")
-    @Schema(description = "The datetime of the last activity through this connection",
+    @Schema(description = "The datetime the object was 'started' in the system.",
             format = "date-time", type = "string")
     @JsonSerialize(using = TimestampToDateConverter.Serializer.class)
     @JsonDeserialize(using = TimestampToDateConverter.Deserializer.class)

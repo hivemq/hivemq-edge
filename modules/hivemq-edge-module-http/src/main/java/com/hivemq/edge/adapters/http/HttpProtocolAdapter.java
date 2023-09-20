@@ -64,6 +64,11 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
     }
 
     @Override
+    public ConnectionStatus getConnectionStatus() {
+        return ConnectionStatus.STATELESS;
+    }
+
+    @Override
     public CompletableFuture<Void> start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {

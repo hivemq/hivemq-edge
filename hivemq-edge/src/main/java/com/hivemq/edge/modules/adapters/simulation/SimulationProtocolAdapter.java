@@ -53,6 +53,11 @@ public class SimulationProtocolAdapter extends AbstractProtocolAdapter<Simulatio
     }
 
     @Override
+    public ConnectionStatus getConnectionStatus() {
+        return ConnectionStatus.STATELESS;
+    }
+
+    @Override
     public CompletableFuture<Void> start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
