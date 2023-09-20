@@ -1,7 +1,7 @@
 import { expect } from 'vitest'
 import { Node, NodeProps } from 'reactflow'
 
-import { Adapter, Status } from '@/api/__generated__'
+import { Adapter, Bridge, Status } from '@/api/__generated__'
 
 import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_LISTENER } from '@/__test-utils__/react-flow/nodes.ts'
 import { updateNodeStatus } from '@/modules/EdgeVisualisation/utils/status-utils.ts'
@@ -9,14 +9,12 @@ import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
-const disconnectedBridge: NodeProps = {
+const disconnectedBridge: NodeProps<Bridge> = {
   ...MOCK_NODE_BRIDGE,
   data: {
     ...MOCK_NODE_BRIDGE.data,
-    bridgeRuntimeInformation: {
-      connectionStatus: {
-        status: Status.connectionStatus.DISCONNECTED,
-      },
+    runtimeStatus: {
+      connectionStatus: Status.connectionStatus.DISCONNECTED,
     },
   },
 }
@@ -24,10 +22,8 @@ const disconnectedAdapter: NodeProps<Adapter> = {
   ...MOCK_NODE_ADAPTER,
   data: {
     ...MOCK_NODE_ADAPTER.data,
-    adapterRuntimeInformation: {
-      connectionStatus: {
-        status: Status.connectionStatus.DISCONNECTED,
-      },
+    runtimeStatus: {
+      connectionStatus: Status.connectionStatus.DISCONNECTED,
     },
   },
 }
@@ -89,8 +85,8 @@ const validationSuite: Suite[] = [
     expected: expect.arrayContaining([
       expect.objectContaining({
         data: expect.objectContaining({
-          bridgeRuntimeInformation: expect.objectContaining({
-            connectionStatus: expect.objectContaining({ status: Status.connectionStatus.CONNECTED }),
+          runtimeStatus: expect.objectContaining({
+            connectionStatus: Status.connectionStatus.CONNECTED,
           }),
         }),
       }),

@@ -12,7 +12,7 @@ export const updateNodeStatus = (currentNodes: Node[], updates: Status[]) => {
 
       n.data = {
         ...newData,
-        bridgeRuntimeInformation: {
+        runtimeStatus: {
           connectionStatus: newStatus,
         },
       }
@@ -26,7 +26,7 @@ export const updateNodeStatus = (currentNodes: Node[], updates: Status[]) => {
 
       n.data = {
         ...newData,
-        adapterRuntimeInformation: {
+        runtimeStatus: {
           connectionStatus: newStatus,
         },
       }
