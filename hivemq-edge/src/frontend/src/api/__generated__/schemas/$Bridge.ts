@@ -77,15 +77,15 @@ export const $Bridge = {
                 type: 'BridgeSubscription',
             },
         },
-        runtimeStatus: {
-            type: 'Status',
-        },
         sessionExpiry: {
             type: 'number',
             description: `The sessionExpiry associated the the MQTT connection.`,
             isRequired: true,
             format: 'int32',
             maximum: 4294967295,
+        },
+        status: {
+            type: 'Status',
         },
         tlsConfiguration: {
             type: 'TlsConfiguration',

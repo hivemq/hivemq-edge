@@ -14,7 +14,7 @@ export type Adapter = {
      * The adapter id, must be unique and only contain alpha numeric characters with spaces and hyphens.
      */
     id: string;
-    runtimeStatus?: Status;
+    status?: Status;
     /**
      * The adapter type associated with this instance
      */
