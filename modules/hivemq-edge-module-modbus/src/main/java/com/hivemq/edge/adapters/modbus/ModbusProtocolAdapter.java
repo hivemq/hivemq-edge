@@ -201,15 +201,20 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
         public void execute() throws Exception {
             //-- If a previously linked job has terminally disconnected the client
             //-- we need to ensure any orphaned jobs tidy themselves up properly
-            if(modbusClient != null){
-                if (!modbusClient.isConnected()) {
+            try {
+                if(modbusClient != null){
+                    if (!modbusClient.isConnected()) {
+                        modbusClient.connect();
+                    }
+                    ModBusData data = readAddresses(addressRange);
                     setConnectionStatus(ConnectionStatus.CONNECTED);
-                    modbusClient.connect();
+                    if (data != null) {
+                        captured(data);
+                    }
                 }
-                ModBusData data = readAddresses(addressRange);
-                if (data != null) {
-                    captured(data);
-                }
+            } catch(Exception e){
+                setConnectionStatus(ConnectionStatus.ERROR);
+                throw e;
             }
         }
 
