@@ -47,25 +47,25 @@ public class Adapter {
             description = "The adapter configuration associated with this instance")
     private final @NotNull Map<String, Object>  config;
 
-    @JsonProperty("runtimeStatus")
-    @Schema(name = "runtimeStatus",
+    @JsonProperty("status")
+    @Schema(name = "status",
             description = "Information associated with the runtime of this adapter")
-    private final @Nullable Status runtimeStatus;
+    private final @Nullable Status status;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public Adapter(
             @JsonProperty("id") final @NotNull String id,
             @JsonProperty("type") final @NotNull String protocolAdapterType,
             @JsonProperty("config") final @NotNull Map<String, Object>  config,
-            @JsonProperty("runtimeStatus") final @Nullable Status runtimeStatus) {
+            @JsonProperty("status") final @Nullable Status status) {
         this.id = id;
         this.protocolAdapterType = protocolAdapterType;
         this.config = config;
-        this.runtimeStatus = runtimeStatus;
+        this.status = status;
     }
 
-    public @Nullable Status getRuntimeStatus() {
-        return runtimeStatus;
+    public @Nullable Status getStatus() {
+        return status;
     }
 
     public @NotNull String getId() {

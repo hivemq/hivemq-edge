@@ -60,7 +60,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected @Nullable String lastErrorMessage;
     protected @Nullable volatile Object lock = new Object();
     protected @Nullable volatile RuntimeStatus runtimeStatus = RuntimeStatus.STOPPED;
-    protected @Nullable volatile ConnectionStatus connectionStatus = ConnectionStatus.STATELESS;
+    protected @Nullable volatile ConnectionStatus connectionStatus = ConnectionStatus.DISCONNECTED;
 
     public AbstractProtocolAdapter(final @NotNull ProtocolAdapterInformation adapterInformation,
                                    final @NotNull T adapterConfig,
