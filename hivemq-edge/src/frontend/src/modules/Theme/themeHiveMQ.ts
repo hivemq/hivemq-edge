@@ -71,11 +71,10 @@ export const themeHiveMQ = extendTheme({
 
   colors: {
     status: {
-      connected: baseTheme.colors.green,
-      disconnected: baseTheme.colors.gray,
-      connecting: baseTheme.colors.orange,
-      disconnecting: baseTheme.colors.orange,
       error: baseTheme.colors.red,
+      connected: baseTheme.colors.green,
+      disconnected: baseTheme.colors.orange,
+      stateless: baseTheme.colors.gray,
     },
     // Based on 20-scale palette. One in two, omitting #fff
     brand: {
