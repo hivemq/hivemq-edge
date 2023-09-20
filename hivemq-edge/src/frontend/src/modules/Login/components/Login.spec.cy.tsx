@@ -7,7 +7,7 @@ describe('Login', () => {
     cy.viewport(800, 900)
   })
 
-  it.only('should render properly', () => {
+  it('should render properly', () => {
     cy.intercept('/api/v1/auth/authenticate', {
       token: 'fake_token',
     }).as('getConfig')

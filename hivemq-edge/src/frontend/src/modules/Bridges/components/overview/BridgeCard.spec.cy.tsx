@@ -11,7 +11,7 @@ describe('BridgeCard', () => {
     cy.viewport(500, 800)
   })
 
-  it.only('should render properly', () => {
+  it('should render properly', () => {
     cy.intercept('/api/v1/management/bridges/status', { items: [mockBridgeConnectionStatus] }).as('getStatus')
     const mockOnSubmit = cy.stub().as('onNavigate')
 

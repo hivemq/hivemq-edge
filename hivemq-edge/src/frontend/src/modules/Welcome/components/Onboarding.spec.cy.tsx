@@ -49,7 +49,7 @@ describe('Onboarding', () => {
     cy.percySnapshot('Component: Onboarding')
   })
 
-  it.only('should render properly', () => {
+  it('should render properly', () => {
     cy.mountWithProviders(<Onboarding tasks={MOCK_ONBOARDING} />)
     cy.get('a[aria-label="Get Started"]').should('have.length', 3)
     cy.get('a[aria-label="Get Started"]').eq(0).should('have.attr', 'href', '/link1')
