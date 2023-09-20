@@ -4,13 +4,13 @@ import { MOCK_ADAPTER_ID, MOCK_BRIDGE_ID } from '@/__test-utils__/mocks.ts'
 
 export const mockBridgeConnectionStatus: Status = {
   id: MOCK_BRIDGE_ID,
-  connectionStatus: Status.connectionStatus.CONNECTED,
+  connection: Status.connection.CONNECTED,
   type: 'bridge',
 }
 
 export const mockAdapterConnectionStatus: Status = {
   id: MOCK_ADAPTER_ID,
-  connectionStatus: Status.connectionStatus.CONNECTED,
+  connection: Status.connection.CONNECTED,
   type: 'adapter',
 }
 

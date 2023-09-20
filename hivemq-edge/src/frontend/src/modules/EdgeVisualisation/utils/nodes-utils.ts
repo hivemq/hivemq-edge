@@ -33,7 +33,7 @@ export const createBridgeNode = (
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idBridge = `${IdStubs.BRIDGE_NODE}@${bridge.id}`
-  const isConnected = bridge.runtimeStatus?.connectionStatus === Status.connectionStatus.CONNECTED
+  const isConnected = bridge.status?.connection === Status.connection.CONNECTED
   const { local, remote } = getBridgeTopics(bridge)
 
   const nodeBridge: Node<Bridge, NodeTypes.BRIDGE_NODE> = {
@@ -142,7 +142,7 @@ export const createAdapterNode = (
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idAdapter = `${IdStubs.ADAPTER_NODE}@${adapter.id}`
-  const isConnected = adapter.runtimeStatus?.connectionStatus === Status.connectionStatus.CONNECTED
+  const isConnected = adapter.status?.connection === Status.connection.CONNECTED
   const topics = getAdapterTopics(adapter)
 
   const posX = nbAdapter % MAX_ADAPTERS

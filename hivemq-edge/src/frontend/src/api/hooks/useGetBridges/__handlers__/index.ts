@@ -12,8 +12,8 @@ export const mockBridge: Bridge = {
   sessionExpiry: 0,
   cleanStart: true,
   clientId: 'my-client-id',
-  runtimeStatus: {
-    connectionStatus: Status.connectionStatus.CONNECTED,
+  status: {
+    connection: Status.connection.CONNECTED,
   },
   localSubscriptions: [
     {

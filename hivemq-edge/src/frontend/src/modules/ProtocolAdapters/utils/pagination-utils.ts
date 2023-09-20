@@ -1,15 +1,15 @@
 import { Status } from '@/api/__generated__'
 
-const STATUS_ERROR = Status.connectionStatus.ERROR
+const STATUS_ERROR = Status.connection.ERROR
 const STATUS_ORDER = {
-  [Status.connectionStatus.ERROR]: 0,
-  [Status.connectionStatus.CONNECTED]: 1,
-  [Status.connectionStatus.DISCONNECTED]: 2,
-  [Status.connectionStatus.STATELESS]: 3,
-  [Status.connectionStatus.UNKNOWN]: 4,
+  [Status.connection.ERROR]: 0,
+  [Status.connection.CONNECTED]: 1,
+  [Status.connection.DISCONNECTED]: 2,
+  [Status.connection.STATELESS]: 3,
+  [Status.connection.UNKNOWN]: 4,
 }
 
-export function compareStatus(rowA: Status.connectionStatus | undefined, rowB: Status.connectionStatus | undefined) {
+export function compareStatus(rowA: Status.connection | undefined, rowB: Status.connection | undefined) {
   const a = STATUS_ORDER[rowA || STATUS_ERROR]
   const b = STATUS_ORDER[rowB || STATUS_ERROR]
 

@@ -33,7 +33,7 @@ const AdapterStatusContainer: FC<{ id: string }> = ({ id }) => {
 
   const connection = connections?.items?.find((e) => e.id === id)
 
-  return <ConnectionStatusBadge status={connection?.connectionStatus} />
+  return <ConnectionStatusBadge status={connection?.connection} />
 }
 
 const AdapterTypeContainer: FC<ProtocolAdapter> = (adapter) => {
@@ -93,14 +93,13 @@ const ProtocolAdapters: FC = () => {
         header: t('protocolAdapter.table.header.type') as string,
       },
       {
-        accessorFn: (row) => row.runtimeStatus?.connectionStatus,
+        accessorFn: (row) => row.status?.connection,
         id: 'status',
         cell: (info) => <AdapterStatusContainer id={info.row.original.id} />,
-        sortingFn: (rowA, rowB) =>
-          compareStatus(rowA.original.runtimeStatus?.connectionStatus, rowB.original.runtimeStatus?.connectionStatus),
+        sortingFn: (rowA, rowB) => compareStatus(rowA.original.status?.connection, rowB.original.status?.connection),
       },
       {
-        accessorFn: (row) => row.runtimeStatus?.startedAt,
+        accessorFn: (row) => row.status?.startedAt,
         id: 'lastStartedAttemptTime',
         cell: (info) => DateTime.fromISO(info.getValue() as string).toRelativeCalendar({ unit: 'minutes' }),
         header: t('protocolAdapter.table.header.lastStarted') as string,

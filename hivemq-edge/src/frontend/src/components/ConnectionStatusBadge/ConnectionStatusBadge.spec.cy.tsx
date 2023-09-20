@@ -12,11 +12,11 @@ describe('ConnectionStatusBadge', () => {
 
   const selectors = [
     { status: undefined },
-    { status: Status.connectionStatus.CONNECTED },
-    { status: Status.connectionStatus.DISCONNECTED },
-    { status: Status.connectionStatus.STATELESS },
-    { status: Status.connectionStatus.UNKNOWN },
-    { status: Status.connectionStatus.ERROR },
+    { status: Status.connection.CONNECTED },
+    { status: Status.connection.DISCONNECTED },
+    { status: Status.connection.STATELESS },
+    { status: Status.connection.UNKNOWN },
+    { status: Status.connection.ERROR },
   ]
   it.each(selectors)(
     (selector) => `should render and be accessible for ${selector.status}`,
