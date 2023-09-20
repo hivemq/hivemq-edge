@@ -4,10 +4,10 @@
 /* eslint-disable */
 import type { Adapter } from '../models/Adapter';
 import type { AdaptersList } from '../models/AdaptersList';
-import type { ConnectionStatus } from '../models/ConnectionStatus';
-import type { ConnectionStatusList } from '../models/ConnectionStatusList';
-import type { ConnectionStatusTransitionCommand } from '../models/ConnectionStatusTransitionCommand';
 import type { ProtocolAdaptersList } from '../models/ProtocolAdaptersList';
+import type { Status } from '../models/Status';
+import type { StatusList } from '../models/StatusList';
+import type { StatusTransitionCommand } from '../models/StatusTransitionCommand';
 import type { ValuesTree } from '../models/ValuesTree';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -92,48 +92,6 @@ export class ProtocolAdaptersService {
     }
 
     /**
-     * Get the up to date status of a bridge
-     * Get the up to date status of a bridge.
-     * @param adapterId The name of the adapter to query.
-     * @returns ConnectionStatus Success
-     * @throws ApiError
-     */
-    public getConnectionStatus1(
-        adapterId: string,
-    ): CancelablePromise<ConnectionStatus> {
-        return this.httpRequest.request({
-            method: 'GET',
-            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/connection',
-            path: {
-                'adapterId': adapterId,
-            },
-        });
-    }
-
-    /**
-     * Transition the connection status of an adapter
-     * Transition the connection status of an adapter.
-     * @param adapterId The id of the adapter whose connection-status will change.
-     * @param requestBody The command to transition the adapter connection status.
-     * @returns any Success
-     * @throws ApiError
-     */
-    public changeConnectionStatus1(
-        adapterId: string,
-        requestBody: ConnectionStatusTransitionCommand,
-    ): CancelablePromise<any> {
-        return this.httpRequest.request({
-            method: 'PUT',
-            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/connection',
-            path: {
-                'adapterId': adapterId,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
-        });
-    }
-
-    /**
      * Discover a list of available data points
      * Obtain a list of available values accessible via this protocol adapter.
      * @param adapterId The adapter Id.
@@ -157,6 +115,51 @@ export class ProtocolAdaptersService {
                 'root': root,
                 'depth': depth,
             },
+            errors: {
+                400: `Protocol adapter does not support discovery`,
+            },
+        });
+    }
+
+    /**
+     * Get the up to date status of a bridge
+     * Get the up to date status of a bridge.
+     * @param adapterId The name of the adapter to query.
+     * @returns Status Success
+     * @throws ApiError
+     */
+    public getStatus1(
+        adapterId: string,
+    ): CancelablePromise<Status> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/status',
+            path: {
+                'adapterId': adapterId,
+            },
+        });
+    }
+
+    /**
+     * Transition the runtime status of an adapter
+     * Transition the runtime status of an adapter.
+     * @param adapterId The id of the adapter whose runtime status will change.
+     * @param requestBody The command to transition the adapter runtime status.
+     * @returns any Success
+     * @throws ApiError
+     */
+    public changeStatus1(
+        adapterId: string,
+        requestBody: StatusTransitionCommand,
+    ): CancelablePromise<any> {
+        return this.httpRequest.request({
+            method: 'PUT',
+            url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/status',
+            path: {
+                'adapterId': adapterId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 
@@ -186,10 +189,10 @@ export class ProtocolAdaptersService {
     /**
      * Get the status of all the adapters in the system.
      * Obtain the details.
-     * @returns ConnectionStatusList The Connection Details Verification Result.
+     * @returns StatusList The Connection Details Verification Result.
      * @throws ApiError
      */
-    public status1(): CancelablePromise<ConnectionStatusList> {
+    public status1(): CancelablePromise<StatusList> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/management/protocol-adapters/status',

@@ -13,7 +13,7 @@ export const $Link = {
         displayText: {
             type: 'string',
             description: `The link display text`,
-            isRequired: true,
+            isNullable: true,
         },
         external: {
             type: 'boolean',

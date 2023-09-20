@@ -2,12 +2,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export const $ConnectionStatusList = {
+export const $StatusList = {
     properties: {
         items: {
             type: 'array',
             contains: {
-                type: 'ConnectionStatus',
+                type: 'Status',
             },
         },
     },

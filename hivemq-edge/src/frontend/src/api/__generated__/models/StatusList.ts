@@ -3,12 +3,12 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { ConnectionStatus } from './ConnectionStatus';
+import type { Status } from './Status';
 
-export type ConnectionStatusList = {
+export type StatusList = {
     /**
      * List of result items that are returned by this endpoint
      */
-    items?: Array<ConnectionStatus>;
+    items?: Array<Status>;
 };
 

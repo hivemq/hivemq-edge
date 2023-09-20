@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export const $ConnectionStatusTransitionCommand = {
+export const $StatusTransitionCommand = {
     properties: {
         command: {
             type: 'Enum',
