@@ -4,9 +4,9 @@
 /* eslint-disable */
 import type { Bridge } from '../models/Bridge';
 import type { BridgeList } from '../models/BridgeList';
-import type { ConnectionStatus } from '../models/ConnectionStatus';
-import type { ConnectionStatusList } from '../models/ConnectionStatusList';
-import type { ConnectionStatusTransitionCommand } from '../models/ConnectionStatusTransitionCommand';
+import type { Status } from '../models/Status';
+import type { StatusList } from '../models/StatusList';
+import type { StatusTransitionCommand } from '../models/StatusTransitionCommand';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -49,10 +49,10 @@ export class BridgesService {
     /**
      * Get the status of all the bridges in the system.
      * Obtain the details.
-     * @returns ConnectionStatusList The Connection Details Verification Result.
+     * @returns StatusList The Connection Details Verification Result.
      * @throws ApiError
      */
-    public status(): CancelablePromise<ConnectionStatusList> {
+    public status(): CancelablePromise<StatusList> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/management/bridges/status',
@@ -124,12 +124,12 @@ export class BridgesService {
      * Get the up to date status of a bridge
      * Get the up to date status of a bridge.
      * @param bridgeId The name of the bridge to query.
-     * @returns ConnectionStatus Success
+     * @returns Status Success
      * @throws ApiError
      */
-    public getConnectionStatus(
+    public getStatus(
         bridgeId: string,
-    ): CancelablePromise<ConnectionStatus> {
+    ): CancelablePromise<Status> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/management/bridges/{bridgeId}/connection-status',
@@ -140,20 +140,20 @@ export class BridgesService {
     }
 
     /**
-     * Transition the connection status of a bridge
+     * Transition the runtime status of a bridge
      * Transition the connection status of a bridge.
-     * @param bridgeId The id of the bridge whose connection-status will change.
-     * @param requestBody The command to transition the bridge connection status.
+     * @param bridgeId The id of the bridge whose runtime-status will change.
+     * @param requestBody The command to transition the bridge runtime status.
      * @returns any Success
      * @throws ApiError
      */
-    public changeConnectionStatus(
+    public changeStatus(
         bridgeId: string,
-        requestBody: ConnectionStatusTransitionCommand,
+        requestBody: StatusTransitionCommand,
     ): CancelablePromise<any> {
         return this.httpRequest.request({
             method: 'PUT',
-            url: '/api/v1/management/bridges/{bridgeId}/connection-status',
+            url: '/api/v1/management/bridges/{bridgeId}/status',
             path: {
                 'bridgeId': bridgeId,
             },

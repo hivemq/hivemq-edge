@@ -14,7 +14,7 @@ export type Link = {
     /**
      * The link display text
      */
-    displayText: string;
+    displayText?: string | null;
     /**
      * A mandatory Boolean indicating if the link is internal to the context or an external webLink
      */

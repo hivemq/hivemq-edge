@@ -3,21 +3,21 @@
 /* tslint:disable */
 /* eslint-disable */
 
-export type ConnectionStatusTransitionCommand = {
+export type StatusTransitionCommand = {
     /**
      * The command to perform on the target connection.
      */
-    command?: ConnectionStatusTransitionCommand.command;
+    command?: StatusTransitionCommand.command;
 };
 
-export namespace ConnectionStatusTransitionCommand {
+export namespace StatusTransitionCommand {
 
     /**
      * The command to perform on the target connection.
      */
     export enum command {
-        CONNECT = 'CONNECT',
-        DISCONNECT = 'DISCONNECT',
+        START = 'START',
+        STOP = 'STOP',
         RESTART = 'RESTART',
     }
 

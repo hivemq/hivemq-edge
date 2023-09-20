@@ -14,6 +14,10 @@ export type ProtocolAdapter = {
      * The author of the adapter
      */
     author?: string;
+    /**
+     * The capabilities of this adapter
+     */
+    capabilities?: Array<'READ' | 'WRITE' | 'DISCOVER'>;
     category?: ProtocolAdapterCategory;
     configSchema?: JsonNode;
     /**

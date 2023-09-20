@@ -3,12 +3,11 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import type { BridgeRuntimeInformation } from './BridgeRuntimeInformation';
 import type { BridgeSubscription } from './BridgeSubscription';
+import type { Status } from './Status';
 import type { TlsConfiguration } from './TlsConfiguration';
 
 export type Bridge = {
-    bridgeRuntimeInformation?: BridgeRuntimeInformation;
     /**
      * The cleanStart value associated the the MQTT connection.
      */
@@ -53,6 +52,7 @@ export type Bridge = {
      * remoteSubscriptions associated with the bridge
      */
     remoteSubscriptions?: Array<BridgeSubscription>;
+    runtimeStatus?: Status;
     /**
      * The sessionExpiry associated the the MQTT connection.
      */
