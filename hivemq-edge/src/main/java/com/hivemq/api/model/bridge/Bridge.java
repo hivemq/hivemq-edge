@@ -140,9 +140,9 @@ public class Bridge {
     @Schema(description = "tlsConfiguration associated with the bridge", nullable = true)
     private final @Nullable TlsConfiguration tlsConfiguration;
 
-    @JsonProperty("runtimeStatus")
-    @Schema(description = "runtimeStatus associated with the bridge", nullable = true)
-    private final @Nullable Status runtimeStatus;
+    @JsonProperty("status")
+    @Schema(description = "status associated with the bridge", nullable = true)
+    private final @Nullable Status status;
 
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -161,7 +161,7 @@ public class Bridge {
             @NotNull @JsonProperty("remoteSubscriptions") final List<BridgeSubscription> remoteSubscriptions,
             @NotNull @JsonProperty("localSubscriptions") final List<BridgeSubscription> localSubscriptions,
             @Nullable @JsonProperty("tlsConfiguration") final TlsConfiguration tlsConfiguration,
-            @Nullable @JsonProperty("runtimeStatus") final Status runtimeStatus) {
+            @Nullable @JsonProperty("status") final Status status) {
         this.id = id;
         this.host = host;
         this.port = port;
@@ -176,11 +176,11 @@ public class Bridge {
         this.remoteSubscriptions = remoteSubscriptions;
         this.localSubscriptions = localSubscriptions;
         this.tlsConfiguration = tlsConfiguration;
-        this.runtimeStatus = runtimeStatus;
+        this.status = status;
     }
 
-    public Status getRuntimeStatus() {
-        return runtimeStatus;
+    public Status getStatus() {
+        return status;
     }
 
     public String getId() {
