@@ -61,11 +61,7 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
                              final @NotNull HttpAdapterConfig adapterConfig,
                              final @NotNull MetricRegistry metricRegistry) {
         super(adapterInformation, adapterConfig, metricRegistry);
-    }
-
-    @Override
-    public ConnectionStatus getConnectionStatus() {
-        return ConnectionStatus.STATELESS;
+        setConnectionStatus(ConnectionStatus.STATELESS);
     }
 
     @Override
@@ -133,6 +129,7 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
 
     protected void captured(final @NotNull HttpData data) throws ProtocolAdapterException {
         boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) || !adapterConfig.isHttpPublishSuccessStatusCodeOnly();
+        setConnectionStatus(isSuccessStatusCode(data.getHttpStatusCode()) ? ConnectionStatus.STATELESS : ConnectionStatus.ERROR);
         if (publishData) {
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
                     .withTopic(data.getTopic())
