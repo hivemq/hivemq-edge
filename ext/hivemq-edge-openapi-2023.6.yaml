@@ -1194,8 +1194,6 @@ components:
           description: remoteSubscriptions associated with the bridge
           items:
             $ref: '#/components/schemas/BridgeSubscription'
-        runtimeStatus:
-          $ref: '#/components/schemas/Status'
         sessionExpiry:
           type: integer
           format: int32
@@ -1203,6 +1201,8 @@ components:
           description: The sessionExpiry associated the the MQTT connection.
           maximum: 4294967295
           minimum: 0
+        status:
+          $ref: '#/components/schemas/Status'
         tlsConfiguration:
           $ref: '#/components/schemas/TlsConfiguration'
         username:
