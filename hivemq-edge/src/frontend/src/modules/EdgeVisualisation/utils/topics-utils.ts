@@ -4,6 +4,7 @@ import { GenericObjectType, RJSFSchema } from '@rjsf/utils'
 import { OpcUaClient } from '@/api/__generated__/adapters/opc-ua-client'
 import { Modbus } from '@/api/__generated__/adapters/modbus'
 import { Simulation } from '@/api/__generated__/adapters/simulation'
+import { CustomFormat } from '@/api/types/json-schema.ts'
 
 import { TopicFilter } from '../types.ts'
 
@@ -64,7 +65,7 @@ export const getTopicPaths = (configSchema: RJSFSchema) => {
   return (
     Object.entries(flattenSchema)
       // Only interested in topics, internally defined by the string format `format: 'mqtt-topic'`
-      .filter(([k, v]) => k.endsWith('format') && v === 'mqtt-topic')
+      .filter(([k, v]) => k.endsWith('format') && v === CustomFormat.MQTT_TOPIC)
       .map(([path]) =>
         path
           // The root of the path will always be "properties" [?]
