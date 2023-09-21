@@ -3,6 +3,7 @@
 import ProtocolAdapters from '@/modules/ProtocolAdapters/components/panels/ProtocolAdapters.tsx'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockAdapterConnectionStatus } from '@/api/hooks/useConnection/__handlers__'
+import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
 describe('ProtocolAdapters', () => {
   beforeEach(() => {
@@ -17,7 +18,8 @@ describe('ProtocolAdapters', () => {
     cy.mountWithProviders(<ProtocolAdapters />)
 
     cy.wait('@getAdapters').then(() => {
-      cy.get('tbody').get('tr').eq(1).get('td').eq(0).should('contain.text', 'my-adapter')
+      cy.get('tbody').find('tr').should('have.length', 1)
+      cy.get('tbody').find('tr').find('td').eq(0).should('contain.text', MOCK_ADAPTER_ID)
       cy.checkAccessibility()
       cy.percySnapshot('Component: ProtocolAdapters')
     })
