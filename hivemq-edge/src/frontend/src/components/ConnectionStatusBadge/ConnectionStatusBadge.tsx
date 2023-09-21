@@ -15,7 +15,6 @@ interface ConnectionStatusBadgeProps {
 }
 
 const ConnectionStatusBadge: FC<ConnectionStatusBadgeProps> = ({ status }) => {
-  console.log('XXXXX st', status)
   return (
     <Badge
       variant="subtle"
