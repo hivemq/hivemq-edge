@@ -15,9 +15,11 @@ describe('ProtocolAdapters', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ProtocolAdapters />)
-    cy.wait('@getAdapters')
 
-    cy.checkAccessibility()
-    cy.percySnapshot('Component: ProtocolAdapters')
+    cy.wait('@getAdapters').then(() => {
+      cy.get('tbody').get('tr').eq(1).get('td').eq(0).should('contain.text', 'my-adapter')
+      cy.checkAccessibility()
+      cy.percySnapshot('Component: ProtocolAdapters')
+    })
   })
 })
