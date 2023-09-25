@@ -3,18 +3,24 @@ package com.hivemq.adapter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.base.Preconditions;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import wiremock.org.custommonkey.xmlunit.NodeTestException;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 
 /**
@@ -44,13 +50,50 @@ public class SchemaNodeGeneratorTest {
         Assertions.assertEquals("Identifier", nodes.next().get("title").textValue(), "Identifier Should be Last");
     }
 
-//    @Test
-//    public void testHttpConfig() throws JsonProcessingException {
-//
-//        CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
-//        JsonNode node = generator.generateJsonSchema(HttpAdapterConfig.class);
+    @Test
+    public void testNestedEntitySchemaDuplication() {
+
+        CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
+        JsonNode node = generator.generateJsonSchema(TestNestedEntity.class);
 //        System.err.println(mapper.writeValueAsString(node));
-//    }
+        JsonNode propertiesNode = node.get("properties");
+        JsonNode subscriptions = findFirstChild(propertiesNode, "subscriptions");
+        JsonNode subscriptionItems = findFirstChild(subscriptions, "items");
+        Assertions.assertFalse(hasImmediateChild(subscriptionItems, "title"), "Wrapped typed should not have a duplicate title");
+        Assertions.assertFalse(hasImmediateChild(subscriptionItems, "description"), "Wrapped typed should not have a duplicate description");
+    }
+
+    @Test
+    public void testCustomAttributesAppearInSchema() {
+
+        CustomConfigSchemaGenerator generator = new CustomConfigSchemaGenerator();
+        JsonNode node = generator.generateJsonSchema(TestNestedEntity.class);
+        JsonNode propertiesNode = node.get("properties");
+        JsonNode subscriptions = findFirstChild(propertiesNode, "subscriptions");
+        JsonNode subscriptionItems = findFirstChild(subscriptions, "items");
+        Assertions.assertTrue(hasImmediateChild(subscriptionItems, "testAttributeName"), "Wrapped typed should have a test-attribute");
+    }
+
+    private static JsonNode findFirstChild(final @NotNull JsonNode parent, final @NotNull String nodeName){
+        Preconditions.checkNotNull(parent);
+        JsonNode child = parent.get(nodeName);
+        if(child != null){
+            return child;
+        } else {
+            Iterator<JsonNode> nodes = parent.iterator();
+            while (nodes.hasNext()){
+                if((child = findFirstChild(nodes.next(), nodeName)) != null){
+                    return child;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean hasImmediateChild(final @NotNull JsonNode parent, final @NotNull String nodeName){
+        Preconditions.checkNotNull(parent);
+        return parent.get(nodeName) != null;
+    }
 
     @JsonPropertyOrder({"startIdx", "endIdx"})
     static class TestOrderingConfig extends AbstractProtocolAdapterConfig {
@@ -62,5 +105,16 @@ public class SchemaNodeGeneratorTest {
         @JsonProperty(value = "endIdx")
         @ModuleConfigField(title = "End Index")
         int endIdx;
+    }
+
+    static class TestNestedEntity extends AbstractProtocolAdapterConfig {
+
+        @JsonProperty("subscriptions")
+        @ModuleConfigField(title = "Subscriptions",
+                           description = "Map your sensor data to MQTT Topics", customAttributes = {
+                @ModuleConfigField.CustomAttribute(name = "testAttributeName", value = "testAttributeValue")
+        })
+        private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+
     }
 }

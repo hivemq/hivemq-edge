@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * Annotation to enrich configuration fields with user facing information
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.METHOD})
+@Target({ElementType.FIELD, ElementType.METHOD, ElementType.TYPE})
 public @interface ModuleConfigField {
 
     /**
