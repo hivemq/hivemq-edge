@@ -473,7 +473,7 @@
     "description": "Set your unified namespace architecture.",
     "standard": "ISA-95",
     "action": {
-      "define": "Set up a unified namespace"
+      "define": "Modify the unified namespace"
     },
     "error": {
       "loading": "We cannot load your namespace for the time being. Please try again later"
