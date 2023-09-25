@@ -87,6 +87,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
 
             opcUaClient.connect().thenAccept(uaClient -> {
 
+                setConnectionStatus(ConnectionStatus.CONNECTED);
                 opcUaClient.getSubscriptionManager().addSubscriptionListener(createSubscriptionListener(input));
 
                 createAllSubscriptions(input.moduleServices()
@@ -211,7 +212,6 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
         }
 
         CompletableFuture.allOf(subscribeFutures.build().toArray(new CompletableFuture[]{})).thenApply(unused -> {
-            setConnectionStatus(ConnectionStatus.CONNECTED);
             resultFuture.complete(null);
             return null;
         }).exceptionally(throwable -> {
