@@ -128,6 +128,7 @@ public interface BridgeApi {
     @Path("/{bridgeId: ([a-zA-Z_0-9\\-])*}/connection-status")
     @Operation(summary = "Get the up to date status of a bridge",
                description = "Get the up to date status of a bridge.",
+               operationId = "get-bridge-status",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
@@ -149,6 +150,7 @@ public interface BridgeApi {
     @Path("/{bridgeId: ([a-zA-Z_0-9\\-])*}/status")
     @Operation(summary = "Transition the runtime status of a bridge",
                description = "Transition the connection status of a bridge.",
+               operationId = "transition-bridge-status",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
@@ -197,8 +199,8 @@ public interface BridgeApi {
     @GET
     @Path("/status")
     @Operation(summary = "Get the status of all the bridges in the system.",
-               operationId = "status",
                description = "Obtain the details.",
+               operationId = "get-bridges-status",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "The Connection Details Verification Result.",

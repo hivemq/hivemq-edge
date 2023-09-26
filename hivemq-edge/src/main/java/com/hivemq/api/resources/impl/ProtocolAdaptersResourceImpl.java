@@ -36,13 +36,14 @@ import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.protocols.AdapterInstance;
+import com.hivemq.protocols.ProtocolAdapterWrapper;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
 import com.hivemq.protocols.params.NodeTreeImpl;
@@ -108,7 +109,6 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return Response.status(200).entity(new AdaptersList(adapters)).build();
     }
 
-
     @Override
     public @NotNull Response getAdaptersForType(@NotNull final String adapterType) {
 
@@ -130,7 +130,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAdapter(final @NotNull String adapterId) {
-        Optional<AdapterInstance> instance = protocolAdapterManager.getAdapterById(adapterId);
+        Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (!instance.isPresent()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
@@ -138,7 +138,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
 
-    private @NotNull Adapter convertToAdapter(final @NotNull AdapterInstance value) {
+    private @NotNull Adapter convertToAdapter(final @NotNull ProtocolAdapterWrapper value) {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         Map<String, Object> configObject;
         try {
@@ -157,12 +157,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response discoverValues(
             @NotNull final String adapterId, final @Nullable String rootNode, final @Nullable Integer depth) {
 
-        Optional<AdapterInstance> instance = protocolAdapterManager.getAdapterById(adapterId);
+        Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (!instance.isPresent()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
 
-        final AdapterInstance adapterInstance = instance.get();
+        final ProtocolAdapterWrapper adapterInstance = instance.get();
         if(!ProtocolAdapterCapability.supportsCapability(adapterInstance.getAdapterInformation(),
                 ProtocolAdapterCapability.DISCOVER)){
             return ApiErrorUtils.badRequest("Adapter does not support discovery");
@@ -202,7 +202,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
-        Optional<AdapterInstance> instance = protocolAdapterManager.getAdapterById(adapter.getId());
+        Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapter.getId());
         if (instance.isPresent()) {
             ApiErrorUtils.addValidationError(errorMessages, "id", "Adapter ID must be unique in system");
             return ApiErrorUtils.badRequest(errorMessages);
@@ -213,7 +213,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.badRequest(errorMessages);
         }
         try {
-            protocolAdapterManager.addAdapter(adapterType, adapter.getId(), adapter.getConfig(), true);
+            protocolAdapterManager.addAdapter(adapterType, adapter.getId(), adapter.getConfig());
         } catch(IllegalArgumentException e){
             if(e.getCause() instanceof UnrecognizedPropertyException){
                 ApiErrorUtils.addValidationError(errorMessages,
@@ -229,7 +229,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public Response updateAdapter(final String adapterId, final Adapter adapter) {
-        Optional<AdapterInstance> instance = protocolAdapterManager.getAdapterById(adapterId);
+        Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (!instance.isPresent()) {
             return ApiErrorUtils.notFound("Cannot update an adapter that does not exist");
         }
@@ -239,7 +239,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public Response deleteAdapter(final String adapterId) {
-        Optional<AdapterInstance> instance = protocolAdapterManager.getAdapterById(adapterId);
+        Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (!instance.isPresent()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
@@ -262,14 +262,19 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         } else {
             switch (command.getCommand()) {
                 case START:
+                    protocolAdapterManager.start(adapterId);
                     break;
                 case STOP:
+                    protocolAdapterManager.stop(adapterId);
                     break;
                 case RESTART:
+                    protocolAdapterManager.stop(adapterId).thenRun(() ->
+                            protocolAdapterManager.start(adapterId));
                     break;
             }
             return Response.ok(
-                    StatusTransitionResult.pending(ApiConstants.ADAPTER_TYPE, adapterId, ApiConstants.DEFAULT_TRANSITION_WAIT_TIMEOUT)).build();
+                    StatusTransitionResult.pending(ApiConstants.ADAPTER_TYPE, adapterId,
+                            ApiConstants.DEFAULT_TRANSITION_WAIT_TIMEOUT)).build();
         }
     }
 
@@ -291,7 +296,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     protected Status getStatusInternal(final @NotNull String adapterId) {
-        Optional<AdapterInstance> optionalAdapterInstance = protocolAdapterManager.getAdapterById(adapterId);
+        Optional<ProtocolAdapterWrapper> optionalAdapterInstance = protocolAdapterManager.getAdapterById(adapterId);
         if (optionalAdapterInstance.isPresent()) {
             return AdapterStatusModelConversionUtils.getAdapterStatus(
                     optionalAdapterInstance.get().getAdapter());
@@ -326,8 +331,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public Response status() {
         ImmutableList.Builder<Status> builder = new ImmutableList.Builder<>();
-        Map<String, AdapterInstance> adapters = protocolAdapterManager.getProtocolAdapters();
-        for (AdapterInstance instance : adapters.values()) {
+        Map<String, ProtocolAdapterWrapper> adapters = protocolAdapterManager.getProtocolAdapters();
+        for (ProtocolAdapterWrapper instance : adapters.values()) {
             builder.add(AdapterStatusModelConversionUtils.getAdapterStatus(instance.getAdapter()));
         }
         return Response.status(200).entity(new StatusList(builder.build())).build();

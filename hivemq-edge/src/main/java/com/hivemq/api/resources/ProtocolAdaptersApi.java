@@ -208,8 +208,9 @@ public interface ProtocolAdaptersApi {
 
     @GET
     @Path("/adapters/{adapterId: ([a-zA-Z_0-9\\-])*}/status")
-    @Operation(summary = "Get the up to date status of a bridge",
-               description = "Get the up to date status of a bridge.",
+    @Operation(summary = "Get the up to date status of an adapter",
+               description = "Get the up to date status an adapter.",
+               operationId = "get-adapter-status",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
@@ -231,6 +232,7 @@ public interface ProtocolAdaptersApi {
     @Path("/adapters/{adapterId: ([a-zA-Z_0-9\\-])*}/status")
     @Operation(summary = "Transition the runtime status of an adapter",
                description = "Transition the runtime status of an adapter.",
+               operationId = "transition-adapter-status",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
@@ -257,8 +259,8 @@ public interface ProtocolAdaptersApi {
     @GET
     @Path("/status")
     @Operation(summary = "Get the status of all the adapters in the system.",
-               operationId = "status",
                description = "Obtain the details.",
+               operationId = "get-adapters-status",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "The Connection Details Verification Result.",
