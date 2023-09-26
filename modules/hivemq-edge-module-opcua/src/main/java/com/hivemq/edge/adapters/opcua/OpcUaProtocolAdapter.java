@@ -74,15 +74,12 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> start(
+    protected @NotNull CompletableFuture<Void> startInternal(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
-            initStartAttempt();
             if (opcUaClient == null) {
-                bindServices(input.moduleServices());
                 createClient();
             }
-
             final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
 
             opcUaClient.connect().thenAccept(uaClient -> {
@@ -117,30 +114,21 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> stop() {
+    protected @NotNull CompletableFuture<Void> stopInternal() {
         try {
             if (opcUaClient == null) {
-                setConnectionStatus(ConnectionStatus.DISCONNECTED);
                 return CompletableFuture.completedFuture(null);
             }
-
-            return opcUaClient.disconnect().thenAccept(client -> {
-                setConnectionStatus(ConnectionStatus.DISCONNECTED);
-            });
+            else {
+                subscriptionMap.clear();
+                opcUaClient = null;
+                return opcUaClient.disconnect().thenAccept(client -> {
+                    setConnectionStatus(ConnectionStatus.DISCONNECTED);
+                });
+            }
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
-        } finally {
-            setRuntimeStatus(RuntimeStatus.STOPPED);
         }
-    }
-
-    @Override
-    public @NotNull CompletableFuture<Void> close() {
-        return stop().thenApply(unused -> {
-            subscriptionMap.clear();
-            opcUaClient = null;
-            return null;
-        });
     }
 
     @Override
@@ -174,11 +162,6 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
                             nodeType != null ? nodeType : NodeType.VALUE,
                             nodeType != null && nodeType == NodeType.VALUE);
         }, input.getDepth());
-    }
-
-    @Override
-    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
-        return OpcUaProtocolAdapterInformation.INSTANCE;
     }
 
     @NotNull

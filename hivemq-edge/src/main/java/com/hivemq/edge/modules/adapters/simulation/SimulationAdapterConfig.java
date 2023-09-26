@@ -17,22 +17,14 @@ package com.hivemq.edge.modules.adapters.simulation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
+import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class SimulationAdapterConfig extends AbstractProtocolAdapterConfig {
-
-    @JsonProperty(value = "pollingIntervalMillis")
-    @ModuleConfigField(title = "Polling interval [ms]",
-                       description = "Interval in milliseconds to poll for changes",
-                       defaultValue = "10000",
-                       numberMin = 100,
-                       numberMax = 86400000) //24h
-    private int pollingIntervalMillis = 10000;
-
+public class SimulationAdapterConfig extends AbstractPollingProtocolAdapterConfig {
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
                        description = "List of subscriptions for the simulation",
@@ -47,14 +39,6 @@ public class SimulationAdapterConfig extends AbstractProtocolAdapterConfig {
             final @NotNull List<Subscription> subscriptions) {
         this.id = id;
         this.subscriptions = subscriptions;
-    }
-
-    public int getPollingIntervalMillis() {
-        return pollingIntervalMillis;
-    }
-
-    public void setPollingIntervalMillis(int pollingIntervalMillis) {
-        this.pollingIntervalMillis = pollingIntervalMillis;
     }
 
     public void setSubscriptions(List<Subscription> subscriptions) {

@@ -19,6 +19,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
+import com.hivemq.edge.modules.adapters.impl.AbstractPollingPerSubscriptionAdapter;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
 import com.hivemq.edge.modules.adapters.params.NodeTree;
 import com.hivemq.edge.modules.adapters.params.NodeType;
@@ -29,6 +30,7 @@ import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingInputImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
@@ -42,7 +44,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapterConfig> {
+public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter<ModbusAdapterConfig, ModBusData> {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull Object lock = new Object();
     private volatile @Nullable IModbusClient modbusClient;
@@ -56,10 +58,9 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
     }
 
     @Override
-    public CompletableFuture<Void> start(
+    protected CompletableFuture<Void> startInternal(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
-            bindServices(input.moduleServices());
             if (modbusClient == null) {
                 createClient();
             }
@@ -91,30 +92,15 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
     }
 
     @Override
-    public CompletableFuture<Void> stop() {
-
-        setRuntimeStatus(RuntimeStatus.STOPPED);
-        //-- Stop polling jobs
-        protocolAdapterPollingService.getPollingJobsForAdapter(getId()).stream().forEach(
-                protocolAdapterPollingService::stopPolling);
+    protected CompletableFuture<Void> stopInternal() {
         return CompletableFuture.completedFuture(null);
     }
 
-    private void startPolling(final @NotNull ModbusPoller poller) {
-        protocolAdapterPollingService.schedulePolling(this, poller);
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-        return stop();
-    }
-
-
     protected void subscribeInternal(final @NotNull ModbusAdapterConfig.Subscription subscription) {
         if (subscription != null) {
-            ModbusAdapterConfig.AddressRange registerAddressRange = subscription.getHoldingRegisters();
+            ModbusAdapterConfig.AddressRange registerAddressRange = subscription.getAddressRange();
             if (registerAddressRange != null) {
-                startPolling(new HoldingRegistersPoller(registerAddressRange, subscription));
+                startPolling(new SubscriptionSampler(this.adapterConfig, subscription));
             }
         }
     }
@@ -133,31 +119,48 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
         return CompletableFuture.completedFuture(null);
     }
 
-    protected void captured(ModBusData data) throws ProtocolAdapterException {
+    @Override
+    protected void captureDataSample(@NotNull final ModBusData data) throws ProtocolAdapterException {
         boolean publishData = true;
         if (adapterConfig.getPublishChangedDataOnly()) {
             ModBusData previousSample = lastSamples.put(data.getType(), data);
             if (previousSample != null) {
-                Object[][] objects = previousSample.getData();
-                publishData = !Arrays.deepEquals(objects, data.getData());
+                Object[][] objects = (Object[][]) previousSample.getData();
+                publishData = !Arrays.deepEquals(objects, (Object[][]) data.getData());
             }
         }
         if (publishData) {
+            super.captureDataSample(data);
+        }
+    }
 
-            final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
-                    .withTopic(data.getTopic())
-                    .withPayload(convertToJson(data.getData()))
-                    .withQoS(data.getQos().getQosNumber());
 
-            final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
+    @Override
+    protected ModBusData doSample(
+            final ModbusAdapterConfig config,
+            final AbstractProtocolAdapterConfig.Subscription subscription) throws Exception {
 
-            publishFuture.thenAccept(publishReturnCode -> {
-                protocolAdapterMetricsHelper.incrementReadPublishSuccess();
-            }).exceptionally(throwable -> {
-                log.warn("Error Publishing ModBus Payload", throwable);
-                protocolAdapterMetricsHelper.incrementReadPublishFailure();
-                return null;
-            });
+        //-- If a previously linked job has terminally disconnected the client
+        //-- we need to ensure any orphaned jobs tidy themselves up properly
+        try {
+            if(modbusClient != null){
+                if (!modbusClient.isConnected()) {
+                    modbusClient.connect();
+                    setConnectionStatus(ConnectionStatus.CONNECTED);
+                }
+                ModbusAdapterConfig.AddressRange addressRange = ((ModbusAdapterConfig.Subscription)subscription).getAddressRange();
+                Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
+                        addressRange.endIdx - addressRange.startIdx);
+                ModBusData data = new ModBusData(null,subscription.getDestination(), subscription.getQos(),
+                        ModBusData.TYPE.HOLDING_REGISTERS);
+                data.setData(addressRange.startIdx, registers);
+                return data;
+            } else {
+                throw new IllegalStateException("client not initialised");
+            }
+        } catch(Exception e){
+            setConnectionStatus(ConnectionStatus.ERROR);
+            throw e;
         }
     }
 
@@ -175,119 +178,6 @@ public class ModbusProtocolAdapter extends AbstractProtocolAdapter<ModbusAdapter
                 tree.addNode("grouping-" + i, "Addresses " + (i + 1) + "-" + (i + groupIdx), "", parent, NodeType.FOLDER, false);
                 parentNode = "grouping-" + i;
             }
-        }
-    }
-
-    abstract class ModbusPoller extends ProtocolAdapterPollingInputImpl {
-        private final ModbusAdapterConfig.AddressRange addressRange;
-        private final ModBusData.TYPE type;
-        private final ModbusAdapterConfig.Subscription subscription;
-
-        public ModbusPoller(ModbusAdapterConfig.AddressRange addressRange, ModBusData.TYPE type, ModbusAdapterConfig.Subscription subscription) {
-            super(adapterConfig.getPublishingInterval(),
-                    adapterConfig.getPublishingInterval(),
-                    TimeUnit.MILLISECONDS,
-                    adapterConfig.getMaxPollingErrorsBeforeRemoval());
-            this.addressRange = addressRange;
-            this.type = type;
-            this.subscription = subscription;
-        }
-
-        public ModBusData.TYPE getType() {
-            return type;
-        }
-
-        @Override
-        public void execute() throws Exception {
-            //-- If a previously linked job has terminally disconnected the client
-            //-- we need to ensure any orphaned jobs tidy themselves up properly
-            try {
-                if(modbusClient != null){
-                    if (!modbusClient.isConnected()) {
-                        modbusClient.connect();
-                    }
-                    ModBusData data = readAddresses(addressRange);
-                    setConnectionStatus(ConnectionStatus.CONNECTED);
-                    if (data != null) {
-                        captured(data);
-                    }
-                }
-            } catch(Exception e){
-                setConnectionStatus(ConnectionStatus.ERROR);
-                throw e;
-            }
-        }
-
-        @Override
-        public void close() {
-            try {
-                if(modbusClient != null){
-                    setConnectionStatus(ConnectionStatus.DISCONNECTED);
-                    modbusClient.disconnect();
-                }
-            } catch (ProtocolAdapterException e) {
-                log.warn("error closing/disconnecting from modbus client;", e);
-            } finally {
-                modbusClient = null;
-                super.close();
-            }
-        }
-
-        protected ModBusData createData() {
-            ModBusData data = new ModBusData(type,
-                    subscription.getDestination(),
-                    QoS.valueOf(subscription.getQos()));
-            return data;
-        }
-
-        protected abstract ModBusData readAddresses(ModbusAdapterConfig.AddressRange addressRange) throws ProtocolAdapterException;
-    }
-
-    public class HoldingRegistersPoller extends ModbusPoller {
-
-        public HoldingRegistersPoller(ModbusAdapterConfig.AddressRange addressRange, ModbusAdapterConfig.Subscription subscription) {
-            super(addressRange, ModBusData.TYPE.HOLDING_REGISTERS, subscription);
-        }
-
-        @Override
-        protected ModBusData readAddresses(ModbusAdapterConfig.AddressRange addressRange) throws ProtocolAdapterException {
-            Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
-                    addressRange.endIdx - addressRange.startIdx);
-            ModBusData data = createData();
-            data.setData(addressRange.startIdx, registers);
-            return data;
-        }
-    }
-
-    public class InputRegistersPoller extends ModbusPoller {
-
-        public InputRegistersPoller(ModbusAdapterConfig.AddressRange addressRange, ModbusAdapterConfig.Subscription subscription) {
-            super(addressRange, ModBusData.TYPE.INPUT_REGISTERS, subscription);
-        }
-
-        @Override
-        protected ModBusData readAddresses(ModbusAdapterConfig.AddressRange addressRange) throws ProtocolAdapterException {
-            Short[] registers = modbusClient.readInputRegisters(addressRange.startIdx,
-                    addressRange.endIdx - addressRange.startIdx);
-            ModBusData data = createData();
-            data.setData(addressRange.startIdx, registers);
-            return data;
-        }
-    }
-
-    public class CoilsPoller extends ModbusPoller {
-
-        public CoilsPoller(ModbusAdapterConfig.AddressRange addressRange, ModbusAdapterConfig.Subscription subscription) {
-            super(addressRange, ModBusData.TYPE.COILS, subscription);
-        }
-
-        @Override
-        protected ModBusData readAddresses(ModbusAdapterConfig.AddressRange addressRange) throws ProtocolAdapterException {
-            Boolean[] coils = modbusClient.readCoils(addressRange.startIdx,
-                    addressRange.endIdx - addressRange.startIdx);
-            ModBusData data = createData();
-            data.setData(addressRange.startIdx, coils);
-            return data;
         }
     }
 }

@@ -110,7 +110,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
 
     protected void bindServices(final @NotNull ModuleServices moduleServices){
         Preconditions.checkNotNull(moduleServices);
-        if(adapterPublishService != null){
+        if(adapterPublishService == null){
             adapterPublishService = moduleServices.adapterPublishService();
         }
     }

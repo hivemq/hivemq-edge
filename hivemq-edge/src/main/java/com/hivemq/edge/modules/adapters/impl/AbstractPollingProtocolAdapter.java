@@ -10,7 +10,6 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
@@ -36,7 +35,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
     protected void bindServices(final @NotNull ModuleServices moduleServices){
         Preconditions.checkNotNull(moduleServices);
         super.bindServices(moduleServices);
-        if(protocolAdapterPollingService != null){
+        if(protocolAdapterPollingService == null){
             protocolAdapterPollingService = moduleServices.protocolAdapterPollingService();
         }
     }
@@ -94,23 +93,4 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
             }
         }
     }
-//
-//    protected abstract class SubscriptionSampler extends Sampler {
-//
-//        protected final AbstractProtocolAdapterConfig.Subscription subscription;
-//
-//        public SubscriptionSampler(final @NotNull T config,
-//                      final @NotNull AbstractProtocolAdapterConfig.Subscription subscription) {
-//            super(config);
-//            this.subscription = subscription;
-//        }
-//
-//        protected U doSample(@NotNull T config) throws Exception {
-//            return doSample(config, subscription);
-//        }
-//
-//        protected abstract U doSample(@NotNull T config, @NotNull AbstractProtocolAdapterConfig.Subscription subscription) throws Exception ;
-//    }
-
-
 }

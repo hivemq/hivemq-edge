@@ -15,10 +15,12 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
@@ -27,7 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ModbusAdapterConfig extends AbstractProtocolAdapterConfig {
+public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
     @JsonProperty("port")
     @ModuleConfigField(title = "Port",
@@ -43,21 +45,6 @@ public class ModbusAdapterConfig extends AbstractProtocolAdapterConfig {
             required = true,
             format = ModuleConfigField.FieldType.HOSTNAME)
     private @NotNull String host;
-
-    @JsonProperty("publishingInterval")
-    @ModuleConfigField(title = "Publishing interval [ms]",
-            description = "Publishing interval in milliseconds for this subscription on the server",
-            numberMin = 1,
-            required = true,
-            defaultValue = "1000")
-    private int publishingInterval = DEFAULT_PUBLISHING_INTERVAL; //1 second
-
-    @JsonProperty("maxPollingErrorsBeforeRemoval")
-    @ModuleConfigField(title = "Max. Polling Errors",
-            description = "Max. errors polling the endpoint before the polling daemon is stopped",
-            numberMin = 3,
-            defaultValue = "10")
-    private int maxPollingErrorsBeforeRemoval = DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL;
 
     @JsonProperty("publishChangedDataOnly")
     @ModuleConfigField(title = "Only publish data items that have changed since last poll",
@@ -77,10 +64,6 @@ public class ModbusAdapterConfig extends AbstractProtocolAdapterConfig {
         return publishChangedDataOnly;
     }
 
-    public int getMaxPollingErrorsBeforeRemoval() {
-        return maxPollingErrorsBeforeRemoval;
-    }
-
     public int getPort() {
         return port;
     }
@@ -89,22 +72,19 @@ public class ModbusAdapterConfig extends AbstractProtocolAdapterConfig {
         return host;
     }
 
-    public int getPublishingInterval() {
-        return publishingInterval;
-    }
-
     public @NotNull List<Subscription> getSubscriptions() {
         return subscriptions;
     }
 
     public static class Subscription extends AbstractProtocolAdapterConfig.Subscription {
-        @JsonProperty("holding-registers")
+        @JsonProperty("addressRange")
+        @JsonAlias("holding-registers")
         @ModuleConfigField(title = "Holding Registers",
-                           description = "Define the start and end index values for your holding registers")
-        private @NotNull AddressRange holdingRegisters;
+                           description = "Define the start and end index values for your memory addresses")
+        private @NotNull AddressRange addressRange;
 
-        public @NotNull AddressRange getHoldingRegisters() {
-            return holdingRegisters;
+        public @NotNull AddressRange getAddressRange() {
+            return addressRange;
         }
     }
 
@@ -124,7 +104,7 @@ public class ModbusAdapterConfig extends AbstractProtocolAdapterConfig {
 
         @JsonProperty("endIdx")
         @ModuleConfigField(title = "End Index",
-                description = "The Finishing Index (Incl.) of the Address Range",
+                description = "The Finishing Index (Excl.) of the Address Range",
                 numberMin = 1,
                 numberMax = CustomConfig.PORT_MAX,
                 defaultValue = "1")
