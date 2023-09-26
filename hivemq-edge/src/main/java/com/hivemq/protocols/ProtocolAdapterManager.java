@@ -223,8 +223,7 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(id);
         Optional<AdapterInstance> adapterInstance = getAdapterById(id);
         if (adapterInstance.isPresent()) {
-            adapterInstance.get().getAdapter().stop().whenComplete(
-                    (result, ex) -> adapterInstance.get().getAdapter().close());
+            adapterInstance.get().getAdapter().stop();
             if (protocolAdapters.remove(id) != null) {
                 synchronized(lock){
                     Map<String, Object> mainMap =

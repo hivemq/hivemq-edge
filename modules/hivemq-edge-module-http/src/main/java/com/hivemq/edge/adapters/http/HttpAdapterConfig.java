@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.http;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
+import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -35,7 +36,7 @@ import java.util.List;
                     "httpRequestBody",
                     "httpPublishSuccessStatusCodeOnly",
                     "httpHeaders"})
-public class HttpAdapterConfig extends AbstractProtocolAdapterConfig {
+public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
     public enum HttpMethod {
         GET, POST, PUT
@@ -109,21 +110,6 @@ public class HttpAdapterConfig extends AbstractProtocolAdapterConfig {
                        description = "HTTP headers to be added to your requests")
     private @NotNull List<HttpHeader> httpHeaders = new ArrayList<>();
 
-    @JsonProperty("publishingInterval")
-    @ModuleConfigField(title = "Polling interval [ms]",
-                       description = "Time in millisecond that this URL will be called",
-                       numberMin = 1,
-                       required = true,
-                       defaultValue = "1000")
-    private int publishingInterval = DEFAULT_PUBLISHING_INTERVAL; //1 second
-
-    @JsonProperty("maxPollingErrorsBeforeRemoval")
-    @ModuleConfigField(title = "Max. Polling Errors",
-                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
-                       numberMin = 3,
-                       defaultValue = "10")
-    private int maxPollingErrorsBeforeRemoval = DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL;
-
     @JsonProperty("httpPublishSuccessStatusCodeOnly")
     @ModuleConfigField(title = "Only publish data when HTTP response code is successful ( 200 - 299 )",
                        defaultValue = "true",
@@ -136,15 +122,6 @@ public class HttpAdapterConfig extends AbstractProtocolAdapterConfig {
     public boolean isHttpPublishSuccessStatusCodeOnly() {
         return httpPublishSuccessStatusCodeOnly;
     }
-
-    public int getMaxPollingErrorsBeforeRemoval() {
-        return maxPollingErrorsBeforeRemoval;
-    }
-
-    public int getPublishingInterval() {
-        return publishingInterval;
-    }
-
     public @NotNull HttpMethod getHttpRequestMethod() {
         return httpRequestMethod;
     }
