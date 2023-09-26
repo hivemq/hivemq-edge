@@ -65,8 +65,6 @@ public interface ProtocolAdapter {
      */
     @NotNull CompletableFuture<Void> stop();
 
-    @NotNull CompletableFuture<Void> close();
-
     CompletableFuture<Void> discoverValues(@NotNull ProtocolAdapterDiscoveryInput input, @NotNull ProtocolAdapterDiscoveryOutput output);
 
     @NotNull ProtocolAdapterInformation getProtocolAdapterInformation();
@@ -76,8 +74,6 @@ public interface ProtocolAdapter {
     @NotNull RuntimeStatus getRuntimeStatus();
 
     @Nullable Long getTimeOfLastStartAttempt();
-
-    @Nullable Integer getNumberOfDaemonProcessed();
 
     @Nullable String getLastErrorMessage();
 

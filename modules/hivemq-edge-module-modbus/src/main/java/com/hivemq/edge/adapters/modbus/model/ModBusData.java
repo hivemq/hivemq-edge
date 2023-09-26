@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.modbus.model;
 
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.QoS;
 
@@ -23,7 +24,7 @@ import java.util.Arrays;
 /**
  * @author Simon L Johnson
  */
-public class ModBusData {
+public class ModBusData extends ProtocolAdapterDataSample {
 
     public enum TYPE {
         COILS,
@@ -31,37 +32,15 @@ public class ModBusData {
         HOLDING_REGISTERS,
     }
 
-    private Object[][]  data;
-    private final long systemTime;
     private final TYPE type;
-    private String topic;
-    private QoS qos;
 
-    public ModBusData(final @NotNull TYPE type, final String topic, final QoS qos) {
+    public ModBusData(final Object data, final String topic, final int qos, final TYPE type) {
+        super(data, topic, qos);
         this.type = type;
-        this.systemTime = System.currentTimeMillis();
-        this.topic = topic;
-        this.qos = qos;
-    }
-
-    public long getSystemTime() {
-        return systemTime;
     }
 
     public TYPE getType() {
         return type;
-    }
-
-    public Object[][] getData() {
-        return data;
-    }
-
-    public String getTopic() {
-        return topic;
-    }
-
-    public QoS getQos() {
-        return qos;
     }
 
     public void setData(int startIdx, Object[] data) {
@@ -71,15 +50,5 @@ public class ModBusData {
             arr[i][1] = data[i];
         }
         this.data = arr;
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("ModBusData{");
-        sb.append("systemTime=").append(systemTime);
-        sb.append(", type=").append(type);
-        sb.append(", data=").append(Arrays.deepToString(data));
-        sb.append('}');
-        return sb.toString();
     }
 }

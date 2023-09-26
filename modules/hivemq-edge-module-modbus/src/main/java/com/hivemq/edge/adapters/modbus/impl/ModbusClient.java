@@ -86,7 +86,7 @@ public class ModbusClient implements IModbusClient {
         try {
             ModbusTcpMaster client = getOrCreateClient();
             CompletableFuture<ModbusResponse> future =
-                    client.sendRequest(new ReadCoilsRequest(startIdx, count), 0);
+                    client.sendRequest(new ReadCoilsRequest(startIdx, Math.min(count, 2000)), 0);
             Boolean[] val = new Boolean[count];
             future.thenAccept(response -> {
                 try {
@@ -111,7 +111,7 @@ public class ModbusClient implements IModbusClient {
         try {
             ModbusTcpMaster client = getOrCreateClient();
             CompletableFuture<ReadHoldingRegistersResponse> future =
-                    client.sendRequest(new ReadHoldingRegistersRequest(startIdx, count), 0);
+                    client.sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count, 125)), 0);
             Short[] val = new Short[count];
             future.thenAccept(response -> {
                 try {
@@ -137,7 +137,7 @@ public class ModbusClient implements IModbusClient {
         try {
             ModbusTcpMaster client = getOrCreateClient();
             CompletableFuture<ModbusResponse> future =
-                    client.sendRequest(new ReadInputRegistersRequest(startIdx, count), 0);
+                    client.sendRequest(new ReadInputRegistersRequest(startIdx, Math.min(count, 125)), 0);
             Short[] val = new Short[count];
             future.thenAccept(response -> {
                 try {
