@@ -26,6 +26,7 @@ import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.core.TlsConfiguration;
+import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.bridge.BridgeService;
@@ -165,7 +166,9 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                     bridgeService.restartBridge(bridgeId);
                     break;
             }
-            return Response.status(200).build();
+
+            return Response.ok(
+                    StatusTransitionResult.pending(ApiConstants.BRIDGE_TYPE, bridgeId, ApiConstants.DEFAULT_TRANSITION_WAIT_TIMEOUT)).build();
         }
     }
 

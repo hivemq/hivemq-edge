@@ -30,6 +30,7 @@ import com.hivemq.api.model.adapters.ValuesTree;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
+import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -267,7 +268,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 case RESTART:
                     break;
             }
-            return Response.status(200).build();
+            return Response.ok(
+                    StatusTransitionResult.pending(ApiConstants.ADAPTER_TYPE, adapterId, ApiConstants.DEFAULT_TRANSITION_WAIT_TIMEOUT)).build();
         }
     }
 

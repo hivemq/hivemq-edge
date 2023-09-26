@@ -21,6 +21,8 @@ import com.hivemq.api.model.bridge.BridgeList;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
+import com.hivemq.api.model.status.StatusTransitionResult;
+import com.hivemq.codec.transcoder.TranscodingResult;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -149,7 +151,15 @@ public interface BridgeApi {
                description = "Transition the connection status of a bridge.",
                responses = {
                        @ApiResponse(responseCode = "200",
-                                    description = "Success")})
+                                    description = "Success",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = StatusTransitionResult.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "Example response with PENDING status.",
+                                                                              name = "transition-status-result",
+                                                                              summary = "Bridge Connection Transition Result",
+                                                                              value = ApiBodyExamples.EXAMPLE_STATUS_TRANSITION_RESULT)
+                                                       }))})
     Response changeStatus(
             @Parameter(name = "bridgeId",
                        description = "The id of the bridge whose runtime-status will change.",

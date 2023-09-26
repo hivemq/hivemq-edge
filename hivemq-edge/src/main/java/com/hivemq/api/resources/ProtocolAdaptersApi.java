@@ -23,6 +23,7 @@ import com.hivemq.api.model.adapters.ValuesTree;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
+import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.Operation;
@@ -232,7 +233,15 @@ public interface ProtocolAdaptersApi {
                description = "Transition the runtime status of an adapter.",
                responses = {
                        @ApiResponse(responseCode = "200",
-                                    description = "Success")})
+                                    description = "Success",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = StatusTransitionResult.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "Example response with PENDING status.",
+                                                                              name = "transition-status-result",
+                                                                              summary = "Adapter Connection Transition Result",
+                                                                              value = ApiBodyExamples.EXAMPLE_STATUS_TRANSITION_RESULT)
+                                                       }))})
     Response changeStatus(
             @Parameter(name = "adapterId",
                        description = "The id of the adapter whose runtime status will change.",

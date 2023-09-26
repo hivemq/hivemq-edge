@@ -20,6 +20,8 @@ package com.hivemq.api.model;
  */
 public interface ApiConstants {
 
+    int DEFAULT_TRANSITION_WAIT_TIMEOUT = 1000 * 2;
+
     String BRIDGE_TYPE = "bridge";
     String ADAPTER_TYPE = "adapter";
 }
