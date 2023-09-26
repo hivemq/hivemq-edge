@@ -123,6 +123,8 @@ public class CustomConfigSchemaGenerator {
         }
 
         private String title(final @NotNull MemberScope<?, ?> memberScope) {
+            //-- We should not allow duplication of titles for wrapped types
+            if(memberScope.isFakeContainerItemScope()) return null;
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             return fieldInfo != null && fieldInfo.title() != null && !fieldInfo.title().isBlank() ?
                     fieldInfo.title() :
@@ -130,6 +132,8 @@ public class CustomConfigSchemaGenerator {
         }
 
         private String description(final @NotNull MemberScope<?, ?> memberScope) {
+            //-- We should not allow duplication of descriptions for wrapped types
+            if(memberScope.isFakeContainerItemScope()) return null;
             final ModuleConfigField fieldInfo = getModuleFieldInfo(memberScope);
             return fieldInfo != null && fieldInfo.description() != null && !fieldInfo.description().isBlank() ?
                     fieldInfo.description() :
