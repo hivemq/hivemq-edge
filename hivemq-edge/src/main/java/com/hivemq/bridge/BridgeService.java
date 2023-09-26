@@ -205,6 +205,10 @@ public class BridgeService {
         return false;
     }
 
+    public boolean isRunning(@NotNull final String bridgeName) {
+        return activeBridges().contains(bridgeName);
+    }
+
     public boolean restartBridge(@NotNull final String bridgeName) {
         if (bridgeToClientMap.containsKey(bridgeName)) {
             stopBridge(bridgeName);

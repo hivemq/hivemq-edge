@@ -297,7 +297,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     optionalAdapterInstance.get().getAdapter());
         }
         else {
-            return Status.unknown(ApiConstants.ADAPTER_TYPE, adapterId);
+            return Status.unknown(Status.RUNTIME_STATUS.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId);
         }
     }
 

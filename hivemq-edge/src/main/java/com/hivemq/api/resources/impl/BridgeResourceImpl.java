@@ -228,9 +228,10 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
 
         Preconditions.checkNotNull(bridgeId);
         boolean connected = bridgeService.isConnected(bridgeId);
+        Status.RUNTIME_STATUS runtimeStatus = bridgeService.isRunning(bridgeId) ? Status.RUNTIME_STATUS.STARTED : Status.RUNTIME_STATUS.STOPPED;
         Status status = connected ?
-                Status.connected(ApiConstants.BRIDGE_TYPE, bridgeId) :
-                Status.disconnected(ApiConstants.BRIDGE_TYPE, bridgeId);
+                Status.connected(runtimeStatus, ApiConstants.BRIDGE_TYPE, bridgeId) :
+                Status.disconnected(runtimeStatus, ApiConstants.BRIDGE_TYPE, bridgeId);
         if(!connected){
             status.setMessage(getLastErrorInternal(bridgeId));
         }
