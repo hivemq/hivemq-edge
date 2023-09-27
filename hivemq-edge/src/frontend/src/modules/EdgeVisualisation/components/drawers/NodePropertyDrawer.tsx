@@ -19,12 +19,15 @@ import {
 import { EditIcon } from '@chakra-ui/icons'
 
 import { Adapter, Bridge } from '@/api/__generated__'
+import { DeviceTypes } from '@/api/types/api-devices.ts'
+
+import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
+
 import Metrics from '@/modules/Welcome/components/Metrics.tsx'
 import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
+import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
-import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 const NodePropertyDrawer: FC = () => {
   const { t } = useTranslation()
@@ -85,11 +88,7 @@ const NodePropertyDrawer: FC = () => {
             >
               {t('workspace.observability.adapter.modify')}
             </Button>
-            <ConnectionController
-              type={selected.type as NodeTypes}
-              id={selected.data.id}
-              status={selected.data.status}
-            />
+            <ConnectionController type={DeviceTypes.ADAPTER} id={selected.data.id} status={selected.data.status} />
           </Flex>
         </DrawerFooter>
       </DrawerContent>

@@ -2,20 +2,18 @@ import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError, Status, StatusTransitionCommand } from '@/api/__generated__'
+import { DeviceTypes } from '@/api/types/api-devices.ts'
 import { useSetConnectionStatus as useSetAdapterConnectionStatus } from '@/api/hooks/useProtocolAdapters/useSetConnectionStatus.tsx'
 import { useSetConnectionStatus as useSetBridgeConnectionStatus } from '@/api/hooks/useGetBridges/useSetConnectionStatus.tsx'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
-
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 import ConnectionButton from './components/ConnectionButton.tsx'
 import ConnectionMenu from './components/ConnectionMenu.tsx'
 import { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
 
 interface ConnectionControllerProps {
-  // TODO[NVL] Not sure about reusing a "proprietary" type here; simple enum like for variant?
-  type: NodeTypes
+  type: DeviceTypes
   id: string
   status?: Status
   variant?: 'button' | 'menuItem'
@@ -33,7 +31,7 @@ const ConnectionController: FC<ConnectionControllerProps> = ({ type, id, status,
 
   const handleOnStatusChange = (eventId: string, status: StatusTransitionCommand.command) => {
     const statusPromise =
-      type === NodeTypes.BRIDGE_NODE
+      type === DeviceTypes.BRIDGE
         ? updateBridgeStatus.mutateAsync({ name: eventId, requestBody: { command: status } })
         : updateAdapterStatus.mutateAsync({ adapterId: eventId, requestBody: { command: status } })
 

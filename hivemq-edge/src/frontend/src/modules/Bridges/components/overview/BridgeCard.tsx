@@ -21,8 +21,7 @@ import BridgeLogo from '@/assets/app/bridges.svg'
 
 import { Bridge } from '@/api/__generated__'
 import { useGetBridgesStatus } from '@/api/hooks/useConnection/useGetBridgesStatus.tsx'
-
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { DeviceTypes } from '@/api/types/api-devices.ts'
 
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
@@ -94,7 +93,7 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, ...props }) =>
             <ConnectionStatusBadge status={data?.connection} />
           </Box>
           <Flex flex="1" justifyContent={'flex-end'}>
-            <ConnectionController type={NodeTypes.BRIDGE_NODE} id={props.id} status={props.status} />
+            <ConnectionController type={DeviceTypes.BRIDGE} id={props.id} status={props.status} />
           </Flex>
         </CardFooter>
       </Skeleton>

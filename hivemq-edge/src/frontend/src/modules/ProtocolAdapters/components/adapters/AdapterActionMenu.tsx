@@ -4,8 +4,9 @@ import { ChevronDownIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
 import { Adapter } from '@/api/__generated__'
+import { DeviceTypes } from '@/api/types/api-devices.ts'
+
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 interface AdapterActionMenuProps {
   adapter: Adapter
@@ -29,7 +30,7 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEd
         aria-label={t('protocolAdapter.table.actions.label') as string}
       />
       <MenuList>
-        <ConnectionController type={NodeTypes.ADAPTER_NODE} id={id} status={status} variant={'menuItem'} />
+        <ConnectionController type={DeviceTypes.ADAPTER} id={id} status={status} variant={'menuItem'} />
 
         <MenuItem data-testid={'adapter-action-workspace'} onClick={() => onViewWorkspace?.(id, type as string)}>
           {t('protocolAdapter.table.actions.workspace')}
