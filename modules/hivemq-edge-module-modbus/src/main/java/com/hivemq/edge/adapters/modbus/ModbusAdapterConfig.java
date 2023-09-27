@@ -46,6 +46,15 @@ public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
             format = ModuleConfigField.FieldType.HOSTNAME)
     private @NotNull String host;
 
+    @JsonProperty("timeout")
+    @ModuleConfigField(title = "Timeout",
+                       description = "Time (in milliseconds) to await a connection before the client gives up",
+                       numberMin = 1000,
+                       numberMax = 15000,
+                       defaultValue = "5000",
+                       required = true)
+    private @NotNull int timeout = 5000;
+
     @JsonProperty("publishChangedDataOnly")
     @ModuleConfigField(title = "Only publish data items that have changed since last poll",
             defaultValue = "true",
@@ -74,6 +83,10 @@ public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
     public @NotNull List<Subscription> getSubscriptions() {
         return subscriptions;
+    }
+
+    public int getTimeout() {
+        return timeout;
     }
 
     public static class Subscription extends AbstractProtocolAdapterConfig.Subscription {

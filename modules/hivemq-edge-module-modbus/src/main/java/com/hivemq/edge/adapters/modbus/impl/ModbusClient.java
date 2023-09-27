@@ -31,6 +31,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -55,6 +56,7 @@ public class ModbusClient implements IModbusClient {
                     ModbusTcpMasterConfig config = new ModbusTcpMasterConfig.Builder(adapterConfig.getHost()).
                             setPort(adapterConfig.getPort()).
                             setInstanceId(adapterConfig.getId()).
+                            setTimeout(Duration.ofMillis(adapterConfig.getTimeout())).
                             build();
                     modbusClient = new ModbusTcpMaster(config);
                 }
@@ -69,16 +71,15 @@ public class ModbusClient implements IModbusClient {
     }
 
     @Override
-    public void connect() {
+    public CompletableFuture connect() {
         ModbusTcpMaster client = getOrCreateClient();
-        synchronized (lock) {
-            if (!connected.get()) {
-                client.connect().handle((res, ex) -> {
-                    connected.set(ex == null);
-                    return res;
-                });
-            }
+        if (!connected.get()) {
+            return client.connect().handle((res, ex) -> {
+                connected.set(ex == null);
+                return res;
+            });
         }
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
@@ -163,8 +164,12 @@ public class ModbusClient implements IModbusClient {
         //-- If the client is manually disconnected before connection established ensure we still call into the client
         //-- to shut it all down.
         if (modbusClient != null) {
-            modbusClient.disconnect();
-            return true;
+            try {
+                modbusClient.disconnect().get();
+                return true;
+            } catch(Exception e){
+                //error disconnecting
+            }
         }
         return false;
     }

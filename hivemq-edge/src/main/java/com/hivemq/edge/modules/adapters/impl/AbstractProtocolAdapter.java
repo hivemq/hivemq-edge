@@ -184,7 +184,15 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         Preconditions.checkNotNull(errorMessage);
         synchronized (lock){
             this.connectionStatus = ConnectionStatus.ERROR;
-            setErrorConnectionStatus(errorMessage);
+            setLastErrorMessage(errorMessage);
+        }
+    }
+
+    protected void setErrorConnectionStatus(@NotNull final Throwable t){
+        Preconditions.checkNotNull(t);
+        synchronized (lock){
+            this.connectionStatus = ConnectionStatus.ERROR;
+            setErrorConnectionStatus(t.getMessage());
         }
     }
 

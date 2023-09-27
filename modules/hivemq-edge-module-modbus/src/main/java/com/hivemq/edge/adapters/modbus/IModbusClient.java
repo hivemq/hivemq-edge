@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.modbus;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * @author Simon L Johnson
  */
@@ -24,7 +26,7 @@ public interface IModbusClient {
 
     boolean isConnected();
 
-    void connect() throws ProtocolAdapterException;
+    CompletableFuture<Void> connect() throws ProtocolAdapterException;
 
     Boolean[] readCoils(int startIdx, int count) throws ProtocolAdapterException ;
 
