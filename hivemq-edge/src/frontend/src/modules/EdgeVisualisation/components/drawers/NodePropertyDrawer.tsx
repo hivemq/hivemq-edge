@@ -1,7 +1,7 @@
 import { FC, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useNodes } from 'reactflow'
+import { Node, useNodes } from 'reactflow'
 import {
   Button,
   Drawer,
@@ -18,20 +18,24 @@ import {
 } from '@chakra-ui/react'
 import { EditIcon } from '@chakra-ui/icons'
 
-import { Adapter } from '@/api/__generated__'
+import { Adapter, Bridge } from '@/api/__generated__'
 import Metrics from '@/modules/Welcome/components/Metrics.tsx'
 import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
 
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
+import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
+import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 const NodePropertyDrawer: FC = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { isOpen, onOpen, onClose } = useDisclosure()
+
   const nodes = useNodes()
   const { nodeId } = useParams()
-  const selected = nodes.find((e) => e.id === nodeId)
-  const navigate = useNavigate()
-
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const selected = nodes.find(
+    (e) => e.id === nodeId && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
+  ) as Node<Bridge | Adapter> | undefined
 
   useEffect(() => {
     if (!nodes.length) return
@@ -47,7 +51,8 @@ const NodePropertyDrawer: FC = () => {
     navigate('/edge-flow')
   }
 
-  if (!selected) return null
+  // TODO[NVL] Needs warning / error
+  if (!selected || !selected.type) return null
 
   return (
     <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={handleClose}>
@@ -63,7 +68,7 @@ const NodePropertyDrawer: FC = () => {
           </VStack>
         </DrawerBody>
         <DrawerFooter borderTopWidth="1px">
-          <Flex flexGrow={1} justifyContent={'flex-start'}>
+          <Flex flexGrow={1} justifyContent={'flex-start'} gap={5}>
             <Button
               data-testid={'protocol-create-adapter'}
               variant={'outline'}
@@ -80,6 +85,11 @@ const NodePropertyDrawer: FC = () => {
             >
               {t('workspace.observability.adapter.modify')}
             </Button>
+            <ConnectionController
+              type={selected.type as NodeTypes}
+              id={selected.data.id}
+              status={selected.data.status}
+            />
           </Flex>
         </DrawerFooter>
       </DrawerContent>
