@@ -44,4 +44,18 @@ describe('ConnectionButton', () => {
     cy.getByTestId('device-action-restart').click()
     cy.get('@onChangeStatus').should('have.been.calledWith', MOCK_ID, StatusTransitionCommand.command.RESTART)
   })
+
+  it('should render disabled states when isLoading (and running)', () => {
+    cy.mountWithProviders(<ConnectionButton id={MOCK_ID} isRunning isLoading />)
+
+    cy.getByTestId('device-action-stop').should('be.disabled')
+    cy.getByTestId('device-action-restart').should('be.disabled')
+  })
+
+  it('should render disabled states when isLoading (and not running)', () => {
+    cy.mountWithProviders(<ConnectionButton id={MOCK_ID} isRunning={false} isLoading />)
+
+    cy.getByTestId('device-action-start').should('be.disabled')
+    cy.getByTestId('device-action-restart').should('be.disabled')
+  })
 })
