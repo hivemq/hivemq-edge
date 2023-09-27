@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError, Status, StatusTransitionCommand } from '@/api/__generated__'
@@ -24,10 +24,23 @@ const ConnectionController: FC<ConnectionControllerProps> = ({ type, id, status,
   const updateBridgeStatus = useSetBridgeConnectionStatus()
   const { successToast, errorToast } = useEdgeToast()
   const { t } = useTranslation()
+  const [isLoading, setIsLoading] = useState(0)
 
   const As: React.FC<ConnectionElementProps> = variant === 'button' ? ConnectionButton : ConnectionMenu
 
   const isRunning = status?.runtime === Status.runtime.STARTED
+
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => {
+        setIsLoading(0)
+      }, isLoading)
+
+      return () => {
+        clearTimeout(timer)
+      }
+    }
+  }, [isLoading])
 
   const handleOnStatusChange = (eventId: string, status: StatusTransitionCommand.command) => {
     const statusPromise =
@@ -38,6 +51,7 @@ const ConnectionController: FC<ConnectionControllerProps> = ({ type, id, status,
     statusPromise
       .then((results) => {
         const { callbackTimeoutMillis } = results
+        if (callbackTimeoutMillis) setIsLoading(callbackTimeoutMillis)
         successToast({
           title: t('protocolAdapter.toast.status.title'),
           description: t('protocolAdapter.toast.status.description', {
@@ -60,7 +74,7 @@ const ConnectionController: FC<ConnectionControllerProps> = ({ type, id, status,
       )
   }
 
-  return <As id={id} isRunning={isRunning} onChangeStatus={handleOnStatusChange} />
+  return <As id={id} isRunning={isRunning} onChangeStatus={handleOnStatusChange} isLoading={!!isLoading} />
 }
 
 export default ConnectionController

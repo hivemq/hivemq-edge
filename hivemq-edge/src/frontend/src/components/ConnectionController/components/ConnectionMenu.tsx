@@ -4,13 +4,14 @@ import { MenuItem } from '@chakra-ui/react'
 import { StatusTransitionCommand } from '@/api/__generated__'
 import { useTranslation } from 'react-i18next'
 
-const ConnectionMenu: FC<ConnectionElementProps> = ({ id, isRunning, onChangeStatus }) => {
+const ConnectionMenu: FC<ConnectionElementProps> = ({ id, isRunning, isLoading, onChangeStatus }) => {
   const { t } = useTranslation()
 
   return (
     <>
       {!isRunning && (
         <MenuItem
+          isDisabled={isLoading}
           data-testid={'device-action-start'}
           onClick={() => onChangeStatus?.(id, StatusTransitionCommand.command.START)}
         >
@@ -20,6 +21,7 @@ const ConnectionMenu: FC<ConnectionElementProps> = ({ id, isRunning, onChangeSta
 
       {isRunning && (
         <MenuItem
+          isDisabled={isLoading}
           data-testid={'device-action-stop'}
           onClick={() => onChangeStatus?.(id, StatusTransitionCommand.command.STOP)}
         >
@@ -28,6 +30,7 @@ const ConnectionMenu: FC<ConnectionElementProps> = ({ id, isRunning, onChangeSta
       )}
 
       <MenuItem
+        isDisabled={isLoading}
         data-testid={'device-action-restart'}
         onClick={() => onChangeStatus?.(id, StatusTransitionCommand.command.RESTART)}
       >

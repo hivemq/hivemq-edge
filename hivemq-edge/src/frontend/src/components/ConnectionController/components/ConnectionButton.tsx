@@ -5,13 +5,14 @@ import { StatusTransitionCommand } from '@/api/__generated__'
 import { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
 import { useTranslation } from 'react-i18next'
 
-const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeStatus }) => {
+const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeStatus, isLoading }) => {
   const { t } = useTranslation()
 
   return (
     <ButtonGroup size="sm" isAttached variant="outline">
       {!isRunning && (
         <IconButton
+          isDisabled={isLoading}
           data-testid={'device-action-start'}
           aria-label={t('action.start')}
           icon={<MdStart />}
@@ -20,6 +21,7 @@ const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeS
       )}
       {isRunning && (
         <IconButton
+          isDisabled={isLoading}
           data-testid={'device-action-stop'}
           aria-label={t('action.stop')}
           icon={<MdStop />}
@@ -27,6 +29,7 @@ const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeS
         />
       )}
       <IconButton
+        isDisabled={isLoading}
         data-testid={'device-action-restart'}
         aria-label={t('action.restart')}
         icon={<MdRestartAlt />}
