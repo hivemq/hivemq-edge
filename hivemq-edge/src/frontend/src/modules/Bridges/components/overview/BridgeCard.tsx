@@ -39,7 +39,7 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, ...props }) =>
   // const { isFetching } = useGetBridgeConnectionStatus(props.id)
   const { isFetching, data: connections } = useGetBridgesStatus()
 
-  const data = useMemo(
+  const status = useMemo(
     () => connections?.items?.find((connection) => connection.id === props.id && connection.type === 'bridge'),
     [connections, props.id]
   )
@@ -90,7 +90,7 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, ...props }) =>
             <Text as={'span'} mr={2}>
               {t('bridge.status.label')}
             </Text>
-            <ConnectionStatusBadge status={data?.connection} />
+            <ConnectionStatusBadge status={status} />
           </Box>
           <Flex flex="1" justifyContent={'flex-end'}>
             <ConnectionController type={DeviceTypes.BRIDGE} id={props.id} status={props.status} />
