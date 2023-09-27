@@ -16,35 +16,16 @@
 package com.hivemq.edge.modules.adapters.simulation;
 
 import com.codahale.metrics.MetricRegistry;
-import com.hivemq.api.model.status.Status;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.impl.AbstractPollingPerSubscriptionAdapter;
-import com.hivemq.edge.modules.adapters.impl.AbstractPollingProtocolAdapter;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
-import com.hivemq.edge.modules.adapters.params.NodeTree;
-import com.hivemq.edge.modules.adapters.params.NodeType;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingOutput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingInputImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
-import com.hivemq.mqtt.message.QoS;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 
 public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAdapter<SimulationAdapterConfig, ProtocolAdapterDataSample> {
 
@@ -83,7 +64,7 @@ public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAda
     }
 
     @Override
-    protected ProtocolAdapterDataSample doSample(
+    protected ProtocolAdapterDataSample onSamplerInvoked(
             final SimulationAdapterConfig config,
             final AbstractProtocolAdapterConfig.Subscription subscription) {
         ProtocolAdapterDataSample dataSample =

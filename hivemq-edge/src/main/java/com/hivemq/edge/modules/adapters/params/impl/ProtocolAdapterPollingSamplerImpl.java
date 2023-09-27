@@ -16,31 +16,42 @@
 package com.hivemq.edge.modules.adapters.params.impl;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingInput;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import io.reactivex.internal.schedulers.NewThreadWorker;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
-import java.nio.channels.ClosedByInterruptException;
+import java.util.Date;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Simon L Johnson
  */
-public abstract class ProtocolAdapterPollingInputImpl implements ProtocolAdapterPollingInput {
+public abstract class ProtocolAdapterPollingSamplerImpl implements ProtocolAdapterPollingSampler {
 
     private final long initialDelay;
     private final long period;
     private final TimeUnit unit;
     private final int maxErrorsBeforeRemoval;
     protected AtomicBoolean closed = new AtomicBoolean(false);
+    private final String adapterId;
+    private final UUID uuid;
+    private final Date created;
+    private @Nullable ScheduledFuture<?> future;
 
-    public ProtocolAdapterPollingInputImpl(final long initialDelay, final long period, final @NotNull TimeUnit unit, final int maxErrorsBeforeRemoval) {
+    public ProtocolAdapterPollingSamplerImpl(final String adapterId, final long initialDelay, final long period, final @NotNull TimeUnit unit, final int maxErrorsBeforeRemoval) {
+        Preconditions.checkNotNull(adapterId);
         Preconditions.checkNotNull(unit);
+        this.adapterId = adapterId;
         this.initialDelay = Math.max(initialDelay, 100);
         this.period = Math.max(period, 10);
         this.unit = unit;
         this.maxErrorsBeforeRemoval = maxErrorsBeforeRemoval;
+        this.uuid = UUID.randomUUID();
+        this.created = new Date();
     }
 
     @Override
@@ -71,5 +82,43 @@ public abstract class ProtocolAdapterPollingInputImpl implements ProtocolAdapter
     @Override
     public boolean isClosed() {
         return closed.get();
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final ProtocolAdapterPollingSamplerImpl that = (ProtocolAdapterPollingSamplerImpl) o;
+        return uuid.equals(that.uuid);
+    }
+
+    @Override
+    public UUID getId() {
+        return uuid;
+    }
+
+    @Override
+    public Date getCreated() {
+        return created;
+    }
+
+    @Override
+    public String getAdapterId() {
+        return adapterId;
+    }
+
+    @Override
+    public ScheduledFuture<?> getFuture() {
+        return future;
+    }
+
+    @Override
+    public void setFuture(final ScheduledFuture<?> future) {
+        this.future = future;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uuid);
     }
 }

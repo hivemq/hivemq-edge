@@ -20,21 +20,19 @@ import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.impl.AbstractPollingPerSubscriptionAdapter;
+import com.hivemq.edge.modules.adapters.impl.AbstractPollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
 import com.hivemq.edge.modules.adapters.params.NodeTree;
 import com.hivemq.edge.modules.adapters.params.NodeType;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingInputImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
-import com.hivemq.mqtt.message.QoS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +40,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter<ModbusAdapterConfig, ModBusData> {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
@@ -84,7 +81,6 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
                 if (modbusClient == null) {
                     log.info("Creating new Instance Of ModbusClient with {}", adapterConfig);
                     modbusClient = new ModbusClient(adapterConfig);
-                    setRuntimeStatus(RuntimeStatus.STARTED);
                 }
             }
         }
@@ -136,7 +132,23 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
 
 
     @Override
-    protected ModBusData doSample(
+    protected void onSamplerClosed(final ProtocolAdapterPollingSampler sampler) {
+        try {
+            if(log.isInfoEnabled()){
+                log.info("Sampler was closed by framework, disconnect modbus device");
+            }
+            if(modbusClient != null){
+                modbusClient.disconnect();
+            }
+        } catch(Exception e){
+            if(log.isWarnEnabled()){
+                log.warn("Error encountered closing connection to modbus device", e);
+            }
+        }
+    }
+
+    @Override
+    protected ModBusData onSamplerInvoked(
             final ModbusAdapterConfig config,
             final AbstractProtocolAdapterConfig.Subscription subscription) throws Exception {
 
@@ -145,8 +157,8 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
         try {
             if(modbusClient != null){
                 if (!modbusClient.isConnected()) {
-                    modbusClient.connect();
-                    setConnectionStatus(ConnectionStatus.CONNECTED);
+                    modbusClient.connect().thenRun(() ->
+                            setConnectionStatus(ConnectionStatus.CONNECTED));
                 }
                 ModbusAdapterConfig.AddressRange addressRange = ((ModbusAdapterConfig.Subscription)subscription).getAddressRange();
                 Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
@@ -159,7 +171,8 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
                 throw new IllegalStateException("client not initialised");
             }
         } catch(Exception e){
-            setConnectionStatus(ConnectionStatus.ERROR);
+            setErrorConnectionStatus(e);
+            //if we throw here it will put the job into backoff mode
             throw e;
         }
     }

@@ -15,12 +15,17 @@
  */
 package com.hivemq.edge.modules.adapters.params;
 
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+
+import java.util.Date;
+import java.util.UUID;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author Simon L Johnson
  */
-public interface ProtocolAdapterPollingInput {
+public interface ProtocolAdapterPollingSampler {
 
     long getInitialDelay();
 
@@ -42,6 +47,18 @@ public interface ProtocolAdapterPollingInput {
     void close();
 
     boolean isClosed();
+
+    UUID getId();
+    Date getCreated();
+    String getAdapterId();
+    ScheduledFuture<?> getFuture();
+    void setFuture(ScheduledFuture<?> future);
+
+    default String getReferenceId(){
+        return String.format("%s:%s", getAdapterId(), getId());
+    }
+
+    default void error(@NotNull final Throwable t, final boolean continuing) {}
 
     default int getMaxErrorsBeforeRemoval(){
         return 25;

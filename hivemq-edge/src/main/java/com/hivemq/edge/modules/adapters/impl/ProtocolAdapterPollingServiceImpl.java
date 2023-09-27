@@ -18,9 +18,7 @@ package com.hivemq.edge.modules.adapters.impl;
 import com.google.common.base.Preconditions;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingInput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingOutput;
-import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingOutputImpl;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -28,8 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,7 +55,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
     private static long MAX_BACKOFF_MILLIS = 60000 * 10; //-- 10 Mins
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
-    private final @NotNull Map<ProtocolAdapterPollingOutput, MonitoredPollingJob> activePollers =
+    private final @NotNull Map<ProtocolAdapterPollingSampler, MonitoredPollingJob> activePollers =
             new ConcurrentHashMap<>();
 
     @Inject
@@ -88,30 +84,27 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
         });
     }
 
-    public ProtocolAdapterPollingOutput schedulePolling(final @NotNull ProtocolAdapter adapter,
-                                                         final @NotNull ProtocolAdapterPollingInput input){
-
+    public void schedulePolling(final @NotNull ProtocolAdapter adapter,
+                                                           final @NotNull ProtocolAdapterPollingSampler sampler){
         if(log.isTraceEnabled()){
             log.trace("Scheduling Polling For Adapter {}", adapter.getId());
         }
-        ProtocolAdapterPollingOutput output = new ProtocolAdapterPollingOutputImpl(adapter.getId(), input);
-        MonitoredPollingJob internalJob = new MonitoredPollingJob(input, output);
+        MonitoredPollingJob internalJob = new MonitoredPollingJob(sampler);
         ScheduledFuture<?> future = scheduledExecutorService.scheduleAtFixedRate(internalJob,
-                input.getInitialDelay(),
-                input.getPeriod(),
-                input.getUnit());
-        output.setFuture(future);
-        activePollers.put(output, internalJob);
-        return output;
+                sampler.getInitialDelay(),
+                sampler.getPeriod(),
+                sampler.getUnit());
+        sampler.setFuture(future);
+        activePollers.put(sampler, internalJob);
     }
 
 
-    public Optional<ProtocolAdapterPollingOutput> getPollingJob(final @NotNull UUID id){
+    public Optional<ProtocolAdapterPollingSampler> getPollingJob(final @NotNull UUID id){
         Preconditions.checkNotNull(id);
         return activePollers.keySet().stream().filter(p -> p.getId().equals(id)).findAny();
     }
 
-    public List<ProtocolAdapterPollingOutput> getPollingJobsForAdapter(final @NotNull String adapterId){
+    public List<ProtocolAdapterPollingSampler> getPollingJobsForAdapter(final @NotNull String adapterId){
         Preconditions.checkNotNull(adapterId);
         return activePollers.keySet().stream().
                 filter(p -> p.getAdapterId().equals(adapterId)).
@@ -125,33 +118,31 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 forEach(this::stopPolling);
     }
 
-    public void stopPolling(final @NotNull ProtocolAdapterPollingOutput pollingJob){
-        Preconditions.checkNotNull(pollingJob);
-        if(activePollers.remove(pollingJob) != null){
-            Future<?> future = pollingJob.getFuture();
+    public void stopPolling(final @NotNull ProtocolAdapterPollingSampler sampler){
+        Preconditions.checkNotNull(sampler);
+        if(activePollers.remove(sampler) != null){
+            Future<?> future = sampler.getFuture();
             if(!future.isCancelled()){
                 if(log.isInfoEnabled()){
-                    log.info("Stopping Polling Job {}", getJobId(pollingJob));
+                    log.info("Stopping Polling Job {}", sampler.getReferenceId());
                 }
                 if(future.cancel(true)){
-                    pollingJob.getInput().close();
+                    //-- Ensure we dont cause loops, always check before calling close
+                    if(!sampler.isClosed()){
+                        sampler.close();
+                    }
                 }
             }
         }
     }
 
-    protected static String getJobId(final @NotNull ProtocolAdapterPollingOutput pollingJob){
-        return String.format("%s:%s", pollingJob.getAdapterId(), pollingJob.getId());
+    @Override
+    public List<ProtocolAdapterPollingSampler> getActiveProcesses() {
+        return List.copyOf(activePollers.keySet());
     }
 
     @Override
-    public List<ProtocolAdapterPollingOutput> getActiveProcesses() {
-        return Collections.unmodifiableList(
-                    new ArrayList<>(activePollers.keySet()));
-    }
-
-    @Override
-    public int currentErrorCount(final ProtocolAdapterPollingOutput pollingJob) {
+    public int currentErrorCount(final ProtocolAdapterPollingSampler pollingJob) {
         return activePollers.get(pollingJob).errorCount.get();
     }
 
@@ -171,14 +162,11 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
     private class MonitoredPollingJob implements Runnable {
         private final AtomicInteger errorCount = new AtomicInteger(0);
-        private final ProtocolAdapterPollingInput input;
-        private final ProtocolAdapterPollingOutput output;
+        private final ProtocolAdapterPollingSampler sampler;
         private volatile long notBefore = 0;
 
-        public MonitoredPollingJob(final ProtocolAdapterPollingInput input,
-                                   final ProtocolAdapterPollingOutput output) {
-            this.input = input;
-            this.output = output;
+        public MonitoredPollingJob(final ProtocolAdapterPollingSampler sampler) {
+            this.sampler = sampler;
         }
 
         @Override
@@ -189,40 +177,39 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                         //-- We're backing off atm so as not to harass the network
                         if(log.isDebugEnabled()){
                             log.debug("Backing Off Polling Job {} Error Count {}",
-                                    getJobId(output), errorCount);
+                                    sampler.getReferenceId(), errorCount);
                         }
                         return;
                     }
                 }
-                input.execute();
-                errorCount.set(0);
-                notBefore = 0;
+                if(!sampler.isClosed()){
+                    sampler.execute();
+                    errorCount.set(0);
+                    notBefore = 0;
+                } else {
+                    //Sampler was closed externally, ensure we remove it from the engine
+                    stopPolling(sampler);
+                }
             } catch(Throwable e){
-                if(log.isInfoEnabled()){
-                    log.info("Polling Job {} Resulted In Error -> {}",
-                            getJobId(output), e.getMessage());
+                int errorCountTotal = errorCount.incrementAndGet();
+                if(log.isTraceEnabled()){
+                    log.trace("Error {} In Polling Job {} -> {}",
+                            errorCountTotal, sampler.getReferenceId(), e.getMessage());
                 }
-                if(log.isDebugEnabled()){
-                    log.debug("Original exception:", e);
-                }
-                if(input.getMaxErrorsBeforeRemoval() <=
-                        errorCount.incrementAndGet()) {
-                    onTerminalError(e, errorCount.get());
+                boolean continuing = sampler.getMaxErrorsBeforeRemoval() >
+                        errorCountTotal;
+                sampler.error(e, continuing);
+                if(!continuing) {
+                    stopPolling(sampler);
                     //-- rest the error state
                     notBefore = 0;
                     errorCount.set(0);
                 } else {
                     //exp. backoff the network call according to the number of errors
-                    long backoff = getBackoff(errorCount.get(), MAX_BACKOFF_MILLIS,true);
+                    long backoff = getBackoff(errorCountTotal, MAX_BACKOFF_MILLIS,true);
                     notBefore = System.currentTimeMillis() + backoff;
                 }
             }
-        }
-
-        protected void onTerminalError(Throwable t, int errorCount){
-            log.warn("Job {} Hit Terminal Error Threshold {}",
-                    getJobId(output), errorCount, t);
-            stopPolling(output);
         }
     }
 }

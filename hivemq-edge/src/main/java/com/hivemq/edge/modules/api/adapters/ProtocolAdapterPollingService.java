@@ -15,8 +15,7 @@
  */
 package com.hivemq.edge.modules.api.adapters;
 
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingInput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingOutput;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
@@ -31,17 +30,17 @@ import java.util.UUID;
  */
 public interface ProtocolAdapterPollingService {
 
-    ProtocolAdapterPollingOutput schedulePolling(@NotNull ProtocolAdapter adapter,
-                                                 @NotNull ProtocolAdapterPollingInput input);
-    Optional<ProtocolAdapterPollingOutput> getPollingJob(@NotNull UUID id);
+    void schedulePolling(@NotNull ProtocolAdapter adapter, @NotNull ProtocolAdapterPollingSampler input);
 
-    List<ProtocolAdapterPollingOutput> getActiveProcesses();
+    Optional<ProtocolAdapterPollingSampler> getPollingJob(@NotNull UUID id);
 
-    List<ProtocolAdapterPollingOutput> getPollingJobsForAdapter(@NotNull String adapterId);
+    List<ProtocolAdapterPollingSampler> getActiveProcesses();
 
-    int currentErrorCount(@NotNull ProtocolAdapterPollingOutput pollingJob);
+    List<ProtocolAdapterPollingSampler> getPollingJobsForAdapter(@NotNull String adapterId);
 
-    void stopPolling(@NotNull ProtocolAdapterPollingOutput pollingJob);
+    int currentErrorCount(@NotNull ProtocolAdapterPollingSampler pollingJob);
+
+    void stopPolling(@NotNull ProtocolAdapterPollingSampler pollingJob);
 
     void stopPollingForAdapterInstance(@NotNull ProtocolAdapter adapter);
 

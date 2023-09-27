@@ -22,11 +22,11 @@ public abstract class AbstractPollingPerSubscriptionAdapter<T extends AbstractPo
     }
 
     @Override
-    protected U doSample(final T config) throws Exception {
+    protected U onSamplerInvoked(final T config) throws Exception {
         throw new UnsupportedOperationException("Subscription sampler should be used.");
     }
 
-    protected abstract U doSample(@NotNull T config, @NotNull T.Subscription subscription) throws Exception ;
+    protected abstract U onSamplerInvoked(@NotNull T config, @NotNull T.Subscription subscription) throws Exception ;
 
     protected class SubscriptionSampler extends Sampler {
 
@@ -40,7 +40,7 @@ public abstract class AbstractPollingPerSubscriptionAdapter<T extends AbstractPo
 
         @Override
         public void execute() throws Exception {
-            U data = doSample(config, subscription);
+            U data = onSamplerInvoked(config, subscription);
             if (data != null) {
                 captureDataSample(data);
             }

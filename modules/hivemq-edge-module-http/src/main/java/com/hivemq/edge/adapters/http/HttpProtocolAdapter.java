@@ -19,22 +19,14 @@ import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.impl.AbstractPollingProtocolAdapter;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
-import com.hivemq.edge.modules.adapters.params.NodeTree;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingInputImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.http.core.HttpUtils;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +39,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -117,7 +107,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
     }
 
     @Override
-    protected HttpData doSample(final HttpAdapterConfig config) throws Exception {
+    protected HttpData onSamplerInvoked(final HttpAdapterConfig config) throws Exception {
         if(httpClient != null){
             switch (config.getHttpRequestMethod()){
                 case GET:
@@ -129,6 +119,16 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
             }
         }
         return null;
+    }
+
+    @Override
+    protected void onSamplerError(
+            final ProtocolAdapterPollingSampler sampler,
+            final Throwable exception,
+            final boolean continuing) {
+        if(!continuing){
+            setErrorConnectionStatus(exception.getMessage());
+        }
     }
 
     protected HttpData httpPut(@NotNull final HttpAdapterConfig config)

@@ -4,7 +4,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingInputImpl;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
+import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingSamplerImpl;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
@@ -71,14 +72,38 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
         protocolAdapterPollingService.schedulePolling(this, sampler);
     }
 
-    protected abstract U doSample(T config) throws Exception ;
+    /**
+     * Method is invoked by the sampling engine on the schedule determined by the configuration
+     * supplied.
+     */
+    protected abstract U onSamplerInvoked(T config) throws Exception ;
 
-    protected class Sampler extends ProtocolAdapterPollingInputImpl {
+    /**
+     * Hook Method is invoked by the sampling engine when the scheduling engine is removing the
+     * sampler from being managed
+     */
+    protected void onSamplerClosed(final @NotNull ProtocolAdapterPollingSampler sampler) {
+        //-- Override me
+    }
+
+    /**
+     * Hook Method is invoked by the sampling engine when the sampler throws an exception. It contains
+     * details of whether the sampler will continue or be removed from the scheduler along with
+     * the cause of the error.
+     */
+    protected void onSamplerError(final @NotNull ProtocolAdapterPollingSampler sampler, final @NotNull Throwable exception, boolean continuing) {
+        //-- Override me
+        if(log.isWarnEnabled()){
+            log.warn("Sampler {} threw an error, will continue ? {}", sampler.getReferenceId(), continuing, exception);
+        }
+    }
+
+    protected class Sampler extends ProtocolAdapterPollingSamplerImpl {
 
         protected final T config;
 
         public Sampler(final @NotNull T config) {
-            super(config.getPollingIntervalMillis(),
+            super(AbstractPollingProtocolAdapter.this.getId(), config.getPollingIntervalMillis(),
                     config.getPollingIntervalMillis(),
                     TimeUnit.MILLISECONDS,
                     config.getMaxPollingErrorsBeforeRemoval());
@@ -87,10 +112,21 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
 
         @Override
         public void execute() throws Exception {
-            U data = doSample(config);
+            U data = onSamplerInvoked(config);
             if (data != null) {
                 captureDataSample(data);
             }
+        }
+
+        @Override
+        public void close() {
+            super.close();
+            onSamplerClosed(this);
+        }
+
+        @Override
+        public void error(@NotNull final Throwable t, final boolean continuing) {
+            onSamplerError(this,t,continuing);
         }
     }
 }
