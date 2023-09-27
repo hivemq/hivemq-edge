@@ -130,6 +130,14 @@ export const handlers = [
     return res(ctx.json<any>({}), ctx.status(200))
   }),
 
+  rest.put('*/protocol-adapters/adapters/:adapterId/status', (_, res, ctx) => {
+    // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { adapterType } = req.params
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return res(ctx.json<any>({}), ctx.status(200))
+  }),
+
   rest.put('*/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
