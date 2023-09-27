@@ -21,14 +21,18 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-public class AdapterInstance {
+/**
+ * Wraps the protocol adapter instance, the factory that created it, the information of the adapter type and the configuration object that it was instantiated
+ * with
+ */
+public class ProtocolAdapterWrapper {
 
     private final @NotNull ProtocolAdapter adapter;
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull CustomConfig configObject;
 
-    public AdapterInstance(
+    public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapter adapter,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,

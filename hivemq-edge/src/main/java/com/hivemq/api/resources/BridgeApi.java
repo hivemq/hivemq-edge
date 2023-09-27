@@ -21,6 +21,8 @@ import com.hivemq.api.model.bridge.BridgeList;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
+import com.hivemq.api.model.status.StatusTransitionResult;
+import com.hivemq.codec.transcoder.TranscodingResult;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -126,6 +128,7 @@ public interface BridgeApi {
     @Path("/{bridgeId: ([a-zA-Z_0-9\\-])*}/connection-status")
     @Operation(summary = "Get the up to date status of a bridge",
                description = "Get the up to date status of a bridge.",
+               operationId = "get-bridge-status",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
@@ -147,9 +150,18 @@ public interface BridgeApi {
     @Path("/{bridgeId: ([a-zA-Z_0-9\\-])*}/status")
     @Operation(summary = "Transition the runtime status of a bridge",
                description = "Transition the connection status of a bridge.",
+               operationId = "transition-bridge-status",
                responses = {
                        @ApiResponse(responseCode = "200",
-                                    description = "Success")})
+                                    description = "Success",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = StatusTransitionResult.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "Example response with PENDING status.",
+                                                                              name = "transition-status-result",
+                                                                              summary = "Bridge Connection Transition Result",
+                                                                              value = ApiBodyExamples.EXAMPLE_STATUS_TRANSITION_RESULT)
+                                                       }))})
     Response changeStatus(
             @Parameter(name = "bridgeId",
                        description = "The id of the bridge whose runtime-status will change.",
@@ -187,8 +199,8 @@ public interface BridgeApi {
     @GET
     @Path("/status")
     @Operation(summary = "Get the status of all the bridges in the system.",
-               operationId = "status",
                description = "Obtain the details.",
+               operationId = "get-bridges-status",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "The Connection Details Verification Result.",

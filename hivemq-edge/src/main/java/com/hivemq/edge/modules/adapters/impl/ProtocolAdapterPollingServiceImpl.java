@@ -92,7 +92,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                                                          final @NotNull ProtocolAdapterPollingInput input){
 
         if(log.isTraceEnabled()){
-            log.trace("Scheduling Polling For Adapter {}", adapter.getProtocolAdapterInformation().getProtocolId());
+            log.trace("Scheduling Polling For Adapter {}", adapter.getId());
         }
         ProtocolAdapterPollingOutput output = new ProtocolAdapterPollingOutputImpl(adapter.getId(), input);
         MonitoredPollingJob internalJob = new MonitoredPollingJob(input, output);
@@ -130,12 +130,18 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
         if(activePollers.remove(pollingJob) != null){
             Future<?> future = pollingJob.getFuture();
             if(!future.isCancelled()){
-                log.info("Stopping Polling Job {}", pollingJob.getId());
+                if(log.isInfoEnabled()){
+                    log.info("Stopping Polling Job {}", getJobId(pollingJob));
+                }
                 if(future.cancel(true)){
                     pollingJob.getInput().close();
                 }
             }
         }
+    }
+
+    protected static String getJobId(final @NotNull ProtocolAdapterPollingOutput pollingJob){
+        return String.format("%s:%s", pollingJob.getAdapterId(), pollingJob.getId());
     }
 
     @Override
@@ -182,8 +188,8 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     if(System.currentTimeMillis() < notBefore){
                         //-- We're backing off atm so as not to harass the network
                         if(log.isDebugEnabled()){
-                            log.debug("Backing Off Polling Job {} from Adapter {}; Error Count {}",
-                                    output.getId(), output.getAdapterId(), errorCount);
+                            log.debug("Backing Off Polling Job {} Error Count {}",
+                                    getJobId(output), errorCount);
                         }
                         return;
                     }
@@ -192,8 +198,10 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 errorCount.set(0);
                 notBefore = 0;
             } catch(Throwable e){
-                log.info("Polling Job Resulted In Error {} from Adapter {} -> {}",
-                        output.getId(), output.getAdapterId(), e.getMessage());
+                if(log.isInfoEnabled()){
+                    log.info("Polling Job {} Resulted In Error -> {}",
+                            getJobId(output), e.getMessage());
+                }
                 if(log.isDebugEnabled()){
                     log.debug("Original exception:", e);
                 }
@@ -212,8 +220,8 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
         }
 
         protected void onTerminalError(Throwable t, int errorCount){
-            log.warn("Job {} Hit Terminal Error Threshold {} for Adapter {}",
-                    output.getId(), errorCount, output.getAdapterId(), t);
+            log.warn("Job {} Hit Terminal Error Threshold {}",
+                    getJobId(output), errorCount, t);
             stopPolling(output);
         }
     }

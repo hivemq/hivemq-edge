@@ -936,4 +936,10 @@ public interface ApiBodyExamples {
             "    \"productionLine\": \"production-line\",\n" +
             "    \"workCell\": \"work-cell\"\n" +
             "}";
+
+    //-- Connection Statis
+    String EXAMPLE_STATUS_TRANSITION_RESULT = "{\n" +
+            "    \"status\": \"PENDING\",\n" +
+            "    \"callbackTimeoutMillis\": 1000" +
+            "}";
 }

@@ -25,6 +25,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.model.HiveMQEdgeEvent;
 import com.hivemq.edge.modules.ModuleLoader;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterInput;
@@ -58,7 +59,7 @@ public class ProtocolAdapterManager {
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
 
     private final @NotNull Map<String, ProtocolAdapterFactory<?>> configToAdapterMap = new ConcurrentHashMap<>();
-    private final @NotNull Map<String, AdapterInstance> protocolAdapters = new ConcurrentHashMap<>();
+    private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters = new ConcurrentHashMap<>();
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ModuleServicesImpl moduleServices;
@@ -128,7 +129,7 @@ public class ProtocolAdapterManager {
             }
 
             for (Map<String, Object> adapterConfig : adapterConfigs) {
-                AdapterInstance instance = createAdapterInstance(adapterType, adapterConfig);
+                ProtocolAdapterWrapper instance = createAdapterInstance(adapterType, adapterConfig);
                 CompletableFuture<Void> future = start(instance.getAdapter());
                 adapterFutures.add(future);
             }
@@ -165,48 +166,101 @@ public class ProtocolAdapterManager {
         return protocolAdapterFactory;
     }
 
+    public CompletableFuture<Void> start(final @NotNull String protocolAdapterId) {
+        Preconditions.checkNotNull(protocolAdapterId);
+        Optional<ProtocolAdapterWrapper> adapterOptional = getAdapterById(protocolAdapterId);
+        if(!adapterOptional.isPresent()){
+            return CompletableFuture.failedFuture(null);
+        } else {
+            return start(adapterOptional.get().getAdapter());
+        }
+    }
+
+    public CompletableFuture<Void> stop(final @NotNull String protocolAdapterId) {
+        Preconditions.checkNotNull(protocolAdapterId);
+        Optional<ProtocolAdapterWrapper> adapterOptional = getAdapterById(protocolAdapterId);
+        if(!adapterOptional.isPresent()){
+            return CompletableFuture.failedFuture(null);
+        } else {
+            return stop(adapterOptional.get().getAdapter());
+        }
+    }
+
     public CompletableFuture<Void> start(final @NotNull ProtocolAdapter protocolAdapter) {
         Preconditions.checkNotNull(protocolAdapter);
+        if(log.isInfoEnabled()){
+            log.info("Starting protocol-adapter {}", protocolAdapter.getId());
+        }
         CompletableFuture<Void> startFuture;
+        final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
         if (protocolAdapter.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STARTED) {
             startFuture = CompletableFuture.completedFuture(null);
         } else {
-            final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
             startFuture = protocolAdapter.start(new ProtocolAdapterStartInputImpl(protocolAdapter), output);
-            startFuture.thenApply(input -> {
-                if (!output.startedSuccessfully) {
-                    log.warn("Protocol adapter {} could not be started, reason: {}",
-                            protocolAdapter.getProtocolAdapterInformation().getDisplayName(),
-                            output.message);
-                    HiveMQEdgeEvent adapterCreatedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.ADAPTER_ERROR);
-                    adapterCreatedEvent.addUserData("adapterType",
-                            protocolAdapter.getProtocolAdapterInformation().getProtocolId());
-                    remoteService.fireUsageEvent(adapterCreatedEvent);
-                } else if (output.message != null) {
-                    log.info("Protocol adapter {} started: {}",
-                            protocolAdapter.getProtocolAdapterInformation().getDisplayName(),
-                            output.message);
-                    HiveMQEdgeEvent adapterCreatedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.ADAPTER_STARTED);
-                    adapterCreatedEvent.addUserData("adapterType",
-                            protocolAdapter.getProtocolAdapterInformation().getProtocolId());
-                    remoteService.fireUsageEvent(adapterCreatedEvent);
-                }
-                return null;
-            }).exceptionally(throwable -> {
-                log.warn("Protocol adapter failed {} could not be initd, reason: {}",
-                        protocolAdapter.getProtocolAdapterInformation().getDisplayName(),
-                        output.message);
-                return null;
-            });;
         }
+        startFuture.thenApply(input -> {
+            if (!output.startedSuccessfully) {
+               handleStartupError(protocolAdapter, output);
+            } else if (output.message != null) {
+                log.trace("Protocol-adapter {} started: {}",
+                        protocolAdapter.getId(), output.message);
+                HiveMQEdgeEvent adapterCreatedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.ADAPTER_STARTED);
+                adapterCreatedEvent.addUserData("adapterType",
+                        protocolAdapter.getProtocolAdapterInformation().getProtocolId());
+                remoteService.fireUsageEvent(adapterCreatedEvent);
+            }
+            return output;
+        }).exceptionally(throwable -> {
+            output.failStart(throwable, output.message);
+            handleStartupError(protocolAdapter, output);
+            return output;
+        });
+
         return startFuture;
+    }
+
+    public CompletableFuture<Void> stop(final @NotNull ProtocolAdapter protocolAdapter) {
+        Preconditions.checkNotNull(protocolAdapter);
+        if(log.isInfoEnabled()){
+            log.info("Stopping protocol-adapter {}", protocolAdapter.getId());
+        }
+        CompletableFuture<Void> stopFuture;
+        if (protocolAdapter.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STOPPED) {
+            stopFuture = CompletableFuture.completedFuture(null);
+        } else {
+            stopFuture = protocolAdapter.stop();
+        }
+        stopFuture.thenApply(input -> {
+            if(log.isTraceEnabled()){
+                log.trace("Protocol-adapter {} stopped", protocolAdapter.getId());
+            }
+            return null;
+        }).exceptionally(throwable -> {
+            if(log.isWarnEnabled()){
+                log.warn("Protocol-adapter {} was unable to stop cleanly",
+                        protocolAdapter.getId(), throwable);
+            }
+            return null;
+        });
+        return stopFuture;
+    }
+
+    protected void handleStartupError(final @NotNull ProtocolAdapter protocolAdapter, @NotNull final ProtocolAdapterStartOutputImpl output){
+        if(log.isWarnEnabled()){
+            log.warn("Protocol-adapter {} could not be started, reason: {}",
+                    protocolAdapter.getId(),
+                    output.message, output.getThrowable());
+        }
+        HiveMQEdgeEvent adapterCreatedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.ADAPTER_ERROR);
+        adapterCreatedEvent.addUserData("adapterType",
+                protocolAdapter.getProtocolAdapterInformation().getProtocolId());
+        remoteService.fireUsageEvent(adapterCreatedEvent);
     }
 
     public synchronized CompletableFuture<Void> addAdapter(
             final @NotNull String adapterType,
             final @NotNull String adapterId,
-            final @NotNull Map<String, Object> config,
-            boolean start) {
+            final @NotNull Map<String, Object> config) {
         Preconditions.checkNotNull(adapterType);
         Preconditions.checkNotNull(adapterId);
         if (getAdapterTypeById(adapterType).isEmpty()) {
@@ -221,7 +275,7 @@ public class ProtocolAdapterManager {
 
     public boolean deleteAdapter(final String id) {
         Preconditions.checkNotNull(id);
-        Optional<AdapterInstance> adapterInstance = getAdapterById(id);
+        Optional<ProtocolAdapterWrapper> adapterInstance = getAdapterById(id);
         if (adapterInstance.isPresent()) {
             adapterInstance.get().getAdapter().stop();
             if (protocolAdapters.remove(id) != null) {
@@ -244,20 +298,20 @@ public class ProtocolAdapterManager {
     public boolean updateAdapter(final @NotNull String adapterId,
                                  final @NotNull Map<String, Object> config) {
         Preconditions.checkNotNull(adapterId);
-        Optional<AdapterInstance> adapterInstance = getAdapterById(adapterId);
+        Optional<ProtocolAdapterWrapper> adapterInstance = getAdapterById(adapterId);
         if (adapterInstance.isPresent()) {
-            AdapterInstance oldInstance = adapterInstance.get();
+            ProtocolAdapterWrapper oldInstance = adapterInstance.get();
             deleteAdapter(oldInstance.getAdapter().getId());
             addAdapter(oldInstance.getAdapter().getProtocolAdapterInformation().getProtocolId(),
-                    oldInstance.getAdapter().getId(), config, true);
+                    oldInstance.getAdapter().getId(), config);
             return true;
         }
         return false;
     }
 
-    public Optional<AdapterInstance> getAdapterById(final String id) {
+    public Optional<ProtocolAdapterWrapper> getAdapterById(final String id) {
         Preconditions.checkNotNull(id);
-        Map<String, AdapterInstance> adapters = getProtocolAdapters();
+        Map<String, ProtocolAdapterWrapper> adapters = getProtocolAdapters();
         return Optional.ofNullable(adapters.get(id));
     }
 
@@ -274,7 +328,7 @@ public class ProtocolAdapterManager {
                 .collect(Collectors.toMap(ProtocolAdapterInformation::getProtocolId, o -> o));
     }
 
-    public @NotNull Map<String, AdapterInstance> getProtocolAdapters() {
+    public @NotNull Map<String, ProtocolAdapterWrapper> getProtocolAdapters() {
         return protocolAdapters;
     }
 
@@ -284,7 +338,7 @@ public class ProtocolAdapterManager {
         return new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterInformation);
     }
 
-    protected AdapterInstance createAdapterInstance(final String adapterType, final @NotNull Map<String, Object> config){
+    protected ProtocolAdapterWrapper createAdapterInstance(final String adapterType, final @NotNull Map<String, Object> config){
 
         ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -294,13 +348,12 @@ public class ProtocolAdapterManager {
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(configObject, metricRegistry));
-
-            AdapterInstance instance = new AdapterInstance(protocolAdapter,
+            ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(protocolAdapter,
                     protocolAdapterFactory,
                     protocolAdapterFactory.getInformation(),
                     configObject);
-            protocolAdapters.put(instance.getAdapter().getId(), instance);
-            return instance;
+            protocolAdapters.put(wrapper.getAdapter().getId(), wrapper);
+            return wrapper;
 
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
@@ -310,7 +363,7 @@ public class ProtocolAdapterManager {
     protected CompletableFuture<Void> addAdapterAndStartInRuntime(final String adapterType, final @NotNull Map<String, Object> config){
 
         synchronized(lock){
-            AdapterInstance instance = createAdapterInstance(adapterType, config);
+            ProtocolAdapterWrapper instance = createAdapterInstance(adapterType, config);
 
             //-- Write the protocol adapter back to the main config (through the proxy)
             List<Map> adapterList = getAdapterListForType(adapterType);
@@ -368,6 +421,7 @@ public class ProtocolAdapterManager {
         //default: all good
         boolean startedSuccessfully = true;
         @Nullable String message = null;
+        @Nullable Throwable throwable;
 
         @Override
         public void startedSuccessfully(@NotNull final String message) {
@@ -378,7 +432,12 @@ public class ProtocolAdapterManager {
         @Override
         public void failStart(@NotNull Throwable t, @NotNull final String errorMessage) {
             startedSuccessfully = false;
+            this.throwable = t;
             this.message = errorMessage;
+        }
+
+        public Throwable getThrowable() {
+            return throwable;
         }
 
         public boolean isStartedSuccessfully() {

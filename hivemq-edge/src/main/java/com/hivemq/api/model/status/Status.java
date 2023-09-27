@@ -136,21 +136,21 @@ public class Status {
         return runtime;
     }
 
-    public static Status unknown(@NotNull final String connectionType, @NotNull final String entityId){
+    public static Status unknown(@NotNull final RUNTIME_STATUS runtimeStatus, @NotNull final String connectionType, @NotNull final String entityId){
         Preconditions.checkNotNull(connectionType);
         Preconditions.checkNotNull(entityId);
-        return new Status(RUNTIME_STATUS.STOPPED, CONNECTION_STATUS.UNKNOWN, entityId, connectionType, null, null, null);
+        return new Status(runtimeStatus, CONNECTION_STATUS.UNKNOWN, entityId, connectionType, null, null, null);
     }
 
-    public static Status connected(@NotNull final String connectionType, @NotNull final String entityId){
+    public static Status connected(@NotNull final RUNTIME_STATUS runtimeStatus, @NotNull final String connectionType, @NotNull final String entityId){
         Preconditions.checkNotNull(connectionType);
         Preconditions.checkNotNull(entityId);
-        return new Status(RUNTIME_STATUS.STARTED, CONNECTION_STATUS.CONNECTED, entityId, connectionType, null, null, null);
+        return new Status(runtimeStatus, CONNECTION_STATUS.CONNECTED, entityId, connectionType, null, null, null);
     }
 
-    public static Status disconnected(@NotNull final String connectionType, @NotNull final String entityId){
+    public static Status disconnected(@NotNull final RUNTIME_STATUS runtimeStatus, @NotNull final String connectionType, @NotNull final String entityId){
         Preconditions.checkNotNull(connectionType);
         Preconditions.checkNotNull(entityId);
-        return new Status(RUNTIME_STATUS.STARTED, CONNECTION_STATUS.DISCONNECTED, entityId, connectionType, null, null, null);
+        return new Status(runtimeStatus, CONNECTION_STATUS.DISCONNECTED, entityId, connectionType, null, null, null);
     }
 }
