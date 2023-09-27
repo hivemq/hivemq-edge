@@ -18,6 +18,9 @@ package com.hivemq.edge.modules.adapters.simulation;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.edge.modules.adapters.impl.AbstractPollingPerSubscriptionAdapter;
+import com.hivemq.edge.modules.adapters.impl.AbstractPollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
 import com.hivemq.edge.modules.adapters.params.NodeTree;
 import com.hivemq.edge.modules.adapters.params.NodeType;
@@ -29,6 +32,7 @@ import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingInputImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
@@ -42,8 +46,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
-public class SimulationProtocolAdapter extends AbstractProtocolAdapter<SimulationAdapterConfig> {
-    private static final Logger log = LoggerFactory.getLogger(SimulationProtocolAdapter.class);
+public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAdapter<SimulationAdapterConfig, ProtocolAdapterDataSample> {
 
     public SimulationProtocolAdapter(
             @NotNull final ProtocolAdapterInformation adapterInformation,
@@ -58,96 +61,35 @@ public class SimulationProtocolAdapter extends AbstractProtocolAdapter<Simulatio
     }
 
     @Override
-    public CompletableFuture<Void> start(
+    protected CompletableFuture<Void> startInternal(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
-            bindServices(input.moduleServices());
-            setRuntimeStatus(RuntimeStatus.STARTED);
             if (adapterConfig.getSubscriptions() != null) {
                 for (SimulationAdapterConfig.Subscription subscription : adapterConfig.getSubscriptions()) {
-                    subscribeInternal(subscription);
+                    startPolling(new SubscriptionSampler(adapterConfig, subscription));
                 }
             }
             output.startedSuccessfully("Successfully connected");
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             output.failStart(e, e.getMessage());
-            setRuntimeStatus(RuntimeStatus.STOPPED);
             return CompletableFuture.failedFuture(e);
         }
     }
 
     @Override
-    public CompletableFuture<Void> stop() {
-        try {
-            //-- Stop polling jobs
-            protocolAdapterPollingService.getPollingJobsForAdapter(getId())
-                    .stream()
-                    .forEach(protocolAdapterPollingService::stopPolling);
-            return CompletableFuture.completedFuture(null);
-        } finally {
-            setRuntimeStatus(RuntimeStatus.STOPPED);
-        }
-    }
-
-    private void startPolling(final @NotNull SimulationPoller poller) {
-        protocolAdapterPollingService.schedulePolling(this, poller);
+    protected CompletableFuture<Void> stopInternal() {
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public CompletableFuture<Void> close() {
-        return stop();
-    }
-
-    protected void subscribeInternal(final @NotNull SimulationAdapterConfig.Subscription subscription) {
-        if (subscription != null) {
-            startPolling(new SimulationPoller(subscription));
-        }
-    }
-
-    protected void captured(SimulationData data) throws ProtocolAdapterException {
-
-        final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
-                .withTopic(data.getTopic())
-                .withPayload(convertToJson(data.getData()))
-                .withQoS(data.getQos().getQosNumber())
-                .withContextInformation("polling-interval-ms", Long.toString(adapterConfig.getPollingIntervalMillis()));
-
-        final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
-
-        publishFuture.thenAccept(publishReturnCode -> {
-            protocolAdapterMetricsHelper.incrementReadPublishSuccess();
-        }).exceptionally(throwable -> {
-            protocolAdapterMetricsHelper.incrementReadPublishFailure();
-            log.warn("Error Publishing Simulation Payload", throwable);
-            return null;
-        });
-    }
-
-    class SimulationPoller extends ProtocolAdapterPollingInputImpl {
-
-        private final SimulationAdapterConfig.Subscription subscription;
-
-        public SimulationPoller(SimulationAdapterConfig.Subscription subscription) {
-            super(adapterConfig.getPollingIntervalMillis(),
-                    adapterConfig.getPollingIntervalMillis(),
-                    TimeUnit.MILLISECONDS,
-                    1);
-            this.subscription = subscription;
-        }
-
-        @Override
-        public void execute() throws Exception {
-            SimulationData data = createData();
-            data.setData(ThreadLocalRandom.current().nextDouble());
-            captured(data);
-        }
-
-        protected SimulationData createData() {
-            SimulationData data = new SimulationData(SimulationData.TYPE.RANDOM,
+    protected ProtocolAdapterDataSample doSample(
+            final SimulationAdapterConfig config,
+            final AbstractProtocolAdapterConfig.Subscription subscription) {
+        ProtocolAdapterDataSample dataSample =
+                new ProtocolAdapterDataSample(ThreadLocalRandom.current().nextDouble(),
                     subscription.getDestination(),
-                    QoS.valueOf(subscription.getQos()));
-            return data;
-        }
+                    subscription.getQos());
+        return dataSample;
     }
 }

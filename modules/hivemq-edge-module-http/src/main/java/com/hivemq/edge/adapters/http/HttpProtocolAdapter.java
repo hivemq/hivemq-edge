@@ -19,6 +19,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.edge.modules.adapters.impl.AbstractPollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
 import com.hivemq.edge.modules.adapters.params.NodeTree;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
@@ -28,6 +30,7 @@ import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingInputImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.http.core.HttpUtils;
@@ -50,11 +53,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConfig> {
+public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdapterConfig, HttpData> {
 
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
-    private volatile Object lock = new Object();
-    private AtomicBoolean connected = new AtomicBoolean(false);
     private HttpClient httpClient = null;
 
     public HttpProtocolAdapter(final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -65,10 +66,9 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
     }
 
     @Override
-    public CompletableFuture<Void> start(
+    protected CompletableFuture<Void> startInternal(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
-            bindServices(input.moduleServices());
             if(httpClient == null){
                 synchronized (lock) {
                     if (httpClient == null) {
@@ -80,26 +80,17 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
             return CompletableFuture.completedFuture(null);
         } catch (Exception e) {
             output.failStart(e, e.getMessage());
-            setRuntimeStatus(RuntimeStatus.STOPPED);
             return CompletableFuture.failedFuture(e);
         }
     }
 
     @Override
-    public CompletableFuture<Void> stop() {
-        try {
-            //-- Stop polling jobs
-            protocolAdapterPollingService.getPollingJobsForAdapter(getId()).stream().forEach(
-                    protocolAdapterPollingService::stopPolling);
-        } finally {
-            connected.set(false);
-            httpClient = null;
-        }
+    protected CompletableFuture<Void> stopInternal() {
+        httpClient = null;
         return CompletableFuture.completedFuture(null);
     }
 
     protected void initializeHttpRequest(@NotNull final HttpAdapterConfig config){
-        initStartAttempt();
         if(HttpUtils.validHttpOrHttpsUrl(config.getUrl())){
             //initialize client
             httpClient = HttpClient.newBuilder()
@@ -107,68 +98,26 @@ public class HttpProtocolAdapter extends AbstractProtocolAdapter<HttpAdapterConf
                     .followRedirects(HttpClient.Redirect.NORMAL)
                     .connectTimeout(Duration.ofSeconds(config.getHttpConnectTimeout()))
                     .build();
-            setRuntimeStatus(RuntimeStatus.STARTED);
-            startPolling(new HttpRequestPoller(config));
+            startPolling(new Sampler(config));
         } else {
             setLastErrorMessage("Invalid URL supplied");
         }
-    }
-
-    private void startPolling(final @NotNull HttpRequestPoller httpRequestPoller) {
-        protocolAdapterPollingService.schedulePolling(this, httpRequestPoller);
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-        return stop();
     }
 
     private static boolean isSuccessStatusCode(final int statusCode){
         return statusCode >= 200 && statusCode <= 299;
     }
 
-    protected void captured(final @NotNull HttpData data) throws ProtocolAdapterException {
+    protected void captureDataSample(final @NotNull HttpData data) throws ProtocolAdapterException {
         boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) || !adapterConfig.isHttpPublishSuccessStatusCodeOnly();
         setConnectionStatus(isSuccessStatusCode(data.getHttpStatusCode()) ? ConnectionStatus.STATELESS : ConnectionStatus.ERROR);
         if (publishData) {
-            final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
-                    .withTopic(data.getTopic())
-                    .withPayload(convertToJson(data))
-                    .withQoS(data.getQos());
-            final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
-            publishFuture.thenAccept(publishReturnCode -> {
-                protocolAdapterMetricsHelper.incrementReadPublishSuccess();
-            }).exceptionally(throwable -> {
-                protocolAdapterMetricsHelper.incrementReadPublishFailure();
-                log.warn("Error Publishing Http Payload", throwable);
-                return null;
-            });
+           super.captureDataSample(data);
         }
     }
 
-    class HttpRequestPoller extends ProtocolAdapterPollingInputImpl {
-
-        private final HttpAdapterConfig config;
-
-        public HttpRequestPoller(final @NotNull HttpAdapterConfig config) {
-            super(config.getPublishingInterval(),
-                    config.getPublishingInterval(),
-                    TimeUnit.MILLISECONDS,
-                    config.getMaxPollingErrorsBeforeRemoval());
-            this.config = config;
-        }
-
-        @Override
-        public void execute() throws Exception {
-            HttpData data = executeHttpRequest(config);
-            if (data != null) {
-                captured(data);
-            }
-        }
-    }
-
-    protected HttpData executeHttpRequest(@NotNull final HttpAdapterConfig config)
-            throws IOException, InterruptedException {
+    @Override
+    protected HttpData doSample(final HttpAdapterConfig config) throws Exception {
         if(httpClient != null){
             switch (config.getHttpRequestMethod()){
                 case GET:

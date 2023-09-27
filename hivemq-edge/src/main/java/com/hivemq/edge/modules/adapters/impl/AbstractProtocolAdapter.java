@@ -21,10 +21,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.adapters.params.NodeTree;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
+import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
@@ -34,6 +37,8 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -49,10 +54,12 @@ import java.util.concurrent.CompletableFuture;
 public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterConfig>
         implements ProtocolAdapter {
 
+    protected final Logger log = LoggerFactory.getLogger(getClass());
+
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull ObjectMapper objectMapper;
+
     protected @Nullable ProtocolAdapterPublishService adapterPublishService;
-    protected @Nullable ProtocolAdapterPollingService protocolAdapterPollingService;
     protected @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
 
     protected @NotNull T adapterConfig;
@@ -85,12 +92,16 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * @param data - The data you wish to wrap into the standard JSONB envelope
      * @return a valid JSON document encoded to UTF-8 with the supplied value wrapped as an attribute on the envelope
      */
-    public byte[] convertToJson(final @NotNull Object data) throws ProtocolAdapterException {
+    public byte[] convertToJson(final @NotNull ProtocolAdapterDataSample data) throws ProtocolAdapterException {
         try {
             Preconditions.checkNotNull(data);
             ProtocolAdapterPublisherJsonPayload payload = new ProtocolAdapterPublisherJsonPayload();
             payload.setValue(data);
-            payload.setTimestamp(System.currentTimeMillis());
+            if(data.getTimestamp() > 0){
+                payload.setTimestamp(data.getTimestamp());
+            } else {
+                payload.setTimestamp(System.currentTimeMillis());
+            }
             return objectMapper.writeValueAsBytes(payload);
         } catch(JsonProcessingException e){
             throw new ProtocolAdapterException("Error Wrapping Adapter Data", e);
@@ -99,8 +110,9 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
 
     protected void bindServices(final @NotNull ModuleServices moduleServices){
         Preconditions.checkNotNull(moduleServices);
-        protocolAdapterPollingService = moduleServices.protocolAdapterPollingService();
-        adapterPublishService = moduleServices.adapterPublishService();
+        if(adapterPublishService == null){
+            adapterPublishService = moduleServices.adapterPublishService();
+        }
     }
 
     protected void initStartAttempt(){
@@ -116,10 +128,6 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         return lastStartAttemptTime;
     }
 
-    public Integer getNumberOfDaemonProcessed(){
-        return protocolAdapterPollingService.getPollingJobsForAdapter(getId()).size();
-    }
-
     @Override
     public CompletableFuture<Void> discoverValues(final @NotNull ProtocolAdapterDiscoveryInput input,
                                                   final @NotNull ProtocolAdapterDiscoveryOutput output) {
@@ -128,6 +136,40 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
             return CompletableFuture.failedFuture(new UnsupportedOperationException("Adapter type does not support discovery"));
         } else {
             return CompletableFuture.completedFuture(null);
+        }
+    }
+
+    @Override
+    public CompletableFuture<Void> start(
+            final ProtocolAdapterStartInput input,
+            final ProtocolAdapterStartOutput output) {
+        CompletableFuture<Void> future = null;
+        synchronized (lock){
+            try {
+                bindServices(input.moduleServices());
+                initStartAttempt();
+                future = startInternal(input, output);
+                return future;
+            } finally {
+                if(future != null){
+                    future.thenRun(() -> setRuntimeStatus(RuntimeStatus.STARTED));
+                }
+            }
+        }
+    }
+
+    @Override
+    public CompletableFuture<Void> stop() {
+        CompletableFuture<Void> future = null;
+        synchronized (lock){
+            try {
+                future = stopInternal();
+                return future;
+            } finally {
+                if(future != null){
+                    future.thenRun(() -> setRuntimeStatus(RuntimeStatus.STOPPED));
+                }
+            }
         }
     }
 
@@ -178,4 +220,8 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     public RuntimeStatus getRuntimeStatus() {
         return runtimeStatus;
     }
+
+    protected abstract CompletableFuture<Void> startInternal(final ProtocolAdapterStartInput input, final ProtocolAdapterStartOutput output);
+
+    protected abstract CompletableFuture<Void> stopInternal();
 }

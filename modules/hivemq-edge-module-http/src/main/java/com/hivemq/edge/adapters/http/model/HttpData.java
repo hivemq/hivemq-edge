@@ -15,19 +15,16 @@
  */
 package com.hivemq.edge.adapters.http.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpData {
+public class HttpData extends ProtocolAdapterDataSample {
 
-    private Object data;
     private final String requestUrl;
     private final String contentType;
-    private String topic;
-    private int qos;
     private int httpStatusCode;
 
     public HttpData(final String requestUrl,
@@ -36,12 +33,10 @@ public class HttpData {
                     final @NotNull Object data,
                     final @NotNull String topic,
                     final @NotNull int qos) {
+        super(data, topic, qos);
         this.requestUrl = requestUrl;
         this.contentType = contentType;
         this.httpStatusCode = httpStatusCode;
-        this.topic = topic;
-        this.qos = qos;
-        this.data = data;
     }
 
     public String getRequestUrl() {
@@ -58,15 +53,5 @@ public class HttpData {
 
     public Object getData() {
         return data;
-    }
-
-    @JsonIgnore
-    public String getTopic() {
-        return topic;
-    }
-
-    @JsonIgnore
-    public int getQos() {
-        return qos;
     }
 }
