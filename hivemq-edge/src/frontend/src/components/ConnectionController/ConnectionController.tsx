@@ -51,7 +51,9 @@ const ConnectionController: FC<ConnectionControllerProps> = ({ type, id, status,
         errorToast(
           {
             title: t('protocolAdapter.toast.status.title'),
-            description: t('protocolAdapter.toast.status.error'),
+            description: t('protocolAdapter.toast.status.error', {
+              device: type,
+            }),
           },
           err
         )
