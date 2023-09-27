@@ -1,28 +1,35 @@
 import { FC } from 'react'
-import { Status } from '@/api/__generated__'
+import { useTranslation } from 'react-i18next'
 import { Badge } from '@chakra-ui/react'
 
+import { Status } from '@/api/__generated__'
+
 const statusMapping = {
-  [Status.connection.ERROR]: { text: 'error', color: 'status.error' },
-  [Status.connection.UNKNOWN]: { text: 'Disconnecting', color: 'status.error' },
-  [Status.connection.CONNECTED]: { text: 'Connected', color: 'status.connected' },
-  [Status.connection.DISCONNECTED]: { text: 'Disconnected', color: 'status.disconnected' },
-  [Status.connection.STATELESS]: { text: 'Stateless', color: 'status.stateless' },
+  [Status.runtime.STOPPED]: { text: 'STOPPED', color: 'status.error' },
+  [Status.connection.ERROR]: { text: 'ERROR', color: 'status.error' },
+  [Status.connection.UNKNOWN]: { text: 'UNKNOWN', color: 'status.error' },
+  [Status.connection.CONNECTED]: { text: 'CONNECTED', color: 'status.connected' },
+  [Status.connection.DISCONNECTED]: { text: 'DISCONNECTED', color: 'status.disconnected' },
+  [Status.connection.STATELESS]: { text: 'STATELESS', color: 'status.stateless' },
 }
 
 interface ConnectionStatusBadgeProps {
-  status?: Status.connection
+  status?: Status
 }
 
 const ConnectionStatusBadge: FC<ConnectionStatusBadgeProps> = ({ status }) => {
+  const { t } = useTranslation()
+
+  const mapping =
+    statusMapping[
+      status?.runtime === Status.runtime.STOPPED
+        ? Status.runtime.STOPPED
+        : status?.connection || Status.connection.UNKNOWN
+    ]
+
   return (
-    <Badge
-      variant="subtle"
-      colorScheme={statusMapping[status || 'ERROR'].color}
-      borderRadius={15}
-      data-testid={'connection-status'}
-    >
-      {statusMapping[status || 'ERROR'].text}
+    <Badge variant="subtle" colorScheme={mapping.color} borderRadius={15} data-testid={'connection-status'}>
+      {t('hivemq.connection.status', { context: mapping.text })}
     </Badge>
   )
 }
