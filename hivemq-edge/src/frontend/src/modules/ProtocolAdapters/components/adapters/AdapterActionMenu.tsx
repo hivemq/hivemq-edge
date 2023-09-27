@@ -3,7 +3,9 @@ import { IconButton, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Text } f
 import { ChevronDownIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
-import { Adapter, Status } from '@/api/__generated__'
+import { Adapter } from '@/api/__generated__'
+import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
+import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 interface AdapterActionMenuProps {
   adapter: Adapter
@@ -16,7 +18,7 @@ interface AdapterActionMenuProps {
 const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEdit, onDelete, onViewWorkspace }) => {
   const { t } = useTranslation()
 
-  const { type, id, status: { connection } = {} } = adapter
+  const { type, id, status } = adapter
   return (
     <Menu>
       <MenuButton
@@ -27,11 +29,8 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEd
         aria-label={t('protocolAdapter.table.actions.label') as string}
       />
       <MenuList>
-        <MenuItem isDisabled data-testid={'adapter-action-connect'}>
-          {connection !== Status.connection.CONNECTED
-            ? t('protocolAdapter.table.actions.connect')
-            : t('protocolAdapter.table.actions.disconnect')}
-        </MenuItem>
+        <ConnectionController type={NodeTypes.ADAPTER_NODE} id={id} status={status} variant={'menuItem'} />
+
         <MenuItem data-testid={'adapter-action-workspace'} onClick={() => onViewWorkspace?.(id, type as string)}>
           {t('protocolAdapter.table.actions.workspace')}
         </MenuItem>
