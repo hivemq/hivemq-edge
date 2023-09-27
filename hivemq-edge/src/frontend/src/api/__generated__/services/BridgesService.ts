@@ -7,6 +7,7 @@ import type { BridgeList } from '../models/BridgeList';
 import type { Status } from '../models/Status';
 import type { StatusList } from '../models/StatusList';
 import type { StatusTransitionCommand } from '../models/StatusTransitionCommand';
+import type { StatusTransitionResult } from '../models/StatusTransitionResult';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
 import type { BaseHttpRequest } from '../core/BaseHttpRequest';
@@ -144,13 +145,13 @@ export class BridgesService {
      * Transition the connection status of a bridge.
      * @param bridgeId The id of the bridge whose runtime-status will change.
      * @param requestBody The command to transition the bridge runtime status.
-     * @returns any Success
+     * @returns StatusTransitionResult Success
      * @throws ApiError
      */
     public changeStatus(
         bridgeId: string,
         requestBody: StatusTransitionCommand,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<StatusTransitionResult> {
         return this.httpRequest.request({
             method: 'PUT',
             url: '/api/v1/management/bridges/{bridgeId}/status',
