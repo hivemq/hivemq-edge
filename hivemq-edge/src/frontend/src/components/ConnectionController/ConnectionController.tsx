@@ -36,10 +36,15 @@ const ConnectionController: FC<ConnectionControllerProps> = ({ type, id, status,
         : updateAdapterStatus.mutateAsync({ adapterId: eventId, requestBody: { command: status } })
 
     statusPromise
-      .then(() => {
+      .then((results) => {
+        const { callbackTimeoutMillis } = results
         successToast({
           title: t('protocolAdapter.toast.status.title'),
-          description: t('protocolAdapter.toast.status.description'),
+          description: t('protocolAdapter.toast.status.description', {
+            action: status,
+            device: type,
+            callbackTimeoutMillis: callbackTimeoutMillis ? callbackTimeoutMillis / 1000 : 0,
+          }),
         })
       })
       .catch((err: ApiError) =>
