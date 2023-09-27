@@ -1,34 +1,40 @@
 import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-
 import {
+  Box,
   Card,
   CardBody,
   CardFooter,
   CardHeader,
+  Flex,
   Heading,
-  Image,
-  Stack,
-  IconButton,
-  Box,
   HStack,
-  Text,
+  IconButton,
+  Image,
   Skeleton,
+  Stack,
+  Text,
 } from '@chakra-ui/react'
 import { EditIcon } from '@chakra-ui/icons'
 
-import { Bridge } from '@/api/__generated__'
 import BridgeLogo from '@/assets/app/bridges.svg'
 
-import ConnectionSummary from './ConnectionSummary.tsx'
+import { Bridge } from '@/api/__generated__'
 import { useGetBridgesStatus } from '@/api/hooks/useConnection/useGetBridgesStatus.tsx'
-import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 
-const BridgeCard: FC<Bridge & { isLoading?: boolean; onNavigate?: (route: string) => void }> = ({
-  isLoading,
-  onNavigate,
-  ...props
-}) => {
+import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+
+import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
+import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
+
+import ConnectionSummary from './ConnectionSummary.tsx'
+
+interface BridgeCardProps extends Bridge {
+  isLoading?: boolean
+  onNavigate?: (route: string) => void
+}
+
+const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, ...props }) => {
   const { t } = useTranslation()
 
   // const { isFetching } = useGetBridgeConnectionStatus(props.id)
@@ -69,7 +75,7 @@ const BridgeCard: FC<Bridge & { isLoading?: boolean; onNavigate?: (route: string
       </HStack>
       <Skeleton mt={2} isLoaded={!isLoading}>
         <CardFooter flexDirection={'row'} gap={2}>
-          <Box>
+          <Box alignSelf="center">
             <span
               style={{
                 display: 'inline-block',
@@ -87,6 +93,9 @@ const BridgeCard: FC<Bridge & { isLoading?: boolean; onNavigate?: (route: string
             </Text>
             <ConnectionStatusBadge status={data?.connection} />
           </Box>
+          <Flex flex="1" justifyContent={'flex-end'}>
+            <ConnectionController type={NodeTypes.BRIDGE_NODE} id={props.id} status={props.status} />
+          </Flex>
         </CardFooter>
       </Skeleton>
     </Card>

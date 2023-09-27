@@ -1,17 +1,18 @@
 import { FC, useMemo } from 'react'
 import { Box, Flex, SimpleGrid } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 import BridgeEmptyLogo from '@/assets/app/bridge-empty.svg'
 
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import WarningMessage from '@/components/WarningMessage.tsx'
 
 import BridgeCard from '@/modules/Bridges/components/overview/BridgeCard.tsx'
-import WarningMessage from '@/components/WarningMessage.tsx'
-import { useNavigate } from 'react-router-dom'
 
 const Bridges: FC = () => {
   const { data, isLoading, isError, error } = useListBridges()
