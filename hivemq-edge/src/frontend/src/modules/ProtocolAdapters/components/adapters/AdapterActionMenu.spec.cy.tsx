@@ -13,23 +13,23 @@ describe('AdapterActionMenu', () => {
     cy.mountWithProviders(<AdapterActionMenu adapter={mockAdapter} />)
 
     cy.getByAriaLabel('Actions').click()
-    cy.getByTestId('adapter-action-connect').should('be.visible')
+    cy.getByTestId('device-action-start').should('be.visible')
     cy.getByTestId('adapter-action-create').should('be.visible')
     cy.getByTestId('adapter-action-edit').should('be.visible')
     cy.getByTestId('adapter-action-delete').should('be.visible')
 
     cy.get('body').click(0, 0)
-    cy.getByTestId('adapter-action-connect').should('not.be.visible')
+    cy.getByTestId('device-action-start').should('not.be.visible')
   })
 
   it('should render connected status properly', () => {
     cy.mountWithProviders(<AdapterActionMenu adapter={mockAdapter} />)
 
     cy.getByAriaLabel('Actions').click()
-    cy.getByTestId('adapter-action-connect').should('be.visible').should('have.text', 'Disconnect')
+    cy.getByTestId('device-action-start').should('be.visible').should('have.text', 'Start')
   })
 
-  it('should render disconnected status properly', () => {
+  it('should render start status properly', () => {
     const adapter: Adapter = {
       ...mockAdapter,
       status: {
@@ -40,7 +40,7 @@ describe('AdapterActionMenu', () => {
     cy.mountWithProviders(<AdapterActionMenu adapter={adapter} />)
 
     cy.getByAriaLabel('Actions').click()
-    cy.getByTestId('adapter-action-connect').should('be.visible').should('have.text', 'Connect')
+    cy.getByTestId('device-action-start').should('be.visible').should('have.text', 'Start')
   })
 
   it('should trigger actions', () => {
