@@ -9,7 +9,10 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "start": "Start",
+    "stop": "Stop",
+    "restart": "Restart"
   },
   "hivemq": {
     "topic": "Topic"
@@ -126,8 +129,6 @@
       "add": "Add bridge connection",
       "edit": "Edit",
       "delete": "Delete",
-      "start": "Start",
-      "stop": "Stop",
       "create": "Create the bridge",
       "update": "Update the bridge",
       "submitting": "Submitting"
@@ -418,15 +419,18 @@
       },
       "actions": {
         "label": "Actions",
-        "connect": "Connect",
-        "workspace": "View on workspace",
-        "disconnect": "Disconnect",
         "create": "Create similar",
         "edit": "Edit",
-        "delete": "Delete"
+        "delete": "Delete",
+        "workspace": "View on workspace"
       }
     },
     "toast": {
+      "status": {
+        "title": "Reconnecting Protocol Adapter",
+        "description": "We've successfully sent a request to reconnect the Protocol Adapter. It might take a little bit of time before the requested changes are visible.",
+        "error": "There was a problem trying to reconnect the Protocol Adapter"
+      },
       "delete": {
         "title": "Deleting Protocol Adapter",
         "description": "We've successfully deleted the Protocol Adapter for you.",
