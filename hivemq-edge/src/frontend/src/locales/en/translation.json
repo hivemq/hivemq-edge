@@ -427,9 +427,18 @@
     },
     "toast": {
       "status": {
-        "title": "Reconnecting Protocol Adapter",
-        "description": "We've successfully sent a request to reconnect the Protocol Adapter. It might take a little bit of time before the requested changes are visible.",
-        "error": "There was a problem trying to reconnect the Protocol Adapter"
+        "title": "Connection updating",
+        "action_STOP": "stopped",
+        "action_START": "started",
+        "action_RESTART": "restarted",
+        "device": "the device",
+        "device_BRIDGE": "the bridge",
+        "device_ADAPTER": "the adapter",
+        "callbackTimeoutMillis_zero": "a little bit of time",
+        "callbackTimeoutMillis_one": "up to {{count}} second",
+        "callbackTimeoutMillis_other": "up to {{count}} seconds",
+        "description": "We've successfully $t(protocolAdapter.toast.status.action, {'context': '{{action}}' }) $t(protocolAdapter.toast.status.device, {'context': '{{device}}' }). It might take $t(protocolAdapter.toast.status.callbackTimeoutMillis, {'count': {{callbackTimeoutMillis}} }) to update the status.",
+        "error": "There was a problem trying to reconnect $t(protocolAdapter.toast.status.device, {'context': '{{device}}' })"
       },
       "delete": {
         "title": "Deleting Protocol Adapter",
