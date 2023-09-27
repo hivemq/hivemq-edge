@@ -78,8 +78,8 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
         protected final T config;
 
         public Sampler(final @NotNull T config) {
-            super(config.getPublishingInterval(),
-                    config.getPublishingInterval(),
+            super(config.getPollingIntervalMillis(),
+                    config.getPollingIntervalMillis(),
                     TimeUnit.MILLISECONDS,
                     config.getMaxPollingErrorsBeforeRemoval());
             this.config = config;

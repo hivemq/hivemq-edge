@@ -9,7 +9,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'coreFields',
       title: t('protocolAdapter.uiSchema.groups.coreFields'),
-      properties: ['id', 'port', 'host', 'uri', 'url', 'pollingIntervalMillis'],
+      properties: ['id', 'port', 'host', 'uri', 'url'],
     },
     {
       id: 'subFields',
@@ -28,6 +28,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
         'maxPollingErrorsBeforeRemoval',
         'publishChangedDataOnly',
         'publishingInterval',
+        'pollingIntervalMillis',
         'destination',
         'qos',
       ],

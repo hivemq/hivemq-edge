@@ -24,7 +24,7 @@ public interface CustomConfig {
 
     int PORT_MIN = 1;
     int PORT_MAX = HiveMQEdgeConstants.MAX_UINT16;
-    int DEFAULT_PUBLISHING_INTERVAL = 1000;
+    int DEFAULT_POLLING_INTERVAL = 1000;
     int DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL = 10;
 
     @NotNull String getId();

@@ -131,7 +131,7 @@ public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
                            description = "OPC UA publishing interval in milliseconds for this subscription on the server",
                            numberMin = 1,
                            defaultValue = "1000")
-        private int publishingInterval = DEFAULT_PUBLISHING_INTERVAL; //1 second
+        private int publishingInterval = DEFAULT_POLLING_INTERVAL; //1 second
 
         @JsonProperty("server-queue-size")
         @ModuleConfigField(title = "OPC UA server queue size",
