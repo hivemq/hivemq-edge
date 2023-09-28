@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { ButtonGroup, IconButton } from '@chakra-ui/react'
-import { MdRestartAlt, MdStart, MdStop } from 'react-icons/md'
+import { MdPlayArrow, MdRestartAlt, MdStop } from 'react-icons/md'
 import { StatusTransitionCommand } from '@/api/__generated__'
 import { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
 import { useTranslation } from 'react-i18next'
@@ -15,7 +15,7 @@ const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeS
           isDisabled={isLoading}
           data-testid={'device-action-start'}
           aria-label={t('action.start')}
-          icon={<MdStart />}
+          icon={<MdPlayArrow />}
           onClick={() => onChangeStatus?.(id, StatusTransitionCommand.command.START)}
         />
       )}
