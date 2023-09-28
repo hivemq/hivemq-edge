@@ -77,8 +77,7 @@ describe('ConnectionMenu', () => {
     cy.getByTestId('mock-trigger').click()
 
     cy.getByTestId('device-action-restart').should('have.text', 'Restart')
-    cy.getByTestId('device-action-restart').click()
-    cy.get('@onChangeStatus').should('have.been.calledWith', MOCK_ID, StatusTransitionCommand.command.RESTART)
+    cy.getByTestId('device-action-restart').should('be.disabled')
   })
 
   it('should render restart CTA (running)', () => {

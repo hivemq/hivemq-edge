@@ -41,8 +41,7 @@ describe('ConnectionButton', () => {
     cy.get('@onChangeStatus').should('have.been.calledWith', MOCK_ID, StatusTransitionCommand.command.START)
 
     cy.getByTestId('device-action-restart').should('have.attr', 'aria-label', 'Restart')
-    cy.getByTestId('device-action-restart').click()
-    cy.get('@onChangeStatus').should('have.been.calledWith', MOCK_ID, StatusTransitionCommand.command.RESTART)
+    cy.getByTestId('device-action-restart').should('be.disabled')
   })
 
   it('should render disabled states when isLoading (and running)', () => {
