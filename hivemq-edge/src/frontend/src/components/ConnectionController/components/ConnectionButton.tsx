@@ -29,7 +29,7 @@ const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeS
         />
       )}
       <IconButton
-        isDisabled={isLoading}
+        isDisabled={isLoading || !isRunning}
         data-testid={'device-action-restart'}
         aria-label={t('action.restart')}
         icon={<MdRestartAlt />}

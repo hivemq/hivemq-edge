@@ -30,7 +30,7 @@ const ConnectionMenu: FC<ConnectionElementProps> = ({ id, isRunning, isLoading, 
       )}
 
       <MenuItem
-        isDisabled={isLoading}
+        isDisabled={isLoading || !isRunning}
         data-testid={'device-action-restart'}
         onClick={() => onChangeStatus?.(id, StatusTransitionCommand.command.RESTART)}
       >
