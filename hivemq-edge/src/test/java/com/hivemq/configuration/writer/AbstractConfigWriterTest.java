@@ -72,11 +72,15 @@ public abstract class AbstractConfigWriterTest {
 
     protected File loadTestConfigFile() throws IOException {
         try (final InputStream is =
-                     AbstractConfigWriterTest.class.getResourceAsStream("/test-config.xml")){
+                     AbstractConfigWriterTest.class.getResourceAsStream("/" + getTestConfigName())){
             final File tempFile = new File(System.getProperty("java.io.tmpdir"), "original-config.xml");
             tempFile.deleteOnExit();
             FileUtils.copyInputStreamToFile(is, tempFile);
             return tempFile;
         }
+    }
+
+    protected String getTestConfigName(){
+        return "test-config.xml";
     }
 }

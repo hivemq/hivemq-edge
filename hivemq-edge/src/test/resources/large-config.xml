@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<hivemq>
+    <mqtt-listeners>
+        <tcp-listener>
+            <port>1883</port>
+            <bind-address>0.0.0.0</bind-address>
+            <external-hostname>localhost</external-hostname>
+        </tcp-listener>
+    </mqtt-listeners>
+    <dynamic-configuration>
+        <allow-configuration-export>true</allow-configuration-export>
+        <allow-mutable-configuration>true</allow-mutable-configuration>
+    </dynamic-configuration>
+    <persistence>
+        <mode>in-memory</mode>
+    </persistence>
+    <protocol-adapters>
+        <simulation>
+            <id>large-config</id>
+            <pollingIntervalMillis>5000</pollingIntervalMillis>
+            <subscriptions>
+                <subscription>
+                    <destination>test1</destination>
+                    <qos>1</qos>
+                </subscription>
+            </subscriptions>
+        </simulation>
+    </protocol-adapters>
+</hivemq>
