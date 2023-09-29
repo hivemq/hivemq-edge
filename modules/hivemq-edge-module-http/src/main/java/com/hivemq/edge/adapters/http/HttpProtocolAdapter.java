@@ -52,13 +52,13 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
                              final @NotNull HttpAdapterConfig adapterConfig,
                              final @NotNull MetricRegistry metricRegistry) {
         super(adapterInformation, adapterConfig, metricRegistry);
-        setConnectionStatus(ConnectionStatus.STATELESS);
     }
 
     @Override
     protected CompletableFuture<Void> startInternal(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
+            setConnectionStatus(ConnectionStatus.STATELESS);
             if(httpClient == null){
                 synchronized (lock) {
                     if (httpClient == null) {
