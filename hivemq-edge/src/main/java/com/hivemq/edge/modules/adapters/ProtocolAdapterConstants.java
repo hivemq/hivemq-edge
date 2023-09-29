@@ -26,7 +26,10 @@ public interface ProtocolAdapterConstants {
         SERIAL,
         INTERNET,
         WEB,
-        IOT
+        IOT,
+        IIOT,
+        AUTOMATION,
+        FACTORY
     }
 
     enum CATEGORY {

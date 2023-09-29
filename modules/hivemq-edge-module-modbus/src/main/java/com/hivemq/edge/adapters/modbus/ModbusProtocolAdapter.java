@@ -20,8 +20,6 @@ import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.impl.AbstractPollingPerSubscriptionAdapter;
-import com.hivemq.edge.modules.adapters.impl.AbstractPollingProtocolAdapter;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
 import com.hivemq.edge.modules.adapters.params.NodeTree;
 import com.hivemq.edge.modules.adapters.params.NodeType;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
