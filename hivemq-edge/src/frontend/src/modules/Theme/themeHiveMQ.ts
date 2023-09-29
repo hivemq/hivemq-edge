@@ -74,7 +74,7 @@ export const themeHiveMQ = extendTheme({
       error: baseTheme.colors.red,
       connected: baseTheme.colors.green,
       disconnected: baseTheme.colors.orange,
-      stateless: baseTheme.colors.gray,
+      stateless: baseTheme.colors.green,
     },
     // Based on 20-scale palette. One in two, omitting #fff
     brand: {
