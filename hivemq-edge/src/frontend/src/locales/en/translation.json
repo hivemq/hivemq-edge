@@ -21,7 +21,7 @@
       "status_STARTED": "On",
       "status_CONNECTED": "Connected",
       "status_DISCONNECTED": "Disconnected",
-      "status_STATELESS": "Stateless",
+      "status_STATELESS": "Running",
       "status_UNKNOWN": "Unknown",
       "status_ERROR": "Error"
     }
