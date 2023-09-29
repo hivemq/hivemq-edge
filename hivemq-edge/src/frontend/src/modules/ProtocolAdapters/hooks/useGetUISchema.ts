@@ -31,6 +31,8 @@ const useGetUiSchema = (isNewAdapter = true) => {
         'pollingIntervalMillis',
         'destination',
         'qos',
+        'minValue',
+        'maxValue',
       ],
     },
     {

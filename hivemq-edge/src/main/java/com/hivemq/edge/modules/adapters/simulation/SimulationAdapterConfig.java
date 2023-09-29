@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.adapters.simulation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
@@ -24,12 +25,27 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+@JsonPropertyOrder({"minValue", "maxValue", "subscriptions"})
 public class SimulationAdapterConfig extends AbstractPollingProtocolAdapterConfig {
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
                        description = "List of subscriptions for the simulation",
                        required = true)
     private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+
+    @JsonProperty("minValue")
+    @ModuleConfigField(title = "Min. Generated Value",
+                       description = "Minimum value of the generated decimal number",
+                       numberMin = 0,
+                       defaultValue = "0")
+    private int minValue = 0;
+
+    @JsonProperty("maxValue")
+    @ModuleConfigField(title = "Max. Generated Value (Excl.)",
+                       description = "Maximum value of the generated decimal number (excluded)",
+                       numberMax = 1000,
+                       defaultValue = "1000")
+    private int maxValue = 1000;
 
     public SimulationAdapterConfig() {
     }
@@ -49,4 +65,11 @@ public class SimulationAdapterConfig extends AbstractPollingProtocolAdapterConfi
         return subscriptions;
     }
 
+    public int getMinValue() {
+        return minValue;
+    }
+
+    public int getMaxValue() {
+        return maxValue;
+    }
 }
