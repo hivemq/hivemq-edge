@@ -10,6 +10,11 @@ import { TopicFilter } from '../types.ts'
 
 const TOPIC_PATH_ITEMS_TOKEN = '*'
 
+/**
+ * @deprecated switch to discoverAdapterTopics
+ * @param adapter
+ * @see discoverAdapterTopics
+ */
 /* istanbul ignore next -- @preserve */
 export const getAdapterTopics = (adapter: Adapter): TopicFilter[] => {
   if (adapter.type === 'opc-ua-client') {
@@ -109,4 +114,27 @@ export const discoverAdapterTopics = (protocol: ProtocolAdapter, instance: Gener
   })
 
   return topics
+}
+
+export const mergeAllTopics = (adapters: Adapter[] | undefined, bridges: Bridge[] | undefined) => {
+  const data: string[] = []
+  if (bridges) {
+    const gg = bridges.reduce<string[]>((acc, cur) => {
+      const { local, remote } = getBridgeTopics(cur)
+      acc.push(...local.map((e) => e.topic))
+      acc.push(...remote.map((e) => e.topic))
+      return acc
+    }, [])
+    data.push(...gg)
+  }
+  if (adapters) {
+    const gg = adapters.reduce<string[]>((acc, cur) => {
+      const topics = getAdapterTopics(cur)
+      acc.push(...topics.map((e) => e.topic))
+      return acc
+    }, [])
+    data.push(...gg)
+  }
+
+  return Array.from(new Set(data))
 }

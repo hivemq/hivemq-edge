@@ -16,8 +16,9 @@ import {
   getAdapterTopics,
   getBridgeTopics,
   getTopicPaths,
+  mergeAllTopics,
 } from './topics-utils.ts'
-import { ProtocolAdapter } from '@/api/__generated__'
+import { Adapter, ProtocolAdapter } from '@/api/__generated__'
 
 describe('getBridgeTopics', () => {
   it('should extract topics from a Bridge', async () => {
@@ -148,4 +149,46 @@ describe('discoverAdapterTopics', () => {
       expect(discoverAdapterTopics(protocol, formData?.config)).toEqual(expectedTopics)
     }
   )
+})
+
+describe('mergeAllTopics', () => {
+  it('should extract every topics from all bridges and adapters', async () => {
+    const actual = mergeAllTopics(
+      [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
+      [mockBridge, mockBridge]
+    )
+
+    expect(actual).toStrictEqual([
+      '#',
+      'root/topic/act/1',
+      'a/valid/topic/opc-ua-client/1',
+      'a/valid/topic/opc-ua-client/2',
+      'a/valid/topic/modbus/1',
+    ])
+  })
+
+  it('should extract every topics from all bridges', async () => {
+    const actual = mergeAllTopics(undefined, [mockBridge, mockBridge])
+
+    expect(actual).toStrictEqual(['#', 'root/topic/act/1'])
+  })
+
+  it('should extract every topics from all  adapters', async () => {
+    const actual = mergeAllTopics(
+      [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
+      undefined
+    )
+
+    expect(actual).toStrictEqual([
+      'a/valid/topic/opc-ua-client/1',
+      'a/valid/topic/opc-ua-client/2',
+      'a/valid/topic/modbus/1',
+    ])
+  })
+
+  it('should not extract any topic!', async () => {
+    const actual = mergeAllTopics(undefined, undefined)
+
+    expect(actual).toStrictEqual([])
+  })
 })
