@@ -175,10 +175,6 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 if(notBefore > 0){
                     if(System.currentTimeMillis() < notBefore){
                         //-- We're backing off atm so as not to harass the network
-                        if(log.isDebugEnabled()){
-                            log.debug("Backing Off Polling Job {} Error Count {}",
-                                    sampler.getReferenceId(), errorCount);
-                        }
                         return;
                     }
                 }
@@ -192,8 +188,8 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 }
             } catch(Throwable e){
                 int errorCountTotal = errorCount.incrementAndGet();
-                if(log.isTraceEnabled()){
-                    log.trace("Error {} In Polling Job {} -> {}",
+                if(log.isDebugEnabled()){
+                    log.debug("Error {} In Polling Job {} -> {}",
                             errorCountTotal, sampler.getReferenceId(), e.getMessage());
                 }
                 boolean continuing = sampler.getMaxErrorsBeforeRemoval() >
