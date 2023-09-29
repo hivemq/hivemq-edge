@@ -70,7 +70,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
         'retryTime',
         'retryTimeout',
         'retryTime',
-        'retryTime'
+        'retryTime',
       ],
     },
   ]
