@@ -23,10 +23,10 @@ export const useEdgeToast = () => {
         <>
           <Text>{options?.description}</Text>
           {!body && <Text>{err.message}</Text>}
-          {body.message && <Text>{body.message}</Text>}
+          {body && body.message && <Text>{body.message}</Text>}
           {body?.errors?.map((e: ProblemDetailsExtended) => (
             <Text key={e.fieldName as string}>
-              {e.fieldName as string} : {e.detail}
+              {e.fieldName as string} : {e.detail || e.title}
             </Text>
           ))}
         </>

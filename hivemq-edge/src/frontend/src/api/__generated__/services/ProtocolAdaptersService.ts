@@ -8,6 +8,7 @@ import type { ProtocolAdaptersList } from '../models/ProtocolAdaptersList';
 import type { Status } from '../models/Status';
 import type { StatusList } from '../models/StatusList';
 import type { StatusTransitionCommand } from '../models/StatusTransitionCommand';
+import type { StatusTransitionResult } from '../models/StatusTransitionResult';
 import type { ValuesTree } from '../models/ValuesTree';
 
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -145,13 +146,13 @@ export class ProtocolAdaptersService {
      * Transition the runtime status of an adapter.
      * @param adapterId The id of the adapter whose runtime status will change.
      * @param requestBody The command to transition the adapter runtime status.
-     * @returns any Success
+     * @returns StatusTransitionResult Success
      * @throws ApiError
      */
     public changeStatus1(
         adapterId: string,
         requestBody: StatusTransitionCommand,
-    ): CancelablePromise<any> {
+    ): CancelablePromise<StatusTransitionResult> {
         return this.httpRequest.request({
             method: 'PUT',
             url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/status',

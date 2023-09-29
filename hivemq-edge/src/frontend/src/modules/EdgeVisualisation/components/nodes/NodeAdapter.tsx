@@ -48,7 +48,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
           </HStack>
           {options.showStatus && (
             <Box flex={1}>
-              <ConnectionStatusBadge status={adapter.status?.connection} />
+              <ConnectionStatusBadge status={adapter.status} />
             </Box>
           )}
           {options.showTopics && <TopicsContainer topics={topics} />}

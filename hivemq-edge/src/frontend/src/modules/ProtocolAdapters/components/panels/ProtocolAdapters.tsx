@@ -34,7 +34,7 @@ const AdapterStatusContainer: FC<{ id: string }> = ({ id }) => {
 
   const connection = connections?.items?.find((e) => e.id === id)
 
-  return <ConnectionStatusBadge status={connection?.connection} />
+  return <ConnectionStatusBadge status={connection} />
 }
 
 const AdapterTypeContainer: FC<ProtocolAdapter> = (adapter) => {

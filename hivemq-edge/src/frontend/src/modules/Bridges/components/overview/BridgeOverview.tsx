@@ -29,6 +29,11 @@ import SubscriptionStats from '@/modules/Bridges/components/overview/Subscriptio
 
 import ConnectionSummary from './ConnectionSummary.tsx'
 
+/**
+ * @deprecated
+ * @param props
+ * @constructor
+ */
 const BridgeOverview: FC<Bridge> = (props) => {
   const { t } = useTranslation()
   const { isLoading, isError, mutateAsync } = useSetConnectionStatus()
