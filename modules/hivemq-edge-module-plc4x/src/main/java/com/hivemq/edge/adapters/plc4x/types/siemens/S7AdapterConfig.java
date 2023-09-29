@@ -47,6 +47,15 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
         }
     }
 
+    @JsonProperty("port")
+    @ModuleConfigField(title = "Port",
+                       description = "The port number on the device you wish to connect to",
+                       required = true,
+                       numberMin = PORT_MIN,
+                       numberMax = PORT_MAX,
+                       defaultValue = "102")
+    private int port = 102;
+
     @JsonProperty("controllerType")
     @ModuleConfigField(title = "S7 Controller Type",
                        description = "Http method associated with the request",
@@ -124,6 +133,9 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
                        defaultValue = "8")
     private @NotNull Integer retryTimeout = 8;
 
+    public int getPort() {
+        return port;
+    }
 
     public Integer getRemoteRack() {
         return remoteRack;

@@ -52,6 +52,27 @@ const useGetUiSchema = (isNewAdapter = true) => {
         'httpPublishSuccessStatusCodeOnly',
       ],
     },
+    {
+      id: 's7advanced',
+      title: t('protocolAdapter.uiSchema.groups.s7advanced'),
+      properties: [
+        'controllerType',
+        'remoteRack',
+        'remoteSlot',
+        'ping',
+        'pingTime',
+        'maxAmqCaller',
+        'maxAmqCallee',
+        'remoteTsap',
+        'remoteRack2',
+        'remoteSlot2',
+        'pduSize',
+        'retryTime',
+        'retryTimeout',
+        'retryTime',
+        'retryTime'
+      ],
+    },
   ]
 
   const uiSchema: UiSchema = {

@@ -38,9 +38,9 @@ dependencies {
     compileOnly("com.hivemq:hivemq-extension-sdk")
     implementation("org.apache.plc4x:plc4j-api:${property("org.apache.plc4x.version")}")
     implementation("org.apache.plc4x:plc4j-driver-s7:${property("org.apache.plc4x.version")}")
-    implementation("org.apache.plc4x:plc4j-driver-bacnet:${property("org.apache.plc4x.version")}")
-    implementation("org.apache.plc4x:plc4j-driver-profinet:${property("org.apache.plc4x.version")}")
-    implementation("org.apache.plc4x:plc4j-driver-eip:${property("org.apache.plc4x.version")}")
+//    implementation("org.apache.plc4x:plc4j-driver-bacnet:${property("org.apache.plc4x.version")}")
+//    implementation("org.apache.plc4x:plc4j-driver-profinet:${property("org.apache.plc4x.version")}")
+//    implementation("org.apache.plc4x:plc4j-driver-eip:${property("org.apache.plc4x.version")}")
 
     implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     runtimeOnly("com.google.guava:guava:${property("guava.version")}") {
