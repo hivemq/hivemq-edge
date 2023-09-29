@@ -22,7 +22,7 @@ import java.util.zip.ZipFile;
  */
 public class CreateAdapterBlueprint {
 
-    static final String ADAPTER_TEMPLATE = "ext/polling-adapter-template.zip";
+    static final String ADAPTER_TEMPLATE = "ext/module-templates/polling-adapter-template.zip";
     static final String MODULES_DIR = "modules";
 
     private final Map<String, String> replacements;
