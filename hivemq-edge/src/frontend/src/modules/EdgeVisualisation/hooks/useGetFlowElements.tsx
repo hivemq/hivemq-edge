@@ -75,7 +75,7 @@ const useGetFlowElements = () => {
 
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])
     setEdges([...edges])
-  }, [bridges, adapters, listeners, groups, setNodes, setEdges, t, options, theme])
+  }, [bridges, adapters, listeners, groups, setNodes, setEdges, t, options, theme, adapterTypes?.items])
 
   return { nodes, edges, onNodesChange, onEdgesChange }
 }
