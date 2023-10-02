@@ -3,10 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { Edge, Node, useEdgesState, useNodesState } from 'reactflow'
 import { useTheme } from '@chakra-ui/react'
 
-import { Adapter, Bridge } from '@/api/__generated__'
+import { Adapter, Bridge, ProtocolAdapter } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { useGetListeners } from '@/api/hooks/useGateway/useGetListeners.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 
 import { createEdgeNode, createBridgeNode, createAdapterNode, createListenerNode } from '../utils/nodes-utils.ts'
 import { applyLayout } from '../utils/layout-utils.ts'
@@ -16,6 +17,7 @@ const useGetFlowElements = () => {
   const { t } = useTranslation()
   const theme = useTheme()
   const { options, groups } = useEdgeFlowContext()
+  const { data: adapterTypes } = useGetAdapterTypes()
   const { data: bridges } = useListBridges()
   const { data: adapters } = useListProtocolAdapters()
   const { data: listenerList } = useGetListeners()
@@ -58,7 +60,15 @@ const useGetFlowElements = () => {
     })
 
     adapters.forEach((adapter, incAdapterNb) => {
-      const { nodeAdapter, edgeConnector } = createAdapterNode(adapter, incAdapterNb, adapters.length, theme)
+      const type = adapterTypes?.items?.find((e) => e.id === adapter.type)
+
+      const { nodeAdapter, edgeConnector } = createAdapterNode(
+        type as ProtocolAdapter,
+        adapter,
+        incAdapterNb,
+        adapters.length,
+        theme
+      )
       nodes.push(nodeAdapter)
       edges.push(edgeConnector)
     })
