@@ -57,7 +57,7 @@ describe('Topic', () => {
     cy.get('#my-id').click()
     cy.checkAccessibility(undefined, {
       rules: {
-        // TODO[#111] Color-contrast fixed but still not passing. Flaky with expandable panel
+        // TODO[#138] Select color is not accessible
         'color-contrast': { enabled: false },
       },
     })
