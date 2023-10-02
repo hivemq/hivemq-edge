@@ -153,7 +153,7 @@ describe('mergeAllTopics', () => {
   it('should extract every topics from all  adapters', async () => {
     const actual = mergeAllTopics(
       { items: [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS] },
-      [(MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter)],
+      [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
       undefined
     )
 
