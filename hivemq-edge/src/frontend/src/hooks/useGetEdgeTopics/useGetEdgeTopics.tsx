@@ -15,16 +15,25 @@ interface EdgeTopics {
 }
 
 export interface EdgeTopicsOptions {
-  publishOnly: boolean
+  publishOnly?: boolean
+  branchOnly?: boolean
 }
 
-export const publishOnlyFilter = (options: EdgeTopicsOptions) => (e: string) => {
-  return !options.publishOnly || (options.publishOnly && !e.match(/[+#$]/gi))
+export const reduceTopicsBy = (options: EdgeTopicsOptions) => (prev: string[], cur: string) => {
+  if (options.publishOnly && cur.match(/[+#$]/gi)) return prev
+  if (options.branchOnly) {
+    const branch = cur.split('/')
+    const res = branch.slice(0, -1).join('/')
+    if (res.length) prev.push(res)
+    return prev
+  }
+  prev.push(cur)
+  return prev
 }
 
 export const useGetEdgeTopics = (options?: EdgeTopicsOptions): EdgeTopics => {
   const {
-    // data: adapterTypes,
+    data: adapterTypes,
     isLoading: isAdapterTypesLoading,
     isError: isAdapterTypesError,
     error: adapterTypesError,
@@ -40,8 +49,9 @@ export const useGetEdgeTopics = (options?: EdgeTopicsOptions): EdgeTopics => {
   const data = useMemo<string[]>(() => {
     const _options = { publishOnly: true, ...options }
 
-    return mergeAllTopics(adapters, bridges).filter(publishOnlyFilter(_options)).sort()
-  }, [adapters, bridges, options])
+    // return mergeAllTopics(adapters, bridges).filter(filterTopicsBy(_options)).sort()
+    return mergeAllTopics(adapterTypes, adapters, bridges).reduce<string[]>(reduceTopicsBy(_options), []).sort()
+  }, [adapterTypes, adapters, bridges, options])
 
   return {
     data: data,
