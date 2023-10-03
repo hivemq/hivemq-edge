@@ -11,6 +11,7 @@ interface EdgeTopics {
   data: string[]
   isLoading: boolean
   isError: boolean
+  isSuccess: boolean
   error: ApiError | null
 }
 
@@ -36,15 +37,23 @@ export const useGetEdgeTopics = (options?: EdgeTopicsOptions): EdgeTopics => {
     data: adapterTypes,
     isLoading: isAdapterTypesLoading,
     isError: isAdapterTypesError,
+    isSuccess: isAdapterTypeSuccess,
     error: adapterTypesError,
   } = useGetAdapterTypes()
   const {
     data: adapters,
     isLoading: isAdapterLoading,
+    isSuccess: isAdapterSuccess,
     isError: isAdapterError,
     error: adapterError,
   } = useListProtocolAdapters()
-  const { data: bridges, isLoading: isBridgeLoading, isError: isBridgeError, error: bridgeError } = useListBridges()
+  const {
+    data: bridges,
+    isLoading: isBridgeLoading,
+    isSuccess: isBridgeSuccess,
+    isError: isBridgeError,
+    error: bridgeError,
+  } = useListBridges()
 
   const data = useMemo<string[]>(() => {
     const _options = { publishOnly: true, ...options }
@@ -55,6 +64,7 @@ export const useGetEdgeTopics = (options?: EdgeTopicsOptions): EdgeTopics => {
 
   return {
     data: data,
+    isSuccess: isAdapterTypeSuccess && isAdapterSuccess && isBridgeSuccess,
     isLoading: isBridgeLoading || isAdapterLoading || isAdapterTypesLoading,
     isError: isBridgeError || isAdapterError || isAdapterTypesError,
     error: adapterTypesError || adapterError || bridgeError,
