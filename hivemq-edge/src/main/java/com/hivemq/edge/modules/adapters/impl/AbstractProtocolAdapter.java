@@ -64,7 +64,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
 
     protected @NotNull T adapterConfig;
     protected @Nullable Long lastStartAttemptTime;
-    protected @Nullable String lastErrorMessage;
+    protected @Nullable String errorMessage;
     protected @Nullable volatile Object lock = new Object();
     protected @Nullable volatile RuntimeStatus runtimeStatus = RuntimeStatus.STOPPED;
     protected @Nullable volatile ConnectionStatus connectionStatus = ConnectionStatus.DISCONNECTED;
@@ -129,10 +129,11 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     /**
      * Sets the last error message associated with the adapter runtime. This is can be sent through the API to
      * give an indication of the status of an adapter runtime.
-     * @param lastErrorMessage
+     * @param errorMessage
      */
-    protected void setLastErrorMessage(String lastErrorMessage){
-        this.lastErrorMessage = lastErrorMessage;
+    protected void reportErrorMessage(@Nullable final Throwable throwable, @NotNull final String errorMessage){
+        Preconditions.checkNotNull(errorMessage);
+        this.errorMessage = errorMessage;
     }
 
     @Override
@@ -174,11 +175,9 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
                 return future;
             } finally {
                 if(future != null){
-                    future.thenAccept(out -> out.startedSuccessfully("adapter start OK")).
-                            thenRun(() -> setRuntimeStatus(RuntimeStatus.STARTED)).exceptionally(
+                    future.thenRun(() -> onStartSuccess(output)).exceptionally(
                                 (t) ->  {
-                                    setErrorConnectionStatus(t);
-                                    output.failStart(t, t.getMessage());
+                                    onStartFail(output, t);
                                     return null;
                                 });
                 }
@@ -202,7 +201,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
                 return future;
             } finally {
                 if(future != null){
-                    future.thenRun(() -> setRuntimeStatus(RuntimeStatus.STOPPED));
+                    future.thenRun(() -> onStop());
                 }
             }
         }
@@ -228,7 +227,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         Preconditions.checkNotNull(errorMessage);
         synchronized (lock){
             this.connectionStatus = ConnectionStatus.ERROR;
-            setLastErrorMessage(errorMessage);
+            reportErrorMessage(null, errorMessage);
         }
     }
 
@@ -236,7 +235,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         Preconditions.checkNotNull(t);
         synchronized (lock){
             this.connectionStatus = ConnectionStatus.ERROR;
-            setErrorConnectionStatus(t.getMessage());
+            reportErrorMessage(t, t.getMessage());
         }
     }
 
@@ -244,15 +243,12 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         Preconditions.checkNotNull(runtimeStatus);
         synchronized (lock){
             this.runtimeStatus = runtimeStatus;
-            if(runtimeStatus == RuntimeStatus.STARTED){
-                initStartAttempt();
-            }
         }
     }
 
     @Override
-    public String getLastErrorMessage() {
-        return lastErrorMessage;
+    public String getErrorMessage() {
+        return errorMessage;
     }
 
     public @NotNull T getAdapterConfig() {
@@ -271,6 +267,23 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     @Override
     public RuntimeStatus getRuntimeStatus() {
         return runtimeStatus;
+    }
+
+    protected void onStartFail(@NotNull final ProtocolAdapterStartOutput output, @NotNull final Throwable throwable){
+        setErrorConnectionStatus(throwable);
+        output.failStart(throwable, throwable.getMessage());
+        //-- TODO add event
+    }
+
+    protected void onStartSuccess(@NotNull final ProtocolAdapterStartOutput output){
+        setRuntimeStatus(RuntimeStatus.STARTED);
+        output.startedSuccessfully("adapter start OK");
+        //-- TODO add event
+    }
+
+    protected void onStop(){
+        setRuntimeStatus(RuntimeStatus.STOPPED);
+        //-- TODO add event
     }
 
     protected abstract CompletableFuture<ProtocolAdapterStartOutput> startInternal(final ProtocolAdapterStartOutput output);

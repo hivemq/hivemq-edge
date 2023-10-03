@@ -19,7 +19,7 @@ public class AdapterStatusModelConversionUtils {
                 convertConnectionStatus(protocolAdapter.getConnectionStatus()),
                 protocolAdapter.getId(), ApiConstants.ADAPTER_TYPE,
                 protocolAdapter.getTimeOfLastStartAttempt(), null,
-                protocolAdapter.getLastErrorMessage());
+                protocolAdapter.getErrorMessage());
         return status;
     }
 

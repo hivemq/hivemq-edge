@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  *
  *
- * @since 2013.1
+ * @since 2023.1
  */
 public interface ProtocolAdapter {
 
@@ -75,7 +75,7 @@ public interface ProtocolAdapter {
 
     @Nullable Long getTimeOfLastStartAttempt();
 
-    @Nullable String getLastErrorMessage();
+    @Nullable String getErrorMessage();
 
 
     enum RuntimeStatus {
