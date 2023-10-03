@@ -88,7 +88,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
                     .build();
             startPolling(new Sampler(config));
         } else {
-            setLastErrorMessage("Invalid URL supplied");
+            reportErrorMessage(null, "Invalid URL supplied");
         }
     }
 
@@ -161,9 +161,8 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         builder.timeout(Duration.ofSeconds(timeout));
         builder.setHeader(HttpConstants.USER_AGENT_HEADER,
                 String.format(HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE, HiveMQEdgeConstants.VERSION));
-        if(config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()){
-            config.getHttpHeaders().stream().
-                    forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
+        if (config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()) {
+            config.getHttpHeaders().stream().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
         }
         HttpRequest request = builder.build();
         CompletableFuture<HttpResponse<String>> responseFuture =
@@ -172,29 +171,33 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
     }
 
     protected HttpData readResponse(@NotNull final HttpAdapterConfig config, final @NotNull HttpResponse<String> response){
-        String responseContentType = response.headers().firstValue(HttpConstants.CONTENT_TYPE_HEADER).orElse(null);
-        String bodyData = response.body() == null ? null : response.body();
         Object payloadData = null;
-        //-- if the content type is json, then apply the JSON to the output data,
-        //-- else encode using base64 (as we dont know what the content is).
-        if(bodyData != null){
-            if(HttpConstants.JSON_MIME_TYPE.equals(responseContentType)) {
-                try {
-                    payloadData = objectMapper.readTree(bodyData);
-                } catch (Exception e){
-                    log.warn("Error encountered marshalling HTTP response data to json", e);
-                    if(log.isDebugEnabled()){
-                        log.debug("Invalid json data was [{}]", bodyData);
+        String responseContentType = null;
+        if(isSuccessStatusCode(response.statusCode())){
+            String bodyData = response.body() == null ? null : response.body();
+            //-- if the content type is json, then apply the JSON to the output data,
+            //-- else encode using base64 (as we dont know what the content is).
+            if(bodyData != null){
+                responseContentType = response.headers().firstValue(HttpConstants.CONTENT_TYPE_HEADER).orElse(null);
+                if(HttpConstants.JSON_MIME_TYPE.equals(responseContentType)) {
+                    try {
+                        payloadData = objectMapper.readTree(bodyData);
+                    } catch (Exception e){
+                        log.warn("Error encountered marshalling HTTP response data to json", e);
+                        if(log.isDebugEnabled()){
+                            log.debug("Invalid json data was [{}]", bodyData);
+                        }
                     }
+                } else {
+                    if(responseContentType == null){
+                        responseContentType = HttpConstants.PLAIN_MIME_TYPE;
+                    }
+                    String base64 = Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
+                    payloadData = String.format(HttpConstants.BASE64_ENCODED_VALUE, responseContentType, base64);
                 }
-            } else {
-                if(responseContentType == null){
-                    responseContentType = HttpConstants.PLAIN_MIME_TYPE;
-                }
-                String base64 = Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
-                payloadData = String.format(HttpConstants.BASE64_ENCODED_VALUE, responseContentType, base64);
             }
         }
+
 
         HttpData data = new HttpData(adapterConfig.getUrl(),
                 response.statusCode(),

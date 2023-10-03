@@ -2,6 +2,7 @@ package com.hivemq.adapter;
 
 import com.hivemq.edge.HiveMQEdgeConstants;
 import org.junit.Assert;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -20,19 +21,54 @@ public class AdapterConfigFormatTest {
         Pattern pattern = Pattern.compile(HiveMQEdgeConstants.ID_REGEX);
 
         //-- Test for leading and trailing whitespace
-        Assert.assertFalse("Leading whitespace is invalid for identifiers", pattern.matcher(" invalid-leading-ws").find());
-        Assert.assertFalse("Trailing whitespace is invalid for identifiers", pattern.matcher("invalid-trailing-ws ").find());
+        Assert.assertFalse("Leading whitespace is invalid for identifiers", pattern.matcher(" invalid-leading-ws").matches());
+        Assert.assertFalse("Trailing whitespace is invalid for identifiers", pattern.matcher("invalid-trailing-ws ").matches());
 
         //-- Test the allowed cases
-        Assert.assertTrue("Should be valid identifier", pattern.matcher("this-is-valid").find());
-        Assert.assertTrue("Should be valid identifier", pattern.matcher("this_is_valid").find());
-        Assert.assertTrue("Should be valid identifier", pattern.matcher("this_is-valid").find());
-        Assert.assertTrue("Should be valid identifier", pattern.matcher("this-is_valid").find());
-        Assert.assertTrue("Should be valid identifier", pattern.matcher("-thisisvalid-").find());
-        Assert.assertTrue("Should be valid identifier", pattern.matcher("_thisisvalid_").find());
+        Assert.assertTrue("Should be valid identifier", pattern.matcher("this-is-valid").matches());
+        Assert.assertTrue("Should be valid identifier", pattern.matcher("this_is_valid").matches());
+        Assert.assertTrue("Should be valid identifier", pattern.matcher("this_is-valid").matches());
+        Assert.assertTrue("Should be valid identifier", pattern.matcher("this-is_valid").matches());
+        Assert.assertTrue("Should be valid identifier", pattern.matcher("-thisisvalid-").matches());
+        Assert.assertTrue("Should be valid identifier", pattern.matcher("_thisisvalid_").matches());
 
         //-- Test the not allowed cases
         testPatternDoesNotAllowSpecialCharsOtherThanSpecified("test_-", pattern, '_','-');
+    }
+
+    @Test
+    @Disabled
+    void testUrlRegex() {
+
+        Pattern pattern = Pattern.compile("https?:\\/\\/(?:w{1,3}\\.)?[^\\s.]+(?:\\.[a-z]+)*(?::\\d+)?((?:\\/\\w+)|(?:-\\w+))*\\/?(?![^<]*(?:<\\/\\w+>|\\/?>))");
+
+        //-- Test for valid oracle webpage
+        Assert.assertTrue("Url should be allowed",
+                pattern.matcher("https://docs.oracle.com/javase/tutorial/essential/io/notification.html").matches());
+
+        //-- Test for valid localhost
+        Assert.assertTrue("Url should be allowed",
+                pattern.matcher("http://localhost:8080").matches());
+
+        //-- Test for valid localhost
+        Assert.assertTrue("Url should be allowed",
+                pattern.matcher("https://localhost:8080").matches());
+
+        //-- Test for valid localhost
+        Assert.assertTrue("Url should be allowed",
+                pattern.matcher("http://127.0.0.1:8080").matches());
+
+        //-- Test for valid localhost
+        Assert.assertTrue("Url should be allowed",
+                pattern.matcher("http://127.0.0.1:8080/").matches());
+
+        //-- Test for valid localhost
+        Assert.assertTrue("Url should be allowed",
+                pattern.matcher("http://127.0.0.1:8080/foo").matches());
+
+        //-- Test for valid localhost
+        Assert.assertTrue("Url should be allowed",
+                pattern.matcher("http://127.0.0.1:8080/foo.html").matches());
     }
 
     @Test
@@ -40,17 +76,17 @@ public class AdapterConfigFormatTest {
         Pattern pattern = Pattern.compile(HiveMQEdgeConstants.NAME_REGEX);
 
         //-- Test for leading and trailing whitespace
-        Assert.assertFalse("Leading whitespace is invalid for name", pattern.matcher(" invalid-leading-ws").find());
-        Assert.assertFalse("Trailing whitespace is invalid for name", pattern.matcher("invalid-trailing-ws ").find());
+        Assert.assertFalse("Leading whitespace is invalid for name", pattern.matcher(" invalid-leading-ws").matches());
+        Assert.assertFalse("Trailing whitespace is invalid for name", pattern.matcher("invalid-trailing-ws ").matches());
 
         //-- Test the allowed cases
-        Assert.assertTrue("Should be valid name", pattern.matcher("A Valid Name").find());
-        Assert.assertTrue("Should be valid name", pattern.matcher("this-is-valid").find());
-        Assert.assertTrue("Should be valid name", pattern.matcher("this_is_valid").find());
-        Assert.assertTrue("Should be valid name", pattern.matcher("this_is-valid").find());
-        Assert.assertTrue("Should be valid name", pattern.matcher("this-is_valid").find());
-        Assert.assertTrue("Should be valid name", pattern.matcher("-thisisvalid-").find());
-        Assert.assertTrue("Should be valid name", pattern.matcher("_thisisvalid_").find());
+        Assert.assertTrue("Should be valid name", pattern.matcher("A Valid Name").matches());
+        Assert.assertTrue("Should be valid name", pattern.matcher("this-is-valid").matches());
+        Assert.assertTrue("Should be valid name", pattern.matcher("this_is_valid").matches());
+        Assert.assertTrue("Should be valid name", pattern.matcher("this_is-valid").matches());
+        Assert.assertTrue("Should be valid name", pattern.matcher("this-is_valid").matches());
+        Assert.assertTrue("Should be valid name", pattern.matcher("-thisisvalid-").matches());
+        Assert.assertTrue("Should be valid name", pattern.matcher("_thisisvalid_").matches());
 
         //-- Test the not allowed cases
         testPatternDoesNotAllowSpecialCharsOtherThanSpecified("test_-", pattern, '_','-');

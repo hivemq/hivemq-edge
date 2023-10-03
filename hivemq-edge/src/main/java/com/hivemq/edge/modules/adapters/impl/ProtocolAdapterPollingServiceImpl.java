@@ -199,12 +199,20 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     if(executing.compareAndSet(false, true)){
                         try {
                             Thread.currentThread().setName(originalName + " " + sampler.getReferenceId());
-                            sampler.execute().orTimeout(InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get(), TimeUnit.MILLISECONDS).get();
-                            if (log.isTraceEnabled()) {
-                                log.trace("Adapter Job Successfully Invoked in {}ms",
-                                        System.currentTimeMillis() - startedTimeMillis);
+                            CompletableFuture<?> sampleFuture = sampler.execute();
+                            if(sampleFuture != null){
+                                sampleFuture.orTimeout(InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get(), TimeUnit.MILLISECONDS).get();
+                                if (log.isTraceEnabled()) {
+                                    log.trace("Adapter Job Successfully Invoked in {}ms",
+                                            System.currentTimeMillis() - startedTimeMillis);
+                                }
+                                resetErrorStats();
+                            } else {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Adapter Job {} Returned <Null> Future, Cancel", sampler.getReferenceId());
+                                }
+                                throw new IllegalStateException("Adapter Job Returned Empty Future, Error Handling");
                             }
-                            resetErrorStats();
                         }
                         finally {
                             Thread.currentThread().setName(originalName);
@@ -221,8 +229,18 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
             } catch(Throwable e){
                 boolean continuing, notify = true;
                 int errorCountTotal;
+                if(e instanceof InterruptedException || e.getCause() instanceof InterruptedException){
+                    continuing = false;
+                    notify = false;
+                    //-- This does nothing in this circumstance
+                    errorCountTotal = 0;
+                    if(log.isInfoEnabled()){
+                        log.info("Detected Interrupt In Adapter Job {} - Removing From Service",
+                                sampler.getReferenceId(), System.currentTimeMillis() - startedTimeMillis);
+                    }
+                }
                 //-- Determine if this is the watchdog or the application causing the error
-                if(e.getCause() instanceof TimeoutException){
+                else if(e.getCause() instanceof TimeoutException){
                     //-- Job was killed by the framework as it took too long
                     //-- Do not call back to the job here (notify) since it will
                     //-- Not respond and we dont want to block other polls
@@ -240,7 +258,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     continuing = errorCountTotal < sampler.getMaxErrorsBeforeRemoval();
                     if(log.isDebugEnabled()){
                         log.debug("Error {} In Adapter Job {} -> {}",
-                                errorCountTotal, sampler.getReferenceId(), e.getMessage());
+                                errorCountTotal, sampler.getReferenceId(), e.getMessage(), e);
                     }
                 }
                 if(notify){
