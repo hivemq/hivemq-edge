@@ -115,6 +115,9 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
 
         @Override
         public CompletableFuture<U> execute() {
+            if(Thread.currentThread().isInterrupted()){
+                return CompletableFuture.failedFuture(new InterruptedException());
+            }
             CompletableFuture<U> data = onSamplerInvoked(config);
             data.thenApply(d -> captureDataSample(d));
             return data;

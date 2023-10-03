@@ -44,6 +44,9 @@ public abstract class AbstractPollingPerSubscriptionAdapter<T extends AbstractPo
 
         @Override
         public CompletableFuture<U> execute() {
+            if(Thread.currentThread().isInterrupted()){
+                return CompletableFuture.failedFuture(new InterruptedException());
+            }
             CompletableFuture<U> future = onSamplerInvoked(config, subscription);
             future.thenApply(d -> captureDataSample(d));
             return future;

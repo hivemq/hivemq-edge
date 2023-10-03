@@ -18,10 +18,12 @@ package com.hivemq.edge.modules.adapters.impl;
 import com.google.common.base.Preconditions;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import io.reactivex.internal.operators.completable.CompletableDoFinally;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,10 +59,6 @@ import java.util.stream.Collectors;
 public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPollingService {
 
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
-    private static long MAX_BACKOFF_MILLIS = 60000 * 10; //-- 10 Mins
-    private static long JOB_EXECUTION_CEILING_MILLIS = 60000; //-- 60 Seconds
-    private static int MAX_TIMEOUT_ERRORS = 10; //-- Number of consecutive job timeouts (based on above) that will be allowed before job is terminated
-
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull Map<ProtocolAdapterPollingSampler, MonitoredPollingJob> activePollers =
             new ConcurrentHashMap<>();
@@ -189,7 +187,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
         public void run() {
             long startedTimeMillis = System.currentTimeMillis();
             try {
-                executing.set(true);
+
                 if(notBefore > 0){
                     if(System.currentTimeMillis() < notBefore){
                         //-- We're backing off atm so as not to harass the network
@@ -198,15 +196,23 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 }
                 if(!sampler.isClosed()){
                     final String originalName = Thread.currentThread().getName();
-                    try {
-                        Thread.currentThread().setName(originalName + " " + sampler.getReferenceId());
-                        sampler.execute().orTimeout(JOB_EXECUTION_CEILING_MILLIS, TimeUnit.MILLISECONDS).get();
-                        if(log.isTraceEnabled()){
-                            log.trace("Adapter Job Successfully Invoked in {}ms", System.currentTimeMillis() - startedTimeMillis);
+                    if(executing.compareAndSet(false, true)){
+                        try {
+                            Thread.currentThread().setName(originalName + " " + sampler.getReferenceId());
+                            sampler.execute().orTimeout(InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get(), TimeUnit.MILLISECONDS).get();
+                            if (log.isTraceEnabled()) {
+                                log.trace("Adapter Job Successfully Invoked in {}ms",
+                                        System.currentTimeMillis() - startedTimeMillis);
+                            }
+                            resetErrorStats();
                         }
-                        resetErrorStats();
-                    } finally {
-                        Thread.currentThread().setName(originalName);
+                        finally {
+                            Thread.currentThread().setName(originalName);
+                        }
+                    } else {
+                        if(log.isInfoEnabled()){
+                            log.info("Determined Sampler {} Was Already Running, Concurrent Access Forbidden", sampler.getReferenceId());
+                        }
                     }
                 } else {
                     //Sampler was closed externally, ensure we remove it from the engine
@@ -221,7 +227,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     //-- Do not call back to the job here (notify) since it will
                     //-- Not respond and we dont want to block other polls
                     errorCountTotal = watchdogErrorCount.incrementAndGet();
-                    continuing = errorCountTotal < MAX_TIMEOUT_ERRORS;
+                    continuing = errorCountTotal < InternalConfigurations.ADAPTER_RUNTIME_ALLOWED_TIMEOUT_ERRORS_BEFORE_INTERRUPT.get();
                     notify = false;
                     if(!continuing){
                         if(log.isInfoEnabled()){
@@ -246,7 +252,8 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     resetErrorStats();
                 } else {
                     //exp. backoff the network call according to the number of errors
-                    long backoff = getBackoff(errorCountTotal, MAX_BACKOFF_MILLIS,true);
+                    long backoff = getBackoff(errorCountTotal,
+                            InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get(),true);
                     notBefore = System.currentTimeMillis() + backoff;
                 }
             } finally {
