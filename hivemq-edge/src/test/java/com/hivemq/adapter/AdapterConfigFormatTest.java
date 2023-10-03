@@ -37,9 +37,10 @@ public class AdapterConfigFormatTest {
     }
 
     @Test
-//    @Disabled
+    @Disabled
     void testUrlRegex() {
 
+        //No longer used
         Pattern pattern = Pattern.compile("https?:\\/\\/(?:w{1,3}\\.)?[^\\s.]+(?:\\.[a-z]+)*(?::\\d+)?((?:\\/\\w+)|(?:-\\w+))*\\/?(?![^<]*(?:<\\/\\w+>|\\/?>))");
 
         //-- Test for valid oracle webpage
