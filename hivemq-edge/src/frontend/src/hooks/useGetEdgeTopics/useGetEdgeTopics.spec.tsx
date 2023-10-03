@@ -1,16 +1,18 @@
 /// <reference types="cypress" />
 
-import { expect, vi } from 'vitest'
+import { expect } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
-import { renderHook } from '@testing-library/react'
-import { QueryClientProvider } from '@tanstack/react-query'
+import { renderHook, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { rest } from 'msw'
 
-import { MOCK_ADAPTER_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
-import { MOCK_ADAPTER_MODBUS } from '@/__test-utils__/adapters/modbus.ts'
+import { server } from '@/__test-utils__/msw/mockServer.ts'
+import { MOCK_ADAPTER_OPC_UA, MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
+import { MOCK_ADAPTER_MODBUS, MOCK_PROTOCOL_MODBUS } from '@/__test-utils__/adapters/modbus.ts'
 
-import { Adapter } from '@/api/__generated__'
-import queryClient from '@/api/queryClient.ts'
+import { Adapter, AdaptersList, Bridge, BridgeList, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
 import { EdgeTopicsOptions, useGetEdgeTopics, reduceTopicsBy } from './useGetEdgeTopics.tsx'
@@ -43,75 +45,81 @@ describe('reduceTopicsBy', () => {
   })
 })
 
-const { useGetAdapterTypes, useListProtocolAdapters, useListBridges } = vi.hoisted(() => {
-  const defaults = { data: undefined, isLoading: false, isError: false, error: undefined }
-  return {
-    useGetAdapterTypes: vi.fn().mockReturnValue(defaults),
-    useListProtocolAdapters: vi.fn().mockReturnValue(defaults),
-    useListBridges: vi.fn().mockReturnValue(defaults),
-  }
-})
-
-vi.mock('@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx', () => {
-  return { useGetAdapterTypes: useGetAdapterTypes }
-})
-
-vi.mock('@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx', () => {
-  return { useListProtocolAdapters: useListProtocolAdapters }
-})
-
-vi.mock('@/api/hooks/useGetBridges/useListBridges.tsx', () => {
-  return { useListBridges: useListBridges }
-})
-
 const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
-  <QueryClientProvider client={queryClient}>
+  <QueryClientProvider
+    client={
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: false,
+          },
+        },
+      })
+    }
+  >
     <AuthProvider>
       <MemoryRouter>{children}</MemoryRouter>
     </AuthProvider>
   </QueryClientProvider>
 )
 
+const customHandlers = (
+  types: Array<ProtocolAdapter> | undefined,
+  adapters?: Array<Adapter> | undefined,
+  bridges?: Array<Bridge> | undefined
+) => [
+  rest.get('**/protocol-adapters/types', (_, res, ctx) => {
+    return types ? res(ctx.json<ProtocolAdaptersList>({ items: types }), ctx.status(200)) : res(ctx.status(500))
+  }),
+  rest.get('**/protocol-adapters/adapters', (_, res, ctx) => {
+    return adapters ? res(ctx.json<AdaptersList>({ items: adapters }), ctx.status(200)) : res(ctx.status(500))
+  }),
+  rest.get('**/management/bridges', (_, res, ctx) => {
+    return bridges ? res(ctx.json<BridgeList>({ items: bridges }), ctx.status(200)) : res(ctx.status(500))
+  }),
+]
+
 describe('useGetEdgeTopics', () => {
-  afterEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('should return basic payload', () => {
-    const { result } = renderHook(() => useGetEdgeTopics(), { wrapper })
-
-    expect(result.current).toStrictEqual({
-      data: [],
-      error: undefined,
-      isError: false,
-      isLoading: false,
-    })
-  })
-
-  it("should return bridge's topics", () => {
-    useListBridges.mockReturnValue({
-      data: [mockBridge, mockBridge, mockBridge],
-    })
+  it('should return basic payload', async () => {
+    server.use(...customHandlers([], [], []))
 
     const { result } = renderHook(() => useGetEdgeTopics(), { wrapper })
-
+    await waitFor(() => {
+      expect(result.current.isLoading).toBeFalsy()
+    })
     expect(result.current).toStrictEqual({
-      data: ['root/topic/act/1'],
-      error: undefined,
+      data: [],
+      error: null,
       isError: false,
       isLoading: false,
+      isSuccess: true,
     })
   })
 
-  it("should return bridge's topics for publishing and subscribing", () => {
-    useListBridges.mockReturnValue({
-      data: [mockBridge, mockBridge, mockBridge],
+  it("should return bridge's topics", async () => {
+    server.use(...customHandlers([], [], [mockBridge]))
+    server.printHandlers()
+
+    const { result } = renderHook(() => useGetEdgeTopics(), { wrapper })
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBeTruthy()
     })
-    useListProtocolAdapters.mockReturnValue({
-      data: [],
-    })
+
+    expect(result.current).toStrictEqual(
+      expect.objectContaining({
+        data: ['root/topic/act/1'],
+      })
+    )
+  })
+
+  it("should return bridge's topics for publishing and subscribing", async () => {
+    server.use(...customHandlers([], [], [mockBridge]))
+    server.printHandlers()
 
     const { result } = renderHook(() => useGetEdgeTopics({ publishOnly: false }), { wrapper })
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBeTruthy()
+    })
 
     expect(result.current).toStrictEqual(
       expect.objectContaining({
@@ -120,15 +128,20 @@ describe('useGetEdgeTopics', () => {
     )
   })
 
-  it("should return adapters' topics", () => {
-    useListBridges.mockReturnValue({
-      data: [mockBridge, mockBridge, mockBridge],
-    })
-    useListProtocolAdapters.mockReturnValue({
-      data: [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
-    })
+  it("should return adapters' topics", async () => {
+    server.use(
+      ...customHandlers(
+        [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS],
+        [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
+        [mockBridge]
+      )
+    )
+    server.printHandlers()
 
     const { result } = renderHook(() => useGetEdgeTopics(), { wrapper })
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBeTruthy()
+    })
 
     expect(result.current).toStrictEqual(
       expect.objectContaining({
