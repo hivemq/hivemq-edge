@@ -37,10 +37,14 @@ public class AdapterConfigFormatTest {
     }
 
     @Test
-    @Disabled
+//    @Disabled
     void testUrlRegex() {
 
         Pattern pattern = Pattern.compile("https?:\\/\\/(?:w{1,3}\\.)?[^\\s.]+(?:\\.[a-z]+)*(?::\\d+)?((?:\\/\\w+)|(?:-\\w+))*\\/?(?![^<]*(?:<\\/\\w+>|\\/?>))");
+
+        //-- Test for valid oracle webpage
+        Assert.assertTrue("Url should be allowed",
+                pattern.matcher("https://docs.oracle.com/javase/tutorial/essential/io/notification").matches());
 
         //-- Test for valid oracle webpage
         Assert.assertTrue("Url should be allowed",
