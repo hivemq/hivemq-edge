@@ -17,7 +17,6 @@ import { useParams } from 'react-router-dom'
 import { IChangeEvent } from '@rjsf/core'
 import { RJSFSchema } from '@rjsf/utils'
 import Form from '@rjsf/chakra-ui'
-import validator from '@rjsf/validator-ajv8'
 
 import { ApiError, Adapter, ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
@@ -30,7 +29,7 @@ import { FieldTemplate } from '../templates/FieldTemplate.tsx'
 import { ObjectFieldTemplate } from '../templates/ObjectFieldTemplate.tsx'
 import { BaseInputTemplate } from '../templates/BaseInputTemplate.tsx'
 import useGetUiSchema from '../../hooks/useGetUISchema.ts'
-import { customValidate } from '../../utils/validation-utils.ts'
+import { customFormatsValidator, customValidate } from '../../utils/validation-utils.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -108,7 +107,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                     templates={{ ObjectFieldTemplate, FieldTemplate, BaseInputTemplate }}
                     liveValidate
                     onSubmit={onValidate}
-                    validator={validator}
+                    validator={customFormatsValidator}
                     showErrorList={'bottom'}
                     onError={(errors) => console.log('XXXXXXX', errors)}
                     formData={defaultValues}
