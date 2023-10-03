@@ -32,8 +32,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
 
     public Plc4xConnection(final @NotNull PlcDriverManager plcDriverManager,
                            final @NotNull T config,
-                           final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider,
-                           final boolean lazy) throws Plc4xException {
+                           final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider) throws Plc4xException {
         this.plcDriverManager = plcDriverManager;
         this.config = config;
         this.connectionQueryStringProvider = connectionQueryStringProvider;
@@ -43,9 +42,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
             }
             throw new Plc4xException("invalid connection configuration, unable to initialize");
         }
-        if(!lazy){
-            initConnection();
-        }
+        initConnection();
     }
 
     protected String createConnectionString(final @NotNull T config){
@@ -103,10 +100,9 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
                 plcConnection.isConnected();
     }
 
-    public void read(final @NotNull T.Subscription subscription, final @NotNull Consumer<PlcReadResponse> responseConsumer) throws Plc4xException{
-        initConnection();
+    public CompletableFuture<? extends PlcReadResponse> read(final @NotNull T.Subscription subscription) {
         if (!plcConnection.getMetadata().canRead()) {
-            throw new Plc4xException("connection type cannot read-blocking");
+            return CompletableFuture.failedFuture(new Plc4xException("connection type read-blocking"));
         }
         if(log.isDebugEnabled()){
             log.debug("Sending direct-read request to connection for {}", subscription.getTagName());
@@ -114,16 +110,13 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
         PlcReadRequest.Builder builder = plcConnection.readRequestBuilder();
         builder.addItem(subscription.getTagName(), initializeQueryForSubscription(subscription));
         PlcReadRequest readRequest = builder.build();
-        readRequest.execute().whenComplete((plcResponse, throwable) -> {
-            responseConsumer.accept(plcResponse);
-        });
+        return readRequest.execute();
     }
 
-    public void subscribe(final @NotNull T.Subscription subscription, final @NotNull Consumer<PlcSubscriptionEvent> consumer)
-            throws Plc4xException {
-        initConnection();
+    public CompletableFuture<? extends PlcSubscriptionResponse> subscribe(final @NotNull T.Subscription subscription, final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
+
         if (!plcConnection.getMetadata().canSubscribe()) {
-            throw new Plc4xException("connection type cannot subscribe");
+            return CompletableFuture.failedFuture(new Plc4xException("connection type cannot subscribe"));
         }
         if(log.isDebugEnabled()){
             log.debug("Sending subscribe request to connection for {}", subscription.getTagName());
@@ -144,6 +137,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
                 }
             }
         });
+        return future;
     }
 
     /**

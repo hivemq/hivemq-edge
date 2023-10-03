@@ -15,17 +15,19 @@
  */
 package com.hivemq.edge.modules.adapters.params;
 
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Date;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author Simon L Johnson
  */
-public interface ProtocolAdapterPollingSampler {
+public interface ProtocolAdapterPollingSampler<U extends ProtocolAdapterDataSample> {
 
     long getInitialDelay();
 
@@ -36,10 +38,8 @@ public interface ProtocolAdapterPollingSampler {
     /**
      * Do the work associated with this polling job. It is acceptable to throw exceptions from this method,
      * they will be caught and the process will be backed off accordingly
-     *
-     * @throws Exception
      */
-    void execute() throws Exception;
+    CompletableFuture<U> execute() ;
 
     /**
      * Called when the job is remove from the pool
@@ -51,8 +51,6 @@ public interface ProtocolAdapterPollingSampler {
     UUID getId();
     Date getCreated();
     String getAdapterId();
-    ScheduledFuture<?> getFuture();
-    void setFuture(ScheduledFuture<?> future);
 
     default String getReferenceId(){
         return String.format("%s:%s", getAdapterId(), getId());
@@ -63,4 +61,7 @@ public interface ProtocolAdapterPollingSampler {
     default int getMaxErrorsBeforeRemoval(){
         return 25;
     }
+
+    ScheduledFuture getScheduledFuture();
+    void setScheduledFuture(ScheduledFuture future);
 }

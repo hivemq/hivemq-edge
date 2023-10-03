@@ -48,23 +48,26 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
                     protocolAdapterPollingService::stopPolling));
     }
 
-    protected void captureDataSample(final @NotNull U sample) throws ProtocolAdapterException {
+    protected CompletableFuture<PublishReturnCode> captureDataSample(final @NotNull U sample){
         Preconditions.checkNotNull(sample);
         Preconditions.checkNotNull(sample.getData());
         Preconditions.checkNotNull(sample.getTopic());
         Preconditions.checkArgument(sample.getQos() <= 2 && sample.getQos() >= 0, "QoS needs to be a valid Quality-Of-Service value (0,1,2)");
-        final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
-                .withTopic(sample.getTopic())
-                .withPayload(convertToJson(sample))
-                .withQoS(sample.getQos());
-        final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
-        publishFuture.thenAccept(publishReturnCode -> {
-            protocolAdapterMetricsHelper.incrementReadPublishSuccess();
-        }).exceptionally(throwable -> {
-            protocolAdapterMetricsHelper.incrementReadPublishFailure();
-            log.warn("Error Publishing Adapter Payload", throwable);
-            return null;
-        });
+        try {
+            final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
+                    .withTopic(sample.getTopic())
+                    .withPayload(convertToJson(sample))
+                    .withQoS(sample.getQos());
+            final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
+            publishFuture.thenAccept(publishReturnCode -> protocolAdapterMetricsHelper.incrementReadPublishSuccess())
+                    .exceptionally(throwable -> {
+                        protocolAdapterMetricsHelper.incrementReadPublishFailure();
+                        log.warn("Error Publishing Adapter Payload", throwable); return null;
+                    });
+            return publishFuture;
+        } catch(Exception e){
+            return CompletableFuture.failedFuture(e);
+        }
     }
 
     protected void startPolling(final @NotNull Sampler sampler) {
@@ -76,7 +79,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
      * Method is invoked by the sampling engine on the schedule determined by the configuration
      * supplied.
      */
-    protected abstract U onSamplerInvoked(T config) throws Exception ;
+    protected abstract CompletableFuture<U> onSamplerInvoked(T config) ;
 
     /**
      * Hook Method is invoked by the sampling engine when the scheduling engine is removing the
@@ -98,7 +101,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
         }
     }
 
-    protected class Sampler extends ProtocolAdapterPollingSamplerImpl {
+    protected class Sampler extends ProtocolAdapterPollingSamplerImpl<U> {
 
         protected final T config;
 
@@ -111,11 +114,10 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
         }
 
         @Override
-        public void execute() throws Exception {
-            U data = onSamplerInvoked(config);
-            if (data != null) {
-                captureDataSample(data);
-            }
+        public CompletableFuture<U> execute() {
+            CompletableFuture<U> data = onSamplerInvoked(config);
+            data.thenApply(d -> captureDataSample(d));
+            return data;
         }
 
         @Override

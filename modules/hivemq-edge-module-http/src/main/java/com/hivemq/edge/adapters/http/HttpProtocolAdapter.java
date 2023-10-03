@@ -27,6 +27,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.http.core.HttpUtils;
+import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,21 +56,18 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
     }
 
     @Override
-    protected CompletableFuture<Void> startInternal(
-            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+    protected CompletableFuture<ProtocolAdapterStartOutput> startInternal(final @NotNull ProtocolAdapterStartOutput output) {
         try {
             setConnectionStatus(ConnectionStatus.STATELESS);
             if(httpClient == null){
                 synchronized (lock) {
                     if (httpClient == null) {
                         initializeHttpRequest(adapterConfig);
-                        output.startedSuccessfully("Successfully connected");
                     }
                 }
             }
-            return CompletableFuture.completedFuture(null);
+            return CompletableFuture.completedFuture(output);
         } catch (Exception e) {
-            output.failStart(e, e.getMessage());
             return CompletableFuture.failedFuture(e);
         }
     }
@@ -98,16 +96,17 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         return statusCode >= 200 && statusCode <= 299;
     }
 
-    protected void captureDataSample(final @NotNull HttpData data) throws ProtocolAdapterException {
+    protected CompletableFuture<PublishReturnCode> captureDataSample(final @NotNull HttpData data){
         boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) || !adapterConfig.isHttpPublishSuccessStatusCodeOnly();
         setConnectionStatus(isSuccessStatusCode(data.getHttpStatusCode()) ? ConnectionStatus.STATELESS : ConnectionStatus.ERROR);
         if (publishData) {
-           super.captureDataSample(data);
+           return super.captureDataSample(data);
         }
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    protected HttpData onSamplerInvoked(final HttpAdapterConfig config) throws Exception {
+    protected CompletableFuture<HttpData> onSamplerInvoked(final HttpAdapterConfig config) {
         if(httpClient != null){
             switch (config.getHttpRequestMethod()){
                 case GET:
@@ -131,8 +130,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         }
     }
 
-    protected HttpData httpPut(@NotNull final HttpAdapterConfig config)
-            throws IOException, InterruptedException {
+    protected CompletableFuture<HttpData> httpPut(@NotNull final HttpAdapterConfig config){
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .PUT(HttpRequest.BodyPublishers.ofString(config.getHttpRequestBody()));
         builder.header(HttpConstants.CONTENT_TYPE_HEADER,
@@ -140,8 +138,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         return executeInternal(config, builder);
     }
 
-    protected HttpData httpPost(@NotNull final HttpAdapterConfig config)
-            throws IOException, InterruptedException {
+    protected CompletableFuture<HttpData> httpPost(@NotNull final HttpAdapterConfig config){
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString(config.getHttpRequestBody()));
         builder.header(HttpConstants.CONTENT_TYPE_HEADER,
@@ -149,15 +146,13 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         return executeInternal(config, builder);
     }
 
-    protected HttpData httpGet(@NotNull final HttpAdapterConfig config)
-            throws IOException, InterruptedException {
+    protected CompletableFuture<HttpData> httpGet(@NotNull final HttpAdapterConfig config){
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .GET();
         return executeInternal(config, builder);
     }
 
-    protected HttpData executeInternal(@NotNull final HttpAdapterConfig config, @NotNull final HttpRequest.Builder builder)
-            throws IOException, InterruptedException {
+    protected CompletableFuture<HttpData> executeInternal(@NotNull final HttpAdapterConfig config, @NotNull final HttpRequest.Builder builder) {
         builder.uri(URI.create(config.getUrl()));
         //-- Ensure we apply a reasonable timeout so we don't hang threads
         Integer timeout = config.getHttpConnectTimeout();
@@ -171,7 +166,12 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
                     forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
         }
         HttpRequest request = builder.build();
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        CompletableFuture<HttpResponse<String>> responseFuture =
+                httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+        return responseFuture.thenApply(response -> readResponse(config, response));
+    }
+
+    protected HttpData readResponse(@NotNull final HttpAdapterConfig config, final @NotNull HttpResponse<String> response){
         String responseContentType = response.headers().firstValue(HttpConstants.CONTENT_TYPE_HEADER).orElse(null);
         String bodyData = response.body() == null ? null : response.body();
         Object payloadData = null;

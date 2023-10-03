@@ -18,19 +18,18 @@ package com.hivemq.edge.adapters.modbus;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.impl.AbstractPollingPerSubscriptionAdapter;
 import com.hivemq.edge.modules.adapters.params.NodeTree;
 import com.hivemq.edge.modules.adapters.params.NodeType;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,27 +52,13 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected CompletableFuture<Void> startInternal(
-            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
-        try {
-            if (modbusClient == null) {
-                createClient();
-            }
-            if (adapterConfig.getSubscriptions() != null) {
-                for (ModbusAdapterConfig.Subscription subscription : adapterConfig.getSubscriptions()) {
-                    subscribeInternal(subscription);
-                }
-            }
-            output.startedSuccessfully("Successfully connected");
-            return CompletableFuture.completedFuture(null);
-        } catch (Exception e) {
-            stop();
-            output.failStart(e, e.getMessage());
-            return CompletableFuture.failedFuture(e);
-        }
+    protected CompletableFuture<ProtocolAdapterStartOutput> startInternal( final @NotNull ProtocolAdapterStartOutput output) {
+        CompletableFuture<IModbusClient> startFuture = CompletableFuture.supplyAsync(() -> initConnection());
+        startFuture.thenAccept(this::subscribeAllInternal);
+        return startFuture.thenApply(connection -> output);
     }
 
-    private IModbusClient createClient() {
+    private IModbusClient initConnection() {
         if (modbusClient == null) {
             synchronized (lock) {
                 if (modbusClient == null) {
@@ -90,7 +75,15 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
         return CompletableFuture.completedFuture(null);
     }
 
-    protected void subscribeInternal(final @NotNull ModbusAdapterConfig.Subscription subscription) {
+    protected void subscribeAllInternal(@NotNull final IModbusClient client) throws RuntimeException {
+        if (adapterConfig.getSubscriptions() != null) {
+            for (ModbusAdapterConfig.Subscription subscription : adapterConfig.getSubscriptions()) {
+                subscribeInternal(client, subscription);
+            }
+        }
+    }
+
+    protected void subscribeInternal(@NotNull final IModbusClient client, final @NotNull ModbusAdapterConfig.Subscription subscription) {
         if (subscription != null) {
             ModbusAdapterConfig.AddressRange registerAddressRange = subscription.getAddressRange();
             if (registerAddressRange != null) {
@@ -114,7 +107,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected void captureDataSample(@NotNull final ModBusData data) throws ProtocolAdapterException {
+    protected CompletableFuture<PublishReturnCode> captureDataSample(@NotNull final ModBusData data) {
         boolean publishData = true;
         if (adapterConfig.getPublishChangedDataOnly()) {
             ModBusData previousSample = lastSamples.put(data.getType(), data);
@@ -124,8 +117,9 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
             }
         }
         if (publishData) {
-            super.captureDataSample(data);
+            return super.captureDataSample(data);
         }
+        return CompletableFuture.completedFuture(null);
     }
 
 
@@ -146,9 +140,9 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected ModBusData onSamplerInvoked(
+    protected CompletableFuture<ModBusData> onSamplerInvoked(
             final ModbusAdapterConfig config,
-            final AbstractProtocolAdapterConfig.Subscription subscription) throws Exception {
+            final AbstractProtocolAdapterConfig.Subscription subscription) {
 
         //-- If a previously linked job has terminally disconnected the client
         //-- we need to ensure any orphaned jobs tidy themselves up properly
@@ -158,20 +152,20 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
                     modbusClient.connect().thenRun(() ->
                             setConnectionStatus(ConnectionStatus.CONNECTED));
                 }
+                //TODO - check out the async API
                 ModbusAdapterConfig.AddressRange addressRange = ((ModbusAdapterConfig.Subscription)subscription).getAddressRange();
                 Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
                         addressRange.endIdx - addressRange.startIdx);
                 ModBusData data = new ModBusData(null,subscription.getDestination(), subscription.getQos(),
                         ModBusData.TYPE.HOLDING_REGISTERS);
                 data.setData(addressRange.startIdx, registers);
-                return data;
+                return CompletableFuture.completedFuture(data);
             } else {
-                throw new IllegalStateException("client not initialised");
+                return CompletableFuture.failedFuture(new IllegalStateException("client not initialised"));
             }
         } catch(Exception e){
             setErrorConnectionStatus(e);
-            //if we throw here it will put the job into backoff mode
-            throw e;
+            return CompletableFuture.failedFuture(e);
         }
     }
 

@@ -30,12 +30,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -54,6 +58,9 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
     private static long MAX_BACKOFF_MILLIS = 60000 * 10; //-- 10 Mins
+    private static long JOB_EXECUTION_CEILING_MILLIS = 60000; //-- 60 Seconds
+    private static int MAX_TIMEOUT_ERRORS = 10; //-- Number of consecutive job timeouts (based on above) that will be allowed before job is terminated
+
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull Map<ProtocolAdapterPollingSampler, MonitoredPollingJob> activePollers =
             new ConcurrentHashMap<>();
@@ -94,7 +101,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 sampler.getInitialDelay(),
                 sampler.getPeriod(),
                 sampler.getUnit());
-        sampler.setFuture(future);
+        sampler.setScheduledFuture(future);
         activePollers.put(sampler, internalJob);
     }
 
@@ -121,13 +128,14 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     public void stopPolling(final @NotNull ProtocolAdapterPollingSampler sampler){
         Preconditions.checkNotNull(sampler);
         if(activePollers.remove(sampler) != null){
-            Future<?> future = sampler.getFuture();
+            Future<?> future = sampler.getScheduledFuture();
             if(!future.isCancelled()){
                 if(log.isInfoEnabled()){
                     log.info("Stopping Polling Job {}", sampler.getReferenceId());
                 }
+                //-- Cancel the future
+                //-- Bad Processes May Block Here.. Consider Forking
                 if(future.cancel(true)){
-                    //-- Ensure we dont cause loops, always check before calling close
                     if(!sampler.isClosed()){
                         sampler.close();
                     }
@@ -143,7 +151,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
     @Override
     public int currentErrorCount(final ProtocolAdapterPollingSampler pollingJob) {
-        return activePollers.get(pollingJob).errorCount.get();
+        return activePollers.get(pollingJob).applicationErrorCount.get();
     }
 
     public void stopAllPolling(){
@@ -161,17 +169,27 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     }
 
     private class MonitoredPollingJob implements Runnable {
-        private final AtomicInteger errorCount = new AtomicInteger(0);
+        private final AtomicInteger watchdogErrorCount = new AtomicInteger(0);
+        private final AtomicInteger applicationErrorCount = new AtomicInteger(0);
         private final ProtocolAdapterPollingSampler sampler;
         private volatile long notBefore = 0;
+        private AtomicBoolean executing = new AtomicBoolean(false);
 
         public MonitoredPollingJob(final ProtocolAdapterPollingSampler sampler) {
             this.sampler = sampler;
         }
 
+        private void resetErrorStats(){
+            applicationErrorCount.set(0);
+            watchdogErrorCount.set(0);
+            notBefore = 0;
+        }
+
         @Override
         public void run() {
+            long startedTimeMillis = System.currentTimeMillis();
             try {
+                executing.set(true);
                 if(notBefore > 0){
                     if(System.currentTimeMillis() < notBefore){
                         //-- We're backing off atm so as not to harass the network
@@ -179,32 +197,60 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     }
                 }
                 if(!sampler.isClosed()){
-                    sampler.execute();
-                    errorCount.set(0);
-                    notBefore = 0;
+                    final String originalName = Thread.currentThread().getName();
+                    try {
+                        Thread.currentThread().setName(originalName + " " + sampler.getReferenceId());
+                        sampler.execute().orTimeout(JOB_EXECUTION_CEILING_MILLIS, TimeUnit.MILLISECONDS).get();
+                        if(log.isTraceEnabled()){
+                            log.trace("Adapter Job Successfully Invoked in {}ms", System.currentTimeMillis() - startedTimeMillis);
+                        }
+                        resetErrorStats();
+                    } finally {
+                        Thread.currentThread().setName(originalName);
+                    }
                 } else {
                     //Sampler was closed externally, ensure we remove it from the engine
                     stopPolling(sampler);
                 }
             } catch(Throwable e){
-                int errorCountTotal = errorCount.incrementAndGet();
-                if(log.isDebugEnabled()){
-                    log.debug("Error {} In Polling Job {} -> {}",
-                            errorCountTotal, sampler.getReferenceId(), e.getMessage());
+                boolean continuing, notify = true;
+                int errorCountTotal;
+                //-- Determine if this is the watchdog or the application causing the error
+                if(e.getCause() instanceof TimeoutException){
+                    //-- Job was killed by the framework as it took too long
+                    //-- Do not call back to the job here (notify) since it will
+                    //-- Not respond and we dont want to block other polls
+                    errorCountTotal = watchdogErrorCount.incrementAndGet();
+                    continuing = errorCountTotal < MAX_TIMEOUT_ERRORS;
+                    notify = false;
+                    if(!continuing){
+                        if(log.isInfoEnabled()){
+                            log.info("Detected Bad System Process In Adapter Job {} - Terminating Process to Maintain Health ({}ms Runtime)",
+                                    sampler.getReferenceId(), System.currentTimeMillis() - startedTimeMillis);
+                        }
+                    }
+                } else {
+                    errorCountTotal = applicationErrorCount.incrementAndGet();
+                    continuing = errorCountTotal < sampler.getMaxErrorsBeforeRemoval();
+                    if(log.isDebugEnabled()){
+                        log.debug("Error {} In Adapter Job {} -> {}",
+                                errorCountTotal, sampler.getReferenceId(), e.getMessage());
+                    }
                 }
-                boolean continuing = sampler.getMaxErrorsBeforeRemoval() >
-                        errorCountTotal;
-                sampler.error(e, continuing);
+                if(notify){
+                    sampler.error(e, continuing);
+                }
                 if(!continuing) {
                     stopPolling(sampler);
                     //-- rest the error state
-                    notBefore = 0;
-                    errorCount.set(0);
+                    resetErrorStats();
                 } else {
                     //exp. backoff the network call according to the number of errors
                     long backoff = getBackoff(errorCountTotal, MAX_BACKOFF_MILLIS,true);
                     notBefore = System.currentTimeMillis() + backoff;
                 }
+            } finally {
+                executing.set(false);
             }
         }
     }

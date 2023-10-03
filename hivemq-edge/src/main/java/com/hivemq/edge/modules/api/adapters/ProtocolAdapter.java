@@ -53,7 +53,7 @@ public interface ProtocolAdapter {
      * @param output - the output resulting from the start operation. The adapter will
      * @return a completable future which can be used to check on the status of the start operation.
      */
-    @NotNull CompletableFuture<Void> start(
+    @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
             @NotNull ProtocolAdapterStartInput input, @NotNull ProtocolAdapterStartOutput output);
 
     /**
