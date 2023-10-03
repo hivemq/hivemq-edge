@@ -100,21 +100,21 @@ export const mockAdapter: Adapter = {
 }
 
 export const handlers = [
-  rest.get('*/protocol-adapters/types', (_, res, ctx) => {
+  rest.get('**/protocol-adapters/types', (_, res, ctx) => {
     return res(ctx.json<ProtocolAdaptersList>({ items: [mockProtocolAdapter] }), ctx.status(200))
   }),
 
-  rest.get('*/protocol-adapters/adapters', (_, res, ctx) => {
+  rest.get('**/protocol-adapters/adapters', (_, res, ctx) => {
     return res(ctx.json<AdaptersList>({ items: [mockAdapter] }), ctx.status(200))
   }),
 
-  rest.get('*/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
+  rest.get('**/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
     // @ts-ignore
     const { adapterType } = req.params
     return res(ctx.json<Adapter>({ ...mockAdapter, id: adapterType }), ctx.status(200))
   }),
 
-  rest.post('*/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
+  rest.post('**/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { adapterType } = req.params
@@ -122,7 +122,7 @@ export const handlers = [
     return res(ctx.json<any>({}), ctx.status(200))
   }),
 
-  rest.delete('*/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
+  rest.delete('**/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { adapterType } = req.params
@@ -130,7 +130,7 @@ export const handlers = [
     return res(ctx.json<any>({}), ctx.status(200))
   }),
 
-  rest.put('*/protocol-adapters/adapters/:adapterId/status', (_, res, ctx) => {
+  rest.put('**/protocol-adapters/adapters/:adapterId/status', (_, res, ctx) => {
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { adapterType } = req.params
@@ -138,7 +138,7 @@ export const handlers = [
     return res(ctx.json<any>({}), ctx.status(200))
   }),
 
-  rest.put('*/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
+  rest.put('**/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { adapterType } = req.params
