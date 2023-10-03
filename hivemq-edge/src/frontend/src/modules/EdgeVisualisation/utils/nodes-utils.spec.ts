@@ -6,7 +6,7 @@ import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
-import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import { IdStubs, NodeTypes } from '../types.ts'
 import { createAdapterNode, createBridgeNode, createEdgeNode, createListenerNode } from './nodes-utils.ts'
@@ -149,7 +149,7 @@ describe('createListenerNode', () => {
 
 describe('createAdapterNode', () => {
   it('should create a default Adapter node', async () => {
-    const actual = createAdapterNode(mockAdapter, 1, 2, MOCK_THEME)
+    const actual = createAdapterNode(mockProtocolAdapter, mockAdapter, 1, 2, MOCK_THEME)
     const expected: {
       nodeAdapter: Node<Bridge, NodeTypes.ADAPTER_NODE>
       edgeConnector: Edge
@@ -171,7 +171,7 @@ describe('createAdapterNode', () => {
   })
 
   it('should create an Adapter node with stored location', async () => {
-    const actual = createAdapterNode(mockAdapter, 1, 2, MOCK_THEME, MOCK_LOCAL_STORAGE)
+    const actual = createAdapterNode(mockProtocolAdapter, mockAdapter, 1, 2, MOCK_THEME, MOCK_LOCAL_STORAGE)
     const expected: {
       nodeAdapter: Node<Bridge, NodeTypes.ADAPTER_NODE>
       edgeConnector: Edge
