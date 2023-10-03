@@ -107,7 +107,7 @@ export const mergeAllTopics = (
     const adapterTopics = adapters.reduce<string[]>((acc, cur) => {
       const type = types?.items?.find((e) => e.id === cur.type)
       if (!type) return acc
-      const topics = discoverAdapterTopics(type, cur.config)
+      const topics = discoverAdapterTopics(type, cur.config as GenericObjectType)
       acc.push(...topics)
       // const topics = getAdapterTopics(cur)
       // acc.push(...topics.map((e) => e.topic))
