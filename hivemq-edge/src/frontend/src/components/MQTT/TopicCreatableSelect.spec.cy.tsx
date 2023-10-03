@@ -4,7 +4,7 @@ import TopicCreatableSelect from './TopicCreatableSelect.tsx'
 
 const MOCK_ID = 'my-id'
 
-describe('Topic', () => {
+describe('TopicCreatableSelect', () => {
   beforeEach(() => {
     cy.viewport(450, 250)
   })
@@ -61,6 +61,6 @@ describe('Topic', () => {
         'color-contrast': { enabled: false },
       },
     })
-    cy.percySnapshot('Component: Topic')
+    cy.percySnapshot('Component: TopicCreatableSelect')
   })
 })
