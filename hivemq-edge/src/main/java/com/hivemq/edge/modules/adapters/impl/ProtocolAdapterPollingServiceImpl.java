@@ -18,6 +18,7 @@ package com.hivemq.edge.modules.adapters.impl;
 import com.google.common.base.Preconditions;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
@@ -26,16 +27,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -53,15 +60,25 @@ import java.util.stream.Collectors;
 public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPollingService {
 
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
-    private static long MAX_BACKOFF_MILLIS = 60000 * 10; //-- 10 Mins
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull Map<ProtocolAdapterPollingSampler, MonitoredPollingJob> activePollers =
             new ConcurrentHashMap<>();
+    private final @NotNull Set<MonitoredPollingJob> executingJobs
+            = Collections.synchronizedSet(new HashSet<>());
+
+    private final @NotNull Object semaphore = new Object();
+    private final @NotNull Watchdog watchdog = new Watchdog();
 
     @Inject
     public ProtocolAdapterPollingServiceImpl(final @NotNull ScheduledExecutorService scheduledExecutorService,
                                              final @NotNull ShutdownHooks shutdownHooks) {
         this.scheduledExecutorService = scheduledExecutorService;
+
+        Thread watchdogThread = new Thread(watchdog, "ProtocolAdapter-Watchdog");
+        watchdogThread.setPriority(Thread.MIN_PRIORITY);
+        watchdogThread.setDaemon(true);
+        watchdogThread.start();
+
         shutdownHooks.add(new HiveMQShutdownHook() {
             @Override
             public @NotNull String name() {
@@ -70,6 +87,14 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
             @Override
             public void run() {
+                try {
+                    ProtocolAdapterPollingServiceImpl.this.watchdog.running = false;
+                    synchronized (semaphore){
+                        semaphore.notifyAll();
+                    }
+                } catch(Exception e){
+                    log.warn("Error Encountered Stopping Watchdog", e);
+                }
                 if(!scheduledExecutorService.isShutdown()){
                     try {
                         scheduledExecutorService.shutdown();
@@ -94,7 +119,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 sampler.getInitialDelay(),
                 sampler.getPeriod(),
                 sampler.getUnit());
-        sampler.setFuture(future);
+        sampler.setScheduledFuture(future);
         activePollers.put(sampler, internalJob);
     }
 
@@ -121,13 +146,14 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     public void stopPolling(final @NotNull ProtocolAdapterPollingSampler sampler){
         Preconditions.checkNotNull(sampler);
         if(activePollers.remove(sampler) != null){
-            Future<?> future = sampler.getFuture();
+            Future<?> future = sampler.getScheduledFuture();
             if(!future.isCancelled()){
                 if(log.isInfoEnabled()){
                     log.info("Stopping Polling Job {}", sampler.getReferenceId());
                 }
+                //-- Cancel the future
+                //-- Bad Processes May Block Here.. Consider Forking
                 if(future.cancel(true)){
-                    //-- Ensure we dont cause loops, always check before calling close
                     if(!sampler.isClosed()){
                         sampler.close();
                     }
@@ -143,7 +169,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
     @Override
     public int currentErrorCount(final ProtocolAdapterPollingSampler pollingJob) {
-        return activePollers.get(pollingJob).errorCount.get();
+        return activePollers.get(pollingJob).applicationErrorCount.get();
     }
 
     public void stopAllPolling(){
@@ -161,16 +187,31 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     }
 
     private class MonitoredPollingJob implements Runnable {
-        private final AtomicInteger errorCount = new AtomicInteger(0);
+        private final AtomicInteger runCount = new AtomicInteger(0);
+        private final AtomicInteger watchdogErrorCount = new AtomicInteger(0);
+        private final AtomicInteger applicationErrorCount = new AtomicInteger(0);
         private final ProtocolAdapterPollingSampler sampler;
         private volatile long notBefore = 0;
+        private volatile long recentExecutionStarted = 0;
+        private volatile Thread currentThread;
 
         public MonitoredPollingJob(final ProtocolAdapterPollingSampler sampler) {
             this.sampler = sampler;
         }
 
+        private void resetErrorStats(){
+            applicationErrorCount.set(0);
+            watchdogErrorCount.set(0);
+            notBefore = 0;
+        }
+
+        private boolean hasErrorStats(){
+            return notBefore > 0 || applicationErrorCount.get() > 0 || watchdogErrorCount.get() > 0;
+        }
+
         @Override
         public void run() {
+            long startedTimeMillis = System.currentTimeMillis();
             try {
                 if(notBefore > 0){
                     if(System.currentTimeMillis() < notBefore){
@@ -179,31 +220,155 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     }
                 }
                 if(!sampler.isClosed()){
-                    sampler.execute();
-                    errorCount.set(0);
-                    notBefore = 0;
+                    final String originalName = Thread.currentThread().getName();
+                    if(!executingJobs.contains(this)){
+                        try {
+                            boolean execute;
+                            synchronized (semaphore) {
+                                execute = !executingJobs.contains(this);
+                                recentExecutionStarted = startedTimeMillis;
+                                currentThread = Thread.currentThread();
+                                if(execute) {
+                                    executingJobs.add(this);
+                                    semaphore.notify();
+                                }
+                            }
+                            if(execute) {
+                                runCount.incrementAndGet();
+                                currentThread.setName(originalName + " " + sampler.getAdapterId());
+                                CompletableFuture<?> sampleFuture = sampler.execute();
+                                if(sampleFuture != null){
+                                    sampleFuture.get();
+                                    if (log.isTraceEnabled()) {
+                                        log.trace("Sampler {} Successfully Invoked in {}ms",
+                                                sampler.getAdapterId(), System.currentTimeMillis() - startedTimeMillis);
+                                    }
+                                    if(hasErrorStats()){
+                                        resetErrorStats();
+                                    }
+                                } else {
+                                    throw new IllegalStateException("Sampler Returned Empty Future, Error Handling");
+                                }
+                            }
+                        }
+                        finally {
+                            currentThread.setName(originalName);
+                            synchronized (semaphore) {
+                                executingJobs.remove(this);
+                                currentThread = null;
+                            }
+                        }
+                    } else {
+                        if(log.isInfoEnabled()){
+                            log.info("Determined Sampler {} Was Already Running, Concurrent Access Forbidden", sampler.getAdapterId());
+                        }
+                    }
                 } else {
                     //Sampler was closed externally, ensure we remove it from the engine
                     stopPolling(sampler);
                 }
             } catch(Throwable e){
-                int errorCountTotal = errorCount.incrementAndGet();
-                if(log.isDebugEnabled()){
-                    log.debug("Error {} In Polling Job {} -> {}",
-                            errorCountTotal, sampler.getReferenceId(), e.getMessage());
-                }
-                boolean continuing = sampler.getMaxErrorsBeforeRemoval() >
-                        errorCountTotal;
-                sampler.error(e, continuing);
-                if(!continuing) {
-                    stopPolling(sampler);
-                    //-- rest the error state
-                    notBefore = 0;
-                    errorCount.set(0);
+                boolean continuing, notify = true;
+                int errorCountTotal;
+                if(isInterruptedException(e)){
+                    //-- Job was killed by the framework as it took too long
+                    //-- Do not call back to the job here (notify) since it will
+                    //-- Not respond and we dont want to block other polls
+                    errorCountTotal = watchdogErrorCount.incrementAndGet();
+                    continuing = errorCountTotal < InternalConfigurations.ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT.get();
+                    if(!continuing){
+                        if(log.isInfoEnabled()){
+                            log.info("Detected Bad System Process {} In Sampler {} - Terminating Process to Maintain Health ({}ms Runtime)",
+                                    errorCountTotal, sampler.getAdapterId(), System.currentTimeMillis() - startedTimeMillis);
+                        }
+                    } else {
+                        if(log.isDebugEnabled()){
+                            log.debug("Detected Bad System Process {} In Sampler {} - Interrupted Process to Maintain Health ({}ms Runtime)",
+                                    errorCountTotal, sampler.getAdapterId(), System.currentTimeMillis() - startedTimeMillis);
+                        }
+                    }
                 } else {
-                    //exp. backoff the network call according to the number of errors
-                    long backoff = getBackoff(errorCountTotal, MAX_BACKOFF_MILLIS,true);
-                    notBefore = System.currentTimeMillis() + backoff;
+                    errorCountTotal = applicationErrorCount.incrementAndGet();
+                    continuing = errorCountTotal < sampler.getMaxErrorsBeforeRemoval();
+                    if(log.isDebugEnabled()){
+                        log.debug("Application Error {} In Sampler {} -> {}",
+                                errorCountTotal, sampler.getAdapterId(), e.getMessage());
+                    }
+                }
+                try {
+                    if(notify){
+                        try {
+                            sampler.error(e, continuing);
+                        } catch(Throwable samplerError){
+                            if(log.isInfoEnabled()){
+                                log.info("Sampler Encountered Error In Notification", samplerError);
+                            }
+                        }
+                    }
+                    if(!continuing) {
+                        stopPolling(sampler);
+                        //-- rest the error state
+                        resetErrorStats();
+                    } else {
+                        //exp. backoff the network call according to the number of errors
+                        long backoff = getBackoff(errorCountTotal,
+                                InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get(),true);
+                        notBefore = System.currentTimeMillis() + backoff;
+                    }
+                } catch(Throwable t){
+                    if(log.isErrorEnabled()){
+                        log.error("Framework Error Detected, This Needs Addressing", t);
+                    }
+                }
+            }
+        }
+    }
+
+    protected static boolean isInterruptedException(@NotNull Throwable t){
+        Preconditions.checkNotNull(t);
+        do{
+          if(t instanceof InterruptedException || t instanceof TimeoutException)
+              return true;
+          t = t.getCause();
+        } while(t != null);
+        return false;
+    }
+
+    private final class Watchdog implements Runnable {
+        volatile boolean running = false;
+
+        @Override
+        public void run() {
+            running = true;
+            while(running){
+                try {
+                    //create shallow copy then process outside lock
+                    Set<MonitoredPollingJob> inProgress;
+                    synchronized (semaphore){
+                        if(executingJobs.isEmpty()){
+                            semaphore.wait();
+                        }
+                        if(!running) break;
+                        //-- notify will release so relock for iterator
+                        synchronized (semaphore){
+                            inProgress = new HashSet<>(executingJobs);
+                        }
+                    }
+                    Iterator<MonitoredPollingJob> itr = inProgress.iterator();
+                    while(itr.hasNext()){
+                        MonitoredPollingJob job = itr.next();
+                        if((System.currentTimeMillis() - job.recentExecutionStarted) >
+                                InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get()){
+                            if(job.currentThread != null){
+                                job.currentThread.interrupt();
+                            }
+                        }
+                    }
+                    //-- Ensure were not too aggressive
+                    Thread.sleep(25);
+                }
+                catch(Throwable e){
+                    log.error("Watchdog Thread was Terminated By Error", e);
                 }
             }
         }

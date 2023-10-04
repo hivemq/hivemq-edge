@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
  * <p>
  *
  *
- * @since 2013.1
+ * @since 2023.1
  */
 public interface ProtocolAdapter {
 
@@ -53,7 +53,7 @@ public interface ProtocolAdapter {
      * @param output - the output resulting from the start operation. The adapter will
      * @return a completable future which can be used to check on the status of the start operation.
      */
-    @NotNull CompletableFuture<Void> start(
+    @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
             @NotNull ProtocolAdapterStartInput input, @NotNull ProtocolAdapterStartOutput output);
 
     /**
@@ -75,7 +75,7 @@ public interface ProtocolAdapter {
 
     @Nullable Long getTimeOfLastStartAttempt();
 
-    @Nullable String getLastErrorMessage();
+    @Nullable String getErrorMessage();
 
 
     enum RuntimeStatus {

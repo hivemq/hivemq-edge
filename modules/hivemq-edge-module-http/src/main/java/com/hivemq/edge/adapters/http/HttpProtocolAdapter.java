@@ -20,6 +20,7 @@ import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.impl.AbstractPollingProtocolAdapter;
+import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
@@ -27,6 +28,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.http.core.HttpUtils;
+import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,21 +57,18 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
     }
 
     @Override
-    protected CompletableFuture<Void> startInternal(
-            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+    protected CompletableFuture<ProtocolAdapterStartOutput> startInternal(final @NotNull ProtocolAdapterStartOutput output) {
         try {
             setConnectionStatus(ConnectionStatus.STATELESS);
             if(httpClient == null){
                 synchronized (lock) {
                     if (httpClient == null) {
                         initializeHttpRequest(adapterConfig);
-                        output.startedSuccessfully("Successfully connected");
                     }
                 }
             }
-            return CompletableFuture.completedFuture(null);
+            return CompletableFuture.completedFuture(output);
         } catch (Exception e) {
-            output.failStart(e, e.getMessage());
             return CompletableFuture.failedFuture(e);
         }
     }
@@ -90,7 +89,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
                     .build();
             startPolling(new Sampler(config));
         } else {
-            setLastErrorMessage("Invalid URL supplied");
+            reportErrorMessage(null, "Invalid URL supplied");
         }
     }
 
@@ -98,16 +97,17 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         return statusCode >= 200 && statusCode <= 299;
     }
 
-    protected void captureDataSample(final @NotNull HttpData data) throws ProtocolAdapterException {
+    protected CompletableFuture<PublishReturnCode> captureDataSample(final @NotNull HttpData data){
         boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) || !adapterConfig.isHttpPublishSuccessStatusCodeOnly();
         setConnectionStatus(isSuccessStatusCode(data.getHttpStatusCode()) ? ConnectionStatus.STATELESS : ConnectionStatus.ERROR);
         if (publishData) {
-           super.captureDataSample(data);
+           return super.captureDataSample(data);
         }
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    protected HttpData onSamplerInvoked(final HttpAdapterConfig config) throws Exception {
+    protected CompletableFuture<HttpData> onSamplerInvoked(final HttpAdapterConfig config) {
         if(httpClient != null){
             switch (config.getHttpRequestMethod()){
                 case GET:
@@ -121,18 +121,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         return null;
     }
 
-    @Override
-    protected void onSamplerError(
-            final ProtocolAdapterPollingSampler sampler,
-            final Throwable exception,
-            final boolean continuing) {
-        if(!continuing){
-            setErrorConnectionStatus(exception.getMessage());
-        }
-    }
-
-    protected HttpData httpPut(@NotNull final HttpAdapterConfig config)
-            throws IOException, InterruptedException {
+    protected CompletableFuture<HttpData> httpPut(@NotNull final HttpAdapterConfig config){
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .PUT(HttpRequest.BodyPublishers.ofString(config.getHttpRequestBody()));
         builder.header(HttpConstants.CONTENT_TYPE_HEADER,
@@ -140,8 +129,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         return executeInternal(config, builder);
     }
 
-    protected HttpData httpPost(@NotNull final HttpAdapterConfig config)
-            throws IOException, InterruptedException {
+    protected CompletableFuture<HttpData> httpPost(@NotNull final HttpAdapterConfig config){
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString(config.getHttpRequestBody()));
         builder.header(HttpConstants.CONTENT_TYPE_HEADER,
@@ -149,15 +137,13 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         return executeInternal(config, builder);
     }
 
-    protected HttpData httpGet(@NotNull final HttpAdapterConfig config)
-            throws IOException, InterruptedException {
+    protected CompletableFuture<HttpData> httpGet(@NotNull final HttpAdapterConfig config){
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .GET();
         return executeInternal(config, builder);
     }
 
-    protected HttpData executeInternal(@NotNull final HttpAdapterConfig config, @NotNull final HttpRequest.Builder builder)
-            throws IOException, InterruptedException {
+    protected CompletableFuture<HttpData> executeInternal(@NotNull final HttpAdapterConfig config, @NotNull final HttpRequest.Builder builder) {
         builder.uri(URI.create(config.getUrl()));
         //-- Ensure we apply a reasonable timeout so we don't hang threads
         Integer timeout = config.getHttpConnectTimeout();
@@ -166,36 +152,42 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         builder.timeout(Duration.ofSeconds(timeout));
         builder.setHeader(HttpConstants.USER_AGENT_HEADER,
                 String.format(HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE, HiveMQEdgeConstants.VERSION));
-        if(config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()){
-            config.getHttpHeaders().stream().
-                    forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
+        if (config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()) {
+            config.getHttpHeaders().stream().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
         }
         HttpRequest request = builder.build();
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        String responseContentType = response.headers().firstValue(HttpConstants.CONTENT_TYPE_HEADER).orElse(null);
-        String bodyData = response.body() == null ? null : response.body();
+        CompletableFuture<HttpResponse<String>> responseFuture =
+                httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+        return responseFuture.thenApply(response -> readResponse(config, response));
+    }
+
+    protected HttpData readResponse(@NotNull final HttpAdapterConfig config, final @NotNull HttpResponse<String> response){
         Object payloadData = null;
-        //-- if the content type is json, then apply the JSON to the output data,
-        //-- else encode using base64 (as we dont know what the content is).
-        if(bodyData != null){
-            if(HttpConstants.JSON_MIME_TYPE.equals(responseContentType)) {
-                try {
-                    payloadData = objectMapper.readTree(bodyData);
-                } catch (Exception e){
-                    log.warn("Error encountered marshalling HTTP response data to json", e);
-                    if(log.isDebugEnabled()){
-                        log.debug("Invalid json data was [{}]", bodyData);
+        String responseContentType = null;
+        if(isSuccessStatusCode(response.statusCode())){
+            String bodyData = response.body() == null ? null : response.body();
+            //-- if the content type is json, then apply the JSON to the output data,
+            //-- else encode using base64 (as we dont know what the content is).
+            if(bodyData != null){
+                responseContentType = response.headers().firstValue(HttpConstants.CONTENT_TYPE_HEADER).orElse(null);
+                if(HttpConstants.JSON_MIME_TYPE.equals(responseContentType)) {
+                    try {
+                        payloadData = objectMapper.readTree(bodyData);
+                    } catch (Exception e){
+                        log.warn("Error encountered marshalling HTTP response data to json", e);
+                        if(log.isDebugEnabled()){
+                            log.debug("Invalid json data was [{}]", bodyData);
+                        }
                     }
+                } else {
+                    if(responseContentType == null){
+                        responseContentType = HttpConstants.PLAIN_MIME_TYPE;
+                    }
+                    String base64 = Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
+                    payloadData = String.format(HttpConstants.BASE64_ENCODED_VALUE, responseContentType, base64);
                 }
-            } else {
-                if(responseContentType == null){
-                    responseContentType = HttpConstants.PLAIN_MIME_TYPE;
-                }
-                String base64 = Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
-                payloadData = String.format(HttpConstants.BASE64_ENCODED_VALUE, responseContentType, base64);
             }
         }
-
         HttpData data = new HttpData(adapterConfig.getUrl(),
                 response.statusCode(),
                 responseContentType,

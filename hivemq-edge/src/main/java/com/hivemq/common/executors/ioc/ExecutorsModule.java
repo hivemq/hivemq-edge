@@ -17,13 +17,16 @@ package com.hivemq.common.executors.ioc;
 
 import dagger.Module;
 import dagger.Provides;
+import org.apache.commons.lang3.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
+import javax.swing.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * @author Simon L Johnson
@@ -31,18 +34,39 @@ import java.util.concurrent.ScheduledExecutorService;
 @Module
 public abstract class ExecutorsModule {
 
-    static final Logger log = LoggerFactory.getLogger(ExecutorsModule.class);
-
+    static final String GROUP_NAME = "hivemq-edge-group";
+    static final String SCHEDULED_WORKER_GROUP_NAME = "hivemq-edge-scheduled-group";
+    static final String CACHED_WORKER_GROUP_NAME = "hivemq-edge-cached-group";
+    private static final ThreadGroup coreGroup = new ThreadGroup(GROUP_NAME);
     @Provides
     @Singleton
     static ScheduledExecutorService scheduledExecutor() {
-        return Executors.newScheduledThreadPool(2);
+        return Executors.newScheduledThreadPool(4,
+                new HiveMQEdgeThreadFactory(SCHEDULED_WORKER_GROUP_NAME));
     }
 
     @Provides
     @Singleton
     static ExecutorService executorService() {
-        return Executors.newCachedThreadPool() ;
+        return Executors.newCachedThreadPool(new HiveMQEdgeThreadFactory(CACHED_WORKER_GROUP_NAME));
     }
 
+    static class HiveMQEdgeThreadFactory implements ThreadFactory {
+        private final String factoryName;
+        private final ThreadGroup group;
+        private volatile int counter = 0;
+
+        public HiveMQEdgeThreadFactory(final String factoryName) {
+            this.factoryName = factoryName;
+            this.group = new ThreadGroup(coreGroup,  factoryName);
+        }
+
+        @Override
+        public Thread newThread(final Runnable r) {
+            synchronized (group) {
+                Thread thread = new Thread(coreGroup, r, String.format(factoryName + "-%d", counter++));
+                return thread;
+            }
+        }
+    }
 }

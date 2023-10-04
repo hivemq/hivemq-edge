@@ -74,23 +74,20 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
     }
 
     @Override
-    protected @NotNull CompletableFuture<Void> startInternal(
-            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+    protected @NotNull CompletableFuture<ProtocolAdapterStartOutput> startInternal(final @NotNull ProtocolAdapterStartOutput output) {
         try {
             if (opcUaClient == null) {
                 createClient();
             }
-            final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
+            final CompletableFuture<ProtocolAdapterStartOutput> resultFuture = new CompletableFuture<>();
 
             opcUaClient.connect().thenAccept(uaClient -> {
 
                 setConnectionStatus(ConnectionStatus.CONNECTED);
-                opcUaClient.getSubscriptionManager().addSubscriptionListener(createSubscriptionListener(input));
-
-                createAllSubscriptions(input.moduleServices()
-                        .adapterPublishService()).whenComplete((unused, throwable) -> {
+                opcUaClient.getSubscriptionManager().addSubscriptionListener(createSubscriptionListener());
+                createAllSubscriptions(adapterPublishService).whenComplete((unused, throwable) -> {
                     if (throwable == null) {
-                        resultFuture.complete(null);
+                        resultFuture.complete(output);
                     } else {
                         output.failStart(throwable, throwable.getMessage());
                         resultFuture.completeExceptionally(throwable);
@@ -165,14 +162,14 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
     }
 
     @NotNull
-    private OpcUaSubscriptionListener createSubscriptionListener(@NotNull ProtocolAdapterStartInput input) {
+    private OpcUaSubscriptionListener createSubscriptionListener() {
         return new OpcUaSubscriptionListener(protocolAdapterMetricsHelper, adapterConfig.getId(), (subscription) -> {
             //re-create a subscription on failure
             final OpcUaAdapterConfig.Subscription subscriptionConfig =
                     subscriptionMap.get(subscription.getSubscriptionId());
             if (subscriptionConfig != null) {
                 try {
-                    subscribeToNode(subscriptionConfig, input.moduleServices().adapterPublishService()).get();
+                    subscribeToNode(subscriptionConfig, adapterPublishService).get();
                 } catch (InterruptedException | ExecutionException e) {
                     log.error("Not able to recreate OPC-UA subscription after transfer failure", e);
                 }

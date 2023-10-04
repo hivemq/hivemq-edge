@@ -191,14 +191,14 @@ public class ProtocolAdapterManager {
         if(log.isInfoEnabled()){
             log.info("Starting protocol-adapter {}", protocolAdapter.getId());
         }
-        CompletableFuture<Void> startFuture;
+        CompletableFuture<ProtocolAdapterStartOutput> startFuture;
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
         if (protocolAdapter.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STARTED) {
-            startFuture = CompletableFuture.completedFuture(null);
+            startFuture = CompletableFuture.completedFuture(output);
         } else {
             startFuture = protocolAdapter.start(new ProtocolAdapterStartInputImpl(protocolAdapter), output);
         }
-        startFuture.thenApply(input -> {
+        return startFuture.<Void> thenApply(input -> {
             if (!output.startedSuccessfully) {
                handleStartupError(protocolAdapter, output);
             } else if (output.message != null) {
@@ -209,14 +209,12 @@ public class ProtocolAdapterManager {
                         protocolAdapter.getProtocolAdapterInformation().getProtocolId());
                 remoteService.fireUsageEvent(adapterCreatedEvent);
             }
-            return output;
+            return null;
         }).exceptionally(throwable -> {
             output.failStart(throwable, output.message);
             handleStartupError(protocolAdapter, output);
-            return output;
+            return null;
         });
-
-        return startFuture;
     }
 
     public CompletableFuture<Void> stop(final @NotNull ProtocolAdapter protocolAdapter) {

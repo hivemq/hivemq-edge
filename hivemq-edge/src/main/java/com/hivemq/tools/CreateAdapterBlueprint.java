@@ -120,6 +120,7 @@ public class CreateAdapterBlueprint {
                 throw new FileNotFoundException("Unable to locate HIVEMQ_EDGE development home");
             }
             adapterName = captureMandatoryString(input, output, "Please specify the name of your adapter (alpha-numeric)");
+//            adapterName = captureMandatoryChoice(input, output, "Please specify the name of your adapter (alpha-numeric)");
 
         } catch (Exception e) {
             System.err.println("A fatal error was encountered: " + e.getMessage());
@@ -173,6 +174,22 @@ public class CreateAdapterBlueprint {
         String value = null;
         while(value == null){
             output.print(String.format("%s : ", question));
+            value = input.nextLine();
+            value = value.trim();
+            if(value.length() == 0) {
+                value = null;
+            }
+        }
+        return value;
+    }
+
+    protected static String captureMandatoryChoice(Scanner input, PrintStream output, String question, String[] choices){
+        String value = null;
+        while(value == null){
+            output.println(String.format("%s (Please select one) : ", question));
+            for (int i=0; i<choices.length;i++){
+                output.print(String.format("%d : ", i+1, choices[i]));
+            }
             value = input.nextLine();
             value = value.trim();
             if(value.length() == 0) {

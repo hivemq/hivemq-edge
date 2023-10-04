@@ -42,18 +42,15 @@ public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAda
     }
 
     @Override
-    protected CompletableFuture<Void> startInternal(
-            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+    protected CompletableFuture<ProtocolAdapterStartOutput> startInternal( final @NotNull ProtocolAdapterStartOutput output) {
         try {
             if (adapterConfig.getSubscriptions() != null) {
                 for (SimulationAdapterConfig.Subscription subscription : adapterConfig.getSubscriptions()) {
                     startPolling(new SubscriptionSampler(adapterConfig, subscription));
                 }
             }
-            output.startedSuccessfully("Successfully connected");
-            return CompletableFuture.completedFuture(null);
+            return CompletableFuture.completedFuture(output);
         } catch (Exception e) {
-            output.failStart(e, e.getMessage());
             return CompletableFuture.failedFuture(e);
         }
     }
@@ -64,7 +61,7 @@ public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAda
     }
 
     @Override
-    protected ProtocolAdapterDataSample onSamplerInvoked(
+    protected CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(
             final SimulationAdapterConfig config,
             final AbstractProtocolAdapterConfig.Subscription subscription) {
         ProtocolAdapterDataSample dataSample =
@@ -73,6 +70,6 @@ public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAda
                         Math.max(config.getMinValue() + 1, config.getMaxValue())),
                     subscription.getDestination(),
                     subscription.getQos());
-        return dataSample;
+        return CompletableFuture.completedFuture(dataSample);
     }
 }

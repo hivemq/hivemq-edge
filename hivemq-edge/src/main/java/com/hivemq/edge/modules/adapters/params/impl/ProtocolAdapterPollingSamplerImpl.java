@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.adapters.params.impl;
 
 import com.google.common.base.Preconditions;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -23,6 +24,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author Simon L Johnson
  */
-public abstract class ProtocolAdapterPollingSamplerImpl implements ProtocolAdapterPollingSampler {
+public abstract class ProtocolAdapterPollingSamplerImpl<U extends ProtocolAdapterDataSample> implements ProtocolAdapterPollingSampler<U> {
 
     private final long initialDelay;
     private final long period;
@@ -108,12 +110,12 @@ public abstract class ProtocolAdapterPollingSamplerImpl implements ProtocolAdapt
     }
 
     @Override
-    public ScheduledFuture<?> getFuture() {
+    public ScheduledFuture getScheduledFuture() {
         return future;
     }
 
     @Override
-    public void setFuture(final ScheduledFuture<?> future) {
+    public void setScheduledFuture(final ScheduledFuture future) {
         this.future = future;
     }
 
