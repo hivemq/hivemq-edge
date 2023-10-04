@@ -55,12 +55,7 @@ describe('TopicCreatableSelect', () => {
       />
     )
     cy.get('#my-id').click()
-    cy.checkAccessibility(undefined, {
-      rules: {
-        // TODO[#138] Select color is not accessible
-        'color-contrast': { enabled: false },
-      },
-    })
+    cy.checkAccessibility()
     cy.percySnapshot('Component: TopicCreatableSelect')
   })
 })
