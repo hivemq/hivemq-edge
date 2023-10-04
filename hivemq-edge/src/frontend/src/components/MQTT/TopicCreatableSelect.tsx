@@ -77,10 +77,10 @@ const TopicCreatableSelect: FC<TopicSelectProps> = ({ id, options, isLoading, va
 
   return (
     <CreatableSelect
-      aria-label={'Add a topic'}
-      placeholder={'Type or select ...'}
-      noOptionsMessage={() => 'No topic loaded'}
-      formatCreateLabel={(e) => `Add the topic ... ${e}`}
+      aria-label={t('topicCreate.label') as string}
+      placeholder={t('topicCreate.placeholder') as string}
+      noOptionsMessage={() => t('topicCreate.options.noOptionsMessage')}
+      formatCreateLabel={(e) => t('topicCreate.options.createLabel', { topic: e })}
       isLoading={isLoading}
       id={id}
       isClearable
