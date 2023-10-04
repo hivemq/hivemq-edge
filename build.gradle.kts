@@ -83,7 +83,6 @@ val moduleReleaseBinaries: Configuration by configurations.creating {
 
 dependencies {
     hivemq("com.hivemq:hivemq-edge")
-	edgeModule("com.hivemq:hivemq-edge-module-acme")
 	edgeModule("com.hivemq:hivemq-edge-module-http")
     // ** module-deps ** //
     edgeModule("com.hivemq:hivemq-edge-module-plc4x")
