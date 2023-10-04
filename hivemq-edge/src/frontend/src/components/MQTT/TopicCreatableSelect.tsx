@@ -30,12 +30,6 @@ const filterConfig = {
 }
 
 const customComponents: SelectComponentsConfig<TopicOption, true, GroupBase<TopicOption>> = {
-  // ValueContainer: ({ children, ...p }) => (
-  //   <chakraComponents.ValueContainer {...p} className={'ZZZZZZZZ'}>
-  //     {children}
-  //   </chakraComponents.ValueContainer>
-  // ),
-  // Input: (props) => <chakraComponents.Input {...props} className={'XXXXXX'} />,
   Option: ({ children, ...props }) => (
     <chakraComponents.Option {...props}>
       {props.data.iconColor && <TopicIcon color={props.data.iconColor} mr={2} h={5} w={5} />}
@@ -44,27 +38,11 @@ const customComponents: SelectComponentsConfig<TopicOption, true, GroupBase<Topi
   ),
 
   Control: ({ children, ...props }) => (
-    <chakraComponents.Control {...props} className={'XXXXXX'}>
+    <chakraComponents.Control {...props}>
       <TopicIcon mr={0} ml={3} />
       {children}
     </chakraComponents.Control>
   ),
-  // SingleValue: (props) => {
-  //   return (
-  //     // <HStack>
-  //     //   <TagLeftIcon as={props.data.Icon} color={props.data.iconColor} />
-  //     <chakraComponents.SingleValue {...props} className={'YYYYY'}>
-  //       {props.children}
-  //     </chakraComponents.SingleValue>
-  //     // {/*</HStack>*/}
-  //   )
-  // },
-  // MultiValueContainer: ({ children, ...props }) => (
-  //   <chakraComponents.MultiValueContainer {...props}>
-  //     <TagLeftIcon as={props.data.Icon} color={props.data.iconColor} />
-  //     {children}
-  //   </chakraComponents.MultiValueContainer>
-  // ),
 }
 
 const TopicCreatableSelect: FC<TopicSelectProps> = ({ id, options, isLoading, value, onChange }) => {
