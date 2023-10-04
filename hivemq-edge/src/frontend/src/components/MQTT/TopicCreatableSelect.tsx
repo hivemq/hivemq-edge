@@ -8,13 +8,12 @@ import {
   GroupBase,
   chakraComponents,
 } from 'chakra-react-select'
-import { SiMqtt } from 'react-icons/si'
-import { Icon } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
+import TopicIcon from '@/components/Icons/TopicIcon.tsx'
 
 interface TopicOption extends OptionBase {
   label: string
   value: string
-  Icon: FC
   iconColor: string
 }
 
@@ -39,9 +38,8 @@ const customComponents: SelectComponentsConfig<TopicOption, true, GroupBase<Topi
   // Input: (props) => <chakraComponents.Input {...props} className={'XXXXXX'} />,
   Option: ({ children, ...props }) => (
     <chakraComponents.Option {...props}>
-      {props.data.Icon && (
-        <Icon as={props.data.Icon} color={props.data.iconColor} aria-label={'XXXXX'} mr={2} h={5} w={5} />
-      )}
+      <TopicIcon color={props.data.iconColor} mr={2} h={5} w={5} />
+
       {children}
     </chakraComponents.Option>
   ),
@@ -66,7 +64,8 @@ const customComponents: SelectComponentsConfig<TopicOption, true, GroupBase<Topi
 const TopicCreatableSelect: FC<TopicSelectProps> = ({ id, options, isLoading, value, onChange }) => {
   const topicOptions = Array.from(new Set([...options]))
     .sort()
-    .map<TopicOption>((e) => ({ label: e, value: e, Icon: SiMqtt, iconColor: 'brand.500' }))
+    .map<TopicOption>((e) => ({ label: e, value: e, iconColor: 'brand.500' }))
+  const { t } = useTranslation('components')
 
   return (
     <CreatableSelect
@@ -80,7 +79,7 @@ const TopicCreatableSelect: FC<TopicSelectProps> = ({ id, options, isLoading, va
       isSearchable
       isMulti={false}
       options={topicOptions}
-      value={value ? { label: value, value: value, Icon: SiMqtt, iconColor: 'brand.200' } : undefined}
+      value={value ? { label: value, value: value, iconColor: 'brand.200' } : undefined}
       onChange={(value) => {
         const newValue = value as SingleValue<TopicOption>
         onChange(newValue?.label)
