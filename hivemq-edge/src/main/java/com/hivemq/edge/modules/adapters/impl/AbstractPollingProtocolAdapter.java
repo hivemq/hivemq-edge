@@ -95,11 +95,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
      * the cause of the error.
      */
     protected void onSamplerError(final @NotNull ProtocolAdapterPollingSampler sampler, final @NotNull Throwable exception, boolean continuing) {
-        //-- Override me
-        if(log.isWarnEnabled()){
-            log.warn("Sampler {} threw an error, will continue ? {}", sampler.getReferenceId(), continuing, exception);
-        }
-        setErrorConnectionStatus(exception.getMessage());
+        setErrorConnectionStatus(exception);
         if(!continuing){
             stop();
         }

@@ -132,8 +132,8 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * @param errorMessage
      */
     protected void reportErrorMessage(@Nullable final Throwable throwable, @NotNull final String errorMessage){
-        Preconditions.checkNotNull(errorMessage);
-        this.errorMessage = errorMessage;
+        Preconditions.checkNotNull(throwable);
+        this.errorMessage = errorMessage == null ? throwable.getMessage() : errorMessage;
     }
 
     @Override

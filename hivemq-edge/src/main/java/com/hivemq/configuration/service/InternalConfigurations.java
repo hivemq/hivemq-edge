@@ -263,6 +263,6 @@ public class InternalConfigurations {
      **********************/
 
     public static final AtomicInteger ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF = new AtomicInteger(60 * 10 * 1000); //-- 10 minutes
-    public static final AtomicInteger ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS = new AtomicInteger(2);  //-- 60 Seconds
-    public static final AtomicInteger ADAPTER_RUNTIME_ALLOWED_TIMEOUT_ERRORS_BEFORE_INTERRUPT = new AtomicInteger(10);
+    public static final AtomicInteger ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS = new AtomicInteger(60 * 1000);  //-- 60 Seconds
+    public static final AtomicInteger ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT = new AtomicInteger(10);
 }
