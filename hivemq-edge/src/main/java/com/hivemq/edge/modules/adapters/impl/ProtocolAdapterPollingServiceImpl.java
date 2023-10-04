@@ -231,7 +231,6 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 int errorCountTotal;
                 if(e instanceof InterruptedException || e.getCause() instanceof InterruptedException){
                     continuing = false;
-                    notify = false;
                     //-- This does nothing in this circumstance
                     errorCountTotal = 0;
                     if(log.isInfoEnabled()){
@@ -246,10 +245,14 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     //-- Not respond and we dont want to block other polls
                     errorCountTotal = watchdogErrorCount.incrementAndGet();
                     continuing = errorCountTotal < InternalConfigurations.ADAPTER_RUNTIME_ALLOWED_TIMEOUT_ERRORS_BEFORE_INTERRUPT.get();
-                    notify = false;
                     if(!continuing){
                         if(log.isInfoEnabled()){
                             log.info("Detected Bad System Process In Adapter Job {} - Terminating Process to Maintain Health ({}ms Runtime)",
+                                    sampler.getReferenceId(), System.currentTimeMillis() - startedTimeMillis);
+                        }
+                    } else {
+                        if(log.isDebugEnabled()){
+                            log.debug("Detected Bad System Process In Adapter Job {} - Interrupted Process to Maintain Health ({}ms Runtime)",
                                     sampler.getReferenceId(), System.currentTimeMillis() - startedTimeMillis);
                         }
                     }
@@ -258,7 +261,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     continuing = errorCountTotal < sampler.getMaxErrorsBeforeRemoval();
                     if(log.isDebugEnabled()){
                         log.debug("Error {} In Adapter Job {} -> {}",
-                                errorCountTotal, sampler.getReferenceId(), e.getMessage(), e);
+                                errorCountTotal, sampler.getReferenceId(), e.getMessage());
                     }
                 }
                 if(notify){

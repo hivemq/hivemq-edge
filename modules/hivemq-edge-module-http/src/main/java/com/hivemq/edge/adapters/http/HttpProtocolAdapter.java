@@ -120,16 +120,6 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         return null;
     }
 
-    @Override
-    protected void onSamplerError(
-            final ProtocolAdapterPollingSampler sampler,
-            final Throwable exception,
-            final boolean continuing) {
-        if(!continuing){
-            setErrorConnectionStatus(exception.getMessage());
-        }
-    }
-
     protected CompletableFuture<HttpData> httpPut(@NotNull final HttpAdapterConfig config){
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .PUT(HttpRequest.BodyPublishers.ofString(config.getHttpRequestBody()));

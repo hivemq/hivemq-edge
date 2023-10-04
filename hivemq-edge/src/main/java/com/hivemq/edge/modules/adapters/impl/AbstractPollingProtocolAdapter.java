@@ -99,6 +99,10 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
         if(log.isWarnEnabled()){
             log.warn("Sampler {} threw an error, will continue ? {}", sampler.getReferenceId(), continuing, exception);
         }
+        setErrorConnectionStatus(exception.getMessage());
+        if(!continuing){
+            stop();
+        }
     }
 
     protected class Sampler extends ProtocolAdapterPollingSamplerImpl<U> {
