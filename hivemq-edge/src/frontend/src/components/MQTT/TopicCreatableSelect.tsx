@@ -38,8 +38,7 @@ const customComponents: SelectComponentsConfig<TopicOption, true, GroupBase<Topi
   // Input: (props) => <chakraComponents.Input {...props} className={'XXXXXX'} />,
   Option: ({ children, ...props }) => (
     <chakraComponents.Option {...props}>
-      <TopicIcon color={props.data.iconColor} mr={2} h={5} w={5} />
-
+      {props.data.iconColor && <TopicIcon color={props.data.iconColor} mr={2} h={5} w={5} />}
       {children}
     </chakraComponents.Option>
   ),
@@ -47,7 +46,6 @@ const customComponents: SelectComponentsConfig<TopicOption, true, GroupBase<Topi
   Control: ({ children, ...props }) => (
     <chakraComponents.Control {...props} className={'XXXXXX'}>
       <TopicIcon mr={0} ml={3} />
-
       {children}
     </chakraComponents.Control>
   ),
