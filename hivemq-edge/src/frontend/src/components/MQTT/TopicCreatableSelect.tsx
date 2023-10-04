@@ -43,6 +43,14 @@ const customComponents: SelectComponentsConfig<TopicOption, true, GroupBase<Topi
       {children}
     </chakraComponents.Option>
   ),
+
+  Control: ({ children, ...props }) => (
+    <chakraComponents.Control {...props} className={'XXXXXX'}>
+      <TopicIcon mr={0} ml={3} />
+
+      {children}
+    </chakraComponents.Control>
+  ),
   // SingleValue: (props) => {
   //   return (
   //     // <HStack>
@@ -86,6 +94,8 @@ const TopicCreatableSelect: FC<TopicSelectProps> = ({ id, options, isLoading, va
       }}
       components={customComponents}
       filterOption={createFilter(filterConfig)}
+      // @ts-ignore TODO[NVL] Bug with CRS, see https://github.com/csandman/chakra-react-select/issues/273
+      selectedOptionStyle="check"
     />
   )
 }
