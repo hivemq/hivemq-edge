@@ -5,9 +5,14 @@ import { FormControl, FormLabel } from '@chakra-ui/react'
 import TopicCreatableSelect from '@/components/MQTT/TopicCreatableSelect.tsx'
 import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.tsx'
 
+import config from '@/config'
+
 export const TopicInputTemplate: FC<BaseInputTemplateProps> = (props) => {
   const { chakraProps, label, id, disabled, readonly, onChange, required, rawErrors, value } = props
-  const { isLoading, data } = useGetEdgeTopics({ branchOnly: true })
+  const { isLoading, data } = useGetEdgeTopics({
+    branchOnly: config.features.TOPIC_EDITOR_SHOW_BRANCHES,
+    publishOnly: true,
+  })
 
   return (
     <FormControl
