@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import TopicCreatableSelect from './TopicCreatableSelect.tsx'
+import { SingleTopicCreatableSelect } from './TopicCreatableSelect.tsx'
 
 const MOCK_ID = 'my-id'
 
@@ -13,7 +13,7 @@ describe('TopicCreatableSelect', () => {
     const mockOnChange = cy.stub().as('onChange')
 
     cy.mountWithProviders(
-      <TopicCreatableSelect options={[]} isLoading={false} id={MOCK_ID} value={''} onChange={mockOnChange} />
+      <SingleTopicCreatableSelect options={[]} isLoading={false} id={MOCK_ID} value={''} onChange={mockOnChange} />
     )
 
     cy.get('#my-id').click()
@@ -25,7 +25,7 @@ describe('TopicCreatableSelect', () => {
     const mockOptions = ['topic/1', 'topic/2']
 
     cy.mountWithProviders(
-      <TopicCreatableSelect
+      <SingleTopicCreatableSelect
         options={mockOptions}
         isLoading={false}
         id={MOCK_ID}
@@ -46,7 +46,7 @@ describe('TopicCreatableSelect', () => {
     cy.injectAxe()
 
     cy.mountWithProviders(
-      <TopicCreatableSelect
+      <SingleTopicCreatableSelect
         options={mockOptions}
         isLoading={false}
         id={MOCK_ID}
