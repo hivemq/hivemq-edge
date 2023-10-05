@@ -83,4 +83,33 @@ const AbstractTopicCreatableSelect = <T extends boolean>({
   )
 }
 
-export default TopicCreatableSelect
+interface SingleTopicCreatableSelectProps extends Omit<TopicCreatableSelectProps<false>, 'value' | 'onChange'> {
+  value: string
+  onChange: (value: string | undefined) => void
+}
+
+export const SingleTopicCreatableSelect = ({ value, onChange, ...props }: SingleTopicCreatableSelectProps) => (
+  <AbstractTopicCreatableSelect<false>
+    {...props}
+    isMulti={false}
+    value={value ? { label: value, value: value, iconColor: 'brand.200' } : undefined}
+    onChange={(value) => {
+      const newValue = value as SingleValue<TopicOption>
+      onChange(newValue?.label)
+    }}
+  />
+)
+
+interface MultiTopicsCreatableSelectProps extends Omit<TopicCreatableSelectProps<true>, 'value' | 'onChange'> {
+  value: string[]
+  onChange: (value: string[] | undefined) => void
+}
+
+export const MultiTopicsCreatableSelect = ({ value, onChange, ...props }: MultiTopicsCreatableSelectProps) => (
+  <AbstractTopicCreatableSelect<true>
+    {...props}
+    isMulti={true}
+    value={value.map<TopicOption>((e) => ({ label: e, value: e, iconColor: 'brand.200' }))}
+    onChange={(m) => onChange(m.map<string>((e) => e.value))}
+  />
+)
