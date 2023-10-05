@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { RefAttributes } from 'react'
 import {
   CreatableSelect,
   createFilter,
@@ -6,6 +6,8 @@ import {
   SingleValue,
   SelectComponentsConfig,
   GroupBase,
+  CreatableProps,
+  SelectInstance,
   chakraComponents,
 } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
@@ -32,16 +34,36 @@ const customComponents = (isMulti: boolean): SelectComponentsConfig<TopicOption,
       {children}
     </chakraComponents.Control>
   ),
+})
+
+// Recreating the type for the CreatableSelect component
+type TopicCreatableSelect<IsMulti extends boolean> = CreatableProps<TopicOption, IsMulti, GroupBase<TopicOption>> &
+  RefAttributes<SelectInstance<TopicOption, IsMulti, GroupBase<TopicOption>>>
+
+interface TopicCreatableSelectProps<IsMulti extends boolean>
+  extends Partial<Omit<TopicCreatableSelect<IsMulti>, 'options'>> {
+  id: string
+  options: string[]
 }
 
-const TopicCreatableSelect: FC<TopicSelectProps> = ({ id, options, isLoading, value, onChange }) => {
+const AbstractTopicCreatableSelect = <T extends boolean>({
+  id,
+  options,
+  isLoading,
+  isMulti,
+  ...rest
+}: TopicCreatableSelectProps<T>) => {
   const topicOptions = Array.from(new Set([...options]))
     .sort()
     .map<TopicOption>((e) => ({ label: e, value: e, iconColor: 'brand.500' }))
   const { t } = useTranslation('components')
 
+  const filterConfig = {
+    trim: false,
+  }
+
   return (
-    <CreatableSelect
+    <CreatableSelect<TopicOption, T, GroupBase<TopicOption>>
       aria-label={t('topicCreate.label') as string}
       placeholder={t('topicCreate.placeholder') as string}
       noOptionsMessage={() => t('topicCreate.options.noOptionsMessage')}
@@ -50,17 +72,13 @@ const TopicCreatableSelect: FC<TopicSelectProps> = ({ id, options, isLoading, va
       id={id}
       isClearable
       isSearchable
-      isMulti={false}
+      isMulti={isMulti}
       options={topicOptions}
-      value={value ? { label: value, value: value, iconColor: 'brand.200' } : undefined}
-      onChange={(value) => {
-        const newValue = value as SingleValue<TopicOption>
-        onChange(newValue?.label)
-      }}
-      components={customComponents}
+      components={isMulti === undefined ? undefined : customComponents(isMulti)}
       filterOption={createFilter(filterConfig)}
       // @ts-ignore TODO[NVL] Bug with CRS, see https://github.com/csandman/chakra-react-select/issues/273
       selectedOptionStyle="check"
+      {...rest}
     />
   )
 }
