@@ -1,14 +1,17 @@
 import { useTranslation } from 'react-i18next'
-import { IoHomeOutline, IoLinkOutline } from 'react-icons/io5'
+import { Icon } from '@chakra-ui/react'
+
+import { IoHomeOutline } from 'react-icons/io5'
+import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
 import { BiListUl } from 'react-icons/bi'
 import { BsIntersect } from 'react-icons/bs'
 import { HiOutlinePuzzle } from 'react-icons/hi'
 import { GoLinkExternal } from 'react-icons/go'
 
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
+import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
 
 import config from '@/config'
-import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
 
 import { NavLinksBlockType } from '../types.ts'
 
@@ -37,12 +40,12 @@ const useGetNavItems = (): NavLinksBlockType[] => {
         },
         ...workspaceLink,
         {
-          icon: <IoLinkOutline />,
+          icon: <Icon as={PiBridgeThin} fontSize={'20px'} />,
           href: '/mqtt-bridges',
           label: t('translation:navigation.gateway.routes.bridges') as string,
         },
         {
-          icon: <IoLinkOutline />,
+          icon: <PiPlugsConnectedFill />,
           href: '/protocol-adapters',
           label: t('translation:navigation.gateway.routes.protocolAdapters') as string,
         },
