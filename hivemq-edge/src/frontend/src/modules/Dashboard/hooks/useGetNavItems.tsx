@@ -15,9 +15,9 @@ import config from '@/config'
 
 import { NavLinksBlockType } from '../types.ts'
 
-const useGetNavItems = (): NavLinksBlockType[] => {
+const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => {
   const { t } = useTranslation()
-  const { data } = useGetConfiguration()
+  const { data, isSuccess } = useGetConfiguration()
 
   const workspaceLink = config.features.WORKSPACE_FLOW_PANEL
     ? [
@@ -29,7 +29,7 @@ const useGetNavItems = (): NavLinksBlockType[] => {
       ]
     : []
 
-  return [
+  const menu = [
     {
       title: t('translation:navigation.gateway.title'),
       items: [
@@ -98,6 +98,8 @@ const useGetNavItems = (): NavLinksBlockType[] => {
       ],
     },
   ]
+
+  return { data: menu, isSuccess }
 }
 
 export default useGetNavItems
