@@ -103,7 +103,7 @@ export const mockGatewayConfiguration: GatewayConfiguration = {
 }
 
 export const handlers = [
-  rest.get('*/frontend/configuration', (_, res, ctx) => {
+  rest.get('**/frontend/configuration', (_, res, ctx) => {
     return res(ctx.json<GatewayConfiguration>(mockGatewayConfiguration), ctx.status(200))
   }),
 ]
