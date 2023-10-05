@@ -17,19 +17,8 @@ interface TopicOption extends OptionBase {
   iconColor: string
 }
 
-interface TopicSelectProps {
-  id: string
-  options: string[]
-  isLoading: boolean
-  value: string
-  onChange: (value: string | undefined) => void
-}
-
-const filterConfig = {
-  trim: false,
-}
-
-const customComponents: SelectComponentsConfig<TopicOption, true, GroupBase<TopicOption>> = {
+const customComponents = (isMulti: boolean): SelectComponentsConfig<TopicOption, never, GroupBase<TopicOption>> => ({
+  DropdownIndicator: null,
   Option: ({ children, ...props }) => (
     <chakraComponents.Option {...props}>
       {props.data.iconColor && <TopicIcon color={props.data.iconColor} mr={2} h={5} w={5} />}
@@ -39,7 +28,7 @@ const customComponents: SelectComponentsConfig<TopicOption, true, GroupBase<Topi
 
   Control: ({ children, ...props }) => (
     <chakraComponents.Control {...props}>
-      <TopicIcon mr={0} ml={3} />
+      {!isMulti && <TopicIcon mr={0} ml={3} />}
       {children}
     </chakraComponents.Control>
   ),
