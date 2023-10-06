@@ -12,6 +12,7 @@ import {
 } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 import TopicIcon from '@/components/Icons/TopicIcon.tsx'
+import Topic from '@/components/MQTT/Topic.tsx'
 
 interface TopicOption extends OptionBase {
   label: string
@@ -34,6 +35,16 @@ const customComponents = (isMulti: boolean): SelectComponentsConfig<TopicOption,
       {children}
     </chakraComponents.Control>
   ),
+
+  // @ts-ignore Check why sx is not recognised by TS
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  MultiValueContainer: ({ children, sx, ...props }) => {
+    return (
+      <chakraComponents.MultiValueContainer {...props}>
+        <Topic topic={children} mr={3} />
+      </chakraComponents.MultiValueContainer>
+    )
+  },
 })
 
 // Recreating the type for the CreatableSelect component
