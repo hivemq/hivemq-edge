@@ -338,7 +338,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         return builder.build();
     }
 
-    private static LocalSubscription unconvertLocal(final @NotNull Bridge.BridgeSubscription subscription) {
+    private static LocalSubscription unconvertLocal(final @NotNull Bridge.LocalBridgeSubscription subscription) {
 
         return new LocalSubscription(subscription.getFilters(),
                 subscription.getDestination(),

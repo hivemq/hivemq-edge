@@ -134,7 +134,7 @@ public class Bridge {
 
     @JsonProperty("localSubscriptions")
     @Schema(description = "localSubscriptions associated with the bridge")
-    private final @NotNull List<BridgeSubscription> localSubscriptions;
+    private final @NotNull List<LocalBridgeSubscription> localSubscriptions;
 
     @JsonProperty("tlsConfiguration")
     @Schema(description = "tlsConfiguration associated with the bridge", nullable = true)
@@ -159,7 +159,7 @@ public class Bridge {
             @NotNull @JsonProperty("loopPreventionEnabled") final boolean loopPreventionEnabled,
             @NotNull @JsonProperty("loopPreventionHopCount") final int loopPreventionHopCount,
             @NotNull @JsonProperty("remoteSubscriptions") final List<BridgeSubscription> remoteSubscriptions,
-            @NotNull @JsonProperty("localSubscriptions") final List<BridgeSubscription> localSubscriptions,
+            @NotNull @JsonProperty("localSubscriptions") final List<LocalBridgeSubscription> localSubscriptions,
             @Nullable @JsonProperty("tlsConfiguration") final TlsConfiguration tlsConfiguration,
             @Nullable @JsonProperty("status") final Status status) {
         this.id = id;
@@ -231,7 +231,7 @@ public class Bridge {
         return remoteSubscriptions;
     }
 
-    public List<BridgeSubscription> getLocalSubscriptions() {
+    public List<LocalBridgeSubscription> getLocalSubscriptions() {
         return localSubscriptions;
     }
 
@@ -247,17 +247,6 @@ public class Bridge {
                 required = true,
                 example = "some/topic/value")
         private final @NotNull List<String> filters;
-
-        @JsonProperty("destination")
-        @Schema(name = "destination",
-                description = "The destination topic for this filter set.",
-                required = true,
-                example = "some/topic/value")
-        private final @NotNull String destination;
-
-        @JsonProperty("excludes")
-        @Schema(description = "The exclusion patterns", nullable = true)
-        private final @Nullable List<String> excludes;
 
         @JsonProperty("customUserProperties")
         @Schema(description = "The customUserProperties for this subscription")
@@ -278,33 +267,36 @@ public class Bridge {
                 maximum = "2")
         private final int maxQoS;
 
+        @JsonProperty("destination")
+        @Schema(name = "destination",
+                description = "The destination topic for this filter set.",
+                required = true,
+                example = "some/topic/value")
+        private final @NotNull String destination;
+
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public BridgeSubscription(
                 @NotNull @JsonProperty("filters") final List<String> filters,
                 @NotNull @JsonProperty("destination") final String destination,
-                @Nullable @JsonProperty("excludes") final List<String> excludes,
                 @NotNull @JsonProperty("customUserProperties") final List<BridgeCustomUserProperty> customUserProperties,
                 @JsonProperty("preserveRetain") final boolean preserveRetain,
                 @JsonProperty("maxQoS") final int maxQoS) {
             this.filters = filters;
             this.destination = destination;
-            this.excludes = excludes;
             this.customUserProperties = customUserProperties;
             this.preserveRetain = preserveRetain;
             this.maxQoS = maxQoS;
+        }
+
+        public String getDestination() {
+            return destination;
         }
 
         public @NotNull List<String> getFilters() {
             return filters;
         }
 
-        public @NotNull String getDestination() {
-            return destination;
-        }
 
-        public @Nullable List<String> getExcludes() {
-            return excludes;
-        }
 
         public @NotNull List<BridgeCustomUserProperty> getCustomUserProperties() {
             return customUserProperties;
@@ -316,6 +308,28 @@ public class Bridge {
 
         public int getMaxQoS() {
             return maxQoS;
+        }
+    }
+
+    public static class LocalBridgeSubscription extends BridgeSubscription {
+
+        @JsonProperty("excludes")
+        @Schema(description = "The exclusion patterns", nullable = true)
+        private final @Nullable List<String> excludes;
+
+        public LocalBridgeSubscription(
+                @NotNull @JsonProperty("filters") final List<String> filters,
+                @NotNull @JsonProperty("destination") final String destination,
+                @Nullable @JsonProperty("excludes") final List<String> excludes,
+                @NotNull @JsonProperty("customUserProperties") final List<BridgeCustomUserProperty> customUserProperties,
+                @JsonProperty("preserveRetain") final boolean preserveRetain,
+                @JsonProperty("maxQoS") final int maxQoS) {
+            super(filters, destination, customUserProperties, preserveRetain, maxQoS);
+            this.excludes = excludes;
+        }
+
+        public @Nullable List<String> getExcludes() {
+            return excludes;
         }
     }
 
@@ -360,21 +374,21 @@ public class Bridge {
                 mqttBridge.getLoopPreventionHopCount() < 1 ? 0 : mqttBridge.getLoopPreventionHopCount(),
                 mqttBridge.getRemoteSubscriptions()
                         .stream()
-                        .map(m -> convertSubscription(m))
+                        .map(m -> convertRemoteSubscription(m))
                         .collect(Collectors.toList()),
                 mqttBridge.getLocalSubscriptions()
                         .stream()
-                        .map(m -> convertSubscription(m))
+                        .map(m -> convertLocalSubscription(m))
                         .collect(Collectors.toList()),
                 convertTls(mqttBridge.getBridgeTls()), status);
         return bridge;
     }
 
-    public static BridgeSubscription convertSubscription(LocalSubscription localSubscription) {
+    public static LocalBridgeSubscription convertLocalSubscription(LocalSubscription localSubscription) {
         if (localSubscription == null) {
             return null;
         }
-        BridgeSubscription subscription = new BridgeSubscription(localSubscription.getFilters(),
+        LocalBridgeSubscription subscription = new LocalBridgeSubscription(localSubscription.getFilters(),
                 localSubscription.getDestination(),
                 localSubscription.getExcludes(),
                 localSubscription.getCustomUserProperties()
@@ -386,13 +400,12 @@ public class Bridge {
         return subscription;
     }
 
-    public static BridgeSubscription convertSubscription(RemoteSubscription remoteSubscription) {
+    public static BridgeSubscription convertRemoteSubscription(RemoteSubscription remoteSubscription) {
         if (remoteSubscription == null) {
             return null;
         }
         BridgeSubscription subscription = new BridgeSubscription(remoteSubscription.getFilters(),
                 remoteSubscription.getDestination(),
-                null,
                 remoteSubscription.getCustomUserProperties()
                         .stream()
                         .map(f -> convertProperty(f))
