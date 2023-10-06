@@ -14,7 +14,7 @@ import useGetNavItems from '../hooks/useGetNavItems.tsx'
 
 const SidePanel: FC = () => {
   const { data: configuration } = useGetConfiguration()
-  const items = useGetNavItems()
+  const { data: items } = useGetNavItems()
   const auth = useAuth()
   const navigate = useNavigate()
   const { t } = useTranslation()
