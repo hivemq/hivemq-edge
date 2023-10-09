@@ -11,8 +11,10 @@ import {
   chakraComponents,
 } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
+
 import TopicIcon from '@/components/Icons/TopicIcon.tsx'
 import Topic from '@/components/MQTT/Topic.tsx'
+import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.tsx'
 
 interface TopicOption extends OptionBase {
   label: string
@@ -111,16 +113,22 @@ export const SingleTopicCreatableSelect = ({ value, onChange, ...props }: Single
   />
 )
 
-interface MultiTopicsCreatableSelectProps extends Omit<TopicCreatableSelectProps<true>, 'value' | 'onChange'> {
+interface MultiTopicsCreatableSelectProps
+  extends Omit<TopicCreatableSelectProps<true>, 'value' | 'onChange' | 'options'> {
   value: string[]
   onChange: (value: string[] | undefined) => void
 }
 
-export const MultiTopicsCreatableSelect = ({ value, onChange, ...props }: MultiTopicsCreatableSelectProps) => (
-  <AbstractTopicCreatableSelect<true>
-    {...props}
-    isMulti={true}
-    value={value.map<TopicOption>((e) => ({ label: e, value: e, iconColor: 'brand.200' }))}
-    onChange={(m) => onChange(m.map<string>((e) => e.value))}
-  />
-)
+export const MultiTopicsCreatableSelect = ({ value, onChange, ...props }: MultiTopicsCreatableSelectProps) => {
+  const { data, isSuccess } = useGetEdgeTopics({ publishOnly: false })
+  return (
+    <AbstractTopicCreatableSelect<true>
+      {...props}
+      options={data}
+      isLoading={!isSuccess}
+      isMulti={true}
+      value={value.map<TopicOption>((e) => ({ label: e, value: e, iconColor: 'brand.200' }))}
+      onChange={(m) => onChange(m.map<string>((e) => e.value))}
+    />
+  )
+}
