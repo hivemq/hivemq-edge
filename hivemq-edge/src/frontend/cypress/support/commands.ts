@@ -28,6 +28,7 @@
 import { getByTestId } from './commands/getByTestId.ts'
 import { getByAriaLabel } from './commands/getByAriaLabel.ts'
 import { checkAccessibility } from './commands/checkAccessibility.ts'
+import { clearInterceptList } from './commands/clearInterceptList.ts'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -36,6 +37,7 @@ declare global {
       checkAccessibility: typeof checkAccessibility
       getByTestId: typeof getByTestId
       getByAriaLabel: typeof getByAriaLabel
+      clearInterceptList: typeof clearInterceptList
     }
   }
 }
@@ -43,3 +45,4 @@ declare global {
 Cypress.Commands.add('getByTestId', getByTestId)
 Cypress.Commands.add('getByAriaLabel', getByAriaLabel)
 Cypress.Commands.add('checkAccessibility', checkAccessibility)
+Cypress.Commands.add('clearInterceptList', clearInterceptList)
