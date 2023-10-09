@@ -30,6 +30,8 @@ import { AddIcon, DeleteIcon } from '@chakra-ui/icons'
 
 import { $BridgeSubscription } from '@/api/__generated__'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
+import { MultiTopicsCreatableSelect } from '@/components/MQTT/TopicCreatableSelect.tsx'
+
 import CustomUserProperties from './CustomUserProperties.tsx'
 import { BridgeSubscriptionsProps } from '../../types.ts'
 
@@ -54,7 +56,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
             <Card shadow="xs" flexDirection={'column'} key={field.id}>
               <HStack>
                 <CardBody>
-                  <Flex gap={4}>
+                  <Flex gap={4} flexDirection={'column'}>
                     <FormControl
                       data-testid={`${type}.${index}.filters`}
                       isInvalid={!!errors[type]?.[index]?.filters}
@@ -67,18 +69,13 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                         name={`${type}.${index}.filters`}
                         render={({ field }) => {
                           const { value, onChange, ...rest } = field
-                          const formatValue = value.map((e) => ({ value: e, label: e }))
                           return (
-                            <CreatableSelect
+                            <MultiTopicsCreatableSelect
                               {...rest}
-                              value={formatValue}
-                              onChange={(values) => onChange(values.map((item) => item.value))}
+                              value={value}
+                              onChange={(values) => onChange(values?.map((item) => item))}
                               inputId={`${type}.${index}.filters`}
-                              isClearable={true}
-                              isMulti={true}
-                              components={{
-                                DropdownIndicator: null,
-                              }}
+                              id={`${type}.${index}.container`}
                             />
                           )
                         }}
