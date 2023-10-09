@@ -24,11 +24,10 @@ import './commands'
 import { mount, MountOptions, MountReturn } from 'cypress/react18'
 import { MemoryRouterProps, MemoryRouter } from 'react-router-dom'
 import { ChakraProvider, VisuallyHidden } from '@chakra-ui/react'
-import { QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 import { themeHiveMQ } from '@/modules/Theme/themeHiveMQ.ts'
-import queryClient from '@/api/queryClient.ts'
 import '@/config/i18n.config.ts'
 
 // Augment the Cypress namespace to include type definitions for
@@ -53,7 +52,7 @@ Cypress.Commands.add('mountWithProviders', (component, options = {}) => {
   const { routerProps = { initialEntries: ['/'] }, ...mountOptions } = options
 
   const wrapped = (
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={new QueryClient()}>
       <ChakraProvider theme={themeHiveMQ}>
         <AuthProvider>
           <MemoryRouter {...routerProps}>
