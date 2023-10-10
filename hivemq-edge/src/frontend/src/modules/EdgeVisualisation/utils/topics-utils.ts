@@ -77,7 +77,8 @@ const getTopicsFromPath = (path: string, instance: RJSFSchema): string[] => {
 }
 
 export const discoverAdapterTopics = (protocol: ProtocolAdapter, instance: GenericObjectType): string[] => {
-  const paths = getTopicPaths(protocol.configSchema as RJSFSchema)
+  // TODO[138] review nullable for protocol
+  const paths = getTopicPaths(protocol?.configSchema || {})
   const topics: string[] = []
 
   paths.forEach((path) => {

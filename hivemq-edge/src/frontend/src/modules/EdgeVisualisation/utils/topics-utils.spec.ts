@@ -120,8 +120,6 @@ describe('discoverAdapterTopics', () => {
 
       expect(paths).toEqual(expectedPath)
 
-      if (!formData) return
-
       expect(discoverAdapterTopics(protocol, formData?.config)).toEqual(expectedTopics)
     }
   )
