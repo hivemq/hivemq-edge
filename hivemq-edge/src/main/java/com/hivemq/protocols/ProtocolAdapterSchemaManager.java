@@ -19,7 +19,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailure;
+import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
@@ -27,29 +28,32 @@ import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
+ * Encapsulate the management of the schema, anbd ensure we external managed API instances to decouple from
+ * schema parser
+ *
  * @author Simon L Johnson
  */
 public class ProtocolAdapterSchemaManager {
-
-    private final @NotNull ProtocolAdapterInformation adapterInformation;
+    private final @NotNull Class<? extends CustomConfig> configBean;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull CustomConfigSchemaGenerator customConfigSchemaGenerator;
     private JsonNode schemaNode;
     private JsonSchema schema;
 
     public ProtocolAdapterSchemaManager(@NotNull final ObjectMapper objectMapper,
-                                        @NotNull final ProtocolAdapterInformation adapterInformation) {
-        this.adapterInformation = adapterInformation;
+                                        @NotNull final Class<? extends CustomConfig> configBean) {
         this.objectMapper = objectMapper;
+        this.configBean = configBean;
         this.customConfigSchemaGenerator = new CustomConfigSchemaGenerator();
     }
 
     public synchronized JsonNode generateSchemaNode(){
         if(schemaNode == null){
-            schemaNode = customConfigSchemaGenerator.generateJsonSchema(adapterInformation.getConfigClass());
+            schemaNode = customConfigSchemaGenerator.generateJsonSchema(configBean);
         }
         return schemaNode;
     }
@@ -63,14 +67,16 @@ public class ProtocolAdapterSchemaManager {
         return schema;
     }
 
-    public Set<ValidationMessage> validateJsonDocument(@NotNull final byte[] jsonDocument) throws IOException {
+    public List<ProtocolAdapterValidationFailure> validateJsonDocument(@NotNull final byte[] jsonDocument) throws IOException {
         JsonSchema schema = generateSchema();
         Preconditions.checkNotNull(jsonDocument);
         JsonNode node = objectMapper.readTree(jsonDocument);
-        return schema.validate(node);
+        return schema.validate(node).stream().
+                map(v -> convertMessage(v)).
+                collect(Collectors.toList());
     }
 
-    public Set<ValidationMessage> validateObject(@NotNull final Object o) {
+    public List<ProtocolAdapterValidationFailure> validateObject(@NotNull final Object o) {
         Preconditions.checkNotNull(o);
         JsonNode node;
         if(o instanceof JsonNode){
@@ -79,27 +85,16 @@ public class ProtocolAdapterSchemaManager {
         else {
             node = objectMapper.valueToTree(o);
         }
-        return generateSchema().validate(node);
+        return generateSchema().validate(node).stream().
+                map(v -> convertMessage(v)).
+                collect(Collectors.toList());
     }
 
-//    public static void main(String[] args) throws IOException {
-//        ProtocolAdapterSchemaManager manager = new ProtocolAdapterSchemaManager(new ObjectMapper(),
-//                SimulationProtocolAdapterInformation.INSTANCE);
-//
-//
-//        Set<ValidationMessage> set = manager.validateJsonDocument(("{\n" +
-//                        "  \"id\": \"simulation1\",\n" +
-//                        "  \"host\": \"localhost\",\n" +
-//                        "  \"pollingIntervalMillis\": 300,\n" +
-//                        "  \"port\": 8080,\n" +
-//                        "  \"subscriptions\": [\n" +
-//                        "    {\n" +
-//                        "      \"destination\": \"topic\",\n" +
-//                        "      \"qos\": 1,\n" +
-//                        "      \"filter\": \"path\"\n" +
-//                        "    }\n" +
-//                        "  ]\n" +
-//                        "}").getBytes());
-//        set.stream().forEach(e -> System.err.println(e.getMessage()));
-//    }
+    public static ProtocolAdapterValidationFailure convertMessage(ValidationMessage validationMessage){
+        ProtocolAdapterValidationFailure failure =
+                new ProtocolAdapterValidationFailure(validationMessage.getMessage(),
+                        validationMessage.getPath(),
+                        validationMessage.getClass());
+        return failure;
+    }
 }

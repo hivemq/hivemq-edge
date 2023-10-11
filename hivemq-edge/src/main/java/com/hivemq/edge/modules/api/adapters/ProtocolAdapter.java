@@ -15,10 +15,10 @@
  */
 package com.hivemq.edge.modules.api.adapters;
 
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryOutput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 

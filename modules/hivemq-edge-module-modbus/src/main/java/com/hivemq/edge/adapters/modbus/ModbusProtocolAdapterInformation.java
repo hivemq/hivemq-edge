@@ -60,9 +60,4 @@ public class ModbusProtocolAdapterInformation
     public List<ProtocolAdapterConstants.TAG> getTags() {
         return List.of(ProtocolAdapterConstants.TAG.TCP);
     }
-
-    @Override
-    public @NotNull Class<? extends CustomConfig> getConfigClass() {
-        return ModbusAdapterConfig.class;
-    }
 }

@@ -36,11 +36,11 @@ import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterDiscoveryInput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailure;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
@@ -85,7 +85,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 values().
                 stream().
                 map(installedAdapter -> ProtocolAdapterApiUtils.convertInstalledAdapterType(
-                        protocolAdapterManager, installedAdapter, configurationService)).
+                        objectMapper, protocolAdapterManager, installedAdapter, configurationService)).
                 collect(Collectors.toSet());
 
         //-- Obtain the remote modules and perform a selective union on the two sets
@@ -321,11 +321,13 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return;
         }
 
-        Set<ValidationMessage> errors =
-                protocolAdapterManager.getSchemaManager(information).validateObject(adapter.getConfig());
+        List<ProtocolAdapterValidationFailure> errors =
+                protocolAdapterManager.getProtocolAdapterFactory(
+                        information.getProtocolId()).getValidator().validateConfiguration(objectMapper, adapter.getConfig());
+
         errors.stream()
                 .forEach(e -> ApiErrorUtils.addValidationError(apiErrorMessages,
-                        e.getPath(), e.getMessage()));
+                        e.getFieldName(), e.getMessage()));
     }
 
     @Override

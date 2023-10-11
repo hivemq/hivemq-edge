@@ -25,12 +25,11 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.model.HiveMQEdgeEvent;
 import com.hivemq.edge.modules.ModuleLoader;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterInput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
@@ -58,7 +57,7 @@ import java.util.stream.Collectors;
 public class ProtocolAdapterManager {
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
 
-    private final @NotNull Map<String, ProtocolAdapterFactory<?>> configToAdapterMap = new ConcurrentHashMap<>();
+    private final @NotNull Map<String, ProtocolAdapterFactory<?>> factoryMap = new ConcurrentHashMap<>();
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters = new ConcurrentHashMap<>();
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull MetricRegistry metricRegistry;
@@ -91,8 +90,8 @@ public class ProtocolAdapterManager {
         findAllAdapters();
 
         log.info("Discovered {} protocol adapter-type: [{}]",
-                configToAdapterMap.size(),
-                configToAdapterMap.values()
+                factoryMap.size(),
+                factoryMap.values()
                         .stream()
                         .map(protocolAdapterFactory -> "'" +
                                 protocolAdapterFactory.getInformation().getProtocolName() +
@@ -152,7 +151,7 @@ public class ProtocolAdapterManager {
                         facroryClass.getDeclaredConstructor().newInstance();
                 log.debug("Discovered Protocol Adapter Implementation {}", facroryClass.getName());
                 final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
-                configToAdapterMap.put(information.getProtocolId(), protocolAdapterFactory);
+                factoryMap.put(information.getProtocolId(), protocolAdapterFactory);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {
                 log.error("Not able to load module, reason: {}", e.getMessage());
@@ -162,7 +161,7 @@ public class ProtocolAdapterManager {
 
     public ProtocolAdapterFactory getProtocolAdapterFactory(final @NotNull String protocolAdapterType) {
         Preconditions.checkNotNull(protocolAdapterType);
-        final ProtocolAdapterFactory<?> protocolAdapterFactory = configToAdapterMap.get(protocolAdapterType);
+        final ProtocolAdapterFactory<?> protocolAdapterFactory = factoryMap.get(protocolAdapterType);
         return protocolAdapterFactory;
     }
 
@@ -320,7 +319,7 @@ public class ProtocolAdapterManager {
     }
 
     public @NotNull Map<String, ProtocolAdapterInformation> getAllAvailableAdapterTypes() {
-        return configToAdapterMap.values()
+        return factoryMap.values()
                 .stream()
                 .map(ProtocolAdapterFactory::getInformation)
                 .collect(Collectors.toMap(ProtocolAdapterInformation::getProtocolId, o -> o));
@@ -328,12 +327,6 @@ public class ProtocolAdapterManager {
 
     public @NotNull Map<String, ProtocolAdapterWrapper> getProtocolAdapters() {
         return protocolAdapters;
-    }
-
-    public ProtocolAdapterSchemaManager getSchemaManager(
-            final @NotNull ProtocolAdapterInformation protocolAdapterInformation) {
-        Preconditions.checkNotNull(protocolAdapterInformation);
-        return new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterInformation);
     }
 
     protected ProtocolAdapterWrapper createAdapterInstance(final String adapterType, final @NotNull Map<String, Object> config){

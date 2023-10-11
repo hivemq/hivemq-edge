@@ -76,7 +76,7 @@ public class Adapter {
         return protocolAdapterType;
     }
 
-    public @NotNull Map<String, Object>  getConfig() {
+    public @NotNull Map<String, Object> getConfig() {
         return config;
     }
 }

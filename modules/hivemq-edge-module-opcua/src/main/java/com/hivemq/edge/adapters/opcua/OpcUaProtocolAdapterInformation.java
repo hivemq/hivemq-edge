@@ -57,9 +57,4 @@ public class OpcUaProtocolAdapterInformation
     public @NotNull String getLogoUrl() {
         return "/images/opc-ua-icon.jpg";
     }
-
-    @Override
-    public @NotNull Class<? extends CustomConfig> getConfigClass() {
-        return OpcUaAdapterConfig.class;
-    }
 }
