@@ -22,6 +22,9 @@ export const MOCK_THEME: Partial<WithCSSVar<Dict>> = {
       error: {
         500: '#E53E3E',
       },
+      stateless: {
+        500: '#38A169',
+      },
     },
   },
 }

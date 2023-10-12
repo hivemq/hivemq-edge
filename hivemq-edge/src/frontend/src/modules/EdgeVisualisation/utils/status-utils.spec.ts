@@ -1,13 +1,17 @@
 import { expect } from 'vitest'
 import { Node, NodeProps } from 'reactflow'
-
-import { Adapter, Bridge, Status } from '@/api/__generated__'
+import * as CSS from 'csstype'
+import { ResponsiveValue, ThemeTypings } from '@chakra-ui/react'
 
 import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_LISTENER } from '@/__test-utils__/react-flow/nodes.ts'
-import { updateNodeStatus } from '@/modules/EdgeVisualisation/utils/status-utils.ts'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
-import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
+import { MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
+
+import { Adapter, Bridge, Status } from '@/api/__generated__'
+import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
+
+import { getThemeForStatus, updateNodeStatus } from '@/modules/EdgeVisualisation/utils/status-utils.ts'
+import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 const disconnectedBridge: NodeProps<Bridge> = {
   ...MOCK_NODE_BRIDGE,
@@ -95,5 +99,29 @@ describe('updateNodeStatus', () => {
     const updatedNodes = updateNodeStatus(nodes, status)
     expect(updatedNodes.length).toBe(nodes.length)
     expect(updatedNodes).toStrictEqual(expected)
+  })
+})
+
+type Token<CSSType, ThemeKey = unknown> = ThemeKey extends keyof ThemeTypings
+  ? ResponsiveValue<CSSType | ThemeTypings[ThemeKey]>
+  : ResponsiveValue<CSSType>
+
+interface StatusSuite {
+  status?: Status
+  expected: Token<CSS.Property.Color, 'colors'>
+}
+
+describe('getThemeForStatus', () => {
+  it.each<StatusSuite>([
+    { status: undefined, expected: '#E53E3E' },
+    { status: { runtime: Status.runtime.STOPPED }, expected: '#E53E3E' },
+    { status: { connection: Status.connection.CONNECTED }, expected: '#38A169' },
+    { status: { connection: Status.connection.DISCONNECTED }, expected: '#718096' },
+    { status: { connection: Status.connection.ERROR }, expected: '#E53E3E' },
+    { status: { connection: Status.connection.UNKNOWN }, expected: '#E53E3E' },
+    { status: { connection: Status.connection.STATELESS }, expected: '#38A169' },
+  ])('should return $expected for $status', ({ status, expected }) => {
+    const color = getThemeForStatus(MOCK_THEME, status)
+    expect(color).toBe(expected)
   })
 })
