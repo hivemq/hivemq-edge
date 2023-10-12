@@ -7,6 +7,7 @@ import { Adapter, Bridge, Status, Listener, ProtocolAdapter } from '@/api/__gene
 
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
+import { getThemeForStatus } from '@/modules/EdgeVisualisation/utils/status-utils.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
 
@@ -58,12 +59,12 @@ export const createBridgeNode = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      color: getThemeForStatus(theme, bridge.status),
     },
     animated: isConnected && !!remote.length,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
-      stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      stroke: getThemeForStatus(theme, bridge.status),
     },
   }
 
@@ -89,12 +90,12 @@ export const createBridgeNode = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      color: getThemeForStatus(theme, bridge.status),
     },
     animated: isConnected && !!local.length,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
-      stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      stroke: getThemeForStatus(theme, bridge.status),
     },
   }
 
@@ -172,12 +173,12 @@ export const createAdapterNode = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      color: getThemeForStatus(theme, adapter.status),
     },
     animated: isConnected && !!topics.length,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
-      stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      stroke: getThemeForStatus(theme, adapter.status),
     },
   }
 
