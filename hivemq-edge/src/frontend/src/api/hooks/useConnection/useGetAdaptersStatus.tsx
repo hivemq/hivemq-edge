@@ -9,7 +9,7 @@ export const useGetAdaptersStatus = () => {
   return useQuery(
     [QUERY_KEYS.ADAPTERS, QUERY_KEYS.CONNECTION_STATUS],
     async () => {
-      const item = await appClient.protocolAdapters.status1()
+      const item = await appClient.protocolAdapters.getAdaptersStatus()
       return item
     },
     {

@@ -443,7 +443,7 @@ paths:
   /api/v1/management/bridges/status:
     get:
       description: Obtain the details.
-      operationId: status
+      operationId: get-bridges-status
       responses:
         "200":
           content:
@@ -567,7 +567,7 @@ paths:
   /api/v1/management/bridges/{bridgeId}/connection-status:
     get:
       description: Get the up to date status of a bridge.
-      operationId: getStatus
+      operationId: get-bridge-status
       parameters:
       - description: The name of the bridge to query.
         in: path
@@ -596,7 +596,7 @@ paths:
   /api/v1/management/bridges/{bridgeId}/status:
     put:
       description: Transition the connection status of a bridge.
-      operationId: changeStatus
+      operationId: transition-bridge-status
       parameters:
       - description: The id of the bridge whose runtime-status will change.
         in: path
@@ -805,8 +805,8 @@ paths:
       - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterId}/status:
     get:
-      description: Get the up to date status of a bridge.
-      operationId: getStatus_1
+      description: Get the up to date status an adapter.
+      operationId: get-adapter-status
       parameters:
       - description: The name of the adapter to query.
         in: path
@@ -829,12 +829,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Status'
           description: Success
-      summary: Get the up to date status of a bridge
+      summary: Get the up to date status of an adapter
       tags:
       - Protocol Adapters
     put:
       description: Transition the runtime status of an adapter.
-      operationId: changeStatus_1
+      operationId: transition-adapter-status
       parameters:
       - description: The id of the adapter whose runtime status will change.
         in: path
@@ -893,7 +893,7 @@ paths:
   /api/v1/management/protocol-adapters/status:
     get:
       description: Obtain the details.
-      operationId: status_1
+      operationId: get-adapters-status
       responses:
         "200":
           content:
@@ -1186,7 +1186,7 @@ components:
           type: array
           description: localSubscriptions associated with the bridge
           items:
-            $ref: '#/components/schemas/BridgeSubscription'
+            $ref: '#/components/schemas/LocalBridgeSubscription'
         loopPreventionEnabled:
           type: boolean
           format: boolean
@@ -1265,7 +1265,7 @@ components:
             $ref: '#/components/schemas/Bridge'
     BridgeSubscription:
       type: object
-      description: localSubscriptions associated with the bridge
+      description: remoteSubscriptions associated with the bridge
       properties:
         customUserProperties:
           type: array
@@ -1276,14 +1276,6 @@ components:
           type: string
           description: The destination topic for this filter set.
           example: some/topic/value
-        excludes:
-          type: array
-          description: The exclusion patterns
-          items:
-            type: string
-            description: The exclusion patterns
-            nullable: true
-          nullable: true
         filters:
           type: array
           description: The filters for this subscription.
@@ -1548,6 +1540,53 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Listener'
+    LocalBridgeSubscription:
+      type: object
+      description: localSubscriptions associated with the bridge
+      properties:
+        customUserProperties:
+          type: array
+          description: The customUserProperties for this subscription
+          items:
+            $ref: '#/components/schemas/BridgeCustomUserProperty'
+        destination:
+          type: string
+          description: The destination topic for this filter set.
+          example: some/topic/value
+        excludes:
+          type: array
+          description: The exclusion patterns
+          items:
+            type: string
+            description: The exclusion patterns
+            nullable: true
+          nullable: true
+        filters:
+          type: array
+          description: The filters for this subscription.
+          example: some/topic/value
+          items:
+            type: string
+            description: The filters for this subscription.
+            example: some/topic/value
+        maxQoS:
+          type: integer
+          format: int32
+          default: 0
+          description: The maxQoS for this subscription.
+          enum:
+          - 0
+          - 1
+          - 2
+          maximum: 2
+          minimum: 0
+        preserveRetain:
+          type: boolean
+          description: The preserveRetain for this subscription
+      required:
+      - destination
+      - filters
+      - maxQoS
     Metric:
       type: object
       description: List of result items that are returned by this endpoint

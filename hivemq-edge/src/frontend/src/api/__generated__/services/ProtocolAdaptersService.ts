@@ -123,13 +123,13 @@ export class ProtocolAdaptersService {
     }
 
     /**
-     * Get the up to date status of a bridge
-     * Get the up to date status of a bridge.
+     * Get the up to date status of an adapter
+     * Get the up to date status an adapter.
      * @param adapterId The name of the adapter to query.
      * @returns Status Success
      * @throws ApiError
      */
-    public getStatus1(
+    public getAdapterStatus(
         adapterId: string,
     ): CancelablePromise<Status> {
         return this.httpRequest.request({
@@ -149,7 +149,7 @@ export class ProtocolAdaptersService {
      * @returns StatusTransitionResult Success
      * @throws ApiError
      */
-    public changeStatus1(
+    public transitionAdapterStatus(
         adapterId: string,
         requestBody: StatusTransitionCommand,
     ): CancelablePromise<StatusTransitionResult> {
@@ -193,7 +193,7 @@ export class ProtocolAdaptersService {
      * @returns StatusList The Connection Details Verification Result.
      * @throws ApiError
      */
-    public status1(): CancelablePromise<StatusList> {
+    public getAdaptersStatus(): CancelablePromise<StatusList> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/management/protocol-adapters/status',

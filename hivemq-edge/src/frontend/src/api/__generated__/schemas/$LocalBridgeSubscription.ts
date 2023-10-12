@@ -2,8 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export const $BridgeSubscription = {
-    description: `remoteSubscriptions associated with the bridge`,
+export const $LocalBridgeSubscription = {
+    description: `localSubscriptions associated with the bridge`,
     properties: {
         customUserProperties: {
             type: 'array',
@@ -15,6 +15,15 @@ export const $BridgeSubscription = {
             type: 'string',
             description: `The destination topic for this filter set.`,
             isRequired: true,
+        },
+        excludes: {
+            type: 'array',
+            contains: {
+                type: 'string',
+                description: `The exclusion patterns`,
+                isNullable: true,
+            },
+            isNullable: true,
         },
         filters: {
             type: 'array',
