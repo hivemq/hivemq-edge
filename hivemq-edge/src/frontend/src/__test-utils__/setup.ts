@@ -4,7 +4,7 @@ import { server } from './msw/mockServer.ts'
 
 // Establish API mocking before all tests.
 beforeAll(() => {
-  server.listen()
+  server.listen({ onUnhandledRequest: 'error' })
 })
 
 // Reset any request handlers that we may add during the tests,

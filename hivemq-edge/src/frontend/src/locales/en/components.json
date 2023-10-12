@@ -1,4 +1,7 @@
 {
+  "topic": {
+    "iconLabel": "Topic"
+  },
   "pagination": {
     "goFirstPage": "Go to the first page",
     "goPreviousPage": "Go to the previous page",
@@ -7,5 +10,13 @@
     "pageOf": "Page {{ page }} of {{ max }}",
     "goPage": "Go to page",
     "perPage": "Items per page"
+  },
+  "topicCreate": {
+    "label": "Add a topic",
+    "placeholder": "Type or select ...",
+    "options": {
+      "noOptionsMessage": "No topic loaded",
+      "createLabel": "Add the topic ... {{topic}}"
+    }
   }
 }

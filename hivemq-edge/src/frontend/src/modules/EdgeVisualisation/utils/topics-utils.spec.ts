@@ -1,8 +1,8 @@
 import { expect } from 'vitest'
 import { GenericObjectType, RJSFSchema } from '@rjsf/utils'
 
+import { Adapter, ProtocolAdapter } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
-import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { TopicFilter } from '@/modules/EdgeVisualisation/types.ts'
 
 import { MOCK_PROTOCOL_MODBUS, MOCK_ADAPTER_MODBUS } from '@/__test-utils__/adapters/modbus.ts'
@@ -10,14 +10,7 @@ import { MOCK_PROTOCOL_SIMULATION, MOCK_ADAPTER_SIMULATION } from '@/__test-util
 import { MOCK_PROTOCOL_OPC_UA, MOCK_ADAPTER_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
 import { MOCK_PROTOCOL_HTTP, MOCK_ADAPTER_HTTP } from '@/__test-utils__/adapters/http.ts'
 
-import {
-  discoverAdapterTopics,
-  flattenObject,
-  getAdapterTopics,
-  getBridgeTopics,
-  getTopicPaths,
-} from './topics-utils.ts'
-import { ProtocolAdapter } from '@/api/__generated__'
+import { discoverAdapterTopics, flattenObject, getBridgeTopics, getTopicPaths, mergeAllTopics } from './topics-utils.ts'
 
 describe('getBridgeTopics', () => {
   it('should extract topics from a Bridge', async () => {
@@ -36,22 +29,6 @@ describe('getBridgeTopics', () => {
       local: [],
       remote: [],
     }
-
-    expect(actual).toStrictEqual(expected)
-  })
-})
-
-describe('getAdapterTopics', () => {
-  it('should extract topics from adapters', async () => {
-    const actual = getAdapterTopics(mockAdapter)
-    const expected: TopicFilter[] = [{ topic: 'root/topic/ref/1' }, { topic: 'root/topic/ref/2' }]
-
-    expect(actual).toStrictEqual(expected)
-  })
-
-  it('should handle empty subscriptions', async () => {
-    const actual = getAdapterTopics({ ...mockAdapter, config: { ...mockAdapter.config, subscriptions: [] } })
-    const expected: TopicFilter[] = []
 
     expect(actual).toStrictEqual(expected)
   })
@@ -143,9 +120,51 @@ describe('discoverAdapterTopics', () => {
 
       expect(paths).toEqual(expectedPath)
 
-      if (!formData) return
-
       expect(discoverAdapterTopics(protocol, formData?.config)).toEqual(expectedTopics)
     }
   )
+})
+
+describe('mergeAllTopics', () => {
+  it('should extract every topics from all bridges and adapters', async () => {
+    const actual = mergeAllTopics(
+      { items: [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS] },
+      [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
+      [mockBridge, mockBridge]
+    )
+
+    expect(actual).toStrictEqual([
+      '#',
+      'root/topic/act/1',
+      'a/valid/topic/opc-ua-client/1',
+      'a/valid/topic/opc-ua-client/2',
+      'a/valid/topic/modbus/1',
+    ])
+  })
+
+  it('should extract every topics from all bridges', async () => {
+    const actual = mergeAllTopics(undefined, undefined, [mockBridge, mockBridge])
+
+    expect(actual).toStrictEqual(['#', 'root/topic/act/1'])
+  })
+
+  it('should extract every topics from all  adapters', async () => {
+    const actual = mergeAllTopics(
+      { items: [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS] },
+      [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
+      undefined
+    )
+
+    expect(actual).toStrictEqual([
+      'a/valid/topic/opc-ua-client/1',
+      'a/valid/topic/opc-ua-client/2',
+      'a/valid/topic/modbus/1',
+    ])
+  })
+
+  it('should not extract any topic!', async () => {
+    const actual = mergeAllTopics(undefined, undefined, undefined)
+
+    expect(actual).toStrictEqual([])
+  })
 })

@@ -1,11 +1,12 @@
 import { Edge, MarkerType, Node, Position, XYPosition } from 'reactflow'
 import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
+import { GenericObjectType } from '@rjsf/utils'
 
-import { Adapter, Bridge, Status, Listener } from '@/api/__generated__'
+import { Adapter, Bridge, Status, Listener, ProtocolAdapter } from '@/api/__generated__'
 
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
-import { getAdapterTopics, getBridgeTopics } from '../utils/topics-utils.ts'
+import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
 
@@ -135,6 +136,7 @@ export const createListenerNode = (
 }
 
 export const createAdapterNode = (
+  type: ProtocolAdapter,
   adapter: Adapter,
   nbAdapter: number,
   maxAdapter: number,
@@ -143,7 +145,7 @@ export const createAdapterNode = (
 ) => {
   const idAdapter = `${IdStubs.ADAPTER_NODE}@${adapter.id}`
   const isConnected = adapter.status?.connection === Status.connection.CONNECTED
-  const topics = getAdapterTopics(adapter)
+  const topics = discoverAdapterTopics(type, adapter.config as GenericObjectType)
 
   const posX = nbAdapter % MAX_ADAPTERS
   const posY = Math.floor(nbAdapter / MAX_ADAPTERS) + 1

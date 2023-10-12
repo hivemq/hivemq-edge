@@ -46,6 +46,7 @@ const TopicAutoComplete: FC<TopicAutoCompleteProps> = ({
       <Input type={'hidden'} name={name} value={value.map((e) => e.label)} />
 
       <CreatableSelect
+        // @ts-ignore TODO[NVL] Bug with CRS, see https://github.com/csandman/chakra-react-select/issues/273
         isRequired={isRequired}
         ref={initialRef}
         name={`${name}-internal`}

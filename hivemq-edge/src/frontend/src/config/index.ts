@@ -14,6 +14,7 @@ interface configType {
   }
 
   features: {
+    TOPIC_EDITOR_SHOW_BRANCHES: boolean
     WORKSPACE_FLOW_PANEL: boolean
     PROTOCOL_ADAPTER_FACET: boolean
     METRICS_SELECT_PANEL: boolean
@@ -54,6 +55,7 @@ const config: configType = {
   },
 
   features: {
+    TOPIC_EDITOR_SHOW_BRANCHES: import.meta.env.VITE_FLAG_TOPIC_EDITOR_SHOW_BRANCHES === 'true',
     /**
      * Enable the workspace flow for the edge
      */

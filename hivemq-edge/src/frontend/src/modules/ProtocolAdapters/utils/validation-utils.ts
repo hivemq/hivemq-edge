@@ -3,6 +3,7 @@ import { Adapter } from '@/api/__generated__'
 import { TFunction } from 'i18next'
 
 import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
+import { customizeValidator } from '@rjsf/validator-ajv8'
 
 /**
  *
@@ -23,7 +24,6 @@ export const customValidate =
   (jsonSchema: RJSFSchema, existingAdapters: Adapter[] | undefined, t: TFunction) =>
   (formData: Record<string, unknown>, errors: FormValidation<AdapterConfig>, uiSchema?: UiSchema<AdapterConfig>) => {
     // Check for uniqueness of `id` ONLY if `format` = `identifier` and not `ui:disabled`
-
     if (
       !uiSchema?.id?.['ui:disabled'] &&
       (jsonSchema.properties?.['id'] as StrictRJSFSchema)?.format === 'identifier'
@@ -34,3 +34,9 @@ export const customValidate =
     }
     return errors
   }
+
+export const customFormatsValidator = customizeValidator({
+  customFormats: {
+    'mqtt-topic': /^[^+#$]*$/,
+  },
+})
