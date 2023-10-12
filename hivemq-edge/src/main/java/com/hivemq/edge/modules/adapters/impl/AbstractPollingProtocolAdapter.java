@@ -2,10 +2,9 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterPollingSampler;
-import com.hivemq.edge.modules.adapters.params.impl.ProtocolAdapterPollingSamplerImpl;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterPollingSampler;
+import com.hivemq.edge.modules.adapters.model.impl.ProtocolAdapterPollingSamplerImpl;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;

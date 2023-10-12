@@ -76,9 +76,4 @@ public class HttpProtocolAdapterInformation
                 ProtocolAdapterConstants.TAG.TCP,
                 ProtocolAdapterConstants.TAG.WEB);
     }
-
-    @Override
-    public @NotNull Class<? extends CustomConfig> getConfigClass() {
-        return HttpAdapterConfig.class;
-    }
 }

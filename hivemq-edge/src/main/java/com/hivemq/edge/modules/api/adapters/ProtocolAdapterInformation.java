@@ -53,10 +53,22 @@ public interface ProtocolAdapterInformation {
 
     @NotNull String getLogoUrl();
 
+    /**
+     * The entity (person or company) who is responsible for producing the adapter
+     * @return the name of the authoring entity
+     */
     @NotNull String getAuthor();
 
+    /**
+     * An adapter can be in a single category. This helps discovery purposes
+     * @return the category in which the adapter resides
+     */
     @Nullable ProtocolAdapterConstants.CATEGORY getCategory();
 
+    /**
+     * Tag represents the keywords that can be associated with this type of adapter
+     * @return a list of associated tags that can be used for search purposes
+     */
     @Nullable List<ProtocolAdapterConstants.TAG> getTags();
 
     /**
@@ -66,12 +78,5 @@ public interface ProtocolAdapterInformation {
      */
     default byte getCapabilities(){
         return ProtocolAdapterCapability.READ | ProtocolAdapterCapability.DISCOVER;
-    }
-
-    @NotNull Class<? extends CustomConfig> getConfigClass();
-
-    default @Nullable String getConfigJsonSchema() {
-        //null means the schema will be auto-generated
-        return null;
     }
 }

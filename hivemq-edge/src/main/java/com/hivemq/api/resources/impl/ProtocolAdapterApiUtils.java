@@ -1,5 +1,6 @@
 package com.hivemq.api.resources.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
@@ -31,7 +32,8 @@ public class ProtocolAdapterApiUtils {
      * This decoupling allows for flexibility when internal model changes would otherwise impact API support
      * @return The instance to be sent across the API
      */
-    public static ProtocolAdapter convertInstalledAdapterType(final @NotNull ProtocolAdapterManager adapterManager,
+    public static ProtocolAdapter convertInstalledAdapterType(final @NotNull ObjectMapper objectMapper,
+                                                              final @NotNull ProtocolAdapterManager adapterManager,
                                                               final @NotNull ProtocolAdapterInformation info,
                                                               final @NotNull ConfigurationService configurationService){
 
@@ -56,7 +58,8 @@ public class ProtocolAdapterApiUtils {
                 info == null ? null : convertApiCategory(info.getCategory()),
                 info.getTags() == null ? null : info.getTags().stream().
                         map(Enum::toString).collect(Collectors.toList()),
-                adapterManager.getSchemaManager(info).generateSchemaNode());
+                adapterManager.getProtocolAdapterFactory(info.getProtocolId()).
+                        getConfigSchemaManager(objectMapper).generateSchemaNode());
     }
 
     /**

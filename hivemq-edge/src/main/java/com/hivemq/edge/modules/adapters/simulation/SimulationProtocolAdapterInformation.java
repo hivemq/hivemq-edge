@@ -65,8 +65,4 @@ public class SimulationProtocolAdapterInformation
         return ProtocolAdapterCapability.READ;
     }
 
-    @Override
-    public @NotNull Class<? extends CustomConfig> getConfigClass() {
-        return SimulationAdapterConfig.class;
-    }
 }

@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.modules.adapters.params;
+package com.hivemq.edge.modules.adapters.model;
 
-import com.codahale.metrics.MetricRegistry;
-import com.hivemq.edge.modules.config.CustomConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-public interface ProtocolAdapterInput<E extends CustomConfig> {
-    @NotNull E getConfig();
-
-    @NotNull MetricRegistry getMetricRegistry();
+public enum NodeType {
+    FOLDER,
+    OBJECT,
+    VALUE
 }

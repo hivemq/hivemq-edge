@@ -32,11 +32,6 @@ public class TestAdapterInformation extends AbstractProtocolAdapterInformation {
         return "This is the test protocol information";
     }
 
-    @Override
-    public Class<? extends CustomConfig> getConfigClass() {
-        return TestConfig.class;
-    }
-
     class TestConfig extends AbstractProtocolAdapterConfig {
 
     }

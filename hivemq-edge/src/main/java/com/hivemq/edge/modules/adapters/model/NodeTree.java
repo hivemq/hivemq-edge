@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.modules.adapters.params;
+package com.hivemq.edge.modules.adapters.model;
 
-public enum NodeType {
-    FOLDER,
-    OBJECT,
-    VALUE
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+public interface NodeTree {
+
+    void addNode(@NotNull String id, @NotNull String name, @NotNull String description, @Nullable String parentId, @NotNull NodeType nodeType, boolean selectable);
+
 }
+
+

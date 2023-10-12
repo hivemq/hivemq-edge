@@ -16,8 +16,8 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.codahale.metrics.MetricRegistry;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartInput;
-import com.hivemq.edge.modules.adapters.params.ProtocolAdapterStartOutput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;

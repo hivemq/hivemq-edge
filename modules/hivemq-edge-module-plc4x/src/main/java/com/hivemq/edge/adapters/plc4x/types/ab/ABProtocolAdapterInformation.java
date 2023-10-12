@@ -76,9 +76,4 @@ public class ABProtocolAdapterInformation
     public byte getCapabilities() {
         return ProtocolAdapterCapability.READ;
     }
-
-    @Override
-    public @NotNull Class<? extends CustomConfig> getConfigClass() {
-        return ABAdapterConfig.class;
-    }
 }

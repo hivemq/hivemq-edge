@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.modules.adapters.params;
+package com.hivemq.edge.modules.adapters.model;
 
+import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
 
-public interface NodeTree {
+public interface ProtocolAdapterStartInput {
 
-    void addNode(@NotNull String id, @NotNull String name, @NotNull String description, @Nullable String parentId, @NotNull NodeType nodeType, boolean selectable);
+    @NotNull ModuleServices moduleServices();
 
 }
-
-

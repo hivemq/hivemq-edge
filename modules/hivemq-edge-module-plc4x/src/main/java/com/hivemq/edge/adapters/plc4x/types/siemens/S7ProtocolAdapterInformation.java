@@ -77,8 +77,4 @@ public class S7ProtocolAdapterInformation
         return ProtocolAdapterCapability.READ;
     }
 
-    @Override
-    public @NotNull Class<? extends CustomConfig> getConfigClass() {
-        return S7AdapterConfig.class;
-    }
 }
