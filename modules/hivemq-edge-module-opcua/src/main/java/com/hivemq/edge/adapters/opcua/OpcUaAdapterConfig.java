@@ -46,6 +46,13 @@ public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
     @JsonProperty("security")
     private @NotNull Security security = new Security(SecPolicy.DEFAULT);
 
+    @JsonProperty("updateEndpoint")
+    @ModuleConfigField(title = "Update Endpoint",
+                       description = "Updates endpoint with hostname and port from given URI.",
+                       format = ModuleConfigField.FieldType.BOOLEAN,
+                       required = false)
+    private @NotNull Boolean updateEndpoint = true;
+
     public OpcUaAdapterConfig() {
     }
 
@@ -94,6 +101,10 @@ public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
     public void setSecurity(final @NotNull Security security) {
         this.security = security;
     }
+
+    public @NotNull Boolean getUpdateEndpoint() { return updateEndpoint; }
+
+    public void setUpdateEndpoint(final @NotNull Boolean updateEndpoint) { this.updateEndpoint = updateEndpoint; }
 
     @Override
     public @NotNull String toString() {
