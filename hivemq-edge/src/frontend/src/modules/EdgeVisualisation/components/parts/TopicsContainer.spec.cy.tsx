@@ -1,8 +1,10 @@
 /// <reference types="cypress" />
 
+import { formatTopicString } from '@/components/MQTT/topic-utils.ts'
+
 import TopicsContainer from './TopicsContainer.tsx'
 
-describe('NodeListener', () => {
+describe('TopicsContainer', () => {
   beforeEach(() => {
     cy.viewport(400, 400)
   })
@@ -22,8 +24,8 @@ describe('NodeListener', () => {
     )
 
     cy.getByTestId('topic-wrapper').should('have.length', 2)
-    cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'my/first/topic')
-    cy.getByTestId('topic-wrapper').eq(1).should('contain.text', 'my/second/topic')
+    cy.getByTestId('topic-wrapper').eq(0).should('contain.text', formatTopicString('my/first/topic'))
+    cy.getByTestId('topic-wrapper').eq(1).should('contain.text', formatTopicString('my/second/topic'))
 
     cy.getByTestId('topics-show-more').should('not.exist')
   })
@@ -46,8 +48,8 @@ describe('NodeListener', () => {
     )
 
     cy.getByTestId('topic-wrapper').should('have.length', 2)
-    cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'my/first/topic')
-    cy.getByTestId('topic-wrapper').eq(1).should('contain.text', 'my/second/topic')
+    cy.getByTestId('topic-wrapper').eq(0).should('contain.text', formatTopicString('my/first/topic'))
+    cy.getByTestId('topic-wrapper').eq(1).should('contain.text', formatTopicString('my/second/topic'))
 
     cy.getByTestId('topics-show-more').should('be.visible').should('contain.text', '+1')
   })

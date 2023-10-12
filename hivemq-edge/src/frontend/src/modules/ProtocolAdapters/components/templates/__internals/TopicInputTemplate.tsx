@@ -2,7 +2,7 @@ import { FC } from 'react'
 import { BaseInputTemplateProps } from '@rjsf/utils'
 import { FormControl, FormLabel } from '@chakra-ui/react'
 
-import TopicCreatableSelect from '@/components/MQTT/TopicCreatableSelect.tsx'
+import { SingleTopicCreatableSelect } from '@/components/MQTT/TopicCreatableSelect.tsx'
 import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.tsx'
 
 import config from '@/config'
@@ -23,7 +23,7 @@ export const TopicInputTemplate: FC<BaseInputTemplateProps> = (props) => {
       isInvalid={rawErrors && rawErrors.length > 0}
     >
       <FormLabel htmlFor={id}>{label}</FormLabel>
-      <TopicCreatableSelect isLoading={isLoading} options={data} id={id} value={value} onChange={onChange} />
+      <SingleTopicCreatableSelect isLoading={isLoading} options={data} id={id} value={value} onChange={onChange} />
     </FormControl>
   )
 }
