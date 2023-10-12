@@ -14,7 +14,7 @@ export const useSetConnectionStatus = () => {
   const queryClient = useQueryClient()
 
   const setConnectionStatus = ({ name, requestBody }: SetConnectionStatusProps) => {
-    return appClient.bridges.changeStatus(name, requestBody)
+    return appClient.bridges.transitionBridgeStatus(name, requestBody)
   }
 
   return useMutation<StatusTransitionResult, ApiError, SetConnectionStatusProps>(setConnectionStatus, {

@@ -174,34 +174,38 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                         />
                       </FormControl>
 
-                      <FormControl>
-                        <FormLabel htmlFor={`${type}.${index}.excludes`}>{t('bridge.subscription.excludes')}</FormLabel>
-                        <Controller
-                          name={`${type}.${index}.excludes`}
-                          render={({ field }) => {
-                            const { value, onChange, ...rest } = field
-                            const formatValue = value?.map((e) => ({ value: e, label: e }))
-                            return (
-                              <CreatableSelect
-                                {...rest}
-                                value={formatValue}
-                                onChange={(values) => onChange(values.map((item) => item.value))}
-                                inputId={`${type}.${index}.excludes`}
-                                // options={[{ value: 'ddfd', label: 'fgg' }]}
-                                // menuIsOpen={false}
-                                isClearable={true}
-                                placeholder={'add topic'}
-                                isMulti={true}
-                                components={{
-                                  DropdownIndicator: null,
-                                }}
-                              />
-                            )
-                          }}
-                          control={form.control}
-                        />
-                        <FormErrorMessage>{errors[type]?.[index]?.filters?.message}</FormErrorMessage>
-                      </FormControl>
+                      {type === 'localSubscriptions' && (
+                        <FormControl>
+                          <FormLabel htmlFor={`${type}.${index}.excludes`}>
+                            {t('bridge.subscription.excludes')}
+                          </FormLabel>
+                          <Controller
+                            name={`${type}.${index}.excludes`}
+                            render={({ field }) => {
+                              const { value, onChange, ...rest } = field
+                              const formatValue = value?.map((e) => ({ value: e, label: e }))
+                              return (
+                                <CreatableSelect
+                                  {...rest}
+                                  value={formatValue}
+                                  onChange={(values) => onChange(values.map((item) => item.value))}
+                                  inputId={`${type}.${index}.excludes`}
+                                  // options={[{ value: 'ddfd', label: 'fgg' }]}
+                                  // menuIsOpen={false}
+                                  isClearable={true}
+                                  placeholder={'add topic'}
+                                  isMulti={true}
+                                  components={{
+                                    DropdownIndicator: null,
+                                  }}
+                                />
+                              )
+                            }}
+                            control={form.control}
+                          />
+                          <FormErrorMessage>{errors[type]?.[index]?.filters?.message}</FormErrorMessage>
+                        </FormControl>
+                      )}
 
                       <FormControl>
                         <FormLabel htmlFor={`${type}.${index}.preserveRetain`}>

@@ -6,9 +6,9 @@
 import type { BridgeCustomUserProperty } from './BridgeCustomUserProperty';
 
 /**
- * remoteSubscriptions associated with the bridge
+ * localSubscriptions associated with the bridge
  */
-export type BridgeSubscription = {
+export type LocalBridgeSubscription = {
     /**
      * The customUserProperties for this subscription
      */
@@ -18,20 +18,24 @@ export type BridgeSubscription = {
      */
     destination: string;
     /**
+     * The exclusion patterns
+     */
+    excludes?: Array<string | null> | null;
+    /**
      * The filters for this subscription.
      */
     filters: Array<string>;
     /**
      * The maxQoS for this subscription.
      */
-    maxQoS: BridgeSubscription.maxQoS;
+    maxQoS: LocalBridgeSubscription.maxQoS;
     /**
      * The preserveRetain for this subscription
      */
     preserveRetain?: boolean;
 };
 
-export namespace BridgeSubscription {
+export namespace LocalBridgeSubscription {
 
     /**
      * The maxQoS for this subscription.

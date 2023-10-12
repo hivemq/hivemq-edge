@@ -53,7 +53,7 @@ export class BridgesService {
      * @returns StatusList The Connection Details Verification Result.
      * @throws ApiError
      */
-    public status(): CancelablePromise<StatusList> {
+    public getBridgesStatus(): CancelablePromise<StatusList> {
         return this.httpRequest.request({
             method: 'GET',
             url: '/api/v1/management/bridges/status',
@@ -128,7 +128,7 @@ export class BridgesService {
      * @returns Status Success
      * @throws ApiError
      */
-    public getStatus(
+    public getBridgeStatus(
         bridgeId: string,
     ): CancelablePromise<Status> {
         return this.httpRequest.request({
@@ -148,7 +148,7 @@ export class BridgesService {
      * @returns StatusTransitionResult Success
      * @throws ApiError
      */
-    public changeStatus(
+    public transitionBridgeStatus(
         bridgeId: string,
         requestBody: StatusTransitionCommand,
     ): CancelablePromise<StatusTransitionResult> {

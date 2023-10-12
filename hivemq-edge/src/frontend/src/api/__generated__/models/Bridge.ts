@@ -4,6 +4,7 @@
 /* eslint-disable */
 
 import type { BridgeSubscription } from './BridgeSubscription';
+import type { LocalBridgeSubscription } from './LocalBridgeSubscription';
 import type { Status } from './Status';
 import type { TlsConfiguration } from './TlsConfiguration';
 
@@ -31,7 +32,7 @@ export type Bridge = {
     /**
      * localSubscriptions associated with the bridge
      */
-    localSubscriptions?: Array<BridgeSubscription>;
+    localSubscriptions?: Array<LocalBridgeSubscription>;
     /**
      * Is loop prevention enabled on the connection
      */

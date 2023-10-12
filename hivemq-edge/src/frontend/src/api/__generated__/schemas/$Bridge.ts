@@ -42,7 +42,7 @@ export const $Bridge = {
         localSubscriptions: {
             type: 'array',
             contains: {
-                type: 'BridgeSubscription',
+                type: 'LocalBridgeSubscription',
             },
         },
         loopPreventionEnabled: {
