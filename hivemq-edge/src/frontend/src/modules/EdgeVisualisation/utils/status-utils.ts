@@ -13,11 +13,12 @@ import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
  * @see ConnectionStatusBadge
  */
 export const getThemeForStatus = (theme: Partial<WithCSSVar<Dict>>, status: Status | undefined) => {
+  if (status?.runtime === Status.runtime.STOPPED) return theme.colors.status.error[500]
+
   if (status?.connection === Status.connection.CONNECTED) return theme.colors.status.connected[500]
   if (status?.connection === Status.connection.DISCONNECTED) return theme.colors.status.disconnected[500]
   if (status?.connection === Status.connection.STATELESS) return theme.colors.status.stateless[500]
 
-  // if (status?.runtime === Status.runtime.STOPPED) return theme.colors.status.error[500]
   // if (status?.connection === Status.connection.ERROR) return theme.colors.status.error[500]
   // if (status?.connection === Status.connection.UNKNOWN) return theme.colors.status.error[500]
   return theme.colors.status.error[500]

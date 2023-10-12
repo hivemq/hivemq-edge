@@ -35,7 +35,10 @@ export const createBridgeNode = (
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idBridge = `${IdStubs.BRIDGE_NODE}@${bridge.id}`
-  const isConnected = bridge.status?.connection === Status.connection.CONNECTED
+  const isConnected =
+    bridge.status?.connection === Status.connection.CONNECTED ||
+    (bridge.status?.runtime === Status.runtime.STARTED && bridge.status?.connection === Status.connection.STATELESS)
+
   const { local, remote } = getBridgeTopics(bridge)
 
   const nodeBridge: Node<Bridge, NodeTypes.BRIDGE_NODE> = {
@@ -145,7 +148,9 @@ export const createAdapterNode = (
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idAdapter = `${IdStubs.ADAPTER_NODE}@${adapter.id}`
-  const isConnected = adapter.status?.connection === Status.connection.CONNECTED
+  const isConnected =
+    adapter.status?.connection === Status.connection.CONNECTED ||
+    (adapter.status?.runtime === Status.runtime.STARTED && adapter.status?.connection === Status.connection.STATELESS)
   const topics = discoverAdapterTopics(type, adapter.config as GenericObjectType)
 
   const posX = nbAdapter % MAX_ADAPTERS
@@ -163,6 +168,7 @@ export const createAdapterNode = (
     },
   }
 
+  console.log('XXXXXXX idAdapter', adapter.status)
   const edgeConnector: Edge = {
     id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idAdapter}`,
     target: IdStubs.EDGE_NODE,
