@@ -34,6 +34,13 @@ public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
                        required = true)
     private @NotNull String uri;
 
+    @JsonProperty("updateEndpoint")
+    @ModuleConfigField(title = "Update Endpoint",
+                       description = "Updates endpoint with hostname and port from given URI.",
+                       format = ModuleConfigField.FieldType.BOOLEAN,
+                       required = false)
+    private @NotNull Boolean updateEndpoint = true;    
+
     @JsonProperty("subscriptions")
     private @NotNull List<Subscription> subscriptions = new ArrayList<>();
 
@@ -45,13 +52,6 @@ public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
 
     @JsonProperty("security")
     private @NotNull Security security = new Security(SecPolicy.DEFAULT);
-
-    @JsonProperty("updateEndpoint")
-    @ModuleConfigField(title = "Update Endpoint",
-                       description = "Updates endpoint with hostname and port from given URI.",
-                       format = ModuleConfigField.FieldType.BOOLEAN,
-                       required = false)
-    private @NotNull Boolean updateEndpoint = true;
 
     public OpcUaAdapterConfig() {
     }
