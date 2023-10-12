@@ -7,6 +7,7 @@ import { Adapter, Bridge, Status, Listener, ProtocolAdapter } from '@/api/__gene
 
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
+import { getThemeForStatus } from '@/modules/EdgeVisualisation/utils/status-utils.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
 
@@ -34,7 +35,10 @@ export const createBridgeNode = (
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idBridge = `${IdStubs.BRIDGE_NODE}@${bridge.id}`
-  const isConnected = bridge.status?.connection === Status.connection.CONNECTED
+  const isConnected =
+    bridge.status?.connection === Status.connection.CONNECTED ||
+    (bridge.status?.runtime === Status.runtime.STARTED && bridge.status?.connection === Status.connection.STATELESS)
+
   const { local, remote } = getBridgeTopics(bridge)
 
   const nodeBridge: Node<Bridge, NodeTypes.BRIDGE_NODE> = {
@@ -58,12 +62,12 @@ export const createBridgeNode = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      color: getThemeForStatus(theme, bridge.status),
     },
     animated: isConnected && !!remote.length,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
-      stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      stroke: getThemeForStatus(theme, bridge.status),
     },
   }
 
@@ -89,12 +93,12 @@ export const createBridgeNode = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      color: getThemeForStatus(theme, bridge.status),
     },
     animated: isConnected && !!local.length,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
-      stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      stroke: getThemeForStatus(theme, bridge.status),
     },
   }
 
@@ -144,7 +148,9 @@ export const createAdapterNode = (
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idAdapter = `${IdStubs.ADAPTER_NODE}@${adapter.id}`
-  const isConnected = adapter.status?.connection === Status.connection.CONNECTED
+  const isConnected =
+    adapter.status?.connection === Status.connection.CONNECTED ||
+    (adapter.status?.runtime === Status.runtime.STARTED && adapter.status?.connection === Status.connection.STATELESS)
   const topics = discoverAdapterTopics(type, adapter.config as GenericObjectType)
 
   const posX = nbAdapter % MAX_ADAPTERS
@@ -162,6 +168,7 @@ export const createAdapterNode = (
     },
   }
 
+  console.log('XXXXXXX idAdapter', adapter.status)
   const edgeConnector: Edge = {
     id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idAdapter}`,
     target: IdStubs.EDGE_NODE,
@@ -172,12 +179,12 @@ export const createAdapterNode = (
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      color: getThemeForStatus(theme, adapter.status),
     },
     animated: isConnected && !!topics.length,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
-      stroke: isConnected ? theme.colors.status.connected[500] : theme.colors.status.disconnected[500],
+      stroke: getThemeForStatus(theme, adapter.status),
     },
   }
 
