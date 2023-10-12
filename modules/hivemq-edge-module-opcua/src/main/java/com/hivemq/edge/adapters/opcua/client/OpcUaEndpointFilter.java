@@ -71,8 +71,8 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
     }
 
     private EndpointDescription endpointUpdater(EndpointDescription endpoint) {
-        if (true) { // TODO: make this configurable
-            String[] parts = configPolicyUri.split("://|:|/");
+        if (adapterConfig.getUpdateEndpoint()) {
+            String[] parts = adapterConfig.getUri().split("://|:|/");
             if (parts.length == 1) {
                 return EndpointUtil.updateUrl(endpoint, parts[1]);
             } else if (parts.length > 1) {
