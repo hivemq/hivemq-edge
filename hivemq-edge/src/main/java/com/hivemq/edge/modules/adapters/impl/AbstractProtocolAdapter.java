@@ -141,11 +141,11 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     @Override
     public CompletableFuture<Void> discoverValues(final @NotNull ProtocolAdapterDiscoveryInput input,
                                                   final @NotNull ProtocolAdapterDiscoveryOutput output) {
-        if(ProtocolAdapterCapability.supportsCapability(
+        if(!ProtocolAdapterCapability.supportsCapability(
                 getProtocolAdapterInformation(), ProtocolAdapterCapability.DISCOVER)){
             return CompletableFuture.failedFuture(new UnsupportedOperationException("Adapter type does not support discovery"));
         } else {
-            return CompletableFuture.completedFuture(null);
+            return discoverValuesInternal(input, output);
         }
     }
 
@@ -164,20 +164,21 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
             final ProtocolAdapterStartInput input,
             final ProtocolAdapterStartOutput output) {
         CompletableFuture<ProtocolAdapterStartOutput> future = null;
-        synchronized (lock){
-            try {
-                bindServices(input.moduleServices());
-                initStartAttempt();
-                future = startInternal(output);
-                return future;
-            } finally {
-                if(future != null){
-                    future.thenRun(() -> onStartSuccess(output)).exceptionally(
-                                (t) ->  {
-                                    onStartFail(output, t);
-                                    return null;
-                                });
-                }
+        if(running()){
+            return CompletableFuture.completedFuture(output);
+        }
+        try {
+            bindServices(input.moduleServices());
+            initStartAttempt();
+            future = startInternal(output);
+            return future;
+        } finally {
+            if(future != null){
+                future.thenRun(() -> onStartSuccess(output)).exceptionally(
+                            (t) ->  {
+                                onStartFail(output, t);
+                                return null;
+                            });
             }
         }
     }
@@ -191,15 +192,16 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      */
     @Override
     public CompletableFuture<Void> stop() {
+        if(!running()){
+            return CompletableFuture.completedFuture(null);
+        }
         CompletableFuture<Void> future = null;
-        synchronized (lock){
-            try {
-                future = stopInternal();
-                return future;
-            } finally {
-                if(future != null){
-                    future.thenRun(() -> onStop());
-                }
+        try {
+            future = stopInternal();
+            return future;
+        } finally {
+            if(future != null){
+                future.thenRun(() -> onStop());
             }
         }
     }
@@ -243,6 +245,12 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         }
     }
 
+    protected boolean running(){
+        synchronized (lock){
+            return runtimeStatus == RuntimeStatus.STARTED;
+        }
+    }
+
     @Override
     public String getErrorMessage() {
         return errorMessage;
@@ -269,18 +277,30 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected void onStartFail(@NotNull final ProtocolAdapterStartOutput output, @NotNull final Throwable throwable){
         setErrorConnectionStatus(throwable);
         output.failStart(throwable, throwable.getMessage());
-        //-- TODO add event
+        //-- TODO add system event
     }
 
     protected void onStartSuccess(@NotNull final ProtocolAdapterStartOutput output){
         setRuntimeStatus(RuntimeStatus.STARTED);
         output.startedSuccessfully("adapter start OK");
-        //-- TODO add event
+        //-- TODO add system event
     }
 
     protected void onStop(){
         setRuntimeStatus(RuntimeStatus.STOPPED);
-        //-- TODO add event
+        //-- TODO add system event
+    }
+
+
+    /**
+     * Provide a method to lazily traverse tag-data on your external device.
+     * @param input
+     * @param output
+     * @return
+     */
+    protected CompletableFuture<Void> discoverValuesInternal(final @NotNull ProtocolAdapterDiscoveryInput input,
+                                                             final @NotNull ProtocolAdapterDiscoveryOutput output){
+        return CompletableFuture.completedFuture(null);
     }
 
     protected abstract CompletableFuture<ProtocolAdapterStartOutput> startInternal(final ProtocolAdapterStartOutput output);
