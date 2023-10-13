@@ -65,12 +65,24 @@ public class CreateAdapterBlueprint {
                     byte[] arr = readZipEntry(is);
                     String outputName = entryIn.getName();
                     String resultName = PropertyReplacer.replaceProperties(outputName, replacements);
-                    String result = PropertyReplacer.replaceProperties(new String(arr, StandardCharsets.UTF_8), replacements);
                     File file = new File(outputDirectory, resultName);
-                    Files.write(file.toPath(), result.getBytes(StandardCharsets.UTF_8));
+                    if(processFile(resultName)){
+                        String result = PropertyReplacer.replaceProperties(new String(arr, StandardCharsets.UTF_8), replacements);
+                        Files.write(file.toPath(), result.getBytes(StandardCharsets.UTF_8));
+                    } else {
+                        //binary files
+                        Files.write(file.toPath(), arr);
+                    }
                 }
             }
         }
+    }
+
+    protected boolean processFile(String fileName){
+        return !fileName.endsWith("png") &&
+                !fileName.endsWith("jpg") &&
+                !fileName.endsWith("gif") &&
+                !fileName.endsWith("bat");
     }
 
     public static File newFile(File destinationDir, ZipEntry zipEntry, Map<String, String> replacements) throws IOException {
