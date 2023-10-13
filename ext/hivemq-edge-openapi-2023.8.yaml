@@ -1373,8 +1373,6 @@ components:
           type: string
           format: date-time
           description: Time the event was in date format
-        id:
-          $ref: '#/components/schemas/TypeIdentifier'
         identifier:
           $ref: '#/components/schemas/TypeIdentifier'
         message:
@@ -1401,7 +1399,7 @@ components:
           description: Time the event was generated in epoch format
       required:
       - created
-      - id
+      - identifier
       - message
       - severity
       - timestamp
@@ -2005,6 +2003,7 @@ components:
           description: The verifyHostname from the config
     TypeIdentifier:
       type: object
+      description: The type-identifier of the object who caused the event to be generated
       properties:
         fullQualifiedIdentifier:
           type: string

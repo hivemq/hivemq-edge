@@ -35,10 +35,10 @@ public class Event implements Identifiable {
         INFO, WARN, ERROR, CRITICAL
     }
 
-    @JsonProperty("id")
+    @JsonProperty("identifier")
     @Schema(description = "The unique id of the event object",
             required = true)
-    private final @NotNull TypeIdentifier id;
+    private final @NotNull TypeIdentifier identifier;
 
     @JsonProperty("severity")
     @Schema(description = "The severity that this log is considered to be",
@@ -83,7 +83,7 @@ public class Event implements Identifiable {
 
 
     public Event(
-            @JsonProperty("id") final TypeIdentifier id,
+            @JsonProperty("identifier") final TypeIdentifier identifier,
             @JsonProperty("severity") final SEVERITY severity,
             @JsonProperty("message") final String message,
             @JsonProperty("contentType") final String contentType,
@@ -91,7 +91,7 @@ public class Event implements Identifiable {
             @JsonProperty("timestamp") final Long timestamp,
             @JsonProperty("associatedObject") final TypeIdentifier associatedObject,
             @JsonProperty("source") final TypeIdentifier source) {
-        this.id = id;
+        this.identifier = identifier;
         this.severity = severity;
         this.message = message;
         this.contentType = contentType;
@@ -126,10 +126,6 @@ public class Event implements Identifiable {
         return timestamp;
     }
 
-    public TypeIdentifier getId() {
-        return id;
-    }
-
     public @Nullable TypeIdentifier getAssociatedObject() {
         return associatedObject;
     }
@@ -140,6 +136,6 @@ public class Event implements Identifiable {
 
     @Override
     public TypeIdentifier getIdentifier() {
-        return id;
+        return identifier;
     }
 }
