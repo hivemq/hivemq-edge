@@ -1366,9 +1366,6 @@ components:
       properties:
         associatedObject:
           $ref: '#/components/schemas/TypeIdentifier'
-        contentType:
-          type: string
-          description: The content type of the payload that the event contains
         created:
           type: string
           format: date-time
@@ -1380,9 +1377,7 @@ components:
           description: The message associated with the event. A message will be no
             more than 1024 characters in length
         payload:
-          type: object
-          description: "Extended details of the event, this could contain a longer\
-            \ textual description, error trace or null."
+          $ref: '#/components/schemas/Payload'
         severity:
           type: string
           description: The severity that this log is considered to be
@@ -1785,6 +1780,23 @@ components:
           - VALUE
         selectable:
           type: boolean
+    Payload:
+      type: object
+      description: Object to denote the payload of the event
+      properties:
+        content:
+          type: string
+          description: The content of the payload encoded as a string
+        contentType:
+          type: string
+          description: The content type of the payload that the event contains
+          enum:
+          - JSON
+          - PLAIN_TEXT
+          - XML
+          - CSV
+      required:
+      - contentType
     ProtocolAdapter:
       type: object
       description: List of result items that are returned by this endpoint

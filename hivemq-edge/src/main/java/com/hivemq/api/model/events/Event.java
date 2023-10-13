@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.api.json.TimestampToDateConverter;
+import com.hivemq.api.model.core.Payload;
 import com.hivemq.edge.model.Identifiable;
 import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -51,13 +52,9 @@ public class Event implements Identifiable {
             required = true)
     private final @NotNull String message;
 
-    @JsonProperty("contentType")
-    @Schema(description = "The content type of the payload that the event contains")
-    private final @NotNull String contentType;
-
     @JsonProperty("payload")
-    @Schema(description = "Extended details of the event, this could contain a longer textual description, error trace or null.")
-    private final @NotNull Object payload;
+    @Schema(description = "Object to denote the payload of the event")
+    private final @NotNull Payload payload;
 
     @JsonProperty("created")
     @JsonSerialize(using = TimestampToDateConverter.Serializer.class)
@@ -86,15 +83,13 @@ public class Event implements Identifiable {
             @JsonProperty("identifier") final TypeIdentifier identifier,
             @JsonProperty("severity") final SEVERITY severity,
             @JsonProperty("message") final String message,
-            @JsonProperty("contentType") final String contentType,
-            @JsonProperty("payload") final Object payload,
+            @JsonProperty("payload") final Payload payload,
             @JsonProperty("timestamp") final Long timestamp,
             @JsonProperty("associatedObject") final TypeIdentifier associatedObject,
             @JsonProperty("source") final TypeIdentifier source) {
         this.identifier = identifier;
         this.severity = severity;
         this.message = message;
-        this.contentType = contentType;
         this.payload = payload;
         this.created = timestamp;
         this.timestamp = timestamp;
@@ -110,11 +105,7 @@ public class Event implements Identifiable {
         return message;
     }
 
-    public @Nullable String getContentType() {
-        return contentType;
-    }
-
-    public @Nullable Object getPayload() {
+    public @Nullable Payload getPayload() {
         return payload;
     }
 
@@ -138,4 +129,6 @@ public class Event implements Identifiable {
     public TypeIdentifier getIdentifier() {
         return identifier;
     }
+
+
 }
