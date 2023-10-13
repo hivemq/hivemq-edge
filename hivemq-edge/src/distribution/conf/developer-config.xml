@@ -18,8 +18,7 @@
     WARNING - This file is for use when running from your development environment ONLY,
     it should not be used in production.
 -->
-<hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="developer-config.xsd">
+<hivemq>
 
     <mqtt-listeners>
         <tcp-listener>
