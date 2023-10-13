@@ -26,6 +26,7 @@ import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.IHttpRequestResponseHandler;
 import com.hivemq.http.error.JaxrsDefaultExceptionMapper;
 import com.hivemq.http.filters.CorsFilter;
+import com.hivemq.http.handlers.AlternativeClassloadingStaticFileHandler;
 import com.hivemq.http.handlers.StaticFileHandler;
 import com.hivemq.http.handlers.WebAppHandler;
 import com.hivemq.http.sun.SunHttpHandlerProxy;
@@ -146,6 +147,7 @@ public class JaxrsHttpServer {
 
                         registerContext("/app", new WebAppHandler(objectMapperProvider.getMapper(), "httpd"), httpServer);
                         registerContext("/images", new StaticFileHandler(objectMapperProvider.getMapper(), "httpd/images"), httpServer);
+                        registerContext("/module/images", new AlternativeClassloadingStaticFileHandler(objectMapperProvider.getMapper(), "httpd/images"), httpServer);
 
 
                         httpServers.add(httpServer);
