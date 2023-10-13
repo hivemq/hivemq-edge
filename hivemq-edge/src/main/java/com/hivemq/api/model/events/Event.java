@@ -19,50 +19,127 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.api.json.TimestampToDateConverter;
+import com.hivemq.edge.model.Identifiable;
+import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
- * Bean to transport log lines across the API
+ * Bean to transport events across the API
  * @author Simon L Johnson
  */
-public class Event {
+public class Event implements Identifiable {
 
-    @JsonProperty("eventSourceName")
-    @Schema(description = "The name of the protocol adapter or bridge that generated to the log")
-    private final @NotNull String eventSourceName;
+    public enum SEVERITY {
+        INFO, WARN, ERROR, CRITICAL
+    }
+
+    @JsonProperty("id")
+    @Schema(description = "The unique id of the event object",
+            required = true)
+    private final @NotNull TypeIdentifier id;
+
+    @JsonProperty("severity")
+    @Schema(description = "The severity that this log is considered to be",
+            required = true)
+    private final @NotNull SEVERITY severity;
+
+    @JsonProperty("message")
+    @Schema(description = "The message associated with the event. A message will be no more than 1024 characters in length",
+            type = "string",
+            required = true)
+    private final @NotNull String message;
+
+    @JsonProperty("contentType")
+    @Schema(description = "The content type of the payload that the event contains")
+    private final @NotNull String contentType;
+
+    @JsonProperty("payload")
+    @Schema(description = "Extended details of the event, this could contain a longer textual description, error trace or null.")
+    private final @NotNull Object payload;
 
     @JsonProperty("created")
     @JsonSerialize(using = TimestampToDateConverter.Serializer.class)
     @JsonDeserialize(using = TimestampToDateConverter.Deserializer.class)
     @Schema(type = "string",
             format = "date-time",
-            description = "Time the event was generated",
-            nullable = true)
+            description = "Time the event was in date format",
+            required = true)
     private final @NotNull Long created;
 
-    @JsonProperty("logLine")
-    @Schema(description = "The details of the log")
-    private final @NotNull String logLine;
+    @JsonProperty("timestamp")
+    @Schema(description = "Time the event was generated in epoch format",
+            required = true)
+    private final @NotNull Long timestamp;
+
+    @JsonProperty("associatedObject")
+    @Schema(description = "The type-identifier associated with the event")
+    private final @NotNull TypeIdentifier associatedObject;
+
+    @JsonProperty("source")
+    @Schema(description = "The type-identifier of the object who caused the event to be generated")
+    private final @NotNull TypeIdentifier source;
 
 
-    public Event(@JsonProperty("eventSourceName") final @NotNull String eventSourceName,
-                 @JsonProperty("created") final @NotNull Long created,
-                 @JsonProperty("logLine") final @NotNull String logLine) {
-        this.eventSourceName = eventSourceName;
-        this.created = created;
-        this.logLine = logLine;
+    public Event(
+            @JsonProperty("id") final TypeIdentifier id,
+            @JsonProperty("severity") final SEVERITY severity,
+            @JsonProperty("message") final String message,
+            @JsonProperty("contentType") final String contentType,
+            @JsonProperty("payload") final Object payload,
+            @JsonProperty("timestamp") final Long timestamp,
+            @JsonProperty("associatedObject") final TypeIdentifier associatedObject,
+            @JsonProperty("source") final TypeIdentifier source) {
+        this.id = id;
+        this.severity = severity;
+        this.message = message;
+        this.contentType = contentType;
+        this.payload = payload;
+        this.created = timestamp;
+        this.timestamp = timestamp;
+        this.associatedObject = associatedObject;
+        this.source = source;
     }
 
-    public @NotNull String getEventSourceName() {
-        return eventSourceName;
+    public @NotNull SEVERITY getSeverity() {
+        return severity;
+    }
+
+    public @NotNull String getMessage() {
+        return message;
+    }
+
+    public @Nullable String getContentType() {
+        return contentType;
+    }
+
+    public @Nullable Object getPayload() {
+        return payload;
     }
 
     public @NotNull Long getCreated() {
         return created;
     }
 
-    public @NotNull String getLogLine() {
-        return logLine;
+    public @NotNull Long getTimestamp() {
+        return timestamp;
+    }
+
+    public TypeIdentifier getId() {
+        return id;
+    }
+
+    public @Nullable TypeIdentifier getAssociatedObject() {
+        return associatedObject;
+    }
+
+    public @Nullable TypeIdentifier getSource() {
+        return source;
+    }
+
+    @Override
+    public TypeIdentifier getIdentifier() {
+        return id;
     }
 }
