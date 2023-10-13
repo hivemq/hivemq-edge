@@ -42,6 +42,7 @@ public class ProtocolAdapterApiUtils {
         Preconditions.checkNotNull(configurationService);
         String logoUrl = info.getLogoUrl();
         if(logoUrl != null){
+            logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
         }
         return new ProtocolAdapter(info.getProtocolId(),
@@ -70,14 +71,13 @@ public class ProtocolAdapterApiUtils {
 
         Preconditions.checkNotNull(module);
         Preconditions.checkNotNull(configurationService);
-
         String logoUrl = module.getLogoUrl() == null ? null : module.getLogoUrl().getUrl();
         String documentationUrl = module.getDocumentationLink() == null ? null : module.getDocumentationLink().getUrl();
         String provisioningUrl = module.getProvisioningLink() == null ? null : module.getProvisioningLink().getUrl();
         if(logoUrl != null){
+            logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
         }
-
         return new ProtocolAdapter(
                 module.getId(),
                 module.getId(),

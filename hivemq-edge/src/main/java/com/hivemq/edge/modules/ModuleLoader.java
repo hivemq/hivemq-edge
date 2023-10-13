@@ -20,6 +20,7 @@ import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.modules.adapters.impl.IsolatedModuleClassloader;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.loader.ClassServiceLoader;
+import com.hivemq.http.handlers.AlternativeClassloadingStaticFileHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,6 +155,9 @@ public class ModuleLoader {
         public EdgeModule(final @NotNull File root, final @NotNull ClassLoader classloader) {
             this.classloader = classloader;
             this.root = root;
+            if(classloader != null){
+                AlternativeClassloadingStaticFileHandler.addClassLoader(classloader);
+            }
         }
 
         public @NotNull ClassLoader getClassloader() {
