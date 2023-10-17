@@ -27,8 +27,6 @@ import org.slj.mqtt.sn.spi.IMqttsnCodec;
 import org.slj.mqtt.sn.spi.IMqttsnMessage;
 
 public class MqttSnEncoder extends MessageToByteEncoder<IMqttsnMessage> {
-
-    private static final Logger log = LoggerFactory.getLogger(MqttSnEncoder.class);
     private final @NotNull ChannelDependencies channelDependencies;
 
     public MqttSnEncoder(final @NotNull ChannelDependencies channelDependencies) {
