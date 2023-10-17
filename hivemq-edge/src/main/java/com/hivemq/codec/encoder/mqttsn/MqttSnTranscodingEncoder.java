@@ -32,6 +32,7 @@ import org.slj.mqtt.sn.spi.IMqttsnMessage;
 import java.util.List;
 import java.util.Optional;
 
+@Deprecated
 public class MqttSnTranscodingEncoder extends MessageToByteEncoder<Message> {
 
     private static final Logger logger = LoggerFactory.getLogger(MqttSnTranscodingEncoder.class);
