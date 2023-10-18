@@ -22,6 +22,7 @@ import com.hivemq.edge.modules.adapters.impl.AbstractPollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.http.core.HttpUtils;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
@@ -42,8 +43,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdapterConfig, HttpData> {
 
-    private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
-    private HttpClient httpClient = null;
+    private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
+    private volatile @Nullable HttpClient httpClient = null;
 
     public HttpProtocolAdapter(final @NotNull ProtocolAdapterInformation adapterInformation,
                              final @NotNull HttpAdapterConfig adapterConfig,
