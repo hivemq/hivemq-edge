@@ -18,9 +18,11 @@ package com.hivemq.configuration.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.validations.BridgeValidator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +30,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
-public class BridgeConfigurationServiceImpl implements BridgeConfigurationService {
+public class BridgeConfigurationServiceImpl implements BridgeConfigurationService, BridgeValidator {
 
     private final @NotNull List<MqttBridge> mqttBridges = Collections.synchronizedList(new ArrayList<>());
 
@@ -45,9 +47,16 @@ public class BridgeConfigurationServiceImpl implements BridgeConfigurationServic
 
     @Override
     public void addBridge(final String connectionString) {
+        addBridge(connectionString, null);
+    }
+
+    @Override
+    //TODO Refactor to return Business Errors to the top API layer
+    public void addBridge(final String connectionString, final ApiErrorMessages errorMessages) {
         String jsonConfig = Arrays.toString(Base64.getDecoder().decode(connectionString));
         try {
             final MqttBridge mqttBridge = objectMapper.readValue(jsonConfig, MqttBridge.class);
+            //validateBridge(errorMessages, mqttBridge); TODO change to validate MqttBridge at this layer.
             addBridge(mqttBridge);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e); // TODO Improve error handling
@@ -56,14 +65,14 @@ public class BridgeConfigurationServiceImpl implements BridgeConfigurationServic
 
     @Override
     public @NotNull List<MqttBridge> getBridges() {
-        synchronized (mqttBridges){
+        synchronized (mqttBridges) {
             return new ImmutableList.Builder().addAll(mqttBridges).build();
         }
     }
 
     @Override
     public boolean removeBridge(@NotNull final String id) {
-        synchronized (mqttBridges){
+        synchronized (mqttBridges) {
             return mqttBridges.removeIf(mqttBridge -> mqttBridge.getId().equals(id));
         }
     }

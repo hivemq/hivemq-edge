@@ -36,6 +36,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.validations.BridgeValidator;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
@@ -47,7 +48,7 @@ import java.util.stream.Collectors;
 /**
  * @author Simon L Johnson
  */
-public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
+public class BridgeResourceImpl extends AbstractApi implements BridgeApi, BridgeValidator {
 
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull BridgeService bridgeService;
@@ -97,7 +98,8 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
 
     @Override
     public Response addBridgeConnectionString(final @NotNull String connectionString) {
-        configurationService.bridgeConfiguration().addBridge(connectionString);
+        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        configurationService.bridgeConfiguration().addBridge(connectionString, errorMessages);
         return Response.status(200).build();
     }
 
@@ -252,62 +254,11 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     protected boolean checkBridgeExists(@NotNull final String bridgeName) {
-        Optional<MqttBridge> bridge = configurationService.bridgeConfiguration()
+        return configurationService.bridgeConfiguration()
                 .getBridges()
                 .stream()
-                .filter(b -> b.getId().equals(bridgeName))
-                .findFirst();
-        return bridge.isPresent();
+                .anyMatch(b -> b.getId().equals(bridgeName));
     }
-
-    protected void validateBridge(final @NotNull ApiErrorMessages errorMessages, final @NotNull Bridge bridge) {
-        ApiErrorUtils.validateRequiredEntity(errorMessages, "bridge", bridge);
-        ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", bridge.getId(), HiveMQEdgeConstants.ID_REGEX);
-        ApiErrorUtils.validateFieldLengthBetweenIncl(errorMessages,
-                "id",
-                bridge.getId(),
-                1,
-                HiveMQEdgeConstants.MAX_ID_LEN);
-
-        if (!bridge.getHost().matches(HiveMQEdgeConstants.IPV4_REGEX) &&
-                !bridge.getHost().matches(HiveMQEdgeConstants.IPV6_REGEX) &&
-                !bridge.getHost().matches(HiveMQEdgeConstants.HOSTNAME_REGEX)) {
-            ApiErrorUtils.addValidationError(errorMessages,
-                    "host",
-                    "Supplied value does not match ipv4, ipv6 or host format");
-        }
-        ApiErrorUtils.validateFieldValueBetweenIncl(errorMessages,
-                "port",
-                bridge.getPort(),
-                1,
-                HiveMQEdgeConstants.MAX_UINT16);
-
-       if(bridge.getLoopPreventionHopCount() != 0){
-           ApiErrorUtils.validateFieldValueBetweenIncl(errorMessages,
-                   "loopPreventionHopCount",
-                   bridge.getLoopPreventionHopCount(),
-                   1, 100);
-       }
-
-        bridge.getLocalSubscriptions()
-                .stream().forEach(s ->
-                        validateValidSubscribeTopicField(errorMessages, "local-filters", s.getFilters()));
-
-        bridge.getRemoteSubscriptions()
-                .stream().forEach(s ->
-                        validateValidSubscribeTopicField(errorMessages, "remote-filters", s.getFilters()));
-    }
-
-    public static void validateValidSubscribeTopicField(final ApiErrorMessages apiErrorMessages, final String fieldName, final List<String> topicFilters){
-        try {
-            BridgeConfigurator.validateTopicFilters(fieldName, topicFilters);
-        } catch(UnrecoverableException e){
-            ApiErrorUtils.addValidationError(apiErrorMessages,
-                    fieldName,
-                    "Invalid bridge topic filters for subscribing");
-        }
-    }
-
 
     private static MqttBridge unconvert(final @NotNull Bridge bridge) {
 

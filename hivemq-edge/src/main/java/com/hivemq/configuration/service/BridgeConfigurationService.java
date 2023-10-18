@@ -15,6 +15,7 @@
  */
 package com.hivemq.configuration.service;
 
+import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
@@ -29,6 +30,7 @@ public interface BridgeConfigurationService {
     void addBridge(final @NotNull MqttBridge mqttBridge);
 
     void addBridge(final @NotNull String connectionString);
+    void addBridge(final @NotNull String connectionString, final ApiErrorMessages errorMessages);
 
     @NotNull List<MqttBridge> getBridges();
 
