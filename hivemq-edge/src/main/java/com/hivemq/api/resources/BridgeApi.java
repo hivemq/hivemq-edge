@@ -93,7 +93,7 @@ public interface BridgeApi {
             final @NotNull Bridge bridge);
 
     @POST
-    @Path("")
+    @Path("/connect")
     @Operation(summary = "Add a new Bridge",
                operationId = "addBridgeConnString",
                description = "Add bridge from a connection string.",
