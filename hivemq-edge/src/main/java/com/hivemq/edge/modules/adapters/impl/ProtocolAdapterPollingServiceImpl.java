@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Collections2;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
@@ -23,17 +24,15 @@ import com.hivemq.edge.modules.adapters.model.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,6 +42,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -59,15 +59,13 @@ import java.util.stream.Collectors;
  */
 public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPollingService {
 
-    private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull Map<ProtocolAdapterPollingSampler, MonitoredPollingJob> activePollers =
             new ConcurrentHashMap<>();
-    private final @NotNull Set<MonitoredPollingJob> executingJobs
-            = Collections.synchronizedSet(new HashSet<>());
-
-    private final @NotNull Object semaphore = new Object();
+    private final @NotNull AtomicInteger runningJobCount = new AtomicInteger();
     private final @NotNull Watchdog watchdog = new Watchdog();
+    private final @NotNull Object watchdogNotificationLock = new Object();
 
     @Inject
     public ProtocolAdapterPollingServiceImpl(final @NotNull ScheduledExecutorService scheduledExecutorService,
@@ -89,8 +87,9 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
             public void run() {
                 try {
                     ProtocolAdapterPollingServiceImpl.this.watchdog.running = false;
-                    synchronized (semaphore){
-                        semaphore.notifyAll();
+                    synchronized (watchdogNotificationLock) {
+                        // Notify the Watchdog in case it is waiting for a job to run again.
+                        watchdogNotificationLock.notify();
                     }
                 } catch(Exception e){
                     log.warn("Error Encountered Stopping Watchdog", e);
@@ -187,13 +186,16 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     }
 
     private class MonitoredPollingJob implements Runnable {
-        private final AtomicInteger runCount = new AtomicInteger(0);
-        private final AtomicInteger watchdogErrorCount = new AtomicInteger(0);
-        private final AtomicInteger applicationErrorCount = new AtomicInteger(0);
-        private final ProtocolAdapterPollingSampler sampler;
-        private volatile long notBefore = 0;
-        private volatile long recentExecutionStarted = 0;
-        private volatile Thread currentThread;
+
+        private final @NotNull ProtocolAdapterPollingSampler sampler;
+        private final @NotNull AtomicBoolean isRunning = new AtomicBoolean();
+        private final @NotNull AtomicInteger runCount = new AtomicInteger(0);
+        private final @NotNull AtomicInteger watchdogErrorCount = new AtomicInteger(0);
+        private final @NotNull AtomicInteger applicationErrorCount = new AtomicInteger(0);
+
+        private long notBefore = 0;
+        private long recentExecutionStarted = 0;
+        private @Nullable Thread currentThread;
 
         public MonitoredPollingJob(final ProtocolAdapterPollingSampler sampler) {
             this.sampler = sampler;
@@ -211,61 +213,63 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
 
         @Override
         public void run() {
+            if (sampler.isClosed()) {
+                // Sampler was closed externally, ensure we remove it from the engine
+                stopPolling(sampler);
+                return;
+            }
             long startedTimeMillis = System.currentTimeMillis();
+            if (notBefore > 0 && startedTimeMillis < notBefore) {
+                // We're backing off atm so as not to harass the network
+                return;
+            }
+            if (!isRunning.compareAndSet(false, true)) {
+                if (log.isInfoEnabled()){
+                    log.info("Determined Sampler {} Was Already Running, Concurrent Access Forbidden", sampler.getAdapterId());
+                }
+                return;
+            }
             try {
-                if(notBefore > 0){
-                    if(System.currentTimeMillis() < notBefore){
-                        //-- We're backing off atm so as not to harass the network
-                        return;
+                if (runningJobCount.incrementAndGet() == 1) {
+                    // Notify the Watchdog in case it is waiting for a job to run again.
+                    synchronized (watchdogNotificationLock) {
+                        watchdogNotificationLock.notify();
                     }
                 }
-                if(!sampler.isClosed()){
-                    final String originalName = Thread.currentThread().getName();
-                    if(!executingJobs.contains(this)){
-                        try {
-                            boolean execute;
-                            synchronized (semaphore) {
-                                execute = !executingJobs.contains(this);
-                                recentExecutionStarted = startedTimeMillis;
-                                currentThread = Thread.currentThread();
-                                if(execute) {
-                                    executingJobs.add(this);
-                                    semaphore.notify();
-                                }
-                            }
-                            if(execute) {
-                                runCount.incrementAndGet();
-                                currentThread.setName(originalName + " " + sampler.getAdapterId());
-                                CompletableFuture<?> sampleFuture = sampler.execute();
-                                if(sampleFuture != null){
-                                    sampleFuture.get();
-                                    if (log.isTraceEnabled()) {
-                                        log.trace("Sampler {} Successfully Invoked in {}ms",
-                                                sampler.getAdapterId(), System.currentTimeMillis() - startedTimeMillis);
-                                    }
-                                    if(hasErrorStats()){
-                                        resetErrorStats();
-                                    }
-                                } else {
-                                    throw new IllegalStateException("Sampler Returned Empty Future, Error Handling");
-                                }
-                            }
+                final String originalName = Thread.currentThread().getName();
+                try {
+                    recentExecutionStarted = startedTimeMillis;
+                    currentThread = Thread.currentThread();
+                    runCount.incrementAndGet();
+                    currentThread.setName(originalName + " " + sampler.getAdapterId());
+                    CompletableFuture<?> sampleFuture = sampler.execute();
+                    if(sampleFuture != null){
+                        sampleFuture.get();
+                        if (log.isTraceEnabled()) {
+                            log.trace("Sampler {} Successfully Invoked in {}ms",
+                                    sampler.getAdapterId(), System.currentTimeMillis() - startedTimeMillis);
                         }
-                        finally {
-                            currentThread.setName(originalName);
-                            synchronized (semaphore) {
-                                executingJobs.remove(this);
-                                currentThread = null;
-                            }
+                        if(hasErrorStats()){
+                            resetErrorStats();
                         }
                     } else {
-                        if(log.isInfoEnabled()){
-                            log.info("Determined Sampler {} Was Already Running, Concurrent Access Forbidden", sampler.getAdapterId());
-                        }
+                        throw new IllegalStateException("Sampler Returned Empty Future, Error Handling");
                     }
-                } else {
-                    //Sampler was closed externally, ensure we remove it from the engine
-                    stopPolling(sampler);
+                }
+                finally {
+                    currentThread.setName(originalName);
+                    currentThread = null;
+                    if (!isRunning.compareAndSet(true, false)) {
+                        //noinspection ThrowFromFinallyBlock
+                        throw new IllegalStateException("Sampler " + sampler.getAdapterId() +
+                                ": Failed to reset isRunning flag due to unexpected concurrent change.");
+                    }
+                    final int newRunningJobCount = runningJobCount.decrementAndGet();
+                    if (newRunningJobCount < 0) {
+                        //noinspection ThrowFromFinallyBlock
+                        throw new IllegalStateException("Sampler " + sampler.getAdapterId() +
+                                ": Unexpected negative running job count:" + newRunningJobCount);
+                    }
                 }
             } catch(Throwable e){
                 boolean continuing, notify = true;
@@ -335,31 +339,28 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     }
 
     private final class Watchdog implements Runnable {
-        volatile boolean running = false;
+        volatile boolean running = true;
 
         @Override
         public void run() {
-            running = true;
-            while(running){
+            while (running) {
                 try {
-                    //create shallow copy then process outside lock
-                    Set<MonitoredPollingJob> inProgress;
-                    synchronized (semaphore){
-                        if(executingJobs.isEmpty()){
-                            semaphore.wait();
-                        }
-                        if(!running) break;
-                        //-- notify will release so relock for iterator
-                        synchronized (semaphore){
-                            inProgress = new HashSet<>(executingJobs);
+                    // Wait for a job to start running if none is running at the moment.
+                    synchronized (watchdogNotificationLock) {
+                        // Loop to guard against spurious wakeup.
+                        while (running && runningJobCount.get() == 0) {
+                            watchdogNotificationLock.wait();
                         }
                     }
-                    Iterator<MonitoredPollingJob> itr = inProgress.iterator();
-                    while(itr.hasNext()){
-                        MonitoredPollingJob job = itr.next();
-                        if((System.currentTimeMillis() - job.recentExecutionStarted) >
-                                InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get()){
-                            if(job.currentThread != null){
+                    if (!running) {
+                        return;
+                    }
+                    final Collection<MonitoredPollingJob> runningJobs = Collections2.filter(activePollers.values(),
+                            job -> job.isRunning.get());
+                    for (final MonitoredPollingJob job : runningJobs) {
+                        if ((System.currentTimeMillis() - job.recentExecutionStarted) >
+                                InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get()) {
+                            if (job.currentThread != null) {
                                 job.currentThread.interrupt();
                             }
                         }
