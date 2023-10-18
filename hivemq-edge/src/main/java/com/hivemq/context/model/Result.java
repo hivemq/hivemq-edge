@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.model;
+package com.hivemq.context.model;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
@@ -23,7 +23,7 @@ import java.util.Optional;
 /**
  * @author Simon L Johnson
  */
-public interface DataGovernanceResult {
+public interface Result {
 
     enum STATUS {
         SUCCESS(false),
@@ -44,13 +44,13 @@ public interface DataGovernanceResult {
     }
 
     @NotNull STATUS getStatus();
-    @NotNull List<DataGovernanceError> getErrors();
+    @NotNull List<Error> getErrors();
 
     Optional<String> getMessage();
-    DataGovernanceData getOutput();
+    Data getOutput();
 
     void setStatus(@NotNull STATUS status);
-    void addError(@NotNull DataGovernanceError error, boolean fatal);
+    void addError(@NotNull Error error, boolean fatal);
     void setMessage(@NotNull String message);
     boolean hasErrors();
 

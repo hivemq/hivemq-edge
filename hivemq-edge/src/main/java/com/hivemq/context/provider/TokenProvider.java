@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov;
+package com.hivemq.context.provider;
+
+import com.hivemq.context.HiveMQEdgeContext;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+
+import java.util.Map;
 
 /**
  * @author Simon L Johnson
  */
-public class DataGovernanceException extends Exception {
-    public DataGovernanceException() {
-    }
+public interface TokenProvider {
 
-    public DataGovernanceException(final String message) {
-        super(message);
-    }
+    @NotNull Map<String, String> getTokenReplacements(@NotNull final HiveMQEdgeContext context);
 
-    public DataGovernanceException(final String message, final Throwable cause) {
-        super(message, cause);
-    }
 
-    public DataGovernanceException(final Throwable cause) {
-        super(cause);
-    }
 }

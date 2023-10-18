@@ -13,26 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.ioc;
+package com.hivemq.context.ioc;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.hivemq.datagov.DataGovernanceService;
-import com.hivemq.datagov.impl.DataGovernanceServiceImpl;
+import com.hivemq.context.HiveMQEdgeService;
+import com.hivemq.context.impl.ServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import dagger.Binds;
-import dagger.Module;
 import dagger.Provides;
 
 import javax.inject.Singleton;
 
-@Module
-public abstract class DataGovernanceModule {
+@dagger.Module
+public abstract class HiveMQModule {
 
     @Binds
-    abstract @NotNull DataGovernanceService dataGovernanceService(@NotNull DataGovernanceServiceImpl dataGovernanceService);
+    abstract @NotNull HiveMQEdgeService dataGovernanceService(@NotNull ServiceImpl dataGovernanceService);
 
 //    @Binds
 //    abstract @NotNull DataGovernancePolicyProvider dataGovernancePolicyProvider(@NotNull DataGovernancePolicyProviderImpl dataGovernanceService);

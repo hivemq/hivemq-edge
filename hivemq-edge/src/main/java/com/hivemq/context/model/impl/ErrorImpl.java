@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.model.impl;
+package com.hivemq.context.model.impl;
 
-import com.hivemq.datagov.model.DataGovernanceError;
+import com.hivemq.context.model.Error;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Optional;
@@ -23,7 +23,7 @@ import java.util.Optional;
 /**
  * @author Simon L Johnson
  */
-public class DataGovernanceErrorImpl implements DataGovernanceError {
+public class ErrorImpl implements Error {
 
     private Optional<Throwable> error;
     private Optional<String> pipelineId;
@@ -31,12 +31,12 @@ public class DataGovernanceErrorImpl implements DataGovernanceError {
     private Optional<String> validatorId;
     private Optional<String> message;
 
-    public DataGovernanceErrorImpl(final @NotNull Throwable error) {
+    public ErrorImpl(final @NotNull Throwable error) {
         this.error = Optional.of(error);
         this.message = Optional.ofNullable(error.getMessage());
     }
 
-    public DataGovernanceErrorImpl(final @NotNull String message) {
+    public ErrorImpl(final @NotNull String message) {
         this.message = Optional.of(message);
     }
 
@@ -76,23 +76,23 @@ public class DataGovernanceErrorImpl implements DataGovernanceError {
         this.message = Optional.ofNullable(message);
     }
 
-    public static DataGovernanceError ofPipelineAndFunction(@NotNull final Throwable t,
-                                                            @NotNull final String pipelineId,
-                                                            @NotNull final String functionId){
-        DataGovernanceErrorImpl impl = new DataGovernanceErrorImpl(t);
+    public static Error ofPipelineAndFunction(@NotNull final Throwable t,
+                                              @NotNull final String pipelineId,
+                                              @NotNull final String functionId){
+        ErrorImpl impl = new ErrorImpl(t);
         impl.setFunctionId(functionId);
         impl.setPipelineId(pipelineId);
         return impl;
     }
 
-    public static DataGovernanceError ofPipeline(@NotNull final Throwable t, @NotNull final String pipelineId){
-        DataGovernanceErrorImpl impl = new DataGovernanceErrorImpl(t);
+    public static Error ofPipeline(@NotNull final Throwable t, @NotNull final String pipelineId){
+        ErrorImpl impl = new ErrorImpl(t);
         impl.setPipelineId(pipelineId);
         return impl;
     }
 
-    public static DataGovernanceError ofValidator(@NotNull final String message, @NotNull final String validatorId){
-        DataGovernanceErrorImpl impl = new DataGovernanceErrorImpl(message);
+    public static Error ofValidator(@NotNull final String message, @NotNull final String validatorId){
+        ErrorImpl impl = new ErrorImpl(message);
         impl.setValidatorId(validatorId);
         return impl;
     }

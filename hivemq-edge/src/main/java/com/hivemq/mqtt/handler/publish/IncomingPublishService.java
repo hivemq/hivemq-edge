@@ -21,11 +21,11 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
-import com.hivemq.datagov.DataGovernanceContext;
-import com.hivemq.datagov.DataGovernanceService;
-import com.hivemq.datagov.impl.DataGovernanceContextImpl;
-import com.hivemq.datagov.model.DataGovernanceData;
-import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
+import com.hivemq.context.HiveMQEdgeContext;
+import com.hivemq.context.HiveMQEdgeService;
+import com.hivemq.context.impl.ContextImpl;
+import com.hivemq.context.model.Data;
+import com.hivemq.context.model.impl.DataImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.extension.sdk.api.packets.auth.DefaultAuthorizationBehaviour;
@@ -63,18 +63,18 @@ public class IncomingPublishService {
     private final @NotNull RestrictionsConfigurationService restrictionsConfigurationService;
     private final @NotNull MqttServerDisconnector mqttServerDisconnector;
 
-    private final @NotNull DataGovernanceService dataGovernanceService;
+    private final @NotNull HiveMQEdgeService hiveMQEdgeService;
 
     @Inject
     IncomingPublishService(final @NotNull MqttConfigurationService mqttConfigurationService,
                            final @NotNull RestrictionsConfigurationService restrictionsConfigurationService,
                            final @NotNull MqttServerDisconnector mqttServerDisconnector,
-                           final @NotNull  DataGovernanceService dataGovernanceService) {
+                           final @NotNull HiveMQEdgeService hiveMQEdgeService) {
 
         this.mqttConfigurationService = mqttConfigurationService;
         this.restrictionsConfigurationService = restrictionsConfigurationService;
         this.mqttServerDisconnector = mqttServerDisconnector;
-        this.dataGovernanceService = dataGovernanceService;
+        this.hiveMQEdgeService = hiveMQEdgeService;
     }
 
     public void processPublish(@NotNull final ChannelHandlerContext ctx,
@@ -232,14 +232,14 @@ public class IncomingPublishService {
         final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
         final String clientId = clientConnection.getClientId();
 
-        DataGovernanceData data = new DataGovernanceDataImpl.Builder()
+        Data data = new DataImpl.Builder()
                 .withPublish(publish).withClientId(clientId)
                 .build();
 
-        DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
+        HiveMQEdgeContext governanceContext = new ContextImpl(data);
         governanceContext.setExecutorService(ctx.channel().eventLoop());
 
-        final ListenableFuture<PublishReturnCode> publishFinishedFuture = dataGovernanceService.applyAndPublish(governanceContext);
+        final ListenableFuture<PublishReturnCode> publishFinishedFuture = hiveMQEdgeService.applyAndPublish(governanceContext);
 //        final ListenableFuture<PublishReturnCode> publishFinishedFuture = publishService.publish(publish, ctx.channel().eventLoop(), clientId);
         Futures.addCallback(publishFinishedFuture, new FutureCallback<>() {
             @Override

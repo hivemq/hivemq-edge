@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.impl;
+package com.hivemq.context.impl;
 
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.common.topic.TopicFilterProcessor;
-import com.hivemq.datagov.DataGovernanceContext;
-import com.hivemq.datagov.model.DataGovernanceData;
-import com.hivemq.datagov.model.DataGovernancePolicy;
-import com.hivemq.datagov.model.impl.DataGovernancePolicyImpl;
+import com.hivemq.context.HiveMQEdgeContext;
+import com.hivemq.context.model.Data;
+import com.hivemq.context.model.Policy;
+import com.hivemq.context.model.impl.PolicyImpl;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
@@ -32,7 +32,7 @@ import java.util.Map;
 /**
  * @author Simon L Johnson
  */
-public class UnifiedNamespaceDataGovernancePolicy extends DataGovernancePolicyImpl implements DataGovernancePolicy {
+public class UnifiedNamespacePolicy extends PolicyImpl implements Policy {
 
     static final String ID = "unified.namespace.policy";
     static final String NAME = "Unified Namespace Policy";
@@ -40,13 +40,13 @@ public class UnifiedNamespaceDataGovernancePolicy extends DataGovernancePolicyIm
     private final UnifiedNamespaceService unifiedNamespaceService;
 
     @Inject
-    public UnifiedNamespaceDataGovernancePolicy(
+    public UnifiedNamespacePolicy(
             final UnifiedNamespaceService unifiedNamespaceService) {
         super(ID, NAME);
         this.unifiedNamespaceService = unifiedNamespaceService;
     }
 
-    public void execute(final DataGovernanceContext context, final DataGovernanceData input){
+    public void execute(final HiveMQEdgeContext context, final Data input){
 
         ImmutableMap.Builder builder = ImmutableMap.<String, String>builder();
         Map<String, String> tokens = context.getTokenProvider().getTokenReplacements(context);

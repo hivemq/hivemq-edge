@@ -13,18 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.model;
-
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.message.publish.PUBLISH;
+package com.hivemq.context;
 
 /**
  * @author Simon L Johnson
  */
-public interface DataGovernanceData {
+public class HiveMQEdgeException extends Exception {
+    public HiveMQEdgeException() {
+    }
 
-    @NotNull String getClientId();
+    public HiveMQEdgeException(final String message) {
+        super(message);
+    }
 
-    @NotNull PUBLISH getPublish();
-    void setPublish(PUBLISH publish);
+    public HiveMQEdgeException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
+
+    public HiveMQEdgeException(final Throwable cause) {
+        super(cause);
+    }
 }

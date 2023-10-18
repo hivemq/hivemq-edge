@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.model.impl;
+package com.hivemq.context.model.impl;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.datagov.model.DataGovernanceData;
-import com.hivemq.datagov.model.DataGovernanceError;
-import com.hivemq.datagov.model.DataGovernanceResult;
+import com.hivemq.context.model.Data;
+import com.hivemq.context.model.Error;
+import com.hivemq.context.model.Result;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -29,24 +29,24 @@ import java.util.Optional;
 /**
  * @author Simon L Johnson
  */
-public class DataGoveranceResultImpl implements DataGovernanceResult {
+public class ResultImpl implements Result {
 
-    private List<DataGovernanceError> errors;
+    private List<Error> errors;
     private String message;
     private STATUS status;
-    private DataGovernanceData output;
+    private Data output;
 
-    public DataGoveranceResultImpl(final @NotNull DataGovernanceData output) {
+    public ResultImpl(final @NotNull Data output) {
         this.status = STATUS.PENDING;
         this.output = output;
     }
 
     @Override
-    public List<DataGovernanceError> getErrors() {
+    public List<Error> getErrors() {
         return errors == null ? Collections.emptyList() : errors;
     }
 
-    public void addError(final DataGovernanceError error, boolean fatal) {
+    public void addError(final Error error, boolean fatal) {
         Preconditions.checkNotNull(error);
         if(fatal){
             status = STATUS.FAILURE;
@@ -76,7 +76,7 @@ public class DataGoveranceResultImpl implements DataGovernanceResult {
     }
 
     @Override
-    public DataGovernanceData getOutput() {
+    public Data getOutput() {
         return output;
     }
 

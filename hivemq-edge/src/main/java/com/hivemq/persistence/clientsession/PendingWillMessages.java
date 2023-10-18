@@ -21,11 +21,11 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.hivemq.datagov.DataGovernanceContext;
-import com.hivemq.datagov.DataGovernanceService;
-import com.hivemq.datagov.impl.DataGovernanceContextImpl;
-import com.hivemq.datagov.model.DataGovernanceData;
-import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
+import com.hivemq.context.HiveMQEdgeContext;
+import com.hivemq.context.HiveMQEdgeService;
+import com.hivemq.context.impl.ContextImpl;
+import com.hivemq.context.model.Data;
+import com.hivemq.context.model.impl.DataImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
@@ -62,7 +62,7 @@ public class PendingWillMessages {
     private final @NotNull Lazy<ClientSessionPersistence> clientSessionPersistence;
     private final @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence;
     private final @NotNull MetricsHolder metricsHolder;
-    private final @NotNull DataGovernanceService dataGovernanceService;
+    private final @NotNull HiveMQEdgeService hiveMQEdgeService;
 
     @Inject
     public PendingWillMessages(
@@ -70,13 +70,13 @@ public class PendingWillMessages {
             final @NotNull Lazy<ClientSessionPersistence> clientSessionPersistence,
             final @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence,
             final @NotNull MetricsHolder metricsHolder,
-            final @NotNull DataGovernanceService dataGovernanceService) {
+            final @NotNull HiveMQEdgeService hiveMQEdgeService) {
 
         this.executorService = executorService;
         this.clientSessionPersistence = clientSessionPersistence;
         this.clientSessionLocalPersistence = clientSessionLocalPersistence;
         this.metricsHolder = metricsHolder;
-        this.dataGovernanceService = dataGovernanceService;
+        this.hiveMQEdgeService = hiveMQEdgeService;
         executorService.scheduleAtFixedRate(new CheckWillsTask(), WILL_DELAY_CHECK_INTERVAL_SEC, WILL_DELAY_CHECK_INTERVAL_SEC, TimeUnit.SECONDS);
     }
 
@@ -162,13 +162,13 @@ public class PendingWillMessages {
 
     private void sendWill(final @NotNull String clientId, final @NotNull PUBLISH willPublish) {
 
-        DataGovernanceData data = new DataGovernanceDataImpl.Builder()
+        Data data = new DataImpl.Builder()
                 .withPublish(willPublish)
                 .withClientId(clientId)
                 .build();
-        DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
+        HiveMQEdgeContext governanceContext = new ContextImpl(data);
         governanceContext.setExecutorService(executorService);
-        final ListenableFuture<PublishReturnCode> publishFuture = dataGovernanceService.applyAndPublish(governanceContext);
+        final ListenableFuture<PublishReturnCode> publishFuture = hiveMQEdgeService.applyAndPublish(governanceContext);
 //        publishService.publish(willPublish, executorService, clientId)
         Futures.addCallback(publishFuture, new FutureCallback<>() {
             @Override

@@ -24,7 +24,7 @@ import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
-import com.hivemq.datagov.DataGovernanceService;
+import com.hivemq.context.HiveMQEdgeService;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.handler.tasks.PublishAuthorizerResult;
@@ -79,7 +79,7 @@ public class IncomingPublishServiceTest {
     private ChannelHandlerContext ctx;
     private IncomingPublishService incomingPublishService;
     private final ClientConnection clientConnection = new ClientConnection(channel, null);
-    private DataGovernanceService dataGovernanceService;
+    private HiveMQEdgeService hiveMQEdgeService;
 
     @Before
     public void setUp() throws Exception {
@@ -87,8 +87,8 @@ public class IncomingPublishServiceTest {
 
         mqttConfigurationService = Mockito.spy(new MqttConfigurationServiceImpl());
         restrictionsConfigurationService = Mockito.spy(new RestrictionsConfigurationServiceImpl());
-        dataGovernanceService = mock(DataGovernanceService.class);
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
+        hiveMQEdgeService = mock(HiveMQEdgeService.class);
+        when(hiveMQEdgeService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
 
         setupHandlerAndChannel();
 
@@ -102,8 +102,7 @@ public class IncomingPublishServiceTest {
 
         incomingPublishService = new IncomingPublishService(mqttConfigurationService,
                 restrictionsConfigurationService,
-                mqttServerDisconnector,
-                dataGovernanceService);
+                mqttServerDisconnector, hiveMQEdgeService);
 
         final CheckUserEventTriggeredOnSuper triggeredUserEvents = new CheckUserEventTriggeredOnSuper();
 
@@ -166,13 +165,13 @@ public class IncomingPublishServiceTest {
 
         assertEquals(0, channel.outboundMessages().size());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
     public void test_publish_valid_qos0_failed_return_code() throws InterruptedException {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
+        when(hiveMQEdgeService.applyAndPublish(any())).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_MOST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
@@ -181,7 +180,7 @@ public class IncomingPublishServiceTest {
 
         assertEquals(0, channel.outboundMessages().size());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
@@ -192,7 +191,7 @@ public class IncomingPublishServiceTest {
 
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
@@ -211,7 +210,7 @@ public class IncomingPublishServiceTest {
 
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
 
         while (channel.outboundMessages().size() == 0) {
             channel.runScheduledPendingTasks();
@@ -234,7 +233,7 @@ public class IncomingPublishServiceTest {
         incomingPublishService.processPublish(ctx, publish, authorizerResult);
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
 
         while (channel.outboundMessages().size() == 0) {
             channel.runScheduledPendingTasks();
@@ -261,7 +260,7 @@ public class IncomingPublishServiceTest {
                 anyString(),
                 eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
                 anyString());
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
 
         final PUBACK puback = (PUBACK) channel.outboundMessages().poll();
         assertEquals(Mqtt5PubAckReasonCode.NOT_AUTHORIZED, puback.getReasonCode());
@@ -279,7 +278,7 @@ public class IncomingPublishServiceTest {
         incomingPublishService.processPublish(ctx, publish, authorizerResult);
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
@@ -298,7 +297,7 @@ public class IncomingPublishServiceTest {
                 anyString(),
                 eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
                 anyString());
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
 
         final PUBACK puback = (PUBACK) channel.outboundMessages().poll();
         assertEquals(Mqtt5PubAckReasonCode.PACKET_IDENTIFIER_IN_USE, puback.getReasonCode());
@@ -322,7 +321,7 @@ public class IncomingPublishServiceTest {
                 anyString(),
                 eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
                 anyString());
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
 
     }
 
@@ -337,7 +336,7 @@ public class IncomingPublishServiceTest {
         incomingPublishService.processPublish(ctx, publish, authorizerResult);
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
 
         while (channel.outboundMessages().size() == 0) {
             channel.runScheduledPendingTasks();
@@ -365,7 +364,7 @@ public class IncomingPublishServiceTest {
                 anyString(),
                 eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
                 anyString());
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
 
         final PUBREC puback = (PUBREC) channel.outboundMessages().poll();
         assertEquals(Mqtt5PubRecReasonCode.PACKET_IDENTIFIER_IN_USE, puback.getReasonCode());
@@ -389,7 +388,7 @@ public class IncomingPublishServiceTest {
 
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
@@ -413,7 +412,7 @@ public class IncomingPublishServiceTest {
                 eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
                 anyString());
 
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
 
         final PUBACK puback = channel.readOutbound();
 
@@ -444,7 +443,7 @@ public class IncomingPublishServiceTest {
                 eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
                 any());
 
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
     }
 
     @Test
@@ -468,7 +467,7 @@ public class IncomingPublishServiceTest {
                 eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
                 any());
 
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
     }
 
     @Test
@@ -487,7 +486,7 @@ public class IncomingPublishServiceTest {
 
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
@@ -511,7 +510,7 @@ public class IncomingPublishServiceTest {
                 eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
                 anyString());
 
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
 
     }
 
@@ -531,7 +530,7 @@ public class IncomingPublishServiceTest {
 
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
@@ -555,7 +554,7 @@ public class IncomingPublishServiceTest {
                 eq(Mqtt5DisconnectReasonCode.NOT_AUTHORIZED),
                 anyString());
 
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
 
         final PUBREC pubrec = channel.readOutbound();
 
@@ -568,14 +567,14 @@ public class IncomingPublishServiceTest {
     @Test
     public void test_publish_valid_qos1_no_matching_subs() throws InterruptedException {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.NO_MATCHING_SUBSCRIBERS));
+        when(hiveMQEdgeService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.NO_MATCHING_SUBSCRIBERS));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_LEAST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
 
         while (channel.outboundMessages().size() == 0) {
             channel.runScheduledPendingTasks();
@@ -587,20 +586,20 @@ public class IncomingPublishServiceTest {
 
         assertEquals(Mqtt5PubAckReasonCode.NO_MATCHING_SUBSCRIBERS, puback.getReasonCode());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
     public void test_publish_valid_qos1_failed_publish() throws InterruptedException {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
+        when(hiveMQEdgeService.applyAndPublish(any())).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.AT_LEAST_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
 
         while (channel.outboundMessages().size() == 0) {
             channel.runScheduledPendingTasks();
@@ -612,7 +611,7 @@ public class IncomingPublishServiceTest {
 
         assertEquals(Mqtt5PubAckReasonCode.SUCCESS, puback.getReasonCode());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
@@ -623,7 +622,7 @@ public class IncomingPublishServiceTest {
 
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
 
         while (channel.outboundMessages().size() == 0) {
             channel.runScheduledPendingTasks();
@@ -637,20 +636,20 @@ public class IncomingPublishServiceTest {
 
         assertEquals(Mqtt5PubRecReasonCode.SUCCESS, pubrec.getReasonCode());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
     public void test_publish_valid_qos2_no_matching_subs() throws InterruptedException {
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.NO_MATCHING_SUBSCRIBERS));
+        when(hiveMQEdgeService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.NO_MATCHING_SUBSCRIBERS));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.EXACTLY_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
 
         while (channel.outboundMessages().size() == 0) {
             channel.runScheduledPendingTasks();
@@ -662,18 +661,18 @@ public class IncomingPublishServiceTest {
 
         assertEquals(Mqtt5PubRecReasonCode.NO_MATCHING_SUBSCRIBERS, pubrec.getReasonCode());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
     public void test_publish_valid_qos2_failed_publish() throws InterruptedException {
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
+        when(hiveMQEdgeService.applyAndPublish(any())).thenReturn(Futures.immediateFailedFuture(TestException.INSTANCE));
 
         final PUBLISH publish = TestMessageUtil.createMqtt3Publish("testtopic", "1234".getBytes(), QoS.EXACTLY_ONCE);
         incomingPublishService.processPublish(ctx, publish, null);
 
         assertEquals(true, channel.isActive());
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
 
         while (channel.outboundMessages().size() == 0) {
             channel.runScheduledPendingTasks();
@@ -684,7 +683,7 @@ public class IncomingPublishServiceTest {
         final PUBREC pubrec = channel.readOutbound();
 
         assertEquals(Mqtt5PubRecReasonCode.SUCCESS, pubrec.getReasonCode());
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
@@ -695,7 +694,7 @@ public class IncomingPublishServiceTest {
 
         assertEquals(true, channel.isActive());
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
@@ -730,7 +729,7 @@ public class IncomingPublishServiceTest {
                 anyString());
 
         // Verify PUBLISH not processed
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
     }
 
     @Test
@@ -751,7 +750,7 @@ public class IncomingPublishServiceTest {
                 any());
 
         // Verify PUBLISH not processed
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
     }
 
     @Test
