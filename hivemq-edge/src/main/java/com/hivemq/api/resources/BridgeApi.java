@@ -92,6 +92,21 @@ public interface BridgeApi {
                        in = ParameterIn.DEFAULT)
             final @NotNull Bridge bridge);
 
+    @POST
+    @Path("")
+    @Operation(summary = "Add a new Bridge",
+               operationId = "addBridgeConnString",
+               description = "Add bridge from a connection string.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success")})
+    Response addBridgeConnectionString(
+            @Parameter(name = "bridge connection string",
+                       description = "Upsert bridge using a base64 encoded connection string.",
+                       required = true,
+                       in = ParameterIn.DEFAULT)
+            final @NotNull String connectionString);
+
     @DELETE
     @Path("/{bridgeId: ([a-zA-Z_0-9\\-])*}")
     @Operation(summary = "Remove a Bridge",

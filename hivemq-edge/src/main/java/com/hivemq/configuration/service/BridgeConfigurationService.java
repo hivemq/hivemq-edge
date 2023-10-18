@@ -28,6 +28,8 @@ public interface BridgeConfigurationService {
 
     void addBridge(final @NotNull MqttBridge mqttBridge);
 
+    void addBridge(final @NotNull String connectionString);
+
     @NotNull List<MqttBridge> getBridges();
 
     /**

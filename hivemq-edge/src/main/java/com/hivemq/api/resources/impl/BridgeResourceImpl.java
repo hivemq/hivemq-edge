@@ -90,9 +90,15 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 configurationService.bridgeConfiguration().addBridge(mqttBridge);
                 return Response.status(200).build();
             } finally {
-                executorService.submit(() -> bridgeService.updateBridges());
+                executorService.submit(bridgeService::updateBridges);
             }
         }
+    }
+
+    @Override
+    public Response addBridgeConnectionString(final @NotNull String connectionString) {
+        configurationService.bridgeConfiguration().addBridge(connectionString);
+        return Response.status(200).build();
     }
 
     @Override

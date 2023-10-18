@@ -15,12 +15,16 @@
  */
 package com.hivemq.configuration.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,9 +32,26 @@ public class BridgeConfigurationServiceImpl implements BridgeConfigurationServic
 
     private final @NotNull List<MqttBridge> mqttBridges = Collections.synchronizedList(new ArrayList<>());
 
+    private final ObjectMapper objectMapper;
+
+    public BridgeConfigurationServiceImpl() {
+        objectMapper = new ObjectMapper();
+    }
+
     @Override
     public void addBridge(final @NotNull MqttBridge mqttBridge) {
         mqttBridges.add(mqttBridge);
+    }
+
+    @Override
+    public void addBridge(final String connectionString) {
+        String jsonConfig = Arrays.toString(Base64.getDecoder().decode(connectionString));
+        try {
+            final MqttBridge mqttBridge = objectMapper.readValue(jsonConfig, MqttBridge.class);
+            addBridge(mqttBridge);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e); // TODO Improve error handling
+        }
     }
 
     @Override
