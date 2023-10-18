@@ -26,6 +26,6 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   </React.StrictMode>
 )
 
-if (window.location.pathname === "/") {
-  window.location.replace("/app")
+if (window.location.pathname === '/') {
+  window.location.replace('/app')
 }
