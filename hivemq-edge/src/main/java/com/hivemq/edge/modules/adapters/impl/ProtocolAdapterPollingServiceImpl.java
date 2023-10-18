@@ -175,14 +175,14 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
         activePollers.keySet().stream().forEach(this::stopPolling);
     }
 
-    private static long getBackoff(int errorCount, long max, boolean addFuzziness){
+    private static long getBackoffNanos(int errorCount, long max, boolean addFuzziness){
         //-- This will backoff up to a max of about a day (unless the max provided is less)
         long f = (long) (Math.pow(2, Math.min(errorCount, 20)) * 100);
         if(addFuzziness){
             f += ThreadLocalRandom.current().nextInt(0, errorCount * 100);
         }
         f =  Math.min(f, max);
-        return f;
+        return TimeUnit.MILLISECONDS.convert(f, TimeUnit.NANOSECONDS);
     }
 
     private class MonitoredPollingJob implements Runnable {
@@ -194,7 +194,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
         private final @NotNull AtomicInteger applicationErrorCount = new AtomicInteger(0);
 
         private long notBefore = 0;
-        private long recentExecutionStarted = 0;
+        private long recentExecutionStartedNanos = 0;
         private @Nullable Thread currentThread;
 
         public MonitoredPollingJob(final ProtocolAdapterPollingSampler sampler) {
@@ -218,8 +218,8 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 stopPolling(sampler);
                 return;
             }
-            long startedTimeMillis = System.currentTimeMillis();
-            if (notBefore > 0 && startedTimeMillis < notBefore) {
+            long startedTimeNanos = System.nanoTime();
+            if (notBefore > 0 && startedTimeNanos < notBefore) {
                 // We're backing off atm so as not to harass the network
                 return;
             }
@@ -238,7 +238,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 }
                 final String originalName = Thread.currentThread().getName();
                 try {
-                    recentExecutionStarted = startedTimeMillis;
+                    recentExecutionStartedNanos = startedTimeNanos;
                     currentThread = Thread.currentThread();
                     runCount.incrementAndGet();
                     currentThread.setName(originalName + " " + sampler.getAdapterId());
@@ -247,7 +247,8 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                         sampleFuture.get();
                         if (log.isTraceEnabled()) {
                             log.trace("Sampler {} Successfully Invoked in {}ms",
-                                    sampler.getAdapterId(), System.currentTimeMillis() - startedTimeMillis);
+                                    sampler.getAdapterId(),
+                                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedTimeNanos));
                         }
                         if(hasErrorStats()){
                             resetErrorStats();
@@ -283,12 +284,16 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     if(!continuing){
                         if(log.isInfoEnabled()){
                             log.info("Detected Bad System Process {} In Sampler {} - Terminating Process to Maintain Health ({}ms Runtime)",
-                                    errorCountTotal, sampler.getAdapterId(), System.currentTimeMillis() - startedTimeMillis);
+                                    errorCountTotal,
+                                    sampler.getAdapterId(),
+                                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedTimeNanos));
                         }
                     } else {
                         if(log.isDebugEnabled()){
                             log.debug("Detected Bad System Process {} In Sampler {} - Interrupted Process to Maintain Health ({}ms Runtime)",
-                                    errorCountTotal, sampler.getAdapterId(), System.currentTimeMillis() - startedTimeMillis);
+                                    errorCountTotal,
+                                    sampler.getAdapterId(),
+                                    TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedTimeNanos));
                         }
                     }
                 } else {
@@ -315,9 +320,9 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                         resetErrorStats();
                     } else {
                         //exp. backoff the network call according to the number of errors
-                        long backoff = getBackoff(errorCountTotal,
+                        long backoff = getBackoffNanos(errorCountTotal,
                                 InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get(),true);
-                        notBefore = System.currentTimeMillis() + backoff;
+                        notBefore = System.nanoTime() + backoff;
                     }
                 } catch(Throwable t){
                     if(log.isErrorEnabled()){
@@ -358,7 +363,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     final Collection<MonitoredPollingJob> runningJobs = Collections2.filter(activePollers.values(),
                             job -> job.isRunning.get());
                     for (final MonitoredPollingJob job : runningJobs) {
-                        if ((System.currentTimeMillis() - job.recentExecutionStarted) >
+                        if (TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - job.recentExecutionStartedNanos) >
                                 InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get()) {
                             if (job.currentThread != null) {
                                 job.currentThread.interrupt();
