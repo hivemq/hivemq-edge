@@ -25,7 +25,7 @@ import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.ioc.ConfigurationModule;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.context.ioc.HiveMQModule;
+import com.hivemq.context.ioc.HiveMQEdgeModule;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.ioc.ModulesModule;
@@ -63,7 +63,7 @@ import java.util.Set;
         ApiModule.class,
         ModulesModule.class,
         UnsServiceModule.class,
-        HiveMQModule.class,
+        HiveMQEdgeModule.class,
         RemoteServiceModule.class})
 @Singleton
 public interface Injector {

@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author Simon L Johnson
  */
-public class HiveMQModuleModelTests {
+public class HiveMQEdgeModuleModelTests {
 
     static String MODULE_ID = "moduleId";
     static String MODULE_VERSION = "moduleVersion";

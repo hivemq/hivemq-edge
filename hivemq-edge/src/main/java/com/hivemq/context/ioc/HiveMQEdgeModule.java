@@ -28,7 +28,7 @@ import dagger.Provides;
 import javax.inject.Singleton;
 
 @dagger.Module
-public abstract class HiveMQModule {
+public abstract class HiveMQEdgeModule {
 
     @Binds
     abstract @NotNull HiveMQEdgeService dataGovernanceService(@NotNull ServiceImpl dataGovernanceService);

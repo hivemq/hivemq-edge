@@ -44,7 +44,7 @@ public class AdapterModelConverterTest {
     void testProtocolAdapterModuleConversionUtils() {
 
         ConfigurationService configurationService = mock(ConfigurationService.class);
-        Module testModule = HiveMQModuleModelTests.createTestModule();
+        Module testModule = HiveMQEdgeModuleModelTests.createTestModule();
         ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule,configurationService);
         assertEquals(testModule.getName(), adapter.getName(), "Adapter name should match module name");
         assertEquals(testModule.getDescription(), adapter.getDescription(), "Adapter description should match");
@@ -89,7 +89,7 @@ public class AdapterModelConverterTest {
     void testProtocolAdapterDiscoveryDisabled() {
 
         ConfigurationService configurationService = mock(ConfigurationService.class);
-        Module testModule = HiveMQModuleModelTests.createTestModule();
+        Module testModule = HiveMQEdgeModuleModelTests.createTestModule();
         ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule,configurationService);
         assertFalse(adapter.getCapabilities().contains(ProtocolAdapter.Capability.DISCOVER), "Module generated adapter should not support discovery");
     }
@@ -98,7 +98,7 @@ public class AdapterModelConverterTest {
     void testProtocolAdapterWriteDisabled() {
 
         ConfigurationService configurationService = mock(ConfigurationService.class);
-        Module testModule = HiveMQModuleModelTests.createTestModule();
+        Module testModule = HiveMQEdgeModuleModelTests.createTestModule();
         ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule,configurationService);
         assertFalse(adapter.getCapabilities().contains(ProtocolAdapter.Capability.WRITE), "Module generated adapter should not support write");
     }
@@ -107,7 +107,7 @@ public class AdapterModelConverterTest {
     void testProtocolAdapterReadDisabled() {
 
         ConfigurationService configurationService = mock(ConfigurationService.class);
-        Module testModule = HiveMQModuleModelTests.createTestModule();
+        Module testModule = HiveMQEdgeModuleModelTests.createTestModule();
         ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule,configurationService);
         assertFalse(adapter.getCapabilities().contains(ProtocolAdapter.Capability.READ), "Module generated adapter should not support read");
     }
