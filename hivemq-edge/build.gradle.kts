@@ -7,21 +7,21 @@ plugins {
     `java-library`
     `maven-publish`
     signing
-    id("com.github.johnrengelman.shadow")
-    id("com.github.sgtsilvio.gradle.utf8")
-    id("com.github.sgtsilvio.gradle.metadata")
-    id("com.github.sgtsilvio.gradle.javadoc-links")
-    id("com.github.breadmoirai.github-release")
-    id("com.github.hierynomus.license")
-    id("org.owasp.dependencycheck")
-    id("com.github.ben-manes.versions")
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.utf8)
+    alias(libs.plugins.metadata)
+    alias(libs.plugins.javadocLinks)
+    alias(libs.plugins.githubRelease)
+    alias(libs.plugins.hierynomusLicense)
+    alias(libs.plugins.dependencycheck)
+    alias(libs.plugins.benManes)
 
     /* Code Quality Plugins */
-    id("jacoco")
-    id("pmd")
-    id("com.github.spotbugs")
-    id("de.thetaphi.forbiddenapis")
-    id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.8"
+    jacoco
+    pmd
+    alias(libs.plugins.spotbugs)
+    alias(libs.plugins.forbiddenapis)
+    alias(libs.plugins.swagger)
 }
 
 group = "com.hivemq"
@@ -100,113 +100,79 @@ repositories {
 // Runtime stuffs
 dependencies {
 
-    //HiveMQ
-    api("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
-    api("com.hivemq:hivemq-edge-extension-sdk:${property("hivemq-edge-extension-sdk.version")}")
-
-    // netty
-    implementation("io.netty:netty-buffer:${property("netty.version")}")
-    implementation("io.netty:netty-codec:${property("netty.version")}")
-    implementation("io.netty:netty-codec-http:${property("netty.version")}")
-    implementation("io.netty:netty-common:${property("netty.version")}")
-    implementation("io.netty:netty-handler:${property("netty.version")}")
-    implementation("io.netty:netty-transport:${property("netty.version")}")
-
-    // logging
-    implementation("org.slf4j:slf4j-api:${property("slf4j.version")}")
-    implementation("org.slf4j:jul-to-slf4j:${property("slf4j.version")}")
-    implementation("ch.qos.logback:logback-classic:${property("logback.version")}")
-
-    // security
-    implementation("org.bouncycastle:bcprov-jdk15on:${property("bouncycastle.version")}")
-    implementation("org.bouncycastle:bcpkix-jdk15on:${property("bouncycastle.version")}")
+    api(libs.bundles.hivemq)
+    implementation(libs.bundles.netty)
+    implementation(libs.bundles.logs)
+    implementation(libs.bundles.security)
+    implementation(libs.bundles.metrics)
+    runtimeOnly(libs.metrics.logback)
 
     // override transitive dependencies that have security vulnerabilities
     constraints {
-        implementation("org.jetbrains.kotlin:kotlin-stdlib:${property("kotlin.version")}")
-        implementation("org.apache.commons:commons-compress:${property("commons-compress.version")}")
+        implementation(libs.kotlin.stdlib)
+        implementation(libs.commons.compress)
     }
 
     // config
-    implementation("jakarta.xml.bind:jakarta.xml.bind-api:${property("jakarta-xml-bind.version")}")
-    runtimeOnly("com.sun.xml.bind:jaxb-impl:${property("jaxb.version")}")
-
-    // metrics
-    implementation("io.dropwizard.metrics:metrics-core:${property("metrics.version")}")
-    implementation("io.dropwizard.metrics:metrics-jmx:${property("metrics.version")}")
-    runtimeOnly("io.dropwizard.metrics:metrics-logback:${property("metrics.version")}")
-    implementation("io.dropwizard.metrics:metrics-jvm:${property("metrics.version")}")
+    implementation(libs.jakarta.xml.bind.api)
+    runtimeOnly(libs.jaxb.impl)
 
     // dependency injection
-    implementation("com.google.dagger:dagger:${property("dagger.version")}")
-    annotationProcessor("com.google.dagger:dagger-compiler:${property("dagger.version")}")
+    implementation(libs.dagger)
+    annotationProcessor(libs.dagger.compiler)
 
-    implementation("javax.annotation:javax.annotation-api:${property("javax.annotation.version")}")
+    implementation(libs.annotation.api)
 
     // common
-    implementation("commons-io:commons-io:${property("commons-io.version")}")
-    implementation("org.apache.commons:commons-lang3:${property("commons-lang.version")}")
-    implementation("com.google.guava:guava:${property("guava.version")}") {
+    implementation(libs.commons.io)
+    implementation(libs.commons.lang3)
+    implementation(libs.guava) {
         exclude("org.checkerframework", "checker-qual")
         exclude("com.google.errorprone", "error_prone_annotations")
     }
-    implementation("net.javacrumbs.future-converter:future-converter-java8-guava:1.2.0")
+    implementation(libs.future.converter.java8.guava)
 
     // com.google.code.findbugs:jsr305 (transitive dependency of com.google.guava:guava) is used in imports
-    implementation("net.openhft:zero-allocation-hashing:${property("zero-allocation-hashing.version")}")
-    implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
-    implementation("org.jctools:jctools-core:${property("jctools.version")}")
+    implementation(libs.zero.allocation.hashing)
+    implementation(libs.jackson.databind)
+    implementation(libs.jctools.core)
 
     //mqtt-sn codec
-    implementation("com.github.simon622.mqtt-sn:mqtt-sn-codec:838f51d691")
+    implementation(libs.mqtt.sn.codec)
 
     //JAX-RS + Http Connector + Serializers
-    implementation("org.glassfish.jersey.containers:jersey-container-jdk-http:${property("jersey.jaxrs.sun.version")}")
-    implementation("org.glassfish.jersey.inject:jersey-hk2:${property("jersey.jaxrs.sun.version")}")
-    implementation("org.glassfish.jersey.media:jersey-media-json-jackson:${property("jersey.jaxrs.sun.version")}")
-    implementation("org.glassfish.jersey.media:jersey-media-multipart:${property("jersey.jaxrs.sun.version")}")
-    implementation("org.glassfish.jersey.inject:jersey-hk2:${property("jersey.jaxrs.sun.version")}")
-    implementation("com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${property("jackson.version")}")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${property("jackson.version")}")
+    implementation(libs.bundles.glassfish)
+    implementation(libs.bundles.jackson)
 
-    implementation("com.hivemq:hivemq-mqtt-client:1.3.1")
+    implementation(libs.hivemq.mqtt.client)
 
     //Open API
-    implementation("io.swagger.core.v3:swagger-annotations:${property("swagger.openapi.annotations.version")}")
-
-    //JWT
-    implementation("org.bitbucket.b_c:jose4j:${property("jose4j.version")}")
-
-    // crypto
-    implementation("org.bouncycastle:bcpkix-jdk15on")
-    implementation("org.bouncycastle:bcprov-jdk15on")
+    implementation(libs.swagger.annotations)
 
     //json schema
-    implementation("com.networknt:json-schema-validator:1.0.82")
-    implementation("com.github.victools:jsonschema-generator:4.31.1")
-    implementation("com.github.victools:jsonschema-module-jackson:4.31.1")
+    implementation(libs.jsonschema.validator)
+    implementation(libs.jsonschema.generator)
+    implementation(libs.jsonschema.module.jackson)
 }
 
 /* ******************** test ******************** */
 
 dependencies {
-    testAnnotationProcessor("com.google.dagger:dagger-compiler:${property("dagger.version")}")
-    testImplementation(platform("org.junit:junit-bom:${property("junit.jupiter.version")}"))
-    testImplementation("junit:junit:${property("junit.version")}")
+    testAnnotationProcessor(libs.dagger.compiler)
+    testImplementation(platform(libs.junit.jupiter.bom))
+    testImplementation(libs.junit.classic)
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine")
-    testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
-    testImplementation("org.mockito:mockito-junit-jupiter:${property("mockito.version")}")
-    testImplementation("nl.jqno.equalsverifier:equalsverifier:${property("equalsverifier.version")}")
-    testImplementation("net.jodah:concurrentunit:${property("concurrentunit.version")}")
-    testImplementation("org.jboss.shrinkwrap:shrinkwrap-api:${property("shrinkwrap.version")}")
-    testRuntimeOnly("org.jboss.shrinkwrap:shrinkwrap-impl-base:${property("shrinkwrap.version")}")
-    testImplementation("net.bytebuddy:byte-buddy:${property("bytebuddy.version")}")
-    testImplementation("com.github.tomakehurst:wiremock-jre8-standalone:${property("wiremock.version")}")
-    testImplementation("org.javassist:javassist:${property("javassist.version")}")
-    testImplementation("org.awaitility:awaitility:${property("awaitility.version")}")
-    testImplementation("org.assertj:assertj-core:${property("assertj.version")}")
-    testImplementation("com.github.stefanbirkner:system-rules:${property("system-rules.version")}") {
+    testImplementation(libs.bundles.mokito)
+    testImplementation(libs.equalsverifier)
+    testImplementation(libs.concurrentunit)
+    testImplementation(libs.bundles.shrinkwrap)
+    testImplementation(libs.byte.buddy)
+    testImplementation(libs.wiremock.jre8.standalone)
+    testImplementation(libs.javassist)
+    testImplementation(libs.awaitility)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.system.rules) {
         exclude("junit", "junit-dep")
     }
 }
