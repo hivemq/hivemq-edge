@@ -659,7 +659,11 @@
         "id": "Id",
         "created": "Created",
         "severity": "Severity",
-        "message": "Event"
+        "message": "Event",
+        "source": "Source"
+      },
+      "cta": {
+        "open": "View details of event"
       }
     },
     "panel": {
