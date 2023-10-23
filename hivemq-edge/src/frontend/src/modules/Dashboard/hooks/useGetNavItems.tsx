@@ -3,10 +3,10 @@ import { Icon } from '@chakra-ui/react'
 
 import { IoHomeOutline } from 'react-icons/io5'
 import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
-import { BiListUl } from 'react-icons/bi'
 import { BsIntersect } from 'react-icons/bs'
 import { HiOutlinePuzzle } from 'react-icons/hi'
 import { GoLinkExternal } from 'react-icons/go'
+import { MdOutlineEventNote } from 'react-icons/md'
 
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
@@ -50,9 +50,8 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
           label: t('translation:navigation.gateway.routes.protocolAdapters') as string,
         },
         {
-          icon: <BiListUl />,
+          icon: <MdOutlineEventNote />,
           href: '/event-logs',
-          isDisabled: true,
           label: t('translation:navigation.gateway.routes.eventLogs') as string,
         },
       ],
