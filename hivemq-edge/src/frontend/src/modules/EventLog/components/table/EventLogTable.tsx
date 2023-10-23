@@ -10,7 +10,7 @@ import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
 interface EventLogTableProps {
-  onOpen: () => void
+  onOpen: (t: Event) => void
 }
 
 const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
@@ -20,7 +20,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
   const columns = useMemo<ColumnDef<Event>[]>(() => {
     return [
       {
-        accessorKey: 'identifier',
+        accessorKey: 'identifier.identifier',
         width: '25%',
         header: t('eventLog.table.header.id') as string,
         cell: (info) => {
@@ -30,8 +30,8 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
                 <IconButton
                   size={'sm'}
                   mr={2}
-                  onClick={onOpen}
-                  aria-label={t('bridge.subscription.delete')}
+                  onClick={() => onOpen(info.row.original)}
+                  aria-label={t('eventLog.table.cta.open')}
                   icon={<MdOutlineEventNote />}
                 />
                 {info.row.original.identifier.identifier}
@@ -76,6 +76,18 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
                 <AlertIcon />
                 {info.row.original.severity}
               </Alert>
+            </Skeleton>
+          )
+        },
+      },
+      {
+        accessorKey: 'associatedObject.identifier',
+        sortType: 'alphanumeric',
+        header: t('eventLog.table.header.source') as string,
+        cell: (info) => {
+          return (
+            <Skeleton isLoaded={!isLoading}>
+              <Box whiteSpace={'nowrap'}>{info.row.original.associatedObject?.identifier}</Box>
             </Skeleton>
           )
         },
