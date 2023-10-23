@@ -10,6 +10,7 @@ export const QUERY_KEYS = {
   LISTENERS: 'gateway.listeners',
   METRICS: 'metrics',
   METRICS_SAMPLE: 'sample',
+  EVENTS: 'events',
 }
 
 export const parseJWT = (token: string): JWTPayload | null => {
