@@ -11,7 +11,7 @@ interface BridgeMainDrawerProps {
   onClose: () => void
 }
 
-const EventDrawer: FC<BridgeMainDrawerProps> = ({ isOpen, onClose }) => {
+const EventDrawer: FC<BridgeMainDrawerProps> = ({ event, isOpen, onClose }) => {
   const { t } = useTranslation()
 
   return (
