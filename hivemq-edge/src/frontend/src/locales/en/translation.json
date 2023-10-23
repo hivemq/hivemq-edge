@@ -650,5 +650,20 @@
       "publish.excluded.count": ""
     },
     "messages.retained.current": "Message retained"
+  },
+  "eventLog": {
+    "title": "Event Log",
+    "description": "All the crazy events in Edge",
+    "table": {
+      "header": {
+        "id": "Id",
+        "created": "Created",
+        "severity": "Severity",
+        "message": "Event"
+      }
+    },
+    "panel": {
+      "title": "Event"
+    }
   }
 }
