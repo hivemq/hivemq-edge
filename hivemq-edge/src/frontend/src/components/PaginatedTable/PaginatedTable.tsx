@@ -58,8 +58,8 @@ const PaginatedTable = <T,>({
 
   return (
     <>
-      <TableContainer>
-        <TableUI variant="simple">
+      <TableContainer overflowY={'auto'} overflowX={'auto'} whiteSpace={'normal'}>
+        <TableUI variant="simple" size={'sm'}>
           <Thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <Tr key={headerGroup.id}>
