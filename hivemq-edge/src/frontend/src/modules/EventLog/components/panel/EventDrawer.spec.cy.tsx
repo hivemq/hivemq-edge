@@ -20,6 +20,6 @@ describe('EventDrawer', () => {
     cy.injectAxe()
     cy.mountWithProviders(<EventDrawer isOpen={true} onClose={cy.stub()} event={undefined} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: AdapterActionMenu')
+    cy.percySnapshot('Component: EventDrawer')
   })
 })
