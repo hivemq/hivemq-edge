@@ -75,7 +75,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
 
           return (
             <Skeleton isLoaded={!isLoading}>
-              <Alert status={status}>
+              <Alert status={status} px={2} py={0}>
                 <AlertIcon />
                 {info.row.original.severity}
               </Alert>
