@@ -90,7 +90,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
         cell: (info) => {
           return (
             <Skeleton isLoaded={!isLoading}>
-              <Box whiteSpace={'nowrap'}>{info.row.original.associatedObject?.identifier}</Box>
+              <SourceLink event={info.row.original} />
             </Skeleton>
           )
         },
