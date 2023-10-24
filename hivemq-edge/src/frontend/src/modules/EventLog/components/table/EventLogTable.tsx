@@ -2,14 +2,16 @@ import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
-import { Alert, AlertIcon, AlertStatus, Box, IconButton, Skeleton, Text } from '@chakra-ui/react'
+import { Box, IconButton, Skeleton, Text } from '@chakra-ui/react'
 import { MdOutlineEventNote } from 'react-icons/md'
 
 import { Event } from '@/api/__generated__'
 import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import { compareSeverity } from '@/modules/ProtocolAdapters/utils/pagination-utils.ts'
-import SourceLink from './SourceLink.tsx'
+
+import SourceLink from '../SourceLink.tsx'
+import SeverityBadge from '../SeverityBadge.tsx'
 
 interface EventLogTableProps {
   onOpen: (t: Event) => void
@@ -56,44 +58,21 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
         accessorKey: 'severity',
         header: t('eventLog.table.header.severity') as string,
         sortingFn: (rowA, rowB) => compareSeverity(rowA.original.severity, rowB.original.severity),
-        cell: (info) => {
-          let status: AlertStatus = 'info'
-          switch (info.row.original.severity) {
-            case Event.severity.CRITICAL:
-              status = 'error'
-              break
-            case Event.severity.ERROR:
-              status = 'error'
-              break
-            case Event.severity.WARN:
-              status = 'warning'
-              break
-            case Event.severity.INFO:
-              status = 'info'
-              break
-          }
-
-          return (
-            <Skeleton isLoaded={!isLoading}>
-              <Alert status={status} px={2} py={0}>
-                <AlertIcon />
-                {info.row.original.severity}
-              </Alert>
-            </Skeleton>
-          )
-        },
+        cell: (info) => (
+          <Skeleton isLoaded={!isLoading}>
+            <SeverityBadge event={info.row.original} px={2} py={0} />
+          </Skeleton>
+        ),
       },
       {
         accessorKey: 'associatedObject.identifier',
         sortType: 'alphanumeric',
         header: t('eventLog.table.header.source') as string,
-        cell: (info) => {
-          return (
-            <Skeleton isLoaded={!isLoading}>
-              <SourceLink event={info.row.original} />
-            </Skeleton>
-          )
-        },
+        cell: (info) => (
+          <Skeleton isLoaded={!isLoading}>
+            <SourceLink event={info.row.original.source} />
+          </Skeleton>
+        ),
       },
       {
         accessorKey: 'message',

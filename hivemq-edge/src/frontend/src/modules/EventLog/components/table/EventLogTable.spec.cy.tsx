@@ -13,7 +13,7 @@ describe('EventLogTable', () => {
   it('should render the table', () => {
     cy.mountWithProviders(<EventLogTable onOpen={cy.stub()} />)
 
-    cy.get('tbody').find('tr').eq(0).find('td').eq(0).should('have.text', 'EVENT-0')
+    cy.get('tbody').find('tr').eq(0).find('td').eq(0).find('button').should('be.visible')
     cy.get('tbody').find('tr').eq(0).find('td').eq(2).should('have.text', 'INFO')
     cy.get('tbody').find('tr').eq(0).find('td').eq(3).should('have.text', 'BRIDGE-0')
   })
