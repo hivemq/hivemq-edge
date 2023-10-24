@@ -660,7 +660,9 @@
         "created": "Created",
         "severity": "Severity",
         "message": "Event",
-        "source": "Source"
+        "source": "Source",
+        "associatedObject": "Associated Object",
+        "payload": "Payload"
       },
       "cta": {
         "open": "View details of event"
