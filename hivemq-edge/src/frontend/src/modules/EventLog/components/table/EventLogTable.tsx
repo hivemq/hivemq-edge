@@ -55,6 +55,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
       {
         accessorKey: 'severity',
         header: t('eventLog.table.header.severity') as string,
+        sortingFn: (rowA, rowB) => compareSeverity(rowA.original.severity, rowB.original.severity),
         cell: (info) => {
           let status: AlertStatus = 'info'
           switch (info.row.original.severity) {
