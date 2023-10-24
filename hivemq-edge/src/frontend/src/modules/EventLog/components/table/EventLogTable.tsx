@@ -8,6 +8,8 @@ import { MdOutlineEventNote } from 'react-icons/md'
 import { Event } from '@/api/__generated__'
 import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import { compareSeverity } from '@/modules/ProtocolAdapters/utils/pagination-utils.ts'
+import SourceLink from './SourceLink.tsx'
 
 interface EventLogTableProps {
   onOpen: (t: Event) => void
@@ -22,6 +24,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
       {
         accessorKey: 'identifier.identifier',
         width: '25%',
+        enableSorting: false,
         header: t('eventLog.table.header.id') as string,
         cell: (info) => {
           return (
@@ -34,7 +37,6 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
                   aria-label={t('eventLog.table.cta.open')}
                   icon={<MdOutlineEventNote />}
                 />
-                {info.row.original.identifier.identifier}
               </Box>
             </Skeleton>
           )
