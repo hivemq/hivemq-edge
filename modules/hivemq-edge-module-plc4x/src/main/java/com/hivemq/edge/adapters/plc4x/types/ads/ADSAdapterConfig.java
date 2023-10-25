@@ -15,10 +15,16 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.ads;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class ADSAdapterConfig extends Plc4xAdapterConfig {
 
@@ -51,6 +57,15 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig {
                        description = "Target Ams Net Id")
     private @NotNull String targetAmsNetId = "";
 
+    @JsonProperty("subscriptions")
+    @ModuleConfigField(title = "Subscriptions",
+                       description = "Map your sensor data to MQTT Topics")
+    private @NotNull List<? extends ADSAdapterConfig.Subscription> subscriptions = new ArrayList<>();
+
+    public @NotNull List<? extends ADSAdapterConfig.Subscription> getSubscriptions() {
+        return subscriptions;
+    }
+
     public int getPort() {
         return port;
     }
@@ -66,4 +81,11 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig {
     public String getTargetAmsNetId() {
         return targetAmsNetId;
     }
+
+    @JsonPropertyOrder({"destination", "qos"})
+    @JsonIgnoreProperties({"tagName", "tagAddress"})
+    public static class Subscription extends Plc4xAdapterConfig.Subscription {
+
+    }
+
 }
