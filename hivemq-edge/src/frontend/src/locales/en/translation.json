@@ -670,6 +670,9 @@
     },
     "panel": {
       "title": "Event"
+    },
+    "error": {
+      "loading": "We cannot load the events at this time. Please try again later"
     }
   }
 }
