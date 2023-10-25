@@ -1,8 +1,9 @@
 import { FC, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Node, useNodes } from 'reactflow'
+import { Node, useEdges, useNodes } from 'reactflow'
 import {
+  Box,
   Button,
   Drawer,
   DrawerBody,
@@ -25,9 +26,10 @@ import ConnectionController from '@/components/ConnectionController/ConnectionCo
 
 import Metrics from '@/modules/Welcome/components/Metrics.tsx'
 import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { EdgeTypes, NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
+import MetricView from '@/modules/MetricVisualisation/MetricView.tsx'
 
 const NodePropertyDrawer: FC = () => {
   const { t } = useTranslation()
@@ -35,17 +37,19 @@ const NodePropertyDrawer: FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const nodes = useNodes()
+  const edges = useEdges()
   const { nodeId } = useParams()
   const selected = nodes.find(
     (e) => e.id === nodeId && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
   ) as Node<Bridge | Adapter> | undefined
 
+  const ddddd = nodes.find((e) => {
+    const link = edges.find((e) => e.id === nodeId && e.type === EdgeTypes.REPORT_EDGE)
+    if (!link) return undefined
+    return e.id === link.source && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
+  }) as Node<Bridge | Adapter> | undefined
+
   useEffect(() => {
-    if (!nodes.length) return
-    if (!selected || !nodeId) {
-      navigate('/edge-flow', { replace: true })
-      return
-    }
     onOpen()
   }, [navigate, nodeId, nodes.length, onOpen, selected])
 
@@ -53,6 +57,26 @@ const NodePropertyDrawer: FC = () => {
     onClose()
     navigate('/edge-flow')
   }
+
+  if (ddddd)
+    return (
+      <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={handleClose}>
+        {/*<DrawerOverlay />*/}
+        <DrawerContent>
+          <DrawerCloseButton />
+
+          <DrawerHeader>
+            <Box>
+              <Text>Observability Report</Text>
+              <Text>Adapter: {ddddd.data.id}</Text>
+            </Box>
+          </DrawerHeader>
+          <DrawerBody>
+            <MetricView node={ddddd} />
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+    )
 
   // TODO[NVL] Needs warning / error
   if (!selected || !selected.type) return null
