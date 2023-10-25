@@ -6,8 +6,12 @@ import { Box, IconButton, Skeleton, Text } from '@chakra-ui/react'
 import { MdOutlineEventNote } from 'react-icons/md'
 
 import { Event } from '@/api/__generated__'
+import { ProblemDetails } from '@/api/types/http-problem-details.ts'
+import { mockEdgeEvent } from '@/api/hooks/useEvents/__handlers__'
 import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
+
 import { compareSeverity } from '@/modules/ProtocolAdapters/utils/pagination-utils.ts'
 
 import SourceLink from '../SourceLink.tsx'
@@ -20,6 +24,8 @@ interface EventLogTableProps {
 const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useGetEvents()
+
+  const safeData: Event[] = data && data.items ? data.items : [...mockEdgeEvent(5)]
 
   const columns = useMemo<ColumnDef<Event>[]>(() => {
     return [
@@ -88,12 +94,20 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
     ]
   }, [isLoading, onOpen, t])
 
-  // TODO[NVL] Use Skeleton
-  if (!data || !data.items || error) return null
+  if (error) {
+    return (
+      <Box mt={'20%'} mx={'20%'} alignItems={'center'}>
+        <ErrorMessage
+          type={error?.message}
+          message={(error?.body as ProblemDetails)?.title || (t('eventLog.error.loading') as string)}
+        />
+      </Box>
+    )
+  }
 
   return (
     <PaginatedTable<Event>
-      data={data.items}
+      data={safeData}
       columns={columns}
       // getRowStyles={(row) => {
       //   return { backgroundColor: theme.colors.blue[50] }
