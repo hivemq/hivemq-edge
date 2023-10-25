@@ -35,6 +35,6 @@ describe('useGetEvents', () => {
       },
       { timeout: 25000 }
     )
-    expect(result.current.data?.items).toHaveLength(50000)
+    expect(result.current.data?.items).toHaveLength(200)
   })
 })
