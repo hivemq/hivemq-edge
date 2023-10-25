@@ -18,7 +18,7 @@ export const useGetSample = (metricName: string | undefined) => {
       retry: 0,
       refetchInterval: () => {
         // return data ? 4 * 1000 : Math.max(Math.min(query.state.errorUpdateCount, 5 * 60), 4) * 1000
-        return config.httpClient.pollingRefetchInterval * 2
+        return config.httpClient.pollingRefetchInterval / 2
       },
     }
   )

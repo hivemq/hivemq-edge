@@ -3,6 +3,7 @@ import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from 'reactflow
 import { IconButton } from '@chakra-ui/react'
 import { BiBarChartSquare } from 'react-icons/bi'
 import { useEdgeFlowContext } from '@/modules/EdgeVisualisation/hooks/useEdgeFlowContext.tsx'
+import { useNavigate } from 'react-router-dom'
 
 const MonitoringEdge: FC<EdgeProps> = ({
   id,
@@ -16,6 +17,7 @@ const MonitoringEdge: FC<EdgeProps> = ({
   style,
 }) => {
   const { options } = useEdgeFlowContext()
+  const navigate = useNavigate()
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -42,14 +44,14 @@ const MonitoringEdge: FC<EdgeProps> = ({
             className="nodrag nopan"
           >
             <IconButton
-              aria-label={'grpah'}
+              aria-label={'graph'}
               size={'xs'}
               variant={'outline'}
               icon={<BiBarChartSquare />}
               backgroundColor={'white'}
               color={style?.stroke}
               className="edgebutton"
-              onClick={() => console.log('CCCCCC', id)}
+              onClick={() => navigate(`/edge-flow/link/${id}`)}
               borderRadius={'25px'}
             />
           </div>
