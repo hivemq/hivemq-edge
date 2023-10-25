@@ -133,7 +133,7 @@
   },
   "bridge": {
     "title": "MQTT bridges",
-    "description": "A MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
+    "description": "An MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
     "action": {
       "add": "Add bridge connection",
       "edit": "Edit",
@@ -653,7 +653,7 @@
   },
   "eventLog": {
     "title": "Event Log",
-    "description": "All the crazy events in Edge",
+    "description": "System components generate events in the system which can help in the diagnosis of issues or general system monitoring. The Event Log allows you to interact with the events and explore the system",
     "table": {
       "header": {
         "id": "Id",
