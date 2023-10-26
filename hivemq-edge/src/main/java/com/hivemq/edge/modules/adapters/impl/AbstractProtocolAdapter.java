@@ -19,6 +19,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.hivemq.api.model.core.Payload;
+import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
@@ -31,9 +33,12 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,6 +60,8 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
 
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull ObjectMapper objectMapper;
+
+    protected @Nullable EventService eventService;
 
     protected @Nullable ProtocolAdapterPublishService adapterPublishService;
     protected @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
@@ -114,6 +121,9 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         if(adapterPublishService == null){
             adapterPublishService = moduleServices.adapterPublishService();
         }
+        if(eventService == null){
+            eventService = moduleServices.eventService();
+        }
     }
 
     /**
@@ -131,6 +141,17 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected void reportErrorMessage(@Nullable final Throwable throwable, @NotNull final String errorMessage){
         Preconditions.checkNotNull(throwable);
         this.errorMessage = errorMessage == null ? throwable.getMessage() : errorMessage;
+        Payload payload = null;
+        if(throwable != null){
+            payload = Payload.from(Payload.ContentType.PLAIN_TEXT,
+                    ExceptionUtils.getStackTrace(throwable));
+        }
+        eventService.fireEvent(
+                eventBuilder(Event.SEVERITY.ERROR).
+                        withMessage(String.format("Adapter '%s' encountered an error.",
+                        adapterConfig.getId())).
+                        withPayload(payload).
+                        build());
     }
 
     @Override
@@ -269,21 +290,39 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected void onStartFail(@NotNull final ProtocolAdapterStartOutput output, @NotNull final Throwable throwable){
         setErrorConnectionStatus(throwable);
         output.failStart(throwable, throwable.getMessage());
-        //-- TODO add event
+        eventService.fireEvent(
+                eventBuilder(Event.SEVERITY.ERROR).
+                        withMessage(throwable.getMessage()).build());
     }
 
     protected void onStartSuccess(@NotNull final ProtocolAdapterStartOutput output){
         setRuntimeStatus(RuntimeStatus.STARTED);
         output.startedSuccessfully("adapter start OK");
-        //-- TODO add event
+        eventService.fireEvent(
+                eventBuilder(Event.SEVERITY.INFO).
+                        withMessage(String.format("Adapter '%s' started OK.",
+                        adapterConfig.getId())).build());
     }
 
     protected void onStop(){
         setRuntimeStatus(RuntimeStatus.STOPPED);
-        //-- TODO add event
+        eventService.fireEvent(
+                eventBuilder(Event.SEVERITY.INFO).
+                        withMessage(String.format("Adapter '%s' stopped OK.",
+                        adapterConfig.getId())).build());
     }
 
     protected abstract CompletableFuture<ProtocolAdapterStartOutput> startInternal(final ProtocolAdapterStartOutput output);
 
     protected abstract CompletableFuture<Void> stopInternal();
+
+    protected Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity){
+        Event.Builder builder = new Event.Builder();
+        builder.withAssociatedObject(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterConfig.getId()));
+        builder.withTimestamp(System.currentTimeMillis());
+        builder.withAssociatedObject(TypeIdentifier.generate(TypeIdentifier.TYPE.EVENT));
+        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER_TYPE, adapterInformation.getProtocolId()));
+        builder.withSeverity(severity);
+        return builder;
+    }
 }

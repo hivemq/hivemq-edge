@@ -36,6 +36,25 @@ public class Event implements Identifiable {
         INFO, WARN, ERROR, CRITICAL
     }
 
+    public Event(
+            final TypeIdentifier identifier,
+            final SEVERITY severity,
+            final String message,
+            final Payload payload,
+            final Long created,
+            final Long timestamp,
+            final TypeIdentifier associatedObject,
+            final TypeIdentifier source) {
+        this.identifier = identifier;
+        this.severity = severity;
+        this.message = message;
+        this.payload = payload;
+        this.created = created;
+        this.timestamp = timestamp;
+        this.associatedObject = associatedObject;
+        this.source = source;
+    }
+
     @JsonProperty("identifier")
     @Schema(description = "The unique id of the event object",
             required = true)
@@ -130,4 +149,53 @@ public class Event implements Identifiable {
         return identifier;
     }
 
+    public static class Builder {
+        private TypeIdentifier identifier;
+        private Event.SEVERITY severity;
+        private String message;
+        private Payload payload;
+        private Long created;
+        private Long timestamp;
+        private TypeIdentifier associatedObject;
+        private TypeIdentifier source;
+
+        public Builder withIdentifier(final TypeIdentifier identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public Builder withSeverity(final Event.SEVERITY severity) {
+            this.severity = severity;
+            return this;
+        }
+
+        public Builder withMessage(final String message) {
+            this.message = message;
+            return this;
+        }
+
+        public Builder withPayload(final Payload payload) {
+            this.payload = payload;
+            return this;
+        }
+
+        public Builder withTimestamp(final Long timestamp) {
+            this.timestamp = timestamp;
+            return this;
+        }
+
+        public Builder withAssociatedObject(final TypeIdentifier associatedObject) {
+            this.associatedObject = associatedObject;
+            return this;
+        }
+
+        public Builder withSource(final TypeIdentifier source) {
+            this.source = source;
+            return this;
+        }
+
+        public Event build() {
+            return new Event(identifier, severity, message, payload, created, timestamp, associatedObject, source);
+        }
+    }
 }
