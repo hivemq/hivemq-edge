@@ -35,6 +35,7 @@ import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -65,6 +66,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
+    private final @NotNull EventService eventService;
 
     private final @NotNull Object lock = new Object();
 
@@ -75,13 +77,15 @@ public class ProtocolAdapterManager {
             final @NotNull ModuleServicesImpl moduleServices,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ModuleLoader moduleLoader,
-            final @NotNull HiveMQEdgeRemoteService remoteService) {
+            final @NotNull HiveMQEdgeRemoteService remoteService,
+            final @NotNull EventService eventService) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
         this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
         this.moduleLoader = moduleLoader;
         this.remoteService = remoteService;
+        this.eventService = eventService;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -450,7 +454,7 @@ public class ProtocolAdapterManager {
 
         @Override
         public @NotNull ModuleServices moduleServices() {
-            return new ModuleServicesPerModuleImpl(protocolAdapter, moduleServices);
+            return new ModuleServicesPerModuleImpl(protocolAdapter, moduleServices, eventService);
         }
     }
 }

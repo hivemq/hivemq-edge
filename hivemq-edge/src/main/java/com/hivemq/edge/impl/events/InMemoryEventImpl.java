@@ -7,6 +7,8 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.util.RollingList;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -21,9 +23,12 @@ import java.util.stream.Stream;
  * out of lock).
  * @author Simon L Johnson
  */
+@Singleton
 public class InMemoryEventImpl implements EventStore {
     private @NotNull RollingList<Event> inMemoryEventList;
     private volatile ReadWriteLock lock = new ReentrantReadWriteLock();
+
+    @Inject
     public InMemoryEventImpl() {
         //optimize for quick write slow read (sort)
         this.inMemoryEventList

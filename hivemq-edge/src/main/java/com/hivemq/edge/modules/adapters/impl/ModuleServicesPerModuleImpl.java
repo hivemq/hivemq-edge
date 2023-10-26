@@ -20,6 +20,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,10 +29,14 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
 
     private final @NotNull ModuleServicesImpl delegate;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
+    private final @NotNull EventService eventService;
 
     public ModuleServicesPerModuleImpl(
-            final @NotNull ProtocolAdapter protocolAdapter, final @NotNull ModuleServicesImpl delegate) {
+            final @NotNull ProtocolAdapter protocolAdapter,
+            final @NotNull ModuleServicesImpl delegate,
+            final @NotNull EventService eventService) {
         this.delegate = delegate;
+        this.eventService = eventService;
         this.adapterPublishService =
                 new ProtocolAdapterPublishServicePerAdapter(delegate.adapterPublishService(), protocolAdapter);
     }
@@ -49,6 +54,11 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
     @Override
     public @NotNull ProtocolAdapterPollingService protocolAdapterPollingService() {
         return delegate.protocolAdapterPollingService();
+    }
+
+    @Override
+    public EventService eventService() {
+        return null;
     }
 
     private static class ProtocolAdapterPublishServicePerAdapter implements ProtocolAdapterPublishService {

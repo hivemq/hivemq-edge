@@ -11,6 +11,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -22,13 +23,13 @@ import java.util.concurrent.ExecutorService;
 @Singleton
 public class EventServiceDelegateImpl implements EventService {
 
-    private List<EventListener> eventListeners;
+    private Set<EventListener> eventListeners;
     private EventStore eventStore;
     private ExecutorService executorService;
 
     @Inject
     public EventServiceDelegateImpl(final @NotNull EventStore eventStore,
-                                    final @Nullable List<EventListener> eventListeners,
+                                    final @Nullable Set<EventListener> eventListeners,
                                     final @NotNull ExecutorService executorService) {
         Preconditions.checkNotNull(eventStore);
         Preconditions.checkNotNull(executorService);
