@@ -162,7 +162,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     @Override
     public CompletableFuture<Void> discoverValues(final @NotNull ProtocolAdapterDiscoveryInput input,
                                                   final @NotNull ProtocolAdapterDiscoveryOutput output) {
-        if(ProtocolAdapterCapability.supportsCapability(
+        if(!ProtocolAdapterCapability.supportsCapability(
                 getProtocolAdapterInformation(), ProtocolAdapterCapability.DISCOVER)){
             return CompletableFuture.failedFuture(new UnsupportedOperationException("Adapter type does not support discovery"));
         } else {
