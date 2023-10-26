@@ -10,6 +10,6 @@ describe('SeverityBadge', () => {
 
   it('should render the adapter component', () => {
     cy.mountWithProviders(<SeverityBadge event={mockEdgeEvent(5)[0]} />)
-    cy.get("[role='alert'").should('contain.text', 'INFO')
+    cy.get('[data-status]').should('contain.text', 'INFO')
   })
 })

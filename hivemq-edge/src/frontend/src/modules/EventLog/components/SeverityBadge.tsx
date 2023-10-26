@@ -24,7 +24,7 @@ const SeverityBadge: FC<SeverityBadgeProps> = ({ event, ...alertProps }) => {
   }
 
   return (
-    <Alert status={status} {...alertProps}>
+    <Alert status={status} {...alertProps} addRole={false}>
       <AlertIcon />
       {event.severity}
     </Alert>
