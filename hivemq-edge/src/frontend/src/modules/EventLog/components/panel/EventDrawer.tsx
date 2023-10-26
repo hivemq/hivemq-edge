@@ -88,21 +88,30 @@ const EventDrawer: FC<BridgeMainDrawerProps> = ({ event, isOpen, onClose }) => {
                 <CardBody data-testid={'event-value-message'}>{event.message}</CardBody>
               </Card>
 
-              <Card w={'100%'}>
-                <CardHeader data-testid={'event-title-payload'}>
-                  {t('eventLog.table.header.payload')}
-                  <Badge variant="outline" mx={2}>
-                    {event.payload?.contentType}
-                  </Badge>
-                </CardHeader>
-                <CardBody>
-                  <Code w={'100%'} p={2} whiteSpace={'pre-wrap'}>
-                    {JSONFormat && JSONFormat}
-                    {XMLFormat && XMLFormat}
-                    {!isJSON && !isXML && event.payload?.content}
-                  </Code>
-                </CardBody>
-              </Card>
+              {event.payload && (
+                <Card w={'100%'}>
+                  <CardHeader data-testid={'event-title-payload'}>
+                    {t('eventLog.table.header.payload')}
+                    <Badge variant="outline" mx={2}>
+                      {event.payload?.contentType}
+                    </Badge>
+                  </CardHeader>
+                  <CardBody pt={0}>
+                    <Code
+                      w={'100%'}
+                      p={2}
+                      whiteSpace={'pre-wrap'}
+                      overflow={'auto'}
+                      sx={{ textWrap: 'nowrap' }}
+                      maxH={400}
+                    >
+                      {JSONFormat && JSONFormat}
+                      {XMLFormat && XMLFormat}
+                      {!isJSON && !isXML && event.payload?.content}
+                    </Code>
+                  </CardBody>
+                </Card>
+              )}
             </VStack>
           </DrawerBody>
         </DrawerContent>

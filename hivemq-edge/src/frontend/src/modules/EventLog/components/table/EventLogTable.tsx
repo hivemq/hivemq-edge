@@ -37,7 +37,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
         cell: (info) => {
           return (
             <Skeleton isLoaded={!isLoading}>
-              <Box whiteSpace={'nowrap'}>
+              {info.row.original.payload ? (
                 <IconButton
                   size={'sm'}
                   mr={2}
@@ -45,7 +45,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
                   aria-label={t('eventLog.table.cta.open')}
                   icon={<MdOutlineEventNote />}
                 />
-              </Box>
+              ) : null}
             </Skeleton>
           )
         },
