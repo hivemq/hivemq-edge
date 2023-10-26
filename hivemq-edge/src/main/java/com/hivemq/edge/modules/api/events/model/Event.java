@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.api.model.events;
+package com.hivemq.edge.modules.api.events.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -129,6 +129,5 @@ public class Event implements Identifiable {
     public TypeIdentifier getIdentifier() {
         return identifier;
     }
-
 
 }

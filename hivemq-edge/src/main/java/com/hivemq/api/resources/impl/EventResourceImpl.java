@@ -3,11 +3,11 @@ package com.hivemq.api.resources.impl;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.model.core.Payload;
-import com.hivemq.api.model.events.Event;
 import com.hivemq.api.model.events.EventList;
 import com.hivemq.api.resources.EventApi;
 import com.hivemq.api.utils.LoremIpsum;
 import com.hivemq.edge.model.TypeIdentifier;
+import com.hivemq.edge.modules.api.events.model.Event;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
