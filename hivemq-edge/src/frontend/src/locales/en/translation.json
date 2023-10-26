@@ -656,7 +656,7 @@
     "description": "System components generate events in the system which can help in the diagnosis of issues or general system monitoring. The Event Log allows you to interact with the events and explore the system",
     "table": {
       "header": {
-        "id": "Id",
+        "id": "Details",
         "created": "Created",
         "severity": "Severity",
         "message": "Event",
