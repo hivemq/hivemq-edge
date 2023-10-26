@@ -21,7 +21,6 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.connack.CONNACK;
 import com.hivemq.mqtt.message.reason.Mqtt5ConnAckReasonCode;
-import com.hivemq.util.DummyClientConnection;
 import com.hivemq.util.ReasonStrings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -287,7 +286,7 @@ public class MQTTMessageDecoderTest {
         final ConfigurationService fullConfig = new TestConfigurationBootstrap().getConfigurationService();
         fullConfig.mqttConfiguration().setMaxPacketSize(10);
         channel = new EmbeddedChannel(TestMqttDecoder.create(fullConfig));
-        clientConnection = new DummyClientConnection(channel, null);
+        clientConnection = new ClientConnection(channel, null);
         clientConnection.setProtocolVersion(null);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
 
