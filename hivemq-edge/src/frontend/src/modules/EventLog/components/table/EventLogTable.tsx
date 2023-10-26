@@ -66,7 +66,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
         sortingFn: (rowA, rowB) => compareSeverity(rowA.original.severity, rowB.original.severity),
         cell: (info) => (
           <Skeleton isLoaded={!isLoading}>
-            <SeverityBadge event={info.row.original} px={2} py={0} />
+            <SeverityBadge event={info.row.original} />
           </Skeleton>
         ),
       },
