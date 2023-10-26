@@ -253,7 +253,7 @@ public class MQTTMessageDecoderTest {
         final ConfigurationService fullConfig = new TestConfigurationBootstrap().getConfigurationService();
         fullConfig.mqttConfiguration().setMaxPacketSize(10);
         channel = new EmbeddedChannel(TestMqttDecoder.create(fullConfig));
-        clientConnection = new DummyClientConnection(channel, null);
+        clientConnection = new ClientConnection(channel, null);
         //setting version to fake "connected" state
         clientConnection.setProtocolVersion(protocolVersion);
         channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).set(clientConnection);
