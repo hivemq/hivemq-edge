@@ -55,7 +55,7 @@ public class InMemoryEventImpl implements EventStore {
         } finally {
             readLock.unlock();
         }
-        Stream<Event> stream  = events.stream().sorted(Comparator.comparing(Event::getTimestamp));
+        Stream<Event> stream  = events.stream().sorted(Comparator.comparing(Event::getTimestamp).reversed());
         if(since != null){
             stream = stream.filter(event -> since > event.getTimestamp());
         }
