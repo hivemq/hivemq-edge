@@ -13,14 +13,16 @@ import {
   Row,
   useReactTable,
 } from '@tanstack/react-table'
-import { Table as TableUI, Thead, Tbody, Tr, Th, Td, TableContainer, Text } from '@chakra-ui/react'
+import { Table as TableUI, Thead, Tbody, Tr, Th, Td, TableContainer, Text, Alert } from '@chakra-ui/react'
 
 import PaginationBar from './components/PaginationBar.tsx'
+import { useTranslation } from 'react-i18next'
 
 interface PaginatedTableProps<T> {
   data: Array<T>
   columns: ColumnDef<T>[]
   pageSizes?: number[]
+  noDataText?: string
   /**
    * Define row styles
    */
@@ -33,8 +35,10 @@ const PaginatedTable = <T,>({
   data,
   columns,
   pageSizes = DEFAULT_PAGE_SIZES,
+  noDataText,
   getRowStyles,
 }: PaginatedTableProps<T>) => {
+  const { t } = useTranslation()
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState('')
 
@@ -87,15 +91,25 @@ const PaginatedTable = <T,>({
             ))}
           </Thead>
           <Tbody>
-            {table.getRowModel().rows.map((row) => {
-              return (
-                <Tr key={row.id} style={{ ...getRowStyles?.(row) }}>
-                  {row.getVisibleCells().map((cell) => {
-                    return <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
-                  })}
-                </Tr>
-              )
-            })}
+            {table.getRowModel().rows.length === 0 && (
+              <Tr>
+                <Td colSpan={table.getAllColumns().length}>
+                  <Alert status="info">
+                    {noDataText === undefined ? t('components:pagination.noDataText') : noDataText}
+                  </Alert>
+                </Td>
+              </Tr>
+            )}
+            {table.getRowModel().rows.length !== 0 &&
+              table.getRowModel().rows.map((row) => {
+                return (
+                  <Tr key={row.id} style={{ ...getRowStyles?.(row) }}>
+                    {row.getVisibleCells().map((cell) => {
+                      return <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+                    })}
+                  </Tr>
+                )
+              })}
           </Tbody>
         </TableUI>
       </TableContainer>
