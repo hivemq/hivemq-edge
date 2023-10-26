@@ -338,10 +338,10 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
 
     protected Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity){
         Event.Builder builder = new Event.Builder();
-        builder.withAssociatedObject(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterConfig.getId()));
         builder.withTimestamp(System.currentTimeMillis());
         builder.withIdentifier(TypeIdentifier.generate(TypeIdentifier.TYPE.EVENT));
-        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER_TYPE, adapterInformation.getProtocolId()));
+        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterConfig.getId()));
+        builder.withAssociatedObject(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER_TYPE, adapterInformation.getProtocolId()));
         builder.withSeverity(severity);
         return builder;
     }
