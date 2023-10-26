@@ -35,20 +35,20 @@
         "workspace": "Workspace",
         "bridges": "MQTT Bridges",
         "protocolAdapters": "Protocol Adapters",
-        "eventLogs": "Event logs"
+        "eventLogs": "Event Logs"
       }
     },
     "extensions": {
       "title": "Extensions",
       "routes": {
         "modules": "Modules",
-        "namespace": "Unified namespace"
+        "namespace": "Unified Namespace"
       }
     },
     "resources": {
       "title": "External resources",
       "routes": {
-        "articles": "Useful articles",
+        "articles": "Useful Articles",
         "github": "GitHub",
         "help": "Documentation"
       }
