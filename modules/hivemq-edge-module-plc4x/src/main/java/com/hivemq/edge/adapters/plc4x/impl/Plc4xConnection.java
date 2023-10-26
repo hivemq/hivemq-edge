@@ -4,8 +4,8 @@ import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import org.apache.plc4x.java.PlcDriverManager;
 import org.apache.plc4x.java.api.PlcConnection;
+import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.exceptions.PlcConnectionException;
 import org.apache.plc4x.java.api.messages.PlcReadRequest;
 import org.apache.plc4x.java.api.messages.PlcReadResponse;
@@ -16,7 +16,6 @@ import org.apache.plc4x.java.api.model.PlcSubscriptionHandle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -70,7 +69,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
                         if(log.isInfoEnabled()){
                             log.info("Connecting via plx4j to {}", connectionString);
                         }
-                        plcConnection = plcDriverManager.getConnection(connectionString);
+                        plcConnection = plcDriverManager.getConnectionManager().getConnection(connectionString);
                         plcConnection.connect();
                     }
                 }
@@ -108,7 +107,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
             log.debug("Sending direct-read request to connection for {}", subscription.getTagName());
         }
         PlcReadRequest.Builder builder = plcConnection.readRequestBuilder();
-        builder.addItem(subscription.getTagName(), initializeQueryForSubscription(subscription));
+        builder.addTagAddress(subscription.getTagName(), initializeQueryForSubscription(subscription));
         PlcReadRequest readRequest = builder.build();
         return readRequest.execute();
     }
@@ -122,7 +121,9 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
             log.debug("Sending subscribe request to connection for {}", subscription.getTagName());
         }
         final PlcSubscriptionRequest.Builder builder = plcConnection.subscriptionRequestBuilder();
-        builder.addChangeOfStateField(subscription.getTagName(), initializeQueryForSubscription(subscription));
+
+        //TODO we're only registering for state change, could also register events
+        builder.addChangeOfStateTagAddress(subscription.getTagName(), initializeQueryForSubscription(subscription));
         PlcSubscriptionRequest subscriptionRequest = builder.build();
         CompletableFuture<PlcSubscriptionResponse> future =
                 (CompletableFuture<PlcSubscriptionResponse>) subscriptionRequest.execute();
@@ -130,7 +131,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
             if(throwable != null){
                 log.warn("Connection subscription encountered an error;", throwable);
             } else {
-                for (String subscriptionName : plcSubscriptionResponse.getFieldNames()) {
+                for (String subscriptionName : plcSubscriptionResponse.getTagNames()) {
                     final PlcSubscriptionHandle subscriptionHandle =
                             plcSubscriptionResponse.getSubscriptionHandle(subscriptionName);
                     subscriptionHandle.register(consumer);

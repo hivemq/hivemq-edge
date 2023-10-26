@@ -26,16 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+@JsonIgnoreProperties({"port"})
 public class ADSAdapterConfig extends Plc4xAdapterConfig {
-
-    @JsonProperty("port")
-    @ModuleConfigField(title = "Source AMS Port",
-                       description = "The port number on the device you wish to connect to",
-                       required = true,
-                       numberMin = PORT_MIN,
-                       numberMax = PORT_MAX,
-                       defaultValue = "48898")
-    private int port = 48898;
 
     @ModuleConfigField(title = "Target AMS Port",
                        description = "The port number on the device you wish to connect to",
@@ -44,6 +36,14 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig {
                        numberMax = PORT_MAX,
                        defaultValue = "48898")
     private int targetAmsPort = 48898;
+
+    @ModuleConfigField(title = "Source AMS Port",
+                       description = "The port number on the device you wish to connect to",
+                       required = true,
+                       numberMin = PORT_MIN,
+                       numberMax = PORT_MAX,
+                       defaultValue = "48898")
+    private int sourceAmsPort = 48898;
 
     @JsonProperty("sourceAmsNetId")
     @ModuleConfigField(title = "Source Ams Net Id",
@@ -66,8 +66,8 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig {
         return subscriptions;
     }
 
-    public int getPort() {
-        return port;
+    public int getSourceAmsPort() {
+        return sourceAmsPort;
     }
 
     public int getTargetAmsPort() {
@@ -82,8 +82,8 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig {
         return targetAmsNetId;
     }
 
-    @JsonPropertyOrder({"destination", "qos"})
-    @JsonIgnoreProperties({"tagName", "tagAddress"})
+    @JsonPropertyOrder({"destination", "qos", "tagName"})
+    @JsonIgnoreProperties({"tagAddress"})
     public static class Subscription extends Plc4xAdapterConfig.Subscription {
 
     }

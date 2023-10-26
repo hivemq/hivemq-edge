@@ -9,7 +9,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'coreFields',
       title: t('protocolAdapter.uiSchema.groups.coreFields'),
-      properties: ['id', 'port', 'host', 'uri', 'url', 'timeout','targetAmsPort'],
+      properties: ['id', 'port', 'host', 'uri', 'url', 'timeout'],
     },
     {
       id: 'subFields',
@@ -56,6 +56,8 @@ const useGetUiSchema = (isNewAdapter = true) => {
       id: 'ads',
       title: t('protocolAdapter.uiSchema.groups.ads'),
       properties: [
+        'sourceAmsPort',
+        'targetAmsPort',
         'sourceAmsNetId',
         'targetAmsNetId',
       ],

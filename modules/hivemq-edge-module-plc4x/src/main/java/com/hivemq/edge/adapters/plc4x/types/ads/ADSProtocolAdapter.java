@@ -55,10 +55,11 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig> {
     @Override
     protected Map<String, String> createQueryStringParams(final @NotNull ADSAdapterConfig config) {
         Map<String, String> map = new HashMap<>();
-        map.put(SOURCE_AMS_PORT, nullSafe(config.getPort()));
+        map.put(SOURCE_AMS_PORT, nullSafe(config.getSourceAmsPort()));
         map.put(SOURCE_AMS_NET_ID, nullSafe(config.getSourceAmsNetId()));
-        map.put(TARGET_AMS_NET_ID, nullSafe(config.getTargetAmsNetId()));
+
         map.put(TARGET_AMS_PORT, nullSafe(config.getTargetAmsPort()));
+        map.put(TARGET_AMS_NET_ID, nullSafe(config.getTargetAmsNetId()));
         return map;
     }
 }
