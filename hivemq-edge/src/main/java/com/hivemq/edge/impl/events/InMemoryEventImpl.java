@@ -57,10 +57,10 @@ public class InMemoryEventImpl implements EventStore {
         }
         Stream<Event> stream  = events.stream().sorted(Comparator.comparing(Event::getTimestamp));
         if(since != null){
-            stream.filter(event -> since > event.getTimestamp());
+            stream = stream.filter(event -> since > event.getTimestamp());
         }
         if(limit != null){
-            stream.limit(limit);
+            stream = stream.limit(limit);
         }
         return stream.collect(Collectors.toUnmodifiableList());
     }

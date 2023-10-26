@@ -318,7 +318,6 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
                 eventBuilder(Event.SEVERITY.INFO).
                         withMessage(String.format("Adapter '%s' stopped OK.",
                         adapterConfig.getId())).build());
-        //-- TODO add system event
     }
 
 
@@ -341,7 +340,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         Event.Builder builder = new Event.Builder();
         builder.withAssociatedObject(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterConfig.getId()));
         builder.withTimestamp(System.currentTimeMillis());
-        builder.withAssociatedObject(TypeIdentifier.generate(TypeIdentifier.TYPE.EVENT));
+        builder.withIdentifier(TypeIdentifier.generate(TypeIdentifier.TYPE.EVENT));
         builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER_TYPE, adapterInformation.getProtocolId()));
         builder.withSeverity(severity);
         return builder;

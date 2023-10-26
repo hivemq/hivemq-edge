@@ -58,7 +58,7 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
 
     @Override
     public EventService eventService() {
-        return null;
+        return eventService;
     }
 
     private static class ProtocolAdapterPublishServicePerAdapter implements ProtocolAdapterPublishService {

@@ -41,7 +41,6 @@ public class Event implements Identifiable {
             final SEVERITY severity,
             final String message,
             final Payload payload,
-            final Long created,
             final Long timestamp,
             final TypeIdentifier associatedObject,
             final TypeIdentifier source) {
@@ -49,7 +48,7 @@ public class Event implements Identifiable {
         this.severity = severity;
         this.message = message;
         this.payload = payload;
-        this.created = created;
+        this.created = timestamp;
         this.timestamp = timestamp;
         this.associatedObject = associatedObject;
         this.source = source;
@@ -96,25 +95,6 @@ public class Event implements Identifiable {
     @JsonProperty("source")
     @Schema(description = "The type-identifier of the object who caused the event to be generated")
     private final @NotNull TypeIdentifier source;
-
-
-    public Event(
-            @JsonProperty("identifier") final TypeIdentifier identifier,
-            @JsonProperty("severity") final SEVERITY severity,
-            @JsonProperty("message") final String message,
-            @JsonProperty("payload") final Payload payload,
-            @JsonProperty("timestamp") final Long timestamp,
-            @JsonProperty("associatedObject") final TypeIdentifier associatedObject,
-            @JsonProperty("source") final TypeIdentifier source) {
-        this.identifier = identifier;
-        this.severity = severity;
-        this.message = message;
-        this.payload = payload;
-        this.created = timestamp;
-        this.timestamp = timestamp;
-        this.associatedObject = associatedObject;
-        this.source = source;
-    }
 
     public @NotNull SEVERITY getSeverity() {
         return severity;
@@ -195,7 +175,7 @@ public class Event implements Identifiable {
         }
 
         public Event build() {
-            return new Event(identifier, severity, message, payload, created, timestamp, associatedObject, source);
+            return new Event(identifier, severity, message, payload, timestamp, associatedObject, source);
         }
     }
 }
