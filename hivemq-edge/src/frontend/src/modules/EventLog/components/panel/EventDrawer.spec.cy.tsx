@@ -12,7 +12,7 @@ describe('EventDrawer', () => {
     cy.mountWithProviders(<EventDrawer isOpen={true} onClose={cy.stub()} event={mockEdgeEvent(1)[0]} />)
     cy.get('#bridge-form-header').should('contain.text', 'Event')
 
-    cy.get("[role='alert'").should('contain.text', 'INFO')
+    cy.get('[data-status]').should('contain.text', 'INFO')
     cy.getByTestId('event-title-created').should('contain.text', 'Created')
     cy.getByTestId('event-value-created').should('contain.text', 'minutes ago')
     cy.getByTestId('event-title-source').should('contain.text', 'Source')
