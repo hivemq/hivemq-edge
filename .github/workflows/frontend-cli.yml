@@ -47,6 +47,7 @@ jobs:
         run: pnpm lint:eslint
 
   unit_tests:
+    needs: [ lint ]
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
@@ -60,63 +61,8 @@ jobs:
       - name: 🧪 Run Test
         run: pnpm test
 
-  component_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 👓 Checkout repository
-        uses: actions/checkout@v3
-
-      - name: 🏗️ Setup node environment
-        uses: ./.github/actions/setup_node
-        with:
-          working-directory: ./hivemq-edge/src/frontend/
-
-      - name: 🧪 Run Cypress Component
-        uses: cypress-io/github-action@v5
-        with:
-          component: true
-          start: pnpm dev
-          working-directory: ./hivemq-edge/src/frontend/
-
-      # after the test run completes store videos
-      - name: 💾 Upload Component videos
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: cypress-component-videos
-          path: hivemq-edge/src/frontend/cypress/videos
-          if-no-files-found: ignore
-          retention-days: 1
-
-  e2e_tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 👓 Checkout repository
-        uses: actions/checkout@v3
-
-      - name: 🏗️ Setup node environment
-        uses: ./.github/actions/setup_node
-        with:
-          working-directory: ./hivemq-edge/src/frontend/
-
-      - name: 🧪 Run Cypress E2E
-        uses: cypress-io/github-action@v5
-        with:
-          start: pnpm dev
-          working-directory: ./hivemq-edge/src/frontend/
-
-      # after the test run completes store videos
-      - name: 💾 Upload E2E videos
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: cypress-e2e-videos
-          path: hivemq-edge/src/frontend/cypress/videos
-          if-no-files-found: ignore
-          retention-days: 1
-
   build_production:
-    needs: [lint, unit_tests, component_tests, e2e_tests]
+    needs: [ lint ]
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
@@ -137,12 +83,76 @@ jobs:
           path: hivemq-edge/src/frontend/dist
           retention-days: 1
 
+  component_tests:
+    runs-on: ubuntu-latest
+    needs: [ build_production ]
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
+        with:
+          working-directory: ./hivemq-edge/src/frontend/
+
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: application
+          path: hivemq-edge/src/frontend/dist
+
+      - name: 🧪 Run Cypress Component
+        uses: cypress-io/github-action@v5
+        with:
+          component: true
+          start: pnpm preview
+          working-directory: ./hivemq-edge/src/frontend/
+
+      # after the test run completes store videos
+      - name: 💾 Upload Component videos
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-component-videos
+          path: hivemq-edge/src/frontend/cypress/videos
+          if-no-files-found: ignore
+          retention-days: 1
+
+  e2e_tests:
+    runs-on: ubuntu-latest
+    needs: [ build_production ]
+    steps:
+      - name: 👓 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: application
+          path: hivemq-edge/src/frontend/dist
+
+      - name: 🧪 Run Cypress E2E
+        uses: cypress-io/github-action@v5
+        with:
+          start: pnpm preview
+          working-directory: ./hivemq-edge/src/frontend/
+
+      # after the test run completes store videos
+      - name: 💾 Upload E2E videos
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: cypress-e2e-videos
+          path: hivemq-edge/src/frontend/cypress/videos
+          if-no-files-found: ignore
+          retention-days: 1
+
 #      - name: 📸 Run Percy visual tests
 #        run: echo "Check the Percy tests on the other workflow"
 
   lighthouse:
     runs-on: ubuntu-latest
-    needs: [build_production]
+    needs: [ build_production ]
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
