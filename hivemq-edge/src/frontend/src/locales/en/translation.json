@@ -35,20 +35,20 @@
         "workspace": "Workspace",
         "bridges": "MQTT Bridges",
         "protocolAdapters": "Protocol Adapters",
-        "eventLogs": "Event logs"
+        "eventLogs": "Event Logs"
       }
     },
     "extensions": {
       "title": "Extensions",
       "routes": {
         "modules": "Modules",
-        "namespace": "Unified namespace"
+        "namespace": "Unified Namespace"
       }
     },
     "resources": {
       "title": "External resources",
       "routes": {
-        "articles": "Useful articles",
+        "articles": "Useful Articles",
         "github": "GitHub",
         "help": "Documentation"
       }
@@ -133,7 +133,7 @@
   },
   "bridge": {
     "title": "MQTT bridges",
-    "description": "A MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
+    "description": "An MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
     "action": {
       "add": "Add bridge connection",
       "edit": "Edit",
@@ -650,5 +650,29 @@
       "publish.excluded.count": ""
     },
     "messages.retained.current": "Message retained"
+  },
+  "eventLog": {
+    "title": "Event Log",
+    "description": "System components generate events in the system which can help in the diagnosis of issues or general system monitoring. The Event Log allows you to interact with the events and explore the system",
+    "table": {
+      "header": {
+        "id": "Details",
+        "created": "Created",
+        "severity": "Severity",
+        "message": "Event",
+        "source": "Source",
+        "associatedObject": "Associated Object",
+        "payload": "Payload"
+      },
+      "cta": {
+        "open": "View details of event"
+      }
+    },
+    "panel": {
+      "title": "Event"
+    },
+    "error": {
+      "loading": "We cannot load the events at this time. Please try again later"
+    }
   }
 }

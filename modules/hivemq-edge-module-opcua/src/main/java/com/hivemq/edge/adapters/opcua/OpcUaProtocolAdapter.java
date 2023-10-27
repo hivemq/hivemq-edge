@@ -194,7 +194,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
             resultFuture.complete(null);
             return null;
         }).exceptionally(throwable -> {
-            setErrorConnectionStatus(throwable.getMessage());
+            setErrorConnectionStatus(throwable);
             resultFuture.completeExceptionally(throwable);
             return null;
         });

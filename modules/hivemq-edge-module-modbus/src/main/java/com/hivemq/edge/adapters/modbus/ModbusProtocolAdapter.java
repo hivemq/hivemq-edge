@@ -150,22 +150,29 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
             if(modbusClient != null){
                 if (!modbusClient.isConnected()) {
                     modbusClient.connect().thenRun(() ->
-                            setConnectionStatus(ConnectionStatus.CONNECTED));
+                                setConnectionStatus(ConnectionStatus.CONNECTED)).get();
                 }
-                //TODO - check out the async API
-                ModbusAdapterConfig.AddressRange addressRange = ((ModbusAdapterConfig.Subscription)subscription).getAddressRange();
-                Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
-                        addressRange.endIdx - addressRange.startIdx);
-                ModBusData data = new ModBusData(null,subscription.getDestination(), subscription.getQos(),
-                        ModBusData.TYPE.HOLDING_REGISTERS);
-                data.setData(addressRange.startIdx, registers);
-                return CompletableFuture.completedFuture(data);
+                return CompletableFuture.supplyAsync(() -> readRegisters(subscription));
             } else {
                 return CompletableFuture.failedFuture(new IllegalStateException("client not initialised"));
             }
         } catch(Exception e){
-            setErrorConnectionStatus(e);
             return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    protected ModBusData readRegisters(@NotNull final AbstractProtocolAdapterConfig.Subscription sub) {
+        try {
+            ModbusAdapterConfig.Subscription subscription = (ModbusAdapterConfig.Subscription) sub;
+            ModbusAdapterConfig.AddressRange addressRange = subscription.getAddressRange();
+            Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
+                    addressRange.endIdx - addressRange.startIdx);
+            ModBusData data = new ModBusData(null,subscription.getDestination(), subscription.getQos(),
+                    ModBusData.TYPE.HOLDING_REGISTERS);
+            data.setData(addressRange.startIdx, registers);
+            return data;
+        } catch(Exception e){
+            throw new RuntimeException(e);
         }
     }
 

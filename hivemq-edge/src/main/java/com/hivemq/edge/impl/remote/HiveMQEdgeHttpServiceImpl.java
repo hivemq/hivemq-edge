@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.impl;
+package com.hivemq.edge.impl.remote;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.hivemq.edge.model.HiveMQEdgeEvent;
+import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConnectivityException;
 import com.hivemq.edge.model.HiveMQEdgeRemoteServices;
-import com.hivemq.edge.utils.HiveMQEdgeEnvironmentUtils;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.http.core.HttpResponse;
@@ -65,7 +64,7 @@ public class HiveMQEdgeHttpServiceImpl {
     private Object monitor = new Object();
     private volatile HiveMQEdgeRemoteConfiguration remoteConfiguration;
     private volatile HiveMQEdgeRemoteServices remoteServices;
-    private BlockingQueue<HiveMQEdgeEvent> usageEventQueue = new LinkedBlockingDeque<>(20);
+    private BlockingQueue<HiveMQEdgeRemoteEvent> usageEventQueue = new LinkedBlockingDeque<>(20);
     static final int MAX_ERROR_ATTEMPTS_USAGE_STATS = 10;
     static final int USAGE_STATS_ERROR_RESET_INTERVAL_MILLIS = 1000 * 60 * 10;
 
@@ -140,7 +139,7 @@ public class HiveMQEdgeHttpServiceImpl {
                 while (running) {
                     try {
                         boolean attempt = true;
-                        HiveMQEdgeEvent event = usageEventQueue.take();
+                        HiveMQEdgeRemoteEvent event = usageEventQueue.take();
                         if(usageErrorCount.get() > MAX_ERROR_ATTEMPTS_USAGE_STATS){
                             if((lastAttempt < (System.currentTimeMillis() - USAGE_STATS_ERROR_RESET_INTERVAL_MILLIS))) {
                                 if (logger.isTraceEnabled()) {
@@ -200,7 +199,7 @@ public class HiveMQEdgeHttpServiceImpl {
         return Optional.ofNullable(remoteConfiguration);
     }
 
-    public void fireEvent(final HiveMQEdgeEvent event, boolean queueIfOffline){
+    public void fireEvent(final HiveMQEdgeRemoteEvent event, boolean queueIfOffline){
         try {
             if(!activateUsage) return;
             boolean process = isOnline() || queueIfOffline;
@@ -276,7 +275,7 @@ public class HiveMQEdgeHttpServiceImpl {
                             serviceDiscoveryEndpoint);
                 }
                 if(hasConnectivity && activateUsage){
-                    HiveMQEdgeEvent event = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.EDGE_PING);
+                    HiveMQEdgeRemoteEvent event = new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.EDGE_PING);
                     fireEvent(event, false);
                 }
             } else {

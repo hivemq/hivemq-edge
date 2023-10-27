@@ -24,7 +24,7 @@ import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
-import com.hivemq.edge.model.HiveMQEdgeEvent;
+import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.util.Checkpoints;
 import org.slf4j.Logger;
@@ -151,7 +151,7 @@ public class BridgeService {
                                 bridge.getPort(),
                                 (System.currentTimeMillis() - start));
                         lastErrors.remove(bridge.getId());
-                        HiveMQEdgeEvent startedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.BRIDGE_STARTED);
+                        HiveMQEdgeRemoteEvent startedEvent = new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_STARTED);
                         startedEvent.addUserData("cloudBridge",
                                 String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
                         startedEvent.addUserData("name", bridgeName);
@@ -163,7 +163,7 @@ public class BridgeService {
                     public void onFailure(final Throwable t) {
                         log.error("Unable To Start Bridge '{}'.", bridge.getId(), t);
                         lastErrors.put(bridge.getId(), t);
-                        HiveMQEdgeEvent errorEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.BRIDGE_ERROR);
+                        HiveMQEdgeRemoteEvent errorEvent = new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.BRIDGE_ERROR);
                         errorEvent.addUserData("cloudBridge",
                                 String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
                         errorEvent.addUserData("cause", t.getMessage());
