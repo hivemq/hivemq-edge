@@ -1,0 +1,21 @@
+name: "Setup Nodejs environment"
+description: "Setup Nodejs environment including all dependencies to execute runtime jobs"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: pnpm/action-setup@v2
+      name: Install pnpm
+      id: pnpm-install
+      with:
+        version: 8.4.0
+        run_install: ${{ inputs.run_install }}
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18.16.0
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
