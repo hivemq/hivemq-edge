@@ -320,7 +320,6 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
                         adapterConfig.getId())).build());
     }
 
-
     /**
      * Provide a method to lazily traverse tag-data on your external device.
      * @param input
