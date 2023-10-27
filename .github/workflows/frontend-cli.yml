@@ -17,11 +17,6 @@ on:
       - .github/actions/setup_node/action.yml
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-defaults:
-  run:
-    shell: bash
-    working-directory: ./hivemq-edge/src/frontend/
-
 
 # Cancel previous workflow on a follow-up push event
 # https://stackoverflow.com/a/72408109
@@ -32,26 +27,15 @@ concurrency:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./hivemq-edge/src/frontend/
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
 
-      - uses: pnpm/action-setup@v2
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          version: 8.4.0
-          run_install: false
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18.16.0
-          cache: 'pnpm'
-          cache-dependency-path: '**/pnpm-lock.yaml'
-
-      - name: Install dependencies
-        shell: bash
-        run: pnpm install --frozen-lockfile
+      - name: 🏗️ Setup node environment
+        uses: ./.github/actions/setup_node
 
       - name: 🧪 Run Prettier
         run: pnpm lint:prettier
@@ -61,6 +45,9 @@ jobs:
 
   unit_tests:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./hivemq-edge/src/frontend/
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
@@ -75,14 +62,15 @@ jobs:
 
   component_tests:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./hivemq-edge/src/frontend/
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
-        with:
-          working_directory: ./hivemq-edge/src/frontend
 
       - name: 🧪 Run Cypress Component
         uses: cypress-io/github-action@v5
@@ -101,14 +89,15 @@ jobs:
 
   e2e_tests:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./hivemq-edge/src/frontend/
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
-        with:
-          working_directory: ./hivemq-edge/src/frontend
 
       - name: 🧪 Run Cypress E2E
         uses: cypress-io/github-action@v5
@@ -127,14 +116,15 @@ jobs:
   build_production:
     needs: [lint, unit_tests, component_tests, e2e_tests]
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./hivemq-edge/src/frontend/
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
-        with:
-          working_directory: ./hivemq-edge/src/frontend
 
       - name: 🏗️ Build Application
         run: pnpm run build
@@ -144,6 +134,9 @@ jobs:
 
   lighthouse:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./hivemq-edge/src/frontend/
     needs: [build_production]
     steps:
       - name: 👓 Checkout repository
