@@ -18,6 +18,10 @@ on:
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+defaults:
+  run:
+    working-directory: ./hivemq-edge/src/frontend/
+
 # Cancel previous workflow on a follow-up push event
 # https://stackoverflow.com/a/72408109
 concurrency:
@@ -27,9 +31,6 @@ concurrency:
 jobs:
   lint:
     runs-on: ubuntu-latest
-#    defaults:
-#      run:
-#        working-directory: ./hivemq-edge/src/frontend/
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
@@ -126,8 +127,6 @@ jobs:
 
       - name: 🏗️ Build Application
         run: pnpm run build
-        working-directory: ./hivemq-edge/src/frontend/
-
 
 #      - name: 📸 Run Percy visual tests
 #        run: echo "Check the Percy tests on the other workflow"
