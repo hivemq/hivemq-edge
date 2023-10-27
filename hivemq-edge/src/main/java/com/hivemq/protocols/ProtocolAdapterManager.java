@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
+import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
@@ -36,6 +37,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -280,17 +282,24 @@ public class ProtocolAdapterManager {
         if (adapterInstance.isPresent()) {
             adapterInstance.get().getAdapter().stop();
             if (protocolAdapters.remove(id) != null) {
-                synchronized(lock){
-                    Map<String, Object> mainMap =
-                            configurationService.protocolAdapterConfigurationService().getAllConfigs();
-                    List<Map> adapterList = getAdapterListForType(adapterInstance.get().getAdapterInformation().getProtocolId());
-                    if (adapterList != null) {
-                        if(adapterList.removeIf(instance -> id.equals(instance.get("id")))){
-                            configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
+                try {
+                    synchronized(lock){
+                        Map<String, Object> mainMap =
+                                configurationService.protocolAdapterConfigurationService().getAllConfigs();
+                        List<Map> adapterList = getAdapterListForType(adapterInstance.get().getAdapterInformation().getProtocolId());
+                        if (adapterList != null) {
+                            if(adapterList.removeIf(instance -> id.equals(instance.get("id")))){
+                                configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
+                            }
                         }
                     }
+                    return true;
+                } finally {
+                    eventService.fireEvent(
+                            eventBuilder(Event.SEVERITY.WARN, adapterInstance.get().getAdapter()).
+                            withMessage(String.format("Adapter '%s' was deleted from the system permanently",
+                                    adapterInstance.get().getAdapter().getId())).build());
                 }
-                return true;
             }
         }
         return false;
@@ -456,5 +465,15 @@ public class ProtocolAdapterManager {
         public @NotNull ModuleServices moduleServices() {
             return new ModuleServicesPerModuleImpl(protocolAdapter, moduleServices, eventService);
         }
+    }
+
+    protected Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity, final @NotNull ProtocolAdapter adapter){
+        Preconditions.checkNotNull(severity);
+        Preconditions.checkNotNull(adapter);
+        Event.Builder builder = new Event.Builder();
+        builder.withTimestamp(System.currentTimeMillis());
+        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapter.getId()));
+        builder.withSeverity(severity);
+        return builder;
     }
 }

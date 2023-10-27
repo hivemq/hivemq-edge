@@ -139,11 +139,6 @@ public class Event implements Identifiable {
         private TypeIdentifier associatedObject;
         private TypeIdentifier source;
 
-        public Builder withIdentifier(final TypeIdentifier identifier) {
-            this.identifier = identifier;
-            return this;
-        }
-
         public Builder withSeverity(final Event.SEVERITY severity) {
             this.severity = severity;
             return this;
@@ -175,7 +170,7 @@ public class Event implements Identifiable {
         }
 
         public Event build() {
-            return new Event(identifier, severity, message, payload, timestamp, associatedObject, source);
+            return new Event(TypeIdentifier.generate(TypeIdentifier.TYPE.EVENT), severity, message, payload, timestamp, associatedObject, source);
         }
     }
 }

@@ -34,6 +34,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -147,7 +148,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
                     eventBuilder(Event.SEVERITY.ERROR).
                             withMessage(String.format("Adapter '%s' encountered an error.",
                             adapterConfig.getId())).
-                            withPayload(generateErrorPayload(throwable)).
+                            withPayload(EventUtils.generateErrorPayload(throwable)).
                             build());
         }
     }
@@ -298,7 +299,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         output.failStart(throwable, throwable.getMessage());
         eventService.fireEvent(
                 eventBuilder(Event.SEVERITY.CRITICAL).
-                        withPayload(generateErrorPayload(throwable)).
+                        withPayload(EventUtils.generateErrorPayload(throwable)).
                         withMessage("Error starting adapter").build());
     }
 
@@ -338,29 +339,10 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity){
         Event.Builder builder = new Event.Builder();
         builder.withTimestamp(System.currentTimeMillis());
-        builder.withIdentifier(TypeIdentifier.generate(TypeIdentifier.TYPE.EVENT));
         builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterConfig.getId()));
         builder.withAssociatedObject(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER_TYPE,
                 adapterInformation.getProtocolId()));
         builder.withSeverity(severity);
         return builder;
-    }
-
-    protected static Payload generateErrorPayload(final @Nullable Throwable throwable){
-        Payload payload = null;
-        if(throwable != null){
-            payload = Payload.from(Payload.ContentType.PLAIN_TEXT,
-                    ExceptionUtils.getStackTrace(throwable));
-        }
-        return payload;
-    }
-
-    protected static Payload generateJsonPayload(final @Nullable byte[] arr){
-        Payload payload = null;
-        if(arr != null){
-            payload = Payload.from(Payload.ContentType.JSON,
-                    new String(arr, StandardCharsets.UTF_8));
-        }
-        return payload;
     }
 }
