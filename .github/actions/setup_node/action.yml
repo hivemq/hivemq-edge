@@ -16,7 +16,7 @@ runs:
       id: pnpm-install
       with:
         version: 8.4.0
-        run_install: true
+        run_install: false
 
     - uses: actions/setup-node@v3
       with:
