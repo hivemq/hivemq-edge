@@ -7,18 +7,15 @@ runs:
     - uses: pnpm/action-setup@v2
       name: Install pnpm
       id: pnpm-install
-      working-directory: ./hivemq-edge/src/frontend/
       with:
         version: 8.4.0
         run_install: true
 
     - uses: actions/setup-node@v3
-      working-directory: ./hivemq-edge/src/frontend/
       with:
         node-version: 18.16.0
         cache: 'pnpm'
 
     - name: Install dependencies
       shell: bash
-      working-directory: ./hivemq-edge/src/frontend/
       run: pnpm install --frozen-lockfile
