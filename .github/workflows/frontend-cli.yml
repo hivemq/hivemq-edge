@@ -13,6 +13,8 @@ on:
     branches: [master]
     paths:
       - hivemq-edge/src/frontend/**
+      - .github/workflows/frontend-cli.yml
+      - .github/actions/setup_node/action.yml
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 defaults:
