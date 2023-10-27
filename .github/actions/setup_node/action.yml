@@ -9,7 +9,7 @@ runs:
       id: pnpm-install
       with:
         version: 8.4.0
-        run_install: ${{ inputs.run_install }}
+        run_install: true
 
     - uses: actions/setup-node@v3
       with:
