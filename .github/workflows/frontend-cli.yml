@@ -17,13 +17,14 @@ on:
       - .github/actions/setup_node/action.yml
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-defaults:
-  run:
-    working-directory: ./hivemq-edge/src/frontend/
+
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./hivemq-edge/src/frontend/
 
     steps:
       - name: 👓 Checkout repository
