@@ -81,6 +81,7 @@ jobs:
         with:
           component: true
           start: pnpm dev
+          working-directory: ./hivemq-edge/src/frontend/
 
       # after the test run completes store videos
       - name: 💾 Upload Component videos
