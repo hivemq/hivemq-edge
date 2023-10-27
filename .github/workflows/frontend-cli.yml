@@ -67,6 +67,8 @@ jobs:
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
+        with:
+          working_directory: ./hivemq-edge/src/frontend
 
       - name: 🧪 Run Test
         run: pnpm test
@@ -80,7 +82,7 @@ jobs:
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
         with:
-          working_directory: hivemq-edge/src/frontend
+          working_directory: ./hivemq-edge/src/frontend
 
       - name: 🧪 Run Cypress Component
         uses: cypress-io/github-action@v5
@@ -105,6 +107,8 @@ jobs:
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
+        with:
+          working_directory: ./hivemq-edge/src/frontend
 
       - name: 🧪 Run Cypress E2E
         uses: cypress-io/github-action@v5
@@ -129,6 +133,8 @@ jobs:
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
+        with:
+          working_directory: ./hivemq-edge/src/frontend
 
       - name: 🏗️ Build Application
         run: pnpm run build
