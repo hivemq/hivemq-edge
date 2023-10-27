@@ -1,9 +1,5 @@
 name: "Setup Nodejs environment"
 description: "Setup Nodejs environment including all dependencies to execute runtime jobs"
-inputs:
-  working_directory:
-    required: true
-    description: move into the right directory
 
 runs:
   using: "composite"
@@ -22,6 +18,7 @@ runs:
       with:
         node-version: 18.16.0
         cache: 'pnpm'
+        cache-dependency-path: '**/pnpm-lock.json'
 
     - name: Install dependencies
       shell: bash
