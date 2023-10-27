@@ -102,7 +102,7 @@ jobs:
           path: hivemq-edge/src/frontend/cypress/videos
           if-no-files-found: ignore
 
-  build:
+  build_production:
     needs: [lint, unit_tests, component_tests, e2e_tests]
     runs-on: ubuntu-latest
 
@@ -121,7 +121,7 @@ jobs:
 
   lighthouse:
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build_production]
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
