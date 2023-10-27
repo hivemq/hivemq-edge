@@ -19,6 +19,12 @@ env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
+# Cancel previous workflow on a follow-up push event
+# https://stackoverflow.com/a/72408109
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
