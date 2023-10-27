@@ -4,6 +4,10 @@ description: "Setup Nodejs environment including all dependencies to execute run
 runs:
   using: "composite"
   steps:
+    - name: CD into working directory
+      run: cd ${{ github.action_path }}
+      shell: bash
+
     - uses: pnpm/action-setup@v2
       name: Install pnpm
       id: pnpm-install
