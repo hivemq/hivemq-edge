@@ -128,6 +128,13 @@ jobs:
       - name: 🏗️ Build Application
         run: pnpm run build
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: application
+          path: hivemq-edge/src/frontend/dist
+          retention-days: 1
+
 #      - name: 📸 Run Percy visual tests
 #        run: echo "Check the Percy tests on the other workflow"
 
@@ -138,6 +145,12 @@ jobs:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
 
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: application
+          path: hivemq-edge/src/frontend/dist
+
       - name: 🚥 Run Lighthouse audits
         uses: treosh/lighthouse-ci-action@v10
         id: lighthouse
@@ -147,11 +160,3 @@ jobs:
           uploadArtifacts: true # save results as an action artifacts
           configPath: 'hivemq-edge/src/frontend/.lighthouserc.cjs'
 
-      - name: 💾 Job successful feedback
-        if: ${{ success() }}
-        run: |
-          echo '### Lighthouse results 🚦' >> $GITHUB_STEP_SUMMARY
-          echo "Performance: ${{ fromJSON(steps.lighthouse.outputs.manifest)[0].summary.performance }}" >> $GITHUB_STEP_SUMMARY
-          echo "Accessibility: ${{ fromJSON(steps.lighthouse.outputs.manifest)[0].summary.accessibility }}" >> $GITHUB_STEP_SUMMARY
-          echo "Best-practices: ${{ fromJSON(steps.lighthouse.outputs.manifest)[0].summary.best-practices }}" >> $GITHUB_STEP_SUMMARY
-          echo "SEO: ${{ fromJSON(steps.lighthouse.outputs.manifest)[0].summary.seo }}" >> $GITHUB_STEP_SUMMARY
