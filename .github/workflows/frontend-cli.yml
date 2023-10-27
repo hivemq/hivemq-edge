@@ -27,9 +27,9 @@ concurrency:
 jobs:
   lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./hivemq-edge/src/frontend/
+#    defaults:
+#      run:
+#        working-directory: ./hivemq-edge/src/frontend/
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
@@ -47,9 +47,6 @@ jobs:
 
   unit_tests:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./hivemq-edge/src/frontend/
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
@@ -64,9 +61,6 @@ jobs:
 
   component_tests:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./hivemq-edge/src/frontend/
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
@@ -94,9 +88,6 @@ jobs:
 
   e2e_tests:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./hivemq-edge/src/frontend/
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
@@ -110,6 +101,7 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           start: pnpm dev
+          working-directory: ./hivemq-edge/src/frontend/
 
       # after the test run completes store videos
       - name: 💾 Upload E2E videos
@@ -123,9 +115,6 @@ jobs:
   build_production:
     needs: [lint, unit_tests, component_tests, e2e_tests]
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./hivemq-edge/src/frontend/
     steps:
       - name: 👓 Checkout repository
         uses: actions/checkout@v3
@@ -137,15 +126,14 @@ jobs:
 
       - name: 🏗️ Build Application
         run: pnpm run build
+        working-directory: ./hivemq-edge/src/frontend/
+
 
 #      - name: 📸 Run Percy visual tests
 #        run: echo "Check the Percy tests on the other workflow"
 
   lighthouse:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./hivemq-edge/src/frontend/
     needs: [build_production]
     steps:
       - name: 👓 Checkout repository
