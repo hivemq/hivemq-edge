@@ -1,9 +1,16 @@
 name: "Setup Nodejs environment"
 description: "Setup Nodejs environment including all dependencies to execute runtime jobs"
+inputs:
+  working_directory:
+    required: true
+    description: move into the right directory
 
 runs:
   using: "composite"
   steps:
+    - run: cd ${{ inputs.working_directory }}
+      shell: bash
+
     - uses: pnpm/action-setup@v2
       name: Install pnpm
       id: pnpm-install
