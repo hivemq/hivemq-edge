@@ -42,6 +42,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.constraints.Null;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -138,20 +140,16 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * give an indication of the status of an adapter runtime.
      * @param errorMessage
      */
-    protected void reportErrorMessage(@Nullable final Throwable throwable, @NotNull final String errorMessage){
-        Preconditions.checkNotNull(throwable);
-        this.errorMessage = errorMessage == null ? throwable.getMessage() : errorMessage;
-        Payload payload = null;
-        if(throwable != null){
-            payload = Payload.from(Payload.ContentType.PLAIN_TEXT,
-                    ExceptionUtils.getStackTrace(throwable));
+    protected void reportErrorMessage(@Nullable final Throwable throwable, @NotNull final String errorMessage, final boolean sendEvent){
+        this.errorMessage = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
+        if(sendEvent){
+            eventService.fireEvent(
+                    eventBuilder(Event.SEVERITY.ERROR).
+                            withMessage(String.format("Adapter '%s' encountered an error.",
+                            adapterConfig.getId())).
+                            withPayload(generateErrorPayload(throwable)).
+                            build());
         }
-        eventService.fireEvent(
-                eventBuilder(Event.SEVERITY.ERROR).
-                        withMessage(String.format("Adapter '%s' encountered an error.",
-                        adapterConfig.getId())).
-                        withPayload(payload).
-                        build());
     }
 
     @Override
@@ -243,20 +241,20 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * A convenience method that sets the ConnectionStatus to Error
      * and the errorMessage to that supplied.
      */
-    protected void setErrorConnectionStatus(@NotNull final String errorMessage){
-        Preconditions.checkNotNull(errorMessage);
+    protected void setErrorConnectionStatus(@Nullable final Throwable t, @NotNull final String errorMessage){
+        boolean changed = false;
         synchronized (lock){
-            this.connectionStatus = ConnectionStatus.ERROR;
-            reportErrorMessage(null, errorMessage);
+            if(connectionStatus != ConnectionStatus.ERROR){
+                setConnectionStatus(ConnectionStatus.ERROR);
+                changed = true;
+            }
         }
+        reportErrorMessage(t, errorMessage, changed);
     }
 
     protected void setErrorConnectionStatus(@NotNull final Throwable t){
         Preconditions.checkNotNull(t);
-        synchronized (lock){
-            this.connectionStatus = ConnectionStatus.ERROR;
-            reportErrorMessage(t, t.getMessage());
-        }
+        setErrorConnectionStatus(t, null);
     }
 
     protected void setRuntimeStatus(@NotNull final RuntimeStatus runtimeStatus){
@@ -296,11 +294,12 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     }
 
     protected void onStartFail(@NotNull final ProtocolAdapterStartOutput output, @NotNull final Throwable throwable){
-        setErrorConnectionStatus(throwable);
+        setErrorConnectionStatus(throwable, null);
         output.failStart(throwable, throwable.getMessage());
         eventService.fireEvent(
-                eventBuilder(Event.SEVERITY.ERROR).
-                        withMessage(throwable.getMessage()).build());
+                eventBuilder(Event.SEVERITY.CRITICAL).
+                        withPayload(generateErrorPayload(throwable)).
+                        withMessage("Error starting adapter").build());
     }
 
     protected void onStartSuccess(@NotNull final ProtocolAdapterStartOutput output){
@@ -341,8 +340,27 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         builder.withTimestamp(System.currentTimeMillis());
         builder.withIdentifier(TypeIdentifier.generate(TypeIdentifier.TYPE.EVENT));
         builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterConfig.getId()));
-        builder.withAssociatedObject(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER_TYPE, adapterInformation.getProtocolId()));
+        builder.withAssociatedObject(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER_TYPE,
+                adapterInformation.getProtocolId()));
         builder.withSeverity(severity);
         return builder;
+    }
+
+    protected static Payload generateErrorPayload(final @Nullable Throwable throwable){
+        Payload payload = null;
+        if(throwable != null){
+            payload = Payload.from(Payload.ContentType.PLAIN_TEXT,
+                    ExceptionUtils.getStackTrace(throwable));
+        }
+        return payload;
+    }
+
+    protected static Payload generateJsonPayload(final @Nullable byte[] arr){
+        Payload payload = null;
+        if(arr != null){
+            payload = Payload.from(Payload.ContentType.JSON,
+                    new String(arr, StandardCharsets.UTF_8));
+        }
+        return payload;
     }
 }
