@@ -1,7 +1,7 @@
 name: "Setup Nodejs environment"
 description: "Setup Nodejs environment including all dependencies to execute runtime jobs"
 inputs:
-  working_directory:
+  working-directory:
     required: true
     description: move into the right directory
 
@@ -23,5 +23,5 @@ runs:
 
     - name: Install dependencies
       shell: bash
-      working-directory: ${{ inputs.working_directory }}
+      working-directory: ${{ inputs.working-directory }}
       run: pnpm install --frozen-lockfile
