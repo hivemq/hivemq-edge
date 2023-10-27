@@ -20,7 +20,7 @@ env:
 defaults:
   run:
     shell: bash
-    working-directory: hivemq-edge/src/frontend
+    working-directory: ./hivemq-edge/src/frontend/
 
 
 # Cancel previous workflow on a follow-up push event
