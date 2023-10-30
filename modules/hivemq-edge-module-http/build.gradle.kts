@@ -3,11 +3,11 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
-    id("java")
-    id("com.github.sgtsilvio.gradle.utf8")
-    id("com.github.johnrengelman.shadow")
-    id("com.github.hierynomus.license")
-    id("org.owasp.dependencycheck")
+    java
+    alias(libs.plugins.utf8)
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.hierynomusLicense)
+    alias(libs.plugins.dependencycheck)
 }
 
 group = "com.hivemq"
@@ -36,8 +36,8 @@ repositories {
 dependencies {
     compileOnly("com.hivemq:hivemq-edge")
     compileOnly("com.hivemq:hivemq-extension-sdk")
-    implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
-    runtimeOnly("com.google.guava:guava:${property("guava.version")}") {
+    implementation(libs.jackson.databind)
+    runtimeOnly(libs.guava) {
         exclude("org.checkerframework", "checker-qual")
         exclude("com.google.errorprone", "error_prone_annotations")
     }
@@ -55,15 +55,14 @@ configurations {
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
     compileOnly("com.hivemq:hivemq-extension-sdk")
-    testImplementation("org.apache.commons:commons-lang3:${property("commons-lang.version")}")
-    testImplementation("commons-io:commons-io:${property("commons-io.version")}")
-    testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")
-    testImplementation("org.junit.platform:junit-platform-launcher:${property("junit.jupiter.platform.version")}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${property("junit.jupiter.version")}")
-    testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
-    testImplementation("org.mockito:mockito-junit-jupiter:${property("mockito.version")}")
+    testImplementation(libs.commons.lang3)
+    testImplementation(libs.bundles.mokito)
+    testImplementation(libs.commons.io)
+    testImplementation(platform(libs.junit.jupiter.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter-api")
+    testImplementation("org.junit.jupiter:junit-jupiter-params")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    testImplementation(libs.junit.platform.launcher)
 }
 
 tasks.test {

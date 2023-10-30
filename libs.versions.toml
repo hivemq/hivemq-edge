@@ -1,0 +1,154 @@
+[versions]
+hivemqExtensionSdkVersion="4.16.0"
+hivemqEdgeExtensionSdkVersion="2023.6"
+nettyVersion="4.1.79.Final"
+slf4jVersion="2.0.7"
+logbackVersion="1.4.7"
+bouncycastleVersion="1.70"
+kotlinVersion="1.8.22"
+commonsCompressVersion="1.23.0"
+jakartaXmlBindVersion="2.3.3"
+jaxbVersion="2.3.8"
+metricsVersion="4.2.19"
+daggerVersion="2.43.2"
+javaxAnnotationVersion="1.3.2"
+commonsIoVersion="2.13.0"
+commonsLangVersion="3.12.0"
+guavaVersion="32.0.1-jre"
+futureConverterJava8GuavaVersion="1.2.0"
+zeroAllocationHashingVersion="0.16"
+jacksonVersion="2.15.2"
+jctoolsVersion="4.0.1"
+mqttSnCodecVerion="838f51d691"
+jerseyJaxrsSunVersion="2.28"
+hivemqMqttClientVersion="1.3.1"
+jose4jVersion="0.9.3"
+jsonSchemaValidatorVersion="1.0.82"
+jsonschemaVersion="4.31.1"
+assertjVersion="3.23.1"
+miloVersion="0.6.9"
+
+# Test
+junitVersion="4.13.2"
+junitJupiterVersion="5.9.2"
+junitJupiterPlatformVersion="1.7.1"
+mockitoVersion="4.11.0"
+equalsVerifierVersion="3.14.2"
+concurrentunitVersion="0.4.6"
+shrinkwrapVersion="1.2.6"
+bytebuddyVersion="1.14.5"
+wiremockVersion="2.35.0"
+javassistVersion="3.29.2-GA"
+awaitilityVersion="4.2.0"
+systemRulesVersion="1.19.0"
+modbusMasterTcpVersion="1.2.0"
+orgApachePlc4xVersion="0.10.0"
+
+# plugins"
+shadowVersion="7.1.2"
+utf8Version="0.1.0"
+metadataVersion="0.3.0"
+javadocLinksVersion="0.5.0"
+githubReleasesVersion="2.4.1"
+hierynomusLicenseVersion="0.16.1"
+dependencycheckVersion="7.1.1"
+benManesVersion="0.42.0"
+spotbugsVersion="4.3.0"
+forbiddenapisVersion="3.5.1"
+swaggerVersion="2.2.8"
+
+
+[libraries]
+hivemq-extension-sdk = { module = "com.hivemq:hivemq-extension-sdk", version.ref ="hivemqExtensionSdkVersion"}
+hivemq-edge-extension-sdk = { module = "com.hivemq:hivemq-edge-extension-sdk", version.ref ="hivemqEdgeExtensionSdkVersion"}
+netty-buffer = { module = "io.netty:netty-buffer", version.ref ="nettyVersion"}
+netty-codec = { module = "io.netty:netty-codec", version.ref ="nettyVersion"}
+netty-codec-http = { module = "io.netty:netty-codec-http", version.ref ="nettyVersion"}
+netty-common = { module = "io.netty:netty-common", version.ref ="nettyVersion"}
+netty-handler = { module = "io.netty:netty-handler", version.ref ="nettyVersion"}
+netty-transport = { module = "io.netty:netty-transport", version.ref ="nettyVersion"}
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref ="slf4jVersion"}
+jul-to-slf4j = { module = "org.slf4j:jul-to-slf4j", version.ref ="slf4jVersion"}
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref ="logbackVersion"}
+bcprov-jdk15on = { module = "org.bouncycastle:bcprov-jdk15on", version.ref ="bouncycastleVersion"}
+bcpkix-jdk15on = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref ="bouncycastleVersion"}
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref ="kotlinVersion"}
+commons-compress = { module = "org.apache.commons:commons-compress", version.ref ="commonsCompressVersion"}
+jakarta-xml-bind-api = { module = "jakarta.xml.bind:jakarta.xml.bind-api", version.ref ="jakartaXmlBindVersion"}
+jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref ="jaxbVersion"}
+metrics-core = { module = "io.dropwizard.metrics:metrics-core", version.ref ="metricsVersion"}
+metrics-jmx = { module = "io.dropwizard.metrics:metrics-jmx", version.ref ="metricsVersion"}
+metrics-logback = { module = "io.dropwizard.metrics:metrics-logback", version.ref ="metricsVersion"}
+metrics-jvm = { module = "io.dropwizard.metrics:metrics-jvm", version.ref ="metricsVersion"}
+dagger = { module = "com.google.dagger:dagger", version.ref ="daggerVersion"}
+dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref ="daggerVersion"}
+annotation-api = { module = "javax.annotation:javax.annotation-api", version.ref ="javaxAnnotationVersion"}
+commons-io = { module = "commons-io:commons-io", version.ref ="commonsIoVersion"}
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref ="commonsLangVersion"}
+guava = { module = "com.google.guava:guava", version.ref ="guavaVersion"}
+future-converter-java8-guava = { module = "net.javacrumbs.future-converter:future-converter-java8-guava", version.ref ="futureConverterJava8GuavaVersion"}
+zero-allocation-hashing = { module = "net.openhft:zero-allocation-hashing", version.ref ="zeroAllocationHashingVersion"}
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref ="jacksonVersion"}
+jctools-core = { module = "org.jctools:jctools-core", version.ref ="jctoolsVersion"}
+mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref ="mqttSnCodecVerion"}
+jersey-container-jdk-http = { module = "org.glassfish.jersey.containers:jersey-container-jdk-http", version.ref ="jerseyJaxrsSunVersion"}
+jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref ="jerseyJaxrsSunVersion"}
+jersey-media-json-jackson = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref ="jerseyJaxrsSunVersion"}
+jersey-media-multipart = { module = "org.glassfish.jersey.media:jersey-media-multipart", version.ref ="jerseyJaxrsSunVersion"}
+jackson-jaxrs-json-provider = { module = "com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider", version.ref ="jacksonVersion"}
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref ="jacksonVersion"}
+hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version.ref ="hivemqMqttClientVersion"}
+swagger-annotations = { module = "io.swagger.core.v3:swagger-annotations", version.ref ="swaggerVersion"}
+jose4j = { module = "org.bitbucket.b_c:jose4j", version.ref ="jose4jVersion"}
+jsonschema-validator = { module = "com.networknt:json-schema-validator", version.ref ="jsonSchemaValidatorVersion"}
+jsonschema-generator = { module = "com.github.victools:jsonschema-generator", version.ref ="jsonschemaVersion"}
+jsonschema-module-jackson = { module = "com.github.victools:jsonschema-module-jackson", version.ref ="jsonschemaVersion"}
+modbus-master-tcp = { module = "com.digitalpetri.modbus:modbus-master-tcp", version.ref ="modbusMasterTcpVersion"}
+milo-sdk-client = { module = "org.eclipse.milo:sdk-client", version.ref ="miloVersion"}
+milo-dictionary-reader = { module = "org.eclipse.milo:dictionary-reader", version.ref ="miloVersion"}
+milo-bsd-parser-gson = { module = "org.eclipse.milo:bsd-parser-gson", version.ref ="miloVersion"}
+plc4j-api = { module = "org.apache.plc4x:plc4j-api", version.ref ="orgApachePlc4xVersion"}
+plc4j-driver-s7 = { module = "org.apache.plc4x:plc4j-driver-s7", version.ref ="orgApachePlc4xVersion"}
+
+# Test
+junit-Jupiter-bom= { module = "org.junit:junit-bom", version.ref ="junitJupiterVersion"}
+junit-classic= { module = "junit:junit", version.ref ="junitVersion"}
+mockito-core= { module = "org.mockito:mockito-core", version.ref ="mockitoVersion"}
+mockito-junit-jupiter= { module = "org.mockito:mockito-junit-jupiter", version.ref ="mockitoVersion"}
+equalsverifier= { module = "nl.jqno.equalsverifier:equalsverifier", version.ref ="equalsVerifierVersion"}
+concurrentunit= { module = "net.jodah:concurrentunit", version.ref ="concurrentunitVersion"}
+shrinkwrap-api= { module = "org.jboss.shrinkwrap:shrinkwrap-api", version.ref ="shrinkwrapVersion"}
+shrinkwrap-impl-base= { module = "org.jboss.shrinkwrap:shrinkwrap-impl-base", version.ref ="shrinkwrapVersion"}
+byte-buddy= { module = "net.bytebuddy:byte-buddy", version.ref ="bytebuddyVersion"}
+wiremock-jre8-standalone= { module = "com.github.tomakehurst:wiremock-jre8-standalone", version.ref ="wiremockVersion"}
+javassist= { module = "org.javassist:javassist", version.ref ="javassistVersion"}
+awaitility= { module = "org.awaitility:awaitility", version.ref ="awaitilityVersion"}
+assertj-core= { module = "org.assertj:assertj-core", version.ref ="assertjVersion"}
+system-rules= { module = "com.github.stefanbirkner:system-rules", version.ref ="systemRulesVersion"}
+junit-platform-launcher= { module = "org.junit.platform:junit-platform-launcher", version.ref ="junitJupiterPlatformVersion"}
+milo-sdk-server= { module = "org.eclipse.milo:sdk-server", version.ref ="miloVersion"}
+
+[bundles]
+hivemq = ["hivemq-extension-sdk", "hivemq-edge-extension-sdk"]
+netty = ["netty-buffer", "netty-codec", "netty-codec-http", "netty-common", "netty-handler", "netty-transport"]
+logs = ["slf4j-api", "jul-to-slf4j", "logback-classic"]
+security = ["bcprov-jdk15on", "bcpkix-jdk15on", "jose4j"]
+metrics = ["metrics-core", "metrics-jmx", "metrics-jvm"]
+glassfish = ["jersey-container-jdk-http", "jersey-hk2", "jersey-media-json-jackson", "jersey-media-multipart"]
+jackson = ["jackson-jaxrs-json-provider", "jackson-datatype-jsr310"]
+mokito = ["mockito-core", "mockito-junit-jupiter"]
+shrinkwrap = ["shrinkwrap-api", "shrinkwrap-impl-base"]
+milo = ["milo-sdk-client", "milo-dictionary-reader", "milo-bsd-parser-gson"]
+
+[plugins]
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadowVersion" }
+utf8 = { id = "com.github.sgtsilvio.gradle.utf8", version.ref = "utf8Version" }
+metadata = { id = "com.github.sgtsilvio.gradle.metadata", version.ref = "metadataVersion"}
+javadocLinks = { id = "com.github.sgtsilvio.gradle.javadoc-links", version.ref= "javadocLinksVersion"}
+githubRelease = { id = "com.github.breadmoirai.github-release", version.ref= "githubReleasesVersion"}
+hierynomusLicense = { id = "com.github.hierynomus.license", version.ref= "hierynomusLicenseVersion" }
+dependencycheck = { id = "org.owasp.dependencycheck", version.ref= "dependencycheckVersion" }
+benManes = { id = "com.github.ben-manes.versions", version.ref= "benManesVersion" }
+spotbugs = { id = "com.github.spotbugs", version.ref= "spotbugsVersion" }
+forbiddenapis = { id = "de.thetaphi.forbiddenapis", version.ref= "forbiddenapisVersion" }
+swagger = { id = "io.swagger.core.v3.swagger-gradle-plugin", version.ref= "swaggerVersion" }
