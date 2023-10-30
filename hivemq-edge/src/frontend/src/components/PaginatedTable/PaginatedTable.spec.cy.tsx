@@ -84,6 +84,27 @@ describe('PaginatedTable', () => {
     checkRowOrder('desc')
   })
 
+  it.only('should indicate when there is no data to render', () => {
+    cy.mountWithProviders(<PaginatedTable<MOCK_TYPE> data={[]} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} />)
+
+    cy.get('[role="alert"]').should('contain.text', 'No data received yet.')
+    cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
+  })
+
+  it.only('should render the custom nodata message', () => {
+    cy.mountWithProviders(
+      <PaginatedTable<MOCK_TYPE>
+        data={[]}
+        columns={MOCK_COLUMN}
+        pageSizes={[5, 10, 20]}
+        noDataText={'This is a message'}
+      />
+    )
+
+    cy.get('[role="alert"]').should('contain.text', 'This is a message')
+    cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
+  })
+
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(

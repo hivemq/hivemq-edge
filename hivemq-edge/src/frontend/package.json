@@ -11,7 +11,7 @@
     "lint:prettier:write": "prettier --write .",
     "lint:stylelint": "stylelint '{src}/**/*.{css}'",
     "lint:all": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0 && prettier --check .",
-    "dev:openAPI": "openapi --input '../../../../hivemq-edge/ext/hivemq-edge-openapi-2023.7.yaml' -o ./src/api/__generated__ -c axios --name HiveMqClient --exportSchemas true",
+    "dev:openAPI": "openapi --input '../../../../hivemq-edge/ext/hivemq-edge-openapi-2023.8.yaml' -o ./src/api/__generated__ -c axios --name HiveMqClient --exportSchemas true",
     "cypress:open": "cypress open",
     "cypress:open:component": "cypress open --component --browser chrome",
     "cypress:open:e2e": "cypress open --e2e --browser chrome",

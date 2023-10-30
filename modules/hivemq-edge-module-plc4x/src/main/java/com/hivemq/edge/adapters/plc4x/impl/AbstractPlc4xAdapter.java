@@ -99,7 +99,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 return CompletableFuture.completedFuture(null);
             } catch (Exception e) {
                 log.error("Error disconnecting from Plc4x Client", e);
-                setErrorConnectionStatus(e);
+                setErrorConnectionStatus(e, null);
                 return CompletableFuture.failedFuture(e);
             }
         }
