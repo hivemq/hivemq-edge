@@ -24,6 +24,7 @@
 
 package com.hivemq.util;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -32,7 +33,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * FIFO Rolling list, maintains a list with no more than the defined number of elements. When the element count is exceeded,
  * the index is reset to zero, thus writing the "newest" elements to the "oldest" positions in the backing list.
+ *
+ * NOTE: This is not as thread-safe data structure, concurrent access must be achieved externally.
  */
+@NotThreadSafe
 public class RollingList<T> extends ArrayList<T> {
     public static final int DEFAULT_CEILING = 25;
     protected final int ceiling;
@@ -58,7 +62,7 @@ public class RollingList<T> extends ArrayList<T> {
 
     @Override
     public boolean add(T o) {
-        synchronized(this){
+        synchronized(internalIdx){
             int i = internalIdx.get();
             if(i > (ceiling - 1)){
                 internalIdx.set(0);

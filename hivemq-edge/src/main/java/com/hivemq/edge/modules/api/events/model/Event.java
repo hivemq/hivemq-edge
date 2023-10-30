@@ -26,6 +26,8 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.Objects;
+
 /**
  * Bean to transport events across the API
  * @author Simon L Johnson
@@ -129,12 +131,28 @@ public class Event implements Identifiable {
         return identifier;
     }
 
+    @Override
+    public String toString() {
+        return message;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final Event event = (Event) o;
+        return Objects.equals(identifier, event.identifier);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(identifier);
+    }
+
     public static class Builder {
-        private TypeIdentifier identifier;
         private Event.SEVERITY severity;
         private String message;
         private Payload payload;
-        private Long created;
         private Long timestamp;
         private TypeIdentifier associatedObject;
         private TypeIdentifier source;

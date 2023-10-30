@@ -5,6 +5,7 @@ import com.hivemq.edge.modules.api.events.EventStore;
 import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.util.IntMap;
 import com.hivemq.util.RollingList;
 
 import javax.inject.Inject;
@@ -31,8 +32,11 @@ public class InMemoryEventImpl implements EventStore {
     @Inject
     public InMemoryEventImpl() {
         //optimize for quick write slow read (sort)
-        this.inMemoryEventList
-                = new RollingList<>(InternalConfigurations.EDGE_RUNTIME_MAX_EVENTS_IN_INMEMORY_LIST.get());
+        this(InternalConfigurations.EDGE_RUNTIME_MAX_EVENTS_IN_INMEMORY_LIST.get());
+    }
+
+    public InMemoryEventImpl(final int max) {
+        this.inMemoryEventList = new RollingList<>(max);
     }
 
     public void storeEvent(final Event event) {
@@ -57,7 +61,7 @@ public class InMemoryEventImpl implements EventStore {
         }
         Stream<Event> stream  = events.stream().sorted(Comparator.comparing(Event::getTimestamp).reversed());
         if(since != null){
-            stream = stream.filter(event -> since > event.getTimestamp());
+            stream = stream.filter(event -> since < event.getTimestamp());
         }
         if(limit != null){
             stream = stream.limit(limit);
