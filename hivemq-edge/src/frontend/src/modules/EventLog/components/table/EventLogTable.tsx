@@ -55,9 +55,10 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
       {
         accessorKey: 'created',
         sortType: 'datetime',
+        accessorFn: (row) => DateTime.fromISO(row.created).toMillis(),
         cell: (info) => (
           <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
-            {DateTime.fromISO(info.getValue() as string).toRelativeCalendar({ unit: 'minutes' })}
+            {DateTime.fromMillis(info.getValue() as number).toRelativeCalendar({ unit: 'minutes' })}
           </Skeleton>
         ),
         header: t('eventLog.table.header.created') as string,
