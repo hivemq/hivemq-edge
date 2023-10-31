@@ -1,4 +1,5 @@
 import { useState, CSSProperties } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -13,10 +14,10 @@ import {
   Row,
   useReactTable,
 } from '@tanstack/react-table'
-import { Table as TableUI, Thead, Tbody, Tr, Th, Td, TableContainer, Text, Alert } from '@chakra-ui/react'
+import { Table as TableUI, Thead, Tbody, Tr, Th, Td, TableContainer, Text, Alert, VStack } from '@chakra-ui/react'
 
 import PaginationBar from './components/PaginationBar.tsx'
-import { useTranslation } from 'react-i18next'
+import { Filter } from './components/Filter.tsx'
 
 interface PaginatedTableProps<T> {
   data: Array<T>
@@ -70,11 +71,12 @@ const PaginatedTable = <T,>({
           <Thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <Tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <Th key={header.id} colSpan={header.colSpan}>
+                {headerGroup.headers.map((header) => (
+                  <Th key={header.id} colSpan={header.colSpan} verticalAlign={'top'}>
+                    <VStack>
                       {header.isPlaceholder ? null : (
                         <Text
+                          userSelect={'none'}
                           {...{
                             className: header.column.getCanSort() ? 'cursor-pointer select-none' : '',
                             onClick: header.column.getToggleSortingHandler(),
@@ -87,9 +89,10 @@ const PaginatedTable = <T,>({
                           }[header.column.getIsSorted() as string] ?? null}
                         </Text>
                       )}
-                    </Th>
-                  )
-                })}
+                      {header.column.getCanFilter() && <Filter<T> column={header.column} table={table} />}
+                    </VStack>
+                  </Th>
+                ))}
               </Tr>
             ))}
           </Thead>
