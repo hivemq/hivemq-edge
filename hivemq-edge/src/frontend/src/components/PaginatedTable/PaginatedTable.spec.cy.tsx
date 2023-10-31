@@ -105,6 +105,19 @@ describe('PaginatedTable', () => {
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
   })
 
+  it('should render the filters', () => {
+    cy.mountWithProviders(
+      <PaginatedTable<MOCK_TYPE>
+        data={MOCK_DATA(4)}
+        columns={MOCK_COLUMN}
+        pageSizes={[5, 10, 20]}
+        enableColumnFilters
+      />
+    )
+
+    cy.get('th').eq(0).find('input').should('have.attr', 'placeholder', 'Search... (4)')
+  })
+
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
