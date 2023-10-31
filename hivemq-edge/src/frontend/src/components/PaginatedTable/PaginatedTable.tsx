@@ -32,6 +32,7 @@ import {
 import PaginationBar from './components/PaginationBar.tsx'
 import { Filter } from './components/Filter.tsx'
 import { BiSortDown, BiSortUp } from 'react-icons/bi'
+import { getAriaSort } from '@/components/PaginatedTable/utils/table-utils.ts'
 
 interface PaginatedTableProps<T> {
   data: Array<T>
@@ -86,7 +87,12 @@ const PaginatedTable = <T,>({
             {table.getHeaderGroups().map((headerGroup) => (
               <Tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <Th key={header.id} colSpan={header.colSpan} verticalAlign={'top'}>
+                  <Th
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    verticalAlign={'top'}
+                    aria-sort={getAriaSort(header.column.getCanSort(), header.column.getIsSorted())}
+                  >
                     <VStack>
                       {header.isPlaceholder && null}
                       {!header.isPlaceholder && header.column.getCanSort() && (

@@ -77,21 +77,21 @@ describe('PaginatedTable', () => {
     cy.get('th').eq(0).should('have.text', 'item')
     checkRowOrder()
     cy.get('th').eq(0).click()
-    cy.get('th').eq(0).should('have.text', 'item 🔼')
+    cy.get('th').eq(0).should('have.attr', 'aria-sort', 'ascending')
     checkRowOrder('asc')
     cy.get('th').eq(0).click()
-    cy.get('th').eq(0).should('have.text', 'item 🔽')
+    cy.get('th').eq(0).should('have.attr', 'aria-sort', 'descending')
     checkRowOrder('desc')
   })
 
-  it.only('should indicate when there is no data to render', () => {
+  it('should indicate when there is no data to render', () => {
     cy.mountWithProviders(<PaginatedTable<MOCK_TYPE> data={[]} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} />)
 
     cy.get('[role="alert"]').should('contain.text', 'No data received yet.')
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
   })
 
-  it.only('should render the custom nodata message', () => {
+  it('should render the custom nodata message', () => {
     cy.mountWithProviders(
       <PaginatedTable<MOCK_TYPE>
         data={[]}
