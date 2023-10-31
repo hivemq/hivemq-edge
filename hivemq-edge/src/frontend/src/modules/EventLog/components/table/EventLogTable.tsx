@@ -34,6 +34,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
         accessorKey: 'identifier.identifier',
         width: '25%',
         enableSorting: false,
+        enableColumnFilter: false,
         header: t('eventLog.table.header.id') as string,
         cell: (info) => {
           return (
@@ -84,6 +85,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
       {
         accessorKey: 'message',
         header: t('eventLog.table.header.message') as string,
+        enableColumnFilter: false,
         cell: (info) => {
           return (
             <Skeleton isLoaded={!isLoading} overflow={'hidden'}>
@@ -123,11 +125,11 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
       <PaginatedTable<Event>
         data={safeData}
         columns={columns}
-        // getRowStyles={(row) => {
-        //   return { backgroundColor: theme.colors.blue[50] }
-        // }}
-      />
-    </>
+        enableColumnFilters
+      // getRowStyles={(row) => {
+      //   return { backgroundColor: theme.colors.blue[50] }
+      // }}
+    /></>
   )
 }
 
