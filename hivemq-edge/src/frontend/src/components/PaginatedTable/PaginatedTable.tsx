@@ -23,6 +23,7 @@ interface PaginatedTableProps<T> {
   columns: ColumnDef<T>[]
   pageSizes?: number[]
   noDataText?: string
+  enableColumnFilters?: boolean
   /**
    * Define row styles
    */
@@ -37,6 +38,7 @@ const PaginatedTable = <T,>({
   pageSizes = DEFAULT_PAGE_SIZES,
   noDataText,
   getRowStyles,
+  enableColumnFilters = false,
 }: PaginatedTableProps<T>) => {
   const { t } = useTranslation()
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -49,6 +51,7 @@ const PaginatedTable = <T,>({
       columnFilters,
       globalFilter,
     },
+    enableColumnFilters: enableColumnFilters,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
