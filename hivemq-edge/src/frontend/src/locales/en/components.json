@@ -4,7 +4,7 @@
   },
   "pagination": {
     "filter": {
-      "placeholder": "Search ... ({{ size }})"
+      "placeholder": "Search... ({{ size }})"
     },
     "noDataText": "No data received yet.",
     "goFirstPage": "Go to the first page",
