@@ -14,10 +14,24 @@ import {
   Row,
   useReactTable,
 } from '@tanstack/react-table'
-import { Table as TableUI, Thead, Tbody, Tr, Th, Td, TableContainer, Text, Alert, VStack } from '@chakra-ui/react'
+import {
+  Table as TableUI,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
+  Text,
+  Alert,
+  VStack,
+  Button,
+  Icon,
+} from '@chakra-ui/react'
 
 import PaginationBar from './components/PaginationBar.tsx'
 import { Filter } from './components/Filter.tsx'
+import { BiSortDown, BiSortUp } from 'react-icons/bi'
 
 interface PaginatedTableProps<T> {
   data: Array<T>
@@ -74,19 +88,30 @@ const PaginatedTable = <T,>({
                 {headerGroup.headers.map((header) => (
                   <Th key={header.id} colSpan={header.colSpan} verticalAlign={'top'}>
                     <VStack>
-                      {header.isPlaceholder ? null : (
-                        <Text
+                      {header.isPlaceholder && null}
+                      {!header.isPlaceholder && header.column.getCanSort() && (
+                        <Button
+                          onClick={header.column.getToggleSortingHandler()}
+                          size={'sm'}
+                          variant="ghost"
+                          textTransform={'inherit'}
+                          fontWeight={'inherit'}
+                          fontSize={'inherit'}
+                          height={'24px'}
                           userSelect={'none'}
-                          {...{
-                            className: header.column.getCanSort() ? 'cursor-pointer select-none' : '',
-                            onClick: header.column.getToggleSortingHandler(),
-                          }}
+                          rightIcon={
+                            {
+                              asc: <Icon as={BiSortUp} fontSize={'24px'} />,
+                              desc: <Icon as={BiSortDown} fontSize={'24px'} />,
+                            }[header.column.getIsSorted() as string] ?? undefined
+                          }
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {{
-                            asc: ' 🔼',
-                            desc: ' 🔽',
-                          }[header.column.getIsSorted() as string] ?? null}
+                        </Button>
+                      )}
+                      {!header.isPlaceholder && !header.column.getCanSort() && (
+                        <Text userSelect={'none'} pt={1}>
+                          {flexRender(header.column.columnDef.header, header.getContext())}
                         </Text>
                       )}
                       {header.column.getCanFilter() && <Filter<T> column={header.column} table={table} />}
