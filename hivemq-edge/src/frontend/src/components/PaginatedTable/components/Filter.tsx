@@ -46,8 +46,9 @@ export const Filter = ({ column, table }: { column: Column<any, unknown>; table:
         type="text"
         value={(columnFilterValue ?? '') as string}
         onChange={(value) => column.setFilterValue(value)}
-        placeholder={`Search... (${column.getFacetedUniqueValues().size})`}
-        className="wss-36 border shadow rounded"
+        placeholder={
+          t('components:pagination.filter.placeholder', { size: column.getFacetedUniqueValues().size }) as string
+        }
         list={column.id + 'list'}
       />
     </>
