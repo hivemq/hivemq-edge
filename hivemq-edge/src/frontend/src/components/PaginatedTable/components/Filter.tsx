@@ -1,43 +1,81 @@
-import { Column, Table } from '@tanstack/react-table'
-import { DebouncedInput } from './DebouncedInput.tsx'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Column } from '@tanstack/react-table'
+// import { RangeSlider, RangeSliderFilledTrack, RangeSliderThumb, RangeSliderTrack } from '@chakra-ui/react'
 
-export const Filter = ({ column, table }: { column: Column<any, unknown>; table: Table<any> }) => {
-  const firstValue = table.getPreFilteredRowModel().flatRows[0]?.getValue(column.id)
+import { DebouncedInput } from './DebouncedInput.tsx'
 
-  const columnFilterValue = column.getFilterValue()
+export interface FilterProps<T>
+  extends Pick<
+    Column<T, unknown>,
+    'id' | 'getFilterValue' | 'getFacetedUniqueValues' | 'getFacetedMinMaxValues' | 'setFilterValue'
+  > {
+  firstValue: unknown
+}
+
+// /**/export const Filter = <T,>({ column, table }: { column: Column<T, unknown>; table: Table<T> }) => {
+export const Filter = <T,>({
+  id,
+  getFilterValue,
+  getFacetedUniqueValues,
+  // getFacetedMinMaxValues,
+  setFilterValue,
+  firstValue,
+}: FilterProps<T>) => {
+  const { t } = useTranslation()
+  // const firstValue = table.getPreFilteredRowModel().flatRows[0]?.getValue(id)
+
+  const columnFilterValue = getFilterValue()
 
   const sortedUniqueValues = useMemo(
-    () => (typeof firstValue === 'number' ? [] : Array.from(column.getFacetedUniqueValues().keys()).sort()),
-    [column, firstValue]
+    () => (typeof firstValue === 'number' ? [] : Array.from(getFacetedUniqueValues().keys()).sort()),
+    [firstValue, getFacetedUniqueValues]
   )
 
-  return typeof firstValue === 'number' ? (
-    <div>
-      <div className="flex space-x-2">
-        <DebouncedInput
-          type="number"
-          min={Number(column.getFacetedMinMaxValues()?.[0] ?? '')}
-          max={Number(column.getFacetedMinMaxValues()?.[1] ?? '')}
-          value={(columnFilterValue as [number, number])?.[0] ?? ''}
-          onChange={(value) => column.setFilterValue((old: [number, number]) => [value, old?.[1]])}
-          placeholder={`Min ${column.getFacetedMinMaxValues()?.[0] ? `(${column.getFacetedMinMaxValues()?.[0]})` : ''}`}
-          className="w-24 border shadow rounded"
-        />
-        <DebouncedInput
-          type="number"
-          min={Number(column.getFacetedMinMaxValues()?.[0] ?? '')}
-          max={Number(column.getFacetedMinMaxValues()?.[1] ?? '')}
-          value={(columnFilterValue as [number, number])?.[1] ?? ''}
-          onChange={(value) => column.setFilterValue((old: [number, number]) => [old?.[0], value])}
-          placeholder={`Max ${column.getFacetedMinMaxValues()?.[1] ? `(${column.getFacetedMinMaxValues()?.[1]})` : ''}`}
-          className="w-24 border shadow rounded"
-        />
-      </div>
-    </div>
-  ) : (
+  // const FilterMulti = (
+  //   <div className="flex space-x-2">
+  //     <DebouncedInput
+  //       type="number"
+  //       min={Number(getFacetedMinMaxValues()?.[0] ?? '')}
+  //       max={Number(getFacetedMinMaxValues()?.[1] ?? '')}
+  //       value={(columnFilterValue as [number, number])?.[0] ?? ''}
+  //       onChange={(value) => setFilterValue((old: [number, number]) => [value, old?.[1]])}
+  //       placeholder={`Min ${getFacetedMinMaxValues()?.[0] ? `(${getFacetedMinMaxValues()?.[0]})` : ''}`}
+  //       className="w-24 border shadow rounded"
+  //     />
+  //     <DebouncedInput
+  //       type="number"
+  //       min={Number(getFacetedMinMaxValues()?.[0] ?? '')}
+  //       max={Number(getFacetedMinMaxValues()?.[1] ?? '')}
+  //       value={(columnFilterValue as [number, number])?.[1] ?? ''}
+  //       onChange={(value) => setFilterValue((old: [number, number]) => [old?.[0], value])}
+  //       placeholder={`Max ${getFacetedMinMaxValues()?.[1] ? `(${getFacetedMinMaxValues()?.[1]})` : ''}`}
+  //       className="w-24 border shadow rounded"
+  //     />
+  //   </div>
+  // )
+  //
+  // const FilterRangeSlider = (
+  //   <RangeSlider
+  //     onChangeEnd={(a) => console.log('XXXXX', a)}
+  //     aria-label={['min', 'max']}
+  //     defaultValue={[Number(getFacetedMinMaxValues()?.[0] ?? ''), Number(getFacetedMinMaxValues()?.[1] ?? '')]}
+  //     min={Number(getFacetedMinMaxValues()?.[0] ?? '')}
+  //     max={Number(getFacetedMinMaxValues()?.[1] ?? '')}
+  //   >
+  //     <RangeSliderTrack>
+  //       <RangeSliderFilledTrack />
+  //     </RangeSliderTrack>
+  //     <RangeSliderThumb index={0} />
+  //     <RangeSliderThumb index={1} />
+  //   </RangeSlider>
+  // )
+
+  if (typeof firstValue === 'number') return null
+
+  return (
     <>
-      <datalist id={column.id + 'list'}>
+      <datalist id={id + '-list'}>
         {sortedUniqueValues.slice(0, 5000).map((value: any) => (
           <option value={value} key={value} />
         ))}
@@ -45,11 +83,9 @@ export const Filter = ({ column, table }: { column: Column<any, unknown>; table:
       <DebouncedInput
         type="text"
         value={(columnFilterValue ?? '') as string}
-        onChange={(value) => column.setFilterValue(value)}
-        placeholder={
-          t('components:pagination.filter.placeholder', { size: column.getFacetedUniqueValues().size }) as string
-        }
-        list={column.id + 'list'}
+        onChange={(value) => setFilterValue(value)}
+        placeholder={t('components:pagination.filter.placeholder', { size: getFacetedUniqueValues().size }) as string}
+        list={id + '-list'}
       />
     </>
   )

@@ -120,7 +120,12 @@ const PaginatedTable = <T,>({
                           {flexRender(header.column.columnDef.header, header.getContext())}
                         </Text>
                       )}
-                      {header.column.getCanFilter() && <Filter<T> column={header.column} table={table} />}
+                      {header.column.getCanFilter() && (
+                        <Filter<T>
+                          {...header.column}
+                          firstValue={table.getPreFilteredRowModel().flatRows[0]?.getValue(header.column.id)}
+                        />
+                      )}
                     </VStack>
                   </Th>
                 ))}
