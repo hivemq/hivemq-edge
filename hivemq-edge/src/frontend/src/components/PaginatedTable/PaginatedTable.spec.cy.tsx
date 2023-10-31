@@ -116,6 +116,10 @@ describe('PaginatedTable', () => {
     )
 
     cy.get('th').eq(0).find('input').should('have.attr', 'placeholder', 'Search... (4)')
+    cy.get('#column1-list option').should('have.length', 4)
+    cy.get('th').eq(0).find('input').type('0')
+
+    // TODO[NVL] Cannot test for datalist updates
   })
 
   it('should be accessible', () => {
