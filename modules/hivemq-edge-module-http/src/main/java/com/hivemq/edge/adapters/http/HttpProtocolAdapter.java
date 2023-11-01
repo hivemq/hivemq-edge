@@ -84,7 +84,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
                     .build();
             startPolling(new Sampler(config));
         } else {
-            reportErrorMessage(null, "Invalid URL supplied");
+            setErrorConnectionStatus(null, "Invalid URL supplied");
         }
     }
 

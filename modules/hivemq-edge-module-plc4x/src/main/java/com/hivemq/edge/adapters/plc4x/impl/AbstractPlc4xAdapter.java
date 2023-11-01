@@ -11,7 +11,7 @@ import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.plc4x.java.PlcDriverManager;
+import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.messages.PlcReadResponse;
 import org.apache.plc4x.java.api.messages.PlcSubscriptionEvent;
 import org.slf4j.Logger;
@@ -32,7 +32,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         extends AbstractPollingPerSubscriptionAdapter<T, ProtocolAdapterDataSample> {
 
     private static final Logger log = LoggerFactory.getLogger(Plc4xAdapterConfig.class);
-    private static final @NotNull PlcDriverManager driverManager = new PlcDriverManager();
+    private static final @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
     private final @NotNull Object lock = new Object();
     private volatile @Nullable Plc4xConnection connection;
 
@@ -63,7 +63,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                         };
                         setConnectionStatus(ConnectionStatus.CONNECTED);
                     } catch(Plc4xException e){
-                        setConnectionStatus(ConnectionStatus.ERROR);
                         throw new RuntimeException(e);
                     }
                 }
@@ -100,7 +99,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 return CompletableFuture.completedFuture(null);
             } catch (Exception e) {
                 log.error("Error disconnecting from Plc4x Client", e);
-                setErrorConnectionStatus(e);
+                setErrorConnectionStatus(e, null);
                 return CompletableFuture.failedFuture(e);
             }
         }

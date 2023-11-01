@@ -3,6 +3,7 @@
     "iconLabel": "Topic"
   },
   "pagination": {
+    "noDataText": "No data received yet.",
     "goFirstPage": "Go to the first page",
     "goPreviousPage": "Go to the previous page",
     "goNextPage": "Go to the next page",

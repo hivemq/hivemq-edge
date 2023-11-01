@@ -168,7 +168,6 @@ export const createAdapterNode = (
     },
   }
 
-  console.log('XXXXXXX idAdapter', adapter.status)
   const edgeConnector: Edge = {
     id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idAdapter}`,
     target: IdStubs.EDGE_NODE,

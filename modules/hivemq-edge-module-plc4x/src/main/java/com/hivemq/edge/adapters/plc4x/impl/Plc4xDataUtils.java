@@ -22,7 +22,6 @@ public class Plc4xDataUtils {
     private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
     private final static String AMP = "&";
     private final static String EQUALS = "=";
-    private final static String QUESTION = "?";
 
     public static String toHex(final @NotNull byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
@@ -37,7 +36,7 @@ public class Plc4xDataUtils {
 
     public static List<Pair<String, byte[]>> readDataFromSubscriptionEvent(@NotNull final PlcSubscriptionEvent evt){
         List<Pair<String, byte[]>> output = new ArrayList<>();
-        Collection<String> s = evt.getFieldNames();
+        Collection<String> s = evt.getTagNames();
         for (String field : s) {
 
             byte[] arr = null;
@@ -62,7 +61,7 @@ public class Plc4xDataUtils {
 
     public static List<Pair<String, byte[]>> readDataFromReadResponse(@NotNull final PlcReadResponse evt){
         List<Pair<String, byte[]>> output = new ArrayList<>();
-        Collection<String> s = evt.getFieldNames();
+        Collection<String> s = evt.getTagNames();
         for (String field : s) {
             byte[] arr = null;
             if (evt.isValidDouble(field)) {
