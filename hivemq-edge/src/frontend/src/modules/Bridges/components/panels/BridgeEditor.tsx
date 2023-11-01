@@ -36,6 +36,7 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
 
   useEffect(() => {
+    if (!data) return
     if (bridgeId) {
       const b = data?.find((e) => e.id === bridgeId)
       if (b) {
