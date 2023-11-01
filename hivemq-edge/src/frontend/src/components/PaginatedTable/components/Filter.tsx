@@ -76,7 +76,7 @@ export const Filter = <T,>({
   return (
     <>
       <datalist id={id + '-list'}>
-        {sortedUniqueValues.slice(0, 5000).map((value: any) => (
+        {sortedUniqueValues.slice(0, 5000).map((value: string) => (
           <option value={value} key={value} />
         ))}
       </datalist>
