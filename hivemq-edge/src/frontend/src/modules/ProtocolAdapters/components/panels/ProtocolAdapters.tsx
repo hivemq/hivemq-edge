@@ -69,7 +69,6 @@ const ProtocolAdapters: FC = () => {
       const adapterNavigateState: AdapterNavigateState = {
         protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
         protocolAdapterType: type,
-        // selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selected?.data as Adapter).id },
       }
       navigate('/protocol-adapters/new', { state: adapterNavigateState })
     }
@@ -78,7 +77,6 @@ const ProtocolAdapters: FC = () => {
       const adapterNavigateState: AdapterNavigateState = {
         protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
         protocolAdapterType: type,
-        // selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selected?.data as Adapter).id },
       }
       if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: adapterNavigateState })
     }
@@ -138,7 +136,7 @@ const ProtocolAdapters: FC = () => {
         sortingFn: undefined,
         cell: (info) => {
           const { id, type } = info.row.original
-          const { selectedAdapter } = state || {}
+          const { selectedActiveAdapter } = state as AdapterNavigateState
           return (
             <Skeleton isLoaded={!isLoading}>
               <AdapterActionMenu
@@ -148,7 +146,7 @@ const ProtocolAdapters: FC = () => {
                 onDelete={handleOnDelete}
                 onViewWorkspace={handleViewWorkspace}
               />
-              {id === selectedAdapter?.adapterId && (
+              {id === selectedActiveAdapter?.adapterId && (
                 <IconButton
                   size={'sm'}
                   ml={2}
@@ -227,8 +225,8 @@ const ProtocolAdapters: FC = () => {
         data={safeData}
         columns={columns}
         getRowStyles={(row: Row<Adapter>) => {
-          const { selectedAdapter } = state || {}
-          return row.original.id === selectedAdapter?.adapterId ? { backgroundColor: colors.blue[50] } : {}
+          const { selectedActiveAdapter } = state as AdapterNavigateState
+          return row.original.id === selectedActiveAdapter?.adapterId ? { backgroundColor: colors.blue[50] } : {}
         }}
       />
 
