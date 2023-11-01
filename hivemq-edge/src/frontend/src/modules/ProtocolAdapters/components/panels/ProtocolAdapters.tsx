@@ -136,7 +136,7 @@ const ProtocolAdapters: FC = () => {
         sortingFn: undefined,
         cell: (info) => {
           const { id, type } = info.row.original
-          const { selectedActiveAdapter } = state as AdapterNavigateState
+          const { selectedActiveAdapter } = (state || {}) as AdapterNavigateState
           return (
             <Skeleton isLoaded={!isLoading}>
               <AdapterActionMenu
@@ -225,7 +225,7 @@ const ProtocolAdapters: FC = () => {
         data={safeData}
         columns={columns}
         getRowStyles={(row: Row<Adapter>) => {
-          const { selectedActiveAdapter } = state as AdapterNavigateState
+          const { selectedActiveAdapter } = (state || {}) as AdapterNavigateState
           return row.original.id === selectedActiveAdapter?.adapterId ? { backgroundColor: colors.blue[50] } : {}
         }}
       />
