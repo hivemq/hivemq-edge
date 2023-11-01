@@ -10,7 +10,7 @@ import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpd
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
-import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
+import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 import AdapterInstanceDrawer from '@/modules/ProtocolAdapters/components/drawers/AdapterInstanceDrawer.tsx'
 
 interface AdapterEditorProps {
@@ -28,13 +28,12 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
   const updateProtocolAdapter = useUpdateProtocolAdapter()
   const navigate = useNavigate()
   const { state } = useLocation()
-  const { selectedAdapterId } = state || {}
 
   useEffect(() => {
-    if (selectedAdapterId) {
-      setAdaptorType(selectedAdapterId)
+    if ((state as AdapterNavigateState)?.protocolAdapterType) {
+      setAdaptorType(state.protocolAdapterType)
     }
-  }, [selectedAdapterId])
+  }, [state])
 
   useEffect(() => {
     if (adaptorType) {
