@@ -105,11 +105,12 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
     }
 
     onInstanceClose()
+    const adapterNavigateState: AdapterNavigateState = {
+      protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+      selectedActiveAdapter: { isNew: !!isNew, isOpen: false, adapterId: id },
+    }
     navigate('/protocol-adapters', {
-      state: {
-        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
-        selectedAdapter: { isNew: isNew, adapterId: id },
-      },
+      state: adapterNavigateState,
     })
   }
 
