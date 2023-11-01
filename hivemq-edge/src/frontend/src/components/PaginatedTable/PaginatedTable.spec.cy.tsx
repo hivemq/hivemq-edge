@@ -115,9 +115,18 @@ describe('PaginatedTable', () => {
       />
     )
 
+    cy.getByTestId('column1-clear').should('be.disabled')
+
     cy.get('th').eq(0).find('input').should('have.attr', 'placeholder', 'Search... (4)')
     cy.get('#column1-list option').should('have.length', 4)
-    cy.get('th').eq(0).find('input').type('0')
+    cy.get('th').eq(0).find('input').type('item 0')
+
+    // wait for Debounce (should be covered by timeout
+    cy.get('tbody').find('tr').should('have.length', 1)
+    cy.getByTestId('column1-clear').should('not.be.disabled')
+    cy.getByTestId('column1-clear').click()
+    cy.get('tbody').find('tr').should('have.length', 4)
+    cy.get('#column1-list').should('have.text', '')
 
     // TODO[NVL] Cannot test for datalist updates
   })

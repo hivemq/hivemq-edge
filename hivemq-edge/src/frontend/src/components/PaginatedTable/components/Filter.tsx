@@ -82,6 +82,7 @@ export const Filter = <T,>({
       </datalist>
       <DebouncedInput
         type="text"
+        id={id}
         value={(columnFilterValue ?? '') as string}
         onChange={(value) => setFilterValue(value)}
         placeholder={t('components:pagination.filter.placeholder', { size: getFacetedUniqueValues().size }) as string}
