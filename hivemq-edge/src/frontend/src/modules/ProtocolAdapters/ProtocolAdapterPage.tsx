@@ -15,7 +15,7 @@ const ProtocolAdapterPage: FC = () => {
   const [tabIndex, setTabIndex] = useState(0)
 
   useEffect(() => {
-    if (state?.protocolAdapterTabIndex) {
+    if ((state as AdapterNavigateState)?.protocolAdapterTabIndex) {
       setTabIndex(state.protocolAdapterTabIndex)
     }
   }, [state])
