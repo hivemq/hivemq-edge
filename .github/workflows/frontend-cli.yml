@@ -5,12 +5,6 @@ name: Frontend - React Testing Pyramid
 
 on:
   push:
-    branches:
-      - "**"        # matches every branch
-    paths:
-      - hivemq-edge/src/frontend/**
-  pull_request:
-    branches: [master]
     paths:
       - hivemq-edge/src/frontend/**
       - .github/workflows/frontend-cli.yml
