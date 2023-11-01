@@ -26,6 +26,7 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import { compareStatus } from '../../utils/pagination-utils.ts'
 import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 
 const DEFAULT_PER_PAGE = 10
 
@@ -65,11 +66,21 @@ const ProtocolAdapters: FC = () => {
 
   const columns = useMemo<ColumnDef<Adapter>[]>(() => {
     const handleCreateInstance = (type: string | undefined) => {
-      navigate('/protocol-adapters/new', { state: { selectedAdapterId: type } })
+      const adapterNavigateState: AdapterNavigateState = {
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterType: type,
+        // selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selected?.data as Adapter).id },
+      }
+      navigate('/protocol-adapters/new', { state: adapterNavigateState })
     }
 
     const handleEditInstance = (adapterId: string, type: string) => {
-      if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: { selectedAdapterId: type } })
+      const adapterNavigateState: AdapterNavigateState = {
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterType: type,
+        // selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selected?.data as Adapter).id },
+      }
+      if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: adapterNavigateState })
     }
 
     const handleOnDelete = (adapterId: string) => {
