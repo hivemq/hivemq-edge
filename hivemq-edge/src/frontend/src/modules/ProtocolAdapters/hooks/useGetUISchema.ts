@@ -55,12 +55,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
     {
       id: 'ads',
       title: t('protocolAdapter.uiSchema.groups.ads'),
-      properties: [
-        'sourceAmsPort',
-        'targetAmsPort',
-        'sourceAmsNetId',
-        'targetAmsNetId',
-      ],
+      properties: ['sourceAmsPort', 'targetAmsPort', 'sourceAmsNetId', 'targetAmsNetId'],
     },
     {
       id: 's7advanced',
