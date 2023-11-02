@@ -1,6 +1,6 @@
 import { FC, ReactNode, useEffect, useState } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
@@ -12,6 +12,7 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 import AdapterInstanceDrawer from '@/modules/ProtocolAdapters/components/drawers/AdapterInstanceDrawer.tsx'
+import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 
 interface AdapterEditorProps {
   isNew?: boolean
@@ -28,6 +29,8 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
   const updateProtocolAdapter = useUpdateProtocolAdapter()
   const navigate = useNavigate()
   const { state } = useLocation()
+  const { data: allAdapters } = useListProtocolAdapters()
+  const { adapterId } = useParams()
 
   useEffect(() => {
     if ((state as AdapterNavigateState)?.protocolAdapterType) {
@@ -36,10 +39,25 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
   }, [state])
 
   useEffect(() => {
+    if (!allAdapters) return
+    const instance = allAdapters?.find((e) => e.id === adapterId)
+    if (!isNew && !instance) {
+      errorToast(
+        {
+          id: 'adapter-open-noExist',
+          title: t('protocolAdapter.toast.view.title'),
+          description: t('protocolAdapter.toast.view.error'),
+        },
+        new Error(t('protocolAdapter.toast.view.noLongerExist', { id: adapterId }) as string)
+      )
+      navigate('/protocol-adapters', { replace: true })
+      return
+    }
+
     if (adaptorType) {
       onInstanceOpen()
     }
-  }, [adaptorType, onInstanceOpen])
+  }, [adapterId, adaptorType, allAdapters, errorToast, isNew, navigate, onInstanceOpen, t])
 
   const handleInstanceClose = () => {
     onInstanceClose()
