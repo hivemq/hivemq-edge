@@ -671,7 +671,8 @@
         "payload": "Payload"
       },
       "cta": {
-        "open": "View details of event"
+        "open": "View details of event",
+        "refetch": "Update the Event Log"
       }
     },
     "panel": {
