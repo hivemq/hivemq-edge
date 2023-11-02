@@ -24,7 +24,7 @@ interface EventLogTableProps {
 
 const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
   const { t } = useTranslation()
-  const { data, isLoading, error, refetch } = useGetEvents()
+  const { data, isLoading, isFetching, error, refetch } = useGetEvents()
 
   const safeData: Event[] = data && data.items ? data.items : [...mockEdgeEvent(5)]
 
@@ -110,7 +110,8 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
     <>
       <Flex justifyContent={'flex-end'}>
         <Button
-          variant={'ghost'}
+          isLoading={isFetching}
+          variant={'outline'}
           size={'sm'}
           leftIcon={<Icon as={BiRefresh} fontSize={20} />}
           onClick={() => refetch()}
