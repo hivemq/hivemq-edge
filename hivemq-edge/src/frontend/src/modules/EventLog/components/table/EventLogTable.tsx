@@ -72,7 +72,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
         ),
       },
       {
-        accessorKey: 'associatedObject.identifier',
+        accessorKey: 'source.identifier',
         sortType: 'alphanumeric',
         header: t('eventLog.table.header.source') as string,
         cell: (info) => (
