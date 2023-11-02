@@ -468,6 +468,11 @@
         "title": "Creating Protocol Adapter",
         "description": "We've successfully created a new Protocol Adapter for you.",
         "error": "There was a problem trying to create the Protocol Adapter"
+      },
+      "view": {
+        "title": "Viewing Protocol Adapter",
+        "error": "There was a problem trying to view the protocol adapter",
+        "noLongerExist": "The Protocol Adapter {{id}} doesn't exist"
       }
     },
     "type": {
