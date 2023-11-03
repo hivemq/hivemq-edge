@@ -45,7 +45,7 @@ const LinkWrapper: Record<TypeIdentifier.type, LinkWrapperProps> = {
 const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
   const SourceType = source?.type && LinkWrapper[source?.type]
 
-  if (!SourceType)
+  if (!SourceType?.To)
     return (
       <Box whiteSpace={'nowrap'} display={'inline-flex'}>
         {source?.identifier}
@@ -55,13 +55,13 @@ const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
   return (
     <ChakraLink
       as={ReactRouterLink}
-      to={source.identifier && SourceType.To?.(source.identifier)}
+      to={source?.identifier && SourceType.To?.(source.identifier)}
       state={type?.identifier && SourceType.State?.(type?.identifier)}
       whiteSpace={'nowrap'}
       display={'inline-flex'}
     >
-      {source.type && SourceType.Icon}
-      {source.identifier}
+      {source?.type && SourceType.Icon}
+      {source?.identifier}
     </ChakraLink>
   )
 }

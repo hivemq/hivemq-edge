@@ -22,21 +22,21 @@ describe('SourceLink', () => {
     cy.get('a').should('have.attr', 'href', '/protocol-adapters/ADAPTER-1')
   })
 
-  it('should render the adapter component', () => {
+  it('should render the adapter type component', () => {
     cy.mountWithProviders(<SourceLink source={mockEdgeEvent(5)[2].source} />)
 
     cy.get('div').should('contain.text', 'ADAPTER_TYPE-2')
     cy.get('a').should('not.exist')
   })
 
-  it('should render the adapter component', () => {
+  it('should render the event component', () => {
     cy.mountWithProviders(<SourceLink source={mockEdgeEvent(5)[3].source} />)
 
     cy.get('div').should('contain.text', 'EVENT-3')
     cy.get('a').should('not.exist')
   })
 
-  it('should render the adapter component', () => {
+  it('should render the user component', () => {
     cy.mountWithProviders(<SourceLink source={mockEdgeEvent(5)[4].source} />)
 
     cy.get('div').should('contain.text', 'USER-4')
