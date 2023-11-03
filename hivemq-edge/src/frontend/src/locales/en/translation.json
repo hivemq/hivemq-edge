@@ -160,6 +160,11 @@
         "title": "Creating Bridge",
         "description": "We've successfully created a new bridge for you.",
         "error": "There was a problem trying to create the bridge"
+      },
+      "view": {
+        "title": "Viewing Bridge",
+        "error": "There was a problem trying to view the bridge",
+        "noLongerExist": "The bridge {{id}} doesn't exist anymore"
       }
     },
     "status": {
