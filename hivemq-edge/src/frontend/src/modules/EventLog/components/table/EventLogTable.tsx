@@ -111,6 +111,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
       <Flex justifyContent={'flex-end'}>
         <Button
           isLoading={isFetching}
+          loadingText={t('eventLog.table.cta.refetch')}
           variant={'outline'}
           size={'sm'}
           leftIcon={<Icon as={BiRefresh} fontSize={20} />}
