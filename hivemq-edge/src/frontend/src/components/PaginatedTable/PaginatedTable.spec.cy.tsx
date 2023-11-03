@@ -77,21 +77,21 @@ describe('PaginatedTable', () => {
     cy.get('th').eq(0).should('have.text', 'item')
     checkRowOrder()
     cy.get('th').eq(0).click()
-    cy.get('th').eq(0).should('have.text', 'item 🔼')
+    cy.get('th').eq(0).should('have.attr', 'aria-sort', 'ascending')
     checkRowOrder('asc')
     cy.get('th').eq(0).click()
-    cy.get('th').eq(0).should('have.text', 'item 🔽')
+    cy.get('th').eq(0).should('have.attr', 'aria-sort', 'descending')
     checkRowOrder('desc')
   })
 
-  it.only('should indicate when there is no data to render', () => {
+  it('should indicate when there is no data to render', () => {
     cy.mountWithProviders(<PaginatedTable<MOCK_TYPE> data={[]} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} />)
 
     cy.get('[role="alert"]').should('contain.text', 'No data received yet.')
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
   })
 
-  it.only('should render the custom nodata message', () => {
+  it('should render the custom nodata message', () => {
     cy.mountWithProviders(
       <PaginatedTable<MOCK_TYPE>
         data={[]}
@@ -103,6 +103,32 @@ describe('PaginatedTable', () => {
 
     cy.get('[role="alert"]').should('contain.text', 'This is a message')
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
+  })
+
+  it('should render the filters', () => {
+    cy.mountWithProviders(
+      <PaginatedTable<MOCK_TYPE>
+        data={MOCK_DATA(4)}
+        columns={MOCK_COLUMN}
+        pageSizes={[5, 10, 20]}
+        enableColumnFilters
+      />
+    )
+
+    cy.getByTestId('column1-clear').should('be.disabled')
+
+    cy.get('th').eq(0).find('input').should('have.attr', 'placeholder', 'Search... (4)')
+    cy.get('#column1-list option').should('have.length', 4)
+    cy.get('th').eq(0).find('input').type('item 0')
+
+    // wait for Debounce (should be covered by timeout
+    cy.get('tbody').find('tr').should('have.length', 1)
+    cy.getByTestId('column1-clear').should('not.be.disabled')
+    cy.getByTestId('column1-clear').click()
+    cy.get('tbody').find('tr').should('have.length', 4)
+    cy.get('#column1-list').should('have.text', '')
+
+    // TODO[NVL] Cannot test for datalist updates
   })
 
   it('should be accessible', () => {
