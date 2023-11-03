@@ -127,10 +127,11 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
         data={safeData}
         columns={columns}
         enableColumnFilters
-      // getRowStyles={(row) => {
-      //   return { backgroundColor: theme.colors.blue[50] }
-      // }}
-    /></>
+        // getRowStyles={(row) => {
+        //   return { backgroundColor: theme.colors.blue[50] }
+        // }}
+      />
+    </>
   )
 }
 
