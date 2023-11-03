@@ -72,12 +72,12 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
         ),
       },
       {
-        accessorKey: 'associatedObject.identifier',
+        accessorKey: 'source.identifier',
         sortType: 'alphanumeric',
         header: t('eventLog.table.header.source') as string,
         cell: (info) => (
           <Skeleton isLoaded={!isLoading}>
-            <SourceLink event={info.row.original.source} />
+            <SourceLink source={info.row.original.source} type={info.row.original.associatedObject} />
           </Skeleton>
         ),
       },
