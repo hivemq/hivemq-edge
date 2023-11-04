@@ -4,6 +4,7 @@
   },
   "pagination": {
     "filter": {
+      "label": "Filter column",
       "placeholder": "Search... ({{ size }})",
       "noOptions": "No options available",
       "create": "Add filter... {{ topic }}",

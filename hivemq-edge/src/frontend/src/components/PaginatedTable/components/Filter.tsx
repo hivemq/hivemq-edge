@@ -14,15 +14,13 @@ export interface FilterProps<T>
 
 export const Filter = <T,>({
   id,
-  getFilterValue,
+  // getFilterValue,
   getFacetedUniqueValues,
   // getFacetedMinMaxValues,
   setFilterValue,
   firstValue,
 }: FilterProps<T>) => {
   const { t } = useTranslation()
-  // const firstValue = table.getPreFilteredRowModel().flatRows[0]?.getValue(id)
-  const columnFilterValue = getFilterValue()
 
   const sortedUniqueValues = useMemo(
     () => (typeof firstValue === 'number' ? [] : Array.from(getFacetedUniqueValues().keys()).sort()),
@@ -36,7 +34,7 @@ export const Filter = <T,>({
       <CreatableSelect
         size={'sm'}
         inputId={id}
-        value={{ value: columnFilterValue, label: columnFilterValue }}
+        // value={{ value: columnFilterValue, label: columnFilterValue }}
         onChange={(item) => setFilterValue(item?.value)}
         options={sortedUniqueValues
           .slice(0, 5000)
@@ -44,6 +42,7 @@ export const Filter = <T,>({
         placeholder={t('components:pagination.filter.placeholder', { size: getFacetedUniqueValues().size }) as string}
         noOptionsMessage={() => t('components:pagination.filter.noOptions')}
         formatCreateLabel={(e) => t('components:pagination.filter.create', { topic: e })}
+        aria-label={t('components:pagination.filter.label') as string}
         isClearable={true}
         isMulti={false}
         components={{
