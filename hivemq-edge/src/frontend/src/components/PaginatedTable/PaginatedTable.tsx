@@ -137,7 +137,9 @@ const PaginatedTable = <T,>({
               <Tr>
                 <Td colSpan={table.getAllColumns().length}>
                   <Alert status="info">
-                    {noDataText === undefined ? t('components:pagination.noDataText') : noDataText}
+                    {table.getCoreRowModel().rows.length === 0
+                      ? noDataText || t('components:pagination.noDataText')
+                      : t('components:pagination.noDataFiltered')}
                   </Alert>
                 </Td>
               </Tr>
