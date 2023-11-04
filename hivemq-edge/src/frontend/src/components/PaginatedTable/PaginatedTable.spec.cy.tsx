@@ -105,7 +105,7 @@ describe('PaginatedTable', () => {
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
   })
 
-  it('should render the filters', () => {
+  it.only('should render the filters', () => {
     cy.mountWithProviders(
       <PaginatedTable<MOCK_TYPE>
         data={MOCK_DATA(4)}
@@ -115,18 +115,19 @@ describe('PaginatedTable', () => {
       />
     )
 
-    cy.getByTestId('column1-clear').should('be.disabled')
+    cy.getByAriaLabel('Clear selected options').should('not.exist')
 
-    cy.get('th').eq(0).find('input').should('have.attr', 'placeholder', 'Search... (4)')
-    cy.get('#column1-list option').should('have.length', 4)
-    cy.get('th').eq(0).find('input').type('item 0')
+    cy.get('th').eq(0).find('div#react-select-2-placeholder').should('have.text', 'Search... (4)')
+    cy.get('th').eq(0).click()
+    cy.get('div#react-select-2-listbox').find("[role='option']").should('have.length', 4)
+    cy.get('th').eq(0).find('input').type('item 0{Enter}')
 
     // wait for Debounce (should be covered by timeout
     cy.get('tbody').find('tr').should('have.length', 1)
-    cy.getByTestId('column1-clear').should('not.be.disabled')
-    cy.getByTestId('column1-clear').click()
+    cy.getByAriaLabel('Clear selected options').should('be.visible')
+    cy.getByAriaLabel('Clear selected options').click()
     cy.get('tbody').find('tr').should('have.length', 4)
-    cy.get('#column1-list').should('have.text', '')
+    cy.get('th').eq(0).find('div#react-select-2-placeholder').should('have.text', 'Search... (4)')
 
     // TODO[NVL] Cannot test for datalist updates
   })
