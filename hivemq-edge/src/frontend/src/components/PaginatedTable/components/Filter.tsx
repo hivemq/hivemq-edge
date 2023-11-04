@@ -42,6 +42,8 @@ export const Filter = <T,>({
           .slice(0, 5000)
           .map((value: string) => ({ value: value, label: value, group: 'DDD' }))}
         placeholder={t('components:pagination.filter.placeholder', { size: getFacetedUniqueValues().size }) as string}
+        noOptionsMessage={() => t('components:pagination.filter.noOptions')}
+        formatCreateLabel={(e) => t('components:pagination.filter.create', { topic: e })}
         isClearable={true}
         isMulti={false}
         components={{
