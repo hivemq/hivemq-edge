@@ -22,9 +22,10 @@ export const Filter = <T,>({
 }: FilterProps<T>) => {
   const { t } = useTranslation()
 
+  const facetedUniqueValues = getFacetedUniqueValues()
   const sortedUniqueValues = useMemo(
-    () => (typeof firstValue === 'number' ? [] : Array.from(getFacetedUniqueValues().keys()).sort()),
-    [firstValue, getFacetedUniqueValues]
+    () => (typeof firstValue === 'number' ? [] : Array.from(facetedUniqueValues.keys()).sort()),
+    [facetedUniqueValues, firstValue]
   )
 
   if (typeof firstValue === 'number') return null
@@ -36,9 +37,7 @@ export const Filter = <T,>({
         inputId={id}
         // value={{ value: columnFilterValue, label: columnFilterValue }}
         onChange={(item) => setFilterValue(item?.value)}
-        options={sortedUniqueValues
-          .slice(0, 5000)
-          .map((value: string) => ({ value: value, label: value, group: 'DDD' }))}
+        options={sortedUniqueValues.map((value: string) => ({ value: value, label: value, group: 'DDD' }))}
         placeholder={t('components:pagination.filter.placeholder', { size: getFacetedUniqueValues().size }) as string}
         noOptionsMessage={() => t('components:pagination.filter.noOptions')}
         formatCreateLabel={(e) => t('components:pagination.filter.create', { topic: e })}
