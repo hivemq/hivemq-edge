@@ -160,6 +160,11 @@
         "title": "Creating Bridge",
         "description": "We've successfully created a new bridge for you.",
         "error": "There was a problem trying to create the bridge"
+      },
+      "view": {
+        "title": "Viewing Bridge",
+        "error": "There was a problem trying to view the bridge",
+        "noLongerExist": "The bridge {{id}} doesn't exist anymore"
       }
     },
     "status": {
@@ -463,6 +468,11 @@
         "title": "Creating Protocol Adapter",
         "description": "We've successfully created a new Protocol Adapter for you.",
         "error": "There was a problem trying to create the Protocol Adapter"
+      },
+      "view": {
+        "title": "Viewing Protocol Adapter",
+        "error": "There was a problem trying to view the protocol adapter",
+        "noLongerExist": "The Protocol Adapter {{id}} doesn't exist"
       }
     },
     "type": {
@@ -666,7 +676,8 @@
         "payload": "Payload"
       },
       "cta": {
-        "open": "View details of event"
+        "open": "View details of event",
+        "refetch": "Update the Event Log"
       }
     },
     "panel": {

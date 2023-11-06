@@ -89,7 +89,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
 
             opcUaClient.connect().thenAccept(uaClient -> {
                 opcUaClient.getSubscriptionManager().addSubscriptionListener(createSubscriptionListener());
-                createAllSubscriptions(adapterPublishService).whenComplete((unused, throwable) -> {
+                createAllSubscriptions().whenComplete((unused, throwable) -> {
                     if (throwable == null) {
                         resultFuture.complete(output);
                     } else {
@@ -119,8 +119,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
         try {
             if (opcUaClient == null) {
                 return CompletableFuture.completedFuture(null);
-            }
-            else {
+            } else {
                 subscriptionMap.clear();
                 try {
                     return opcUaClient.disconnect().thenAccept(client -> {
@@ -176,7 +175,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
                     subscriptionMap.get(subscription.getSubscriptionId());
             if (subscriptionConfig != null) {
                 try {
-                    subscribeToNode(subscriptionConfig, adapterPublishService).get();
+                    subscribeToNode(subscriptionConfig).get();
                 } catch (InterruptedException | ExecutionException e) {
                     log.error("Not able to recreate OPC-UA subscription after transfer failure", e);
                 }
@@ -184,8 +183,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
         });
     }
 
-    private CompletableFuture<Void> createAllSubscriptions(
-            @NotNull final ProtocolAdapterPublishService adapterPublishService) {
+    private CompletableFuture<Void> createAllSubscriptions() {
         //noinspection ConstantValue
         if (adapterConfig.getSubscriptions() == null || adapterConfig.getSubscriptions().isEmpty()) {
             return CompletableFuture.completedFuture(null);
@@ -195,7 +193,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
         final ImmutableList.Builder<CompletableFuture<Void>> subscribeFutures = ImmutableList.builder();
 
         for (OpcUaAdapterConfig.Subscription subscription : adapterConfig.getSubscriptions()) {
-            subscribeFutures.add(subscribeToNode(subscription, adapterPublishService));
+            subscribeFutures.add(subscribeToNode(subscription));
         }
 
         CompletableFuture.allOf(subscribeFutures.build().toArray(new CompletableFuture[]{})).thenApply(unused -> {
@@ -238,9 +236,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
         setRuntimeStatus(RuntimeStatus.STARTED);
     }
 
-    private @NotNull CompletableFuture<Void> subscribeToNode(
-            final @NotNull OpcUaAdapterConfig.Subscription subscription,
-            final @NotNull ProtocolAdapterPublishService adapterPublishService) {
+    private @NotNull CompletableFuture<Void> subscribeToNode(final @NotNull OpcUaAdapterConfig.Subscription subscription) {
         try {
 
             final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
@@ -256,6 +252,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
                     .thenAccept(new OpcUaSubscriptionConsumer(subscription,
                             readValueId,
                             adapterPublishService,
+                            eventService,
                             resultFuture,
                             opcUaClient,
                             subscriptionMap,

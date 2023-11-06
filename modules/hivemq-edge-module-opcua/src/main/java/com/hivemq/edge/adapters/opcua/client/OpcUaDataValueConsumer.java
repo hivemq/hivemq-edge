@@ -18,9 +18,13 @@ package com.hivemq.edge.adapters.opcua.client;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaStringPayloadConverter;
+import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.EventUtils;
+import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.util.Bytes;
@@ -32,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public class OpcUaDataValueConsumer implements Consumer<DataValue> {
@@ -44,7 +49,9 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
     private final @NotNull OpcUaClient opcUaClient;
     private final @NotNull NodeId nodeId;
     private final @NotNull ProtocolAdapterMetricsHelper metricsHelper;
+    private final EventService eventService;
     private final @NotNull String adapterId;
+    private final @NotNull AtomicBoolean firstMessageReceived = new AtomicBoolean(false);
 
     public OpcUaDataValueConsumer(
             final @NotNull OpcUaAdapterConfig.Subscription subscription,
@@ -52,22 +59,25 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
             final @NotNull OpcUaClient opcUaClient,
             final @NotNull NodeId nodeId,
             final @NotNull ProtocolAdapterMetricsHelper metricsHelper,
-            final @NotNull String adapterId) {
+            final @NotNull String adapterId,
+            final @NotNull EventService eventService) {
         this.subscription = subscription;
         this.adapterPublishService = adapterPublishService;
         this.opcUaClient = opcUaClient;
         this.nodeId = nodeId;
         this.adapterId = adapterId;
         this.metricsHelper = metricsHelper;
+        this.eventService = eventService;
     }
 
     @Override
     public void accept(final @NotNull DataValue dataValue) {
         try {
 
+            final @NotNull byte[] convertedPayload = convertPayload(dataValue, OpcUaAdapterConfig.PayloadMode.JSON);
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
                     .withTopic(subscription.getMqttTopic())
-                    .withPayload(convertPayload(dataValue, OpcUaAdapterConfig.PayloadMode.JSON))
+                    .withPayload(convertedPayload)
                     .withQoS(subscription.getQos())
                     .withContextInformation("opcua-node-id", nodeId.toParseableString());
 
@@ -88,6 +98,17 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
                 log.debug("Not able to get dynamic context infos for OPC UA message for adapter {}", adapterId);
             }
 
+
+            if (firstMessageReceived.compareAndSet(false, true)) {
+                final Event event = new Event.Builder().withTimestamp(System.currentTimeMillis())
+                        .withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterId))
+                        .withSeverity(Event.SEVERITY.INFO)
+                        .withMessage(String.format("Adapter took first sample to be published to '%s'",
+                                subscription.getMqttTopic()))
+                        .withPayload(EventUtils.generateJsonPayload(convertedPayload))
+                        .build();
+                eventService.fireEvent(event);
+            }
             final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
 
             publishFuture.thenAccept(publishReturnCode -> {

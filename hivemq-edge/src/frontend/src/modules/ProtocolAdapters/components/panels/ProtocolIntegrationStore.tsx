@@ -14,7 +14,7 @@ import config from '@/config'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import WarningMessage from '@/components/WarningMessage.tsx'
 
-import { ProtocolFacetType } from '../../types.ts'
+import { AdapterNavigateState, ProtocolAdapterTabIndex, ProtocolFacetType } from '../../types.ts'
 import ProtocolsBrowser from '../IntegrationStore/ProtocolsBrowser.tsx'
 import FacetSearch from '../IntegrationStore/FacetSearch.tsx'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
@@ -28,7 +28,14 @@ const ProtocolIntegrationStore: FC = () => {
   const safeData: ProtocolAdapter[] = data ? (data.items as ProtocolAdapter[]) : [mockProtocolAdapter]
 
   const handleCreateInstance = (adapterId: string | undefined) => {
-    navigate('/protocol-adapters/new', { state: { selectedAdapterId: adapterId } })
+    const adapterNavigateState: AdapterNavigateState = {
+      protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+      protocolAdapterType: adapterId,
+      // selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selected?.data as Adapter).id },
+    }
+    navigate('/protocol-adapters/new', {
+      state: adapterNavigateState,
+    })
   }
 
   const handleOnSearch = (value: ProtocolFacetType) => {

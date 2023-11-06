@@ -2,8 +2,9 @@ import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
-import { Box, IconButton, Skeleton, Text } from '@chakra-ui/react'
+import { Box, Button, Flex, Icon, IconButton, Skeleton, Text } from '@chakra-ui/react'
 import { MdOutlineEventNote } from 'react-icons/md'
+import { BiRefresh } from 'react-icons/bi'
 
 import { Event } from '@/api/__generated__'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
@@ -23,7 +24,7 @@ interface EventLogTableProps {
 
 const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
   const { t } = useTranslation()
-  const { data, isLoading, error } = useGetEvents()
+  const { data, isLoading, isFetching, error, refetch } = useGetEvents()
 
   const safeData: Event[] = data && data.items ? data.items : [...mockEdgeEvent(5)]
 
@@ -33,6 +34,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
         accessorKey: 'identifier.identifier',
         width: '25%',
         enableSorting: false,
+        enableColumnFilter: false,
         header: t('eventLog.table.header.id') as string,
         cell: (info) => {
           return (
@@ -53,9 +55,10 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
       {
         accessorKey: 'created',
         sortType: 'datetime',
+        accessorFn: (row) => DateTime.fromISO(row.created).toMillis(),
         cell: (info) => (
           <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
-            {DateTime.fromISO(info.getValue() as string).toRelativeCalendar({ unit: 'minutes' })}
+            {DateTime.fromMillis(info.getValue() as number).toRelativeCalendar({ unit: 'minutes' })}
           </Skeleton>
         ),
         header: t('eventLog.table.header.created') as string,
@@ -71,18 +74,19 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
         ),
       },
       {
-        accessorKey: 'associatedObject.identifier',
+        accessorKey: 'source.identifier',
         sortType: 'alphanumeric',
         header: t('eventLog.table.header.source') as string,
         cell: (info) => (
           <Skeleton isLoaded={!isLoading}>
-            <SourceLink event={info.row.original.source} />
+            <SourceLink source={info.row.original.source} type={info.row.original.associatedObject} />
           </Skeleton>
         ),
       },
       {
         accessorKey: 'message',
         header: t('eventLog.table.header.message') as string,
+        enableColumnFilter: false,
         cell: (info) => {
           return (
             <Skeleton isLoaded={!isLoading} overflow={'hidden'}>
@@ -106,13 +110,28 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
   }
 
   return (
-    <PaginatedTable<Event>
-      data={safeData}
-      columns={columns}
-      // getRowStyles={(row) => {
-      //   return { backgroundColor: theme.colors.blue[50] }
-      // }}
-    />
+    <>
+      <Flex justifyContent={'flex-end'}>
+        <Button
+          isLoading={isFetching}
+          loadingText={t('eventLog.table.cta.refetch')}
+          variant={'outline'}
+          size={'sm'}
+          leftIcon={<Icon as={BiRefresh} fontSize={20} />}
+          onClick={() => refetch()}
+        >
+          {t('eventLog.table.cta.refetch')}
+        </Button>
+      </Flex>
+      <PaginatedTable<Event>
+        data={safeData}
+        columns={columns}
+        enableColumnFilters
+        // getRowStyles={(row) => {
+        //   return { backgroundColor: theme.colors.blue[50] }
+        // }}
+      />
+    </>
   )
 }
 
