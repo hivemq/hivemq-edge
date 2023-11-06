@@ -1,6 +1,7 @@
 package com.hivemq.api.model.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -57,6 +58,16 @@ public class Payload {
         Preconditions.checkNotNull(contentType);
         Preconditions.checkNotNull(data);
         return new Payload(contentType, data);
+    }
+
+    public static Payload fromObject(ObjectMapper mapper,  Object data){
+        try {
+            Preconditions.checkNotNull(mapper);
+            Preconditions.checkNotNull(data);
+            return new Payload(ContentType.JSON, mapper.writeValueAsString(data));
+        } catch(Exception e){
+            throw new RuntimeException(e);
+        }
     }
 }
 
