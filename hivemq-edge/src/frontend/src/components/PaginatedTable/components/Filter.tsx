@@ -35,6 +35,7 @@ export const Filter = <T,>({
       <CreatableSelect
         size={'sm'}
         inputId={id}
+        menuPortalTarget={document.body}
         // value={{ value: columnFilterValue, label: columnFilterValue }}
         onChange={(item) => setFilterValue(item?.value)}
         options={sortedUniqueValues.map((value: string) => ({ value: value, label: value, group: 'DDD' }))}
