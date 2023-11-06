@@ -92,7 +92,6 @@ const WorkspaceOptionsDrawer: FC = () => {
               <FormControl mt={4} isDisabled={groups.layout !== EdgeFlowLayout.CIRCLE_PACKING}>
                 <FormLabel>{t('workspace.grouping.title')}</FormLabel>
                 <Select
-                  // @ts-ignore TODO[NVL] Bug with CRS, see https://github.com/csandman/chakra-react-select/issues/273
                   colorScheme="brand"
                   isMulti
                   name="adapters"
