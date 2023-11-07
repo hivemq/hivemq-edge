@@ -9,8 +9,10 @@ pluginManagement {
     }
 }
 
-if (file("../../../hivemq-edge-composite/plugins").exists()) {
-    includeBuild("../../../hivemq-edge-composite/plugins")
+
+if (file("../../../hivemq-edge-composite/edge-plugins").exists()) {
+    includeBuild("../../../hivemq-edge-composite/edge-plugins")
 }
+
 
 includeBuild("../../hivemq-edge")

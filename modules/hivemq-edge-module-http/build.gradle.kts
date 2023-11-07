@@ -3,9 +3,9 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 buildscript {
-    if (gradle.includedBuilds.any { it.name == "plugins" }) {
+    if (gradle.includedBuilds.any { it.name == "edge-plugins" }) {
         plugins {
-            id("com.hivemq.version-updater")
+            id("com.hivemq.edge-version-updater")
         }
     }
 }
