@@ -10,6 +10,11 @@ buildscript {
     }
 }
 
+plugins.withId("com.hivemq.edge-version-updater") {
+    project.ext.set("versionUpdaterFiles", arrayOf("src/main/resources/hivemq-edge-configuration.json"))
+}
+
+
 plugins {
     java
     `java-library`
