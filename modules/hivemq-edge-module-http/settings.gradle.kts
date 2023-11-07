@@ -7,10 +7,9 @@ pluginManagement {
         id("com.github.hierynomus.license") version "${extra["plugin.license.version"]}"
         id("org.owasp.dependencycheck") version "${extra["plugin.dependencycheck.version"]}"
     }
-}
-
-if (file("../../../hivemq-edge-composite/edge-plugins").exists()) {
-    includeBuild("../../../hivemq-edge-composite/edge-plugins")
+    if (file("../../../hivemq-edge-composite/edge-plugins").exists()) {
+        includeBuild("../../../hivemq-edge-composite/edge-plugins")
+    }
 }
 
 
