@@ -18,6 +18,8 @@ plugins {
     id("org.owasp.dependencycheck")
 }
 
+
+
 group = "com.hivemq"
 
 java {

@@ -53,9 +53,8 @@ val edgeProjectsToUpdate = setOf(
 )
 
 
-tasks.register("updateVersion") {
+tasks.register("updateDependantVersion") {
     group = "other"
-
     edgeProjectsToUpdate.forEach {
         dependsOn(gradle.includedBuild(it).task(":updateVersion"))
     }
