@@ -38,7 +38,7 @@
   "modules" : [
     {
       "id" : "modbus",
-      "version" : "2023.6",
+      "version" : "2023.7",
       "name" : "Modbus to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing Modbus devices, bringing data from coils & registers into MQTT.",
       "author" : "HiveMQ",
@@ -57,7 +57,7 @@
     },
     {
       "id" : "opc-ua-client",
-      "version" : "2023.6",
+      "version" : "2023.7",
       "name" : "OPC-UA to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing OPC-UA services as a client and enables a seamless exchange of data between MQTT and OPC-UA.",
       "author" : "HiveMQ",
@@ -76,7 +76,7 @@
     },
     {
       "id" : "http",
-      "version" : "2023.6 (BETA)",
+      "version" : "2023.7 (BETA)",
       "name" : "HTTP(s) to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to arbitrary web endpoint URLs via HTTP(s), consuming structured JSON or plain data.",
       "author" : "HiveMQ",
