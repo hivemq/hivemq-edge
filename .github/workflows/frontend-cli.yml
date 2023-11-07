@@ -66,9 +66,7 @@ jobs:
           working-directory: ./hivemq-edge/src/frontend/
 
       - name: 🏗️ Build Application
-        run: |
-          pnpm run build
-          ./node_modules/cypress/bin/cypress install
+        run: pnpm run build
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
@@ -88,6 +86,7 @@ jobs:
         uses: ./.github/actions/setup_node
         with:
           working-directory: ./hivemq-edge/src/frontend/
+          run-install: true
 
       - name: Download artifact
         uses: actions/download-artifact@v3
@@ -123,6 +122,7 @@ jobs:
         uses: ./.github/actions/setup_node
         with:
           working-directory: ./hivemq-edge/src/frontend/
+          run-install: true
 
       - name: Download artifact
         uses: actions/download-artifact@v3
