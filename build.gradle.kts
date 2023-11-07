@@ -44,22 +44,6 @@ tasks.register("testClasses") {
     }
 }
 
-
-val edgeProjectsToUpdate = setOf(
-    "hivemq-edge",
-    "hivemq-edge-module-http",
-    "hivemq-edge-module-modbus",
-    "hivemq-edge-module-opcua"
-)
-
-
-tasks.register("updateDependantVersion") {
-    group = "other"
-    edgeProjectsToUpdate.forEach {
-        dependsOn(gradle.includedBuild(it).task(":updateVersion"))
-    }
-}
-
 gradle.startParameter.taskNames.forEach { task ->
     if (tasks.findByName(task) == null) {
         tasks.register(task) {
@@ -119,6 +103,23 @@ val hivemqEdgeZip by tasks.registering(Zip::class) {
         into("modules") {
             from(moduleReleaseBinaries.elements)
         }
+    }
+}
+
+
+
+val edgeProjectsToUpdate = setOf(
+    "hivemq-edge",
+    "hivemq-edge-module-http",
+    "hivemq-edge-module-modbus",
+    "hivemq-edge-module-opcua"
+)
+
+
+tasks.register("updateDependantVersions") {
+    group = "other"
+    edgeProjectsToUpdate.forEach {
+        dependsOn(gradle.includedBuild(it).task(":updateVersion"))
     }
 }
 
