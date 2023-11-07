@@ -132,6 +132,8 @@ Together. they contain - and enforce - parts of the testing pyramid for frontend
 
 ## Testing
 
+New pipeline
+
 ### Cypress - E2E and Component testing
 
 ### Axe - Accessibility testing
