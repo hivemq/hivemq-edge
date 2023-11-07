@@ -107,3 +107,20 @@ val hivemqEdgeZip by tasks.registering(Zip::class) {
     }
 }
 
+
+/* ******************** update versions ******************** */
+
+val platformProjectsToUpdate = setOf(
+    "hivemq-edge",
+    "hivemq-edge-module-modbus",
+    "hivemq-edge-module-opcua"
+)
+
+
+val updateAllVersions by tasks.registering {
+    dependsOn("updateVersion")
+    platformProjectsToUpdate.forEach {
+        dependsOn(gradle.includedBuild(it).task(":updateVersion"))
+    }
+}
+
