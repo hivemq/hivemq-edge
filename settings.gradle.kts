@@ -9,11 +9,5 @@ includeBuild("./modules/hivemq-edge-module-http")
 includeBuild("./modules/hivemq-edge-module-modbus")
 includeBuild("./modules/hivemq-edge-module-opcua")
 
-pluginManagement {
-    if (file("../hivemq-edge-composite/plugins").exists()) {
-        includeBuild("../hivemq-edge-composite/plugins")
-    }
-}
-
 
 
