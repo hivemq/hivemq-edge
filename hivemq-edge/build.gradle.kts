@@ -2,6 +2,14 @@ import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
+buildscript {
+    if (gradle.includedBuilds.any { it.name == "plugins" }) {
+        plugins {
+            id("com.hivemq.version-updater")
+        }
+    }
+}
+
 plugins {
     java
     `java-library`

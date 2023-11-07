@@ -32,6 +32,13 @@ pluginManagement {
         id("com.github.ben-manes.versions") version "${extra["plugin.versions.version"]}"
         id("com.github.node-gradle.node") version "${extra["plugin.node.version"]}"
     }
+    if (file("../../hivemq-edge-composite/plugins").exists()) {
+        includeBuild("../../hivemq-edge-composite/plugins")
+    }
+}
+
+if (file("../../hivemq-edge-composite/plugins").exists()) {
+    includeBuild("../../hivemq-edge-composite/plugins")
 }
 
 includeBuild("./src/frontend"){
@@ -72,3 +79,4 @@ if (file("../../hivemq-edge-extension-sdk").exists()) {
         """.trimIndent()
     )
 }
+

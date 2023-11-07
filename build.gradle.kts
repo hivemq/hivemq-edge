@@ -44,6 +44,33 @@ tasks.register("testClasses") {
     }
 }
 
+
+val edgeProjectsToUpdate = setOf(
+    "hivemq-edge",
+    "hivemq-edge-module-http",
+    "hivemq-edge-module-modbus",
+    "hivemq-edge-module-opcua"
+)
+
+
+tasks.register("updateVersion") {
+    group = "other"
+
+    edgeProjectsToUpdate.forEach {
+        dependsOn(gradle.includedBuild(it).task(":updateVersion"))
+    }
+}
+
+gradle.startParameter.taskNames.forEach { task ->
+    if (tasks.findByName(task) == null) {
+        tasks.register(task) {
+            gradle.includedBuilds.forEach {
+                dependsOn(it.task(":$name"))
+            }
+        }
+    }
+}
+
 /* ******************** release tasks ******************** */
 
 val hivemq: Configuration by configurations.creating { isCanBeConsumed = false; isCanBeResolved = false }
@@ -72,7 +99,7 @@ val moduleReleaseBinaries: Configuration by configurations.creating {
 
 dependencies {
     hivemq("com.hivemq:hivemq-edge")
-	edgeModule("com.hivemq:hivemq-edge-module-http")
+    edgeModule("com.hivemq:hivemq-edge-module-http")
     // ** module-deps ** //
     edgeModule("com.hivemq:hivemq-edge-module-plc4x")
     edgeModule("com.hivemq:hivemq-edge-module-opcua")
@@ -95,20 +122,4 @@ val hivemqEdgeZip by tasks.registering(Zip::class) {
     }
 }
 
-
-/* ******************** update versions ******************** */
-
-val platformProjectsToUpdate = setOf(
-    "hivemq-edge",
-    "hivemq-edge-module-modbus",
-    "hivemq-edge-module-opcua"
-)
-
-
-val updateAllVersions by tasks.registering {
-    dependsOn("updateVersion")
-    platformProjectsToUpdate.forEach {
-        dependsOn(gradle.includedBuild(it).task(":updateVersion"))
-    }
-}
 
