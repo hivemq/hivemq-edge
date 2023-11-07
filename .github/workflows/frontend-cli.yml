@@ -68,7 +68,7 @@ jobs:
       - name: 🏗️ Build Application
         run: |
           pnpm run build
-          ./packages/core/node_modules/cypress/bin/cypress install
+          ./node_modules/cypress/bin/cypress install
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
