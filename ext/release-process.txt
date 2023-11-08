@@ -5,13 +5,14 @@ Step 4 - Run hivemq-edge/hivemq-edge/src/test functional tests - - if <> green f
 Step 5 - Ensure hivemq-edge-test/ is up to date and run integration test suite - This process will take approximately 18-19 minutes - if <> green follow test failure procedure
 REMOVE: Step 6 - Update "version" property in hivemq-edge/gradle.properties
 REMOVE: Step 7 - Update "version" property in hivemq-edge/hivemq-edge/gradle.properties
-Step 8 - Update "hivemq-edge-extension-sdk.version" property in hivemq-edge/hivemq-edge/gradle.properties
+REMOVE: Step 8 - Update "hivemq-edge-extension-sdk.version" property in hivemq-edge/hivemq-edge/gradle.properties
 REMOVE: Step 9 - Update "version" property in ~all hivemq-edge/modules/${moduleName}/gradle.properties
 REMOVE: Step 10 - Update "version" property in hivemq-edge-composite/gradle.properties
 REMOVE: Step 11 - Update "version" property in hivemq-edge-extension-sdk/gradle.properties
 REMOVE: Step 12 - Update VERSION field in HiveMQEdgeConstants (this is where the module versions are derived - for now)
-Step 13(a) - Ensure any ~new protocol adapter definitions are added to the "modules" array hivemq-edge/src/resources/hivemq-edge-configuration.json remote config file
-Step 13(b) - Update all the "version" attributes in each of the objects in the "modules" array in the hivemq-edge/src/resources/hivemq-edge-configuration.json file (this surfaces these modules up to legacy installations)
+MOVE BEFORE VERSION UPDATE: Step 13(a) - Ensure any ~new protocol adapter definitions are added to the "modules" array hivemq-edge/src/resources/hivemq-edge-configuration.json remote config file
+REPLACE WITH CHECK: Step 13(b) - Update all the "version" attributes in each of the objects in the "modules" array in the hivemq-edge/src/resources/hivemq-edge-configuration.json file (this surfaces these modules up to legacy installations)
+ADD: version updater plugin use
 
 Step 14 - Run a full gradle refresh on your workspace (this may take a few seconds)
 Step 15 - Execute "./gradlew :hiveMqEdgeZip" at the terminal whilst in the ./hivemq-edge project
