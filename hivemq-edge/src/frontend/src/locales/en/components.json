@@ -27,5 +27,11 @@
       "noOptionsMessage": "No topic loaded",
       "createLabel": "Add the topic ... {{topic}}"
     }
+  },
+  "DateTimeRangeSelector": {
+    "placeholder": "Select a date range",
+    "noOptionsMessage": "Not a valid date",
+    "formatCreateLabel": "Create {{ date }}",
+    "ariaLabel": "Select a date"
   }
 }
