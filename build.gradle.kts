@@ -1,4 +1,16 @@
+
+
+
 group = "com.hivemq"
+
+
+plugins.withId("com.hivemq.edge-version-updater") {
+    project.ext.set(
+        "versionUpdaterFiles",
+        arrayOf("src/main/resources/hivemq-edge-configuration.json", "gradle.properties")
+    )
+}
+
 
 tasks.register("clean") {
     group = "build"
@@ -122,5 +134,6 @@ tasks.register("updateDependantVersions") {
         dependsOn(gradle.includedBuild(it).task(":updateVersion"))
     }
 }
+
 
 
