@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.logging;
+package com.hivemq.logging.modifier;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.turbo.TurboFilter;
 import ch.qos.logback.core.spi.FilterReply;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Marker;
 
-public class LogLevelModifier extends TurboFilter {
+public class MiscLogLevelModifier implements LogLevelModifier {
 
     @Override
-    public FilterReply decide(
-            final Marker marker,
-            final Logger logger,
-            final Level level,
-            final String format,
-            final Object[] params,
-            final Throwable t) {
+    public @NotNull FilterReply decide(
+            final @Nullable Marker marker,
+            final @NotNull Logger logger,
+            final @NotNull Level level,
+            final @NotNull String format,
+            final @Nullable Object @Nullable [] params,
+            final @Nullable Throwable t) {
 
         if (format == null || logger == null) {
             return FilterReply.NEUTRAL;
@@ -50,7 +51,7 @@ public class LogLevelModifier extends TurboFilter {
         if (level == Level.DEBUG) {
             if (logger.getName().startsWith("com.github.victools.jsonschema") ||
                     logger.getName().startsWith("org.jose4j")) {
-                //Actually we dont want this at all its far too noisy
+                //Actually we don't want this at all its far too noisy
 //                logger.trace(marker, format, params);
                 return FilterReply.DENY;
             }
