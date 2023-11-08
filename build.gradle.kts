@@ -1,16 +1,8 @@
-
-
-
 group = "com.hivemq"
 
-
-plugins.withId("com.hivemq.edge-version-updater") {
-    project.ext.set(
-        "versionUpdaterFiles",
-        arrayOf("src/main/resources/hivemq-edge-configuration.json", "gradle.properties")
-    )
+plugins {
+    id("com.hivemq.edge-version-updater")
 }
-
 
 tasks.register("clean") {
     group = "build"
@@ -130,6 +122,7 @@ val edgeProjectsToUpdate = setOf(
 
 tasks.register("updateDependantVersions") {
     group = "other"
+    dependsOn(":updateVersion")
     edgeProjectsToUpdate.forEach {
         dependsOn(gradle.includedBuild(it).task(":updateVersion"))
     }
