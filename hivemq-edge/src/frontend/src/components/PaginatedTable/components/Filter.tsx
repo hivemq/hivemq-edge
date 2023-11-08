@@ -2,7 +2,10 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Column } from '@tanstack/react-table'
 import { CreatableSelect } from 'chakra-react-select'
-import { Box } from '@chakra-ui/react'
+import { Box, VStack } from '@chakra-ui/react'
+import { DateTime } from 'luxon'
+
+import DateTimeRangeSelector from '@/components/DateTime/DateTimeRangeSelector.tsx'
 
 export interface FilterProps<T>
   extends Pick<
@@ -28,6 +31,19 @@ export const Filter = <T,>({
     [facetedUniqueValues, firstValue]
   )
 
+  if (firstValue instanceof DateTime)
+    return (
+      <VStack width={'100%'} textTransform={'none'} fontWeight={'initial'}>
+        <Box w={'100%'}>
+          <DateTimeRangeSelector />
+        </Box>
+        <Box w={'100%'}>
+          <DateTimeRangeSelector />
+        </Box>
+      </VStack>
+    )
+
+  // we are not supporting numbers yet
   if (typeof firstValue === 'number') return null
 
   return (
