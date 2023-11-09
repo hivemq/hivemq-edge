@@ -151,7 +151,8 @@ const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max }) => 
         Option,
       }}
       onCreateOption={handleCreate}
-      isValidNewOption={isValidNewOption}
+      // TODO[NVL} Do not allow manual editing of custom date
+      isValidNewOption={() => false}
     />
   )
 }
