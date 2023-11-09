@@ -23,7 +23,7 @@ Step 20 - Open browser to http://localhost:8080/ and ensure youre redirected to 
 Step 21 - Login using the default credentials
 Step 22 - Click Protocol adapters and ensure the built-in adapters have the correct version associated with them (the green tag)
 Step 23 - Update the version of the maven import in hivemq-edge-extension-sdk/README.adoc
-Step 24 - Update the Quick Start download link in hivemq-edge/README.adoc
+Step 24 - Update the Quick Start download link in hivemq-edge/README.adoc (REMOVE THIS STEP)
 Step 25 - Commit all changes to release branch
 Step 26 - IMPORTANT THIS NEEDS TO BE THE FIRST GH ACTION Browse to https://github.com/hivemq/hivemq-edge-extension-sdk and create a new release which reflects the version number e.g. "2023.3"  (Use the generate changelog feature of GH) - await for the GH action "Publish to Maven Central" to finish successfully - if unsuccessful debug.
 Step 27 - Browse the nexus repository https://oss.sonatype.org/#nexus-search;gav~com.hivemq~hivemq-edge-extension-sdk~~~~kw,versionexpand to ensure the latest version is listed - This can take up to 30 minutes to propogate

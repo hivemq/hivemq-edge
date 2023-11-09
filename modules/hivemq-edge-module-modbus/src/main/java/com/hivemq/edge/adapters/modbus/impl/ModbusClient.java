@@ -30,8 +30,11 @@ import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -40,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ModbusClient implements IModbusClient {
 
+    static Logger log = LoggerFactory.getLogger(ModbusClient.class.getName());
     private final @NotNull ModbusAdapterConfig adapterConfig;
     private final Object lock = new Object();
     private ModbusTcpMaster modbusClient;
@@ -74,10 +78,7 @@ public class ModbusClient implements IModbusClient {
     public CompletableFuture connect() {
         ModbusTcpMaster client = getOrCreateClient();
         if (!connected.get()) {
-            return client.connect().handle((res, ex) -> {
-                connected.set(ex == null);
-                return res;
-            });
+            return client.connect().thenRun(() -> connected.set(true));
         }
         return CompletableFuture.completedFuture(null);
     }

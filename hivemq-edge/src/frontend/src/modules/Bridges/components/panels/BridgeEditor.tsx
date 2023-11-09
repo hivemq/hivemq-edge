@@ -27,7 +27,7 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
 
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { bridgeId } = useParams()
-  const { bridge, setBridge } = useBridgeSetup()
+  const { setBridge } = useBridgeSetup()
   const { data } = useListBridges()
   const navigate = useNavigate()
   const createBridge = useCreateBridge()
@@ -36,19 +36,28 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
 
   useEffect(() => {
+    if (!data) return
     if (bridgeId) {
       const b = data?.find((e) => e.id === bridgeId)
       if (b) {
         setBridge(b)
+        onOpen()
       } else {
-        // TODO[NVL] handle error for the edge cases of not finding the right datapoint
-        setBridge(bridgeInitialState)
+        errorToast(
+          {
+            id: 'bridge-open-noExist',
+            title: t('bridge.toast.view.title'),
+            description: t('bridge.toast.view.error'),
+          },
+          new Error(t('bridge.toast.view.noLongerExist', { id: bridgeId }) as string)
+        )
+        navigate('/mqtt-bridges', { replace: true })
       }
     } else {
       setBridge(bridgeInitialState)
+      onOpen()
     }
-    onOpen()
-  }, [bridgeId, bridge, data, setBridge, onOpen])
+  }, [bridgeId, data, setBridge, onOpen, errorToast, t, navigate])
 
   const handleEditorOnClose = () => {
     onClose()

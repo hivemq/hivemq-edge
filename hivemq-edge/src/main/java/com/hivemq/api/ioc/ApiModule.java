@@ -18,7 +18,6 @@ package com.hivemq.api.ioc;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.ApiResourceRegistry;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
-import com.hivemq.api.auth.handler.impl.BasicAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.auth.provider.ITokenGenerator;
@@ -28,6 +27,7 @@ import com.hivemq.api.auth.provider.impl.SimpleUsernamePasswordProviderImpl;
 import com.hivemq.api.config.ApiListener;
 import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.resources.BridgeApi;
+import com.hivemq.api.resources.EventApi;
 import com.hivemq.api.resources.FrontendApi;
 import com.hivemq.api.resources.GatewayApi;
 import com.hivemq.api.resources.HealthCheckApi;
@@ -36,6 +36,7 @@ import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.api.resources.impl.BridgeResourceImpl;
+import com.hivemq.api.resources.impl.EventResourceImpl;
 import com.hivemq.api.resources.impl.FrontendResourceImpl;
 import com.hivemq.api.resources.impl.GatewayResourceImpl;
 import com.hivemq.api.resources.impl.HealthCheckResourceImpl;
@@ -59,7 +60,6 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Singleton;
 import java.util.Set;
 
-
 @Module
 public abstract class ApiModule {
 
@@ -67,30 +67,24 @@ public abstract class ApiModule {
 
     @Binds
     abstract @NotNull AuthenticationApi authenticationApi(@NotNull AuthenticationResourceImpl authenticationResource);
-
     @Binds
     abstract @NotNull BridgeApi bridgeApi(@NotNull BridgeResourceImpl bridgeResource);
-
     @Binds
     abstract @NotNull MetricsApi metricsApi(@NotNull MetricsResourceImpl metricsResource);
-
     @Binds
     abstract @NotNull HealthCheckApi healthCheckApi(@NotNull HealthCheckResourceImpl healthCheckResource);
-
     @Binds
     abstract @NotNull ProtocolAdaptersApi protocolAdaptersApi(@NotNull ProtocolAdaptersResourceImpl protocolAdaptersResource);
-
     @Binds
     abstract @NotNull UnsApi unsApi(@NotNull UnsResourceImpl unsResource);
-
     @Binds
     abstract @NotNull FrontendApi frontendApi(@NotNull FrontendResourceImpl gatewayResource);
     @Binds
     abstract @NotNull GatewayApi gatewayApi(@NotNull GatewayResourceImpl gatewayResource);
-
+    @Binds
+    abstract @NotNull EventApi eventApi(@NotNull EventResourceImpl eventResource);
     @Binds
     abstract @NotNull ITokenVerifier tokenVerifier(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
-
     @Binds
     abstract @NotNull ITokenGenerator tokenGenerator(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
 

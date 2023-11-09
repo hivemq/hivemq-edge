@@ -3,6 +3,15 @@
     "iconLabel": "Topic"
   },
   "pagination": {
+    "filter": {
+      "label": "Filter column",
+      "placeholder": "Search... ({{ size }})",
+      "noOptions": "No options available",
+      "create": "Add filter... {{ topic }}",
+      "clear": "Clear filter"
+    },
+    "noDataText": "No data received yet.",
+    "noDataFiltered": "No data matching your filters.",
     "goFirstPage": "Go to the first page",
     "goPreviousPage": "Go to the previous page",
     "goNextPage": "Go to the next page",

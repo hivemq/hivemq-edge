@@ -66,7 +66,7 @@ public class TestMqttDecoder {
 
         return new MQTTMessageDecoder(
                 mqttConnectDecoder,
-                fullConfigurationService.mqttConfiguration(),
+                mqttConnacker, fullConfigurationService.mqttConfiguration(),
                 new MqttDecoders(
                         new Mqtt3PublishDecoder(hiveMQId, disconnector, fullConfigurationService),
                         new Mqtt3PubackDecoder(disconnector, fullConfigurationService),

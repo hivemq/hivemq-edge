@@ -26,6 +26,7 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import { compareStatus } from '../../utils/pagination-utils.ts'
 import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 
 const DEFAULT_PER_PAGE = 10
 
@@ -65,11 +66,19 @@ const ProtocolAdapters: FC = () => {
 
   const columns = useMemo<ColumnDef<Adapter>[]>(() => {
     const handleCreateInstance = (type: string | undefined) => {
-      navigate('/protocol-adapters/new', { state: { selectedAdapterId: type } })
+      const adapterNavigateState: AdapterNavigateState = {
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterType: type,
+      }
+      navigate('/protocol-adapters/new', { state: adapterNavigateState })
     }
 
     const handleEditInstance = (adapterId: string, type: string) => {
-      if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: { selectedAdapterId: type } })
+      const adapterNavigateState: AdapterNavigateState = {
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterType: type,
+      }
+      if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: adapterNavigateState })
     }
 
     const handleOnDelete = (adapterId: string) => {
@@ -127,7 +136,7 @@ const ProtocolAdapters: FC = () => {
         sortingFn: undefined,
         cell: (info) => {
           const { id, type } = info.row.original
-          const { selectedAdapter } = state || {}
+          const { selectedActiveAdapter } = (state || {}) as AdapterNavigateState
           return (
             <Skeleton isLoaded={!isLoading}>
               <AdapterActionMenu
@@ -137,7 +146,7 @@ const ProtocolAdapters: FC = () => {
                 onDelete={handleOnDelete}
                 onViewWorkspace={handleViewWorkspace}
               />
-              {id === selectedAdapter?.adapterId && (
+              {id === selectedActiveAdapter?.adapterId && (
                 <IconButton
                   size={'sm'}
                   ml={2}
@@ -216,8 +225,8 @@ const ProtocolAdapters: FC = () => {
         data={safeData}
         columns={columns}
         getRowStyles={(row: Row<Adapter>) => {
-          const { selectedAdapter } = state || {}
-          return row.original.id === selectedAdapter?.adapterId ? { backgroundColor: colors.blue[50] } : {}
+          const { selectedActiveAdapter } = (state || {}) as AdapterNavigateState
+          return row.original.id === selectedActiveAdapter?.adapterId ? { backgroundColor: colors.blue[50] } : {}
         }}
       />
 

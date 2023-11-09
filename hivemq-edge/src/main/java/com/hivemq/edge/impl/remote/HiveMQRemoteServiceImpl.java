@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.impl;
+package com.hivemq.edge.impl.remote;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
@@ -21,7 +21,7 @@ import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
-import com.hivemq.edge.model.HiveMQEdgeEvent;
+import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
 import com.hivemq.edge.utils.HiveMQEdgeEnvironmentUtils;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -75,7 +75,7 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
             hiveMQEdgeHttpService = new HiveMQEdgeHttpServiceImpl(systemInformation.getHiveMQVersion(),
                     objectMapper, HiveMQEdgeHttpServiceImpl.SERVICE_DISCOVERY_URL, TIMEOUT, TIMEOUT, REFRESH,
                     true);
-            HiveMQEdgeEvent event = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
+            HiveMQEdgeRemoteEvent event = new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.EDGE_STARTED);
             event.addAll(HiveMQEdgeEnvironmentUtils.generateEnvironmentMap());
             fireUsageEvent(event);
         } finally {
@@ -94,10 +94,10 @@ public class HiveMQRemoteServiceImpl implements HiveMQEdgeRemoteService, HiveMQS
     }
 
     @Override
-    public void fireUsageEvent(final HiveMQEdgeEvent event) {
+    public void fireUsageEvent(final HiveMQEdgeRemoteEvent event) {
         if(hiveMQEdgeHttpService != null){
             //only queue if its a startup event
-            hiveMQEdgeHttpService.fireEvent(event, event.getEventType() == HiveMQEdgeEvent.EVENT_TYPE.EDGE_STARTED);
+            hiveMQEdgeHttpService.fireEvent(event, event.getEventType() == HiveMQEdgeRemoteEvent.EVENT_TYPE.EDGE_STARTED);
         }
     }
 

@@ -14,6 +14,7 @@ import LoginPage from '@/modules/Login/LoginPage.tsx'
 import UnifiedNamespaceEditor from '@/modules/UnifiedNamespace/components/UnifiedNamespaceEditor.tsx'
 import EdgeFlowPage from '@/modules/EdgeVisualisation/EdgeFlowPage.tsx'
 import NodePropertyDrawer from '@/modules/EdgeVisualisation/components/drawers/NodePropertyDrawer.tsx'
+import EvenLogPage from '@/modules/EventLog/EvenLogPage.tsx'
 
 export const routes = createBrowserRouter(
   [
@@ -68,7 +69,7 @@ export const routes = createBrowserRouter(
         },
         {
           path: 'event-logs/',
-          element: <PageContainer />,
+          element: <EvenLogPage />,
         },
         {
           path: 'modules/',

@@ -85,7 +85,7 @@ dependencies {
     hivemq("com.hivemq:hivemq-edge")
 	edgeModule("com.hivemq:hivemq-edge-module-http")
     // ** module-deps ** //
-    edgeModule("com.hivemq:hivemq-edge-module-plc4x")
+//    edgeModule("com.hivemq:hivemq-edge-module-plc4x")
     edgeModule("com.hivemq:hivemq-edge-module-opcua")
     edgeModule("com.hivemq:hivemq-edge-module-modbus")
 
