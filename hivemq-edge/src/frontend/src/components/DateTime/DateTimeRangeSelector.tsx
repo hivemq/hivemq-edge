@@ -116,21 +116,14 @@ const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max }) => 
   }, [min, max])
 
   const handleCreate = (inputValue: string) => {
-    const newOption = { value: inputValue, label: inputValue, color: '#0052CC', isDisabled: true }
-    setOptions((prev) => [...prev, newOption])
-  }
-
-  const isValidNewOption = (
-    inputValue: string,
-    selectValue: Options<RangeOption>,
-    selectOptions: OptionsOrGroups<RangeOption, GroupBase<RangeOption>>,
-    accessors: Accessors<RangeOption>
-  ) => {
-    return !(
-      !inputValue ||
-      selectValue.some((option) => compareOption(inputValue, option, accessors)) ||
-      selectOptions.some((option) => compareOption(inputValue, option as RangeOption, accessors))
-    )
+    const newOption: RangeOption = { value: inputValue, label: inputValue, colorScheme: '#0052CC' }
+    setOptions((prev) => {
+      const old = [...prev]
+      const last = old.pop()
+      const newOptions = [...old, newOption]
+      if (last) newOptions.push(last)
+      return newOptions
+    })
   }
 
   return (
