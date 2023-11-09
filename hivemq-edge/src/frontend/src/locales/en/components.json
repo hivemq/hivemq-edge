@@ -29,7 +29,7 @@
     }
   },
   "DateTimeRangeSelector": {
-    "placeholder": "Select a date range",
+    "placeholder": "Select a date",
     "noOptionsMessage": "Not a valid date",
     "formatCreateLabel": "Create {{ date }}",
     "ariaLabel": "Select a date"
