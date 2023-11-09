@@ -19,7 +19,7 @@ export const Filter = <T,>({
   id,
   // getFilterValue,
   getFacetedUniqueValues,
-  // getFacetedMinMaxValues,
+  getFacetedMinMaxValues,
   setFilterValue,
   firstValue,
   columnDef,
@@ -44,13 +44,14 @@ export const Filter = <T,>({
     return (
       <VStack width={'100%'} textTransform={'none'} fontWeight={'initial'}>
         <Box w={'100%'}>
-          <DateTimeRangeSelector />
+          <DateTimeRangeSelector min={DateTime.fromMillis(min)} max={DateTime.fromMillis(max)} />
         </Box>
         <Box w={'100%'}>
-          <DateTimeRangeSelector />
+          <DateTimeRangeSelector min={DateTime.fromMillis(min)} max={DateTime.fromMillis(max)} />
         </Box>
       </VStack>
     )
+  }
 
   // we are not supporting numbers yet
   if (typeof firstValue === 'number') return null
