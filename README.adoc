@@ -14,6 +14,8 @@ Seamlessly defining UNS by deployment, using targeted data model & transformatio
 
 It is a Java-based open source MQTT and MQTT-SN broker that fully supports MQTT 3.x,5 and MQTT-SN 1.2.
 
+<img alt="Edge Intro" style="filter: drop-shadow(2px 4px 6px black)" src="docs/edge-intro.gif">
+
 * Website: https://www.hivemq.com/
 * Documentation: https://github.com/hivemq/hivemq-edge/wiki
 * Community Forum: https://community.hivemq.com/
