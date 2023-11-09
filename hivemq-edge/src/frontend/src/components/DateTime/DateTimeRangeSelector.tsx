@@ -1,21 +1,104 @@
-import { FC, useState } from 'react'
-import { DateTime } from 'luxon'
-import { CreatableSelect, GroupBase, Options, OptionsOrGroups } from 'chakra-react-select'
+import { FC, useEffect, useState } from 'react'
+import { DateTime, Duration } from 'luxon'
+import { CreatableSelect } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 
-import { Accessors, RangeOption } from './types.ts'
+import { RangeOption } from './types.ts'
 import Option from './components/Option.tsx'
 
 const defaultRangeOption: readonly RangeOption[] = [
-  { value: 'purple', label: 'last minute', color: '#5243AA' },
-  { value: 'orange', label: 'last 5 minutes', color: '#FF8B00' },
-  { value: 'yellow', label: 'last 15 minutes ', color: '#FFC400' },
-  { value: 'green', label: 'last 30 minutes', color: '#36B37E' },
-  { value: 'forest', label: 'last hour', color: '#00875A' },
-  { value: 'slate', label: 'last 2 hours', color: '#253858' },
-  { value: 'silver', label: 'last 5 hours', color: '#666666' },
-  { value: 'more', label: 'More...', color: '#0052CC', isDisabled: true },
+  { value: 'more', label: 'More...', colorScheme: 'yellow', isCommand: true, isDisabled: true },
 ]
+
+const makeDefaultRangeOption = (min: DateTime | undefined, max: DateTime | undefined): RangeOption[] => {
+  if (!min || !max) return []
+
+  const diff = max.diff(min, ['months', 'weeks', 'days', 'hours', 'minutes']).toObject()
+  const options: RangeOption[] = []
+
+  if (diff['months']) {
+    options.push({
+      value: 'month1',
+      label: 'last month',
+      colorScheme: 'whiteAlpha',
+      duration: Duration.fromDurationLike({ month: 1 }),
+    })
+  }
+  if (diff['weeks']) {
+    options.push({
+      value: 'week1',
+      label: 'last week',
+      colorScheme: 'red',
+      duration: Duration.fromDurationLike({ week: 1 }),
+    })
+  }
+  if (diff['days']) {
+    options.push({
+      value: 'day1',
+      label: 'last day',
+      colorScheme: 'green',
+      duration: Duration.fromDurationLike({ day: 1 }),
+    })
+  }
+  if (diff['hours']) {
+    options.push(
+      ...[
+        {
+          value: 'hour1',
+          label: 'last hour',
+          colorScheme: 'blue',
+          duration: Duration.fromDurationLike({ hour: 1 }),
+        },
+        {
+          value: 'hour2',
+          label: 'last 2 hours',
+          colorScheme: 'blue',
+          duration: Duration.fromDurationLike({ hours: 2 }),
+        },
+        {
+          value: 'hour6',
+          label: 'last 6 hours',
+          colorScheme: 'blue',
+          duration: Duration.fromDurationLike({ hours: 6 }),
+        },
+      ]
+    )
+  }
+  if (diff['minutes']) {
+    options.push(
+      ...[
+        {
+          value: 'minute1',
+          label: 'last minute',
+          colorScheme: 'orange',
+          duration: Duration.fromDurationLike({ minute: 1 }),
+        },
+        {
+          value: 'minute5',
+          label: 'last 5 minutes',
+          colorScheme: 'orange',
+          duration: Duration.fromDurationLike({ minute: 5 }),
+        },
+        {
+          value: 'minute15',
+          label: 'last 15 minutes ',
+          colorScheme: 'orange',
+          duration: Duration.fromDurationLike({ minute: 15 }),
+        },
+        {
+          value: 'minute30',
+          label: 'last 30 minutes',
+          colorScheme: 'orange',
+          duration: Duration.fromDurationLike({ minute: 30 }),
+        },
+      ]
+    )
+  }
+
+  options.push(...defaultRangeOption)
+
+  return options
+}
 
 interface DateTimeRangeSelectorProps {
   min?: DateTime
@@ -23,16 +106,14 @@ interface DateTimeRangeSelectorProps {
   value?: DateTime
 }
 
-const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = () => {
+const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max }) => {
   const { t } = useTranslation('components')
-  const [options, setOptions] = useState(defaultRangeOption)
+  const [options, setOptions] = useState<RangeOption[]>([])
 
-  const compareOption = (inputValue = '', option: RangeOption, accessors: Accessors<RangeOption>) => {
-    const candidate = String(inputValue).toLowerCase()
-    const optionValue = String(accessors.getOptionValue(option)).toLowerCase()
-    const optionLabel = String(accessors.getOptionLabel(option)).toLowerCase()
-    return optionValue === candidate || optionLabel === candidate
-  }
+  useEffect(() => {
+    const dd = makeDefaultRangeOption(min, max)
+    if (dd) setOptions(dd)
+  }, [min, max])
 
   const handleCreate = (inputValue: string) => {
     const newOption = { value: inputValue, label: inputValue, color: '#0052CC', isDisabled: true }
