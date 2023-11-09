@@ -1,5 +1,6 @@
 import { GetOptionLabel, GetOptionValue } from 'chakra-react-select'
 import { ThemeTypings } from '@chakra-ui/react'
+import { Duration } from 'luxon'
 
 // Not properly exported from chakra-react-select
 export interface Accessors<Option> {
@@ -13,4 +14,5 @@ export interface RangeOption {
   readonly colorScheme: ThemeTypings['colorSchemes']
   readonly isCommand?: boolean
   readonly isDisabled?: boolean
+  readonly duration?: Duration
 }
