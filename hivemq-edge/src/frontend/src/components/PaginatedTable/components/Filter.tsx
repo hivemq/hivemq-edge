@@ -10,7 +10,7 @@ import DateTimeRangeSelector from '@/components/DateTime/DateTimeRangeSelector.t
 export interface FilterProps<T>
   extends Pick<
     Column<T, unknown>,
-    'id' | 'getFilterValue' | 'getFacetedUniqueValues' | 'getFacetedMinMaxValues' | 'setFilterValue'
+    'id' | 'getFilterValue' | 'getFacetedUniqueValues' | 'getFacetedMinMaxValues' | 'setFilterValue' | 'columnDef'
   > {
   firstValue: unknown
 }
@@ -22,6 +22,7 @@ export const Filter = <T,>({
   // getFacetedMinMaxValues,
   setFilterValue,
   firstValue,
+  columnDef,
 }: FilterProps<T>) => {
   const { t } = useTranslation()
 
@@ -31,7 +32,15 @@ export const Filter = <T,>({
     [facetedUniqueValues, firstValue]
   )
 
-  if (firstValue instanceof DateTime)
+  // @ts-ignore Find a better to fix this
+  const { sortType } = columnDef
+
+  if (typeof firstValue === 'number' && sortType === 'datetime') {
+    // TODO[NVL] This is a weird typing, as the function doesn't match the type
+    const [a, b] = getFacetedMinMaxValues() || [undefined, undefined]
+    const min = Number(a)
+    const max = Number(b)
+
     return (
       <VStack width={'100%'} textTransform={'none'} fontWeight={'initial'}>
         <Box w={'100%'}>
