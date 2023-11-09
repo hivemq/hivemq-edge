@@ -38,9 +38,7 @@ const customComponents = (isMulti: boolean): SelectComponentsConfig<TopicOption,
     </chakraComponents.Control>
   ),
 
-  // @ts-ignore Check why sx is not recognised by TS
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  MultiValueContainer: ({ children, sx, ...props }) => {
+  MultiValueContainer: ({ children, ...props }) => {
     return (
       <chakraComponents.MultiValueContainer {...props}>
         <Topic topic={children} mr={3} />
@@ -89,7 +87,6 @@ const AbstractTopicCreatableSelect = <T extends boolean>({
       options={topicOptions}
       components={isMulti === undefined ? undefined : customComponents(isMulti)}
       filterOption={createFilter(filterConfig)}
-      // @ts-ignore TODO[NVL] Bug with CRS, see https://github.com/csandman/chakra-react-select/issues/273
       selectedOptionStyle="check"
       {...rest}
     />

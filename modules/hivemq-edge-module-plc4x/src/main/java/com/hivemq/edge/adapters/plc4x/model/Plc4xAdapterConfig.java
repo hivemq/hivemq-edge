@@ -44,8 +44,8 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
-            description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+                       description = "Map your sensor data to MQTT Topics")
+    private @NotNull List<? extends Subscription> subscriptions = new ArrayList<>();
 
     public Plc4xAdapterConfig() {
     }
@@ -58,7 +58,7 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         return host;
     }
 
-    public @NotNull List<Subscription> getSubscriptions() {
+    public @NotNull List<? extends Subscription> getSubscriptions() {
         return subscriptions;
     }
 
@@ -86,4 +86,5 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
             return tagAddress;
         }
     }
+
 }

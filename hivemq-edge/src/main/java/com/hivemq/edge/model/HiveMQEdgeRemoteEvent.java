@@ -11,7 +11,7 @@ import java.util.Map;
  * Events to help track usage patterns to help define UX & platform usability
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class HiveMQEdgeEvent {
+public class HiveMQEdgeRemoteEvent {
 
     public enum EVENT_TYPE {
         EDGE_STARTED,
@@ -29,7 +29,7 @@ public class HiveMQEdgeEvent {
     public String edgeVersion;
     public String sessionToken;
 
-    public HiveMQEdgeEvent(final EVENT_TYPE eventType) {
+    public HiveMQEdgeRemoteEvent(final EVENT_TYPE eventType) {
         this.eventType = eventType;
         this.installationToken = HiveMQEdgeEnvironmentUtils.generateInstallationToken();
         this.sessionToken = HiveMQEdgeEnvironmentUtils.getSessionToken();

@@ -147,13 +147,9 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
         if (ApiUtils.hasDefaultUser(configurationService.apiConfiguration().getUserList())) {
             prefillUsername = UsernamePasswordRoles.DEFAULT_USERNAME;
             prefillPassword = UsernamePasswordRoles.DEFAULT_PASSWORD;
-
             firstUseTitle = "Welcome To HiveMQ Edge";
             firstUseDescription = "We have determined this is a new installation and have therefore pre-populated the admin credentials with the system defaults. IMPORTANT: Please update the default credentials in your config.xml document.";
         }
-
-
-
         return new FirstUseInformation(firstUse, prefillUsername, prefillPassword, firstUseTitle, firstUseDescription);
     }
 
@@ -185,13 +181,10 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     protected @NotNull  EnvironmentProperties getEnvironmentProperties() {
         Map<String, String> env = new HashMap<>();
         env.put(HiveMQEdgeConstants.VERSION_PROPERTY, systemInformation.getHiveMQVersion());
-
         env.put(HiveMQEdgeConstants.MUTABLE_CONFIGURAION_ENABLED,
                 String.valueOf(configurationService.gatewayConfiguration().isMutableConfigurationEnabled()));
-
         env.put(HiveMQEdgeConstants.CONFIGURATION_EXPORT_ENABLED,
                 String.valueOf(configurationService.gatewayConfiguration().isConfigurationExportEnabled()));
-
         return new EnvironmentProperties(env);
     }
 }

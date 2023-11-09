@@ -48,6 +48,10 @@ import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.HiveMQEdgeConstants;
+import com.hivemq.edge.model.TypeIdentifier;
+import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.EventUtils;
+import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.utils.HiveMQEdgeEnvironmentUtils;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
@@ -81,6 +85,7 @@ public class BridgeMqttClient {
     private final @NotNull Mqtt5AsyncClient mqtt5Client;
     private final @NotNull ListeningExecutorService executorService;
     private final @NotNull PerBridgeMetrics perBridgeMetrics;
+    private final @NotNull EventService eventService;
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private List<MqttForwarder> forwarders = Collections.synchronizedList(new ArrayList<>());
@@ -90,12 +95,14 @@ public class BridgeMqttClient {
             final @NotNull MqttBridge bridge,
             final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler,
             final @NotNull HivemqId hivemqId,
-            final @NotNull MetricRegistry metricRegistry) {
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull EventService eventService) {
 
         this.hivemqId = hivemqId;
         this.systemInformation = systemInformation;
         this.bridge = bridge;
         this.bridgeInterceptorHandler = bridgeInterceptorHandler;
+        this.eventService = eventService;
         this.mqtt5Client = createClient();
         executorService = MoreExecutors.newDirectExecutorService();
         perBridgeMetrics = new PerBridgeMetrics(bridge.getId(), metricRegistry);
@@ -114,6 +121,18 @@ public class BridgeMqttClient {
             log.debug("Bridge {} connected", bridge.getId());
             connected.set(true);
         });
+
+        builder.addConnectedListener(context -> eventService.fireEvent(
+                eventBuilder(Event.SEVERITY.INFO).
+                        withMessage(String.format("Bridge '%s' connected", getBridge().getId())).build()));
+
+        //-- Fire a system event for the various logging layers
+        builder.addDisconnectedListener(context -> eventService.fireEvent(
+                eventBuilder(context.getCause() == null ? Event.SEVERITY.INFO : Event.SEVERITY.ERROR).
+                    withMessage(String.format("Bridge '%s' disconnected", getBridge().getId())).
+                        withPayload(EventUtils.generateErrorPayload(context.getCause())).
+                        build()));
+
         builder.addDisconnectedListener(context -> {
             final Throwable cause = context.getCause();
             String message = cause.getMessage();
@@ -292,5 +311,13 @@ public class BridgeMqttClient {
 
     public boolean isConnected() {
         return connected.get();
+    }
+
+    protected Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity){
+        Event.Builder builder = new Event.Builder();
+        builder.withTimestamp(System.currentTimeMillis());
+        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.BRIDGE, bridge.getId()));
+        builder.withSeverity(severity);
+        return builder;
     }
 }

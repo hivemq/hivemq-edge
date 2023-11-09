@@ -19,6 +19,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.hivemq.api.model.core.Payload;
+import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
@@ -31,12 +33,18 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.EventUtils;
+import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.constraints.Null;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -55,6 +63,8 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
 
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull ObjectMapper objectMapper;
+
+    protected @Nullable EventService eventService;
 
     protected @Nullable ProtocolAdapterPublishService adapterPublishService;
     protected @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
@@ -114,6 +124,9 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         if(adapterPublishService == null){
             adapterPublishService = moduleServices.adapterPublishService();
         }
+        if(eventService == null){
+            eventService = moduleServices.eventService();
+        }
     }
 
     /**
@@ -128,9 +141,16 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * give an indication of the status of an adapter runtime.
      * @param errorMessage
      */
-    protected void reportErrorMessage(@Nullable final Throwable throwable, @NotNull final String errorMessage){
-        Preconditions.checkNotNull(throwable);
-        this.errorMessage = errorMessage == null ? throwable.getMessage() : errorMessage;
+    protected void reportErrorMessage(@Nullable final Throwable throwable, @NotNull final String errorMessage, final boolean sendEvent){
+        this.errorMessage = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
+        if(sendEvent){
+            eventService.fireEvent(
+                    eventBuilder(Event.SEVERITY.ERROR).
+                            withMessage(String.format("Adapter '%s' encountered an error.",
+                            adapterConfig.getId())).
+                            withPayload(EventUtils.generateErrorPayload(throwable)).
+                            build());
+        }
     }
 
     @Override
@@ -222,20 +242,20 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * A convenience method that sets the ConnectionStatus to Error
      * and the errorMessage to that supplied.
      */
-    protected void setErrorConnectionStatus(@NotNull final String errorMessage){
-        Preconditions.checkNotNull(errorMessage);
+    protected void setErrorConnectionStatus(@Nullable final Throwable t, @NotNull final String errorMessage){
+        boolean changed = false;
         synchronized (lock){
-            this.connectionStatus = ConnectionStatus.ERROR;
-            reportErrorMessage(null, errorMessage);
+            if(connectionStatus != ConnectionStatus.ERROR){
+                setConnectionStatus(ConnectionStatus.ERROR);
+                changed = true;
+            }
         }
+        reportErrorMessage(t, errorMessage, changed);
     }
 
     protected void setErrorConnectionStatus(@NotNull final Throwable t){
         Preconditions.checkNotNull(t);
-        synchronized (lock){
-            this.connectionStatus = ConnectionStatus.ERROR;
-            reportErrorMessage(t, t.getMessage());
-        }
+        setErrorConnectionStatus(t, null);
     }
 
     protected void setRuntimeStatus(@NotNull final RuntimeStatus runtimeStatus){
@@ -275,22 +295,30 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     }
 
     protected void onStartFail(@NotNull final ProtocolAdapterStartOutput output, @NotNull final Throwable throwable){
-        setErrorConnectionStatus(throwable);
+        setErrorConnectionStatus(throwable, null);
         output.failStart(throwable, throwable.getMessage());
-        //-- TODO add system event
+        eventService.fireEvent(
+                eventBuilder(Event.SEVERITY.CRITICAL).
+                        withPayload(EventUtils.generateErrorPayload(throwable)).
+                        withMessage("Error starting adapter").build());
     }
 
     protected void onStartSuccess(@NotNull final ProtocolAdapterStartOutput output){
         setRuntimeStatus(RuntimeStatus.STARTED);
         output.startedSuccessfully("adapter start OK");
-        //-- TODO add system event
+        eventService.fireEvent(
+                eventBuilder(Event.SEVERITY.INFO).
+                        withMessage(String.format("Adapter '%s' started OK.",
+                        adapterConfig.getId())).build());
     }
 
     protected void onStop(){
         setRuntimeStatus(RuntimeStatus.STOPPED);
-        //-- TODO add system event
+        eventService.fireEvent(
+                eventBuilder(Event.SEVERITY.INFO).
+                        withMessage(String.format("Adapter '%s' stopped OK.",
+                        adapterConfig.getId())).build());
     }
-
 
     /**
      * Provide a method to lazily traverse tag-data on your external device.
@@ -306,4 +334,14 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected abstract CompletableFuture<ProtocolAdapterStartOutput> startInternal(final ProtocolAdapterStartOutput output);
 
     protected abstract CompletableFuture<Void> stopInternal();
+
+    protected Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity){
+        Event.Builder builder = new Event.Builder();
+        builder.withTimestamp(System.currentTimeMillis());
+        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterConfig.getId()));
+        builder.withAssociatedObject(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER_TYPE,
+                adapterInformation.getProtocolId()));
+        builder.withSeverity(severity);
+        return builder;
+    }
 }

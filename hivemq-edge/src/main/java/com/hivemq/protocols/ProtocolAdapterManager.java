@@ -23,7 +23,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
-import com.hivemq.edge.model.HiveMQEdgeEvent;
+import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
+import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
@@ -35,6 +36,8 @@ import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -65,6 +68,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
+    private final @NotNull EventService eventService;
 
     private final @NotNull Object lock = new Object();
 
@@ -75,13 +79,15 @@ public class ProtocolAdapterManager {
             final @NotNull ModuleServicesImpl moduleServices,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ModuleLoader moduleLoader,
-            final @NotNull HiveMQEdgeRemoteService remoteService) {
+            final @NotNull HiveMQEdgeRemoteService remoteService,
+            final @NotNull EventService eventService) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
         this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
         this.moduleLoader = moduleLoader;
         this.remoteService = remoteService;
+        this.eventService = eventService;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -203,7 +209,7 @@ public class ProtocolAdapterManager {
             } else if (output.message != null) {
                 log.trace("Protocol-adapter {} started: {}",
                         protocolAdapter.getId(), output.message);
-                HiveMQEdgeEvent adapterCreatedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.ADAPTER_STARTED);
+                HiveMQEdgeRemoteEvent adapterCreatedEvent = new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED);
                 adapterCreatedEvent.addUserData("adapterType",
                         protocolAdapter.getProtocolAdapterInformation().getProtocolId());
                 remoteService.fireUsageEvent(adapterCreatedEvent);
@@ -248,7 +254,7 @@ public class ProtocolAdapterManager {
                     protocolAdapter.getId(),
                     output.message, output.getThrowable());
         }
-        HiveMQEdgeEvent adapterCreatedEvent = new HiveMQEdgeEvent(HiveMQEdgeEvent.EVENT_TYPE.ADAPTER_ERROR);
+        HiveMQEdgeRemoteEvent adapterCreatedEvent = new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_ERROR);
         adapterCreatedEvent.addUserData("adapterType",
                 protocolAdapter.getProtocolAdapterInformation().getProtocolId());
         remoteService.fireUsageEvent(adapterCreatedEvent);
@@ -276,17 +282,24 @@ public class ProtocolAdapterManager {
         if (adapterInstance.isPresent()) {
             adapterInstance.get().getAdapter().stop();
             if (protocolAdapters.remove(id) != null) {
-                synchronized(lock){
-                    Map<String, Object> mainMap =
-                            configurationService.protocolAdapterConfigurationService().getAllConfigs();
-                    List<Map> adapterList = getAdapterListForType(adapterInstance.get().getAdapterInformation().getProtocolId());
-                    if (adapterList != null) {
-                        if(adapterList.removeIf(instance -> id.equals(instance.get("id")))){
-                            configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
+                try {
+                    synchronized(lock){
+                        Map<String, Object> mainMap =
+                                configurationService.protocolAdapterConfigurationService().getAllConfigs();
+                        List<Map> adapterList = getAdapterListForType(adapterInstance.get().getAdapterInformation().getProtocolId());
+                        if (adapterList != null) {
+                            if(adapterList.removeIf(instance -> id.equals(instance.get("id")))){
+                                configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
+                            }
                         }
                     }
+                    return true;
+                } finally {
+                    eventService.fireEvent(
+                            eventBuilder(Event.SEVERITY.WARN, adapterInstance.get().getAdapter()).
+                            withMessage(String.format("Adapter '%s' was deleted from the system permanently",
+                                    adapterInstance.get().getAdapter().getId())).build());
                 }
-                return true;
             }
         }
         return false;
@@ -450,7 +463,17 @@ public class ProtocolAdapterManager {
 
         @Override
         public @NotNull ModuleServices moduleServices() {
-            return new ModuleServicesPerModuleImpl(protocolAdapter, moduleServices);
+            return new ModuleServicesPerModuleImpl(protocolAdapter, moduleServices, eventService);
         }
+    }
+
+    protected Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity, final @NotNull ProtocolAdapter adapter){
+        Preconditions.checkNotNull(severity);
+        Preconditions.checkNotNull(adapter);
+        Event.Builder builder = new Event.Builder();
+        builder.withTimestamp(System.currentTimeMillis());
+        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapter.getId()));
+        builder.withSeverity(severity);
+        return builder;
     }
 }

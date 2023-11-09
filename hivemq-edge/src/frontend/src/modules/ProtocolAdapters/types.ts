@@ -23,4 +23,19 @@ export interface UITab {
   properties: string[]
 }
 
+export enum ProtocolAdapterTabIndex {
+  protocols = 0,
+  adapters = 1,
+}
+
+export interface AdapterNavigateState {
+  protocolAdapterTabIndex: ProtocolAdapterTabIndex
+  protocolAdapterType?: string
+  selectedActiveAdapter?: {
+    isNew: boolean
+    isOpen: boolean
+    adapterId: string
+  }
+}
+
 export type AdapterConfig = NonNullable<Adapter['config']>

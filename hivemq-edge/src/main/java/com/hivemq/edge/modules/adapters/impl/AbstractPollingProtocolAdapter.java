@@ -9,6 +9,8 @@ import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.edge.modules.api.events.EventUtils;
+import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -16,6 +18,7 @@ import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Simon L Johnson
@@ -24,6 +27,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
         extends AbstractProtocolAdapter<T> {
 
     protected @Nullable ProtocolAdapterPollingService protocolAdapterPollingService;
+    protected @NotNull AtomicLong publishCount = new AtomicLong();
 
     public AbstractPollingProtocolAdapter(
             final ProtocolAdapterInformation adapterInformation,
@@ -53,9 +57,15 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
         Preconditions.checkNotNull(sample.getTopic());
         Preconditions.checkArgument(sample.getQos() <= 2 && sample.getQos() >= 0, "QoS needs to be a valid Quality-Of-Service value (0,1,2)");
         try {
+            byte[] json = convertToJson(sample);
+            if(publishCount.incrementAndGet() == 1){
+                eventService.fireEvent(eventBuilder(Event.SEVERITY.INFO).
+                        withMessage(String.format("Adapter took first sample to be published to '%s'", sample.getTopic())).
+                        withPayload(EventUtils.generateJsonPayload(json)).build());
+            }
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
                     .withTopic(sample.getTopic())
-                    .withPayload(convertToJson(sample))
+                    .withPayload(json)
                     .withQoS(sample.getQos());
             final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
             publishFuture.thenAccept(publishReturnCode -> protocolAdapterMetricsHelper.incrementReadPublishSuccess())
@@ -94,7 +104,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
      * the cause of the error.
      */
     protected void onSamplerError(final @NotNull ProtocolAdapterPollingSampler sampler, final @NotNull Throwable exception, boolean continuing) {
-        setErrorConnectionStatus(exception);
+        setErrorConnectionStatus(exception, null);
         if(!continuing){
             stop();
         }

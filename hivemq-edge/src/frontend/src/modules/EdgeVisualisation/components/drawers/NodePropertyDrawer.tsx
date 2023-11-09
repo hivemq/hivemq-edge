@@ -24,7 +24,7 @@ import { DeviceTypes } from '@/api/types/api-devices.ts'
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
 
 import Metrics from '@/modules/Welcome/components/Metrics.tsx'
-import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
+import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
@@ -77,14 +77,16 @@ const NodePropertyDrawer: FC = () => {
               variant={'outline'}
               size={'sm'}
               rightIcon={<EditIcon />}
-              onClick={() =>
-                navigate('/protocol-adapters', {
-                  state: {
-                    protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
-                    selectedAdapter: { isNew: false, adapterId: (selected?.data as Adapter).id },
-                  },
+              onClick={() => {
+                const adapterNavigateState: AdapterNavigateState = {
+                  protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+                  protocolAdapterType: (selected?.data as Adapter).type,
+                  selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selected?.data as Adapter).id },
+                }
+                navigate(`/protocol-adapters/${(selected?.data as Adapter).id}`, {
+                  state: adapterNavigateState,
                 })
-              }
+              }}
             >
               {t('workspace.observability.adapter.modify')}
             </Button>

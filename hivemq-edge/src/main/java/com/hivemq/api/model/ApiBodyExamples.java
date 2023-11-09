@@ -942,4 +942,6 @@ public interface ApiBodyExamples {
             "    \"status\": \"PENDING\",\n" +
             "    \"callbackTimeoutMillis\": 1000" +
             "}";
+
+    String EXAMPLE_EVENT_LIST = "{\n}";
 }

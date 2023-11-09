@@ -77,11 +77,59 @@ describe('PaginatedTable', () => {
     cy.get('th').eq(0).should('have.text', 'item')
     checkRowOrder()
     cy.get('th').eq(0).click()
-    cy.get('th').eq(0).should('have.text', 'item 🔼')
+    cy.get('th').eq(0).should('have.attr', 'aria-sort', 'ascending')
     checkRowOrder('asc')
     cy.get('th').eq(0).click()
-    cy.get('th').eq(0).should('have.text', 'item 🔽')
+    cy.get('th').eq(0).should('have.attr', 'aria-sort', 'descending')
     checkRowOrder('desc')
+  })
+
+  it('should indicate when there is no data to render', () => {
+    cy.mountWithProviders(<PaginatedTable<MOCK_TYPE> data={[]} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} />)
+
+    cy.get('[role="alert"]').should('contain.text', 'No data received yet.')
+    cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
+  })
+
+  it('should render the custom nodata message', () => {
+    cy.mountWithProviders(
+      <PaginatedTable<MOCK_TYPE>
+        data={[]}
+        columns={MOCK_COLUMN}
+        pageSizes={[5, 10, 20]}
+        noDataText={'This is a message'}
+      />
+    )
+
+    cy.get('[role="alert"]').should('contain.text', 'This is a message')
+    cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
+  })
+
+  it.only('should render the filters', () => {
+    cy.mountWithProviders(
+      <PaginatedTable<MOCK_TYPE>
+        data={MOCK_DATA(4)}
+        columns={MOCK_COLUMN}
+        pageSizes={[5, 10, 20]}
+        enableColumnFilters
+      />
+    )
+
+    cy.getByAriaLabel('Clear selected options').should('not.exist')
+
+    cy.get('th').eq(0).find('div#react-select-2-placeholder').should('have.text', 'Search... (4)')
+    cy.get('th').eq(0).click()
+    cy.get('div#react-select-2-listbox').find("[role='option']").should('have.length', 4)
+    cy.get('th').eq(0).find('input').type('item 0{Enter}')
+
+    // wait for Debounce (should be covered by timeout
+    cy.get('tbody').find('tr').should('have.length', 1)
+    cy.getByAriaLabel('Clear selected options').should('be.visible')
+    cy.getByAriaLabel('Clear selected options').click()
+    cy.get('tbody').find('tr').should('have.length', 4)
+    cy.get('th').eq(0).find('div#react-select-2-placeholder').should('have.text', 'Search... (4)')
+
+    // TODO[NVL] Cannot test for datalist updates
   })
 
   it('should be accessible', () => {

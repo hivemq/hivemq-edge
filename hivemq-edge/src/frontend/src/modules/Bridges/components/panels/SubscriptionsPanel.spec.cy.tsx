@@ -37,6 +37,10 @@ const TestingComponent: FC<TestingComponentProps> = ({ onSubmit, defaultValues }
 describe('SubscriptionsPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [] }).as('getConfig1')
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [] }).as('getConfig2')
+    cy.intercept('/api/v1/management/bridges', { items: [] }).as('getConfig3')
   })
 
   it('should be accessible', () => {
@@ -62,9 +66,11 @@ describe('SubscriptionsPanel', () => {
     // force validation to trigger error messages. Better alternative?
     cy.getByTestId(`form-submit`).click()
 
-    cy.getByTestId(`${MOCK_TYPE}.0.filters`).should('be.visible').find('label').should('have.attr', 'data-invalid')
+    cy.getByTestId(`${MOCK_TYPE}.0.filters`).should('be.visible').find('label').should('not.have.attr', 'data-invalid')
 
     cy.get('input[id="remoteSubscriptions.0.filters"').type('my topic{Enter}')
+    // force validation to trigger error messages. Better alternative?
+    cy.getByTestId(`form-submit`).click()
     cy.getByTestId(`${MOCK_TYPE}.0.destination`).should('be.visible').find('label').should('have.attr', 'data-invalid')
   })
 })

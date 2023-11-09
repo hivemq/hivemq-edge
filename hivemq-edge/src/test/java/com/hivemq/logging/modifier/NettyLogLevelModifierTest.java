@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.logging;
+package com.hivemq.logging.modifier;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -24,9 +24,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author Lukas Brandl
- */
 public class NettyLogLevelModifierTest {
     private NettyLogLevelModifier nettyLogLevelModifier;
 
@@ -37,46 +34,37 @@ public class NettyLogLevelModifierTest {
     public void setUp() throws Exception {
 
         final LoggerContext context = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
-
         rootLogger = context.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
 
         nettyLogLevelModifier = new NettyLogLevelModifier();
     }
 
     @Test
-    public void test_level_trace() throws Exception {
-
-        final FilterReply decide = nettyLogLevelModifier.decide(null, null, Level.TRACE, "", null, null);
-
+    public void test_level_trace() {
+        final FilterReply decide = nettyLogLevelModifier.decide(null, rootLogger, Level.TRACE, "", null, null);
         assertEquals(FilterReply.NEUTRAL, decide);
     }
 
     @Test
-    public void test_level_all() throws Exception {
-
-        final FilterReply decide = nettyLogLevelModifier.decide(null, null, Level.ALL, "", null, null);
-
+    public void test_level_all() {
+        final FilterReply decide = nettyLogLevelModifier.decide(null, rootLogger, Level.ALL, "", null, null);
         assertEquals(FilterReply.NEUTRAL, decide);
     }
 
     @Test
-    public void test_level_info_format_null() throws Exception {
-
-        final FilterReply decide = nettyLogLevelModifier.decide(null, null, Level.INFO, null, null, null);
-
+    public void test_level_info_format_null() {
+        final FilterReply decide = nettyLogLevelModifier.decide(null, rootLogger, Level.INFO, null, null, null);
         assertEquals(FilterReply.NEUTRAL, decide);
     }
 
     @Test
-    public void test_level_info_format_set() throws Exception {
-
+    public void test_level_info_format_set() {
         final FilterReply decide = nettyLogLevelModifier.decide(null, rootLogger, Level.INFO, format, null, null);
-
         assertEquals(FilterReply.NEUTRAL, decide);
     }
 
     @Test
-    public void test_level_info_format_denied_throwable() throws Exception {
+    public void test_level_info_format_denied_throwable() {
 
         final LoggerContext context = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
         rootLogger = context.getLogger("io.netty.util.internal.PlatformDependent0");
@@ -87,7 +75,7 @@ public class NettyLogLevelModifierTest {
     }
 
     @Test
-    public void test_level_info_format_neutral_throwable() throws Exception {
+    public void test_level_info_format_neutral_throwable() {
 
         final LoggerContext context = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
         rootLogger = context.getLogger("io.netty.channel.nio.NioEventLoop");
@@ -98,7 +86,7 @@ public class NettyLogLevelModifierTest {
     }
 
     @Test
-    public void test_level_trace_format_denied_throwable() throws Exception {
+    public void test_level_trace_format_denied_throwable() {
 
         final LoggerContext context = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
         rootLogger = context.getLogger("io.netty.channel.nio.NioEventLoop");
@@ -109,7 +97,7 @@ public class NettyLogLevelModifierTest {
     }
 
     @Test
-    public void test_level_info_format_denied_parameter() throws Exception {
+    public void test_level_info_format_denied_parameter() {
 
         final LoggerContext context = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
         rootLogger = context.getLogger("io.netty.util.internal.PlatformDependent0");
@@ -120,7 +108,7 @@ public class NettyLogLevelModifierTest {
     }
 
     @Test
-    public void test_level_debug_native_denied_parameter() throws Exception {
+    public void test_level_debug_native_denied_parameter() {
 
         final LoggerContext context = (LoggerContext) org.slf4j.LoggerFactory.getILoggerFactory();
         rootLogger = context.getLogger("io.netty.util.internal.NativeLibraryLoader");

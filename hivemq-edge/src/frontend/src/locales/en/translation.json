@@ -35,20 +35,20 @@
         "workspace": "Workspace",
         "bridges": "MQTT Bridges",
         "protocolAdapters": "Protocol Adapters",
-        "eventLogs": "Event logs"
+        "eventLogs": "Event Logs"
       }
     },
     "extensions": {
       "title": "Extensions",
       "routes": {
         "modules": "Modules",
-        "namespace": "Unified namespace"
+        "namespace": "Unified Namespace"
       }
     },
     "resources": {
       "title": "External resources",
       "routes": {
-        "articles": "Useful articles",
+        "articles": "Useful Articles",
         "github": "GitHub",
         "help": "Documentation"
       }
@@ -133,7 +133,7 @@
   },
   "bridge": {
     "title": "MQTT bridges",
-    "description": "A MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
+    "description": "An MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
     "action": {
       "add": "Add bridge connection",
       "edit": "Edit",
@@ -160,6 +160,11 @@
         "title": "Creating Bridge",
         "description": "We've successfully created a new bridge for you.",
         "error": "There was a problem trying to create the bridge"
+      },
+      "view": {
+        "title": "Viewing Bridge",
+        "error": "There was a problem trying to view the bridge",
+        "noLongerExist": "The bridge {{id}} doesn't exist anymore"
       }
     },
     "status": {
@@ -463,6 +468,11 @@
         "title": "Creating Protocol Adapter",
         "description": "We've successfully created a new Protocol Adapter for you.",
         "error": "There was a problem trying to create the Protocol Adapter"
+      },
+      "view": {
+        "title": "Viewing Protocol Adapter",
+        "error": "There was a problem trying to view the protocol adapter",
+        "noLongerExist": "The Protocol Adapter {{id}} doesn't exist"
       }
     },
     "type": {
@@ -478,6 +488,7 @@
         "security": "Security",
         "publishing": "Publishing",
         "http": "HTTP",
+        "ads": "ADS",
         "s7advanced": "S7 Device",
         "authentication": "Authentication"
       }
@@ -650,5 +661,30 @@
       "publish.excluded.count": ""
     },
     "messages.retained.current": "Message retained"
+  },
+  "eventLog": {
+    "title": "Event Log",
+    "description": "System components generate events in the system which can help in the diagnosis of issues or general system monitoring. The Event Log allows you to interact with the events and explore the system",
+    "table": {
+      "header": {
+        "id": "Details",
+        "created": "Created",
+        "severity": "Severity",
+        "message": "Event",
+        "source": "Source",
+        "associatedObject": "Associated Object",
+        "payload": "Payload"
+      },
+      "cta": {
+        "open": "View details of event",
+        "refetch": "Update the Event Log"
+      }
+    },
+    "panel": {
+      "title": "Event"
+    },
+    "error": {
+      "loading": "We cannot load the events at this time. Please try again later"
+    }
   }
 }
