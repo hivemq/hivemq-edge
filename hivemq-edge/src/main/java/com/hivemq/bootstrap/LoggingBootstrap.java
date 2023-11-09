@@ -50,6 +50,7 @@ public class LoggingBootstrap {
     private static final List<Appender<ILoggingEvent>> defaultAppenders = new LinkedList<>();
     private static final @NotNull LogLevelModifierTurboFilter logLevelModifierTurboFilter =
             new LogLevelModifierTurboFilter();
+    private static final @NotNull LogbackChangeListener logbackChangeListener = new LogbackChangeListener();
 
     /**
      * Prepares the logging. This method must be called before any logging occurs
@@ -83,12 +84,13 @@ public class LoggingBootstrap {
 
         final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
 
-        context.addListener(new LogbackChangeListener());
+        context.addListener(logbackChangeListener);
 
         final boolean overridden = overrideLogbackXml(configFolder);
 
         if (!overridden) {
             reEnableDefaultAppenders();
+            context.addTurboFilter(logLevelModifierTurboFilter);
         }
         redirectJULToSLF4J();
         logQueuedEntries();
@@ -98,6 +100,12 @@ public class LoggingBootstrap {
         logLevelModifierTurboFilter.registerLogLevelModifier(new NettyLogLevelModifier());
         logLevelModifierTurboFilter.registerLogLevelModifier(new MiscLogLevelModifier());
         log.trace("Added Netty log level modifier");
+    }
+
+    public static void resetLogging() {
+        final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        context.getTurboFilterList().remove(logLevelModifierTurboFilter);
+        context.removeListener(logbackChangeListener);
     }
 
     /**
