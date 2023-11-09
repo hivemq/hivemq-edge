@@ -27,6 +27,8 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
 
+import static com.hivemq.edge.modules.api.adapters.ProtocolAdapter.*;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -48,7 +50,7 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.ConnectionStatus.CONNECTED, protocolAdapter.getConnectionStatus());
+        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
     }
 
     @Test
@@ -63,7 +65,7 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.ConnectionStatus.CONNECTED, protocolAdapter.getConnectionStatus());
+        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
     }
 
     @Test
@@ -80,7 +82,7 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.ConnectionStatus.CONNECTED, protocolAdapter.getConnectionStatus());
+        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
     }
 
     @Test
@@ -96,7 +98,7 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.ConnectionStatus.CONNECTED, protocolAdapter.getConnectionStatus());
+        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
     }
 
     private static class TestProtocolAdapterStartInput implements ProtocolAdapterStartInput {
