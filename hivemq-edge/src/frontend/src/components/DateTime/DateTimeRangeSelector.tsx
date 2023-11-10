@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from 'react'
 import { DateTime, Duration } from 'luxon'
-import { CreatableSelect } from 'chakra-react-select'
+import { ActionMeta, CreatableSelect, SingleValue } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 
 import { RangeOption } from './types.ts'
@@ -104,9 +104,10 @@ interface DateTimeRangeSelectorProps {
   min?: DateTime
   max?: DateTime
   value?: DateTime
+  setFilterValue?: (value: number[] | undefined) => void
 }
 
-const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max }) => {
+const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max, setFilterValue }) => {
   const { t } = useTranslation('components')
   const [options, setOptions] = useState<RangeOption[]>([])
 
@@ -126,12 +127,22 @@ const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max }) => 
     })
   }
 
+  const onHandleChange = (newValue: SingleValue<RangeOption>, actionMeta: ActionMeta<RangeOption>) => {
+    if (newValue?.duration?.isValid) {
+      const now = DateTime.now()
+      const min = now.minus(newValue.duration)
+      setFilterValue?.([min.toMillis(), now.toMillis()])
+    } else if (actionMeta.action === 'clear') {
+      setFilterValue?.(undefined)
+    }
+  }
+
   return (
     <CreatableSelect<RangeOption>
       size={'sm'}
       menuPortalTarget={document.body}
       // value={{ value: columnFilterValue, label: columnFilterValue }}
-      // onChange={(item) => setFilterValue(item?.value)}
+      onChange={onHandleChange}
       options={options}
       noOptionsMessage={() => t('DateTimeRangeSelector.noOptionsMessage')}
       placeholder={t('DateTimeRangeSelector.placeholder')}
