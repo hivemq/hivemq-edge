@@ -20,14 +20,18 @@ const Option: ComponentType<OptionProps<RangeOption, false, GroupBase<RangeOptio
     )
   }
 
-  const duration = props.data.duration?.toObject()
   // TODO[NVL] This is not i18n-friendly
-  const [a, v] = Object.entries({ ...duration })[0]
+  const duration = props.data.duration?.toObject()
+  let badge = ''
+  if (duration) {
+    const [a, v] = Object.entries({ ...duration })[0]
+    badge = `${v}${a[0]}`
+  }
 
   return (
     <chakraComponents.Option {...props}>
       <HStack flexWrap={'nowrap'}>
-        {!isOptionCreate && (
+        {!isOptionCreate && badge && (
           <Badge
             as={'p'}
             textAlign={'center'}
@@ -38,7 +42,7 @@ const Option: ComponentType<OptionProps<RangeOption, false, GroupBase<RangeOptio
             colorScheme={props.data.colorScheme}
             mr={2}
           >
-            {`${v}${a[0]}`}
+            {badge}
           </Badge>
         )}
         <Text>{children}</Text>
