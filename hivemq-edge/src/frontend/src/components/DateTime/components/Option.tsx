@@ -1,10 +1,13 @@
 import { ComponentType } from 'react'
 import { chakraComponents, GroupBase, OptionProps } from 'chakra-react-select'
 import { Badge, Box, Button, HStack, Text } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
 
 import { RangeOption } from '../types.ts'
+import { badgeFrom } from '../utils/range-option.utils.ts'
 
 const Option: ComponentType<OptionProps<RangeOption, false, GroupBase<RangeOption>>> = ({ children, ...props }) => {
+  const { t } = useTranslation('components')
   const { value, label, isCommand } = props.data
 
   // Seems to be the best way of detecting the "Create option"
@@ -20,13 +23,7 @@ const Option: ComponentType<OptionProps<RangeOption, false, GroupBase<RangeOptio
     )
   }
 
-  // TODO[NVL] This is not i18n-friendly
-  const duration = props.data.duration?.toObject()
-  let badge = ''
-  if (duration) {
-    const [a, v] = Object.entries({ ...duration })[0]
-    badge = `${v}${a[0]}`
-  }
+  const badge = badgeFrom(props.data, t)
 
   return (
     <chakraComponents.Option {...props}>
