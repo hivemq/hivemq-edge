@@ -4,6 +4,9 @@ inputs:
   working-directory:
     required: true
     description: move into the right directory
+  run-install:
+    description: Run the install pnpm command
+    default: "false"
 
 runs:
   using: "composite"
@@ -13,7 +16,7 @@ runs:
       id: pnpm-install
       with:
         version: 8.4.0
-        run_install: false
+        run_install: ${{ inputs.run-install }}
 
     - uses: actions/setup-node@v3
       with:

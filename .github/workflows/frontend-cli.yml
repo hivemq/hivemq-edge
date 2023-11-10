@@ -86,6 +86,7 @@ jobs:
         uses: ./.github/actions/setup_node
         with:
           working-directory: ./hivemq-edge/src/frontend/
+          run-install: true
 
       - name: Download artifact
         uses: actions/download-artifact@v3
@@ -121,6 +122,7 @@ jobs:
         uses: ./.github/actions/setup_node
         with:
           working-directory: ./hivemq-edge/src/frontend/
+          run-install: true
 
       - name: Download artifact
         uses: actions/download-artifact@v3
