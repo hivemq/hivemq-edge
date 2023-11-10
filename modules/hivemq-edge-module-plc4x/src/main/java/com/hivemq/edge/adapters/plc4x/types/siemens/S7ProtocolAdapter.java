@@ -79,7 +79,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
         map.put(PING, nullSafe(config.getPing()));
         map.put(PING_TIME, nullSafe(config.getPingTime()));
         map.put(RETRY_TIME, nullSafe(config.getRetryTime()));
-        map.put(READ_TIMEOUT, nullSafe(config.getRetryTimeout()));
+        map.put(READ_TIMEOUT, nullSafe(config.getReadTimeout()));
         return map;
     }
 }

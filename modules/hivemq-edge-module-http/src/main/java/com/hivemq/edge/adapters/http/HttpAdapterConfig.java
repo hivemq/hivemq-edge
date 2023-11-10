@@ -116,6 +116,12 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private boolean httpPublishSuccessStatusCodeOnly = true;
 
+    @JsonProperty("allowUntrustedCertificates")
+    @ModuleConfigField(title = "Allow the adapter to read from untrusted SSL sources (for example expired certificates).",
+                       defaultValue = "false",
+                       format = ModuleConfigField.FieldType.BOOLEAN)
+    private boolean allowUntrustedCertificates = false;
+
     public HttpAdapterConfig() {
     }
 
@@ -152,6 +158,10 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
     public int getQos() {
         return qos;
+    }
+
+    public boolean isAllowUntrustedCertificates() {
+        return allowUntrustedCertificates;
     }
 
     public static class HttpHeader {

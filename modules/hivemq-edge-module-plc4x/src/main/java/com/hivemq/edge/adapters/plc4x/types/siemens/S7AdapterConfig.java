@@ -127,11 +127,11 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
                        defaultValue = "4")
     private @NotNull Integer retryTime = 4;
 
-    @JsonProperty("retryTimeout")
-    @ModuleConfigField(title = "Retry Timeout",
+    @JsonProperty("readTimeout")
+    @ModuleConfigField(title = "Read Timeout",
                        description = "This is the maximum waiting time for reading on the TCP channel.",
                        defaultValue = "8")
-    private @NotNull Integer retryTimeout = 8;
+    private @NotNull Integer readTimeout = 8;
 
     public int getPort() {
         return port;
@@ -177,8 +177,8 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
         return retryTime;
     }
 
-    public Integer getRetryTimeout() {
-        return retryTimeout;
+    public Integer getReadTimeout() {
+        return readTimeout;
     }
 
     public ControllerType getControllerType() {

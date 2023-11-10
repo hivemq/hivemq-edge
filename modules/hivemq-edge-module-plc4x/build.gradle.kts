@@ -43,7 +43,6 @@ dependencies {
 //    implementation("org.apache.plc4x:plc4j-driver-profinet:${property("org.apache.plc4x.version")}")
 //    implementation("org.apache.plc4x:plc4j-driver-eip:${property("org.apache.plc4x.version")}")
 
-    implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     runtimeOnly("com.google.guava:guava:${property("guava.version")}") {
         exclude("org.checkerframework", "checker-qual")
         exclude("com.google.errorprone", "error_prone_annotations")

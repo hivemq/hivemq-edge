@@ -30,10 +30,9 @@ public class HttpData extends ProtocolAdapterDataSample {
     public HttpData(final String requestUrl,
                     final int httpStatusCode,
                     final @NotNull String contentType,
-                    final @NotNull Object data,
                     final @NotNull String topic,
                     final @NotNull int qos) {
-        super(data, topic, qos);
+        super(topic, qos);
         this.requestUrl = requestUrl;
         this.contentType = contentType;
         this.httpStatusCode = httpStatusCode;
@@ -49,9 +48,5 @@ public class HttpData extends ProtocolAdapterDataSample {
 
     public int getHttpStatusCode() {
         return httpStatusCode;
-    }
-
-    public Object getData() {
-        return data;
     }
 }

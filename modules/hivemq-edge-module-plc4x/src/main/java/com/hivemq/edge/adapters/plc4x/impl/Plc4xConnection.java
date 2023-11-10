@@ -4,6 +4,7 @@ import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.apache.plc4x.java.DefaultPlcDriverManager;
 import org.apache.plc4x.java.api.PlcConnection;
 import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.exceptions.PlcConnectionException;
@@ -21,9 +22,9 @@ import java.util.function.Consumer;
 
 public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
 
+    static final String TAG_ADDRESS_TYPE_SEP = ":";
     private static final Logger log = LoggerFactory.getLogger(Plc4xConnection.class);
     private final Object lock = new Object();
-
     private final @NotNull PlcDriverManager plcDriverManager;
     private final @NotNull T config;
     private final @NotNull Plc4xConnectionQueryStringProvider connectionQueryStringProvider;
@@ -70,7 +71,6 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
                             log.info("Connecting via plx4j to {}", connectionString);
                         }
                         plcConnection = plcDriverManager.getConnectionManager().getConnection(connectionString);
-                        plcConnection.connect();
                     }
                 }
             }
@@ -79,6 +79,21 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
                 log.warn("Error encountered connecting to external device", e);
             }
             throw new Plc4xException("Error connecting", e);
+        }
+    }
+
+    protected void lazyConnectionCheck() {
+        if(!plcConnection.isConnected()){
+            synchronized (lock){
+                if(!plcConnection.isConnected()){
+                    try {
+                        plcConnection.connect();
+                    } catch(PlcConnectionException e){
+                        log.warn("Error attempting to connect to PLC device", e);
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
         }
     }
 
@@ -100,6 +115,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
     }
 
     public CompletableFuture<? extends PlcReadResponse> read(final @NotNull T.Subscription subscription) {
+        lazyConnectionCheck();
         if (!plcConnection.getMetadata().canRead()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type read-blocking"));
         }
@@ -109,11 +125,14 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
         PlcReadRequest.Builder builder = plcConnection.readRequestBuilder();
         builder.addTagAddress(subscription.getTagName(), initializeQueryForSubscription(subscription));
         PlcReadRequest readRequest = builder.build();
-        return readRequest.execute();
+        //Ok - seems the reads are not thread safe
+        synchronized (lock){
+            return readRequest.execute();
+        }
     }
 
     public CompletableFuture<? extends PlcSubscriptionResponse> subscribe(final @NotNull T.Subscription subscription, final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
-
+        lazyConnectionCheck();
         if (!plcConnection.getMetadata().canSubscribe()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type cannot subscribe"));
         }
@@ -144,9 +163,11 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
     /**
      * Use this hook method to modify the query generated used to read|subscribe to the devices,
      * for the most part this is simply the tagAddress field unchanged from the subscription
+     *
+     * Typically this would require a format of tagAddress:expectectDataType eg. "0%20:BOOL"
      */
     protected String initializeQueryForSubscription(@NotNull final T.Subscription subscription){
-        return subscription.getTagAddress();
+        return String.format("%s%s%s", subscription.getTagAddress(), TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
     }
 
     protected boolean validConfiguration(@NotNull final T config){
