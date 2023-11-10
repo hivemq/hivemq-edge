@@ -13,7 +13,8 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.messages.PlcReadResponse;
-import org.apache.plc4x.java.api.messages.PlcSubscriptionEvent;
+import org.apache.plc4x.java.api.types.PlcResponseCode;
+import org.apache.plc4x.java.api.value.PlcValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         extends AbstractPollingPerSubscriptionAdapter<T, ProtocolAdapterDataSample> {
 
     private static final Logger log = LoggerFactory.getLogger(Plc4xAdapterConfig.class);
-    private static final @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
+    private final static @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
     private final @NotNull Object lock = new Object();
     private volatile @Nullable Plc4xConnection connection;
 
@@ -101,6 +102,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 log.error("Error disconnecting from Plc4x Client", e);
                 setErrorConnectionStatus(e, null);
                 return CompletableFuture.failedFuture(e);
+            } finally {
+                connection = null;
             }
         }
         return CompletableFuture.completedFuture(null);
@@ -115,7 +118,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                     }
                     return connection.subscribe(subscription,
                             plcSubscriptionEvent ->
-                                    processSubscriptionResponse(subscription, plcSubscriptionEvent));
+                                    processReadResponse(subscription, plcSubscriptionEvent));
                 case Read:
                     if(log.isDebugEnabled()){
                         log.debug("Scheduling read of tag [{}] on connection", subscription.getTagName());
@@ -133,8 +136,10 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     protected CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(final T config, final AbstractProtocolAdapterConfig.Subscription subscription) {
         if (connection.isConnected()) {
             try {
-                CompletableFuture<? extends PlcReadResponse> request = connection.read((Plc4xAdapterConfig.Subscription) subscription);
-                return request.thenApply(response -> processReadResponse((Plc4xAdapterConfig.Subscription) subscription, response));
+                CompletableFuture<? extends PlcReadResponse> request =
+                        connection.read((Plc4xAdapterConfig.Subscription) subscription);
+                return request.thenApply(response ->
+                        processReadResponse((Plc4xAdapterConfig.Subscription) subscription, response));
             } catch(Exception e){
                 return CompletableFuture.failedFuture(e);
             }
@@ -168,56 +173,40 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     /**
      * Hook method to format data from source tag
      */
-    protected byte[] convertTagValue(@NotNull final String tag, @NotNull final byte[] rawdata){
-        return rawdata;
+    protected Object convertTagValue(@NotNull final String tag, @NotNull final PlcValue plcValue){
+        return Plc4xDataUtils.convertObject(plcValue);
+//        return Plc4xDataUtils.convertNative(plcValue);
     }
 
     public static String nullSafe(final @Nullable Object o){
         return Objects.toString(o, null);
     }
 
-    protected ProtocolAdapterDataSample processSubscriptionResponse(final @NotNull T.Subscription subscription,
-                                                                           final @NotNull PlcSubscriptionEvent subscriptionEvent){
-        return processPlcFieldData(subscription,
-                Plc4xDataUtils.readDataFromSubscriptionEvent(subscriptionEvent));
-    }
-
     protected ProtocolAdapterDataSample processReadResponse(final @NotNull T.Subscription subscription,
                                                                    final @NotNull PlcReadResponse readEvent){
-        return processPlcFieldData(subscription,
-                Plc4xDataUtils.readDataFromReadResponse(readEvent));
+        PlcResponseCode responseCode = readEvent.getResponseCode(subscription.getTagName());
+        if(responseCode == PlcResponseCode.OK){
+            if(getConnectionStatus() == ConnectionStatus.ERROR){
+                //Error was transient
+                setConnectionStatus(ConnectionStatus.CONNECTED);
+            }
+            return processPlcFieldData(subscription,
+                    Plc4xDataUtils.readDataFromReadResponse(readEvent));
+        } else {
+            return null;
+        }
     }
 
-    protected ProtocolAdapterDataSample processPlcFieldData(final @NotNull T.Subscription subscription, final @NotNull List<Pair<String, byte[]>> l){
-
-        ProtocolAdapterDataSample data = new ProtocolAdapterDataSample(null,
+    protected ProtocolAdapterDataSample processPlcFieldData(final @NotNull T.Subscription subscription, final @NotNull List<Pair<String, PlcValue>> l){
+        ProtocolAdapterDataSample data = new ProtocolAdapterDataSample(
                 subscription.getDestination(),
                 subscription.getQos());
-        Object dataValue = null;
+        //-- For every tag value associated with the sample, write a data point to be published
         if(!l.isEmpty()){
-            if(l.size() > 1){
-                Object[] arr = new Object[l.size()];
-                for (int i = 0; i < l.size(); i++) {
-                    Pair<String, byte[]> p = l.get(i);
-                    if (p.getRight() != null && p.getRight().length > 0) {
-                        try {
-                            if(log.isDebugEnabled()){
-                                log.info("Received field {} from plc4x-connection -> {}", p.getLeft(), Plc4xDataUtils.toHex(p.getRight()));
-                            }
-                            arr[i] = convertTagValue(p.getLeft(), p.getValue());
-                        } catch (Exception e) {
-                            if(log.isWarnEnabled()){
-                                log.warn("Error receiving bytes from plc4x-connection -> field {}", p.getLeft(), e);
-                            }
-                        }
-                    }
-                }
-            } else {
-                //TODO format []?
-                dataValue = convertTagValue(l.get(0).getLeft(), l.get(0).getValue());
-            }
+            l.forEach(pair ->
+                    data.addDataPoint(pair.getLeft(),
+                            convertTagValue(pair.getLeft(), pair.getValue())));
         }
-        data.setData(dataValue);
         return data;
     }
 }

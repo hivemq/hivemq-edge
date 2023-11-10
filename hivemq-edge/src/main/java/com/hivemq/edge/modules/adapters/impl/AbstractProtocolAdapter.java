@@ -19,7 +19,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.hivemq.api.model.core.Payload;
 import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
@@ -39,13 +38,11 @@ import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.validation.constraints.Null;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The abstract adapter contains the baseline coupling and basic lifecycle operations of
@@ -73,8 +70,10 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected @Nullable Long lastStartAttemptTime;
     protected @Nullable String errorMessage;
     protected @Nullable volatile Object lock = new Object();
-    protected @Nullable volatile RuntimeStatus runtimeStatus = RuntimeStatus.STOPPED;
-    protected @Nullable volatile ConnectionStatus connectionStatus = ConnectionStatus.DISCONNECTED;
+    protected @NotNull AtomicReference<RuntimeStatus> runtimeStatus =
+            new AtomicReference<>(RuntimeStatus.STOPPED);
+    protected @NotNull AtomicReference<ConnectionStatus> connectionStatus =
+            new AtomicReference<>(ConnectionStatus.DISCONNECTED);
 
     public AbstractProtocolAdapter(final @NotNull ProtocolAdapterInformation adapterInformation,
                                    final @NotNull T adapterConfig,
@@ -230,12 +229,11 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * Set the internal status indication, used by the frameworks and APIs to monitor the adapter status and offer controls around
      * state transitions.
      * @param connectionStatus - set the new status of the adapter to that supplied
+     * @return was the value updated by the operation
      */
-    protected void setConnectionStatus(@NotNull final ConnectionStatus connectionStatus){
+    protected boolean setConnectionStatus(@NotNull final ConnectionStatus connectionStatus){
         Preconditions.checkNotNull(connectionStatus);
-        synchronized (lock){
-            this.connectionStatus = connectionStatus;
-        }
+        return this.connectionStatus.getAndSet(connectionStatus) != connectionStatus;
     }
 
     /**
@@ -243,15 +241,10 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * and the errorMessage to that supplied.
      */
     protected void setErrorConnectionStatus(@Nullable final Throwable t, @NotNull final String errorMessage){
-        boolean changed = false;
-        synchronized (lock){
-            if(connectionStatus != ConnectionStatus.ERROR){
-                setConnectionStatus(ConnectionStatus.ERROR);
-                changed = true;
-            }
-        }
+        boolean changed = setConnectionStatus(ConnectionStatus.ERROR);
         reportErrorMessage(t, errorMessage, changed);
     }
+
 
     protected void setErrorConnectionStatus(@NotNull final Throwable t){
         Preconditions.checkNotNull(t);
@@ -260,15 +253,11 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
 
     protected void setRuntimeStatus(@NotNull final RuntimeStatus runtimeStatus){
         Preconditions.checkNotNull(runtimeStatus);
-        synchronized (lock){
-            this.runtimeStatus = runtimeStatus;
-        }
+        this.runtimeStatus.set(runtimeStatus);
     }
 
     protected boolean running(){
-        synchronized (lock){
-            return runtimeStatus == RuntimeStatus.STARTED;
-        }
+        return runtimeStatus.get() == RuntimeStatus.STARTED;
     }
 
     @Override
@@ -286,12 +275,12 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
 
     @Override
     public ConnectionStatus getConnectionStatus() {
-        return connectionStatus;
+        return connectionStatus.get();
     }
 
     @Override
     public RuntimeStatus getRuntimeStatus() {
-        return runtimeStatus;
+        return runtimeStatus.get();
     }
 
     protected void onStartFail(@NotNull final ProtocolAdapterStartOutput output, @NotNull final Throwable throwable){

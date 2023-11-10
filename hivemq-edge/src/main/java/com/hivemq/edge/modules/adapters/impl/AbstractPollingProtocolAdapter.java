@@ -46,6 +46,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
 
     @Override
     public CompletableFuture<Void> stop() {
+        publishCount.set(0);
         return super.stop().whenComplete((v, t) ->
                 protocolAdapterPollingService.getPollingJobsForAdapter(getId()).stream().forEach(
                     protocolAdapterPollingService::stopPolling));
@@ -53,7 +54,6 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
 
     protected CompletableFuture<PublishReturnCode> captureDataSample(final @NotNull U sample){
         Preconditions.checkNotNull(sample);
-        Preconditions.checkNotNull(sample.getData());
         Preconditions.checkNotNull(sample.getTopic());
         Preconditions.checkArgument(sample.getQos() <= 2 && sample.getQos() >= 0, "QoS needs to be a valid Quality-Of-Service value (0,1,2)");
         try {

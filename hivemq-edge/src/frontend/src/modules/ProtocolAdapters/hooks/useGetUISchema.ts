@@ -50,6 +50,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
         'httpHeaders',
         'httpConnectTimeout',
         'httpPublishSuccessStatusCodeOnly',
+        'allowUntrustedCertificates',
       ],
     },
     {
@@ -74,8 +75,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
         'pduSize',
         'retryTime',
         'retryTimeout',
-        'retryTime',
-        'retryTime',
+        'readTimeout',
       ],
     },
   ]

@@ -22,6 +22,11 @@ import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
+import java.math.BigInteger;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,7 +67,7 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         return subscriptions;
     }
 
-    @JsonPropertyOrder({"tagName", "tagAddress", "destination", "qos"})
+    @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "destination", "qos"})
     public static class Subscription extends AbstractProtocolAdapterConfig.Subscription {
 
         @JsonProperty(value = "tagName", required = true)
@@ -78,6 +83,12 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
                            required = true)
         private @NotNull String tagAddress;
 
+        @JsonProperty("dataType")
+        @ModuleConfigField(title = "Data Type",
+                           description = "The expected data type of the tag",
+                           required = true)
+        private @NotNull Plc4xDataType.DATA_TYPE dataType;
+
         public @NotNull String getTagName() {
             return tagName;
         }
@@ -85,6 +96,9 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         public String getTagAddress() {
             return tagAddress;
         }
-    }
 
+        public Plc4xDataType.DATA_TYPE getDataType() {
+            return dataType;
+        }
+    }
 }
