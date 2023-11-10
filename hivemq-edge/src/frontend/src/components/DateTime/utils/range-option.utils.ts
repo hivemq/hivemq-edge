@@ -1,6 +1,5 @@
 import { DateTime, Duration } from 'luxon'
 import { RangeOption } from '@/components/DateTime/types.ts'
-import { Namespace, TFunction } from 'i18next'
 
 const defaultRangeOption: readonly RangeOption[] = [
   { value: 'more', label: 'More...', colorScheme: 'yellow', isCommand: true, isDisabled: true },
@@ -105,14 +104,4 @@ export const makeDefaultRangeOption = (min: DateTime | undefined, max: DateTime 
   sortedOptions.push(...defaultRangeOption)
 
   return sortedOptions
-}
-
-export const badgeFrom = (range: RangeOption, t: TFunction<Namespace>) => {
-  if (!range.duration) return undefined
-
-  const entries = Object.entries(range.duration.toObject())
-  if (!entries.length) return undefined
-
-  const [key, value] = entries[0]
-  return t(`DateTimeRangeSelector.label.badge.${key}`, { value })
 }
