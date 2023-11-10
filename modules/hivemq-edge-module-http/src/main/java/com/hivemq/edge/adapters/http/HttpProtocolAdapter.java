@@ -28,11 +28,20 @@ import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
+import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
@@ -77,11 +86,14 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
     protected void initializeHttpRequest(@NotNull final HttpAdapterConfig config){
         if(HttpUtils.validHttpOrHttpsUrl(config.getUrl())){
             //initialize client
-            httpClient = HttpClient.newBuilder()
-                    .version(HttpClient.Version.HTTP_1_1)
+            HttpClient.Builder builder = HttpClient.newBuilder();
+            builder.version(HttpClient.Version.HTTP_1_1)
                     .followRedirects(HttpClient.Redirect.NORMAL)
-                    .connectTimeout(Duration.ofSeconds(config.getHttpConnectTimeout()))
-                    .build();
+                    .connectTimeout(Duration.ofSeconds(config.getHttpConnectTimeout()));
+            if(config.isAllowUntrustedCertificates()) {
+                builder.sslContext(createTrustAllContext());
+            }
+            httpClient = builder.build();
             startPolling(new Sampler(config));
         } else {
             setErrorConnectionStatus(null, "Invalid URL supplied");
@@ -186,9 +198,49 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         HttpData data = new HttpData(adapterConfig.getUrl(),
                 response.statusCode(),
                 responseContentType,
-                payloadData,
                 config.getDestination(),
                 config.getQos());
+        data.addDataPoint("httpResponsePayload", payloadData);
         return data;
     }
+
+   protected SSLContext createTrustAllContext()  {
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            X509ExtendedTrustManager trustManager = new X509ExtendedTrustManager() {
+                @Override
+                public void checkClientTrusted(final X509Certificate[] x509Certificates, final String s) {
+                }
+                @Override
+                public void checkServerTrusted(final X509Certificate[] x509Certificates, final String s) {
+                }
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return new X509Certificate[0];
+                }
+                @Override
+                public void checkClientTrusted(final X509Certificate[] x509Certificates, final String s, final Socket socket) {
+                }
+                @Override
+                public void checkServerTrusted(final X509Certificate[] x509Certificates, final String s, final Socket socket) {
+                }
+                @Override
+                public void checkClientTrusted(
+                        final X509Certificate[] x509Certificates,
+                        final String s,
+                        final SSLEngine sslEngine) {
+                }
+                @Override
+                public void checkServerTrusted(
+                        final X509Certificate[] x509Certificates,
+                        final String s,
+                        final SSLEngine sslEngine) {
+                }
+            };
+            sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());
+            return sslContext;
+        } catch(NoSuchAlgorithmException | KeyManagementException e){
+            throw new RuntimeException(e);
+        }
+   }
 }
