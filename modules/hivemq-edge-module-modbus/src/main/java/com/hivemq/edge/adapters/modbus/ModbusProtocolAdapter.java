@@ -108,7 +108,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected CompletableFuture<PublishReturnCode> captureDataSample(@NotNull final ModBusData data) {
+    protected CompletableFuture<?> captureDataSample(@NotNull final ModBusData data) {
         boolean publishData = true;
         if (adapterConfig.getPublishChangedDataOnly()) {
             ModBusData previousSample = lastSamples.put(data.getType(), data);
@@ -168,9 +168,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
             ModbusAdapterConfig.AddressRange addressRange = subscription.getAddressRange();
             Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
                     addressRange.endIdx - addressRange.startIdx);
-            ModBusData data = new ModBusData(subscription.getDestination(), subscription.getQos(),
-                    ModBusData.TYPE.HOLDING_REGISTERS);
-
+            ModBusData data = new ModBusData(subscription, ModBusData.TYPE.HOLDING_REGISTERS);
             //add data point per register
             for (int i = 0; i < registers.length; i++){
                 data.addDataPoint("register-"+(addressRange.startIdx + i), registers[i]);

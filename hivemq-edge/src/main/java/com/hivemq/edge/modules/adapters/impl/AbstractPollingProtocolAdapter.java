@@ -2,6 +2,8 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.adapters.model.impl.ProtocolAdapterPollingSamplerImpl;
@@ -15,7 +17,9 @@ import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
+import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -52,28 +56,35 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
                     protocolAdapterPollingService::stopPolling));
     }
 
-    protected CompletableFuture<PublishReturnCode> captureDataSample(final @NotNull U sample){
+    protected CompletableFuture<?> captureDataSample(final @NotNull U sample){
         Preconditions.checkNotNull(sample);
         Preconditions.checkNotNull(sample.getTopic());
         Preconditions.checkArgument(sample.getQos() <= 2 && sample.getQos() >= 0, "QoS needs to be a valid Quality-Of-Service value (0,1,2)");
         try {
-            byte[] json = convertToJson(sample);
-            if(publishCount.incrementAndGet() == 1){
-                eventService.fireEvent(eventBuilder(Event.SEVERITY.INFO).
-                        withMessage(String.format("Adapter took first sample to be published to '%s'", sample.getTopic())).
-                        withPayload(EventUtils.generateJsonPayload(json)).build());
+            final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
+            List<AbstractProtocolAdapterJsonPayload> payloads = convertAdapterSampleToPublishes(sample);
+            for (AbstractProtocolAdapterJsonPayload payload : payloads){
+                byte[] json = convertToJson(payload);
+                final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
+                        .withTopic(sample.getTopic())
+                        .withQoS(sample.getQos())
+                        .withPayload(json);
+                final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
+                publishFuture.thenAccept(publishReturnCode -> {
+                    protocolAdapterMetricsHelper.incrementReadPublishSuccess();
+                    if(publishCount.incrementAndGet() == 1){
+                        eventService.fireEvent(eventBuilder(Event.SEVERITY.INFO).
+                                withMessage(String.format("Adapter took first sample to be published to '%s'", sample.getTopic())).
+                                withPayload(EventUtils.generateJsonPayload(json)).build());
+                    }
+                })
+                .exceptionally(throwable -> {
+                    protocolAdapterMetricsHelper.incrementReadPublishFailure();
+                    log.warn("Error Publishing Adapter Payload", throwable); return null;
+                });
+                publishFutures.add(publishFuture);
             }
-            final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
-                    .withTopic(sample.getTopic())
-                    .withPayload(json)
-                    .withQoS(sample.getQos());
-            final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
-            publishFuture.thenAccept(publishReturnCode -> protocolAdapterMetricsHelper.incrementReadPublishSuccess())
-                    .exceptionally(throwable -> {
-                        protocolAdapterMetricsHelper.incrementReadPublishFailure();
-                        log.warn("Error Publishing Adapter Payload", throwable); return null;
-                    });
-            return publishFuture;
+            return CompletableFuture.allOf(publishFutures.build().toArray(new CompletableFuture[0]));
         } catch(Exception e){
             return CompletableFuture.failedFuture(e);
         }

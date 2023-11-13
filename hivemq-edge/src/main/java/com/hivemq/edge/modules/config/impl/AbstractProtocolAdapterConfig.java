@@ -33,6 +33,11 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
 
     public static class Subscription {
 
+        public enum MessageHandlingOptions {
+            MQTTMessagePerTag,
+            MQTTMessagePerSubscription
+        }
+
         @JsonProperty(value = "destination", required = true)
         @ModuleConfigField(title = "Destination Topic",
                            description = "The topic to publish data on",
@@ -48,6 +53,27 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
                            numberMax = 2,
                            defaultValue = "0")
         private int qos = 0;
+
+        @JsonProperty(value = "messageHandlingOptions", required = true)
+        @ModuleConfigField(title = "Message Handling Options",
+                           description = "The topic to publish data on",
+                           required = true,
+                           enumDisplayValues = {"MQTT Message Per Device Tag",
+                                                "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
+                           defaultValue = "MQTTMessagePerTag")
+        private @Nullable MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
+
+        @JsonProperty(value = "includeTimestamp", required = true)
+        @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
+                           description = "Include the unix timestamp of the sample time in the resulting MQTT message",
+                           defaultValue = "true")
+        private @Nullable Boolean includeTimestamp = Boolean.TRUE;
+
+        @JsonProperty(value = "includeTagNames", required = true)
+        @ModuleConfigField(title = "Include Tag Names In Publish?",
+                           description = "Include the names of the tags in the resulting MQTT publish",
+                           defaultValue = "true")
+        private @Nullable Boolean includeTagNames = Boolean.TRUE;
 
         public Subscription() {
         }
@@ -67,6 +93,20 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
         public int getQos() {
             return qos;
         }
+
+        public MessageHandlingOptions getMessageHandlingOptions() {
+            return messageHandlingOptions;
+        }
+
+        public Boolean getIncludeTimestamp() {
+            return includeTimestamp;
+        }
+
+        public Boolean getIncludeTagNames() {
+            return includeTagNames;
+        }
     }
+
+
 
 }

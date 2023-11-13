@@ -13,29 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.modules.adapters.impl;
+package com.hivemq.edge.modules.adapters.data;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
  */
-public class ProtocolAdapterPublisherJsonPayload {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class ProtocolAdapterPublisherJsonPayload extends AbstractProtocolAdapterJsonPayload {
 
-    private Object value;
-    private Long timestamp;
+   private @NotNull TagSample sample;
 
-    public Object getValue() {
-        return value;
+    public ProtocolAdapterPublisherJsonPayload(final @Nullable Long timestamp, final @NotNull TagSample sample) {
+        super(timestamp);
+        this.sample = sample;
     }
 
-    public void setValue(final Object value) {
-        this.value = value;
-    }
-
-    public Long getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(final Long timestamp) {
-        this.timestamp = timestamp;
+    public TagSample getSample() {
+        return sample;
     }
 }

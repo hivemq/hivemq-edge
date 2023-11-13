@@ -15,13 +15,18 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
+import ch.qos.logback.core.joran.conditional.ElseAction;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
+import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterMultiPublishJsonPayload;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload;
+import com.hivemq.edge.modules.adapters.data.TagSample;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryOutput;
@@ -41,8 +46,11 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * The abstract adapter contains the baseline coupling and basic lifecycle operations of
@@ -102,17 +110,47 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * @param data - The data you wish to wrap into the standard JSONB envelope
      * @return a valid JSON document encoded to UTF-8 with the supplied value wrapped as an attribute on the envelope
      */
-    public byte[] convertToJson(final @NotNull ProtocolAdapterDataSample data) throws ProtocolAdapterException {
+    public List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(final @NotNull ProtocolAdapterDataSample<?> data) {
+        Preconditions.checkNotNull(data);
+        List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
+        //-- Only include the timestamp if the settings say so
+        Long timestamp = data.getSubscription().getIncludeTimestamp() ? data.getTimestamp() : null;
+        if(data.getDataPoints().size() > 1 &&
+                data.getSubscription().getMessageHandlingOptions() ==
+                        AbstractProtocolAdapterConfig.Subscription.MessageHandlingOptions.MQTTMessagePerSubscription){
+            //-- Put all derived samples into a single MQTT message
+            list.add(createMultiPublishPayload(timestamp, data.getDataPoints(), data.getSubscription().getIncludeTagNames()));
+        } else {
+            //-- Put all derived samples into individual publish messages
+            data.getDataPoints().stream().map(dp ->
+                    createPublishPayload(timestamp, dp, data.getSubscription().getIncludeTagNames())).
+                    forEach(list::add);
+        }
+        return list;
+    }
+
+    protected ProtocolAdapterPublisherJsonPayload createPublishPayload(final Long timestamp, ProtocolAdapterDataSample.DataPoint dataPoint, boolean includeTagName){
+        return new ProtocolAdapterPublisherJsonPayload(timestamp, createTagSample(dataPoint, includeTagName));
+    }
+
+    protected AbstractProtocolAdapterJsonPayload createMultiPublishPayload(final Long timestamp, List<ProtocolAdapterDataSample.DataPoint> dataPoint, boolean includeTagName){
+        return new ProtocolAdapterMultiPublishJsonPayload(timestamp, dataPoint.stream().map(dp -> createTagSample(dp, includeTagName)).collect(Collectors.toList()));
+    }
+
+    protected static TagSample createTagSample(final @NotNull ProtocolAdapterDataSample.DataPoint dataPoint, boolean includeTagName){
+        return new TagSample(includeTagName ? dataPoint.getTagName() : null, dataPoint.getTagValue());
+    }
+
+    /**
+     * Converts the supplied object into a valid JSON document which wraps a new timestamp and the
+     * supplied object as the value
+     * @param data - The data you wish to wrap into the standard JSONB envelope
+     * @return a valid JSON document encoded to UTF-8 with the supplied value wrapped as an attribute on the envelope
+     */
+    public byte[] convertToJson(final @NotNull AbstractProtocolAdapterJsonPayload data) throws ProtocolAdapterException {
         try {
             Preconditions.checkNotNull(data);
-            ProtocolAdapterPublisherJsonPayload payload = new ProtocolAdapterPublisherJsonPayload();
-            payload.setValue(data);
-            if(data.getTimestamp() > 0){
-                payload.setTimestamp(data.getTimestamp());
-            } else {
-                payload.setTimestamp(System.currentTimeMillis());
-            }
-            return objectMapper.writeValueAsBytes(payload);
+            return objectMapper.writeValueAsBytes(data);
         } catch(JsonProcessingException e){
             throw new ProtocolAdapterException("Error Wrapping Adapter Data", e);
         }

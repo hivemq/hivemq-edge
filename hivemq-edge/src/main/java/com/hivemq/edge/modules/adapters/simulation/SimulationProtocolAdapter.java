@@ -64,9 +64,7 @@ public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAda
             final SimulationAdapterConfig config,
             final AbstractProtocolAdapterConfig.Subscription subscription) {
         ProtocolAdapterDataSample dataSample =
-                new ProtocolAdapterDataSample(
-                    subscription.getDestination(),
-                    subscription.getQos());
+                new ProtocolAdapterDataSample(subscription);
 
         dataSample.addDataPoint("sample", ThreadLocalRandom.current().nextDouble(
                 Math.min(config.getMinValue(), config.getMaxValue()),

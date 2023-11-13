@@ -21,6 +21,7 @@ import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.impl.AbstractPollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.http.core.HttpUtils;
@@ -51,6 +52,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdapterConfig, HttpData> {
 
+    private static final String RESPONSE_DATA = "httpResponseData";
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
     private HttpClient httpClient = null;
 
@@ -104,7 +106,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         return statusCode >= 200 && statusCode <= 299;
     }
 
-    protected CompletableFuture<PublishReturnCode> captureDataSample(final @NotNull HttpData data){
+    protected CompletableFuture<?> captureDataSample(final @NotNull HttpData data){
         boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) || !adapterConfig.isHttpPublishSuccessStatusCodeOnly();
         setConnectionStatus(isSuccessStatusCode(data.getHttpStatusCode()) ? ConnectionStatus.STATELESS : ConnectionStatus.ERROR);
         if (publishData) {
@@ -195,12 +197,12 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
                 }
             }
         }
-        HttpData data = new HttpData(adapterConfig.getUrl(),
+        HttpData data = new HttpData(
+                new AbstractProtocolAdapterConfig.Subscription(config.getDestination(), config.getQos()),
+                adapterConfig.getUrl(),
                 response.statusCode(),
-                responseContentType,
-                config.getDestination(),
-                config.getQos());
-        data.addDataPoint("httpResponsePayload", payloadData);
+                responseContentType);
+        data.addDataPoint(RESPONSE_DATA, payloadData);
         return data;
     }
 

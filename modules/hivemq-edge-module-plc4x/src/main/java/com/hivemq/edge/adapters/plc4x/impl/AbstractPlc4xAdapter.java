@@ -214,9 +214,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     }
 
     protected ProtocolAdapterDataSample processPlcFieldData(final @NotNull T.Subscription subscription, final @NotNull List<Pair<String, PlcValue>> l){
-        ProtocolAdapterDataSample data = new ProtocolAdapterDataSample(
-                subscription.getDestination(),
-                subscription.getQos());
+        ProtocolAdapterDataSample data = new ProtocolAdapterDataSample(subscription);
         //-- For every tag value associated with the sample, write a data point to be published
         if(!l.isEmpty()){
             l.forEach(pair ->

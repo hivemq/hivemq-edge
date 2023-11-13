@@ -3,6 +3,7 @@ package com.hivemq.edge.modules.adapters.data;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.base.Preconditions;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -17,72 +18,62 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Simon L Johnson
  */
-public class ProtocolAdapterDataSample {
+public class ProtocolAdapterDataSample<T extends AbstractProtocolAdapterConfig> {
 
-    protected long timestamp = 0;
-    protected String topic;
-    protected int qos;
+    protected Long timestamp = System.currentTimeMillis();
+    protected T.Subscription subscription;
 
     //-- Handle multiple tags in the same sample
-    protected List<DataPoint> dataPointValues = new CopyOnWriteArrayList<>();
+    protected List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
-    public ProtocolAdapterDataSample(final @NotNull String topic, final int qos) {
-        this.topic = topic;
-        this.qos = qos;
+    public ProtocolAdapterDataSample(final @NotNull T.Subscription subscription) {
+        this.subscription = subscription;
+    }
+
+    @JsonIgnore
+    public T.Subscription getSubscription() {
+        return subscription;
     }
 
     @JsonIgnore
     public String getTopic() {
-        return topic;
-    }
-
-    public void setTopic(final String topic) {
-        this.topic = topic;
+        return subscription.getDestination();
     }
 
     @JsonIgnore
     public int getQos() {
-        return qos;
-    }
-
-    public void setQos(final int qos) {
-        this.qos = qos;
+        return subscription.getQos();
     }
 
     @JsonIgnore
-    public long getTimestamp() {
+    public Long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(final long timestamp) {
+    public void setTimestamp(final Long timestamp) {
         this.timestamp = timestamp;
     }
 
-    public void addDataPoint(final @NotNull String tagName, final @NotNull Object data){
+    public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue){
         Preconditions.checkNotNull(tagName);
-        Preconditions.checkNotNull(data);
-        dataPointValues.add(new DataPoint(tagName,data));
+        Preconditions.checkNotNull(tagValue);
+        dataPoints.add(new DataPoint(tagName,tagValue));
     }
 
     public List<DataPoint> getDataPoints(){
-        return Collections.unmodifiableList(dataPointValues);
-    }
-
-    @JsonIgnore
-    public DataPoint getLastDataPoint(){
-        return dataPointValues.isEmpty() ? null : dataPointValues.get(dataPointValues.size() - 1);
+        return Collections.unmodifiableList(dataPoints);
     }
 
     public static class DataPoint {
-        private final Object data;
+        private final Object tagValue;
         private final String tagName;
-        public DataPoint(final @NotNull String tagName, final @NotNull Object data) {
+        public DataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
             this.tagName = tagName;
-            this.data = data;
+            this.tagValue = tagValue;
         }
 
-        public Object getData() {
-            return data;
+        public Object getTagValue() {
+            return tagValue;
         }
 
         public String getTagName() {
@@ -94,12 +85,12 @@ public class ProtocolAdapterDataSample {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             final DataPoint dataPoint = (DataPoint) o;
-            return Objects.equals(data, dataPoint.data) && Objects.equals(tagName, dataPoint.tagName);
+            return Objects.equals(tagValue, dataPoint.tagValue) && Objects.equals(tagName, dataPoint.tagName);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(data, tagName);
+            return Objects.hash(tagValue, tagName);
         }
     }
 }
