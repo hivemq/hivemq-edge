@@ -21,6 +21,7 @@ const OptionBadge: FC<OptionBadgeProps> = ({ data }) => {
       textTransform={'lowercase'}
       size={'sm'}
       data-testid={`dateRange-option-badge-${data.value}`}
+      data-group={data.colorScheme}
       variant="solid"
       colorScheme={data.colorScheme}
       mr={2}
