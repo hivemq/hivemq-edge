@@ -16,8 +16,10 @@
 package com.hivemq.api.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.victools.jsonschema.generator.FieldScope;
+import com.github.victools.jsonschema.generator.InstanceAttributeOverrideV2;
 import com.github.victools.jsonschema.generator.MemberScope;
 import com.github.victools.jsonschema.generator.MethodScope;
 import com.github.victools.jsonschema.generator.Module;
@@ -37,8 +39,11 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
 
 public class CustomConfigSchemaGenerator {
+
+    public static final String ENUM_NAMES_ATTRIBUTE = "enumNames";
 
     public @NotNull JsonNode generateJsonSchema(final @NotNull Class<? extends CustomConfig> clazz) {
         SchemaGeneratorConfigBuilder configBuilder =
@@ -47,9 +52,32 @@ public class CustomConfigSchemaGenerator {
                         JacksonOption.INCLUDE_ONLY_JSONPROPERTY_ANNOTATED_METHODS,
                         JacksonOption.RESPECT_JSONPROPERTY_ORDER)).
                     with(new ModuleConfigSchemaGeneratorModule());
+        withEnumDisplayNameProvider(configBuilder);
         SchemaGeneratorConfig config = configBuilder.build();
         SchemaGenerator generator = new SchemaGenerator(config);
         return generator.generateSchema(clazz);
+    }
+
+
+    /**
+     * There is no default way to provide "displayNames" for enum types, the actual way to do it is provide a secondary array
+     * where the indices match the value indices with the names. This can be provided by using the field configuration object
+     * "enumDisplayNames {}"
+     */
+    private static void withEnumDisplayNameProvider(final @NotNull SchemaGeneratorConfigBuilder configBuilder){
+        configBuilder.forFields().withInstanceAttributeOverride((collectedMemberAttributes, member, context) -> {
+            ModuleConfigField configField = member.getAnnotation(ModuleConfigField.class);
+            if(configField != null){
+                String[] displayValues = configField.enumDisplayValues();
+                if(displayValues != null && displayValues.length > 0){
+                    ArrayNode node = (ArrayNode) collectedMemberAttributes.get(ENUM_NAMES_ATTRIBUTE);
+                    if(node == null){
+                        node = collectedMemberAttributes.putArray(ENUM_NAMES_ATTRIBUTE);
+                    }
+                    Arrays.stream(displayValues).forEach(node::add);
+                }
+            }
+        });
     }
 
     private static class ModuleConfigSchemaGeneratorModule implements Module {
@@ -67,7 +95,6 @@ public class CustomConfigSchemaGenerator {
                     .withArrayUniqueItemsResolver(this::arrayUniqueItems)
                     .withDescriptionResolver(this::description)
                     .withStringFormatResolver(this::stringFormat)
-//                    .withEnumResolver(this::resolveAllowableValues)
                     .withDefaultResolver(this::defaultValue)
                     .withRequiredCheck(this::required)
                     .withReadOnlyCheck(this::readOnly)

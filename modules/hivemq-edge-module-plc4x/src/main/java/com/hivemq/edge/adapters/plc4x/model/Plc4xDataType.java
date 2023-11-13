@@ -1,5 +1,7 @@
 package com.hivemq.edge.adapters.plc4x.model;
 
+import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
+
 import java.math.BigInteger;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -42,8 +44,6 @@ public class Plc4xDataType {
         LTIME_OF_DAY((short) 0x56, LocalTime.class),
         DATE_AND_TIME((short) 0x57, LocalDateTime.class),
         LDATE_AND_TIME((short) 0x58, LocalDateTime.class),
-        //        Struct((short) 0x61, HashMap .class),
-//        List((short) 0x62, ArrayList.class),
         RAW_BYTE_ARRAY((short) 0x71, Byte.class);
 
 

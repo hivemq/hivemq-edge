@@ -83,9 +83,40 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
                            required = true)
         private @NotNull String tagAddress;
 
+
         @JsonProperty("dataType")
         @ModuleConfigField(title = "Data Type",
                            description = "The expected data type of the tag",
+                           enumDisplayValues = {"Null",
+                                                "Boolean",
+                                                "Byte",
+                                                "Word (unit 16)",
+                                                "DWord (uint 32)",
+                                                "LWord (uint 64)",
+                                                "USint (uint 8)",
+                                                "Uint (uint 16)",
+                                                "UDint (uint 32)",
+                                                "ULint (uint 64)",
+                                                "Sint (int 8)",
+                                                "Int (int 16)",
+                                                "Dint (int 32)",
+                                                "Lint (int 64)",
+                                                "Real (float)",
+                                                "LReal (double)",
+                                                "Char (1 byte char)",
+                                                "WChar (2 byte char)",
+                                                "String",
+                                                "WString",
+                                                "Timing (Duration)",
+                                                "Long Timing (Duration)",
+                                                "Date (DateStamp)",
+                                                "Long Date (DateStamp)",
+                                                "Time Of Day (TimeStamp)",
+                                                "Long Time Of Day (TimeStamp)",
+                                                "Date Time (DateTimeStamp)",
+                                                "Long Date Time (DateTimeStamp)",
+                                                "Raw Byte Array"
+                           },
                            required = true)
         private @NotNull Plc4xDataType.DATA_TYPE dataType;
 

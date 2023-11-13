@@ -81,6 +81,11 @@ public @interface ModuleConfigField {
     @Nullable String stringPattern() default "";
 
     /**
+     * Use this on enum types if you wish to override the default display-names for a given enum value
+     */
+    String[] enumDisplayValues() default {};
+
+    /**
      * Required properties, properties can't be null
      */
     boolean required() default false;
