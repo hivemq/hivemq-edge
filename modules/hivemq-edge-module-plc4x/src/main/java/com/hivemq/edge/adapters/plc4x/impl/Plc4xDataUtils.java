@@ -1,5 +1,6 @@
 package com.hivemq.edge.adapters.plc4x.impl;
 
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.message.publish.PUBLISH;

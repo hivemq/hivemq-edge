@@ -32,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         extends AbstractPollingPerSubscriptionAdapter<T, ProtocolAdapterDataSample> {
 
+    static final String TAG_ADDRESS_TYPE_SEP = ":";
     private static final Logger log = LoggerFactory.getLogger(Plc4xAdapterConfig.class);
     private final static @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
     private final @NotNull Object lock = new Object();
@@ -60,6 +61,11 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                             @Override
                             protected String getProtocol() {
                                 return getProtocolHandler();
+                            }
+
+                            @Override
+                            protected String getTagAddressForSubscription(final Plc4xAdapterConfig.Subscription subscription) {
+                                return createTagAddressForSubscription(subscription);
                             }
                         };
                         setConnectionStatus(ConnectionStatus.CONNECTED);
@@ -158,6 +164,16 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
      * @return Decides on the mode of reading data from the underlying connection
      */
     protected abstract ReadType getReadType();
+
+    /**
+     * Use this hook method to modify the query generated used to read|subscribe to the devices,
+     * for the most part this is simply the tagAddress field unchanged from the subscription
+     *
+     * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
+     */
+    protected String createTagAddressForSubscription(@NotNull final T.Subscription subscription){
+        return String.format("%s%s%s", subscription.getTagAddress(), TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
+    }
 
 
     /**

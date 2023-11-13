@@ -4,7 +4,6 @@ import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import org.apache.plc4x.java.DefaultPlcDriverManager;
 import org.apache.plc4x.java.api.PlcConnection;
 import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.exceptions.PlcConnectionException;
@@ -22,7 +21,6 @@ import java.util.function.Consumer;
 
 public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
 
-    static final String TAG_ADDRESS_TYPE_SEP = ":";
     private static final Logger log = LoggerFactory.getLogger(Plc4xConnection.class);
     private final Object lock = new Object();
     private final @NotNull PlcDriverManager plcDriverManager;
@@ -123,13 +121,15 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
             log.debug("Sending direct-read request to connection for {}", subscription.getTagName());
         }
         PlcReadRequest.Builder builder = plcConnection.readRequestBuilder();
-        builder.addTagAddress(subscription.getTagName(), initializeQueryForSubscription(subscription));
+        builder.addTagAddress(subscription.getTagName(), getTagAddressForSubscription(subscription));
         PlcReadRequest readRequest = builder.build();
         //Ok - seems the reads are not thread safe
         synchronized (lock){
             return readRequest.execute();
         }
     }
+
+
 
     public CompletableFuture<? extends PlcSubscriptionResponse> subscribe(final @NotNull T.Subscription subscription, final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
         lazyConnectionCheck();
@@ -142,7 +142,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
         final PlcSubscriptionRequest.Builder builder = plcConnection.subscriptionRequestBuilder();
 
         //TODO we're only registering for state change, could also register events
-        builder.addChangeOfStateTagAddress(subscription.getTagName(), initializeQueryForSubscription(subscription));
+        builder.addChangeOfStateTagAddress(subscription.getTagName(), getTagAddressForSubscription(subscription));
         PlcSubscriptionRequest subscriptionRequest = builder.build();
         CompletableFuture<PlcSubscriptionResponse> future =
                 (CompletableFuture<PlcSubscriptionResponse>) subscriptionRequest.execute();
@@ -160,15 +160,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
         return future;
     }
 
-    /**
-     * Use this hook method to modify the query generated used to read|subscribe to the devices,
-     * for the most part this is simply the tagAddress field unchanged from the subscription
-     *
-     * Typically this would require a format of tagAddress:expectectDataType eg. "0%20:BOOL"
-     */
-    protected String initializeQueryForSubscription(@NotNull final T.Subscription subscription){
-        return String.format("%s%s%s", subscription.getTagAddress(), TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
-    }
+
 
     protected boolean validConfiguration(@NotNull final T config){
         return config.getHost() != null && config.getPort() > 0 && config.getPort() <
@@ -179,4 +171,9 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
      * Concrete implementations should provide the protocol with which they are connecting
      */
     protected abstract String getProtocol();
+
+    /**
+     * Each adapter type will have its own address format. The implementation should provide the defaults
+     */
+    protected abstract String getTagAddressForSubscription(T.Subscription subscription);
 }

@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.plc4x.types.ads;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
@@ -51,6 +52,10 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig> {
         return ReadType.Read;
     }
 
+    @Override
+    protected String createTagAddressForSubscription(final Plc4xAdapterConfig.Subscription subscription) {
+        return subscription.getTagAddress();
+    }
 
     @Override
     protected Map<String, String> createQueryStringParams(final @NotNull ADSAdapterConfig config) {
