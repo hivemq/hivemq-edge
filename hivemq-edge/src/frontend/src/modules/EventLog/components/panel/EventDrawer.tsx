@@ -20,9 +20,11 @@ import {
 } from '@chakra-ui/react'
 
 import { Event, Payload } from '@/api/__generated__'
-import SourceLink from '../SourceLink.tsx'
 import SeverityBadge from '@/modules/EventLog/components/SeverityBadge.tsx'
 import { prettifyXml, prettyJSON } from '@/modules/EventLog/utils/payload-utils.ts'
+import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
+
+import SourceLink from '../SourceLink.tsx'
 
 interface BridgeMainDrawerProps {
   event: Event
@@ -66,7 +68,7 @@ const EventDrawer: FC<BridgeMainDrawerProps> = ({ event, isOpen, onClose }) => {
                       <Text>{t('eventLog.table.header.created')}</Text>
                     </GridItem>
                     <GridItem data-testid={'event-value-created'}>
-                      <Text> {DateTime.fromISO(event?.created || '').toRelativeCalendar({ unit: 'minutes' })}</Text>
+                      <DateTimeRenderer date={DateTime.fromISO(event?.created || '')} />
                     </GridItem>
                     <GridItem data-testid={'event-title-source'}>
                       <Text>{t('eventLog.table.header.source')}</Text>
