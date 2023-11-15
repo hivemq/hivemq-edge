@@ -70,12 +70,3 @@ Cypress.Commands.add('mountWithProviders', (component, options = {}) => {
 
   return mount(wrapped, mountOptions)
 })
-
-Cypress.on('test:before:run', () => {
-  Cypress.automation('remote:debugger:protocol', {
-    command: 'Emulation.setLocaleOverride',
-    params: {
-      locale: 'en-GB',
-    },
-  })
-})
