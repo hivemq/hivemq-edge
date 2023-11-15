@@ -93,10 +93,11 @@ const PaginatedTable = <T,>({
                     verticalAlign={'top'}
                     aria-sort={getAriaSort(header.column.getCanSort(), header.column.getIsSorted())}
                   >
-                    <VStack>
+                    <VStack alignItems={'flex-start'}>
                       {header.isPlaceholder && null}
                       {!header.isPlaceholder && header.column.getCanSort() && (
                         <Button
+                          px={1}
                           onClick={header.column.getToggleSortingHandler()}
                           size={'sm'}
                           variant="ghost"
