@@ -6,6 +6,9 @@ import { MOCK_DATE_TIME_NOW } from './utils/range-option.mocks.ts'
 describe('DateTimeRenderer', () => {
   beforeEach(() => {
     cy.viewport(800, 400)
+    cy.window().then((win) => {
+      Object.defineProperty(win.navigator, 'language', { value: 'en-GB' })
+    })
   })
 
   it('should render properly', () => {
