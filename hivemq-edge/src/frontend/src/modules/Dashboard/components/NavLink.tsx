@@ -25,7 +25,7 @@ export const NavLink: FC<{ link: MainNavLinkType }> = ({ link }) => {
       borderLeftWidth={active ? 8 : 0}
       borderRadius={0}
     >
-      <HStack spacing="3" fontSize="sm" fontWeight={active ? 'semibold' : 'medium'} ml={active ? '-8px' : 0}>
+      <HStack spacing="3" fontSize="sm" fontWeight={active ? 'semibold' : 'medium'} ml={active ? 0 : 2}>
         <Center w="6" h="6">
           {icon}
         </Center>
