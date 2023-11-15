@@ -40,6 +40,7 @@ interface PaginatedTableProps<T> {
   pageSizes?: number[]
   noDataText?: string
   enableColumnFilters?: boolean
+  enablePagination?: boolean
   /**
    * Define row styles
    */
@@ -55,6 +56,7 @@ const PaginatedTable = <T,>({
   noDataText,
   getRowStyles,
   enableColumnFilters = false,
+  enablePagination = true,
 }: PaginatedTableProps<T>) => {
   const { t } = useTranslation()
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -158,7 +160,7 @@ const PaginatedTable = <T,>({
           </Tbody>
         </TableUI>
       </TableContainer>
-      <PaginationBar table={table} pageSizes={pageSizes} />
+      {enablePagination && <PaginationBar table={table} pageSizes={pageSizes} />}
     </>
   )
 }
