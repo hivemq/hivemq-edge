@@ -27,5 +27,22 @@
       "noOptionsMessage": "No topic loaded",
       "createLabel": "Add the topic ... {{topic}}"
     }
+  },
+  "DateTimeRangeSelector": {
+    "placeholder": "Select a date",
+    "noOptionsMessage": "Not a valid date",
+    "formatCreateLabel": "Create {{ date }}",
+    "ariaLabel": "Select a date",
+    "label": {
+      "badge": {
+        "years": "{{ value }}y",
+        "months": "{{ value }}mo",
+        "weeks": "{{ value }}w",
+        "days": "{{ value }}d",
+        "hours": "{{ value }}h",
+        "minutes": "{{ value }}m",
+        "seconds": "{{ value }}s"
+      }
+    }
   }
 }

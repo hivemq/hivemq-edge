@@ -3,11 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { Column } from '@tanstack/react-table'
 import { CreatableSelect } from 'chakra-react-select'
 import { Box } from '@chakra-ui/react'
+import { DateTime } from 'luxon'
+
+import DateTimeRangeSelector from '@/components/DateTime/DateTimeRangeSelector.tsx'
 
 export interface FilterProps<T>
   extends Pick<
     Column<T, unknown>,
-    'id' | 'getFilterValue' | 'getFacetedUniqueValues' | 'getFacetedMinMaxValues' | 'setFilterValue'
+    'id' | 'getFilterValue' | 'getFacetedUniqueValues' | 'getFacetedMinMaxValues' | 'setFilterValue' | 'columnDef'
   > {
   firstValue: unknown
 }
@@ -16,9 +19,10 @@ export const Filter = <T,>({
   id,
   // getFilterValue,
   getFacetedUniqueValues,
-  // getFacetedMinMaxValues,
+  getFacetedMinMaxValues,
   setFilterValue,
   firstValue,
+  columnDef,
 }: FilterProps<T>) => {
   const { t } = useTranslation()
 
@@ -28,6 +32,30 @@ export const Filter = <T,>({
     [facetedUniqueValues, firstValue]
   )
 
+  // @ts-ignore Find a better to fix this
+  const { sortType } = columnDef
+
+  if (typeof firstValue === 'number' && sortType === 'datetime') {
+    // TODO[NVL] This is a weird typing, as the function doesn't match the type
+    const [a, b] = getFacetedMinMaxValues() || [undefined, undefined]
+    const min = Number(a)
+    const max = Number(b)
+
+    return (
+      <Box w={'100%'} textTransform={'none'} fontWeight={'initial'}>
+        <DateTimeRangeSelector
+          min={DateTime.fromMillis(min)}
+          max={DateTime.fromMillis(max)}
+          setFilterValue={(v) => {
+            if (v) setFilterValue([v[0], v[1]])
+            else setFilterValue(undefined)
+          }}
+        />
+      </Box>
+    )
+  }
+
+  // we are not supporting numbers yet
   if (typeof firstValue === 'number') return null
 
   return (
