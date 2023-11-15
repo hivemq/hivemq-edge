@@ -50,10 +50,10 @@ export const mockEdgeEvent = (n = maxEvents): Event[] =>
 
     source: makeID(sourceKeys[x % sourceKeys.length] as TypeIdentifier.type, x),
     associatedObject: makeID(sourceKeys[x % sourceKeys.length] as TypeIdentifier.type, x),
-    created: DateTime.fromISO('2023-10-13T11:51:24.234+01')
+    created: DateTime.fromISO('2023-10-13T11:51:24.234')
       .plus({ minutes: x % 100 })
       .toISO({ format: 'basic' }) as string,
-    timestamp: DateTime.fromISO('2023-10-13T11:51:24.234+01')
+    timestamp: DateTime.fromISO('2023-10-13T11:51:24.234')
       .plus({ minutes: x % 100 })
       .toUnixInteger(),
   }))
