@@ -2,6 +2,7 @@ import { FC } from 'react'
 import { Handle, Position, NodeProps } from 'reactflow'
 import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 import { Bridge } from '@/api/__generated__'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
@@ -12,14 +13,15 @@ import TopicsContainer from '../parts/TopicsContainer.tsx'
 import { getBridgeTopics } from '../../utils/topics-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
 
-const NodeBridge: FC<NodeProps<Bridge>> = ({ data: bridge }) => {
+const NodeBridge: FC<NodeProps<Bridge>> = ({ id, data: bridge }) => {
   const { t } = useTranslation()
   const topics = getBridgeTopics(bridge)
   const { options } = useEdgeFlowContext()
+  const navigate = useNavigate()
 
   return (
     <>
-      <NodeWrapper p={3}>
+      <NodeWrapper p={3} onDoubleClick={() => navigate(`/edge-flow/node/${id}`)}>
         <VStack>
           {options.showTopics && <TopicsContainer topics={topics.remote} />}
 
