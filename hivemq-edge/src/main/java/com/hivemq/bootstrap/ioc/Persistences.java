@@ -22,6 +22,7 @@ import com.hivemq.persistence.clientqueue.ClientQueueLocalPersistence;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.ClientSessionSubscriptionLocalPersistence;
+import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.retained.RetainedMessageLocalPersistence;
 
 import javax.inject.Inject;
@@ -30,6 +31,7 @@ public class Persistences {
 
     private final @NotNull ClientQueueLocalPersistence clientQueueLocalPersistence;
     private final @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence;
+    private final @NotNull PublishPayloadPersistence payloadPersistence;
     private final @NotNull ClientSessionSubscriptionLocalPersistence clientSessionSubscriptionLocalPersistence;
     private final @NotNull RetainedMessageLocalPersistence retainedMessageLocalPersistence;
     private final @NotNull ConnectionPersistence connectionPersistence;
@@ -40,6 +42,7 @@ public class Persistences {
     public Persistences(
             final @NotNull ClientQueueLocalPersistence clientQueueLocalPersistence,
             final @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence,
+            final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull ClientSessionSubscriptionLocalPersistence clientSessionSubscriptionLocalPersistence,
             final @NotNull RetainedMessageLocalPersistence retainedMessageLocalPersistence,
             final @NotNull ConnectionPersistence connectionPersistence,
@@ -47,6 +50,7 @@ public class Persistences {
             final @NotNull MessageDroppedService messageDroppedService) {
         this.clientQueueLocalPersistence = clientQueueLocalPersistence;
         this.clientSessionLocalPersistence = clientSessionLocalPersistence;
+        this.payloadPersistence = payloadPersistence;
         this.clientSessionSubscriptionLocalPersistence = clientSessionSubscriptionLocalPersistence;
         this.retainedMessageLocalPersistence = retainedMessageLocalPersistence;
         this.connectionPersistence = connectionPersistence;
@@ -80,5 +84,9 @@ public class Persistences {
 
     public @NotNull MessageDroppedService messageDroppedService() {
         return messageDroppedService;
+    }
+
+    public @NotNull PublishPayloadPersistence payloadPersistence() {
+        return payloadPersistence;
     }
 }

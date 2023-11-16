@@ -27,6 +27,7 @@ import com.hivemq.extension.sdk.api.parameter.ExtensionStopInput;
 import com.hivemq.extension.sdk.api.parameter.ExtensionStopOutput;
 import com.hivemq.extensions.classloader.IsolatedExtensionClassloader;
 import com.hivemq.extensions.client.parameter.ServerInformationImpl;
+import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

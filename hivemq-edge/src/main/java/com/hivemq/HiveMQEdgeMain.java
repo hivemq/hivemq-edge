@@ -27,12 +27,16 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.extensions.core.CoreDiscovery;
+import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.metrics.MetricRegistryLogger;
+import com.hivemq.persistence.PersistenceStartup;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,25 +50,28 @@ public class HiveMQEdgeMain {
     private static final Logger log = LoggerFactory.getLogger(HiveMQEdgeMain.class);
 
     private @Nullable ConfigurationService configService;
+    private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull SystemInformation systemInformation;
+    private final @NotNull PersistenceStartup persistenceStartup = new PersistenceStartup();
 
     private @Nullable JaxrsHttpServer jaxrsServer;
 
-    private @Nullable HiveMQEdgeGateway instance;
     private @Nullable Injector injector;
-    private Thread shutdownThread;
+    private @Nullable Thread shutdownThread;
 
     public HiveMQEdgeMain(
             final @NotNull SystemInformation systemInformation,
-            final @Nullable MetricRegistry metricRegistry,
-            final @Nullable ConfigurationService configService) {
+            final @NotNull MetricRegistry metricRegistry,
+            final @Nullable ConfigurationService configService,
+            final @NotNull ModuleLoader moduleLoader) {
         this.metricRegistry = metricRegistry;
         this.systemInformation = systemInformation;
         this.configService = configService;
+        this.moduleLoader = moduleLoader;
     }
 
-    public void bootstrap() throws HiveMQEdgeStartupException, InterruptedException {
+    public void bootstrap() throws HiveMQEdgeStartupException {
         // Already bootstrapped.
         if (injector != null) {
             return;
@@ -96,18 +103,38 @@ public class HiveMQEdgeMain {
         log.trace("Cleaning up temporary folders");
         deleteTmpFolder(systemInformation.getDataFolder());
 
+        log.info("Integrating Core Modules");
+        final PersistencesService persistencesService = new PersistencesService();
+        try {
+            final CoreDiscovery coreDiscovery = new CoreDiscovery(persistencesService,
+                    systemInformation, moduleLoader);
+            coreDiscovery.loadAllCoreModules();
+        } catch (Exception e) {
+            throw new HiveMQEdgeStartupException(e);
+        }
+
         log.trace("Initializing injector");
         final long startDagger = System.currentTimeMillis();
         injector = DaggerInjector.builder()
                 .configurationService(configService)
                 .systemInformation(systemInformation)
                 .metricRegistry(metricRegistry)
+                .persistenceService(persistencesService)
+                .persistenceStartUp(persistenceStartup)
+                .moduleLoader(moduleLoader)
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
 
         log.trace("Initializing classes");
         final long startInit = System.currentTimeMillis();
-        injector.initEagerSingletons();
+        Objects.requireNonNull(injector).persistences();
+        try {
+            persistenceStartup.finish();
+        } catch (InterruptedException e) {
+            throw new HiveMQEdgeStartupException(e);
+        }
+        Objects.requireNonNull(injector).initEagerSingletons();
+
         log.trace("Initialized classes in {}ms", (System.currentTimeMillis() - startInit));
 
     }
@@ -122,7 +149,7 @@ public class HiveMQEdgeMain {
             throw new HiveMQEdgeStartupException("User aborted.");
         }
 
-        instance = injector.edgeGateway();
+        final HiveMQEdgeGateway instance = injector.edgeGateway();
         instance.start(embeddedExtension);
 
         initializeApiServer(injector);
@@ -197,7 +224,8 @@ public class HiveMQEdgeMain {
     public static void main(final String @NotNull [] args) throws Exception {
         log.info("Starting HiveMQ Edge...");
         final long startTime = System.nanoTime();
-        final HiveMQEdgeMain server = new HiveMQEdgeMain(new SystemInformationImpl(true), new MetricRegistry(), null);
+        final SystemInformationImpl systemInformation = new SystemInformationImpl(true);
+        final HiveMQEdgeMain server = new HiveMQEdgeMain(systemInformation, new MetricRegistry(), null, new ModuleLoader(systemInformation));
         try {
             server.start(null);
             log.info("Started HiveMQ Edge in {}ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));

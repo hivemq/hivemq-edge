@@ -67,7 +67,7 @@ public class EmbeddedHiveMQBuilderImpl implements EmbeddedHiveMQBuilder {
         final File dataFile = dataFolder == null ? null : dataFolder.toFile();
         final File extensionsFile = extensionsFolder == null ? null : extensionsFolder.toFile();
 
-        return new EmbeddedHiveMQImpl(confFile, dataFile, extensionsFile, embeddedExtension);
+        return new EmbeddedHiveMQImpl(confFile, dataFile, extensionsFile,  embeddedExtension);
     }
 
 }
