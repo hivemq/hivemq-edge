@@ -21,7 +21,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { EditIcon } from '@chakra-ui/icons'
-import { BiAbacus } from 'react-icons/bi'
+import { MdOutlineEventNote } from 'react-icons/md'
 
 import { Adapter, Bridge } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
@@ -79,16 +79,15 @@ const NodePropertyDrawer: FC = () => {
               <CardBody>
                 <EventLogTable globalSourceFilter={(selected?.data as Adapter).id} variant={'summary'} />
               </CardBody>
-              <CardFooter>
+              <CardFooter justifyContent={'flex-end'} pt={0}>
                 <Button
                   variant="link"
                   as={RouterLink}
-                  to={'/event-logs'}
-                  target={undefined}
-                  leftIcon={<BiAbacus />}
+                  to={`/event-logs?source=${selected.data.id}`}
+                  rightIcon={<MdOutlineEventNote />}
                   size="sm"
                 >
-                  {'Show more on the log'}
+                  {t('workspace.observability.eventLog.showMore')}
                 </Button>
               </CardFooter>
             </Card>
