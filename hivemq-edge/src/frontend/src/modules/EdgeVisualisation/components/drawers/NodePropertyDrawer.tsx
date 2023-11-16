@@ -42,7 +42,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
   return (
     <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={onClose}>
       <DrawerOverlay />
-      <DrawerContent>
+      <DrawerContent aria-label={t('workspace.observability.header') as string}>
         <DrawerCloseButton />
         <DrawerHeader>
           <Text>{t('workspace.observability.adapter.header')}</Text>
@@ -61,6 +61,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
               </CardBody>
               <CardFooter justifyContent={'flex-end'} pt={0}>
                 <Button
+                  data-testid={'navigate-eventLog-filtered'}
                   variant="link"
                   as={RouterLink}
                   // URL options not yet supported
