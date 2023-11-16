@@ -71,18 +71,12 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
     }
 
     private EndpointDescription endpointUpdater(EndpointDescription endpoint) {
-        if (adapterConfig.getUpdateEndpoint()) {
-            String[] parts = adapterConfig.getUri().split("://|:|/");
-            if (parts.length == 1) {
-                return EndpointUtil.updateUrl(endpoint, parts[1]);
-            } else if (parts.length > 1) {
-                return EndpointUtil.updateUrl(endpoint, parts[1], Integer.parseInt(parts[2]));
-            } else {
-                return endpoint;
-            }
-        } else {
-            return endpoint;
+        if (adapterConfig.getOverrideUri()) {
+            return EndpointUtil.updateUrl(endpoint,
+                    EndpointUtil.getHost(adapterConfig.getUri()),
+                    EndpointUtil.getPort(adapterConfig.getUri()));
         }
+        return endpoint;
     }
 
     private boolean isKeystoreAvailable() {

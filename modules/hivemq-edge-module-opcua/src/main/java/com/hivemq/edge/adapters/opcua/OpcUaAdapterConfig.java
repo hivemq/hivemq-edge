@@ -34,12 +34,12 @@ public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
                        required = true)
     private @NotNull String uri;
 
-    @JsonProperty("updateEndpoint")
-    @ModuleConfigField(title = "Update Endpoint",
-                       description = "Updates endpoint with hostname and port from given URI.",
+    @JsonProperty("overrideUri")
+    @ModuleConfigField(title = "Override server returned endpoint URI",
+                       description = "Overrides the endpoint URI returned from the OPC-UA server with the hostname and port from the specified URI.",
                        format = ModuleConfigField.FieldType.BOOLEAN,
                        required = false)
-    private @NotNull Boolean updateEndpoint = true;    
+    private @NotNull Boolean overrideUri = true;
 
     @JsonProperty("subscriptions")
     private @NotNull List<Subscription> subscriptions = new ArrayList<>();
@@ -102,9 +102,9 @@ public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
         this.security = security;
     }
 
-    public @NotNull Boolean getUpdateEndpoint() { return updateEndpoint; }
-
-    public void setUpdateEndpoint(final @NotNull Boolean updateEndpoint) { this.updateEndpoint = updateEndpoint; }
+    public @NotNull Boolean getOverrideUri() {
+        return overrideUri;
+    }
 
     @Override
     public @NotNull String toString() {

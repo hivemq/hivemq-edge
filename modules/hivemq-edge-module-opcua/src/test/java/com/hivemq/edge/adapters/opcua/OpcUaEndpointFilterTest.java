@@ -83,7 +83,14 @@ class OpcUaEndpointFilterTest {
     @NotNull
     private static List<EndpointDescription> convertToEndpointDescription(List<String> allUris) {
         final ArrayList<EndpointDescription> endpointList = allUris.stream()
-                .map(policyUri -> new EndpointDescription(null, null, null, null, policyUri, null, null, null))
+                .map(policyUri -> new EndpointDescription("opc.tcp://127.0.0.1:49320",
+                        null,
+                        null,
+                        null,
+                        policyUri,
+                        null,
+                        null,
+                        null))
                 .collect(Collectors.toCollection(ArrayList::new));
         Collections.shuffle(endpointList);
         return endpointList;
