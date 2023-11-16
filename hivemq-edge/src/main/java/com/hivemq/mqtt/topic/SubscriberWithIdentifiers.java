@@ -151,4 +151,25 @@ public class SubscriberWithIdentifiers implements Comparable<SubscriberWithIdent
     public int hashCode() {
         return Objects.hash(subscriber, qos, flags, sharedName, subscriptionIdentifiers, topicFilter);
     }
+
+    @Override
+    public String toString() {
+        return "SubscriberWithIdentifiers{" +
+                "subscriber='" +
+                subscriber +
+                '\'' +
+                ", qos=" +
+                qos +
+                ", flags=" +
+                flags +
+                ", sharedName='" +
+                sharedName +
+                '\'' +
+                ", subscriptionIdentifiers=" +
+                subscriptionIdentifiers +
+                ", topicFilter='" +
+                topicFilter +
+                '\'' +
+                '}';
+    }
 }

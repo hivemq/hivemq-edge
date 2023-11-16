@@ -173,7 +173,7 @@ public abstract class ExtensionModule {
     abstract @NotNull ExtensionBuilderDependencies extensionBuilderDependencies(@NotNull ExtensionBuilderDependenciesImpl extensionBuilderDependencies);
 
     @Binds
-    abstract @NotNull PublishService publishService(@NotNull PublishServiceImpl publishService);
+    public abstract @NotNull PublishService publishService(@NotNull PublishServiceImpl publishService);
 
     @Binds
     abstract @NotNull PublishBuilder publishBuilder(@NotNull PublishBuilderImpl publishBuilder);

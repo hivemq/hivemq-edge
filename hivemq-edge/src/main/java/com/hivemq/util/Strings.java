@@ -15,6 +15,7 @@
  */
 package com.hivemq.util;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.netty.buffer.ByteBuf;
 
@@ -134,6 +135,41 @@ public class Strings {
      * @return the human readable converted String
      */
     public static String toHumanReadableFormat(final long bytes) {
+        final long kbDivisor = 1024L;
+        final long mbDivisor = kbDivisor * kbDivisor;
+        final long gbDivisor = mbDivisor * kbDivisor;
+        final long tbDivisor = gbDivisor * kbDivisor;
+
+        if (bytes <= kbDivisor) {
+            return bytes + " B";
+        } else if (bytes <= mbDivisor) {
+            final double kb = (double) bytes / kbDivisor;
+            return String.format(Locale.US, "%.2f", kb) + " KB";
+        } else if (bytes <= gbDivisor) {
+            final double mb = (double) bytes / mbDivisor;
+            return String.format(Locale.US, "%.2f", mb) + " MB";
+        } else if (bytes <= tbDivisor) {
+            final double gb = (double) bytes / gbDivisor;
+            return String.format(Locale.US, "%.2f", gb) + " GB";
+        } else {
+            final double tb = (double) bytes / tbDivisor;
+            return String.format(Locale.US, "%.2f", tb) + " TB";
+        }
+    }
+
+    /**
+     * <p>This method can be used to convert a long value into a human readable byte format</p>
+     *
+     * <p>1024 bytes = 1.00 KB</p>
+     * <p>1024*1024 bytes = 1.00 MB</p>
+     * <p>1024*1024*1024 bytes = 1.00 GB</p>
+     * <p>1024*1024*1024*1024 bytes = 1.00 TB</p>
+     *
+     * @param bytes the long value to convert
+     * @return the human readable converted String
+     */
+    @VisibleForTesting
+    public static String convertBytes(final long bytes) {
         final long kbDivisor = 1024L;
         final long mbDivisor = kbDivisor * kbDivisor;
         final long gbDivisor = mbDivisor * kbDivisor;

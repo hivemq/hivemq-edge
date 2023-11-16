@@ -26,6 +26,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.extension.sdk.api.services.admin.AdminService;
 import com.hivemq.extensions.ExtensionBootstrap;
 import com.hivemq.extensions.services.admin.AdminServiceImpl;
+import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.util.Checkpoints;
@@ -41,6 +42,7 @@ public class HiveMQEdgeGateway {
     private final @NotNull AdminService adminService;
     private final @NotNull BridgeService bridgeService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
+    private final @NotNull PersistenceStartup persistenceStartup;
 
     @Inject
     public HiveMQEdgeGateway(
@@ -49,21 +51,24 @@ public class HiveMQEdgeGateway {
             final @NotNull ExtensionBootstrap extensionBootstrap,
             final @NotNull AdminService adminService,
             final @NotNull BridgeService bridgeService,
-            final @NotNull ProtocolAdapterManager protocolAdapterManager) {
+            final @NotNull ProtocolAdapterManager protocolAdapterManager,
+            final @NotNull PersistenceStartup persistenceStartup) {
         this.nettyBootstrap = nettyBootstrap;
         this.payloadPersistence = payloadPersistence;
         this.extensionBootstrap = extensionBootstrap;
         this.adminService = adminService;
         this.bridgeService = bridgeService;
         this.protocolAdapterManager = protocolAdapterManager;
+        this.persistenceStartup = persistenceStartup;
     }
 
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
         try {
-            payloadPersistence.init();
+            //   payloadPersistence.init();
             extensionBootstrap.startExtensionSystem(embeddedExtension).get();
             bridgeService.updateBridges();
             protocolAdapterManager.start();
+            persistenceStartup.finish();
 
             final List<ListenerStartupInformation> startupInformation = nettyBootstrap.bootstrapServer().get();
             Checkpoints.checkpoint("listener-started");
