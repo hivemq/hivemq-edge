@@ -1,8 +1,7 @@
-import { FC, useEffect } from 'react'
-import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
+import { FC } from 'react'
+import { Link as RouterLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Node, useNodes } from 'reactflow'
-
+import { Node } from 'reactflow'
 import {
   Button,
   Card,
@@ -18,7 +17,6 @@ import {
   DrawerOverlay,
   Flex,
   Text,
-  useDisclosure,
   VStack,
 } from '@chakra-ui/react'
 import { EditIcon } from '@chakra-ui/icons'
@@ -26,47 +24,23 @@ import { MdOutlineEventNote } from 'react-icons/md'
 
 import { Adapter, Bridge } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
-
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
-
-import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 import Metrics from '@/modules/Welcome/components/Metrics.tsx'
 import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'
 
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 
-import { NodeTypes } from '../../types.ts'
-
-const NodePropertyDrawer: FC = () => {
+interface NodePropertyDrawerProps {
+  selectedNode: Node<Bridge | Adapter>
+  isOpen: boolean
+  onClose: () => void
+  onEditEntity: () => void
+}
+const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode, onClose, onEditEntity }) => {
   const { t } = useTranslation()
-  const navigate = useNavigate()
-  const { isOpen, onOpen, onClose } = useDisclosure()
-
-  const nodes = useNodes()
-  const { nodeId } = useParams()
-  const selected = nodes.find(
-    (e) => e.id === nodeId && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
-  ) as Node<Bridge | Adapter> | undefined
-
-  useEffect(() => {
-    if (!nodes.length) return
-    if (!selected || !nodeId) {
-      navigate('/edge-flow', { replace: true })
-      return
-    }
-    onOpen()
-  }, [navigate, nodeId, nodes.length, onOpen, selected])
-
-  const handleClose = () => {
-    onClose()
-    navigate('/edge-flow')
-  }
-
-  // TODO[NVL] Needs warning / error
-  if (!selected || !selected.type) return null
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={handleClose}>
+    <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={onClose}>
       <DrawerOverlay />
       <DrawerContent>
         <DrawerCloseButton />
@@ -75,21 +49,22 @@ const NodePropertyDrawer: FC = () => {
         </DrawerHeader>
         <DrawerBody>
           <VStack gap={4} alignItems={'stretch'}>
-            <Metrics initMetrics={getDefaultMetricsFor(selected)} />
+            <Metrics initMetrics={getDefaultMetricsFor(selectedNode)} />
             <Card size={'sm'}>
               <CardHeader>
                 <Text>
-                  {t('workspace.observability.eventLog.header', { type: selected.type, id: selected.data.id })}
+                  {t('workspace.observability.eventLog.header', { type: selectedNode.type, id: selectedNode.data.id })}
                 </Text>
               </CardHeader>
               <CardBody>
-                <EventLogTable globalSourceFilter={(selected?.data as Adapter).id} variant={'summary'} />
+                <EventLogTable globalSourceFilter={(selectedNode?.data as Adapter).id} variant={'summary'} />
               </CardBody>
               <CardFooter justifyContent={'flex-end'} pt={0}>
                 <Button
                   variant="link"
                   as={RouterLink}
-                  to={`/event-logs?source=${selected.data.id}`}
+                  // URL options not yet supported
+                  to={`/event-logs?source=${selectedNode.data.id}`}
                   rightIcon={<MdOutlineEventNote />}
                   size="sm"
                 >
@@ -106,20 +81,15 @@ const NodePropertyDrawer: FC = () => {
               variant={'outline'}
               size={'sm'}
               rightIcon={<EditIcon />}
-              onClick={() => {
-                const adapterNavigateState: AdapterNavigateState = {
-                  protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
-                  protocolAdapterType: (selected?.data as Adapter).type,
-                  selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selected?.data as Adapter).id },
-                }
-                navigate(`/protocol-adapters/${(selected?.data as Adapter).id}`, {
-                  state: adapterNavigateState,
-                })
-              }}
+              onClick={onEditEntity}
             >
               {t('workspace.observability.adapter.modify')}
             </Button>
-            <ConnectionController type={DeviceTypes.ADAPTER} id={selected.data.id} status={selected.data.status} />
+            <ConnectionController
+              type={DeviceTypes.ADAPTER}
+              id={selectedNode.data.id}
+              status={selectedNode.data.status}
+            />
           </Flex>
         </DrawerFooter>
       </DrawerContent>
