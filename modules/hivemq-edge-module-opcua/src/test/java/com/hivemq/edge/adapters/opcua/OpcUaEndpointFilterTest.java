@@ -108,7 +108,7 @@ class OpcUaEndpointFilterTest {
 
     @NotNull
     private OpcUaAdapterConfig getConfig() {
-        final OpcUaAdapterConfig config = new OpcUaAdapterConfig();
+        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("id", "opc.tcp://127.0.0.1:49320");
         config.setTls(new OpcUaAdapterConfig.Tls(true, new OpcUaAdapterConfig.Keystore("path", null, null), null));
         return config;
     }
