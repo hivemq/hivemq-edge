@@ -14,6 +14,7 @@ import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 import { compareSeverity } from '@/modules/ProtocolAdapters/utils/pagination-utils.ts'
+import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 
 import SourceLink from '../SourceLink.tsx'
 import SeverityBadge from '../SeverityBadge.tsx'
@@ -58,7 +59,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
         accessorFn: (row) => DateTime.fromISO(row.created).toMillis(),
         cell: (info) => (
           <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
-            {DateTime.fromMillis(info.getValue() as number).toRelativeCalendar({ unit: 'minutes' })}
+            <DateTimeRenderer date={DateTime.fromMillis(info.getValue() as number)} isApprox />
           </Skeleton>
         ),
         header: t('eventLog.table.header.created') as string,

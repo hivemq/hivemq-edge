@@ -6,6 +6,9 @@ import EventDrawer from './EventDrawer.tsx'
 describe('EventDrawer', () => {
   beforeEach(() => {
     cy.viewport(1200, 800)
+    cy.window().then((win) => {
+      Object.defineProperty(win.navigator, 'language', { value: 'en-GB' })
+    })
   })
 
   it('should render the side panel', () => {
@@ -14,7 +17,7 @@ describe('EventDrawer', () => {
 
     cy.get('[data-status]').should('contain.text', 'INFO')
     cy.getByTestId('event-title-created').should('contain.text', 'Created')
-    cy.getByTestId('event-value-created').should('contain.text', 'minutes ago')
+    cy.getByTestId('event-value-created').should('contain.text', 'Friday, 13 October 2023 at 11:51:24.234')
     cy.getByTestId('event-title-source').should('contain.text', 'Source')
     cy.getByTestId('event-value-source').should('contain.text', 'BRIDGE-0')
     cy.getByTestId('event-title-associatedObject').should('contain.text', 'Associated Object')

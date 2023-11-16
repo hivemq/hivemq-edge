@@ -11,6 +11,7 @@ import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDel
 import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.tsx'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 
@@ -20,13 +21,14 @@ import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
+import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
+
+import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
-import { compareStatus } from '../../utils/pagination-utils.ts'
 import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
-import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
+import { compareStatus } from '../../utils/pagination-utils.ts'
 
 const DEFAULT_PER_PAGE = 10
 
@@ -125,7 +127,7 @@ const ProtocolAdapters: FC = () => {
         id: 'lastStartedAttemptTime',
         cell: (info) => (
           <Skeleton isLoaded={!isLoading}>
-            {DateTime.fromISO(info.getValue() as string).toRelativeCalendar({ unit: 'minutes' })}
+            <DateTimeRenderer date={DateTime.fromISO(info.getValue() as string)} isApprox />
           </Skeleton>
         ),
         header: t('protocolAdapter.table.header.lastStarted') as string,
