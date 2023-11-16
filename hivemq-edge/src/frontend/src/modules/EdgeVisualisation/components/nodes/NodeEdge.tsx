@@ -12,7 +12,11 @@ const NodeEdge: FC<NodeProps> = (props) => {
 
   return (
     <>
-      <NodeWrapper backgroundColor={selected ? '#dddfe2' : undefined} alignContent={'center'}>
+      <NodeWrapper
+        isSelected={props.selected}
+        backgroundColor={selected ? '#dddfe2' : undefined}
+        alignContent={'center'}
+      >
         <Text data-testid={'edge-node-name'}>{data.label}</Text>
         <Image src={logo} alt={t('workspace.node.edge') as string} boxSize="48px" />
       </NodeWrapper>

@@ -1,18 +1,17 @@
 import { FC } from 'react'
 import { Handle, Position, NodeProps } from 'reactflow'
 import { Image } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
 
 import logoTCP from '@/assets/app/gateway-tcp.svg'
 import logoUDP from '@/assets/app/gateway-udp.svg'
 import logoGateway from '@/assets/app/gateway.svg'
+import { Listener } from '@/api/__generated__'
 
 import NodeWrapper from '../parts/NodeWrapper.tsx'
-import { Listener } from '@/api/__generated__'
-import { useTranslation } from 'react-i18next'
 
-const NodeListener: FC<NodeProps<Listener>> = (props) => {
+const NodeListener: FC<NodeProps<Listener>> = ({ selected, data }) => {
   const { t } = useTranslation()
-  const { selected, data } = props
 
   const getLogo = () => {
     if (data.transport === Listener.transport.TCP) return logoTCP
@@ -22,7 +21,13 @@ const NodeListener: FC<NodeProps<Listener>> = (props) => {
 
   return (
     <>
-      <NodeWrapper p={2} borderRadius={60} backgroundColor={selected ? '#dddfe2' : 'white'} alignContent={'center'}>
+      <NodeWrapper
+        isSelected={selected}
+        p={2}
+        borderRadius={60}
+        backgroundColor={selected ? '#dddfe2' : 'white'}
+        alignContent={'center'}
+      >
         <Image src={getLogo()} alt={t('workspace.node.gateway') as string} boxSize="48px" />
       </NodeWrapper>
       <Handle type="target" position={Position.Right} id="Listeners" isConnectable={false} />

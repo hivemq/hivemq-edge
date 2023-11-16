@@ -13,7 +13,7 @@ import TopicsContainer from '../parts/TopicsContainer.tsx'
 import { getBridgeTopics } from '../../utils/topics-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
 
-const NodeBridge: FC<NodeProps<Bridge>> = ({ id, data: bridge }) => {
+const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
   const { t } = useTranslation()
   const topics = getBridgeTopics(bridge)
   const { options } = useEdgeFlowContext()
@@ -21,7 +21,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, data: bridge }) => {
 
   return (
     <>
-      <NodeWrapper p={3} onDoubleClick={() => navigate(`/edge-flow/node/${id}`)}>
+      <NodeWrapper isSelected={selected} onDoubleClick={() => navigate(`/edge-flow/node/${id}`)} p={3}>
         <VStack>
           {options.showTopics && <TopicsContainer topics={topics.remote} />}
 

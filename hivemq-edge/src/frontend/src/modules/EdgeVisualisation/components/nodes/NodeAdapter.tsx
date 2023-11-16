@@ -1,6 +1,6 @@
 import { FC, useMemo } from 'react'
 import { Handle, NodeProps, Position } from 'reactflow'
-import { Box, HStack, Image, Text, VStack, type BoxProps } from '@chakra-ui/react'
+import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom'
 
 import { Adapter } from '@/api/__generated__'
@@ -12,7 +12,7 @@ import TopicsContainer from '../parts/TopicsContainer.tsx'
 import { discoverAdapterTopics } from '../../utils/topics-utils.ts'
 import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
-import { TopicFilter } from '@/modules/EdgeVisualisation/types.ts'
+import { TopicFilter } from '../../types.ts'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) => {
   const { data: protocols } = useGetAdapterTypes()
@@ -25,19 +25,13 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
     return discoverAdapterTopics(adapterProtocol, adapter.config).map((e) => ({ topic: e }))
   }, [adapter.config, adapterProtocol])
 
-  const selectedStyle: Partial<BoxProps> = {
-    boxShadow: 'dark-lg',
-    rounded: 'md',
-    bg: '#dddfe2',
-  }
-
   return (
     <>
       <NodeWrapper
-        p={2}
-        {...(selected ? { ...selectedStyle } : {})}
-        w={CONFIG_ADAPTER_WIDTH}
+        isSelected={selected}
         onDoubleClick={() => navigate(`/edge-flow/node/${id}`)}
+        w={CONFIG_ADAPTER_WIDTH}
+        p={2}
       >
         <VStack>
           <HStack w={'100%'}>
