@@ -89,4 +89,5 @@ public interface SystemInformation {
      * @return is HiveMQ running in embedded mode
      */
     boolean isEmbedded();
+
 }

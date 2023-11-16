@@ -123,4 +123,20 @@ public class ClientSession implements Sizable {
 
         return timeSinceDisconnectMsec / 1000 >= sessionExpiryIntervalSec;
     }
+
+    @Override
+    public String toString() {
+        return "ClientSession{" +
+                "queueLimit=" +
+                queueLimit +
+                ", connected=" +
+                connected +
+                ", sessionExpiryIntervalSec=" +
+                sessionExpiryIntervalSec +
+                ", inMemorySize=" +
+                inMemorySize +
+                ", willPublish=" +
+                willPublish +
+                '}';
+    }
 }
