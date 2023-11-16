@@ -614,6 +614,9 @@
       "adapter": {
         "header": "Adapter Observability",
         "modify": "Modify the adapter"
+      },
+      "eventLog": {
+        "showMore": "Show more"
       }
     }
   },
