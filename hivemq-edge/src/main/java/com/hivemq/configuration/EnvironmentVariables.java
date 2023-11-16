@@ -48,6 +48,11 @@ public class EnvironmentVariables {
     public static final String EXTENSION_FOLDER = "HIVEMQ_EXTENSION_FOLDER";
 
     /**
+     * Name of the environment variable for configuring the extension folder.
+     */
+    public static final String CORE_FOLDER = "HIVEMQ_CORE_FOLDER";
+
+    /**
      * Name of the environment variable for configuring the modules folder.
      */
     public static final String MODULES_FOLDER = "HIVEMQ_MODULES_FOLDER";

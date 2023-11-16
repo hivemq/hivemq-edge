@@ -29,6 +29,7 @@ public class SystemProperties {
     public static final String DATA_FOLDER = "hivemq.data.folder";
 
     public static final String EXTENSIONS_FOLDER = "hivemq.extensions.folder";
+    public static final String CORE_FOLDER = "hivemq.core.folder";
 
     public static final String MODULES_FOLDER = "hivemq.modules.folder";
 

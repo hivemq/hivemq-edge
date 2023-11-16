@@ -30,12 +30,16 @@ import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.ioc.ModulesModule;
 import com.hivemq.edge.modules.ioc.RemoteServiceModule;
+import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.ioc.ExtensionModule;
 import com.hivemq.http.JaxrsHttpServer;
+import com.hivemq.logging.EventLog;
+import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.metrics.ioc.MetricsModule;
 import com.hivemq.mqtt.ioc.MQTTHandlerModule;
 import com.hivemq.mqtt.ioc.MQTTServiceModule;
 import com.hivemq.mqttsn.ioc.MqttsnServiceModule;
+import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.ioc.PersistenceModule;
 import com.hivemq.security.ioc.SecurityModule;
 import com.hivemq.throttling.ioc.ThrottlingModule;
@@ -103,6 +107,15 @@ public interface Injector {
 
         @BindsInstance
         Builder configurationService(ConfigurationService configurationService);
+
+        @BindsInstance
+        Builder moduleLoader(ModuleLoader moduleLoader);
+
+        @BindsInstance
+        Builder persistenceService(PersistencesService persistencesService);
+
+        @BindsInstance
+        Builder persistenceStartUp(PersistenceStartup persistenceStartup);
 
         Injector build();
     }

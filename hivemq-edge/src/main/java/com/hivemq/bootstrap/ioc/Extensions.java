@@ -16,6 +16,7 @@
 package com.hivemq.bootstrap.ioc;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.services.publish.PublishService;
 import com.hivemq.extension.sdk.api.services.publish.RetainedMessageStore;
 import com.hivemq.extension.sdk.api.services.session.ClientService;
 import com.hivemq.extensions.HiveMQExtensions;
@@ -29,17 +30,20 @@ public class Extensions {
     private final @NotNull Authenticators authenticators;
     private final @NotNull RetainedMessageStore retainedMessageStore;
     private final @NotNull ClientService clientService;
+    private final @NotNull PublishService publishService;
 
     @Inject
     public Extensions(
             final @NotNull HiveMQExtensions hivemqExtensions,
             final @NotNull Authenticators authenticators,
             final @NotNull RetainedMessageStore retainedMessageStore,
-            final @NotNull ClientService clientService) {
+            final @NotNull ClientService clientService,
+            final @NotNull PublishService publishService) {
         this.hivemqExtensions = hivemqExtensions;
         this.authenticators = authenticators;
         this.retainedMessageStore = retainedMessageStore;
         this.clientService = clientService;
+        this.publishService = publishService;
     }
 
     public @NotNull HiveMQExtensions hivemqExtensions() {
@@ -56,5 +60,9 @@ public class Extensions {
 
     public @NotNull ClientService clientService() {
         return clientService;
+    }
+
+    public @NotNull PublishService publishService() {
+        return publishService;
     }
 }
