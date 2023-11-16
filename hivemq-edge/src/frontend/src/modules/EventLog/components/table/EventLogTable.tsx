@@ -29,12 +29,14 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
   const { t } = useTranslation()
   const { data, isLoading, isFetching, error, refetch } = useGetEvents()
 
-  const safeData: Event[] =
-    data && data.items
-      ? data.items
-          .filter((e: Event) => (globalSourceFilter ? e.source?.identifier === globalSourceFilter : true))
-          .slice(0, 5)
-      : [...mockEdgeEvent(5)]
+  const safeData = useMemo<Event[]>(() => {
+    if (!data || !data?.items) return [...mockEdgeEvent(5)]
+    if (globalSourceFilter) {
+      return data.items.filter((e: Event) => e.source?.identifier === globalSourceFilter).slice(0, 5)
+    }
+
+    return data.items
+  }, [data, globalSourceFilter])
 
   const columns = useMemo<ColumnDef<Event>[]>(() => {
     return [
