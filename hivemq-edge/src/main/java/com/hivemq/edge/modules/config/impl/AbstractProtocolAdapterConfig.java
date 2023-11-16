@@ -71,7 +71,7 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
 
         @JsonProperty(value = "messageHandlingOptions", required = false)
         @ModuleConfigField(title = "Message Handling Options",
-                           description = "The topic to publish data on",
+                           description = "This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample",
                            required = false,
                            enumDisplayValues = {"MQTT Message Per Device Tag",
                                                 "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
@@ -87,7 +87,7 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
         @JsonProperty(value = "includeTagNames", required = false)
         @ModuleConfigField(title = "Include Tag Names In Publish?",
                            description = "Include the names of the tags in the resulting MQTT publish",
-                           defaultValue = "true")
+                           defaultValue = "false")
         private @Nullable Boolean includeTagNames = Boolean.TRUE;
 
         public Subscription() {
