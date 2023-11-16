@@ -8,6 +8,7 @@ import {
   Card,
   CardBody,
   CardFooter,
+  CardHeader,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
@@ -75,7 +76,12 @@ const NodePropertyDrawer: FC = () => {
         <DrawerBody>
           <VStack gap={4} alignItems={'stretch'}>
             <Metrics initMetrics={getDefaultMetricsFor(selected)} />
-            <Card>
+            <Card size={'sm'}>
+              <CardHeader>
+                <Text>
+                  {t('workspace.observability.eventLog.header', { type: selected.type, id: selected.data.id })}
+                </Text>
+              </CardHeader>
               <CardBody>
                 <EventLogTable globalSourceFilter={(selected?.data as Adapter).id} variant={'summary'} />
               </CardBody>

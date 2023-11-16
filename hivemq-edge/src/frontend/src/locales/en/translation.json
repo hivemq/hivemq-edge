@@ -600,6 +600,10 @@
       "gateway": "Node: Gateway",
       "group": "Node: Group"
     },
+    "device": {
+      "type_ADAPTER_NODE": "adapter",
+      "type_BRIDGE_NODE": "bridge"
+    },
     "layout": {
       "HORIZONTAL": "Horizontal",
       "CIRCLE_PACKING": "Circle Packing"
@@ -616,6 +620,7 @@
         "modify": "Modify the adapter"
       },
       "eventLog": {
+        "header": "The 5 most recent events for $t(workspace.device.type, {'context': '{{ type }}' }) {{ id }}",
         "showMore": "Show more"
       }
     }
