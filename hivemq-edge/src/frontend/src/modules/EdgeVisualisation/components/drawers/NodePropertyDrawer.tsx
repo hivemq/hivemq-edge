@@ -1,9 +1,13 @@
 import { FC, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Node, useNodes } from 'reactflow'
+
 import {
   Button,
+  Card,
+  CardBody,
+  CardFooter,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
@@ -17,17 +21,20 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { EditIcon } from '@chakra-ui/icons'
+import { BiAbacus } from 'react-icons/bi'
 
 import { Adapter, Bridge } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
 
-import Metrics from '@/modules/Welcome/components/Metrics.tsx'
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import Metrics from '@/modules/Welcome/components/Metrics.tsx'
+import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'
 
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
+
+import { NodeTypes } from '../../types.ts'
 
 const NodePropertyDrawer: FC = () => {
   const { t } = useTranslation()
@@ -68,6 +75,23 @@ const NodePropertyDrawer: FC = () => {
         <DrawerBody>
           <VStack gap={4} alignItems={'stretch'}>
             <Metrics initMetrics={getDefaultMetricsFor(selected)} />
+            <Card>
+              <CardBody>
+                <EventLogTable globalSourceFilter={(selected?.data as Adapter).id} variant={'summary'} />
+              </CardBody>
+              <CardFooter>
+                <Button
+                  variant="link"
+                  as={RouterLink}
+                  to={'/event-logs'}
+                  target={undefined}
+                  leftIcon={<BiAbacus />}
+                  size="sm"
+                >
+                  {'Show more on the log'}
+                </Button>
+              </CardFooter>
+            </Card>
           </VStack>
         </DrawerBody>
         <DrawerFooter borderTopWidth="1px">
