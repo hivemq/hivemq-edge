@@ -69,22 +69,22 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
                            defaultValue = "0")
         private int qos = 0;
 
-        @JsonProperty(value = "messageHandlingOptions", required = true)
+        @JsonProperty(value = "messageHandlingOptions", required = false)
         @ModuleConfigField(title = "Message Handling Options",
                            description = "The topic to publish data on",
-                           required = true,
+                           required = false,
                            enumDisplayValues = {"MQTT Message Per Device Tag",
                                                 "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
                            defaultValue = "MQTTMessagePerTag")
         private @Nullable MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
 
-        @JsonProperty(value = "includeTimestamp", required = true)
+        @JsonProperty(value = "includeTimestamp", required = false)
         @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
                            description = "Include the unix timestamp of the sample time in the resulting MQTT message",
                            defaultValue = "true")
         private @Nullable Boolean includeTimestamp = Boolean.TRUE;
 
-        @JsonProperty(value = "includeTagNames", required = true)
+        @JsonProperty(value = "includeTagNames", required = false)
         @ModuleConfigField(title = "Include Tag Names In Publish?",
                            description = "Include the names of the tags in the resulting MQTT publish",
                            defaultValue = "true")
