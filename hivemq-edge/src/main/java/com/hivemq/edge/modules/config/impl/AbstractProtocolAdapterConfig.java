@@ -88,7 +88,7 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
         @ModuleConfigField(title = "Include Tag Names In Publish?",
                            description = "Include the names of the tags in the resulting MQTT publish",
                            defaultValue = "false")
-        private @Nullable Boolean includeTagNames = Boolean.TRUE;
+        private @Nullable Boolean includeTagNames = Boolean.FALSE;
 
         public Subscription() {
         }
