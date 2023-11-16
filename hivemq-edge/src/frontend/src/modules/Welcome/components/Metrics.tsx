@@ -15,7 +15,7 @@ const Metrics: FC<MetricsProps> = ({ initMetrics }) => {
   const showSelector = config.features.METRICS_SELECT_PANEL
 
   return (
-    <Card flex={1}>
+    <Card flex={1} size={'sm'}>
       {showSelector && (
         <CardHeader>
           <MetricNameSelector
