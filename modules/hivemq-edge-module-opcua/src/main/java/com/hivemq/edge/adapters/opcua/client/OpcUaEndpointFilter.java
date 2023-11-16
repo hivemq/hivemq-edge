@@ -19,6 +19,7 @@ import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
+import org.eclipse.milo.opcua.stack.core.util.EndpointUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +67,16 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
                 return 1;
             }
             return -1 * Integer.compare(policy1.getPriority(), policy2.getPriority());
-        });
+        }).map(endpointDescription -> endpointUpdater(endpointDescription));
+    }
+
+    private EndpointDescription endpointUpdater(EndpointDescription endpoint) {
+        if (adapterConfig.getOverrideUri()) {
+            return EndpointUtil.updateUrl(endpoint,
+                    EndpointUtil.getHost(adapterConfig.getUri()),
+                    EndpointUtil.getPort(adapterConfig.getUri()));
+        }
+        return endpoint;
     }
 
     private boolean isKeystoreAvailable() {
