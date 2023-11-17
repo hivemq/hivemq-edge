@@ -32,10 +32,12 @@ pluginManagement {
         id("com.github.ben-manes.versions") version "${extra["plugin.versions.version"]}"
         id("com.github.node-gradle.node") version "${extra["plugin.node.version"]}"
     }
+    includeBuild("../edge-plugins")
 }
 
-includeBuild("./src/frontend"){
-    name="hivemq-edge-frontend"
+
+includeBuild("./src/frontend") {
+    name = "hivemq-edge-frontend"
 }
 
 if (file("../../hivemq-extension-sdk").exists()) {
@@ -72,3 +74,4 @@ if (file("../../hivemq-edge-extension-sdk").exists()) {
         """.trimIndent()
     )
 }
+

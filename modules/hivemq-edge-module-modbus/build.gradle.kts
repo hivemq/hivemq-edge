@@ -2,13 +2,17 @@ import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
+
 plugins {
     id("java")
     id("com.github.sgtsilvio.gradle.utf8")
     id("com.github.johnrengelman.shadow")
     id("com.github.hierynomus.license")
     id("org.owasp.dependencycheck")
+    id("com.hivemq.edge-version-updater")
 }
+
+
 
 group = "com.hivemq"
 
