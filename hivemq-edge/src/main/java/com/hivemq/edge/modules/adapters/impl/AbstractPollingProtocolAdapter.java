@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.adapters.impl;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
@@ -55,7 +56,8 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
         super(adapterInformation, adapterConfig, metricRegistry);
     }
 
-    protected void bindServices(final @NotNull ModuleServices moduleServices){
+    @VisibleForTesting
+    public void bindServices(final @NotNull ModuleServices moduleServices){
         Preconditions.checkNotNull(moduleServices);
         super.bindServices(moduleServices);
         if(protocolAdapterPollingService == null){
