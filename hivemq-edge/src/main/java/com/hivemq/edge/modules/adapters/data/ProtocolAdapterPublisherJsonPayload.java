@@ -27,14 +27,14 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 public class ProtocolAdapterPublisherJsonPayload extends AbstractProtocolAdapterJsonPayload {
 
     @JsonProperty("value")
-    private @NotNull Value value;
+    private @NotNull Object value;
 
     @JsonProperty("tagName")
     private @Nullable String tagName;
 
     public ProtocolAdapterPublisherJsonPayload(final @Nullable Long timestamp, final @NotNull TagSample sample) {
         super(timestamp);
-        this.value = new Value(sample.getTagValue());
+        this.value = sample.getTagValue();
         this.tagName = sample.getTagName();
     }
 
@@ -48,14 +48,5 @@ public class ProtocolAdapterPublisherJsonPayload extends AbstractProtocolAdapter
         return tagName;
     }
 
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private static class Value{
 
-        @JsonProperty("data")
-        private @NotNull Object data;
-
-        public Value(final @NotNull Object data) {
-            this.data = data;
-        }
-    }
 }
