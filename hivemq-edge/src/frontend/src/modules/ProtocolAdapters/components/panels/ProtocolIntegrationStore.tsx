@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Box, Flex, Text } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
+import AdapterEmptyLogo from '@/assets/app/adaptor-empty-min.svg'
 
 import { ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'

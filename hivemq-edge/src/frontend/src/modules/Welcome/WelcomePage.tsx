@@ -2,7 +2,7 @@ import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Center, Flex, Image } from '@chakra-ui/react'
 
-import ReactLogo from '@/assets/welcome-first-time-logo.svg'
+import ReactLogo from '@/assets/welcome-first-time-logo-min.svg'
 
 import PageContainer from '@/components/PageContainer.tsx'
 import Onboarding from '@/modules/Welcome/components/Onboarding.tsx'

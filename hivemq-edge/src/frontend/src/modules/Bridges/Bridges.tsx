@@ -3,7 +3,7 @@ import { Box, Flex, SimpleGrid } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
-import BridgeEmptyLogo from '@/assets/app/bridge-empty.svg'
+import BridgeEmptyLogo from '@/assets/app/bridge-empty-min.svg'
 
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'

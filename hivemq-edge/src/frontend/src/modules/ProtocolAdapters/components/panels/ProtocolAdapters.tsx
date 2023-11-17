@@ -13,7 +13,7 @@ import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
-import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
+import AdapterEmptyLogo from '@/assets/app/adaptor-empty-min.svg'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import WarningMessage from '@/components/WarningMessage.tsx'

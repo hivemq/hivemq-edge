@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import { ProtocolAdapter } from '@/api/__generated__'
 import WarningMessage from '@/components/WarningMessage.tsx'
-import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
+import AdapterEmptyLogo from '@/assets/app/adaptor-empty-min.svg'
 
 import { ProtocolFacetType } from '../../types.ts'
 import { applyFacets } from '../../utils/facets-utils.ts'
