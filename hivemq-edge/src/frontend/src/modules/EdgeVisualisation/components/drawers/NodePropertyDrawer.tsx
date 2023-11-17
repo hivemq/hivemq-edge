@@ -29,6 +29,7 @@ import Metrics from '@/modules/Welcome/components/Metrics.tsx'
 import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'
 
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
+import NodeNameCard from '../parts/NodeNameCard.tsx'
 
 interface NodePropertyDrawerProps {
   selectedNode: Node<Bridge | Adapter>
@@ -49,6 +50,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
         </DrawerHeader>
         <DrawerBody>
           <VStack gap={4} alignItems={'stretch'}>
+            <NodeNameCard selectedNode={selectedNode} />
             <Metrics initMetrics={getDefaultMetricsFor(selectedNode)} />
             <Card size={'sm'}>
               <CardHeader>
