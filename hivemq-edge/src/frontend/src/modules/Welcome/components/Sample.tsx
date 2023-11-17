@@ -1,21 +1,34 @@
 import { FC, useEffect, useMemo, useState } from 'react'
-import { Spinner, Stat, StatArrow, StatHelpText, StatLabel, StatNumber } from '@chakra-ui/react'
+import {
+  Box,
+  CloseButton,
+  HStack,
+  Spinner,
+  Stat,
+  StatArrow,
+  StatHelpText,
+  StatLabel,
+  StatNumber,
+  Text,
+  VStack,
+} from '@chakra-ui/react'
 import { NotAllowedIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
 import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
 import { DataPoint } from '@/api/__generated__'
+import { extractMetricInfo } from '@/modules/Welcome/utils/metrics-name.utils.ts'
 
 interface SampleProps {
   metricName?: string
+  onClose?: () => void
 }
 
 const MAX_SERIES = 10
-const FRACTION_DIGITS = 1
 
-const diff = (current: number, previous: number) => 100 * ((current - previous) / previous)
+const diff = (current: number, previous: number) => current - previous
 
-const Sample: FC<SampleProps> = ({ metricName }) => {
+const Sample: FC<SampleProps> = ({ metricName, onClose }) => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useGetSample(metricName)
   const [series, setSeries] = useState<DataPoint[]>([])
@@ -40,26 +53,31 @@ const Sample: FC<SampleProps> = ({ metricName }) => {
 
   if (!metricName) return null
 
-  // TODO[NVL] Not the best approach. Use props
-  const splitMetricName = metricName.split('.')
-  const [, , , , type, id] = splitMetricName.splice(0, 6)
-  const suffix = splitMetricName.join('.')
+  const formatNumber = Intl.NumberFormat(navigator.language)
 
+  const { suffix, id } = extractMetricInfo(metricName)
   return (
     <Stat variant="hivemq">
       <StatLabel isTruncated>
-        {type} - {id}
+        <HStack alignItems={'flex-start'}>
+          <VStack flex={1} overflowX={'hidden'} gap={0} alignItems={'flex-start'}>
+            <Text textOverflow={'ellipsis'}>{t(`metrics.protocolAdapters.${suffix}`).replaceAll('.', ' ')}</Text>
+            <Text>{id}</Text>
+          </VStack>
+          <Box>
+            <CloseButton aria-label={'Remove from panel'} size={'sm'} onClick={onClose} />
+          </Box>
+        </HStack>
       </StatLabel>
-      <StatLabel isTruncated>{t(`metrics.protocolAdapters.${suffix}`)}</StatLabel>
-      <StatNumber>
+      <StatNumber py={2}>
         {isLoading && <Spinner />}
         {!!error && <NotAllowedIcon color="red.100" />}
-        {series[0]?.value}
+        {formatNumber.format(series[0]?.value as number)}
       </StatNumber>
       {!!change && (
         <StatHelpText>
           <StatArrow type={change > 0 ? 'increase' : 'decrease'} />
-          {Math.abs(change).toFixed(FRACTION_DIGITS)}%
+          {formatNumber.format(Math.abs(change))}
         </StatHelpText>
       )}
     </Stat>
