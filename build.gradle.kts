@@ -1,5 +1,49 @@
 group = "com.hivemq"
 
+tasks.register("clean") {
+    group = "build"
+
+    gradle.includedBuilds.forEach {
+        dependsOn(it.task(":$name"))
+    }
+}
+
+tasks.register("build") {
+    group = "build"
+
+    gradle.includedBuilds.forEach {
+        dependsOn(it.task(":$name"))
+    }
+}
+
+tasks.register("check") {
+    group = "verification"
+
+    gradle.includedBuilds.forEach {
+        dependsOn(it.task(":$name"))
+    }
+}
+
+tasks.register("test") {
+    group = "verification"
+
+    gradle.includedBuilds.forEach {
+        dependsOn(it.task(":$name"))
+    }
+}
+
+tasks.register("classes") {
+    gradle.includedBuilds.forEach {
+        dependsOn(it.task(":$name"))
+    }
+}
+
+tasks.register("testClasses") {
+    gradle.includedBuilds.forEach {
+        dependsOn(it.task(":$name"))
+    }
+}
+
 /* ******************** release tasks ******************** */
 
 val hivemq: Configuration by configurations.creating { isCanBeConsumed = false; isCanBeResolved = false }
