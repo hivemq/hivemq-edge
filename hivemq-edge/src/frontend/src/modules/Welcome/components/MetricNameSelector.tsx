@@ -8,20 +8,20 @@ import { BiAddToQueue } from 'react-icons/bi'
 import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.tsx'
 import { extractMetricInfo } from '../utils/metrics-name.utils.ts'
 
+interface MetricNameOption {
+  label: string
+  value: string
+  isDisabled?: boolean
+}
+
 interface MetricNameSelectorForm {
-  myTopic: string
+  myTopic: MetricNameOption
 }
 
 interface MetricNameSelectorProps {
   onSubmit: SubmitHandler<MetricNameSelectorForm>
   selectedMetrics: string[]
   filter: string
-}
-
-interface Options {
-  label: string
-  value: string
-  isDisabled?: boolean
 }
 
 const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, selectedMetrics }) => {
@@ -34,7 +34,7 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, sel
     formState: { isValid, isSubmitted },
   } = useForm<MetricNameSelectorForm>()
 
-  const sortedItems: Options[] = useMemo(() => {
+  const sortedItems: MetricNameOption[] = useMemo(() => {
     if (!data || !data.items) return []
 
     return data.items
@@ -70,14 +70,10 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, sel
                 required: true,
               }}
               render={({ field }) => {
-                const { value, onChange, ...rest } = field
+                const { onChange, ...rest } = field
                 return (
                   <Select
                     {...rest}
-                    // value={{
-                    //   label: t(`metrics.protocolAdapters.${extractMetricInfo(value).suffix}`),
-                    //   value: value,
-                    // }}
                     inputId={'tlsConfiguration.protocols'}
                     onChange={(values) => onChange(values?.value)}
                     options={sortedItems}
