@@ -12,11 +12,8 @@ const hivemq = definePartsStyle({
   },
   helpText: {
     fontWeight: 'bold',
-    color: 'blue.500',
   },
-  label: {
-    color: 'blue.500',
-  },
+
   number: {
     fontStyle: 'italic',
     color: 'blue.500',
