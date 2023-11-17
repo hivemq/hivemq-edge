@@ -19,6 +19,7 @@ import ch.qos.logback.core.joran.conditional.ElseAction;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
@@ -41,6 +42,7 @@ import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig.Subscription.MessageHandlingOptions;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Logger;
@@ -117,7 +119,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         Long timestamp = data.getSubscription().getIncludeTimestamp() ? data.getTimestamp() : null;
         if(data.getDataPoints().size() > 1 &&
                 data.getSubscription().getMessageHandlingOptions() ==
-                        AbstractProtocolAdapterConfig.Subscription.MessageHandlingOptions.MQTTMessagePerSubscription){
+                        MessageHandlingOptions.MQTTMessagePerSubscription){
             //-- Put all derived samples into a single MQTT message
             list.add(createMultiPublishPayload(timestamp, data.getDataPoints(), data.getSubscription().getIncludeTagNames()));
         } else {
@@ -156,7 +158,8 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         }
     }
 
-    protected void bindServices(final @NotNull ModuleServices moduleServices){
+    @VisibleForTesting
+    public void bindServices(final @NotNull ModuleServices moduleServices){
         Preconditions.checkNotNull(moduleServices);
         if(adapterPublishService == null){
             adapterPublishService = moduleServices.adapterPublishService();

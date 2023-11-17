@@ -52,7 +52,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdapterConfig, HttpData> {
 
-    private static final String RESPONSE_DATA = "httpResponseData";
+    static final String RESPONSE_DATA = "httpResponseData";
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
     private HttpClient httpClient = null;
 
