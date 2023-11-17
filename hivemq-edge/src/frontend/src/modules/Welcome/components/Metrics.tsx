@@ -1,21 +1,27 @@
 import { FC, useState } from 'react'
-import { Card, CardBody, CardHeader, SimpleGrid } from '@chakra-ui/react'
+import { Card, CardBody, CardHeader, Flex, IconButton, SimpleGrid, useDisclosure } from '@chakra-ui/react'
+import { TbLayoutNavbarExpand, TbLayoutNavbarCollapse } from 'react-icons/tb'
+
+import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+
+import config from '@/config'
 
 import MetricNameSelector from './MetricNameSelector.tsx'
 import Sample from './Sample.tsx'
-import config from '@/config'
 
 interface MetricsProps {
-  id?: string
+  type: NodeTypes
+  id: string
   initMetrics?: string[]
 }
 
-const Metrics: FC<MetricsProps> = ({ initMetrics }) => {
+const Metrics: FC<MetricsProps> = ({ id, initMetrics }) => {
   const [metrics, setMetrics] = useState<string[]>(initMetrics || [])
   const showSelector = config.features.METRICS_SELECT_PANEL
+  const { isOpen, onOpen, onClose } = useDisclosure()
 
   return (
-    <Card flex={1} size={'sm'}>
+    <Card size={'sm'} size={'sm'}>
       {showSelector && (
         <CardHeader>
           <Flex justifyContent={'flex-end'}>
@@ -41,15 +47,9 @@ const Metrics: FC<MetricsProps> = ({ initMetrics }) => {
       )}
 
       <CardBody>
-        <SimpleGrid
-          spacing={4}
-          templateColumns="repeat(auto-fill, minmax(200px, 1fr))"
-          overflowY={'auto'}
-          maxHeight={'30vh'}
-          tabIndex={0}
-        >
+        <SimpleGrid spacing={4} templateColumns="repeat(auto-fill, minmax(200px, 1fr))">
           {metrics.map((e) => (
-            <Sample key={e} metricName={e} />
+            <Sample key={e} metricName={e} onClose={() => setMetrics((old) => old.filter((x) => x !== e))} />
           ))}
         </SimpleGrid>
       </CardBody>

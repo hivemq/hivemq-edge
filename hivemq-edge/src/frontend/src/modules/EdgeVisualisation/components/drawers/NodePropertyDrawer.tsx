@@ -52,7 +52,10 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
         <DrawerBody>
           <VStack gap={4} alignItems={'stretch'}>
             <NodeNameCard selectedNode={selectedNode} />
-            <Metrics initMetrics={getDefaultMetricsFor(selectedNode)} />
+            <Metrics
+              type={selected.type as NodeTypes}
+              id={selected.data.id}
+              initMetrics={getDefaultMetricsFor(selectedNode)} />
             <Card size={'sm'}>
               <CardHeader>
                 <Text>
