@@ -395,6 +395,7 @@ license {
     header = file("HEADER")
     mapping("java", "SLASHSTAR_STYLE")
     exclude("*.json")
+    exclude("**/*.xml")
     exclude("**/RollingList.java")
 }
 
