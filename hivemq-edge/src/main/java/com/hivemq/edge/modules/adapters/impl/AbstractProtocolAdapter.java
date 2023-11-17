@@ -19,6 +19,7 @@ import ch.qos.logback.core.joran.conditional.ElseAction;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
@@ -156,7 +157,8 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         }
     }
 
-    protected void bindServices(final @NotNull ModuleServices moduleServices){
+    @VisibleForTesting
+    public void bindServices(final @NotNull ModuleServices moduleServices){
         Preconditions.checkNotNull(moduleServices);
         if(adapterPublishService == null){
             adapterPublishService = moduleServices.adapterPublishService();
