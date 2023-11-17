@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -25,14 +26,36 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProtocolAdapterPublisherJsonPayload extends AbstractProtocolAdapterJsonPayload {
 
-   private @NotNull TagSample sample;
+    @JsonProperty("value")
+    private @NotNull Value value;
+
+    @JsonProperty("tagName")
+    private @Nullable String tagName;
 
     public ProtocolAdapterPublisherJsonPayload(final @Nullable Long timestamp, final @NotNull TagSample sample) {
         super(timestamp);
-        this.sample = sample;
+        this.value = new Value(sample.getTagValue());
+        this.tagName = sample.getTagName();
     }
 
-    public TagSample getSample() {
-        return sample;
+    @NotNull
+    public Object getValue() {
+        return value;
+    }
+
+    @Nullable
+    public String getTagName() {
+        return tagName;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private static class Value{
+
+        @JsonProperty("data")
+        private @NotNull Object data;
+
+        public Value(final @NotNull Object data) {
+            this.data = data;
+        }
     }
 }
