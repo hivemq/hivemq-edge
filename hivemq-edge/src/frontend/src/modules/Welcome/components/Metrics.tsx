@@ -39,7 +39,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics }) => {
               filter={id}
               selectedMetrics={metrics}
               onSubmit={(d) => {
-                setMetrics((old) => [...old, d.myTopic])
+                setMetrics((old) => [...old, d.myTopic as unknown as string])
               }}
             />
           )}
