@@ -2,8 +2,6 @@ package com.hivemq.edge.adapters.http;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
@@ -22,8 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.hivemq.edge.adapters.http.HttpProtocolAdapter.RESPONSE_DATA;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -55,7 +52,8 @@ class HttpProtocolAdapterTest {
     }
 
     @Test
-    void test_captureDataSample_expectedPayloadPresent() throws ExecutionException, InterruptedException, JsonProcessingException {
+    void test_captureDataSample_expectedPayloadPresent()
+            throws ExecutionException, InterruptedException, JsonProcessingException {
         final AbstractProtocolAdapterConfig.Subscription subscription =
                 new AbstractProtocolAdapterConfig.Subscription("topic", 2);
         final HttpData httpData = new HttpData(subscription, "http://localhost:8080", 200, "text/plain");
@@ -64,11 +62,7 @@ class HttpProtocolAdapterTest {
         httpProtocolAdapter.captureDataSample(httpData).get();
 
         final String payloadAsString = new String(publishArgumentCaptor.getValue().getPayload());
-        System.out.println(payloadAsString);
-        ObjectMapper objectMapper = new ObjectMapper();
-        final JsonNode tree = objectMapper.readTree(payloadAsString);
-        assertTrue(tree.get("timestamp").isIntegralNumber());
-        assertEquals(tree.get("value").asText(), "hello world");
+        assertThatJson(payloadAsString).node("timestamp").isIntegralNumber();
+        assertThatJson(payloadAsString).node("value").isString().isEqualTo("hello world");
     }
-
 }

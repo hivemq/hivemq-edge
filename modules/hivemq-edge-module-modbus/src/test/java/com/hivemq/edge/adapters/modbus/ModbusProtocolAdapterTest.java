@@ -2,8 +2,6 @@ package com.hivemq.edge.adapters.modbus;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
@@ -21,8 +19,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -64,11 +61,8 @@ class ModbusProtocolAdapterTest {
         adapter.captureDataSample(data).get();
 
         final String payloadAsString = new String(publishArgumentCaptor.getValue().getPayload());
-        System.out.println(payloadAsString);
-        ObjectMapper objectMapper = new ObjectMapper();
-        final JsonNode tree = objectMapper.readTree(payloadAsString);
-        assertTrue(tree.get("timestamp").isIntegralNumber());
-        assertEquals(tree.get("value").asText(), "hello world");
+        assertThatJson(payloadAsString).node("timestamp").isIntegralNumber();
+        assertThatJson(payloadAsString).node("value").isString().isEqualTo("hello world");
     }
 
 }

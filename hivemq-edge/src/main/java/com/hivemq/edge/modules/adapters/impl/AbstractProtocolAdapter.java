@@ -42,6 +42,7 @@ import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig.Subscription.MessageHandlingOptions;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Logger;
@@ -118,7 +119,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         Long timestamp = data.getSubscription().getIncludeTimestamp() ? data.getTimestamp() : null;
         if(data.getDataPoints().size() > 1 &&
                 data.getSubscription().getMessageHandlingOptions() ==
-                        AbstractProtocolAdapterConfig.Subscription.MessageHandlingOptions.MQTTMessagePerSubscription){
+                        MessageHandlingOptions.MQTTMessagePerSubscription){
             //-- Put all derived samples into a single MQTT message
             list.add(createMultiPublishPayload(timestamp, data.getDataPoints(), data.getSubscription().getIncludeTagNames()));
         } else {

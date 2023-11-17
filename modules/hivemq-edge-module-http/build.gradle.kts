@@ -65,6 +65,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${property("junit.jupiter.version")}")
     testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
     testImplementation("org.mockito:mockito-junit-jupiter:${property("mockito.version")}")
+    testImplementation("net.javacrumbs.json-unit:json-unit-assertj:${property("jsonUnit")}")
 }
 
 tasks.test {
