@@ -18,12 +18,25 @@ const Metrics: FC<MetricsProps> = ({ initMetrics }) => {
     <Card flex={1} size={'sm'}>
       {showSelector && (
         <CardHeader>
-          <MetricNameSelector
-            selectedMetrics={metrics}
-            onSubmit={(d) => {
-              setMetrics((old) => [...old, d.myTopic])
-            }}
-          />
+          <Flex justifyContent={'flex-end'}>
+            <IconButton
+              variant={'ghost'}
+              size={'sm'}
+              aria-label="ddf"
+              fontSize={'20px'}
+              icon={!isOpen ? <TbLayoutNavbarExpand /> : <TbLayoutNavbarCollapse />}
+              onClick={() => (isOpen ? onClose() : onOpen())}
+            />
+          </Flex>
+          {isOpen && (
+            <MetricNameSelector
+              filter={id}
+              selectedMetrics={metrics}
+              onSubmit={(d) => {
+                setMetrics((old) => [...old, d.myTopic])
+              }}
+            />
+          )}
         </CardHeader>
       )}
 
