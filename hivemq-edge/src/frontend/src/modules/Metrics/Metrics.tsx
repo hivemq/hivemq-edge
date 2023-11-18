@@ -6,8 +6,8 @@ import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 import config from '@/config'
 
-import MetricNameSelector from './MetricNameSelector.tsx'
-import Sample from './Sample.tsx'
+import MetricNameSelector from './components/MetricNameSelector.tsx'
+import Sample from './components/Sample.tsx'
 
 interface MetricsProps {
   type: NodeTypes

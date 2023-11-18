@@ -25,7 +25,7 @@ import { MdOutlineEventNote } from 'react-icons/md'
 import { Adapter, Bridge } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
-import Metrics from '@/modules/Welcome/components/Metrics.tsx'
+import Metrics from '@/modules/Metrics/Metrics.tsx'
 import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
