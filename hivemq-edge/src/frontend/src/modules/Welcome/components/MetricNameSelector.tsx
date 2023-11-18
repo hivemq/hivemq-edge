@@ -49,7 +49,7 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, sel
 
   useEffect(() => {
     if (isSubmitted) {
-      reset(undefined)
+      reset()
     }
   }, [isSubmitted, reset])
 
