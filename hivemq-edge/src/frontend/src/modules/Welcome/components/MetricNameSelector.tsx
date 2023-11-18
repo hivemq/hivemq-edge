@@ -15,7 +15,7 @@ interface MetricNameOption {
 }
 
 interface MetricNameSelectorForm {
-  myTopic: MetricNameOption
+  selectedTopic: MetricNameOption
 }
 
 interface MetricNameSelectorProps {
@@ -64,18 +64,19 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, sel
         <Flex gap={2}>
           <Box flex={1}>
             <Controller
-              name={'myTopic'}
+              name={'selectedTopic'}
               control={control}
               rules={{
                 required: true,
               }}
               render={({ field }) => {
-                const { onChange, ...rest } = field
+                const { value, onChange, ...rest } = field
                 return (
                   <Select
                     {...rest}
                     inputId={'tlsConfiguration.protocols'}
-                    onChange={(values) => onChange(values?.value)}
+                    value={value || null}
+                    onChange={(values) => onChange(values)}
                     options={sortedItems}
                     isClearable={true}
                     isMulti={false}
