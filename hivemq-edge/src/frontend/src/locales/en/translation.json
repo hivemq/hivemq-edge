@@ -656,6 +656,15 @@
     }
   },
   "metrics": {
+    "command": {
+      "remove": {
+        "ariaLabel": "Remove from panel"
+      },
+      "copy": {
+        "ariaLabel": "Copy the metric to the clipboard",
+        "prompt": "The metric information has been copied to the clipboard"
+      }
+    },
     "protocolAdapters": {
       "connection.success.count": "Connection success (count)",
       "connection.failed.count": "Connection failed (count)",
@@ -663,10 +672,10 @@
       "read.publish.success.count": "Publish success (count)"
     },
     "bridge": {
-      "publish.loop-hops-exceeded.count": "",
-      "publish.count": "",
-      "publish.failed.count": "",
-      "publish.excluded.count": ""
+      "publish.loop-hops-exceeded.count": "Loop hops exceeded (count)",
+      "publish.count": "Publish success (count)",
+      "publish.failed.count": "Publish failed (count)",
+      "publish.excluded.count": "Publish excluded (count)"
     },
     "messages.retained.current": "Message retained"
   },
