@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov;
+package com.hivemq.context;
 
-import com.hivemq.datagov.model.DataGovernanceData;
-import com.hivemq.datagov.model.DataGovernanceResult;
-import com.hivemq.datagov.provider.DataGovernanceTokenProvider;
+import com.hivemq.context.model.Data;
+import com.hivemq.context.model.Result;
+import com.hivemq.context.provider.TokenProvider;
 
 import java.util.concurrent.ExecutorService;
 
-public interface DataGovernanceContext {
+public interface HiveMQEdgeContext {
 
-    DataGovernanceData getInput();
-    DataGovernanceResult getResult();
-    DataGovernanceTokenProvider getTokenProvider();
-    void setResult(DataGovernanceResult result);
+    Data getInput();
+    Result getResult();
+    TokenProvider getTokenProvider();
+    void setResult(Result result);
 
     ExecutorService getExecutorService();
     void setExecutorService(ExecutorService executorService);

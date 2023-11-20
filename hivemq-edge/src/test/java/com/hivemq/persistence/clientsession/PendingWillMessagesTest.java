@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.hivemq.datagov.DataGovernanceService;
+import com.hivemq.context.HiveMQEdgeService;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;
@@ -53,15 +53,15 @@ public class PendingWillMessagesTest {
     private ClientSessionPersistence clientSessionPersistence;
     private ClientSessionLocalPersistence clientSessionLocalPersistence;
     private PendingWillMessages pendingWillMessages;
-    private DataGovernanceService dataGovernanceService;
+    private HiveMQEdgeService hiveMQEdgeService;
 
     @Before
     public void setUp() throws Exception {
         clientSessionPersistence = mock(ClientSessionPersistence.class);
         clientSessionLocalPersistence = mock(ClientSessionLocalPersistence.class);
-        dataGovernanceService = mock(DataGovernanceService.class);
+        hiveMQEdgeService = mock(HiveMQEdgeService.class);
 
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
+        when(hiveMQEdgeService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
 
         final MetricsHolder metricsHolder = mock(MetricsHolder.class);
         when(metricsHolder.getPublishedWillMessagesCount()).thenReturn(mock(Counter.class));
@@ -69,8 +69,7 @@ public class PendingWillMessagesTest {
         pendingWillMessages = new PendingWillMessages(executorService,
                 () -> clientSessionPersistence,
                 clientSessionLocalPersistence,
-                metricsHolder,
-                dataGovernanceService);
+                metricsHolder, hiveMQEdgeService);
     }
 
     @After
@@ -125,7 +124,7 @@ public class PendingWillMessagesTest {
         final ClientSession clientSession = new ClientSession(false, 10, sessionWill, 123L);
         pendingWillMessages.sendOrEnqueueWillIfAvailable("client", clientSession);
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
         verify(clientSessionPersistence).deleteWill(eq("client"));
     }
 
@@ -142,7 +141,7 @@ public class PendingWillMessagesTest {
         final ClientSession clientSession = new ClientSession(false, 0, sessionWill, 123L);
         pendingWillMessages.sendOrEnqueueWillIfAvailable("client", clientSession);
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
         verify(clientSessionPersistence).deleteWill(eq("client"));
     }
 
@@ -184,7 +183,7 @@ public class PendingWillMessagesTest {
         final PendingWillMessages.CheckWillsTask checkWillsTask = pendingWillMessages.new CheckWillsTask();
         checkWillsTask.run();
 
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
     }
 
     @Test
@@ -206,7 +205,7 @@ public class PendingWillMessagesTest {
         final PendingWillMessages.CheckWillsTask checkWillsTask = pendingWillMessages.new CheckWillsTask();
         checkWillsTask.run();
 
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test
@@ -224,12 +223,12 @@ public class PendingWillMessagesTest {
         when(clientSessionLocalPersistence.getSession(eq(clientId), anyBoolean())).thenReturn(clientSession);
 
         pendingWillMessages.sendWillIfPending("foobar");
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
         pendingWillMessages.sendOrEnqueueWillIfAvailable(clientId, clientSession);
-        verify(dataGovernanceService, never()).applyAndPublish(any());
+        verify(hiveMQEdgeService, never()).applyAndPublish(any());
         pendingWillMessages.sendWillIfPending(clientId);
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
         pendingWillMessages.sendWillIfPending(clientId);
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 }

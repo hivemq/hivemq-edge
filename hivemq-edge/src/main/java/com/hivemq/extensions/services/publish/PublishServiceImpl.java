@@ -22,11 +22,11 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
 import com.hivemq.configuration.HivemqId;
-import com.hivemq.datagov.DataGovernanceContext;
-import com.hivemq.datagov.DataGovernanceService;
-import com.hivemq.datagov.impl.DataGovernanceContextImpl;
-import com.hivemq.datagov.model.DataGovernanceData;
-import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
+import com.hivemq.context.HiveMQEdgeContext;
+import com.hivemq.context.HiveMQEdgeService;
+import com.hivemq.context.impl.ContextImpl;
+import com.hivemq.context.model.Data;
+import com.hivemq.context.model.impl.DataImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.extension.sdk.api.services.exception.DoNotImplementException;
@@ -78,7 +78,7 @@ public class PublishServiceImpl implements PublishService {
     private final LocalTopicTree topicTree;
 
     @NotNull
-    private final DataGovernanceService dataGovernanceService;
+    private final HiveMQEdgeService hiveMQEdgeService;
 
     @Inject
     public PublishServiceImpl(@NotNull final PluginServiceRateLimitService rateLimitService,
@@ -86,13 +86,13 @@ public class PublishServiceImpl implements PublishService {
                               @NotNull final PublishDistributor publishDistributor,
                               @NotNull final HivemqId hiveMQId,
                               @NotNull final LocalTopicTree topicTree,
-                              @NotNull final DataGovernanceService dataGovernanceService) {
+                              @NotNull final HiveMQEdgeService hiveMQEdgeService) {
         this.rateLimitService = rateLimitService;
         this.globalManagedExtensionExecutorService = globalManagedExtensionExecutorService;
         this.publishDistributor = publishDistributor;
         this.hiveMQId = hiveMQId;
         this.topicTree = topicTree;
-        this.dataGovernanceService = dataGovernanceService;
+        this.hiveMQEdgeService = hiveMQEdgeService;
     }
 
     @Override
@@ -108,12 +108,12 @@ public class PublishServiceImpl implements PublishService {
 
         final PUBLISH internalPublish = publishToPUBLISH((PublishImpl) publish);
 
-        DataGovernanceData data = new DataGovernanceDataImpl.Builder()
+        Data data = new DataImpl.Builder()
                 .withPublish(internalPublish)
                 .build();
-        DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
+        HiveMQEdgeContext governanceContext = new ContextImpl(data);
         governanceContext.setExecutorService(globalManagedExtensionExecutorService);
-        final ListenableFuture<PublishReturnCode> publishFuture = dataGovernanceService.applyAndPublish(governanceContext);
+        final ListenableFuture<PublishReturnCode> publishFuture = hiveMQEdgeService.applyAndPublish(governanceContext);
         return ListenableFutureConverter.toVoidCompletable(publishFuture, globalManagedExtensionExecutorService);
     }
 

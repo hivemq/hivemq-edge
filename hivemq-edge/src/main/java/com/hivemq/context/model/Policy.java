@@ -13,23 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.model;
+package com.hivemq.context.model;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.Optional;
+import com.hivemq.context.HiveMQEdgeContext;
 
 /**
  * @author Simon L Johnson
  */
-public interface DataGovernanceError {
 
-    @NotNull Optional<Throwable> getError();
 
-    @NotNull Optional<String> getPipelineId();
+public interface Policy extends Entity {
 
-    @NotNull Optional<String> getFunctionId();
-
-    @NotNull Optional<String> getMessage();
-
+    void execute(final HiveMQEdgeContext context, final Data input);
 }

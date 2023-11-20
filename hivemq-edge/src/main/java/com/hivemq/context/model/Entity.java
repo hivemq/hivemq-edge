@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.provider;
+package com.hivemq.context.model;
 
-import com.hivemq.datagov.DataGovernanceContext;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.Map;
 
 /**
  * @author Simon L Johnson
  */
-public interface DataGovernanceTokenProvider {
+public interface Entity {
 
-    @NotNull Map<String, String> getTokenReplacements(@NotNull final DataGovernanceContext context);
+    @NotNull String getId();
 
+    @NotNull String getName();
+
+    @NotNull boolean isEnabled();
 
 }

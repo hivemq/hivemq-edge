@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.impl;
+package com.hivemq.context.impl;
 
-import com.hivemq.datagov.DataGovernanceContext;
-import com.hivemq.datagov.model.DataGovernanceData;
-import com.hivemq.datagov.model.DataGovernanceResult;
-import com.hivemq.datagov.provider.DataGovernanceTokenProvider;
+import com.hivemq.context.HiveMQEdgeContext;
+import com.hivemq.context.model.Data;
+import com.hivemq.context.model.Result;
+import com.hivemq.context.provider.TokenProvider;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -29,41 +29,41 @@ import java.util.concurrent.ExecutorService;
 /**
  * @author Simon L Johnson
  */
-public class DataGovernanceContextImpl implements DataGovernanceContext {
+public class ContextImpl implements HiveMQEdgeContext {
 
     private final @NotNull Map<String, String> tokenReplacements;
-    private final @NotNull DataGovernanceData input;
-    private @NotNull DataGovernanceResult result;
+    private final @NotNull Data input;
+    private @NotNull Result result;
     private @NotNull ExecutorService executorService;
 
-    public DataGovernanceContextImpl(final @NotNull DataGovernanceData input) {
+    public ContextImpl(final @NotNull Data input) {
         this.input = input;
         this.tokenReplacements = Collections.emptyMap();
     }
 
-    public DataGovernanceContextImpl(final @NotNull DataGovernanceData input,
-                                     final @NotNull Map<String, String> tokenReplacements) {
+    public ContextImpl(final @NotNull Data input,
+                       final @NotNull Map<String, String> tokenReplacements) {
         this.input = input;
         this.tokenReplacements = tokenReplacements;
     }
 
     @Override
-    public @NotNull DataGovernanceData getInput() {
+    public @NotNull Data getInput() {
         return input;
     }
 
     @Override
-    public @Nullable DataGovernanceResult getResult() {
+    public @Nullable Result getResult() {
         return result;
     }
 
     @Override
-    public void setResult(final @NotNull DataGovernanceResult result) {
+    public void setResult(final @NotNull Result result) {
         this.result = result;
     }
 
     @Override
-    public DataGovernanceTokenProvider getTokenProvider() {
+    public TokenProvider getTokenProvider() {
         return context -> tokenReplacements;
     }
 

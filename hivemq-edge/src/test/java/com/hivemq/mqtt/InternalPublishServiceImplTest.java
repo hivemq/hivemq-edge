@@ -18,7 +18,7 @@ package com.hivemq.mqtt;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.hivemq.datagov.DataGovernanceService;
+import com.hivemq.context.HiveMQEdgeService;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -75,7 +75,7 @@ public class InternalPublishServiceImplTest {
     private ExecutorService executorService;
 
     private InternalPublishServiceImpl publishService;
-    private DataGovernanceService dataGovernator;
+    private HiveMQEdgeService dataGovernator;
 
     @Before
     public void before() {

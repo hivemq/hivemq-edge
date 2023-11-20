@@ -20,7 +20,7 @@ import com.google.common.util.concurrent.Futures;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.datagov.DataGovernanceService;
+import com.hivemq.context.HiveMQEdgeService;
 import com.hivemq.extension.sdk.api.packets.general.Qos;
 import com.hivemq.extension.sdk.api.packets.general.UserProperties;
 import com.hivemq.extension.sdk.api.packets.publish.PayloadFormatIndicator;
@@ -76,7 +76,7 @@ public class PublishServiceImplTest {
     private final ConfigurationService fullConfigurationService =
             new TestConfigurationBootstrap().getConfigurationService();
     private PublishServiceImpl publishService;
-    private DataGovernanceService dataGovernanceService;
+    private HiveMQEdgeService hiveMQEdgeService;
 
     @Before
     public void setUp() throws Exception {
@@ -84,14 +84,13 @@ public class PublishServiceImplTest {
         when(rateLimitService.rateLimitExceeded()).thenReturn(false);
         managedPluginExecutorService = new GlobalManagedExtensionExecutorService(shutdownHooks);
         managedPluginExecutorService.postConstruct();
-        dataGovernanceService = mock(DataGovernanceService.class);
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
+        hiveMQEdgeService = mock(HiveMQEdgeService.class);
+        when(hiveMQEdgeService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
         publishService = new PublishServiceImpl(rateLimitService,
                 managedPluginExecutorService,
                 publishDistributor,
                 hiveMQId,
-                topicTree,
-                dataGovernanceService);
+                topicTree, hiveMQEdgeService);
     }
 
     @Test(expected = DoNotImplementException.class)
@@ -143,10 +142,10 @@ public class PublishServiceImplTest {
         final Publish publish = new PublishBuilderImpl(fullConfigurationService).topic("topic")
                 .payload(ByteBuffer.wrap("message".getBytes()))
                 .build();
-        when(dataGovernanceService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
+        when(hiveMQEdgeService.applyAndPublish(any())).thenReturn(Futures.immediateFuture(PublishReturnCode.DELIVERED));
 
         publishService.publish(publish).get();
-        verify(dataGovernanceService).applyAndPublish(any());
+        verify(hiveMQEdgeService).applyAndPublish(any());
     }
 
     @Test(timeout = 10000)

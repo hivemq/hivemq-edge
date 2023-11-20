@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.model.impl;
+package com.hivemq.context.model.impl;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.datagov.model.DataGovernanceEntity;
+import com.hivemq.context.model.Entity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Objects;
@@ -24,21 +24,21 @@ import java.util.Objects;
 /**
  * @author Simon L Johnson
  */
-public abstract class AbstractDataGovernanceEntity implements DataGovernanceEntity {
+public abstract class AbstractEntity implements Entity {
 
     private @NotNull final String id;
     private @NotNull final String name;
     private boolean enabled = true;
     private boolean mutable = false;
 
-    public AbstractDataGovernanceEntity(final @NotNull String id, final @NotNull String name) {
+    public AbstractEntity(final @NotNull String id, final @NotNull String name) {
         Preconditions.checkNotNull(id, "Id Must Exist On Policy Object");
         Preconditions.checkNotNull(name, "Name Must Exist On Policy Object");
         this.id = id;
         this.name = name;
     }
 
-    public AbstractDataGovernanceEntity(final @NotNull String id) {
+    public AbstractEntity(final @NotNull String id) {
         this(id, id);
     }
 
@@ -72,7 +72,7 @@ public abstract class AbstractDataGovernanceEntity implements DataGovernanceEnti
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        AbstractDataGovernanceEntity that = (AbstractDataGovernanceEntity) o;
+        AbstractEntity that = (AbstractEntity) o;
         return Objects.equals(id, that.id);
     }
 

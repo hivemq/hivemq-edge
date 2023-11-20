@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.model;
+package com.hivemq.context.model;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.mqtt.message.publish.PUBLISH;
 
 /**
  * @author Simon L Johnson
  */
-public interface DataGovernanceEntity {
+public interface Data {
 
-    @NotNull String getId();
+    @NotNull String getClientId();
 
-    @NotNull String getName();
-
-    @NotNull boolean isEnabled();
-
+    @NotNull PUBLISH getPublish();
+    void setPublish(PUBLISH publish);
 }

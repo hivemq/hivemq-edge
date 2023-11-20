@@ -19,11 +19,11 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.datagov.DataGovernanceContext;
-import com.hivemq.datagov.DataGovernanceService;
-import com.hivemq.datagov.impl.DataGovernanceContextImpl;
-import com.hivemq.datagov.model.DataGovernanceData;
-import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
+import com.hivemq.context.HiveMQEdgeContext;
+import com.hivemq.context.HiveMQEdgeService;
+import com.hivemq.context.impl.ContextImpl;
+import com.hivemq.context.model.Data;
+import com.hivemq.context.model.impl.DataImpl;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -64,7 +64,7 @@ public class ProtocolAdapterInterceptorHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterInterceptorHandler.class);
 
-    private final @NotNull DataGovernanceService dataGovernanceService;
+    private final @NotNull HiveMQEdgeService hiveMQEdgeService;
     private final @NotNull Interceptors interceptors;
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull PluginOutPutAsyncer asyncer;
@@ -75,7 +75,7 @@ public class ProtocolAdapterInterceptorHandler {
 
     @Inject
     public ProtocolAdapterInterceptorHandler(
-            final @NotNull DataGovernanceService dataGovernanceService,
+            final @NotNull HiveMQEdgeService hiveMQEdgeService,
             final @NotNull Interceptors interceptors,
             final @NotNull ConfigurationService configurationService,
             final @NotNull PluginOutPutAsyncer asyncer,
@@ -83,7 +83,7 @@ public class ProtocolAdapterInterceptorHandler {
             final @NotNull MessageDroppedService messageDroppedService,
             final @NotNull PluginTaskExecutorService pluginTaskExecutorService,
             final @NotNull ServerInformation serverInformation) {
-        this.dataGovernanceService = dataGovernanceService;
+        this.hiveMQEdgeService = hiveMQEdgeService;
         this.interceptors = interceptors;
         this.configurationService = configurationService;
         this.asyncer = asyncer;
@@ -157,17 +157,17 @@ public class ProtocolAdapterInterceptorHandler {
 
     private @NotNull ListenableFuture<PublishReturnCode> processPublish(
             final @NotNull PUBLISH publish, final @NotNull ProtocolAdapter protocolAdapter) {
-        DataGovernanceData data =
-                new DataGovernanceDataImpl.Builder().withClientId(protocolAdapter.getId()).withPublish(publish).build();
-        DataGovernanceContext context = new ProtocolAdapterContext(data, protocolAdapter);
-        return dataGovernanceService.applyAndPublish(context);
+        Data data =
+                new DataImpl.Builder().withClientId(protocolAdapter.getId()).withPublish(publish).build();
+        HiveMQEdgeContext context = new ProtocolAdapterContext(data, protocolAdapter);
+        return hiveMQEdgeService.applyAndPublish(context);
     }
 
-    static class ProtocolAdapterContext extends DataGovernanceContextImpl {
+    static class ProtocolAdapterContext extends ContextImpl {
 
         final @NotNull ProtocolAdapter adapter;
 
-        public ProtocolAdapterContext(final @NotNull DataGovernanceData input, final @NotNull ProtocolAdapter adapter) {
+        public ProtocolAdapterContext(final @NotNull Data input, final @NotNull ProtocolAdapter adapter) {
             super(input, populateAdapterContextReplacements(adapter));
             this.adapter = adapter;
         }

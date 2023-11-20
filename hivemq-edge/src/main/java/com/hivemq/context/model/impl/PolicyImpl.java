@@ -13,16 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.model;
+package com.hivemq.context.model.impl;
 
-import com.hivemq.datagov.DataGovernanceContext;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.context.model.Policy;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
  * @author Simon L Johnson
  */
+public abstract class PolicyImpl extends AbstractEntity implements Policy {
 
+    @JsonCreator
+    public PolicyImpl(@JsonProperty("id") final @NotNull String id,
+                      @JsonProperty("name") final @NotNull String name) {
+        super(id, name);
+    }
 
-public interface DataGovernancePolicy extends DataGovernanceEntity {
-
-    void execute(final DataGovernanceContext context, final DataGovernanceData input);
 }

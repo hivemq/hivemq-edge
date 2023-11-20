@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.impl;
+package com.hivemq.context.impl;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
@@ -24,12 +24,12 @@ import com.google.common.util.concurrent.JdkFutureAdapters;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.hivemq.datagov.DataGovernanceContext;
-import com.hivemq.datagov.DataGovernanceService;
-import com.hivemq.datagov.model.DataGovernancePolicy;
-import com.hivemq.datagov.model.DataGovernanceResult;
-import com.hivemq.datagov.model.impl.DataGoveranceResultImpl;
-import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
+import com.hivemq.context.HiveMQEdgeContext;
+import com.hivemq.context.HiveMQEdgeService;
+import com.hivemq.context.model.Policy;
+import com.hivemq.context.model.Result;
+import com.hivemq.context.model.impl.ResultImpl;
+import com.hivemq.context.model.impl.DataImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.mqtt.services.InternalPublishService;
@@ -47,20 +47,20 @@ import java.util.concurrent.Future;
  *
  */
 @Singleton
-public class DataGovernanceServiceImpl implements DataGovernanceService {
+public class ServiceImpl implements HiveMQEdgeService {
 
-    private static final Logger log = LoggerFactory.getLogger(DataGovernanceServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(ServiceImpl.class);
 
     private final @NotNull Counter governatedMessagesCounter;
     private final @NotNull InternalPublishService internalPublishService;
     private final @NotNull ListeningExecutorService executorService;
-    private final @NotNull UnifiedNamespaceDataGovernancePolicy namespaceDataGovernancePolicy;
+    private final @NotNull UnifiedNamespacePolicy namespaceDataGovernancePolicy;
 
     @Inject
-    public DataGovernanceServiceImpl(final @NotNull MetricRegistry metricRegistry,
-                                     final @NotNull InternalPublishService internalPublishService,
-                                     final @NotNull ExecutorService executorService,
-                                     final @NotNull UnifiedNamespaceDataGovernancePolicy namespaceDataGovernancePolicy) {
+    public ServiceImpl(final @NotNull MetricRegistry metricRegistry,
+                       final @NotNull InternalPublishService internalPublishService,
+                       final @NotNull ExecutorService executorService,
+                       final @NotNull UnifiedNamespacePolicy namespaceDataGovernancePolicy) {
         this.internalPublishService = internalPublishService;
         this.executorService = MoreExecutors.listeningDecorator(executorService);
         this.governatedMessagesCounter = metricRegistry.counter("com.hivemq.messages.governance.count");
@@ -68,37 +68,37 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
     }
 
     @Override
-    public @NotNull ListenableFuture<DataGovernanceResult> apply(@NotNull final DataGovernanceContext context) {
+    public @NotNull ListenableFuture<Result> apply(@NotNull final HiveMQEdgeContext hiveMQEdgeContext) {
 
-        Preconditions.checkNotNull(context);
-        Preconditions.checkNotNull(context.getInput(), "Data Governance Input Cannot Be <null>");
+        Preconditions.checkNotNull(hiveMQEdgeContext);
+        Preconditions.checkNotNull(hiveMQEdgeContext.getInput(), "Data Governance Input Cannot Be <null>");
 
         //-- Create the initial result object initd to the value of the input
-        DataGovernanceResult result = new DataGoveranceResultImpl(
-                new DataGovernanceDataImpl.Builder(context.getInput()).build());
-        result.setStatus(DataGovernanceResult.STATUS.SUCCESS);
-        context.setResult(result);
+        Result result = new ResultImpl(
+                new DataImpl.Builder(hiveMQEdgeContext.getInput()).build());
+        result.setStatus(Result.STATUS.SUCCESS);
+        hiveMQEdgeContext.setResult(result);
 
         //-- If More Than 1 Policy Is Matched, Ensure All Are Run Serially On The Same Thread
-        PolicyExecution policyExecution = new PolicyExecution(context, List.of(namespaceDataGovernancePolicy));
-        final ExecutorService executorForContext = getExecutorForContext(context);
-        final Future<DataGovernanceResult> resultFuture = executorForContext.submit(policyExecution);
+        PolicyExecution policyExecution = new PolicyExecution(hiveMQEdgeContext, List.of(namespaceDataGovernancePolicy));
+        final ExecutorService executorForContext = getExecutorForContext(hiveMQEdgeContext);
+        final Future<Result> resultFuture = executorForContext.submit(policyExecution);
         return JdkFutureAdapters.listenInPoolThread(resultFuture, executorForContext);
     }
 
     @Override
-    public @NotNull ListenableFuture<PublishReturnCode> applyAndPublish(@NotNull final DataGovernanceContext context) {
-        Preconditions.checkNotNull(context);
-        Preconditions.checkNotNull(context.getInput(), "Data Governance Input Cannot Be <null>");
-        ListenableFuture<DataGovernanceResult> policyFuture = apply(context);
-        AsyncFunction<DataGovernanceResult, PublishReturnCode> async = result -> publish(context);
-        return Futures.transformAsync(policyFuture, async, getExecutorForContext(context));
+    public @NotNull ListenableFuture<PublishReturnCode> applyAndPublish(@NotNull final HiveMQEdgeContext hiveMQEdgeContext) {
+        Preconditions.checkNotNull(hiveMQEdgeContext);
+        Preconditions.checkNotNull(hiveMQEdgeContext.getInput(), "Data Governance Input Cannot Be <null>");
+        ListenableFuture<Result> policyFuture = apply(hiveMQEdgeContext);
+        AsyncFunction<Result, PublishReturnCode> async = result -> publish(hiveMQEdgeContext);
+        return Futures.transformAsync(policyFuture, async, getExecutorForContext(hiveMQEdgeContext));
     }
 
-    protected @NotNull ListenableFuture<PublishReturnCode> publish(@NotNull final DataGovernanceContext context) {
+    protected @NotNull ListenableFuture<PublishReturnCode> publish(@NotNull final HiveMQEdgeContext context) {
         Preconditions.checkNotNull(context);
         Preconditions.checkNotNull(context.getResult(), "Data Governance Result Cannot Be <null>");
-        Preconditions.checkArgument(context.getResult().getStatus() == DataGovernanceResult.STATUS.SUCCESS,
+        Preconditions.checkArgument(context.getResult().getStatus() == Result.STATUS.SUCCESS,
                 "Can Only Apply Publish On Successful Execution");
         try {
             log.trace("Data Governance Publishing {} Bytes To {} at QoS {}",
@@ -113,17 +113,17 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
         }
     }
 
-    protected ExecutorService getExecutorForContext(@NotNull final DataGovernanceContext context){
+    protected ExecutorService getExecutorForContext(@NotNull final HiveMQEdgeContext context){
         return context.getExecutorService() == null ? executorService :
                 context.getExecutorService();
     }
 
-    class PolicyExecution implements Callable<DataGovernanceResult> {
+    class PolicyExecution implements Callable<Result> {
 
-        private final @NotNull List<DataGovernancePolicy> policies;
-        private final @NotNull DataGovernanceContext context;
+        private final @NotNull List<Policy> policies;
+        private final @NotNull HiveMQEdgeContext context;
 
-        public PolicyExecution(final @NotNull DataGovernanceContext context, final @NotNull List<DataGovernancePolicy> policies) {
+        public PolicyExecution(final @NotNull HiveMQEdgeContext context, final @NotNull List<Policy> policies) {
             Preconditions.checkNotNull(context);
             Preconditions.checkNotNull(context.getResult(), "Result should be available on context");
             this.policies = policies;
@@ -131,10 +131,10 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
         }
 
         @Override
-        public DataGovernanceResult call() {
+        public Result call() {
             governatedMessagesCounter.inc();
-            DataGovernanceResult result = context.getResult();
-            for(DataGovernancePolicy policy : policies){
+            Result result = context.getResult();
+            for(Policy policy : policies){
 //                log.trace("Data-Gov Executing '{}' with Id '{}'", policy.getName(), policy.getId());
                 policy.execute(context, context.getInput());
             }

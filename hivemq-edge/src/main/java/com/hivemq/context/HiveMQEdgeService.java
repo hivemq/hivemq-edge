@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov;
+package com.hivemq.context;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hivemq.datagov.model.DataGovernanceResult;
+import com.hivemq.context.model.Result;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 
-public interface DataGovernanceService {
+public interface HiveMQEdgeService {
 
-    @NotNull ListenableFuture<DataGovernanceResult> apply(@NotNull DataGovernanceContext governanceContext);
+    @NotNull ListenableFuture<Result> apply(@NotNull HiveMQEdgeContext hiveMQEdgeContext);
 
-    @NotNull ListenableFuture<PublishReturnCode> applyAndPublish(@NotNull DataGovernanceContext governanceContext);
+    @NotNull ListenableFuture<PublishReturnCode> applyAndPublish(@NotNull HiveMQEdgeContext hiveMQEdgeContext);
 
 }
 

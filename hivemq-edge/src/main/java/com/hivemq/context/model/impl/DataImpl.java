@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.datagov.model.impl;
+package com.hivemq.context.model.impl;
 
-import com.hivemq.datagov.model.DataGovernanceData;
+import com.hivemq.context.model.Data;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 
@@ -24,12 +24,12 @@ import java.util.Objects;
 /**
  * @author Simon L Johnson
  */
-public class DataGovernanceDataImpl implements DataGovernanceData {
+public class DataImpl implements Data {
 
     private @NotNull String clientId;
     private @NotNull PUBLISH publish;
 
-    private DataGovernanceDataImpl(
+    private DataImpl(
             final @NotNull String clientId, final @NotNull PUBLISH publish) {
         this.clientId = clientId;
         this.publish = publish;
@@ -58,7 +58,7 @@ public class DataGovernanceDataImpl implements DataGovernanceData {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        DataGovernanceDataImpl that = (DataGovernanceDataImpl) o;
+        DataImpl that = (DataImpl) o;
         return Objects.equals(clientId, that.clientId) && Objects.equals(publish, that.publish);
     }
 
@@ -81,7 +81,7 @@ public class DataGovernanceDataImpl implements DataGovernanceData {
         private String clientId;
         private PUBLISH publish;
 
-        public Builder(final @NotNull DataGovernanceData data) {
+        public Builder(final @NotNull Data data) {
             withClientId(data.getClientId());
             withPublish(data.getPublish());
         }
@@ -99,8 +99,8 @@ public class DataGovernanceDataImpl implements DataGovernanceData {
             return this;
         }
 
-        public DataGovernanceData build() {
-            return new DataGovernanceDataImpl(this.clientId, this.publish);
+        public Data build() {
+            return new DataImpl(this.clientId, this.publish);
         }
     }
 }

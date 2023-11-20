@@ -15,8 +15,8 @@
  */
 package com.hivemq.uns.ioc;
 
-import com.hivemq.datagov.impl.UnifiedNamespaceDataGovernancePolicy;
-import com.hivemq.datagov.model.DataGovernancePolicy;
+import com.hivemq.context.impl.UnifiedNamespacePolicy;
+import com.hivemq.context.model.Policy;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.impl.UnifiedNamespaceServiceImpl;
 import dagger.Binds;
@@ -38,6 +38,6 @@ public abstract class UnsServiceModule {
 
     @Binds
 //    @IntoSet
-    abstract DataGovernancePolicy provideDataGovernancePolicies(UnifiedNamespaceDataGovernancePolicy policy);
+    abstract Policy provideDataGovernancePolicies(UnifiedNamespacePolicy policy);
 
 }
