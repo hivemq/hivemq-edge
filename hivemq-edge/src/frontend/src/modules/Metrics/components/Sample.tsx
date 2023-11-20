@@ -12,7 +12,9 @@ import {
   StatLabel,
   StatNumber,
   Text,
+  Tooltip,
   VStack,
+  StatProps,
 } from '@chakra-ui/react'
 import { LuClipboardCopy } from 'react-icons/lu'
 import { NotAllowedIcon } from '@chakra-ui/icons'
@@ -37,6 +39,7 @@ const Sample: FC<SampleProps> = ({ metricName, onClose, onClipboardCopy, ...prop
   const { t } = useTranslation()
   const { data, isLoading, error } = useGetSample(metricName)
   const [series, setSeries] = useState<DataPoint[]>([])
+  const [isMajor] = useState(false)
   const change = useMemo(() => {
     if (series.length < 2) return undefined
     const d = diff(series[0].value as number, series[1].value as number)
@@ -60,13 +63,15 @@ const Sample: FC<SampleProps> = ({ metricName, onClose, onClipboardCopy, ...prop
 
   const formatNumber = Intl.NumberFormat(navigator.language)
 
-  const { suffix, id } = extractMetricInfo(metricName)
+  const { device, suffix, id } = extractMetricInfo(metricName)
   return (
-    <Stat variant="hivemq">
+    <Stat variant="hivemq" {...props} {...(isMajor ? { gridColumn: '1 / span 2' } : {})}>
       <HStack alignItems={'flex-start'}>
-        <VStack flex={1} alignItems={'flex-start'}>
+        <VStack flex={1} alignItems={'flex-start'} overflowX={'hidden'}>
           <StatLabel isTruncated>
-            <Text textOverflow={'ellipsis'}>{t(`metrics.protocolAdapters.${suffix}`).replaceAll('.', ' ')}</Text>
+            <Tooltip label={t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')} placement={'top'}>
+              <Text textOverflow={'ellipsis'}>{t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')}</Text>
+            </Tooltip>
             <Text>{id}</Text>
           </StatLabel>
 
