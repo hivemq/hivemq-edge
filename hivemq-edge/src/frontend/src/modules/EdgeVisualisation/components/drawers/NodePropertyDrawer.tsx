@@ -56,7 +56,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
             <Card size={'sm'}>
               <CardHeader>
                 <Text>
-                  {t('workspace.observability.eventLog.header', { type: selectedNode.type, id: selectedNode.data.id })}
+                  {t('workspace.property.eventLog.header', { type: selectedNode.type, id: selectedNode.data.id })}
                 </Text>
               </CardHeader>
               <CardBody>
@@ -72,7 +72,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
                   rightIcon={<MdOutlineEventNote />}
                   size="sm"
                 >
-                  {t('workspace.observability.eventLog.showMore')}
+                  {t('workspace.property.eventLog.showMore')}
                 </Button>
               </CardFooter>
             </Card>
