@@ -39,11 +39,14 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, sel
 
     return data.items
       .filter((e) => e.name && e.name.includes(filter))
-      .map((e) => ({
-        label: t(`metrics.protocolAdapters.${extractMetricInfo(e.name as string).suffix}`),
-        value: e.name as string,
-        isDisabled: selectedMetrics?.includes(e.name as string),
-      }))
+      .map((e) => {
+        const { device, suffix } = extractMetricInfo(e.name as string)
+        return {
+          label: t(`metrics.${device}.${suffix}`),
+          value: e.name as string,
+          isDisabled: selectedMetrics?.includes(e.name as string),
+        }
+      })
       .sort((a, b) => a.label.localeCompare(b.label))
   }, [data, filter, selectedMetrics, t])
 
