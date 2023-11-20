@@ -3,6 +3,8 @@ import {
   Box,
   CloseButton,
   HStack,
+  Icon,
+  IconButton,
   Spinner,
   Stat,
   StatArrow,
@@ -12,6 +14,7 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
+import { LuClipboardCopy } from 'react-icons/lu'
 import { NotAllowedIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
@@ -23,13 +26,14 @@ import { extractMetricInfo } from '../utils/metrics-name.utils.ts'
 interface SampleProps {
   metricName?: string
   onClose?: () => void
+  onCopy?: (metricName: string, timestamp: string, value: number) => void
 }
 
 const MAX_SERIES = 10
 
 const diff = (current: number, previous: number) => current - previous
 
-const Sample: FC<SampleProps> = ({ metricName, onClose }) => {
+const Sample: FC<SampleProps> = ({ metricName, onClose, onCopy }) => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useGetSample(metricName)
   const [series, setSeries] = useState<DataPoint[]>([])
@@ -59,28 +63,40 @@ const Sample: FC<SampleProps> = ({ metricName, onClose }) => {
   const { suffix, id } = extractMetricInfo(metricName)
   return (
     <Stat variant="hivemq">
-      <StatLabel isTruncated>
-        <HStack alignItems={'flex-start'}>
-          <VStack flex={1} overflowX={'hidden'} gap={0} alignItems={'flex-start'}>
+      <HStack alignItems={'flex-start'}>
+        <VStack flex={1} alignItems={'flex-start'}>
+          <StatLabel isTruncated>
             <Text textOverflow={'ellipsis'}>{t(`metrics.protocolAdapters.${suffix}`).replaceAll('.', ' ')}</Text>
             <Text>{id}</Text>
-          </VStack>
-          <Box>
-            <CloseButton aria-label={'Remove from panel'} size={'sm'} onClick={onClose} />
+          </StatLabel>
+
+          <StatNumber py={2}>
+            {isLoading && <Spinner data-testid={`metric-loader`} />}
+            {!!error && <NotAllowedIcon color="red.100" />}
+            {formatNumber.format(series[0]?.value as number)}
+          </StatNumber>
+          {!!change && (
+            <StatHelpText>
+              <StatArrow type={change > 0 ? 'increase' : 'decrease'} />
+              {formatNumber.format(Math.abs(change))}
+            </StatHelpText>
+          )}
+        </VStack>
+        <VStack>
+          <Box flex={1}>
+            <CloseButton aria-label={t('metrics.command.remove.ariaLabel') as string} size={'sm'} onClick={onClose} />
           </Box>
-        </HStack>
-      </StatLabel>
-      <StatNumber py={2}>
-        {isLoading && <Spinner />}
-        {!!error && <NotAllowedIcon color="red.100" />}
-        {formatNumber.format(series[0]?.value as number)}
-      </StatNumber>
-      {!!change && (
-        <StatHelpText>
-          <StatArrow type={change > 0 ? 'increase' : 'decrease'} />
-          {formatNumber.format(Math.abs(change))}
-        </StatHelpText>
-      )}
+          <Box>
+            <IconButton
+              size={'xs'}
+              variant={'ghost'}
+              icon={<Icon as={LuClipboardCopy} fontSize={'16px'} />}
+              aria-label={t('metrics.command.copy.ariaLabel')}
+              onClick={() => onCopy?.(metricName, series[0]?.sampleTime as string, series[0]?.value as number)}
+            />
+          </Box>
+        </VStack>
+      </HStack>
     </Stat>
   )
 }
