@@ -1,6 +1,7 @@
 import { FC, useState } from 'react'
-import { Card, CardBody, CardHeader, Flex, IconButton, SimpleGrid, useDisclosure } from '@chakra-ui/react'
+import { Card, CardBody, CardHeader, Flex, IconButton, SimpleGrid, useDisclosure, useToast } from '@chakra-ui/react'
 import { TbLayoutNavbarExpand, TbLayoutNavbarCollapse } from 'react-icons/tb'
+import { useTranslation } from 'react-i18next'
 
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
@@ -19,9 +20,19 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics }) => {
   const [metrics, setMetrics] = useState<string[]>(initMetrics || [])
   const showSelector = config.features.METRICS_SELECT_PANEL
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const toast = useToast()
+  const { t } = useTranslation()
+
+  const handleCopyMetric = (metricName: string, timestamp: string, value: number) => {
+    const id = `${metricName}-${timestamp}`
+    navigator.clipboard.writeText(JSON.stringify({ metricName, timestamp, value })).then(() => {
+      if (!toast.isActive(id))
+        toast({ id, duration: 3000, variant: 'subtle', description: t('metrics.command.copy.prompt') })
+    })
+  }
 
   return (
-    <Card size={'sm'} size={'sm'}>
+    <Card size={'sm'}>
       {showSelector && (
         <CardHeader>
           <Flex justifyContent={'flex-end'}>
@@ -50,7 +61,12 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics }) => {
       <CardBody>
         <SimpleGrid spacing={4} templateColumns="repeat(auto-fill, minmax(200px, 1fr))">
           {metrics.map((e) => (
-            <Sample key={e} metricName={e} onClose={() => setMetrics((old) => old.filter((x) => x !== e))} />
+            <Sample
+              key={e}
+              metricName={e}
+              onClose={() => setMetrics((old) => old.filter((x) => x !== e))}
+              onCopy={handleCopyMetric}
+            />
           ))}
         </SimpleGrid>
       </CardBody>
