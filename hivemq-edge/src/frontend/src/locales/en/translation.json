@@ -614,12 +614,11 @@
       "by_subscriptionCardinality": "By subscription count",
       "by_runtimeDuration": "By duration"
     },
-    "observability": {
-      "header": "Properties",
-      "adapter": {
-        "header": "Adapter Observability",
-        "modify": "Modify the adapter"
-      },
+    "property": {
+      "header_ADAPTER_NODE": "Adapter Observability",
+      "header_BRIDGE_NODE": "Bridge Observability",
+      "modify_ADAPTER_NODE": "Modify the adapter",
+      "modify_BRIDGE_NODE": "Modify the bridge",
       "eventLog": {
         "header": "The 5 most recent events for $t(workspace.device.type, {'context': '{{ type }}' }) {{ id }}",
         "showMore": "Show more"

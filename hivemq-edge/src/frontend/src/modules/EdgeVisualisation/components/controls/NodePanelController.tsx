@@ -34,14 +34,18 @@ const NodePanelController: FC = () => {
   }
 
   const handleEditEntity = () => {
-    const adapterNavigateState: AdapterNavigateState = {
-      protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
-      protocolAdapterType: (selectedNode?.data as Adapter).type,
-      selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selectedNode?.data as Adapter).id },
+    if (selectedNode?.type === NodeTypes.ADAPTER_NODE) {
+      const adapterNavigateState: AdapterNavigateState = {
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterType: (selectedNode?.data as Adapter).type,
+        selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selectedNode?.data as Adapter).id },
+      }
+      navigate(`/protocol-adapters/${(selectedNode?.data as Adapter).id}`, {
+        state: adapterNavigateState,
+      })
+    } else if (selectedNode?.type === NodeTypes.BRIDGE_NODE) {
+      navigate(`/mqtt-bridges/${(selectedNode?.data as Bridge).id}`)
     }
-    navigate(`/protocol-adapters/${(selectedNode?.data as Adapter).id}`, {
-      state: adapterNavigateState,
-    })
   }
 
   if (!selectedNode || !selectedNode.type) {

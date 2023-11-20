@@ -27,8 +27,10 @@ import { DeviceTypes } from '@/api/types/api-devices.ts'
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
 import Metrics from '@/modules/Welcome/components/Metrics.tsx'
 import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'
+import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
+import NodeNameCard from '../parts/NodeNameCard.tsx'
 
 interface NodePropertyDrawerProps {
   selectedNode: Node<Bridge | Adapter>
@@ -45,15 +47,16 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
       <DrawerContent aria-label={t('workspace.observability.header') as string}>
         <DrawerCloseButton />
         <DrawerHeader>
-          <Text>{t('workspace.observability.adapter.header')}</Text>
+          <Text> {t('workspace.property.header', { context: selectedNode.type })}</Text>
         </DrawerHeader>
         <DrawerBody>
           <VStack gap={4} alignItems={'stretch'}>
+            <NodeNameCard selectedNode={selectedNode} />
             <Metrics initMetrics={getDefaultMetricsFor(selectedNode)} />
             <Card size={'sm'}>
               <CardHeader>
                 <Text>
-                  {t('workspace.observability.eventLog.header', { type: selectedNode.type, id: selectedNode.data.id })}
+                  {t('workspace.property.eventLog.header', { type: selectedNode.type, id: selectedNode.data.id })}
                 </Text>
               </CardHeader>
               <CardBody>
@@ -69,7 +72,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
                   rightIcon={<MdOutlineEventNote />}
                   size="sm"
                 >
-                  {t('workspace.observability.eventLog.showMore')}
+                  {t('workspace.property.eventLog.showMore')}
                 </Button>
               </CardFooter>
             </Card>
@@ -84,10 +87,10 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
               rightIcon={<EditIcon />}
               onClick={onEditEntity}
             >
-              {t('workspace.observability.adapter.modify')}
+              {t('workspace.property.modify', { context: selectedNode.type })}
             </Button>
             <ConnectionController
-              type={DeviceTypes.ADAPTER}
+              type={selectedNode.type === NodeTypes.ADAPTER_NODE ? DeviceTypes.ADAPTER : DeviceTypes.BRIDGE}
               id={selectedNode.data.id}
               status={selectedNode.data.status}
             />

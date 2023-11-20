@@ -1,8 +1,18 @@
 import { FC } from 'react'
 import { type BoxProps, useTheme, VStack } from '@chakra-ui/react'
 
-const NodeWrapper: FC<BoxProps> = ({ children, ...rest }) => {
+interface NodeWrapperProps extends BoxProps {
+  isSelected?: boolean
+}
+
+const NodeWrapper: FC<NodeWrapperProps> = ({ children, isSelected = false, ...rest }) => {
   const { colors } = useTheme()
+
+  const selectedStyle: Partial<BoxProps> = {
+    boxShadow: 'dark-lg',
+    rounded: 'md',
+    bg: '#dddfe2',
+  }
 
   return (
     <VStack
@@ -20,6 +30,7 @@ const NodeWrapper: FC<BoxProps> = ({ children, ...rest }) => {
       _focus={{
         boxShadow: '0 0 10px 2px rgba(88, 144, 255, .75), 0 1px 1px rgba(0, 0, 0, .15)',
       }}
+      {...(isSelected ? { ...selectedStyle } : {})}
       {...rest}
     >
       {children}
