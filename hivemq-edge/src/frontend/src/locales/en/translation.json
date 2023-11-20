@@ -665,17 +665,25 @@
         "prompt": "The metric information has been copied to the clipboard"
       }
     },
-    "protocolAdapters": {
+    "protocol-adapters": {
       "connection.success.count": "Connection success (count)",
       "connection.failed.count": "Connection failed (count)",
       "read.publish.failed.count": "Publish failed (count)",
       "read.publish.success.count": "Publish success (count)"
     },
     "bridge": {
-      "publish.loop-hops-exceeded.count": "Loop hops exceeded (count)",
-      "publish.count": "Publish success (count)",
-      "publish.failed.count": "Publish failed (count)",
-      "publish.excluded.count": "Publish excluded (count)"
+      "forward.publish.loop-hops-exceeded.count": "[Forward] Loop hops exceeded (count)",
+      "forward.publish.count": "[Forward] Publish success (count)",
+      "forward.publish.failed.count": "[Forward] Publish failed (count)",
+      "forward.publish.excluded.count": "[Forward] Publish excluded (count)",
+      "local.publish.loop-hops-exceeded.count": "[Local] Loop hops exceeded (count)",
+      "local.publish.count": "[Local] Publish success (count)",
+      "local.publish.failed.count": "[Local] Publish failed (count)",
+      "local.publish.excluded.count": "[Local] Publish excluded (count)",
+      "local.publish.received.count": "[Local] Publish received (count)",
+      "local.publish.no-subscriber-present.count": "[Local] No subscriber (count)",
+      "remote.publish.received.count": "[Remote] Publish received (count)",
+      "remote.publish.loop-hops-exceeded.count": "[Remote] Loop hops exceeded (count)"
     },
     "messages.retained.current": "Message retained"
   },
