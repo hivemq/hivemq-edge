@@ -44,7 +44,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
   return (
     <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={onClose}>
       <DrawerOverlay />
-      <DrawerContent aria-label={t('workspace.observability.header') as string}>
+      <DrawerContent aria-label={t('workspace.property.header', { context: selectedNode.type }) as string}>
         <DrawerCloseButton />
         <DrawerHeader>
           <Text> {t('workspace.property.header', { context: selectedNode.type })}</Text>
@@ -53,9 +53,10 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
           <VStack gap={4} alignItems={'stretch'}>
             <NodeNameCard selectedNode={selectedNode} />
             <Metrics
-              type={selected.type as NodeTypes}
-              id={selected.data.id}
-              initMetrics={getDefaultMetricsFor(selectedNode)} />
+              type={selectedNode.type as NodeTypes}
+              id={selectedNode.data.id}
+              initMetrics={getDefaultMetricsFor(selectedNode)}
+            />
             <Card size={'sm'}>
               <CardHeader>
                 <Text>
