@@ -23,17 +23,17 @@ import { DataPoint } from '@/api/__generated__'
 
 import { extractMetricInfo } from '../utils/metrics-name.utils.ts'
 
-interface SampleProps {
+interface SampleProps extends StatProps {
   metricName?: string
   onClose?: () => void
-  onCopy?: (metricName: string, timestamp: string, value: number) => void
+  onClipboardCopy?: (metricName: string, timestamp: string, value: number) => void
 }
 
 const MAX_SERIES = 10
 
 const diff = (current: number, previous: number) => current - previous
 
-const Sample: FC<SampleProps> = ({ metricName, onClose, onCopy }) => {
+const Sample: FC<SampleProps> = ({ metricName, onClose, onClipboardCopy, ...props }) => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useGetSample(metricName)
   const [series, setSeries] = useState<DataPoint[]>([])
@@ -92,7 +92,7 @@ const Sample: FC<SampleProps> = ({ metricName, onClose, onCopy }) => {
               variant={'ghost'}
               icon={<Icon as={LuClipboardCopy} fontSize={'16px'} />}
               aria-label={t('metrics.command.copy.ariaLabel')}
-              onClick={() => onCopy?.(metricName, series[0]?.sampleTime as string, series[0]?.value as number)}
+              onClick={() => onClipboardCopy?.(metricName, series[0]?.sampleTime as string, series[0]?.value as number)}
             />
           </Box>
         </VStack>

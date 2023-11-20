@@ -65,7 +65,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics }) => {
               key={e}
               metricName={e}
               onClose={() => setMetrics((old) => old.filter((x) => x !== e))}
-              onCopy={handleCopyMetric}
+              onClipboardCopy={handleCopyMetric}
             />
           ))}
         </SimpleGrid>
