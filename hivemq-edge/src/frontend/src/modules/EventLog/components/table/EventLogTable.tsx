@@ -20,14 +20,23 @@ import SourceLink from '../SourceLink.tsx'
 import SeverityBadge from '../SeverityBadge.tsx'
 
 interface EventLogTableProps {
-  onOpen: (t: Event) => void
+  onOpen?: (t: Event) => void
+  globalSourceFilter?: string
+  variant?: 'full' | 'summary'
 }
 
-const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
+const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, variant = 'full' }) => {
   const { t } = useTranslation()
   const { data, isLoading, isFetching, error, refetch } = useGetEvents()
 
-  const safeData: Event[] = data && data.items ? data.items : [...mockEdgeEvent(5)]
+  const safeData = useMemo<Event[]>(() => {
+    if (!data || !data?.items) return [...mockEdgeEvent(5)]
+    if (globalSourceFilter) {
+      return data.items.filter((e: Event) => e.source?.identifier === globalSourceFilter).slice(0, 5)
+    }
+
+    return data.items
+  }, [data, globalSourceFilter])
 
   const columns = useMemo<ColumnDef<Event>[]>(() => {
     return [
@@ -44,7 +53,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
                 <IconButton
                   size={'sm'}
                   mr={2}
-                  onClick={() => onOpen(info.row.original)}
+                  onClick={() => onOpen?.(info.row.original)}
                   aria-label={t('eventLog.table.cta.open')}
                   icon={<MdOutlineEventNote />}
                 />
@@ -110,24 +119,30 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen }) => {
     )
   }
 
+  // TODO[NVL] Not the best approach; destructure within memo
+  const [, a, b, , c] = columns
+
   return (
     <>
-      <Flex justifyContent={'flex-end'}>
-        <Button
-          isLoading={isFetching}
-          loadingText={t('eventLog.table.cta.refetch')}
-          variant={'outline'}
-          size={'sm'}
-          leftIcon={<Icon as={BiRefresh} fontSize={20} />}
-          onClick={() => refetch()}
-        >
-          {t('eventLog.table.cta.refetch')}
-        </Button>
-      </Flex>
+      {variant === 'full' && (
+        <Flex justifyContent={'flex-end'}>
+          <Button
+            isLoading={isFetching}
+            loadingText={t('eventLog.table.cta.refetch')}
+            variant={'outline'}
+            size={'sm'}
+            leftIcon={<Icon as={BiRefresh} fontSize={20} />}
+            onClick={() => refetch()}
+          >
+            {t('eventLog.table.cta.refetch')}
+          </Button>
+        </Flex>
+      )}
       <PaginatedTable<Event>
         data={safeData}
-        columns={columns}
-        enableColumnFilters
+        columns={variant === 'full' ? columns : [a, b, c]}
+        enablePagination={variant === 'full'}
+        enableColumnFilters={variant === 'full'}
         // getRowStyles={(row) => {
         //   return { backgroundColor: theme.colors.blue[50] }
         // }}

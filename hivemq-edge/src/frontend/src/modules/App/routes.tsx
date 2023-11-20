@@ -13,8 +13,8 @@ import WelcomePage from '@/modules/Welcome/WelcomePage.tsx'
 import LoginPage from '@/modules/Login/LoginPage.tsx'
 import UnifiedNamespaceEditor from '@/modules/UnifiedNamespace/components/UnifiedNamespaceEditor.tsx'
 import EdgeFlowPage from '@/modules/EdgeVisualisation/EdgeFlowPage.tsx'
-import NodePropertyDrawer from '@/modules/EdgeVisualisation/components/drawers/NodePropertyDrawer.tsx'
 import EvenLogPage from '@/modules/EventLog/EvenLogPage.tsx'
+import NodePanelController from '@/modules/EdgeVisualisation/components/controls/NodePanelController.tsx'
 
 export const routes = createBrowserRouter(
   [
@@ -63,7 +63,7 @@ export const routes = createBrowserRouter(
           children: [
             {
               path: ':nodeType/:nodeId',
-              element: <NodePropertyDrawer />,
+              element: <NodePanelController />,
             },
           ],
         },
