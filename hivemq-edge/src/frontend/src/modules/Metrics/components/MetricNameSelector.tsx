@@ -63,7 +63,7 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, sel
       style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}
     >
       <FormControl>
-        <FormLabel htmlFor={'tlsConfiguration.protocols'}>{t('welcome.metrics.select')}</FormLabel>
+        <FormLabel htmlFor={'metrics-select'}>{t('welcome.metrics.select')}</FormLabel>
         <Flex gap={2}>
           <Box flex={1}>
             <Controller
@@ -77,7 +77,8 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, sel
                 return (
                   <Select
                     {...rest}
-                    inputId={'tlsConfiguration.protocols'}
+                    id={'metrics-container'}
+                    inputId={'metrics-select'}
                     value={value || null}
                     onChange={(values) => onChange(values)}
                     options={sortedItems}
