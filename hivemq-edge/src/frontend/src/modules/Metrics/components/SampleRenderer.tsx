@@ -38,6 +38,8 @@ const SampleRenderer: FC<SampleRendererProps> = ({ metricInfo, series, isLoading
     return Number.isFinite(d) ? d : undefined
   }, [series])
 
+  const n = series[0]?.value as number
+
   return (
     <HStack alignItems={'flex-start'} gap={0}>
       <Stat variant="hivemq" {...props} overflowX={'hidden'} h={'100%'}>
@@ -51,7 +53,8 @@ const SampleRenderer: FC<SampleRendererProps> = ({ metricInfo, series, isLoading
         <StatNumber py={2}>
           {isLoading && <Spinner data-testid={`metric-loader`} />}
           {!!error && <NotAllowedIcon color="red.100" />}
-          {formatNumber.format(series[0]?.value as number)}
+          {isNaN(n) && '-'}
+          {!isNaN(n) && formatNumber.format(n)}
         </StatNumber>
         {!!change && (
           <StatHelpText>
