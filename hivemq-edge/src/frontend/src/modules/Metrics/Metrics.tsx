@@ -37,6 +37,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics }) => {
         <CardHeader>
           <Flex justifyContent={'flex-end'}>
             <IconButton
+              data-testid="metrics-toggle"
               variant={'ghost'}
               size={'sm'}
               aria-label="ddf"
