@@ -50,14 +50,14 @@ const SampleRenderer: FC<SampleRendererProps> = ({ metricInfo, series, isLoading
           <Text>{id}</Text>
         </StatLabel>
 
-        <StatNumber py={2}>
+        <StatNumber py={2} data-testid={`metric-value`}>
           {isLoading && <Spinner data-testid={`metric-loader`} />}
           {!!error && <NotAllowedIcon color="red.100" />}
           {isNaN(n) && '-'}
           {!isNaN(n) && formatNumber.format(n)}
         </StatNumber>
         {!!change && (
-          <StatHelpText>
+          <StatHelpText data-testid={`metric-change`}>
             <StatArrow type={change > 0 ? 'increase' : 'decrease'} />
             {formatNumber.format(Math.abs(change))}
           </StatHelpText>
