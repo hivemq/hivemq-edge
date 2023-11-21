@@ -40,7 +40,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics }) => {
               data-testid="metrics-toggle"
               variant={'ghost'}
               size={'sm'}
-              aria-label="ddf"
+              aria-label={t('metrics.command.showSelector.ariaLabel')}
               fontSize={'20px'}
               icon={!isOpen ? <TbLayoutNavbarExpand /> : <TbLayoutNavbarCollapse />}
               onClick={() => (isOpen ? onClose() : onOpen())}
