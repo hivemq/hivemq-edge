@@ -49,10 +49,16 @@ const Sample: FC<SampleProps> = ({ metricName, onClose, onClipboardCopy }) => {
     >
       <VStack>
         <Box flex={1}>
-          <CloseButton aria-label={t('metrics.command.remove.ariaLabel') as string} size={'sm'} onClick={onClose} />
+          <CloseButton
+            data-testid="metrics-remove"
+            aria-label={t('metrics.command.remove.ariaLabel') as string}
+            size={'sm'}
+            onClick={onClose}
+          />
         </Box>
         <Box>
           <IconButton
+            data-testid="metrics-copy"
             size={'xs'}
             variant={'ghost'}
             icon={<Icon as={LuClipboardCopy} fontSize={'16px'} />}
