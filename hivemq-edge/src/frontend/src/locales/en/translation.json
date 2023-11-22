@@ -728,5 +728,14 @@
     "error": {
       "loading": "We cannot load the events at this time. Please try again later"
     }
+  },
+  "notifications": {
+    "toast": {
+      "skipNotification": "Do not notify me again"
+    },
+    "releases": {
+      "title": "A new version of $t(branding.appName) is available",
+      "description": "Visit the GitHub repository to learn more about the latest version of $t(branding.appName)"
+    }
   }
 }
