@@ -33,7 +33,7 @@ describe('NodePropertyDrawer', () => {
     cy.get('@onClose').should('have.been.calledOnce')
 
     // check that the metrics is there
-    cy.get('label').should('contain.text', 'Select a metric to display')
+    cy.getByTestId('metrics-toggle').should('be.visible')
 
     // check that the event log is there
     cy.get('p').should('contain.text', 'The 5 most recent events for adapter idAdapter')

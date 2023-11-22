@@ -1,22 +1,30 @@
 import { FC, useEffect, useMemo } from 'react'
 import { Select } from 'chakra-react-select'
-import { Box, Button, Flex, FormControl, FormLabel } from '@chakra-ui/react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-
-import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.tsx'
+import { Box, Button, Flex, FormControl, FormLabel } from '@chakra-ui/react'
 import { BiAddToQueue } from 'react-icons/bi'
 
+import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.tsx'
+import { extractMetricInfo } from '../utils/metrics-name.utils.ts'
+
+interface MetricNameOption {
+  label: string
+  value: string
+  isDisabled?: boolean
+}
+
 interface MetricNameSelectorForm {
-  myTopic: string
+  selectedTopic: MetricNameOption
 }
 
 interface MetricNameSelectorProps {
   onSubmit: SubmitHandler<MetricNameSelectorForm>
   selectedMetrics: string[]
+  filter: string
 }
 
-const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit }) => {
+const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, selectedMetrics }) => {
   const { t } = useTranslation()
   const { data } = useGetMetrics()
   const {
@@ -26,15 +34,26 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit }) => {
     formState: { isValid, isSubmitted },
   } = useForm<MetricNameSelectorForm>()
 
-  const sortedItems: string[] = useMemo(() => {
-    if (!data?.items) return []
-    return (
-      data.items.sort((a, b) => (a.name as string).localeCompare(b.name as string)).map((e) => e.name as string) || ''
-    )
-  }, [data])
+  const sortedItems: MetricNameOption[] = useMemo(() => {
+    if (!data || !data.items) return []
+
+    return data.items
+      .filter((e) => e.name && e.name.includes(filter))
+      .map((e) => {
+        const { device, suffix } = extractMetricInfo(e.name as string)
+        return {
+          label: t(`metrics.${device}.${suffix}`),
+          value: e.name as string,
+          isDisabled: selectedMetrics?.includes(e.name as string),
+        }
+      })
+      .sort((a, b) => a.label.localeCompare(b.label))
+  }, [data, filter, selectedMetrics, t])
 
   useEffect(() => {
-    if (isSubmitted) reset()
+    if (isSubmitted) {
+      reset()
+    }
   }, [isSubmitted, reset])
 
   return (
@@ -44,11 +63,11 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit }) => {
       style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}
     >
       <FormControl>
-        <FormLabel htmlFor={'tlsConfiguration.protocols'}>{t('welcome.metrics.select')}</FormLabel>
-        <Flex>
+        <FormLabel htmlFor={'metrics-select'}>{t('welcome.metrics.select')}</FormLabel>
+        <Flex gap={2}>
           <Box flex={1}>
             <Controller
-              name={'myTopic'}
+              name={'selectedTopic'}
               control={control}
               rules={{
                 required: true,
@@ -58,10 +77,11 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit }) => {
                 return (
                   <Select
                     {...rest}
-                    value={{ label: value, value: value }}
-                    inputId={'tlsConfiguration.protocols'}
-                    onChange={(values) => onChange(values?.value)}
-                    options={sortedItems.map((e) => ({ label: e, value: e }))}
+                    id={'metrics-container'}
+                    inputId={'metrics-select'}
+                    value={value || null}
+                    onChange={(values) => onChange(values)}
+                    options={sortedItems}
                     isClearable={true}
                     isMulti={false}
                     isSearchable={true}

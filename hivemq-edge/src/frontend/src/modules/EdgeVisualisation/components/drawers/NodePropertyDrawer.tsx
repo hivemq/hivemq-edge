@@ -25,7 +25,7 @@ import { MdOutlineEventNote } from 'react-icons/md'
 import { Adapter, Bridge } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
-import Metrics from '@/modules/Welcome/components/Metrics.tsx'
+import Metrics from '@/modules/Metrics/Metrics.tsx'
 import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
@@ -44,7 +44,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
   return (
     <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={onClose}>
       <DrawerOverlay />
-      <DrawerContent aria-label={t('workspace.observability.header') as string}>
+      <DrawerContent aria-label={t('workspace.property.header', { context: selectedNode.type }) as string}>
         <DrawerCloseButton />
         <DrawerHeader>
           <Text> {t('workspace.property.header', { context: selectedNode.type })}</Text>
@@ -52,7 +52,11 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
         <DrawerBody>
           <VStack gap={4} alignItems={'stretch'}>
             <NodeNameCard selectedNode={selectedNode} />
-            <Metrics initMetrics={getDefaultMetricsFor(selectedNode)} />
+            <Metrics
+              type={selectedNode.type as NodeTypes}
+              id={selectedNode.data.id}
+              initMetrics={getDefaultMetricsFor(selectedNode)}
+            />
             <Card size={'sm'}>
               <CardHeader>
                 <Text>

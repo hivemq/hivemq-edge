@@ -200,7 +200,7 @@ export const getDefaultMetricsFor = (node: Node): string[] => {
   if (NodeTypes.BRIDGE_NODE === node.type) {
     const data = node.data as Bridge
     const suffix = 'com.hivemq.edge.bridge'
-    const prefix = 'publish.count'
+    const prefix = 'forward.publish.count'
     return [`${suffix}.${data.id}.${prefix}`]
   }
   return [] as string[]

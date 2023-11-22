@@ -1,8 +1,8 @@
-import { Metric } from '@/api/__generated__'
+import { DataPoint, Metric } from '@/api/__generated__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
-export const mockMetrics: Array<Metric> = [
+export const MOCK_METRICS: Array<Metric> = [
   { name: `com.hivemq.edge.bridge.${mockBridgeId}.forward.publish.count` },
   { name: `com.hivemq.edge.bridge.${mockBridgeId}.forward.publish.excluded.count` },
   { name: `com.hivemq.edge.bridge.${mockBridgeId}.forward.publish.failed.count` },
@@ -44,3 +44,18 @@ export const mockMetrics: Array<Metric> = [
   { name: `com.hivemq.edge.subscriptions.overall.current` },
   { name: `com.hivemq.messages.governance.count` },
 ]
+
+// main metrics
+export const MOCK_METRIC_BRIDGE = MOCK_METRICS[0].name as string
+export const MOCK_METRIC_ADAPTER = MOCK_METRICS[28].name as string
+
+// not in use at the moment
+export const MOCK_METRIC_MESSAGE = MOCK_METRICS[10].name as string
+export const MOCK_METRIC_NETWORKING = MOCK_METRICS[20].name as string
+export const MOCK_METRIC_MQTT = MOCK_METRICS[19].name as string
+export const MOCK_METRIC_PERSISTENCE = MOCK_METRICS[24].name as string
+
+export const MOCK_METRIC_SAMPLE: DataPoint = {
+  sampleTime: '2023-11-18T00:00:00Z',
+  value: 50000,
+}
