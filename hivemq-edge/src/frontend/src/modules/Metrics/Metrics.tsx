@@ -23,9 +23,9 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics }) => {
   const toast = useToast()
   const { t } = useTranslation()
 
-  const handleCopyMetric = (metricName: string, timestamp: string, value: number) => {
+  const handleCopyMetric = (metricName: string, timestamp: string) => {
     const id = `${metricName}-${timestamp}`
-    navigator.clipboard.writeText(JSON.stringify({ metricName, timestamp, value })).then(() => {
+    navigator.clipboard.writeText(metricName).then(() => {
       if (!toast.isActive(id))
         toast({ id, duration: 3000, variant: 'subtle', description: t('metrics.command.copy.prompt') })
     })
