@@ -4,12 +4,12 @@ import { useNavigate } from 'react-router-dom'
 import { Box, Button, Flex, Image, Text } from '@chakra-ui/react'
 import { FiLogOut } from 'react-icons/fi'
 
-import NavLinksBlock from './NavLinksBlock.tsx'
-
-import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 import logo from '@/assets/edge/03-hivemq-industrial-edge-vert.svg'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
+import NotificationBadge from '@/modules/Notifications/NotificationBadge.tsx'
 
+import NavLinksBlock from './NavLinksBlock.tsx'
 import useGetNavItems from '../hooks/useGetNavItems.tsx'
 
 const SidePanel: FC = () => {
@@ -22,13 +22,17 @@ const SidePanel: FC = () => {
   return (
     <nav>
       <Flex flexDirection="column" w={256} h={'100%'} bgColor={'#f5f5f5'} overflow={'auto'}>
-        <Box p={4} m={'auto'} mb={10}>
+        <Box p={4} m={'auto'} mb={4}>
           <Image src={logo} alt={t('branding.company') as string} boxSize="200px" />
           {configuration && (
             <Text data-testid="edge-release" fontSize="xs" textAlign={'center'}>
               [ {configuration.environment?.properties?.version} ]
             </Text>
           )}
+        </Box>
+
+        <Box m={4} mb={8}>
+          <NotificationBadge />
         </Box>
 
         <Flex flexDirection="column" flex={1}>
