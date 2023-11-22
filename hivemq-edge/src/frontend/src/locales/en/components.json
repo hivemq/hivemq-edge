@@ -44,5 +44,11 @@
         "seconds": "{{ value }}s"
       }
     }
+  },
+  "ClipboardCopyIconButton": {
+    "ariaLabel": "Copy to the clipboard",
+    "action_READY": "Ready!",
+    "action_COPIED": "Copied!",
+    "action_ERROR": "Error!"
   }
 }
