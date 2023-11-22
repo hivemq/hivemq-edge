@@ -11,8 +11,8 @@ import { SkipNotification } from '../components/SkipNotification.tsx'
 // TODO[NVL] Need to check whether a "new release" notification might already be handled by BE
 export const useGetManagedNotifications = () => {
   const { t } = useTranslation()
-  const { data: releases } = useGetReleases()
-  const { data: notification } = useGetNotifications()
+  const { data: releases, isSuccess: isReleasesSuccess } = useGetReleases()
+  const { data: notification, isSuccess: isNotificationsSuccess } = useGetNotifications()
   const [readNotifications, setReadNotifications] = useState<string[]>([])
 
   const notifications = useMemo<UseToastOptions[]>(() => {
@@ -86,5 +86,5 @@ export const useGetManagedNotifications = () => {
     return list
   }, [readNotifications, notification, releases, t])
 
-  return { notifications }
+  return { notifications, isSuccess: isNotificationsSuccess && isReleasesSuccess, readNotifications }
 }
