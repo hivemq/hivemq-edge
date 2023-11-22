@@ -730,6 +730,9 @@
     }
   },
   "notifications": {
+    "badge": {
+      "ariaLabel": "Notifications"
+    },
     "toast": {
       "skipNotification": "Do not notify me again"
     },
