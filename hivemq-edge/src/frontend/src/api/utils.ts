@@ -12,6 +12,7 @@ export const QUERY_KEYS = {
   METRICS: 'metrics',
   METRICS_SAMPLE: 'sample',
   EVENTS: 'events',
+  GITHUB_RELEASES: 'github.releases',
 }
 
 export const parseJWT = (token: string): JWTPayload | null => {
