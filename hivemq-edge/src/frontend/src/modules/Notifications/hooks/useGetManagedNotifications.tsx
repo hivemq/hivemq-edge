@@ -78,7 +78,7 @@ export const useGetManagedNotifications = () => {
     }
 
     return list
-  }, [notification, releases])
+  }, [notification, releases, t])
 
   return { notifications }
 }
