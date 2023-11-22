@@ -11,10 +11,7 @@ describe('Sample', () => {
 
   it('should render the bridge component', () => {
     const onClose = cy.stub().as('onClose')
-    const onClipboardCopy = cy.stub().as('onClipboardCopy')
-    cy.mountWithProviders(
-      <Sample metricName={MOCK_METRICS[0].name} onClose={onClose} onClipboardCopy={onClipboardCopy} />
-    )
+    cy.mountWithProviders(<Sample metricName={MOCK_METRICS[0].name} onClose={onClose} />)
 
     cy.get('dd').should('contain.text', '50,000')
 
