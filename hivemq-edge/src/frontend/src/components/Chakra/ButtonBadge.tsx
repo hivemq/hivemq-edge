@@ -29,7 +29,7 @@ const ButtonBadge: FC<ButtonBadgeProps> = ({
   return (
     <Avatar aria-label={ariaLabel} isDisabled={isDisabled} icon={icon} bg="brand.400" {...activeProps} {...props}>
       {((badgeCount && !isDisabled) || !isDisabled) && (
-        <AvatarBadge borderColor="yellow.50" bg="yellow.500" boxSize="1.25em">
+        <AvatarBadge borderColor="yellow.50" bg="yellow.500" boxSize="1.25em" data-testid={'buttonBadge-counter'}>
           <Text fontSize={'.95rem'}>{badgeCount}</Text>
         </AvatarBadge>
       )}
