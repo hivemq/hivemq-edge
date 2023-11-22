@@ -2,14 +2,14 @@ import { FC } from 'react'
 import { Avatar, AvatarBadge, AvatarProps, IconButton, Text } from '@chakra-ui/react'
 
 interface ButtonBadgeProps extends Omit<AvatarProps, 'aria-label'> {
-  badgeLabel?: string | number
+  badgeCount?: number
   isDisabled?: boolean
   'aria-label': string
 }
 
 const ButtonBadge: FC<ButtonBadgeProps> = ({
   ['aria-label']: ariaLabel,
-  badgeLabel,
+  badgeCount,
   icon,
   isDisabled,
   onClick,
@@ -28,9 +28,9 @@ const ButtonBadge: FC<ButtonBadgeProps> = ({
 
   return (
     <Avatar aria-label={ariaLabel} isDisabled={isDisabled} icon={icon} bg="brand.400" {...activeProps} {...props}>
-      {badgeLabel && !isDisabled && (
+      {((badgeCount && !isDisabled) || !isDisabled) && (
         <AvatarBadge borderColor="yellow.50" bg="yellow.500" boxSize="1.25em">
-          <Text fontSize={'.95rem'}>{badgeLabel}</Text>
+          <Text fontSize={'.95rem'}>{badgeCount}</Text>
         </AvatarBadge>
       )}
     </Avatar>

@@ -18,7 +18,7 @@ const NotificationBadge: FC = () => {
   return (
     <ButtonBadge
       aria-label={'dd'}
-      badgeLabel={notifications.length}
+      badgeCount={notifications.length}
       isDisabled={!notifications.length}
       icon={<FiMail />}
       onClick={handleClick}
