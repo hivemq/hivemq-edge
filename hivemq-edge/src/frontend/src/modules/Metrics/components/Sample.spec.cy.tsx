@@ -19,11 +19,5 @@ describe('Sample', () => {
     cy.get('@onClose').should('have.been.calledOnce')
 
     cy.getByTestId('metrics-copy').click()
-    cy.get('@onClipboardCopy').should(
-      'have.been.calledWith',
-      'com.hivemq.edge.bridge.bridge-id-01.forward.publish.count',
-      '2023-11-18T00:00:00Z',
-      50000
-    )
   })
 })

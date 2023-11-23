@@ -7,6 +7,10 @@ const MOCK_CONTENT = 'Text to copy to the clipboard'
 describe('ClipboardCopyIconButton', () => {
   beforeEach(() => {
     cy.viewport(400, 150)
+    cy.on('uncaught:exception', () => {
+      // should take care of unsupported browser permissions in headless mode
+      return false
+    })
     // Needed to test with the clipboard ss
     Cypress.automation('remote:debugger:protocol', {
       command: 'Browser.grantPermissions',
