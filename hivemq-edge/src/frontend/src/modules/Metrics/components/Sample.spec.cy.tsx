@@ -6,7 +6,7 @@ import Sample from './Sample.tsx'
 describe('Sample', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept(`/api/v1/metrics/**`, MOCK_METRIC_SAMPLE).as('getSample')
+    cy.intercept(`/api/v1/metrics/**`, MOCK_METRIC_SAMPLE)
   })
 
   it('should render the bridge component', () => {
