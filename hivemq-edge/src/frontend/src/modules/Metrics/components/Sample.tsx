@@ -1,6 +1,5 @@
 import { FC, useEffect, useState } from 'react'
-import { Box, CloseButton, Icon, IconButton, VStack } from '@chakra-ui/react'
-import { LuClipboardCopy } from 'react-icons/lu'
+import { Box, CloseButton, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
@@ -8,16 +7,16 @@ import { DataPoint } from '@/api/__generated__'
 
 import { extractMetricInfo } from '../utils/metrics-name.utils.ts'
 import SampleRenderer from '@/modules/Metrics/components/SampleRenderer.tsx'
+import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton.tsx'
 
 interface SampleProps {
   metricName?: string
   onClose?: () => void
-  onClipboardCopy?: (metricName: string, timestamp: string, value: number) => void
 }
 
 const MAX_SERIES = 10
 
-const Sample: FC<SampleProps> = ({ metricName, onClose, onClipboardCopy }) => {
+const Sample: FC<SampleProps> = ({ metricName, onClose }) => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useGetSample(metricName)
   const [series, setSeries] = useState<DataPoint[]>([])
@@ -47,7 +46,7 @@ const Sample: FC<SampleProps> = ({ metricName, onClose, onClipboardCopy }) => {
       series={series}
       {...(isMajor ? { gridColumn: '1 / span 2' } : {})}
     >
-      <VStack>
+      <VStack ml={1}>
         <Box flex={1}>
           <CloseButton
             data-testid="metrics-remove"
@@ -57,14 +56,7 @@ const Sample: FC<SampleProps> = ({ metricName, onClose, onClipboardCopy }) => {
           />
         </Box>
         <Box>
-          <IconButton
-            data-testid="metrics-copy"
-            size={'xs'}
-            variant={'ghost'}
-            icon={<Icon as={LuClipboardCopy} fontSize={'16px'} />}
-            aria-label={t('metrics.command.copy.ariaLabel')}
-            onClick={() => onClipboardCopy?.(metricName, series[0]?.sampleTime as string, series[0]?.value as number)}
-          />
+          <ClipboardCopyIconButton content={metricName} />
         </Box>
       </VStack>
     </SampleRenderer>
