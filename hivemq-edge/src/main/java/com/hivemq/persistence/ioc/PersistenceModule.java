@@ -21,6 +21,7 @@ import com.hivemq.bootstrap.provider.ClientQueueLocalPersistenceProvider;
 import com.hivemq.bootstrap.provider.ClientSessionLocalPersistenceProvider;
 import com.hivemq.bootstrap.provider.ClientSessionSubscriptionLocalPersistenceProvider;
 import com.hivemq.bootstrap.provider.PublishPayloadPersistenceProvider;
+import com.hivemq.bootstrap.provider.RetainedMessageLocalPersistenceProvider;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.logging.EventLog;
@@ -72,10 +73,6 @@ public abstract class PersistenceModule {
     abstract @NotNull SingleWriterService singleWriterService(@NotNull InMemorySingleWriter inMemorySingleWriter);
 
     @Binds
-    abstract @NotNull RetainedMessageLocalPersistence retainedMessageLocalPersistence(
-            @NotNull RetainedMessageMemoryLocalPersistence retainedMessageMemoryLocalPersistence);
-
-    @Binds
     abstract @NotNull RetainedMessagePersistence retainedMessagePersistence(
             @NotNull RetainedMessagePersistenceImpl retainedMessagePersistence);
 
@@ -115,6 +112,12 @@ public abstract class PersistenceModule {
 
     @Provides
     @Singleton
+    static @NotNull RetainedMessageLocalPersistence retainedMessageLocalPersistence(@NotNull RetainedMessageLocalPersistenceProvider retainedMessageLocalPersistenceProvider) {
+        return retainedMessageLocalPersistenceProvider.get();
+    }
+
+    @Provides
+    @Singleton
     static @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence(@NotNull ClientSessionLocalPersistenceProvider clientSessionLocalPersistenceProvider) {
         return clientSessionLocalPersistenceProvider.get();
     }
@@ -130,6 +133,8 @@ public abstract class PersistenceModule {
     static @NotNull PublishPayloadPersistence publishPayloadPersistence(@NotNull PublishPayloadPersistenceProvider publishPayloadPersistenceProvider) {
         return publishPayloadPersistenceProvider.get();
     }
+
+
 
     @Provides
     @Singleton
