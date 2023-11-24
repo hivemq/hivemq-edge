@@ -17,11 +17,11 @@ export const useOnboarding = (): OnboardingFetchType => {
 
   const cloud: OnboardingTask = {
     isLoading: isLoading,
-    header: data?.cloudLink?.displayText || t('welcome.onboarding.connectCloud.header'),
+    header: t('welcome.onboarding.connectCloud.header'),
     sections: [
       {
-        title: data?.cloudLink?.description as string,
-        label: data?.cloudLink?.displayText as string,
+        title: t('welcome.onboarding.connectCloud.section.title'),
+        label: t('welcome.onboarding.connectCloud.section.label'),
         to: data?.cloudLink?.url as string,
         isExternal: true,
         leftIcon: <GoLinkExternal />,
