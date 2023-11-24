@@ -119,10 +119,10 @@
         }
       },
       "connectCloud": {
-        "header": "Connect To HiveMQ Cloud\n",
-        "bridge": {
-          "title": "Connect your HiveMQ Edge MQTT Broker to your Enterprise using MQTT Bridge connections.",
-          "label": "Use a Bridge"
+        "header": "Connect To HiveMQ Cloud",
+        "section": {
+          "title": "You should connect your HiveMQ Edge deployment with a HiveMQ Cloud MQTT Broker, which will be the source of truth for your business data",
+          "label": "Connect To HiveMQ Cloud"
         }
       }
     },
