@@ -52,15 +52,6 @@ public interface ApiBodyExamples {
             "    ]\n" +
             "}";
 
-    // TODO
-    String EXAMPLE_CAPABILITIES_JSON = "{\n" +
-            "    \"items\": [\n" +
-            "        {\n" +
-            "            \"id\": \"PERSISTENCE\"\n" +
-            "        }\n" +
-            "    ]\n" +
-            "}";
-
     String EXAMPLE_CONFIGURATION_JSON = "{\n" +
             "    \"environment\": {\n" +
             "        \"properties\": {\n" +
@@ -156,7 +147,14 @@ public interface ApiBodyExamples {
             "                \"installed\": true\n" +
             "            }\n" +
             "        ]\n" +
-            "    }\n" +
+            "    },\n" +
+            "    \"capabilities\": {\n" +
+            "        \"items\": [\n" +
+            "            {\n" +
+            "                \"id\": \"test-capability\"\n" +
+            "            }\n" +
+            "        ]\n" +
+            "    }" +
             "}";
 
 
