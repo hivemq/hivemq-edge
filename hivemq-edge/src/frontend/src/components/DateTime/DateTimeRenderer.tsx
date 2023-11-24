@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { Text, Tooltip, type TextProps } from '@chakra-ui/react'
 import { DateTime } from 'luxon'
+import { useTranslation } from 'react-i18next'
 
 import { toHuman } from './utils/duration.utils.ts'
 
@@ -10,6 +11,7 @@ interface DateTimeRendererProps extends TextProps {
 }
 
 const DateTimeRenderer: FC<DateTimeRendererProps> = ({ date, isApprox = false, ...props }) => {
+  const { t } = useTranslation('components')
   const formatLongDate = new Intl.DateTimeFormat(navigator.language, {
     weekday: 'long',
     year: 'numeric',
@@ -21,7 +23,8 @@ const DateTimeRenderer: FC<DateTimeRendererProps> = ({ date, isApprox = false, .
     fractionalSecondDigits: 3,
   })
 
-  if (isApprox)
+  if (isApprox) {
+    const relative = toHuman(date)
     return (
       <Tooltip
         data-testid={'date-time-tooltip'}
@@ -31,10 +34,11 @@ const DateTimeRenderer: FC<DateTimeRendererProps> = ({ date, isApprox = false, .
         maxW={'200px'}
       >
         <Text data-testid={'date-time-approx'} width={'fit-content'} {...props}>
-          {toHuman(date)}
+          {relative || t('DateTimeRenderer.seconds', { context: 'minus' })}
         </Text>
       </Tooltip>
     )
+  }
 
   return (
     <Text data-testid={'date-time-full'} {...props}>
