@@ -44,7 +44,7 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
               <CardBody pt={0}>
                 <Stack divider={<StackDivider />} spacing="4">
                   {e.sections.map((s) => (
-                    <Stack key={s.title} spacing={8} direction="row" gap={4}>
+                    <Stack key={`${s.title}-${s.label}`} spacing={8} direction="row" gap={4}>
                       <Skeleton isLoaded={!e.isLoading}>
                         <Box>
                           <BsClipboardCheck />
@@ -52,6 +52,7 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
                       </Skeleton>
                       <Skeleton isLoaded={!e.isLoading}>
                         <Box>
+                        {/* {JSON.stringify(s.title)} */}
                           <Text fontSize="sm">{s.title}</Text>
                           <Button
                             variant="link"
