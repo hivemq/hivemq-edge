@@ -1,7 +1,6 @@
 import { DateTime } from 'luxon'
 import { DurationUnits } from 'luxon/src/duration'
 
-// Better Duration.toHuman support https://github.com/moment/luxon/issues/1134
 export const toHuman = (timestamp: DateTime, alternativeNow?: DateTime) => {
   const units: DurationUnits = ['weeks', 'days', 'hours', 'minutes', 'seconds']
 
@@ -12,6 +11,12 @@ export const toHuman = (timestamp: DateTime, alternativeNow?: DateTime) => {
     .negate()
     .mapUnits((x) => Math.floor(x))
     .rescale()
+
+  if (rescaledDuration.valueOf() < 30 * 1000) return null
+  if (rescaledDuration.valueOf() < 60 * 1000)
+    return DateTime.local()
+      .minus(rescaledDuration.set({ minute: 1 }))
+      .toRelative()
 
   return DateTime.local().minus(rescaledDuration).toRelative()
 }
