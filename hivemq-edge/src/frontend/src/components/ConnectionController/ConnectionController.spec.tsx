@@ -65,7 +65,7 @@ describe('ConnectionController', () => {
       })
 
       expect(successToast).toHaveBeenCalledWith({
-        description: "We've successfully started the adapter. It might take up to 2 seconds to update the status.",
+        description: "We've successfully started the adapter. It might take a moment to update the status.",
         title: 'Connection updating',
       })
     })

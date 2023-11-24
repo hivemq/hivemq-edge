@@ -119,10 +119,10 @@
         }
       },
       "connectCloud": {
-        "header": "Connect To HiveMQ Cloud\n",
-        "bridge": {
-          "title": "Connect your HiveMQ Edge MQTT Broker to your Enterprise using MQTT Bridge connections.",
-          "label": "Use a Bridge"
+        "header": "Connect To HiveMQ Cloud",
+        "section": {
+          "title": "You should connect your HiveMQ Edge deployment with a HiveMQ Cloud MQTT Broker, which will be the source of truth for your business data",
+          "label": "Connect To HiveMQ Cloud"
         }
       }
     },
@@ -442,16 +442,12 @@
     "toast": {
       "status": {
         "title": "Connection updating",
-        "action_STOP": "stopped",
-        "action_START": "started",
-        "action_RESTART": "restarted",
         "device": "the device",
         "device_BRIDGE": "the bridge",
         "device_ADAPTER": "the adapter",
-        "callbackTimeoutMillis_zero": "a little bit of time",
-        "callbackTimeoutMillis_one": "up to {{count}} second",
-        "callbackTimeoutMillis_other": "up to {{count}} seconds",
-        "description": "We've successfully $t(protocolAdapter.toast.status.action, {'context': '{{action}}' }) $t(protocolAdapter.toast.status.device, {'context': '{{device}}' }). It might take $t(protocolAdapter.toast.status.callbackTimeoutMillis, {'count': {{callbackTimeoutMillis}} }) to update the status.",
+        "description_STOP": "We've successfully stopped $t(protocolAdapter.toast.status.device, {'context': '{{device}}' }). It might take a moment to update the status.",
+        "description_START": "We've successfully started $t(protocolAdapter.toast.status.device, {'context': '{{device}}' }). It might take a moment to update the status.",
+        "description_RESTART": "We've successfully restarted $t(protocolAdapter.toast.status.device, {'context': '{{device}}' }). It might take a moment to update the status.",
         "error": "There was a problem trying to reconnect $t(protocolAdapter.toast.status.device, {'context': '{{device}}' })"
       },
       "delete": {
