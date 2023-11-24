@@ -221,10 +221,6 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
                 "Iterate is only used for migrations which are not needed for memory persistences");
     }
 
-    @Override
-    public void bootstrapPayloads() {
-        // noop
-    }
 
     @Override
     public void closeDB(final int bucketIndex) {

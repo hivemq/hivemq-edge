@@ -20,8 +20,8 @@ public class PublishPayloadPersistenceProvider {
     private final @NotNull PersistencesService persistencesService;
     private final @NotNull PublishPayloadNoopPersistenceImpl noopPersistence;
     private final @NotNull LocalPersistenceFileUtil localPersistenceFileUtil;
-    private final MessageDroppedService messageDroppedService;
-    private final ListeningScheduledExecutorService payloadPersistenceExecutor;
+    private final @NotNull MessageDroppedService messageDroppedService;
+    private final @NotNull ListeningScheduledExecutorService payloadPersistenceExecutor;
     private final @NotNull PersistenceStartup persistenceStartup;
     private final @NotNull MetricsHolder metricsHolder;
 
