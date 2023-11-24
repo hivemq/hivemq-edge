@@ -17,6 +17,7 @@ package com.hivemq.api.resources.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
+import com.hivemq.api.model.capabilities.CapabilityList;
 import com.hivemq.api.model.components.EnvironmentProperties;
 import com.hivemq.api.model.components.ExtensionList;
 import com.hivemq.api.model.components.GatewayConfiguration;
@@ -33,6 +34,7 @@ import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.api.utils.LoremIpsum;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
@@ -57,6 +59,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull ModulesAndExtensionsService modulesAndExtensionsService;
     private final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService;
+    private final @NotNull HiveMQCapabilityService capabilityService;
     private final @NotNull SystemInformation systemInformation;
 
     @Inject
@@ -65,11 +68,13 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull ModulesAndExtensionsService modulesAndExtensionsService,
             final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService,
+            final @NotNull HiveMQCapabilityService capabilityService,
             final @NotNull SystemInformation systemInformation) {
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.modulesAndExtensionsService = modulesAndExtensionsService;
         this.hiveMQEdgeRemoteConfigurationService = hiveMQEdgeRemoteConfigurationService;
+        this.capabilityService = capabilityService;
         this.systemInformation = systemInformation;
     }
 
@@ -176,6 +181,12 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
                     null));
         }
         return Response.ok(new NotificationList(notifs.build())).build();
+    }
+
+    @Override
+    public @NotNull Response getCapabilities() {
+        final CapabilityList capabilityList = capabilityService.getList();
+        return Response.ok(capabilityList).build();
     }
 
     protected @NotNull  EnvironmentProperties getEnvironmentProperties() {

@@ -17,6 +17,7 @@ package com.hivemq.api.resources;
 
 import com.hivemq.api.model.ApiBodyExamples;
 import com.hivemq.api.model.ApiErrorMessage;
+import com.hivemq.api.model.capabilities.CapabilityList;
 import com.hivemq.api.model.components.GatewayConfiguration;
 import com.hivemq.api.model.components.ListenerList;
 import com.hivemq.api.model.components.NotificationList;
@@ -85,5 +86,25 @@ public interface FrontendApi {
     @NotNull Response getNotifications();
 
 
+
+    @GET
+    @PermitAll
+    @Path("/frontend/capabilities")
+    @Operation(summary = "Obtain Capabilities of the HiveMQ Edge Installation",
+               operationId = "get-capabilities",
+               description = "Obtain gateway capabilities.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = CapabilityList.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example capability list.",
+                                                                              name = "capabilities",
+                                                                              summary = "Example capabilities",
+                                                                              value = ApiBodyExamples.EXAMPLE_NOTIFICATION_JSON)
+                                                       }))})
+    @Produces(MediaType.APPLICATION_JSON)
+    @NotNull Response getCapabilities();
 
 }

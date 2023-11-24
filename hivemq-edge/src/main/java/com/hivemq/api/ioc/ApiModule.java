@@ -45,6 +45,8 @@ import com.hivemq.api.resources.impl.ProtocolAdaptersResourceImpl;
 import com.hivemq.api.resources.impl.UnsResourceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ApiConfigurationService;
+import com.hivemq.edge.HiveMQCapabilityService;
+import com.hivemq.edge.impl.capability.CapabilityServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsBootstrapFactory;
@@ -87,6 +89,10 @@ public abstract class ApiModule {
     abstract @NotNull ITokenVerifier tokenVerifier(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
     @Binds
     abstract @NotNull ITokenGenerator tokenGenerator(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
+
+    @Binds
+    @Singleton
+    abstract @NotNull HiveMQCapabilityService capabilityService(@NotNull CapabilityServiceImpl CapabilityServiceImpl);
 
     @Provides
     @Singleton

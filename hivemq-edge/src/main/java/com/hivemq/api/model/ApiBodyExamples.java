@@ -51,6 +51,16 @@ public interface ApiBodyExamples {
             "        }\n" +
             "    ]\n" +
             "}";
+
+    // TODO
+    String EXAMPLE_CAPABILITIES_JSON = "{\n" +
+            "    \"items\": [\n" +
+            "        {\n" +
+            "            \"id\": \"PERSISTENCE\"\n" +
+            "        }\n" +
+            "    ]\n" +
+            "}";
+
     String EXAMPLE_CONFIGURATION_JSON = "{\n" +
             "    \"environment\": {\n" +
             "        \"properties\": {\n" +
