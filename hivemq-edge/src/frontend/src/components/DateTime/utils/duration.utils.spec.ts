@@ -6,16 +6,18 @@ import { MOCK_DATE_TIME_NOW } from './range-option.mocks.ts'
 
 interface ToHumanTestSuite {
   date: DateTime
-  expected: string
+  expected: string | null
 }
 
 const allTests: ToHumanTestSuite[] = [
   { date: MOCK_DATE_TIME_NOW.minus({ month: 2 }), expected: '2 months ago' },
   { date: MOCK_DATE_TIME_NOW.minus({ days: 9 }), expected: '9 days ago' },
-  { date: MOCK_DATE_TIME_NOW.minus({ second: 1 }), expected: '1 second ago' },
-  { date: MOCK_DATE_TIME_NOW.plus({ days: 1 }), expected: 'in 1 day' },
-  { date: MOCK_DATE_TIME_NOW.plus({ days: 3 }), expected: 'in 3 days' },
-  { date: MOCK_DATE_TIME_NOW.plus({ days: 3, hour: 19 }), expected: 'in 3 days' },
+  { date: MOCK_DATE_TIME_NOW.minus({ minutes: 3 }), expected: '3 minutes ago' },
+  { date: MOCK_DATE_TIME_NOW.minus({ minutes: 1 }), expected: '1 minute ago' },
+  { date: MOCK_DATE_TIME_NOW.minus({ seconds: 50 }), expected: '1 minute ago' },
+  { date: MOCK_DATE_TIME_NOW.minus({ seconds: 30 }), expected: '1 minute ago' },
+  { date: MOCK_DATE_TIME_NOW.minus({ seconds: 29 }), expected: null },
+  { date: MOCK_DATE_TIME_NOW.minus({ second: 1 }), expected: null },
 ]
 
 describe('toHuman', () => {

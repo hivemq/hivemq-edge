@@ -28,6 +28,10 @@
       "createLabel": "Add the topic ... {{topic}}"
     }
   },
+  "DateTimeRenderer": {
+    "seconds_minus": "a few seconds ago",
+    "seconds_plus": "in a few seconds"
+  },
   "DateTimeRangeSelector": {
     "placeholder": "Select a date",
     "noOptionsMessage": "Not a valid date",
