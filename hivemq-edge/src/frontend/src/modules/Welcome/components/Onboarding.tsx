@@ -37,7 +37,9 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
             <Card flex={1} key={e.header}>
               <CardHeader>
                 <Skeleton isLoaded={!e.isLoading}>
-                  <Heading size="md">{e.header}</Heading>
+                  <Heading as="h3" size="md">
+                    {e.header}
+                  </Heading>
                 </Skeleton>
               </CardHeader>
 
@@ -52,7 +54,7 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
                       </Skeleton>
                       <Skeleton isLoaded={!e.isLoading}>
                         <Box>
-                          <Text fontSize="sm">{s.title}</Text>
+                          <Text>{s.title}</Text>
                           <Button
                             variant="link"
                             as={RouterLink}
@@ -60,7 +62,6 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
                             target={s.isExternal ? '_blank' : undefined}
                             aria-label={s.label}
                             leftIcon={s.leftIcon}
-                            size="lg"
                           >
                             {s.label}
                           </Button>
