@@ -447,4 +447,12 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
         sizeInMemory = size;
         return sizeInMemory;
     }
+
+    public void setPayload(byte[] payload) {
+        this.payload = payload;
+    }
+
+    public boolean isExpired() {
+        return this.hasExpired();
+    }
 }
