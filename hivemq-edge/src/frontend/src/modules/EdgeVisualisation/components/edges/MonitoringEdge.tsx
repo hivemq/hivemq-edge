@@ -1,7 +1,9 @@
 import { FC } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from 'reactflow'
 import { IconButton } from '@chakra-ui/react'
 import { BiBarChartSquare } from 'react-icons/bi'
+
 import { useEdgeFlowContext } from '@/modules/EdgeVisualisation/hooks/useEdgeFlowContext.tsx'
 
 const MonitoringEdge: FC<EdgeProps> = ({
@@ -16,6 +18,7 @@ const MonitoringEdge: FC<EdgeProps> = ({
   style,
 }) => {
   const { options } = useEdgeFlowContext()
+  const navigate = useNavigate()
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -49,7 +52,7 @@ const MonitoringEdge: FC<EdgeProps> = ({
               backgroundColor={'white'}
               color={style?.stroke}
               className="edgebutton"
-              onClick={() => console.log('CCCCCC', id)}
+              onDoubleClick={() => navigate(`/edge-flow/link/${id}`)}
               borderRadius={'25px'}
             />
           </div>
