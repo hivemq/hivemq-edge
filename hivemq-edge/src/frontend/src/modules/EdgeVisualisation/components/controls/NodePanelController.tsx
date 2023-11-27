@@ -1,30 +1,39 @@
 import { FC, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Node, useNodes } from 'reactflow'
+import { Node, useEdges, useNodes } from 'reactflow'
 import { useDisclosure } from '@chakra-ui/react'
 
 import { Adapter, Bridge } from '@/api/__generated__'
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 
+import { EdgeTypes, NodeTypes } from '../../types.ts'
 import NodePropertyDrawer from '../drawers/NodePropertyDrawer.tsx'
-import { NodeTypes } from '../../types.ts'
+import LinkPropertyDrawer from '../drawers/LinkPropertyDrawer.tsx'
 
 const NodePanelController: FC = () => {
   const navigate = useNavigate()
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const nodes = useNodes()
+  const edges = useEdges()
+
   const { nodeId } = useParams()
   const selectedNode = nodes.find(
     (e) => e.id === nodeId && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
   ) as Node<Bridge | Adapter> | undefined
 
+  const selectedLinkSource = nodes.find((e) => {
+    const link = edges.find((e) => e.id === nodeId && e.type === EdgeTypes.REPORT_EDGE)
+    if (!link) return undefined
+    return e.id === link.source && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
+  }) as Node<Bridge | Adapter> | undefined
+
   useEffect(() => {
     if (!nodes.length) return
-    if (!selectedNode || !nodeId) {
-      navigate('/edge-flow', { replace: true })
-      return
-    }
+    // if (!selectedNode || !nodeId) {
+    //   navigate('/edge-flow', { replace: true })
+    //   return
+    // }
     onOpen()
   }, [navigate, nodeId, nodes.length, onOpen, selectedNode])
 
@@ -48,8 +57,17 @@ const NodePanelController: FC = () => {
     }
   }
 
+  if (selectedLinkSource)
+    return (
+      <LinkPropertyDrawer
+        selectedNode={selectedLinkSource}
+        isOpen={isOpen}
+        onClose={handleClose}
+        onEditEntity={handleEditEntity}
+      />
+    )
+
   if (!selectedNode || !selectedNode.type) {
-    navigate('/edge-flow', { replace: true })
     return null
   }
 
