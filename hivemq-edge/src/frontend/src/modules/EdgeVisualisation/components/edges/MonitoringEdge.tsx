@@ -1,5 +1,6 @@
 import { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from 'reactflow'
 import { IconButton } from '@chakra-ui/react'
 import { BiBarChartSquare } from 'react-icons/bi'
@@ -17,6 +18,7 @@ const MonitoringEdge: FC<EdgeProps> = ({
   markerEnd,
   style,
 }) => {
+  const { t } = useTranslation()
   const { options } = useEdgeFlowContext()
   const navigate = useNavigate()
   const [edgePath, labelX, labelY] = getBezierPath({
@@ -45,15 +47,14 @@ const MonitoringEdge: FC<EdgeProps> = ({
             className="nodrag nopan"
           >
             <IconButton
-              aria-label={'grpah'}
+              aria-label={t('workspace.observability.ariaLabel')}
               size={'xs'}
               variant={'outline'}
               icon={<BiBarChartSquare />}
               backgroundColor={'white'}
               color={style?.stroke}
-              className="edgebutton"
               onDoubleClick={() => navigate(`/edge-flow/link/${id}`)}
-              borderRadius={'25px'}
+              borderRadius={25}
             />
           </div>
         </EdgeLabelRenderer>
