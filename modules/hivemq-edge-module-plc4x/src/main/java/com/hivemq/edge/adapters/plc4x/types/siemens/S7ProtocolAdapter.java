@@ -17,17 +17,29 @@ package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.*;
 
 /**
  * @author HiveMQ Adapter Generator
  */
 public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
 
+    private static final Logger log = LoggerFactory.getLogger(S7ProtocolAdapter.class);
+
+    // @formatter:off
     static final String
             CONTROLLER_TYPE = "controller-type",   //As part of the connection process, usually the PLC4X S7 driver would try to identify the remote device. However some devices seem to have problems with this and hang up or cause other problems. In such a case, providing the controller-type will skip the identification process and hereby avoid this type of problem.
             LOCAL_RACK = "local-rack",          //Rack value for the client. Defaults to 1. Default value: 1
@@ -45,7 +57,22 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
             PING_TIME = "ping-time",            //Time value in seconds at which the execution of the PING will be scheduled. Generally set by developer experience, but generally should be the same as (read-timeout / 2). Default value: -1 seconds
             RETRY_TIME = "retry-time",          //Time for supervision of TCP channels. If the channel is not active, a safe stop of the EventLoop must be performed, to ensure that no additional tasks are created. Default value: 4 seconds
             READ_TIMEOUT = "read-timeout";      //This is the maximum waiting time for reading on the TCP channel. As there is no traffic, it must be assumed that the connection with the interlocutor was lost and it must be restarted. When the channel is closed, the "fail over" is carried out in case of having the secondary channel, or it is expected that it will be restored automatically, which is done every 4 seconds. Default value: 8 seconds.
+    // @formatter:on
 
+    private final Set<Plc4xDataType.DATA_TYPE> SPECIAL_ADDRESS_SCHEME_TYPES = Set.of(WCHAR,
+            STRING,
+            WSTRING,
+            DATE,
+            TIME,
+            LTIME,
+            TIME_OF_DAY,
+            LDATE,
+            LTIME_OF_DAY,
+            DATE_AND_TIME,
+            LDATE_AND_TIME);
+
+    private final Pattern ADDRESS_PATTERN =
+            Pattern.compile("^%.*?(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])*?:.*");
 
     public S7ProtocolAdapter(
             final ProtocolAdapterInformation adapterInformation,
@@ -82,4 +109,27 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
         map.put(READ_TIMEOUT, nullSafe(config.getReadTimeout()));
         return map;
     }
+
+    @Override
+    protected String createTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull Subscription subscription) {
+        final String formattedAddress =
+                String.format("%s%s%s", subscription.getTagAddress(), ":", subscription.getDataType());
+
+        if (SPECIAL_ADDRESS_SCHEME_TYPES.contains(subscription.getDataType())) {
+            //correct Siemens` addressing scheme into a valid Plc4x addressing scheme (example replacement: %IW20 -> %IX20)
+            final Matcher matcher = ADDRESS_PATTERN.matcher(formattedAddress);
+            if (matcher.matches()) {
+                final String correctedAddress = new StringBuilder(formattedAddress).replace(matcher.start("dataType"),
+                        matcher.end("dataType"),
+                        "X").toString();
+                log.trace("Correcting S7 tag address from '{}' to '{}' to improve compatibility",
+                        formattedAddress,
+                        correctedAddress);
+                return correctedAddress;
+            }
+        }
+
+        return formattedAddress;
+    }
+
 }

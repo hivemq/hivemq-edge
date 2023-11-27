@@ -133,6 +133,9 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
                        defaultValue = "8")
     private @NotNull Integer readTimeout = 8;
 
+    public S7AdapterConfig() {
+    }
+
     public int getPort() {
         return port;
     }
@@ -188,4 +191,6 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
     public PduSize getPduSize() {
         return pduSize;
     }
+
+
 }
