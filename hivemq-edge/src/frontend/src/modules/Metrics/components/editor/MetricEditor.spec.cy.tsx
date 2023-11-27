@@ -4,9 +4,9 @@ import { MetricList } from '@/api/__generated__'
 import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 
-import MetricNameSelector from './MetricNameSelector.tsx'
+import MetricSelector from './MetricEditor.tsx'
 
-describe('MetricNameSelector', () => {
+describe('MetricEditor', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
     cy.intercept('/api/v1/metrics', { items: MOCK_METRICS } as MetricList).as('getMetrics')
@@ -15,7 +15,7 @@ describe('MetricNameSelector', () => {
   it('should render the selector', () => {
     const onSubmit = cy.stub().as('onSubmit')
     cy.mountWithProviders(
-      <MetricNameSelector
+      <MetricSelector
         filter={mockBridgeId}
         onSubmit={onSubmit}
         selectedMetrics={[MOCK_METRICS[0].name as string, MOCK_METRICS[0].name as string]}
@@ -48,13 +48,13 @@ describe('MetricNameSelector', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
-      <MetricNameSelector
+      <MetricSelector
         filter={mockBridgeId}
         onSubmit={cy.stub()}
         selectedMetrics={[MOCK_METRICS[0].name as string, MOCK_METRICS[0].name as string]}
       />
     )
     cy.checkAccessibility()
-    cy.percySnapshot('Component: MetricNameSelector')
+    cy.percySnapshot('Component: MetricEditor')
   })
 })

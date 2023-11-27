@@ -6,7 +6,8 @@ import { Box, Button, Flex, FormControl, FormLabel } from '@chakra-ui/react'
 import { BiAddToQueue } from 'react-icons/bi'
 
 import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.tsx'
-import { extractMetricInfo } from '../utils/metrics-name.utils.ts'
+
+import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 
 interface MetricNameOption {
   label: string
@@ -24,7 +25,7 @@ interface MetricNameSelectorProps {
   filter: string
 }
 
-const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, selectedMetrics }) => {
+const MetricSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, selectedMetrics }) => {
   const { t } = useTranslation()
   const { data } = useGetMetrics()
   const {
@@ -103,4 +104,4 @@ const MetricNameSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, sel
   )
 }
 
-export default MetricNameSelector
+export default MetricSelector
