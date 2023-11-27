@@ -22,11 +22,6 @@ import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-import java.math.BigInteger;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,6 +42,12 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
             format = ModuleConfigField.FieldType.HOSTNAME)
     private @NotNull String host;
 
+    @JsonProperty("publishChangedDataOnly")
+    @ModuleConfigField(title = "Only publish data items that have changed since last poll",
+                       defaultValue = "true",
+                       format = ModuleConfigField.FieldType.BOOLEAN)
+    private boolean publishChangedDataOnly = true;
+
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
                        description = "Map your sensor data to MQTT Topics")
@@ -61,6 +62,10 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
     public @NotNull String getHost() {
         return host;
+    }
+
+    public boolean getPublishChangedDataOnly() {
+        return publishChangedDataOnly;
     }
 
     public @NotNull List<? extends Subscription> getSubscriptions() {
