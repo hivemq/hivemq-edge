@@ -15,7 +15,7 @@ import { NotAllowedIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError, DataPoint } from '@/api/__generated__'
-import { MetricInfo } from '../utils/metrics-name.utils.ts'
+import { MetricInfo } from '../../utils/metrics-name.utils.ts'
 
 interface SampleRendererProps extends StatProps {
   metricInfo: MetricInfo
