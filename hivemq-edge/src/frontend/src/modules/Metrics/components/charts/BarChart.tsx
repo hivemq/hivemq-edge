@@ -1,46 +1,22 @@
-import { FC, useEffect, useState } from 'react'
+import { FC } from 'react'
 import { BarDatum, ResponsiveBar } from '@nivo/bar'
-
-import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
-import { DataPoint } from '@/api/__generated__'
-import { Box } from '@chakra-ui/react'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
+import { Box } from '@chakra-ui/react'
 
-interface BarChartProps {
-  metricName: string
-  'aria-label': string
-}
+import { ChartProps } from '../../types.ts'
 
 interface Datum extends BarDatum {
   sampleTime: string
   count: number
 }
 
-const MAX_SERIES = 10
-
-const BarChart: FC<BarChartProps> = ({ metricName, 'aria-label': ariaLabel }) => {
-  const { data } = useGetSample(metricName)
-  const [series, setSeries] = useState<DataPoint[]>([])
+const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel }) => {
   const { t } = useTranslation()
-
-  useEffect(() => {
-    if (!data) return
-
-    setSeries((old) => {
-      const newTime: DataPoint = {
-        value: data.value as number,
-        sampleTime: data.sampleTime,
-      }
-      const newSeries = [newTime, ...old]
-      newSeries.length = Math.min(newSeries.length, MAX_SERIES)
-      return newSeries
-    })
-  }, [data])
 
   if (!metricName) return null
 
-  const barSeries: Datum[] = [...series]
+  const barSeries: Datum[] = [...data]
     .reverse()
     .map((e) => ({ sampleTime: e.sampleTime as string, count: e.value as number }))
 

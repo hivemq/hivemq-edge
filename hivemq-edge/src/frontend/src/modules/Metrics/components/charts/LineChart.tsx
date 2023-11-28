@@ -1,43 +1,19 @@
-import { FC, useEffect, useState } from 'react'
-import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
-import { DataPoint } from '@/api/__generated__'
-
+import { FC } from 'react'
 import { ResponsiveLine } from '@nivo/line'
 import { DateTime } from 'luxon'
-import { Box } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
+import { Box } from '@chakra-ui/react'
 
-interface LineChartProps {
-  metricName: string
-  'aria-label': string
-}
+import { ChartProps } from '../../types.ts'
 
-const MAX_SERIES = 10
-
-const LineChart: FC<LineChartProps> = ({ metricName, 'aria-label': ariaLabel }) => {
-  const { data } = useGetSample(metricName)
-  const [series, setSeries] = useState<DataPoint[]>([])
+const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel }) => {
   const { t } = useTranslation()
-
-  useEffect(() => {
-    if (!data) return
-
-    setSeries((old) => {
-      const newTime: DataPoint = {
-        value: data.value as number,
-        sampleTime: data.sampleTime,
-      }
-      const newSeries = [newTime, ...old]
-      newSeries.length = Math.min(newSeries.length, MAX_SERIES)
-      return newSeries
-    })
-  }, [data])
 
   if (!metricName) return null
 
   const boundaries = {
-    x: Math.min(...series.map((e) => e.value as number)),
-    y: Math.max(...series.map((e) => e.value as number)),
+    x: Math.min(...data.map((e) => e.value as number)),
+    y: Math.max(...data.map((e) => e.value as number)),
   }
 
   return (
@@ -50,7 +26,7 @@ const LineChart: FC<LineChartProps> = ({ metricName, 'aria-label': ariaLabel }) 
           {
             id: 'ddd',
             color: 'red',
-            data: [...series]
+            data: [...data]
               .reverse()
               .map((e) => ({ x: DateTime.fromISO(e.sampleTime as string).toMillis(), y: e.value })),
           },
