@@ -226,7 +226,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
     }
 
     @Override
-    public void drainQueue() {
+    public synchronized void drainQueue() {
         while (!queue.isEmpty()) {
             final BufferedPublishInformation bufferedPublishInformation = queue.pop();
             final CompletableFuture<Mqtt5PublishResult> publishResult =
