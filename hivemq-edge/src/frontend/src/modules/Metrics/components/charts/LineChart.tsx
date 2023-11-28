@@ -5,6 +5,7 @@ import { DataPoint } from '@/api/__generated__'
 import { ResponsiveLine } from '@nivo/line'
 import { DateTime } from 'luxon'
 import { Box } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
 
 interface LineChartProps {
   metricName: string
@@ -16,6 +17,7 @@ const MAX_SERIES = 10
 const LineChart: FC<LineChartProps> = ({ metricName, 'aria-label': ariaLabel }) => {
   const { data } = useGetSample(metricName)
   const [series, setSeries] = useState<DataPoint[]>([])
+  const { t } = useTranslation()
 
   useEffect(() => {
     if (!data) return
@@ -78,7 +80,7 @@ const LineChart: FC<LineChartProps> = ({ metricName, 'aria-label': ariaLabel }) 
           format: (value) => {
             return '+' + DateTime.fromMillis(value).second
           },
-          legend: 'timestamp (s)',
+          legend: t('metrics.charts.LineChart.ariaLabel.legend'),
           legendOffset: 36,
           legendPosition: 'middle',
         }}
