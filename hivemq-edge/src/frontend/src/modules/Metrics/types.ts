@@ -17,7 +17,7 @@ export interface ChartTypeOption {
 
 export interface MetricDefinition {
   selectedTopic: MetricNameOption
-  selectedChart: ChartTypeOption
+  selectedChart?: ChartTypeOption
 }
 
 export interface MetricVisualisation {
