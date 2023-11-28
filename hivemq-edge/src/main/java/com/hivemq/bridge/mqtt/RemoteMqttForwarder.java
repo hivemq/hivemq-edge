@@ -26,6 +26,7 @@ import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.metrics.PerBridgeMetrics;
+import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
@@ -52,6 +53,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -213,7 +215,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
         drainQueue();
 
         final CompletableFuture<Mqtt5PublishResult> publishResult =
-                remoteMqttClient.getMqtt5Client().toAsync().publish(mqtt5Publish);
+                remoteMqttClient.getMqtt5Client().publish(mqtt5Publish);
         publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
             if (throwable != null) {
                 handlePublishError(origPublish, throwable);
@@ -248,7 +250,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
     @NotNull
     private Mqtt5Publish convertPublishForClient(@NotNull PUBLISH publish) {
         final Mqtt5PublishBuilder.Complete publishBuilder = Mqtt5Publish.builder().topic(publish.getTopic());
-        publishBuilder.payload(publish.getPayload());
+        publishBuilder.payload(publish.getPayload()).qos(MqttQos.fromCode(publish.getQoS().getQosNumber()));
 
         if (publish.getMessageExpiryInterval() <= PUBLISH.MESSAGE_EXPIRY_INTERVAL_MAX) {
             publishBuilder.messageExpiryInterval(publish.getMessageExpiryInterval());
