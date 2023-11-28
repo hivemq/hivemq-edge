@@ -209,6 +209,7 @@ dependencies {
     testImplementation("com.github.stefanbirkner:system-rules:${property("system-rules.version")}") {
         exclude("junit", "junit-dep")
     }
+    testImplementation("io.rest-assured:rest-assured:${property("restAssured.version")}")
 }
 
 tasks.test {
