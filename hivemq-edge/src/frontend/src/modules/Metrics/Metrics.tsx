@@ -84,6 +84,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
                   chartType={e.selectedChart}
                   metricName={e.selectedTopic}
                   onClose={() => setMetrics((old) => old.filter((x) => x !== e))}
+                  canEdit={isOpen}
                 />
               )
           })}
