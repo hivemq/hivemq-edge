@@ -138,6 +138,8 @@ public class BridgeService {
                 for (MqttForwarder forwarder : bridgeMqttClient.createForwarders()) {
                     messageForwarder.addForwarder(forwarder);
                 }
+                Checkpoints.checkpoint("mqtt-bridge-forwarder-started");
+
             } else {
                 bridgeMqttClient = bridgeToClientMap.get(bridgeName);
             }
