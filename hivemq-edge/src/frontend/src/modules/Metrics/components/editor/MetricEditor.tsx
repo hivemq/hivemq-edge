@@ -2,30 +2,28 @@ import { FC, useEffect, useMemo } from 'react'
 import { Select } from 'chakra-react-select'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Box, Button, Flex, FormControl, FormLabel } from '@chakra-ui/react'
+import { Button, FormControl, FormLabel, VStack } from '@chakra-ui/react'
 import { BiAddToQueue } from 'react-icons/bi'
 
 import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.tsx'
 
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
+import { ChartType, ChartTypeOption, MetricDefinition, MetricNameOption } from '../../types.ts'
 
-interface MetricNameOption {
-  label: string
-  value: string
-  isDisabled?: boolean
-}
-
-interface MetricNameSelectorForm {
-  selectedTopic: MetricNameOption
-}
-
-interface MetricNameSelectorProps {
-  onSubmit: SubmitHandler<MetricNameSelectorForm>
+interface MetricEditorProps {
+  onSubmit: SubmitHandler<MetricDefinition>
   selectedMetrics: string[]
+  selectedChart?: ChartType
   filter: string
 }
 
-const MetricSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, selectedMetrics }) => {
+const chartTypeOptions: ChartTypeOption[] = [
+  { value: ChartType.BAR_CHART, label: 'Bar Chart' },
+  { value: ChartType.LINE_CHART, label: 'Line chart' },
+  { value: ChartType.SAMPLE, label: 'Stat' },
+]
+
+const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics, selectedChart }) => {
   const { t } = useTranslation()
   const { data } = useGetMetrics()
   const {
@@ -33,7 +31,9 @@ const MetricSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, selecte
     control,
     reset,
     formState: { isValid, isSubmitted },
-  } = useForm<MetricNameSelectorForm>()
+  } = useForm<MetricDefinition>({
+    // defaultValues: { selectedChart: { value: selectedChart || ChartType.SAMPLE, label: 'ddd' } },
+  })
 
   const sortedItems: MetricNameOption[] = useMemo(() => {
     if (!data || !data.items) return []
@@ -63,12 +63,43 @@ const MetricSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, selecte
       onSubmit={handleSubmit(onSubmit)}
       style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}
     >
-      <FormControl>
-        <FormLabel htmlFor={'metrics-select'}>{t('welcome.metrics.select')}</FormLabel>
-        <Flex gap={2}>
-          <Box flex={1}>
+      <VStack gap={2} alignItems={'flex-end'}>
+        <FormControl>
+          <FormLabel htmlFor={'metrics-select'}>{t('welcome.metrics.select')}</FormLabel>
+
+          <Controller
+            name={'selectedTopic'}
+            control={control}
+            rules={{
+              required: true,
+            }}
+            render={({ field }) => {
+              const { value, onChange, ...rest } = field
+              return (
+                <Select
+                  {...rest}
+                  id={'metrics-container'}
+                  inputId={'metrics-select'}
+                  value={value || null}
+                  onChange={(values) => onChange(values)}
+                  options={sortedItems}
+                  isClearable={true}
+                  isMulti={false}
+                  isSearchable={true}
+                  components={{
+                    DropdownIndicator: null,
+                  }}
+                />
+              )
+            }}
+          />
+        </FormControl>
+        {!selectedChart && (
+          <FormControl>
+            <FormLabel htmlFor={'metrics-select2'}>{t('welcome.metrics.select')}</FormLabel>
+
             <Controller
-              name={'selectedTopic'}
+              name={'selectedChart'}
               control={control}
               rules={{
                 required: true,
@@ -79,13 +110,13 @@ const MetricSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, selecte
                   <Select
                     {...rest}
                     id={'metrics-container'}
-                    inputId={'metrics-select'}
+                    inputId={'metrics-select2'}
                     value={value || null}
                     onChange={(values) => onChange(values)}
-                    options={sortedItems}
+                    options={chartTypeOptions}
                     isClearable={true}
                     isMulti={false}
-                    isSearchable={true}
+                    isSearchable={false}
                     components={{
                       DropdownIndicator: null,
                     }}
@@ -93,15 +124,14 @@ const MetricSelector: FC<MetricNameSelectorProps> = ({ onSubmit, filter, selecte
                 )
               }}
             />
-          </Box>
-
-          <Button isDisabled={!isValid} rightIcon={<BiAddToQueue />} type="submit" form="namespace-form">
-            {t('welcome.metrics.display')}
-          </Button>
-        </Flex>
-      </FormControl>
+          </FormControl>
+        )}
+        <Button isDisabled={!isValid} rightIcon={<BiAddToQueue />} type="submit" form="namespace-form">
+          {t('welcome.metrics.display')}
+        </Button>
+      </VStack>
     </form>
   )
 }
 
-export default MetricSelector
+export default MetricEditor
