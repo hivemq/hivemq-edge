@@ -1,3 +1,5 @@
+import { DataPoint } from '@/api/__generated__'
+
 export enum ChartType {
   SAMPLE = 'SAMPLE',
   LINE_CHART = 'LINE_CHART',
@@ -25,4 +27,10 @@ export interface MetricVisualisation {
   viewType: string
   label: string
   description?: string
+}
+
+export interface ChartProps {
+  metricName: string
+  'aria-label': string
+  data: DataPoint[]
 }

@@ -1,4 +1,5 @@
-import { FC, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Avatar,
   Box,
@@ -16,14 +17,16 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { BiCollapseHorizontal, BiExpandHorizontal } from 'react-icons/bi'
-
-import LineChart from '../charts/LineChart.tsx'
-import { extractMetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
-import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton.tsx'
-import { useTranslation } from 'react-i18next'
-import { ChartType } from '@/modules/Metrics/types.ts'
-import BarChart from '@/modules/Metrics/components/charts/BarChart.tsx'
 import { VscGraph, VscGraphLine } from 'react-icons/vsc'
+
+import { DataPoint } from '@/api/__generated__'
+import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
+import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton.tsx'
+
+import { ChartType } from '../../types.ts'
+import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
+import LineChart from '../charts/LineChart.tsx'
+import BarChart from '../charts/BarChart.tsx'
 
 interface ChartContainerProps extends StackProps {
   chartType: ChartType
@@ -32,11 +35,30 @@ interface ChartContainerProps extends StackProps {
   canEdit?: boolean
 }
 
+const MAX_SERIES = 10
+
 const ChartContainer: FC<ChartContainerProps> = ({ chartType, metricName, onClose, canEdit = true, ...props }) => {
   const { t } = useTranslation()
+  const { data } = useGetSample(metricName)
+  const [series, setSeries] = useState<DataPoint[]>([])
   const [gridSpan, setGridSpan] = useState(true)
 
+  useEffect(() => {
+    if (!data) return
+
+    setSeries((old) => {
+      const newTime: DataPoint = {
+        value: data.value as number,
+        sampleTime: data.sampleTime,
+      }
+      const newSeries = [newTime, ...old]
+      newSeries.length = Math.min(newSeries.length, MAX_SERIES)
+      return newSeries
+    })
+  }, [data])
+
   if (!metricName) return null
+
   const metricInfo = extractMetricInfo(metricName)
   const { device, suffix, id } = metricInfo
 
@@ -59,7 +81,11 @@ const ChartContainer: FC<ChartContainerProps> = ({ chartType, metricName, onClos
           </Flex>
         </CardHeader>
         <CardBody>
-          <Chart metricName={metricName} aria-label={t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')} />
+          <Chart
+            data={series}
+            metricName={metricName}
+            aria-label={t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')}
+          />
         </CardBody>
       </Card>
       <VStack ml={1}>
