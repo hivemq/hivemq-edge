@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next'
 import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
 import { DataPoint } from '@/api/__generated__'
 
-import { extractMetricInfo } from '../utils/metrics-name.utils.ts'
-import SampleRenderer from '@/modules/Metrics/components/SampleRenderer.tsx'
 import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton.tsx'
+import { extractMetricInfo } from '../utils/metrics-name.utils.ts'
+import SampleRenderer from '../components/charts/SampleRenderer.tsx'
 
 interface SampleProps {
   metricName?: string
