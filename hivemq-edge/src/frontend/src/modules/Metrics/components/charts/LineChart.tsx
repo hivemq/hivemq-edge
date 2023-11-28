@@ -8,11 +8,12 @@ import { Box } from '@chakra-ui/react'
 
 interface LineChartProps {
   metricName: string
+  'aria-label': string
 }
 
 const MAX_SERIES = 10
 
-const LineChart: FC<LineChartProps> = ({ metricName }) => {
+const LineChart: FC<LineChartProps> = ({ metricName, 'aria-label': ariaLabel }) => {
   const { data } = useGetSample(metricName)
   const [series, setSeries] = useState<DataPoint[]>([])
 
@@ -38,10 +39,10 @@ const LineChart: FC<LineChartProps> = ({ metricName }) => {
   }
 
   return (
-    <Box w={'100%'} h={250} role={'img'} aria-label={metricName}>
+    <Box w={'100%'} h={250} role={'img'} aria-label={ariaLabel}>
       <ResponsiveLine
         useMesh
-        // TODO[NVL] ResponsiveLine doesn't support aria-label; adding it to the parent element
+        // TODO[NVL] ResponsiveLine doesn't support aria-label; adding it to the wrapper element
         role={'none'}
         data={[
           {
