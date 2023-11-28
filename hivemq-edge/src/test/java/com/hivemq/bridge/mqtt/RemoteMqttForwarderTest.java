@@ -66,7 +66,6 @@ class RemoteMqttForwarderTest {
         when(bridgeClient.isConnected()).thenReturn(true);
         when(bridgeClient.getMqtt5Client()).thenReturn(mqtt5AsyncClient);
         when(mqtt5AsyncClient.publish(any())).thenReturn(CompletableFuture.completedFuture(null));
-        forwarder.setExecutorService(executorService);
     }
 
     @Test
@@ -92,7 +91,6 @@ class RemoteMqttForwarderTest {
     public void whenLocalMessageAndDestinationChanged_ThenPublishToNewDestination() {
         final RemoteMqttForwarder forwarder =
                 createForwarder(callbackCalled, false, "prefix/{1}/suffix", List.of(), List.of(), 2);
-        forwarder.setExecutorService(executorService);
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         forwarder.onMessage(localPublish, "testqueue");
@@ -113,7 +111,6 @@ class RemoteMqttForwarderTest {
     @Test
     public void whenLocalMessageRetainAndPreserveRetain_ThenPublishWithRetain() {
         final RemoteMqttForwarder forwarder = createForwarder(callbackCalled, true, "{#}", List.of(), List.of(), 2);
-        forwarder.setExecutorService(executorService);
 
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
@@ -131,7 +128,6 @@ class RemoteMqttForwarderTest {
     public void whenForwarderStopped_ThenNotPublishButCallbackIsCalled() {
         final AtomicBoolean called = new AtomicBoolean(false);
         final RemoteMqttForwarder forwarder = createForwarder(called, false, "{#}", List.of(), List.of(), 2);
-
         forwarder.start();
         forwarder.stop();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
@@ -189,7 +185,6 @@ class RemoteMqttForwarderTest {
                 List.of(),
                 List.of(CustomUserProperty.of("customk1", "customv1"), CustomUserProperty.of("customk2", "customv2")),
                 2);
-        forwarder.setExecutorService(executorService);
 
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
@@ -272,7 +267,6 @@ class RemoteMqttForwarderTest {
     @Test
     public void whenMaxQoSExceeded_ThenPublishWithLessQoS() {
         final RemoteMqttForwarder forwarder = createForwarder(callbackCalled, true, "{#}", List.of(), List.of(), 1);
-        forwarder.setExecutorService(executorService);
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         forwarder.onMessage(localPublish, "testqueue");
@@ -341,7 +335,7 @@ class RemoteMqttForwarderTest {
                 bridgeClient,
                 new PerBridgeMetrics("testbridge", metricRegistry),
                 new TestInterceptorHandler());
-
+        forwarder.setExecutorService(executorService);
         forwarder.setCallback((message, queueId, cancelled) -> {
             if (queueId.equals("testqueue")) {
                 callbackCalled.set(true);
