@@ -80,7 +80,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
             else
               return (
                 <ChartContainer
-                  gridColumn={'1 / span 2'}
+                  key={e.selectedTopic}
                   chartType={e.selectedChart}
                   metricName={e.selectedTopic}
                   onClose={() => setMetrics((old) => old.filter((x) => x !== e))}
