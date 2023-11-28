@@ -40,8 +40,6 @@ const BarChart: FC<BarChartProps> = ({ metricName, 'aria-label': ariaLabel }) =>
 
   if (!metricName) return null
 
-  console.log('XXXXXX', series)
-
   const barSeries: Datum[] = [...series]
     .reverse()
     .map((e) => ({ sampleTime: e.sampleTime as string, count: e.value as number }))
@@ -106,7 +104,6 @@ const BarChart: FC<BarChartProps> = ({ metricName, 'aria-label': ariaLabel }) =>
           legendOffset: 32,
           truncateTickAt: 0,
           format: (value) => {
-            console.log('XXXXXX vv', value)
             return '+' + DateTime.fromISO(value).second
           },
         }}
