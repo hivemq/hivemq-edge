@@ -52,10 +52,10 @@ const ChartContainer: FC<ChartContainerProps> = ({ chartType, metricName, onClos
         sampleTime: data.sampleTime,
       }
       const newSeries = [newTime, ...old]
-      newSeries.length = Math.min(newSeries.length, MAX_SERIES)
+      newSeries.length = Math.min(newSeries.length, gridSpan ? MAX_SERIES : MAX_SERIES / 2)
       return newSeries
     })
-  }, [data])
+  }, [data, gridSpan])
 
   if (!metricName) return null
 
