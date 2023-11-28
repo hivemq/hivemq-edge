@@ -31,6 +31,8 @@ public interface MqttForwarder {
 
     void stop();
 
+    void drainQueue();
+
     void setCallback(@NotNull MqttForwarder.AfterForwardCallback callback);
 
     void setExecutorService(@NotNull ExecutorService executorService);

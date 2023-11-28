@@ -26,10 +26,8 @@ import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.metrics.PerBridgeMetrics;
-import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
-import com.hivemq.client.mqtt.mqtt5.Mqtt5Client;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserPropertiesBuilder;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator;
@@ -46,13 +44,13 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -74,6 +72,9 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
     private @Nullable MqttForwarder.AfterForwardCallback afterForwardCallback;
     private @Nullable ExecutorService executorService;
+
+    private final LinkedList<BufferedPublishInformation> queue = new LinkedList<>();
+
 
     public RemoteMqttForwarder(
             final @NotNull String id,
@@ -102,7 +103,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
     @Override
     public void onMessage(@NotNull final PUBLISH publish, @NotNull final String queueId) {
-
+        System.err.println("send publish on bridge");
         perBridgeMetrics.getPublishLocalReceivedCounter().inc();
 
         if (!running.get()) {
@@ -194,37 +195,64 @@ public class RemoteMqttForwarder implements MqttForwarder {
         mqtt5Builder.withOnwardQos(modifiedQoS);
         mqtt5Builder.withRetain(localSubscription.isPreserveRetain() && publish.isRetain());
         mqtt5Builder.withUserProperties(convertUserProperties(publish.getUserProperties(), hopCount));
-        PUBLISH newPublish = mqtt5Builder.build();
-        return newPublish;
+        return mqtt5Builder.build();
     }
 
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private void sendPublishToRemote(
+    private synchronized void sendPublishToRemote(
             @NotNull PUBLISH publish, @NotNull String queueId, @NotNull PUBLISH origPublish) {
         final Mqtt5Publish mqtt5Publish = convertPublishForClient(publish);
-        if(remoteMqttClient.isConnected()){
-            final CompletableFuture<Mqtt5PublishResult> publishResult = remoteMqttClient.getMqtt5Client().toAsync().publish(mqtt5Publish);
+
+        if (!remoteMqttClient.isConnected()) {
+            queue.add(new BufferedPublishInformation(mqtt5Publish, queueId, origPublish));
+            return;
+        }
+
+        // first send the publishes that are inflight
+        drainQueue();
+
+        final CompletableFuture<Mqtt5PublishResult> publishResult =
+                remoteMqttClient.getMqtt5Client().toAsync().publish(mqtt5Publish);
+        publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
+            if (throwable != null) {
+                log.error("SENT FAILURE", throwable);
+                handlePublishError(origPublish, throwable);
+                queue.addFirst(new BufferedPublishInformation(mqtt5Publish, queueId, origPublish));
+            } else {
+                log.error("SENT SUCCESSFULLY");
+                perBridgeMetrics.getPublishForwardSuccessCounter().inc();
+                finishProcessing(origPublish, queueId);
+            }
+        });
+    }
+
+    @Override
+    public void drainQueue() {
+        while (!queue.isEmpty()) {
+            final BufferedPublishInformation bufferedPublishInformation = queue.pop();
+            final CompletableFuture<Mqtt5PublishResult> publishResult =
+                    remoteMqttClient.getMqtt5Client().toAsync().publish(bufferedPublishInformation.publish);
             publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
                 if (throwable != null) {
-                    handlePublishError(origPublish, throwable);
+                    log.error("SENT FAILURE", throwable);
+                    handlePublishError(bufferedPublishInformation.origPublish, throwable);
+                    queue.addFirst(bufferedPublishInformation);
                 } else {
+                    log.error("SENT SUCCESSFULLY");
                     perBridgeMetrics.getPublishForwardSuccessCounter().inc();
+                    finishProcessing(bufferedPublishInformation.origPublish, bufferedPublishInformation.queueId);
                 }
-                finishProcessing(origPublish, queueId);
             });
-        } else {
-            if(log.isTraceEnabled()){
-                log.trace("cannot send publish from {} to disconnected bridge, finishing", queueId);
-            }
-            finishProcessing(origPublish, queueId);
         }
     }
+
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @NotNull
     private Mqtt5Publish convertPublishForClient(@NotNull PUBLISH publish) {
         final Mqtt5PublishBuilder.Complete publishBuilder = Mqtt5Publish.builder().topic(publish.getTopic());
-        publishBuilder.payload(publish.getPayload()).qos(MqttQos.fromCode(publish.getQoS().getQosNumber()));
+        publishBuilder.payload(publish.getPayload());
 
         if (publish.getMessageExpiryInterval() <= PUBLISH.MESSAGE_EXPIRY_INTERVAL_MAX) {
             publishBuilder.messageExpiryInterval(publish.getMessageExpiryInterval());
@@ -359,6 +387,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
         return localSubscription.getFilters();
     }
 
+
     @Override
     public int getInflightCount() {
         return inflightCounter.get();
@@ -367,5 +396,34 @@ public class RemoteMqttForwarder implements MqttForwarder {
     @Override
     public void setExecutorService(final ExecutorService executorService) {
         this.executorService = executorService;
+    }
+
+
+    private static class BufferedPublishInformation {
+        private final @NotNull Mqtt5Publish publish;
+        private final @NotNull String queueId;
+        private final @NotNull PUBLISH origPublish;
+
+
+        private BufferedPublishInformation(
+                final @NotNull Mqtt5Publish publish,
+                final @NotNull String queueId,
+                final @NotNull PUBLISH origPublish) {
+            this.publish = publish;
+            this.queueId = queueId;
+            this.origPublish = origPublish;
+        }
+
+        public @NotNull Mqtt5Publish getPublish() {
+            return publish;
+        }
+
+        public @NotNull String getQueueId() {
+            return queueId;
+        }
+
+        public @NotNull PUBLISH getOrigPublish() {
+            return origPublish;
+        }
     }
 }
