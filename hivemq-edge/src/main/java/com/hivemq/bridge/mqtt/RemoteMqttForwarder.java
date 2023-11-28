@@ -72,6 +72,10 @@ public class RemoteMqttForwarder implements MqttForwarder {
     private @NotNull ResetInflightMarkerCallback resetInflightMarkerCallback;
 
     private @Nullable ExecutorService executorService;
+    private final boolean persist;
+
+    private final LinkedList<BufferedPublishInformation> queue = new LinkedList<>();
+
 
     private final ConcurrentLinkedQueue<BufferedPublishInformation> queue = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OutflightPublishInformation> outflightQueue = new ConcurrentLinkedQueue<>();
@@ -83,13 +87,15 @@ public class RemoteMqttForwarder implements MqttForwarder {
             final @NotNull LocalSubscription localSubscription,
             final @NotNull BridgeMqttClient remoteMqttClient,
             final @NotNull PerBridgeMetrics perBridgeMetrics,
-            final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler) {
+            final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler,
+            final boolean persist) {
         this.id = id;
         this.bridge = bridge;
         this.localSubscription = localSubscription;
         this.remoteMqttClient = remoteMqttClient;
         this.perBridgeMetrics = perBridgeMetrics;
         this.bridgeInterceptorHandler = bridgeInterceptorHandler;
+        this.persist = persist;
     }
 
     public void start() {
@@ -114,7 +120,8 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
 
     @Override
-    public void onMessage(final @NotNull PUBLISH publish, @NotNull final String queueId) {
+    public void onMessage(final @NotNullPUBLISH publish, @NotNull final String queueId) {
+        System.err.println("send publish on bridge");
         perBridgeMetrics.getPublishLocalReceivedCounter().inc();
 
         final QoS originalQoS = publish.getQoS();
@@ -137,7 +144,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
                             publish.getTopic(),
                             bridge.getId());
                 }
-                finishProcessing(originalQoS, publish.getUniqueId(), queueId);
+                finishProcessing(originalQoS, publish.getUniqueId(), queueId, false);
                 return;
             }
 
@@ -145,7 +152,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
             for (String exclude : localSubscription.getExcludes()) {
                 if (MqttTopicFilter.of(exclude).matches(MqttTopicFilter.of(publish.getTopic()))) {
                     perBridgeMetrics.getRemotePublishExcludedCounter().inc();
-                    finishProcessing(originalQoS, publish.getUniqueId(), queueId);
+                    finishProcessing(originalQoS, publish.getUniqueId(), queueId, false);
                     return;
                 }
             }
@@ -164,7 +171,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
                         switch (result.getOutcome()) {
                             case DROP:
-                                finishProcessing(originalQoS, publish.getUniqueId(), queueId);
+                                finishProcessing(originalQoS, publish.getUniqueId(), queueId, false);
                                 break;
                             case SUCCESS:
                                 sendPublishToRemote(Objects.requireNonNull(result.getPublish()),
@@ -175,29 +182,31 @@ public class RemoteMqttForwarder implements MqttForwarder {
                         }
                     } catch (Throwable t) {
                         handlePublishError(publish, t);
-                        finishProcessing(originalQoS, publish.getUniqueId(), queueId);
+                        finishProcessing(originalQoS, publish.getUniqueId(), queueId, false);
                     }
                 }
 
                 @Override
                 public void onFailure(final Throwable t) {
                     handlePublishError(publish, t);
-                    finishProcessing(originalQoS, publish.getUniqueId(), queueId);
+                    finishProcessing(originalQoS, publish.getUniqueId(), queueId, false);
                 }
             }, executorService);
 
         } catch (Exception e) {
             handlePublishError(publish, e);
-            finishProcessing(originalQoS, publish.getUniqueId(), queueId);
+            finishProcessing(originalQoS, publish.getUniqueId(), queueId, false);
         }
 
     }
 
     private void finishProcessing(
-            final @NotNull QoS originalQoS, final @NotNull String uniqueId, final @NotNull String queueId) {
-        inflightCounter.decrementAndGet();
+            final @NotNull QoS originalQoS, final @NotNull String uniqueId, final @NotNull String queueId, final boolean cancelConsumption) {
+        if (!cancelConsumption) {
+            inflightCounter.decrementAndGet();
+        }
         if (afterForwardCallback != null) {
-            afterForwardCallback.afterMessage(originalQoS, uniqueId, queueId, false);
+            afterForwardCallback.afterMessage(originalQoS, uniqueId, queueId, cancelConsumption);
         }
     }
 
@@ -280,7 +289,14 @@ public class RemoteMqttForwarder implements MqttForwarder {
     @NotNull
     private Mqtt5Publish convertPublishForClient(@NotNull PUBLISH publish) {
         final Mqtt5PublishBuilder.Complete publishBuilder = Mqtt5Publish.builder().topic(publish.getTopic());
-        publishBuilder.payload(publish.getPayload()).qos(MqttQos.fromCode(publish.getQoS().getQosNumber()));
+        publishBuilder.payload(publish.getPayload());
+
+        if (persist) {
+            publishBuilder.qos(MqttQos.fromCode(publish.getQoS().getQosNumber()));
+        } else {
+            publishBuilder.qos(MqttQos.AT_MOST_ONCE);
+        }
+
 
         if (publish.getMessageExpiryInterval() <= PUBLISH.MESSAGE_EXPIRY_INTERVAL_MAX) {
             publishBuilder.messageExpiryInterval(publish.getMessageExpiryInterval());
