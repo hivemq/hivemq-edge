@@ -59,7 +59,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -83,7 +87,7 @@ public class BridgeMqttClient {
     private final @NotNull EventService eventService;
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicBoolean stopped = new AtomicBoolean(false);
-    private List<MqttForwarder> forwarders = Collections.synchronizedList(new ArrayList<>());
+    private final @NotNull List<MqttForwarder> forwarders = Collections.synchronizedList(new ArrayList<>());
 
     public BridgeMqttClient(
             final @NotNull SystemInformation systemInformation,
@@ -115,6 +119,7 @@ public class BridgeMqttClient {
         builder.addConnectedListener(context -> {
             log.debug("Bridge {} connected", bridge.getId());
             connected.set(true);
+            forwarders.forEach(MqttForwarder::drainQueue);
         });
 
         builder.addConnectedListener(context -> eventService.fireEvent(eventBuilder(Event.SEVERITY.INFO).withMessage(
@@ -236,10 +241,9 @@ public class BridgeMqttClient {
                 forwarder.drainQueue();
             }
 
-
             ImmutableList.Builder<CompletableFuture<Mqtt5SubAck>> subscribeFutures = new ImmutableList.Builder<>();
             for (RemoteSubscription remoteSubscription : bridge.getRemoteSubscriptions()) {
-                final List<Mqtt5Subscription> subscriptions = convertSubscriptions(remoteSubscription, bridge);
+                final List<Mqtt5Subscription> subscriptions = convertSubscriptions(remoteSubscription);
                 final Consumer<Mqtt5Publish> mqtt5PublishConsumer = new RemotePublishConsumer(remoteSubscription,
                         bridgeInterceptorHandler,
                         bridge,
@@ -268,7 +272,7 @@ public class BridgeMqttClient {
 
     @NotNull
     private static List<Mqtt5Subscription> convertSubscriptions(
-            final @NotNull RemoteSubscription remoteSubscription, final @NotNull MqttBridge bridge) {
+            final @NotNull RemoteSubscription remoteSubscription) {
         return remoteSubscription.getFilters().stream().map(originalFilter -> {
             MqttTopicFilter topicFilter = MqttTopicFilter.of(originalFilter);
             return Mqtt5Subscription.builder()
@@ -313,7 +317,7 @@ public class BridgeMqttClient {
         return connected.get();
     }
 
-    protected Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity) {
+    protected @NotNull Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity) {
         Event.Builder builder = new Event.Builder();
         builder.withTimestamp(System.currentTimeMillis());
         builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.BRIDGE, bridge.getId()));
