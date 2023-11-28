@@ -233,7 +233,6 @@ public class RemoteMqttForwarder implements MqttForwarder {
             publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
                 if (throwable != null) {
                     handlePublishError(bufferedPublishInformation.publish, throwable);
-                    queue.addFirst(bufferedPublishInformation);
                 } else {
                     perBridgeMetrics.getPublishForwardSuccessCounter().inc();
                     finishProcessing(bufferedPublishInformation.publish, bufferedPublishInformation.queueId);
