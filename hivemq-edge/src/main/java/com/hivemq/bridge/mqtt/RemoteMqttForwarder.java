@@ -205,7 +205,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
         final Mqtt5Publish mqtt5Publish = convertPublishForClient(publish);
 
         if (!remoteMqttClient.isConnected()) {
-            queue.add(new BufferedPublishInformation(mqtt5Publish, queueId, origPublish));
+            queue.add(new BufferedPublishInformation(queueId, origPublish));
             return;
         }
 
@@ -217,7 +217,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
         publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
             if (throwable != null) {
                 handlePublishError(origPublish, throwable);
-                queue.addFirst(new BufferedPublishInformation(mqtt5Publish, queueId, origPublish));
+                queue.addFirst(new BufferedPublishInformation(queueId, origPublish));
             } else {
                 perBridgeMetrics.getPublishForwardSuccessCounter().inc();
                 finishProcessing(origPublish, queueId);
@@ -230,14 +230,14 @@ public class RemoteMqttForwarder implements MqttForwarder {
         while (!queue.isEmpty()) {
             final BufferedPublishInformation bufferedPublishInformation = queue.pop();
             final CompletableFuture<Mqtt5PublishResult> publishResult =
-                    remoteMqttClient.getMqtt5Client().publish(bufferedPublishInformation.publish);
+                    remoteMqttClient.getMqtt5Client().publish(convertPublishForClient(bufferedPublishInformation.publish));
             publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
                 if (throwable != null) {
-                    handlePublishError(bufferedPublishInformation.origPublish, throwable);
+                    handlePublishError(bufferedPublishInformation.publish, throwable);
                     queue.addFirst(bufferedPublishInformation);
                 } else {
                     perBridgeMetrics.getPublishForwardSuccessCounter().inc();
-                    finishProcessing(bufferedPublishInformation.origPublish, bufferedPublishInformation.queueId);
+                    finishProcessing(bufferedPublishInformation.publish, bufferedPublishInformation.queueId);
                 }
             });
         }
@@ -390,36 +390,21 @@ public class RemoteMqttForwarder implements MqttForwarder {
     }
 
     @Override
-    public void setExecutorService(final ExecutorService executorService) {
+    public void setExecutorService(final @NotNull ExecutorService executorService) {
         this.executorService = executorService;
     }
 
 
     private static class BufferedPublishInformation {
-        private final @NotNull Mqtt5Publish publish;
         private final @NotNull String queueId;
-        private final @NotNull PUBLISH origPublish;
+        private final @NotNull PUBLISH publish;
 
 
         private BufferedPublishInformation(
-                final @NotNull Mqtt5Publish publish,
                 final @NotNull String queueId,
                 final @NotNull PUBLISH origPublish) {
-            this.publish = publish;
             this.queueId = queueId;
-            this.origPublish = origPublish;
-        }
-
-        public @NotNull Mqtt5Publish getPublish() {
-            return publish;
-        }
-
-        public @NotNull String getQueueId() {
-            return queueId;
-        }
-
-        public @NotNull PUBLISH getOrigPublish() {
-            return origPublish;
+            this.publish = origPublish;
         }
     }
 }
