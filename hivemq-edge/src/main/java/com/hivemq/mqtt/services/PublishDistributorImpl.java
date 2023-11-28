@@ -21,6 +21,9 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.bridge.config.MqttBridge;
+import com.hivemq.configuration.service.BridgeConfigurationService;
+import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -44,9 +47,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import static com.hivemq.mqtt.handler.publish.PublishStatus.DELIVERED;
-import static com.hivemq.mqtt.handler.publish.PublishStatus.FAILED;
-import static com.hivemq.mqtt.handler.publish.PublishStatus.NOT_CONNECTED;
+import static com.hivemq.mqtt.handler.publish.PublishStatus.*;
 
 /**
  * @author Christoph Schäbel
@@ -65,6 +66,8 @@ public class PublishDistributorImpl implements PublishDistributor {
     private final SingleWriterService singleWriterService;
     @NotNull
     private final MqttConfigurationService mqttConfigurationService;
+    @NotNull
+    private final BridgeConfigurationService bridgeConfigurationService;
 
     @Inject
     public PublishDistributorImpl(
@@ -72,12 +75,13 @@ public class PublishDistributorImpl implements PublishDistributor {
             @NotNull final ClientQueuePersistence clientQueuePersistence,
             @NotNull final Lazy<ClientSessionPersistence> clientSessionPersistence,
             @NotNull final SingleWriterService singleWriterService,
-            @NotNull final MqttConfigurationService mqttConfigurationService) {
+            @NotNull final ConfigurationService configurationService) {
         this.payloadPersistence = payloadPersistence;
         this.clientQueuePersistence = clientQueuePersistence;
         this.clientSessionPersistence = clientSessionPersistence;
         this.singleWriterService = singleWriterService;
-        this.mqttConfigurationService = mqttConfigurationService;
+        this.mqttConfigurationService = configurationService.mqttConfiguration();
+        this.bridgeConfigurationService = configurationService.bridgeConfiguration();
     }
 
     @NotNull
@@ -204,9 +208,11 @@ public class PublishDistributorImpl implements PublishDistributor {
             @Nullable final ImmutableIntArray subscriptionIdentifier,
             @Nullable final Long queueLimit) {
 
+        int realSubscriptionQos = getRealSubscriptionQos(client, subscriptionQos, shared);
+
         final ListenableFuture<Void> future = clientQueuePersistence.add(client,
                 shared,
-                createPublish(publish, subscriptionQos, retainAsPublished, subscriptionIdentifier),
+                createPublish(publish, realSubscriptionQos, retainAsPublished, subscriptionIdentifier),
                 false,
                 Objects.requireNonNullElseGet(queueLimit, mqttConfigurationService::maxQueuedMessages));
 
@@ -224,6 +230,29 @@ public class PublishDistributorImpl implements PublishDistributor {
             }
         }, singleWriterService.callbackExecutor(client));
         return statusFuture;
+    }
+
+    private int getRealSubscriptionQos(@NotNull String client, int subscriptionQos, boolean shared) {
+        if (!shared) {
+            return subscriptionQos;
+        }
+        boolean downGradeQoS = false;
+        for (MqttBridge bridge : bridgeConfigurationService.getBridges()) {
+            if (!bridge.isPersist()) {
+                final String bridgeClientId = "forwarder#" + bridge.getId();
+                if (client.contains(bridgeClientId)) {
+                    downGradeQoS = true;
+                }
+                break;
+            }
+        }
+        int realSubscriptionQos;
+        if (downGradeQoS) {
+            realSubscriptionQos = 0;
+        } else {
+            realSubscriptionQos = subscriptionQos;
+        }
+        return realSubscriptionQos;
     }
 
 

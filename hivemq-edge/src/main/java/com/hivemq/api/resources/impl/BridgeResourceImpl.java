@@ -357,7 +357,8 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                                 .map(f -> unconvertRemote(f))
                                 .collect(Collectors.toList()) :
                         List.of())
-                .withBridgeTls(convertTls(bridge.getTlsConfiguration()));
+                .withBridgeTls(convertTls(bridge.getTlsConfiguration()))
+                .persist(bridge.isPersist());
         return builder.build();
     }
 

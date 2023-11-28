@@ -18,6 +18,7 @@ package com.hivemq.mqtt.services;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
@@ -47,6 +48,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,32 +57,26 @@ import static org.mockito.Mockito.when;
  */
 public class PublishDistributorImplTest {
 
-    private AutoCloseable closeableMock;
-
-    @Mock
-    private @NotNull PublishPayloadPersistence payloadPersistence;
-    @Mock
-    private @NotNull ClientQueuePersistence clientQueuePersistence;
-    @Mock
-    private @NotNull ClientSessionPersistence clientSessionPersistence;
-    @Mock
-    private @NotNull MqttConfigurationService mqttConfigurationService;
+    private final @NotNull PublishPayloadPersistence payloadPersistence = mock();
+    private final @NotNull ClientQueuePersistence clientQueuePersistence = mock();
+    private final @NotNull ClientSessionPersistence clientSessionPersistence = mock();
+    private final @NotNull ConfigurationService configurationService = mock();
+    private final @NotNull MqttConfigurationService mqttConfigurationService = mock();
 
     private @NotNull PublishDistributorImpl publishDistributor;
     private @NotNull SingleWriterService singleWriterService;
 
     @Before
     public void setUp() throws Exception {
-        closeableMock = MockitoAnnotations.openMocks(this);
+        when(configurationService.mqttConfiguration()).thenReturn(mqttConfigurationService);
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter();
         publishDistributor = new PublishDistributorImpl(payloadPersistence, clientQueuePersistence, ()->clientSessionPersistence,
-                singleWriterService, mqttConfigurationService);
+                singleWriterService, configurationService);
     }
 
     @After
     public void tearDown() throws Exception {
         singleWriterService.stop();
-        closeableMock.close();
     }
 
     @Test(timeout = 5000)
