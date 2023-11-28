@@ -144,6 +144,10 @@ public class Bridge {
     @Schema(description = "status associated with the bridge", nullable = true)
     private final @Nullable Status status;
 
+    @JsonProperty("persist")
+    @Schema(description = "Shall the publishes for the bridge be persisted.", nullable = true)
+    private boolean persist;
+
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public Bridge(
@@ -161,7 +165,8 @@ public class Bridge {
             @NotNull @JsonProperty("remoteSubscriptions") final List<BridgeSubscription> remoteSubscriptions,
             @NotNull @JsonProperty("localSubscriptions") final List<LocalBridgeSubscription> localSubscriptions,
             @Nullable @JsonProperty("tlsConfiguration") final TlsConfiguration tlsConfiguration,
-            @Nullable @JsonProperty("status") final Status status) {
+            @Nullable @JsonProperty("status") final Status status,
+            @Nullable @JsonProperty("persist") final Boolean persist) {
         this.id = id;
         this.host = host;
         this.port = port;
@@ -177,6 +182,7 @@ public class Bridge {
         this.localSubscriptions = localSubscriptions;
         this.tlsConfiguration = tlsConfiguration;
         this.status = status;
+        this.persist = persist;
     }
 
     public Status getStatus() {
@@ -237,6 +243,10 @@ public class Bridge {
 
     public TlsConfiguration getTlsConfiguration() {
         return tlsConfiguration;
+    }
+
+    public boolean isPersist() {
+        return persist;
     }
 
     public static class BridgeSubscription {
@@ -380,7 +390,8 @@ public class Bridge {
                         .stream()
                         .map(m -> convertLocalSubscription(m))
                         .collect(Collectors.toList()),
-                convertTls(mqttBridge.getBridgeTls()), status);
+                convertTls(mqttBridge.getBridgeTls()), status,
+                mqttBridge.isPersist());
         return bridge;
     }
 
