@@ -45,7 +45,6 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.validation.constraints.Null;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +52,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -105,12 +103,12 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
 
     @Override
-    public void onMessage(@NotNull final PUBLISH publish, @NotNull final String queueId) {
+    public void onMessage(final @NotNull PUBLISH publish, @NotNull final String queueId) {
         perBridgeMetrics.getPublishLocalReceivedCounter().inc();
 
         if (!running.get()) {
             if (afterForwardCallback != null) {
-                afterForwardCallback.afterMessage(publish, queueId, true);
+                afterForwardCallback.afterMessage(publish.getQoS(), publish.getUniqueId(), queueId, true);
             }
             return;
         }
@@ -182,7 +180,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
     private void finishProcessing(@NotNull PUBLISH publish, @NotNull String queueId) {
         inflightCounter.decrementAndGet();
         if (afterForwardCallback != null) {
-            afterForwardCallback.afterMessage(publish, queueId, false);
+            afterForwardCallback.afterMessage(publish.getQoS(), publish.getUniqueId(), queueId, false);
         }
     }
 

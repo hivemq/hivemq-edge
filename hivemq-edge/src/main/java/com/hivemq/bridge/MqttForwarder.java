@@ -16,6 +16,8 @@
 package com.hivemq.bridge;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.services.publish.Publish;
+import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 
 import java.util.List;
@@ -43,6 +45,6 @@ public interface MqttForwarder {
 
     @FunctionalInterface
     interface AfterForwardCallback {
-        void afterMessage(@NotNull PUBLISH message, @NotNull String queueId, boolean cancelled);
+        void afterMessage(@NotNull QoS qos, @NotNull String uniqueId, @NotNull String queueId, boolean cancelled);
     }
 }

@@ -348,7 +348,7 @@ class RemoteMqttForwarderTest {
                 new PerBridgeMetrics("testbridge", metricRegistry),
                 new TestInterceptorHandler());
         forwarder.setExecutorService(executorService);
-        forwarder.setCallback((message, queueId, cancelled) -> {
+        forwarder.setCallback((qos,uniqueId, queueId, cancelled) -> {
             if (queueId.equals("testqueue")) {
                 callbackCalled.set(true);
             }
