@@ -232,7 +232,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
         while (!queue.isEmpty()) {
             final BufferedPublishInformation bufferedPublishInformation = queue.pop();
             final CompletableFuture<Mqtt5PublishResult> publishResult =
-                    remoteMqttClient.getMqtt5Client().toAsync().publish(bufferedPublishInformation.publish);
+                    remoteMqttClient.getMqtt5Client().publish(bufferedPublishInformation.publish);
             publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
                 if (throwable != null) {
                     handlePublishError(bufferedPublishInformation.origPublish, throwable);

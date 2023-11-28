@@ -313,6 +313,18 @@ class RemoteMqttForwarderTest {
                 metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count").getCount());
     }
 
+    @Test
+    void whenClientIsDisconnected_thenPublishesAreQueued() {
+        when(bridgeClient.isConnected()).thenReturn(false);
+        forwarder.start();
+        final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
+        forwarder.onMessage(localPublish, "testqueue");
+        when(bridgeClient.isConnected()).thenReturn(true);
+        forwarder.onMessage(localPublish, "testqueue");
+
+        verify(mqtt5AsyncClient, times(2)).publish(any());
+    }
+
     @NotNull
     private RemoteMqttForwarder createForwarder(
             final @NotNull AtomicBoolean callbackCalled,
