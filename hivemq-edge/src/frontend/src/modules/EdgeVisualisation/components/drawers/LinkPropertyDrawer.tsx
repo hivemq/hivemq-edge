@@ -4,10 +4,10 @@ import { Node } from 'reactflow'
 import { Box, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader, Text } from '@chakra-ui/react'
 
 import { Adapter, Bridge } from '@/api/__generated__'
-import MetricView from '@/modules/Metrics/components/MetricView.tsx'
 import Metrics from '@/modules/Metrics/Metrics.tsx'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
-import { getDefaultMetricsFor } from '@/modules/EdgeVisualisation/utils/nodes-utils.ts'
+
+import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
+import { NodeTypes } from '../../types.ts'
 
 interface LinkPropertyDrawerProps {
   selectedNode: Node<Bridge | Adapter>
@@ -38,7 +38,6 @@ const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ isOpen, selectedNode,
             id={selectedNode.data.id}
             initMetrics={getDefaultMetricsFor(selectedNode)}
           />
-          <MetricView node={selectedNode} />
         </DrawerBody>
       </DrawerContent>
     </Drawer>
