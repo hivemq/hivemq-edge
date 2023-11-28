@@ -202,7 +202,6 @@ public class RemoteMqttForwarder implements MqttForwarder {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private synchronized void sendPublishToRemote(
             @NotNull PUBLISH publish, @NotNull String queueId, @NotNull PUBLISH origPublish) {
-        final Mqtt5Publish mqtt5Publish = convertPublishForClient(publish);
 
         if (!remoteMqttClient.isConnected()) {
             queue.add(new BufferedPublishInformation(queueId, origPublish));
@@ -212,6 +211,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
         // first send the publishes that are inflight
         drainQueue();
 
+        final Mqtt5Publish mqtt5Publish = convertPublishForClient(publish);
         final CompletableFuture<Mqtt5PublishResult> publishResult =
                 remoteMqttClient.getMqtt5Client().publish(mqtt5Publish);
         publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
