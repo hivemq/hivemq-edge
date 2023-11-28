@@ -2,13 +2,14 @@ import { FC } from 'react'
 import { BarDatum, ResponsiveBar } from '@nivo/bar'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { Box } from '@chakra-ui/react'
+import { Badge, Box, Card, Text } from '@chakra-ui/react'
 
 import { ChartProps } from '../../types.ts'
+import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
+import { extractMetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
 
 interface Datum extends BarDatum {
   sampleTime: string
-  count: number
 }
 
 const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel }) => {
@@ -16,21 +17,31 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel })
 
   if (!metricName) return null
 
+  const { suffix, device } = extractMetricInfo(metricName)
+  const seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
+
   const barSeries: Datum[] = [...data]
     .reverse()
-    .map((e) => ({ sampleTime: e.sampleTime as string, count: e.value as number }))
+    .map((e) => ({ sampleTime: e.sampleTime as string, [seriesName]: e.value as number }))
 
   return (
     <Box w={'100%'} h={250}>
       <ResponsiveBar
         data={barSeries}
-        keys={['count']}
+        keys={[seriesName]}
         indexBy="sampleTime"
         margin={{ top: 10, right: 80, bottom: 40, left: 40 }}
         padding={0.3}
         valueScale={{ type: 'linear' }}
         indexScale={{ type: 'band', round: true }}
         colors={{ scheme: 'nivo' }}
+        tooltip={(d) => (
+          <Card p={1}>
+            <Badge backgroundColor={d.color}>{d.id}</Badge>
+            <DateTimeRenderer date={DateTime.fromISO(d.indexValue as string)} isShort />
+            <Text fontWeight={'bold'}>{d.formattedValue}</Text>
+          </Card>
+        )}
         // defs={[
         //   {
         //     id: 'dots',
