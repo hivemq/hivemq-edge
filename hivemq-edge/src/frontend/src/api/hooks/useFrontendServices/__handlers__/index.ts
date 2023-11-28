@@ -1,4 +1,4 @@
-import { GatewayConfiguration, Notification, NotificationList } from '@/api/__generated__'
+import { Capability, CapabilityList, GatewayConfiguration, Notification, NotificationList } from '@/api/__generated__'
 import { rest } from 'msw'
 
 const lorem =
@@ -111,6 +111,14 @@ export const MOCK_NOTIFICATIONS: Array<Notification> = [
   },
 ]
 
+export const MOCK_CAPABILITY_PERSISTENCE: Capability = {
+  id: 'mqtt-persistence',
+  displayName: 'Persistent Data for MQTT traffic',
+  description: 'Mqtt Traffic with QoS greater than 0 is stored persistently on disc and loaded on restart of Edge. ',
+}
+
+export const MOCK_CAPABILITIES: CapabilityList = { items: [MOCK_CAPABILITY_PERSISTENCE] }
+
 export const handlers = [
   rest.get('**/frontend/configuration', (_, res, ctx) => {
     return res(ctx.json<GatewayConfiguration>(mockGatewayConfiguration), ctx.status(200))
@@ -119,4 +127,9 @@ export const handlers = [
   rest.get('**/frontend/notifications', (_, res, ctx) => {
     return res(ctx.json<NotificationList>({ items: MOCK_NOTIFICATIONS }), ctx.status(200))
   }),
+
+  rest.get('**/frontend/capabilities', (_, res, ctx) => {
+    return res(ctx.json<CapabilityList>(MOCK_CAPABILITIES), ctx.status(200))
+  }),
+
 ]

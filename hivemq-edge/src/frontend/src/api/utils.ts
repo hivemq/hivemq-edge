@@ -8,6 +8,7 @@ export const QUERY_KEYS = {
   UNIFIED_NAMESPACE: 'unified.namespace',
   FRONTEND_CONFIGURATION: 'frontend.configuration',
   FRONTEND_NOTIFICATION: 'frontend.notification',
+  FRONTEND_CAPABILITIES: 'frontend.capabilities',
   LISTENERS: 'gateway.listeners',
   METRICS: 'metrics',
   METRICS_SAMPLE: 'sample',
