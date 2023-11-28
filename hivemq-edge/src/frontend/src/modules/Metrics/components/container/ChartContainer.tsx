@@ -1,23 +1,7 @@
 import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Avatar,
-  Box,
-  Card,
-  CardBody,
-  CardHeader,
-  CloseButton,
-  Flex,
-  HStack,
-  Icon,
-  IconButton,
-  type StackProps,
-  Text,
-  Tooltip,
-  VStack,
-} from '@chakra-ui/react'
+import { Box, Card, CardBody, CloseButton, HStack, Icon, IconButton, type StackProps, VStack } from '@chakra-ui/react'
 import { BiCollapseHorizontal, BiExpandHorizontal } from 'react-icons/bi'
-import { VscGraph, VscGraphLine } from 'react-icons/vsc'
 
 import { DataPoint } from '@/api/__generated__'
 import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
@@ -60,27 +44,13 @@ const ChartContainer: FC<ChartContainerProps> = ({ chartType, metricName, onClos
   if (!metricName) return null
 
   const metricInfo = extractMetricInfo(metricName)
-  const { device, suffix, id } = metricInfo
+  const { device, suffix } = metricInfo
 
   const Chart = chartType === ChartType.BAR_CHART ? BarChart : LineChart
-  const ChartIcon = chartType === ChartType.BAR_CHART ? VscGraph : VscGraphLine
   return (
     <HStack alignItems={'flex-start'} gap={0} {...props} gridColumn={gridSpan ? '1 / span 2' : 'auto'}>
       <Card size={'sm'} w={'100%'}>
-        <CardHeader>
-          <Flex gap="4">
-            <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
-              <Avatar icon={<ChartIcon fontSize={18} />} size={'sm'} />
-              <Box>
-                <Tooltip label={t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')} placement={'top'}>
-                  <Text textOverflow={'ellipsis'}>{t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')}</Text>
-                </Tooltip>
-                <Text>{id}</Text>
-              </Box>
-            </Flex>
-          </Flex>
-        </CardHeader>
-        <CardBody>
+        <CardBody h={180}>
           <Chart
             data={series}
             metricName={metricName}
