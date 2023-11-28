@@ -12,7 +12,7 @@ interface Datum extends BarDatum {
   sampleTime: string
 }
 
-const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel }) => {
+const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, ...props }) => {
   const { t } = useTranslation()
 
   if (!metricName) return null
@@ -25,7 +25,7 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel })
     .map((e) => ({ sampleTime: e.sampleTime as string, [seriesName]: e.value as number }))
 
   return (
-    <Box w={'100%'} h={250}>
+    <Box w={'100%'} {...props}>
       <ResponsiveBar
         data={barSeries}
         keys={[seriesName]}

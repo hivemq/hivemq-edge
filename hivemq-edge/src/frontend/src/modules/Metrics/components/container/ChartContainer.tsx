@@ -52,6 +52,7 @@ const ChartContainer: FC<ChartContainerProps> = ({ chartType, metricName, onClos
       <Card size={'sm'} w={'100%'}>
         <CardBody h={180}>
           <Chart
+            h={gridSpan ? 250 : 200}
             data={series}
             metricName={metricName}
             aria-label={t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')}

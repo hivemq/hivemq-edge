@@ -8,7 +8,7 @@ import { ChartProps } from '../../types.ts'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import { extractMetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
 
-const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel }) => {
+const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, ...props }) => {
   const { t } = useTranslation()
 
   if (!metricName) return null
@@ -22,7 +22,7 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel }
   const seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
 
   return (
-    <Box w={'100%'} h={250} role={'application'} aria-label={ariaLabel}>
+    <Box w={'100%'} {...props} role={'application'} aria-label={ariaLabel}>
       <ResponsiveLine
         useMesh
         // TODO[NVL] ResponsiveLine doesn't support aria-label; adding it to the wrapper element

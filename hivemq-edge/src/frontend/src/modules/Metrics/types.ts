@@ -1,3 +1,4 @@
+import { BoxProps } from '@chakra-ui/react'
 import { DataPoint } from '@/api/__generated__'
 
 export enum ChartType {
@@ -29,7 +30,7 @@ export interface MetricVisualisation {
   description?: string
 }
 
-export interface ChartProps {
+export interface ChartProps extends BoxProps {
   metricName: string
   'aria-label': string
   data: DataPoint[]
