@@ -1,26 +1,42 @@
 import { FC, useState } from 'react'
 import { Card, CardBody, CardHeader, Flex, IconButton, SimpleGrid, useDisclosure } from '@chakra-ui/react'
-import { TbLayoutNavbarExpand, TbLayoutNavbarCollapse } from 'react-icons/tb'
+import { TbLayoutNavbarCollapse, TbLayoutNavbarExpand } from 'react-icons/tb'
 import { useTranslation } from 'react-i18next'
 
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 import config from '@/config'
 
-import MetricNameSelector from './components/MetricNameSelector.tsx'
+import { ChartType, MetricDefinition } from './types.ts'
 import Sample from './components/Sample.tsx'
+import MetricEditor from './components/editor/MetricEditor.tsx'
+import ChartContainer from './components/container/ChartContainer.tsx'
 
 interface MetricsProps {
   type: NodeTypes
   id: string
   initMetrics?: string[]
+  defaultChartType?: ChartType
 }
 
-const Metrics: FC<MetricsProps> = ({ id, initMetrics }) => {
-  const [metrics, setMetrics] = useState<string[]>(initMetrics || [])
+export interface MetricSpecStorage {
+  selectedTopic: string
+  selectedChart?: ChartType
+}
+
+const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
+  // const [, saveReport] = useLocalStorage<MetricVisualisation[]>(`reports-${id}`, [])
+  const [metrics, setMetrics] = useState<MetricSpecStorage[]>(
+    initMetrics ? initMetrics.map<MetricSpecStorage>((e) => ({ selectedTopic: e })) : []
+  )
   const showSelector = config.features.METRICS_SELECT_PANEL
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation()
+
+  const handleCreateMetrics = (value: MetricDefinition) => {
+    const { selectedTopic, selectedChart } = value
+    setMetrics((old) => [...old, { selectedTopic: selectedTopic?.value, selectedChart: selectedChart?.value }])
+  }
 
   return (
     <Card size={'sm'}>
@@ -38,23 +54,39 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics }) => {
             />
           </Flex>
           {isOpen && (
-            <MetricNameSelector
-              filter={id}
-              selectedMetrics={metrics}
-              onSubmit={(value) => {
-                const { selectedTopic } = value
-                setMetrics((old) => [...old, selectedTopic.value])
-              }}
-            />
+            <>
+              <MetricEditor
+                filter={id}
+                selectedMetrics={metrics.map((e) => e.selectedTopic)}
+                selectedChart={defaultChartType}
+                onSubmit={handleCreateMetrics}
+              />
+            </>
           )}
         </CardHeader>
       )}
 
       <CardBody>
         <SimpleGrid spacing={4} templateColumns="repeat(auto-fill, minmax(200px, 1fr))">
-          {metrics.map((e) => (
-            <Sample key={e} metricName={e} onClose={() => setMetrics((old) => old.filter((x) => x !== e))} />
-          ))}
+          {metrics.map((e) => {
+            if (!e.selectedChart || e.selectedChart === ChartType.SAMPLE)
+              return (
+                <Sample
+                  key={e.selectedTopic}
+                  metricName={e.selectedTopic}
+                  onClose={() => setMetrics((old) => old.filter((x) => x !== e))}
+                />
+              )
+            else
+              return (
+                <ChartContainer
+                  gridColumn={'1 / span 2'}
+                  chartType={e.selectedChart}
+                  metricName={e.selectedTopic}
+                  onClose={() => setMetrics((old) => old.filter((x) => x !== e))}
+                />
+              )
+          })}
         </SimpleGrid>
       </CardBody>
     </Card>
