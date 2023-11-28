@@ -55,6 +55,7 @@ const LineChart: FC<LineChartProps> = ({ metricName, 'aria-label': ariaLabel }) 
               .map((e) => ({ x: DateTime.fromISO(e.sampleTime as string).toMillis(), y: e.value })),
           },
         ]}
+        colors={{ scheme: 'nivo' }}
         margin={{ top: 0, right: 10, bottom: 50, left: 50 }}
         yScale={{ type: 'linear', min: boundaries.x, max: boundaries.y, stacked: true }}
         // xScale={{ type: 'linear' }}
