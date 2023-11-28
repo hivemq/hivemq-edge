@@ -2,9 +2,11 @@ import { FC } from 'react'
 import { ResponsiveLine } from '@nivo/line'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { Box } from '@chakra-ui/react'
+import { Badge, Box, Card, Text } from '@chakra-ui/react'
 
 import { ChartProps } from '../../types.ts'
+import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
+import { extractMetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
 
 const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel }) => {
   const { t } = useTranslation()
@@ -16,6 +18,9 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel }
     y: Math.max(...data.map((e) => e.value as number)),
   }
 
+  const { suffix, device } = extractMetricInfo(metricName)
+  const seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
+
   return (
     <Box w={'100%'} h={250} role={'application'} aria-label={ariaLabel}>
       <ResponsiveLine
@@ -24,7 +29,7 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel }
         role={'none'}
         data={[
           {
-            id: 'ddd',
+            id: seriesName,
             color: 'red',
             data: [...data]
               .reverse()
@@ -32,6 +37,13 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel }
           },
         ]}
         colors={{ scheme: 'nivo' }}
+        tooltip={(d) => (
+          <Card p={1}>
+            <Badge backgroundColor={d.point.serieColor}>{d.point.serieId}</Badge>
+            <DateTimeRenderer date={DateTime.fromMillis(d.point.data.x as number)} isShort />
+            <Text fontWeight={'bold'}>{d.point.data.yFormatted}</Text>
+          </Card>
+        )}
         margin={{ top: 0, right: 10, bottom: 50, left: 50 }}
         yScale={{ type: 'linear', min: boundaries.x, max: boundaries.y, stacked: true }}
         // xScale={{ type: 'linear' }}
