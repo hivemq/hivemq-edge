@@ -44,6 +44,7 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.constraints.Null;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -103,7 +104,6 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
     @Override
     public void onMessage(@NotNull final PUBLISH publish, @NotNull final String queueId) {
-        System.err.println("send publish on bridge");
         perBridgeMetrics.getPublishLocalReceivedCounter().inc();
 
         if (!running.get()) {
@@ -216,11 +216,9 @@ public class RemoteMqttForwarder implements MqttForwarder {
                 remoteMqttClient.getMqtt5Client().toAsync().publish(mqtt5Publish);
         publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
             if (throwable != null) {
-                log.error("SENT FAILURE", throwable);
                 handlePublishError(origPublish, throwable);
                 queue.addFirst(new BufferedPublishInformation(mqtt5Publish, queueId, origPublish));
             } else {
-                log.error("SENT SUCCESSFULLY");
                 perBridgeMetrics.getPublishForwardSuccessCounter().inc();
                 finishProcessing(origPublish, queueId);
             }
@@ -235,11 +233,9 @@ public class RemoteMqttForwarder implements MqttForwarder {
                     remoteMqttClient.getMqtt5Client().toAsync().publish(bufferedPublishInformation.publish);
             publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
                 if (throwable != null) {
-                    log.error("SENT FAILURE", throwable);
                     handlePublishError(bufferedPublishInformation.origPublish, throwable);
                     queue.addFirst(bufferedPublishInformation);
                 } else {
-                    log.error("SENT SUCCESSFULLY");
                     perBridgeMetrics.getPublishForwardSuccessCounter().inc();
                     finishProcessing(bufferedPublishInformation.origPublish, bufferedPublishInformation.queueId);
                 }
