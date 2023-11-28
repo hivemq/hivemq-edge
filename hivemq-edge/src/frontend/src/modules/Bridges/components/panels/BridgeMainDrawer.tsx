@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 
 import { ApiError, Bridge } from '@/api/__generated__'
+import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
 import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 
 import ConnectionPanel from '../panels/ConnectionPanel.tsx'
@@ -27,6 +28,7 @@ import NamePanel from '../panels/NamePanel.tsx'
 import OptionsPanel from '../panels/OptionsPanel.tsx'
 import SubscriptionsPanel from '../panels/SubscriptionsPanel.tsx'
 import SecurityPanel from '../panels/SecurityPanel.tsx'
+import PersistencePanel from '../panels/PersistencePanel.tsx'
 import { useBridgeSetup } from '../../hooks/useBridgeConfig.tsx'
 
 interface BridgeMainDrawerProps {
@@ -49,6 +51,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
 }) => {
   const { t } = useTranslation()
   const { bridge } = useBridgeSetup()
+  const hasPersistence = useGetCapability('mqtt-persistence')
   const form = useForm<Bridge>({
     mode: 'all',
     criteriaMode: 'all',
@@ -88,6 +91,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
                   <Tab>{t('bridge.drawer.connection')}</Tab>
                   <Tab>{t('bridge.drawer.broker')}</Tab>
                   <Tab>{t('bridge.drawer.security')}</Tab>
+                  {hasPersistence && <Tab>{hasPersistence.displayName}</Tab>}
                 </TabList>
 
                 <TabPanels>
@@ -118,6 +122,12 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
                   <TabPanel>
                     <SecurityPanel form={form} />
                   </TabPanel>
+
+                  {hasPersistence && (
+                    <TabPanel>
+                      <PersistencePanel hasPersistence={hasPersistence} />
+                    </TabPanel>
+                  )}
                 </TabPanels>
               </Tabs>
             </form>
