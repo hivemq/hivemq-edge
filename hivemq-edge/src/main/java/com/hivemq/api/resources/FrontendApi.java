@@ -84,4 +84,27 @@ public interface FrontendApi {
                                                        }))})
     @Produces(MediaType.APPLICATION_JSON)
     @NotNull Response getNotifications();
+
+
+    @GET
+    @PermitAll
+    @Path("/frontend/capabilities")
+    @Operation(summary = "Obtain Capabilities of the HiveMQ Edge Installation",
+               operationId = "get-capabilities",
+               description = "Obtain gateway capabilities.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = CapabilityList.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example capability list.",
+                                                                              name = "capabilities",
+                                                                              summary = "Example capabilities",
+                                                                              value = ApiBodyExamples.EXAMPLE_CAPABILITIES_JSON)
+                                                       }))})
+    @Produces(MediaType.APPLICATION_JSON)
+    @NotNull Response getCapabilities();
+
+
 }

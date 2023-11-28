@@ -78,8 +78,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
                 getDashboardCTAs(),
                 getResources(),
                 getModules(),
-                getExtensions(),
-                getCapabilities());
+                getExtensions());
         return Response.ok(configuration).build();
     }
 
@@ -174,9 +173,12 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
         return Response.ok(new NotificationList(notifs.build())).build();
     }
 
-    public @NotNull CapabilityList getCapabilities() {
-        return capabilityService.getList();
+    @Override
+    public @NotNull Response getCapabilities() {
+        final CapabilityList capabilityList = capabilityService.getList();
+        return Response.ok(capabilityList).build();
     }
+
 
     protected @NotNull EnvironmentProperties getEnvironmentProperties() {
         Map<String, String> env = new HashMap<>();
@@ -187,4 +189,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
                 String.valueOf(configurationService.gatewayConfiguration().isConfigurationExportEnabled()));
         return new EnvironmentProperties(env);
     }
+
+
+
 }

@@ -63,11 +63,6 @@ public class GatewayConfiguration {
     @Schema(description = "The extensions available for installation")
     private ExtensionList extensions;
 
-    @JsonProperty("capabilities")
-    @Schema(description = "The available capabilities")
-    private CapabilityList capabilityList;
-
-
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public GatewayConfiguration(
             @JsonProperty("environment") final @NotNull EnvironmentProperties environment,
@@ -78,8 +73,7 @@ public class GatewayConfiguration {
             @JsonProperty("ctas") final @NotNull LinkList ctas,
             @JsonProperty("resources") final @NotNull LinkList resources,
             @JsonProperty("modules") final @NotNull ModuleList modules,
-            @JsonProperty("extensions") final @NotNull ExtensionList extensions,
-            @JsonProperty("capabilities") final @NotNull CapabilityList capabilityList) {
+            @JsonProperty("extensions") final @NotNull ExtensionList extensions) {
         this.environment = environment;
         this.cloudLink = cloudLink;
         this.gitHubLink = gitHubLink;
@@ -89,7 +83,6 @@ public class GatewayConfiguration {
         this.resources = resources;
         this.modules = modules;
         this.extensions = extensions;
-        this.capabilityList = capabilityList;
     }
 
     public EnvironmentProperties getEnvironment() {
@@ -126,9 +119,5 @@ public class GatewayConfiguration {
 
     public ExtensionList getExtensions() {
         return extensions;
-    }
-
-    public CapabilityList getCapabilityList() {
-        return capabilityList;
     }
 }
