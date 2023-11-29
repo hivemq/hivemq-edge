@@ -38,7 +38,7 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
         ]}
         colors={{ scheme: 'nivo' }}
         tooltip={(d) => (
-          <Card p={1}>
+          <Card p={1} data-testid={'line-chart-tooltip'}>
             <Badge backgroundColor={d.point.serieColor}>{d.point.serieId}</Badge>
             <DateTimeRenderer date={DateTime.fromMillis(d.point.data.x as number)} isShort />
             <Text fontWeight={'bold'}>{d.point.data.yFormatted}</Text>
