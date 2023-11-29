@@ -80,6 +80,11 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
     }
 
     @Override
+    public void postConstruct() {
+        // NOOP
+    }
+
+    @Override
     public long size() {
         int sum = 0;
         for (final Map<String, RetainedMessage> bucket : buckets) {
@@ -220,6 +225,8 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
         throw new UnsupportedOperationException(
                 "Iterate is only used for migrations which are not needed for memory persistences");
     }
+
+
 
 
     @Override

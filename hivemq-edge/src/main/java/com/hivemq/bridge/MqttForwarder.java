@@ -45,13 +45,9 @@ public interface MqttForwarder {
 
     @NotNull List<String> getTopics();
 
-    void drainQueue();
-
-    boolean isPersist();
-
     @FunctionalInterface
     interface AfterForwardCallback {
-        void afterMessage(@NotNull QoS qos, @NotNull String uniqueId, @NotNull String queueId, boolean cancelConsumption);
+        void afterMessage(@NotNull QoS qos, @NotNull String uniqueId, @NotNull String queueId, boolean cancelled);
     }
 
     @FunctionalInterface
