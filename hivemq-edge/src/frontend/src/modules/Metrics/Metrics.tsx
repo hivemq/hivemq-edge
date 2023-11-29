@@ -8,9 +8,9 @@ import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 import config from '@/config'
 
 import { ChartType, MetricDefinition } from './types.ts'
-import Sample from './components/Sample.tsx'
 import MetricEditor from './components/editor/MetricEditor.tsx'
 import ChartContainer from './components/container/ChartContainer.tsx'
+import Sample from './components/container/Sample.tsx'
 
 interface MetricsProps {
   type: NodeTypes
