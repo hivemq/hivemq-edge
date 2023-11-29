@@ -144,10 +144,10 @@ public class MessageForwarderImpl implements MessageForwarder {
             final @NotNull String uniqueId,
             final @NotNull String forwarderId,
             final @NotNull String queueId,
-            boolean cancelConsumption) {
+            boolean cancelled) {
         singleWriterService.callbackExecutor(queueId).execute(() -> {
             //QoS 0 has no inflight marker
-            if (qos != QoS.AT_MOST_ONCE && !cancelConsumption) {
+            if (qos != QoS.AT_MOST_ONCE) {
                 //-- 15665 - > QoS 0 causes republishing
                 FutureUtils.addExceptionLogger(queuePersistence.get().removeShared(queueId, uniqueId));
             }

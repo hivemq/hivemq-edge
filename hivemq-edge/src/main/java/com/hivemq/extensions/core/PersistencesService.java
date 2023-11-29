@@ -15,7 +15,7 @@ public class PersistencesService {
     private @Nullable ClientSessionLocalPersistenceFactory clientSessionLocalPersistenceFactory;
     private @Nullable ClientQueueLocalPersistenceFactory clientQueueLocalPersistenceFactory;
     private @Nullable PublishPayloadPersistenceFactory publishPayloadPersistenceFactory;
-    private @NotNull ClientSessionSubscriptionLocalPersistenceFactory clientSessionSubscriptionLocalPersistenceFactory;
+    private @Nullable ClientSessionSubscriptionLocalPersistenceFactory clientSessionSubscriptionLocalPersistenceFactory;
 
     public void supplyClientSessionLocalPersistenceFactory(final @NotNull ClientSessionLocalPersistenceFactory clientSessionLocalPersistenceFactory) {
         this.clientSessionLocalPersistenceFactory = clientSessionLocalPersistenceFactory;

@@ -18,6 +18,10 @@ package com.hivemq.mqtt.services;
 import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.hivemq.api.model.bridge.Bridge;
+import com.hivemq.bridge.BridgeService;
+import com.hivemq.bridge.config.MqttBridge;
+import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -39,6 +43,7 @@ import org.mockito.MockitoAnnotations;
 import util.TestMessageUtil;
 import util.TestSingleWriterFactory;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -61,6 +66,8 @@ public class PublishDistributorImplTest {
     private final @NotNull ClientQueuePersistence clientQueuePersistence = mock();
     private final @NotNull ClientSessionPersistence clientSessionPersistence = mock();
     private final @NotNull ConfigurationService configurationService = mock();
+    private final @NotNull BridgeConfigurationService bridgeConfigurationService = mock();
+    private final @NotNull MqttBridge bridge = mock();
     private final @NotNull MqttConfigurationService mqttConfigurationService = mock();
 
     private @NotNull PublishDistributorImpl publishDistributor;
@@ -69,9 +76,11 @@ public class PublishDistributorImplTest {
     @Before
     public void setUp() throws Exception {
         when(configurationService.mqttConfiguration()).thenReturn(mqttConfigurationService);
+        when(configurationService.bridgeConfiguration()).thenReturn(bridgeConfigurationService);
         singleWriterService = TestSingleWriterFactory.defaultSingleWriter();
         publishDistributor = new PublishDistributorImpl(payloadPersistence, clientQueuePersistence, ()->clientSessionPersistence,
                 singleWriterService, configurationService);
+        when(bridgeConfigurationService.getBridges()).thenReturn(List.of(bridge));
     }
 
     @After

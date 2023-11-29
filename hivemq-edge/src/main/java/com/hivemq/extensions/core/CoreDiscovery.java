@@ -28,24 +28,11 @@ public class CoreDiscovery {
         this.moduleLoader = moduleLoader;
     }
 
-    public static void main(String[] args)
-            throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        File moduleFolder = new File(
-                "/Users/danielkruger/IdeaProjects/hivemq-edge-commercial-modules/hivemq-edge-mqtt-persistence/build/libs");
-        final SystemInformationImpl systemInformation =
-                new SystemInformationImpl(false, false, null, null, null, moduleFolder);
-        CoreDiscovery discovery = new CoreDiscovery(new PersistencesService(),
-                systemInformation,
-                new ModuleLoader(systemInformation));
-        discovery.loadAllCoreModules();
-    }
-
     public void loadAllCoreModules()
             throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
         moduleLoader.loadModules();
         final List<Class<? extends CoreModuleMain>> implementations =
                 moduleLoader.findImplementations(CoreModuleMain.class);
-        System.out.println(implementations);
         for (Class<? extends CoreModuleMain> implementation : implementations) {
             loadAndStartMainClass(implementation);
         }
@@ -54,7 +41,7 @@ public class CoreDiscovery {
     private void loadAndStartMainClass(Class<? extends CoreModuleMain> extensionMainClass)
             throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         final CoreModuleMain instance = extensionMainClass.getDeclaredConstructor().newInstance();
-        CoreModuleServiceImpl coreModuleService = new CoreModuleServiceImpl(persistencesService, systemInformation);
+        CoreModuleServiceImpl coreModuleService = new CoreModuleServiceImpl(persistencesService);
         instance.start(coreModuleService);
     }
 }
