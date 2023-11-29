@@ -125,10 +125,6 @@
           "label": "Connect To HiveMQ Cloud"
         }
       }
-    },
-    "metrics": {
-      "select": "Select a metric to display",
-      "display": "Add to panel"
     }
   },
   "bridge": {
@@ -658,6 +654,15 @@
   },
   "metrics": {
     "command": {
+      "select-metric": {
+        "ariaLabel": "Select a metric to display"
+      },
+      "select-chart": {
+        "ariaLabel": "Select a chart"
+      },
+      "add": {
+        "ariaLabel": "Add to panel"
+      },
       "showSelector": {
         "ariaLabel": "Show/hide the metrics selector"
       },
