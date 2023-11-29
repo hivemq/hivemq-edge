@@ -49,7 +49,7 @@ const ChartContainer: FC<ChartContainerProps> = ({ chartType, metricName, onClos
   const Chart = chartType === ChartType.BAR_CHART ? BarChart : LineChart
   return (
     <HStack alignItems={'flex-start'} gap={0} {...props} gridColumn={gridSpan ? '1 / span 2' : 'auto'}>
-      <Card size={'sm'} w={'100%'}>
+      <Card size={'sm'} w={'100%'} data-testid={'chart-container'}>
         <CardBody h={180}>
           <Chart
             h={gridSpan ? 250 : 200}
@@ -59,7 +59,7 @@ const ChartContainer: FC<ChartContainerProps> = ({ chartType, metricName, onClos
           />
         </CardBody>
       </Card>
-      <VStack ml={1}>
+      <VStack ml={1} data-testid={'chart-container-toolbar'}>
         {canEdit && (
           <>
             <Box flex={1}>
