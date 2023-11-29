@@ -294,7 +294,7 @@ public class BridgeMqttClient {
                     localSubscription,
                     this,
                     perBridgeMetrics,
-                    bridgeInterceptorHandler, bridge.isPersist()));
+                    bridgeInterceptorHandler));
         }
         forwarders.addAll(builder.build());
         return Collections.unmodifiableList(forwarders);

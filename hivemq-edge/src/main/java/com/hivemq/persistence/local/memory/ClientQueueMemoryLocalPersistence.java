@@ -297,7 +297,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                 continue;
             }
 
-            if (publishWithRetained.hasExpired()) {
+            if (publishWithRetained.isExpired()) {
                 iterator.remove();
                 payloadPersistence.decrementReferenceCounter(publishWithRetained.getPublishId());
                 if (publishWithRetained.retained) {
@@ -320,7 +320,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
 
             // poll a qos 0 message
             final PUBLISH qos0Publish = pollQos0Message(messages);
-            if ((qos0Publish != null) && !qos0Publish.hasExpired()) {
+            if ((qos0Publish != null) && !qos0Publish.isExpired()) {
                 publishes.add(qos0Publish);
                 messageCount++;
                 bytes += qos0Publish.getEstimatedSizeInMemory();
@@ -343,7 +343,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             if (qos0Publish == null) {
                 break;
             }
-            if (!qos0Publish.hasExpired()) {
+            if (!qos0Publish.isExpired()) {
                 publishes.add(qos0Publish);
                 qos0MessagesFound++;
                 qos0Bytes += qos0Publish.getEstimatedSizeInMemory();
@@ -795,7 +795,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         final Iterator<PublishWithRetained> iterator = messages.qos0Messages.iterator();
         while (iterator.hasNext()) {
             final PublishWithRetained publishWithRetained = iterator.next();
-            if (publishWithRetained.hasExpired()) {
+            if (publishWithRetained.isExpired()) {
                 increaseQos0MessagesMemory(-publishWithRetained.getEstimatedSize());
                 increaseClientQos0MessagesMemory(messages, -publishWithRetained.getEstimatedSize());
                 increaseMessagesMemory(-publishWithRetained.getEstimatedSize());
@@ -828,7 +828,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                 final PublishWithRetained publish = (PublishWithRetained) messageWithID;
                 final boolean expireInflight = InternalConfigurations.EXPIRE_INFLIGHT_MESSAGES_ENABLED;
                 final boolean isInflight = publish.getQoS() == QoS.EXACTLY_ONCE && publish.getPacketIdentifier() > 0;
-                final boolean drop = publish.hasExpired() && (!isInflight || expireInflight);
+                final boolean drop = publish.isExpired() && (!isInflight || expireInflight);
                 if (drop) {
                     payloadPersistence.decrementReferenceCounter(publish.getPublishId());
                     if (publish.retained) {

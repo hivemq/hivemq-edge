@@ -335,7 +335,7 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
                 (messageExpiryInterval == PUBLISH.MESSAGE_EXPIRY_INTERVAL_NOT_SET);
     }
 
-    public boolean hasExpired() {
+    public boolean isExpired() {
         return getRemainingExpiry() == 0;
     }
 
@@ -450,9 +450,5 @@ public class PUBLISH extends MqttMessageWithUserProperties implements Mqtt3PUBLI
 
     public void setPayload(byte[] payload) {
         this.payload = payload;
-    }
-
-    public boolean isExpired() {
-        return this.hasExpired();
     }
 }

@@ -108,6 +108,8 @@ public interface RetainedMessageLocalPersistence extends LocalPersistence {
 
     void iterate(@NotNull ItemCallback callback);
 
+    void postConstruct();
+
     interface ItemCallback {
         void onItem(@NotNull String topic, @NotNull RetainedMessage message);
     }

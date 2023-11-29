@@ -17,13 +17,16 @@ package com.hivemq.api.model.bridge;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.core.TlsConfiguration;
-import com.hivemq.bridge.config.*;
+import com.hivemq.api.model.status.Status;
+import com.hivemq.bridge.config.BridgeTls;
+import com.hivemq.bridge.config.CustomUserProperty;
+import com.hivemq.bridge.config.LocalSubscription;
+import com.hivemq.bridge.config.MqttBridge;
+import com.hivemq.bridge.config.RemoteSubscription;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.statistics.entity.Statistic;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -115,9 +118,7 @@ public class Bridge {
     private final @Nullable String password;
 
     @JsonProperty("loopPreventionEnabled")
-    @Schema(description = "Is loop prevention enabled on the connection",
-            defaultValue = "true",
-            format = "boolean")
+    @Schema(description = "Is loop prevention enabled on the connection", defaultValue = "true", format = "boolean")
     private final boolean loopPreventionEnabled;
 
     @JsonProperty("loopPreventionHopCount")
@@ -182,7 +183,7 @@ public class Bridge {
         this.localSubscriptions = localSubscriptions;
         this.tlsConfiguration = tlsConfiguration;
         this.status = status;
-        this.persist = persist;
+        this.persist = persist != null ? persist : true; // true is default
     }
 
     public Status getStatus() {
@@ -307,7 +308,6 @@ public class Bridge {
         }
 
 
-
         public @NotNull List<BridgeCustomUserProperty> getCustomUserProperties() {
             return customUserProperties;
         }
@@ -390,7 +390,8 @@ public class Bridge {
                         .stream()
                         .map(m -> convertLocalSubscription(m))
                         .collect(Collectors.toList()),
-                convertTls(mqttBridge.getBridgeTls()), status,
+                convertTls(mqttBridge.getBridgeTls()),
+                status,
                 mqttBridge.isPersist());
         return bridge;
     }
