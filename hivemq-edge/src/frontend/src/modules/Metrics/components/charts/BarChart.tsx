@@ -36,7 +36,7 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, .
         indexScale={{ type: 'band', round: true }}
         colors={{ scheme: 'nivo' }}
         tooltip={(d) => (
-          <Card p={1}>
+          <Card p={1} data-testid={'bar-chart-tooltip'}>
             <Badge backgroundColor={d.color}>{d.id}</Badge>
             <DateTimeRenderer date={DateTime.fromISO(d.indexValue as string)} isShort />
             <Text fontWeight={'bold'}>{d.formattedValue}</Text>
