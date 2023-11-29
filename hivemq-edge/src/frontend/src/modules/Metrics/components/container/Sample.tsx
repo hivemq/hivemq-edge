@@ -6,8 +6,8 @@ import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
 import { DataPoint } from '@/api/__generated__'
 
 import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton.tsx'
-import { extractMetricInfo } from '../utils/metrics-name.utils.ts'
-import SampleRenderer from '../components/charts/SampleRenderer.tsx'
+import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
+import SampleRenderer from '../charts/SampleRenderer.tsx'
 
 interface SampleProps {
   metricName?: string
