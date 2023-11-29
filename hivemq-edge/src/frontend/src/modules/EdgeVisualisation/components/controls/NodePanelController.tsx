@@ -1,14 +1,16 @@
-import { FC, useEffect } from 'react'
+import { FC, lazy, Suspense, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Node, useEdges, useNodes } from 'reactflow'
-import { useDisclosure } from '@chakra-ui/react'
+import { AbsoluteCenter, useDisclosure } from '@chakra-ui/react'
 
 import { Adapter, Bridge } from '@/api/__generated__'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 
 import { EdgeTypes, NodeTypes } from '../../types.ts'
-import NodePropertyDrawer from '../drawers/NodePropertyDrawer.tsx'
-import LinkPropertyDrawer from '../drawers/LinkPropertyDrawer.tsx'
+
+const NodePropertyDrawer = lazy(() => import('../drawers/NodePropertyDrawer.tsx'))
+const LinkPropertyDrawer = lazy(() => import('../drawers/LinkPropertyDrawer.tsx'))
 
 const NodePanelController: FC = () => {
   const navigate = useNavigate()
@@ -57,27 +59,32 @@ const NodePanelController: FC = () => {
     }
   }
 
-  if (selectedLinkSource)
-    return (
-      <LinkPropertyDrawer
-        selectedNode={selectedLinkSource}
-        isOpen={isOpen}
-        onClose={handleClose}
-        onEditEntity={handleEditEntity}
-      />
-    )
-
-  if (!selectedNode || !selectedNode.type) {
-    return null
-  }
-
   return (
-    <NodePropertyDrawer
-      selectedNode={selectedNode}
-      isOpen={isOpen}
-      onClose={handleClose}
-      onEditEntity={handleEditEntity}
-    />
+    <Suspense
+      // TODO[NVL] Would be good to integrate the loader within the drawer
+      fallback={
+        <AbsoluteCenter axis="both">
+          <LoaderSpinner />
+        </AbsoluteCenter>
+      }
+    >
+      {selectedLinkSource && (
+        <LinkPropertyDrawer
+          selectedNode={selectedLinkSource}
+          isOpen={isOpen}
+          onClose={handleClose}
+          onEditEntity={handleEditEntity}
+        />
+      )}
+      {selectedNode && (
+        <NodePropertyDrawer
+          selectedNode={selectedNode}
+          isOpen={isOpen}
+          onClose={handleClose}
+          onEditEntity={handleEditEntity}
+        />
+      )}
+    </Suspense>
   )
 }
 
