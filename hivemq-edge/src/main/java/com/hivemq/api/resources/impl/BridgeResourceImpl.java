@@ -22,20 +22,25 @@ import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.model.bridge.Bridge;
 import com.hivemq.api.model.bridge.BridgeList;
+import com.hivemq.api.model.core.TlsConfiguration;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
-import com.hivemq.api.model.core.TlsConfiguration;
 import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.bridge.BridgeService;
-import com.hivemq.bridge.config.*;
+import com.hivemq.bridge.config.BridgeTls;
+import com.hivemq.bridge.config.CustomUserProperty;
+import com.hivemq.bridge.config.LocalSubscription;
+import com.hivemq.bridge.config.MqttBridge;
+import com.hivemq.bridge.config.RemoteSubscription;
 import com.hivemq.configuration.reader.BridgeConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
@@ -114,8 +119,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                     .findFirst();
             if (bridge.isPresent()) {
                 MqttBridge mqttBridge = bridge.get();
-                return Response.ok(Bridge.convert(mqttBridge,
-                        getStatusInternal(bridgeId))).build();
+                return Response.ok(Bridge.convert(mqttBridge, getStatusInternal(bridgeId))).build();
             } else {
                 return ApiErrorUtils.notFound(String.format("Bridge not found by id '%s'", bridgeId));
             }
@@ -160,15 +164,16 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                     bridgeService.startBridge(bridgeId);
                     break;
                 case STOP:
-                    bridgeService.stopBridge(bridgeId);
+                    bridgeService.stopBridgeAndRemoveQueues(bridgeId);
                     break;
                 case RESTART:
-                    bridgeService.restartBridge(bridgeId);
+                    bridgeService.restartBridge(bridgeId, getBridge(bridgeId));
                     break;
             }
 
-            return Response.ok(
-                    StatusTransitionResult.pending(ApiConstants.BRIDGE_TYPE, bridgeId, ApiConstants.DEFAULT_TRANSITION_WAIT_TIMEOUT)).build();
+            return Response.ok(StatusTransitionResult.pending(ApiConstants.BRIDGE_TYPE,
+                    bridgeId,
+                    ApiConstants.DEFAULT_TRANSITION_WAIT_TIMEOUT)).build();
         }
     }
 
@@ -182,7 +187,9 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                     "id",
                     "Unable to change the id of a bridge, this field is immutable");
         }
-        if (!checkBridgeExists(bridgeId)) {
+
+        final MqttBridge previousBridgeConfig = getBridge(bridgeId);
+        if (previousBridgeConfig == null) {
             ApiErrorUtils.addValidationError(errorMessages, "bridge", "Bridge did not exist to update");
         }
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
@@ -190,9 +197,10 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         } else {
             //-- Modify the configuration
             configurationService.bridgeConfiguration().removeBridge(bridgeId);
-            configurationService.bridgeConfiguration().addBridge(unconvert(bridge));
+            final MqttBridge newBridgeConfig = unconvert(bridge);
+            configurationService.bridgeConfiguration().addBridge(newBridgeConfig);
             //-- Restart the new configuration on a new connection
-            bridgeService.restartBridge(bridgeId);
+            bridgeService.restartBridge(bridgeId, newBridgeConfig);
             return Response.status(200).build();
         }
     }
@@ -228,11 +236,12 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
 
         Preconditions.checkNotNull(bridgeId);
         boolean connected = bridgeService.isConnected(bridgeId);
-        Status.RUNTIME_STATUS runtimeStatus = bridgeService.isRunning(bridgeId) ? Status.RUNTIME_STATUS.STARTED : Status.RUNTIME_STATUS.STOPPED;
+        Status.RUNTIME_STATUS runtimeStatus =
+                bridgeService.isRunning(bridgeId) ? Status.RUNTIME_STATUS.STARTED : Status.RUNTIME_STATUS.STOPPED;
         Status status = connected ?
                 Status.connected(runtimeStatus, ApiConstants.BRIDGE_TYPE, bridgeId) :
                 Status.disconnected(runtimeStatus, ApiConstants.BRIDGE_TYPE, bridgeId);
-        if(!connected){
+        if (!connected) {
             status.setMessage(getLastErrorInternal(bridgeId));
         }
         return status;
@@ -253,6 +262,16 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 .findFirst();
         return bridge.isPresent();
     }
+
+    private @Nullable MqttBridge getBridge(@NotNull final String bridgeName) {
+        return configurationService.bridgeConfiguration()
+                .getBridges()
+                .stream()
+                .filter(b -> b.getId().equals(bridgeName))
+                .findFirst()
+                .orElse(null);
+    }
+
 
     protected void validateBridge(final @NotNull ApiErrorMessages errorMessages, final @NotNull Bridge bridge) {
         ApiErrorUtils.validateRequiredEntity(errorMessages, "bridge", bridge);
@@ -276,26 +295,30 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 1,
                 HiveMQEdgeConstants.MAX_UINT16);
 
-       if(bridge.getLoopPreventionHopCount() != 0){
-           ApiErrorUtils.validateFieldValueBetweenIncl(errorMessages,
-                   "loopPreventionHopCount",
-                   bridge.getLoopPreventionHopCount(),
-                   1, 100);
-       }
+        if (bridge.getLoopPreventionHopCount() != 0) {
+            ApiErrorUtils.validateFieldValueBetweenIncl(errorMessages,
+                    "loopPreventionHopCount",
+                    bridge.getLoopPreventionHopCount(),
+                    1,
+                    100);
+        }
 
         bridge.getLocalSubscriptions()
-                .stream().forEach(s ->
-                        validateValidSubscribeTopicField(errorMessages, "local-filters", s.getFilters()));
+                .stream()
+                .forEach(s -> validateValidSubscribeTopicField(errorMessages, "local-filters", s.getFilters()));
 
         bridge.getRemoteSubscriptions()
-                .stream().forEach(s ->
-                        validateValidSubscribeTopicField(errorMessages, "remote-filters", s.getFilters()));
+                .stream()
+                .forEach(s -> validateValidSubscribeTopicField(errorMessages, "remote-filters", s.getFilters()));
     }
 
-    public static void validateValidSubscribeTopicField(final ApiErrorMessages apiErrorMessages, final String fieldName, final List<String> topicFilters){
+    public static void validateValidSubscribeTopicField(
+            final ApiErrorMessages apiErrorMessages,
+            final String fieldName,
+            final List<String> topicFilters) {
         try {
             BridgeConfigurator.validateTopicFilters(fieldName, topicFilters);
-        } catch(UnrecoverableException e){
+        } catch (UnrecoverableException e) {
             ApiErrorUtils.addValidationError(apiErrorMessages,
                     fieldName,
                     "Invalid bridge topic filters for subscribing");
