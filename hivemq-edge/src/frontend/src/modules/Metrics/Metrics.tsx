@@ -29,7 +29,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
   const [metrics, setMetrics] = useState<MetricSpecStorage[]>(
     initMetrics ? initMetrics.map<MetricSpecStorage>((e) => ({ selectedTopic: e })) : []
   )
-  const showSelector = config.features.METRICS_SELECT_PANEL
+  const showEditor = config.features.METRICS_SHOW_EDITOR
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation()
 
