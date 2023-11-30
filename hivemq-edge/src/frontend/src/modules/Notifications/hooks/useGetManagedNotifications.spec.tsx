@@ -69,7 +69,5 @@ describe('useGetManagedNotifications', () => {
     expect(result.current.readNotifications).toHaveLength(2)
     expect(result.current.readNotifications).toContainEqual('Default Credentials Need Changing!')
     expect(result.current.readNotifications).toContainEqual('2023.XXX')
-
-    console.log('XXXX', result.current)
   })
 })
