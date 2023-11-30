@@ -1,10 +1,12 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiMail } from 'react-icons/fi'
-import { useToast } from '@chakra-ui/react'
+import { useToast, UseToastOptions } from '@chakra-ui/react'
 
 import ButtonBadge from '@/components/Chakra/ButtonBadge.tsx'
+
 import { useGetManagedNotifications } from './hooks/useGetManagedNotifications.tsx'
+import { SkipNotification } from './components/SkipNotification.tsx'
 
 const NotificationBadge: FC = () => {
   const { t } = useTranslation()
@@ -13,7 +15,18 @@ const NotificationBadge: FC = () => {
 
   const handleClick = () => {
     notifications.forEach((notification) => {
-      if (notification.id && !toast.isActive(notification.id)) toast(notification)
+      if (notification.id && !toast.isActive(notification.id)) {
+        const notificationWithSkip: UseToastOptions = {
+          ...notification,
+          description: (
+            <>
+              {notification.description}
+              <SkipNotification id={notification.id.toString()} />
+            </>
+          ),
+        }
+        toast(notificationWithSkip)
+      }
     })
   }
 
