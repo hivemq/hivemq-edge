@@ -59,11 +59,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -292,9 +288,8 @@ public class BridgeMqttClient {
 
     public @NotNull List<MqttForwarder> createForwarders() {
         final ImmutableList.Builder<MqttForwarder> builder = ImmutableList.builder();
-        int i = 0;
         for (LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
-            builder.add(new RemoteMqttForwarder(bridge.getId() + "-" + i,
+            builder.add(new RemoteMqttForwarder(createForwarderId(bridge.getId(), localSubscription),
                     bridge,
                     localSubscription,
                     this,
@@ -303,6 +298,11 @@ public class BridgeMqttClient {
         }
         forwarders.addAll(builder.build());
         return Collections.unmodifiableList(forwarders);
+    }
+
+    @NotNull
+    public static String createForwarderId(final @NotNull String bridgeId, LocalSubscription localSubscription) {
+        return bridgeId + "-" + localSubscription.calculateUniqueId();
     }
 
     public @NotNull List<MqttForwarder> getActiveForwarders() {

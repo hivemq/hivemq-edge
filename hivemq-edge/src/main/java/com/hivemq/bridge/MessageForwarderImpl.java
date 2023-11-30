@@ -113,19 +113,20 @@ public class MessageForwarderImpl implements MessageForwarder {
     }
 
     @Override
-    public void removeForwarder(final @NotNull MqttForwarder mqttForwarder) {
+    public void removeForwarder(final @NotNull MqttForwarder mqttForwarder, final boolean clearQueue) {
         final String forwarderId = mqttForwarder.getId();
         final String clientId = forwarderId + hivemqId.get();
         for (String topic : mqttForwarder.getTopics()) {
             topicTree.removeSubscriber(clientId, topic, FORWARDER_PREFIX + forwarderId);
             final String queueId = createQueueId(forwarderId, topic);
             notEmptyQueues.remove(queueId);
-            queuePersistence.get().clear(queueId, true); //clear up queue
+            if(clearQueue) {
+                queuePersistence.get().clear(queueId, true); //clear up queue
+            }
         }
         queueIdsForForwarder.remove(forwarderId);
         forwarders.get(forwarderId).stop();
         forwarders.remove(forwarderId);
-
     }
 
     public void messageProcessed(
@@ -159,8 +160,7 @@ public class MessageForwarderImpl implements MessageForwarder {
         });
     }
 
-    @NotNull
-    private String createQueueId(final @NotNull String forwarderId, final @NotNull String topic) {
+    private static @NotNull String createQueueId(final @NotNull String forwarderId, final @NotNull String topic) {
         return FORWARDER_PREFIX + forwarderId + "/" + topic;
     }
 
