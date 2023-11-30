@@ -14,20 +14,7 @@ import {
   Row,
   useReactTable,
 } from '@tanstack/react-table'
-import {
-  Table as TableUI,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  TableContainer,
-  Text,
-  Alert,
-  VStack,
-  Button,
-  Icon,
-} from '@chakra-ui/react'
+import { Table, Thead, Tbody, Tr, Th, Td, TableContainer, Text, Alert, VStack, Button, Icon } from '@chakra-ui/react'
 
 import PaginationBar from './components/PaginationBar.tsx'
 import { Filter } from './components/Filter.tsx'
@@ -41,6 +28,7 @@ interface PaginatedTableProps<T> {
   noDataText?: string
   enableColumnFilters?: boolean
   enablePagination?: boolean
+  'aria-label': string
   /**
    * Define row styles
    */
@@ -57,6 +45,7 @@ const PaginatedTable = <T,>({
   getRowStyles,
   enableColumnFilters = false,
   enablePagination = true,
+  'aria-label': ariaLabel,
 }: PaginatedTableProps<T>) => {
   const { t } = useTranslation()
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -84,7 +73,7 @@ const PaginatedTable = <T,>({
   return (
     <>
       <TableContainer overflowY={'auto'} overflowX={'auto'} whiteSpace={'normal'}>
-        <TableUI variant="simple" size={'sm'}>
+        <Table variant="simple" size={'sm'} aria-label={ariaLabel}>
           <Thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <Tr key={headerGroup.id}>
@@ -158,7 +147,7 @@ const PaginatedTable = <T,>({
                 )
               })}
           </Tbody>
-        </TableUI>
+        </Table>
       </TableContainer>
       {enablePagination && <PaginationBar table={table} pageSizes={pageSizes} />}
     </>

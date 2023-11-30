@@ -139,6 +139,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
         </Flex>
       )}
       <PaginatedTable<Event>
+        aria-label={t('eventLog.title')}
         data={safeData}
         columns={variant === 'full' ? columns : [a, b, c]}
         enablePagination={variant === 'full'}

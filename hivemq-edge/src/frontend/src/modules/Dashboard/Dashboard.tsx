@@ -29,15 +29,13 @@ const Dashboard: FC = () => {
   return (
     <>
       <SkipNavLink>{t('translation:action.skipNavLink')}</SkipNavLink>
-      <main>
-        <Flex flexDirection="row" h={'100vh'}>
-          <SidePanel />
-          <Flex w={'100vw'} flexGrow={1} overflowY={'auto'}>
-            <SkipNavContent />
-            <Outlet />
-          </Flex>
+      <Flex flexDirection="row" h={'100vh'} overflow={'hidden'}>
+        <SidePanel />
+        <Flex as={'main'} flexGrow={1} overflow={'auto'}>
+          <SkipNavContent />
+          <Outlet />
         </Flex>
-      </main>
+      </Flex>
     </>
   )
 }
