@@ -78,6 +78,10 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
               return (
                 <Select
                   {...rest}
+                  menuPortalTarget={document.body}
+                  styles={{
+                    menuPortal: (provided) => ({ ...provided, zIndex: 1401 }),
+                  }}
                   id={'metrics-select-container'}
                   inputId={'metrics-select'}
                   value={value || null}
@@ -109,6 +113,10 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
                 return (
                   <Select
                     {...rest}
+                    menuPortalTarget={document.body}
+                    styles={{
+                      menuPortal: (provided) => ({ ...provided, zIndex: 1401 }),
+                    }}
                     id={'chart-select-container'}
                     inputId={'chart-select'}
                     value={value || null}
