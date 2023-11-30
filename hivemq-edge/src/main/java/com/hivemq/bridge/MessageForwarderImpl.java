@@ -42,7 +42,11 @@ import javax.inject.Singleton;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -96,7 +100,8 @@ public class MessageForwarderImpl implements MessageForwarder {
         }
         final ImmutableSet<String> queueIds = queueIdsBuilder.build();
         mqttForwarder.setExecutorService(executorService);
-        mqttForwarder.setCallback((message, queueId, cancelled) -> messageProcessed(message,
+        mqttForwarder.setCallback((qos, uniqueId, queueId, cancelled) -> messageProcessed(qos,
+                uniqueId,
                 forwarderId,
                 queueId,
                 cancelled));
@@ -124,16 +129,16 @@ public class MessageForwarderImpl implements MessageForwarder {
     }
 
     public void messageProcessed(
-            final @NotNull PUBLISH message,
+            final @NotNull QoS qos,
+            final @NotNull String uniqueId,
             final @NotNull String forwarderId,
             final @NotNull String queueId,
             boolean cancelled) {
         singleWriterService.callbackExecutor(queueId).execute(() -> {
             //QoS 0 has no inflight marker
-            if (message.getQoS() != QoS.AT_MOST_ONCE) {
+            if (qos != QoS.AT_MOST_ONCE) {
                 //-- 15665 - > QoS 0 causes republishing
-                FutureUtils.addExceptionLogger(queuePersistence.get()
-                        .removeShared(queueId, message.getUniqueId()));
+                FutureUtils.addExceptionLogger(queuePersistence.get().removeShared(queueId, uniqueId));
             }
             continueForwarding(queueId, forwarders.get(forwarderId));
         });

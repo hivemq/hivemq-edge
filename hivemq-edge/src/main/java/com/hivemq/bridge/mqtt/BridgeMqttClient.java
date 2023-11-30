@@ -52,7 +52,6 @@ import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.Event;
-import com.hivemq.edge.utils.HiveMQEdgeEnvironmentUtils;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
 import org.slf4j.Logger;
@@ -88,7 +87,7 @@ public class BridgeMqttClient {
     private final @NotNull EventService eventService;
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicBoolean stopped = new AtomicBoolean(false);
-    private List<MqttForwarder> forwarders = Collections.synchronizedList(new ArrayList<>());
+    private final @NotNull List<MqttForwarder> forwarders = Collections.synchronizedList(new ArrayList<>());
 
     public BridgeMqttClient(
             final @NotNull SystemInformation systemInformation,
@@ -120,18 +119,18 @@ public class BridgeMqttClient {
         builder.addConnectedListener(context -> {
             log.debug("Bridge {} connected", bridge.getId());
             connected.set(true);
+            forwarders.forEach(MqttForwarder::drainQueue);
         });
 
-        builder.addConnectedListener(context -> eventService.fireEvent(
-                eventBuilder(Event.SEVERITY.INFO).
-                        withMessage(String.format("Bridge '%s' connected", getBridge().getId())).build()));
+        builder.addConnectedListener(context -> eventService.fireEvent(eventBuilder(Event.SEVERITY.INFO).withMessage(
+                String.format("Bridge '%s' connected", getBridge().getId())).build()));
 
         //-- Fire a system event for the various logging layers
-        builder.addDisconnectedListener(context -> eventService.fireEvent(
-                eventBuilder(context.getCause() == null ? Event.SEVERITY.INFO : Event.SEVERITY.ERROR).
-                    withMessage(String.format("Bridge '%s' disconnected", getBridge().getId())).
-                        withPayload(EventUtils.generateErrorPayload(context.getCause())).
-                        build()));
+        builder.addDisconnectedListener(context -> eventService.fireEvent(eventBuilder(context.getCause() == null ?
+                Event.SEVERITY.INFO :
+                Event.SEVERITY.ERROR).withMessage(String.format("Bridge '%s' disconnected", getBridge().getId()))
+                .withPayload(EventUtils.generateErrorPayload(context.getCause()))
+                .build()));
 
         builder.addDisconnectedListener(context -> {
             final Throwable cause = context.getCause();
@@ -238,9 +237,13 @@ public class BridgeMqttClient {
                         mqtt5ConnAck.getReasonString().map(Objects::toString).orElse(""));
             }
 
+            for (MqttForwarder forwarder : forwarders) {
+                forwarder.drainQueue();
+            }
+
             ImmutableList.Builder<CompletableFuture<Mqtt5SubAck>> subscribeFutures = new ImmutableList.Builder<>();
             for (RemoteSubscription remoteSubscription : bridge.getRemoteSubscriptions()) {
-                final List<Mqtt5Subscription> subscriptions = convertSubscriptions(remoteSubscription, bridge);
+                final List<Mqtt5Subscription> subscriptions = convertSubscriptions(remoteSubscription);
                 final Consumer<Mqtt5Publish> mqtt5PublishConsumer = new RemotePublishConsumer(remoteSubscription,
                         bridgeInterceptorHandler,
                         bridge,
@@ -262,13 +265,14 @@ public class BridgeMqttClient {
             return null;
         });
 
+
         return resultFuture;
     }
 
 
     @NotNull
     private static List<Mqtt5Subscription> convertSubscriptions(
-            final @NotNull RemoteSubscription remoteSubscription, final @NotNull MqttBridge bridge) {
+            final @NotNull RemoteSubscription remoteSubscription) {
         return remoteSubscription.getFilters().stream().map(originalFilter -> {
             MqttTopicFilter topicFilter = MqttTopicFilter.of(originalFilter);
             return Mqtt5Subscription.builder()
@@ -301,7 +305,7 @@ public class BridgeMqttClient {
         return Collections.unmodifiableList(forwarders);
     }
 
-    public @NotNull List<MqttForwarder> getActiveForwarders(){
+    public @NotNull List<MqttForwarder> getActiveForwarders() {
         return forwarders;
     }
 
@@ -313,7 +317,7 @@ public class BridgeMqttClient {
         return connected.get();
     }
 
-    protected Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity){
+    protected @NotNull Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity) {
         Event.Builder builder = new Event.Builder();
         builder.withTimestamp(System.currentTimeMillis());
         builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.BRIDGE, bridge.getId()));

@@ -29,7 +29,6 @@ import com.hivemq.bridge.metrics.PerBridgeMetrics;
 import com.hivemq.client.mqtt.datatypes.MqttQos;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.client.mqtt.datatypes.MqttTopicFilter;
-import com.hivemq.client.mqtt.mqtt5.Mqtt5Client;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperties;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserPropertiesBuilder;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator;
@@ -46,13 +45,13 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -74,6 +73,9 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
     private @Nullable MqttForwarder.AfterForwardCallback afterForwardCallback;
     private @Nullable ExecutorService executorService;
+
+    private final LinkedList<BufferedPublishInformation> queue = new LinkedList<>();
+
 
     public RemoteMqttForwarder(
             final @NotNull String id,
@@ -101,13 +103,12 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
 
     @Override
-    public void onMessage(@NotNull final PUBLISH publish, @NotNull final String queueId) {
-
+    public void onMessage(final @NotNull PUBLISH publish, @NotNull final String queueId) {
         perBridgeMetrics.getPublishLocalReceivedCounter().inc();
 
         if (!running.get()) {
             if (afterForwardCallback != null) {
-                afterForwardCallback.afterMessage(publish, queueId, true);
+                afterForwardCallback.afterMessage(publish.getQoS(), publish.getUniqueId(), queueId, true);
             }
             return;
         }
@@ -179,7 +180,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
     private void finishProcessing(@NotNull PUBLISH publish, @NotNull String queueId) {
         inflightCounter.decrementAndGet();
         if (afterForwardCallback != null) {
-            afterForwardCallback.afterMessage(publish, queueId, false);
+            afterForwardCallback.afterMessage(publish.getQoS(), publish.getUniqueId(), queueId, false);
         }
     }
 
@@ -194,31 +195,52 @@ public class RemoteMqttForwarder implements MqttForwarder {
         mqtt5Builder.withOnwardQos(modifiedQoS);
         mqtt5Builder.withRetain(localSubscription.isPreserveRetain() && publish.isRetain());
         mqtt5Builder.withUserProperties(convertUserProperties(publish.getUserProperties(), hopCount));
-        PUBLISH newPublish = mqtt5Builder.build();
-        return newPublish;
+        return mqtt5Builder.build();
     }
 
+
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    private void sendPublishToRemote(
+    private synchronized void sendPublishToRemote(
             @NotNull PUBLISH publish, @NotNull String queueId, @NotNull PUBLISH origPublish) {
+
+        if (!remoteMqttClient.isConnected()) {
+            queue.add(new BufferedPublishInformation(queueId, origPublish));
+            return;
+        }
+
+        // first send the publishes that are inflight
+        drainQueue();
+
         final Mqtt5Publish mqtt5Publish = convertPublishForClient(publish);
-        if(remoteMqttClient.isConnected()){
-            final CompletableFuture<Mqtt5PublishResult> publishResult = remoteMqttClient.getMqtt5Client().toAsync().publish(mqtt5Publish);
+        final CompletableFuture<Mqtt5PublishResult> publishResult =
+                remoteMqttClient.getMqtt5Client().publish(mqtt5Publish);
+        publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
+            if (throwable != null) {
+                handlePublishError(origPublish, throwable);
+            } else {
+                perBridgeMetrics.getPublishForwardSuccessCounter().inc();
+                finishProcessing(origPublish, queueId);
+            }
+        });
+    }
+
+    @Override
+    public synchronized void drainQueue() {
+        while (!queue.isEmpty()) {
+            final BufferedPublishInformation bufferedPublishInformation = queue.pop();
+            final CompletableFuture<Mqtt5PublishResult> publishResult =
+                    remoteMqttClient.getMqtt5Client().publish(convertPublishForClient(bufferedPublishInformation.publish));
             publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
                 if (throwable != null) {
-                    handlePublishError(origPublish, throwable);
+                    handlePublishError(bufferedPublishInformation.publish, throwable);
                 } else {
                     perBridgeMetrics.getPublishForwardSuccessCounter().inc();
+                    finishProcessing(bufferedPublishInformation.publish, bufferedPublishInformation.queueId);
                 }
-                finishProcessing(origPublish, queueId);
             });
-        } else {
-            if(log.isTraceEnabled()){
-                log.trace("cannot send publish from {} to disconnected bridge, finishing", queueId);
-            }
-            finishProcessing(origPublish, queueId);
         }
     }
+
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @NotNull
@@ -359,13 +381,28 @@ public class RemoteMqttForwarder implements MqttForwarder {
         return localSubscription.getFilters();
     }
 
+
     @Override
     public int getInflightCount() {
         return inflightCounter.get();
     }
 
     @Override
-    public void setExecutorService(final ExecutorService executorService) {
+    public void setExecutorService(final @NotNull ExecutorService executorService) {
         this.executorService = executorService;
+    }
+
+
+    private static class BufferedPublishInformation {
+        private final @NotNull String queueId;
+        private final @NotNull PUBLISH publish;
+
+
+        private BufferedPublishInformation(
+                final @NotNull String queueId,
+                final @NotNull PUBLISH origPublish) {
+            this.queueId = queueId;
+            this.publish = origPublish;
+        }
     }
 }
