@@ -77,6 +77,7 @@ class LocalSubscriptionTest {
         assertNotEquals(localSubscription.calculateUniqueId(), otherSubscription.calculateUniqueId());
     }
 
+
     @Test
     void calculateUniqueId_whenChangeInDestinationTopic_thenUniqueIdsAreDifferent() {
         final LocalSubscription localSubscription = new LocalSubscription(List.of("topicA/+", "topicB/#", "topicC/#"),
@@ -100,95 +101,6 @@ class LocalSubscriptionTest {
         assertNotEquals(localSubscription.calculateUniqueId(), otherSubscription.calculateUniqueId());
     }
 
-    @Test
-    void calculateUniqueId_whenChangeInExcludeTopic_thenUniqueIdsAreDifferent() {
-        final LocalSubscription localSubscription = new LocalSubscription(List.of("topicA/+", "topicB/#", "topicC/#"),
-                "destinationTopic",
-                List.of("topicA/topic/", "topicA/topic/", "otherTopic"),
-                List.of(CustomUserProperty.of("key1", "value1"),
-                        CustomUserProperty.of("key2", "value2"),
-                        CustomUserProperty.of("key3", "value3")),
-                true,
-                2);
-
-        // "topicA/topic/" => "topicA/topic/B"
-        final LocalSubscription otherSubscription = new LocalSubscription(List.of("topicA/+", "topicB/#", "topicC/#"),
-                "destinationTopic",
-                List.of("topicA/topic/B", "topicA/topic/", "otherTopic"),
-                List.of(CustomUserProperty.of("key1", "value1"),
-                        CustomUserProperty.of("key2", "value2"),
-                        CustomUserProperty.of("key3", "value3")),
-                true,
-                2);
-        assertNotEquals(localSubscription.calculateUniqueId(), otherSubscription.calculateUniqueId());
-    }
-
-    @Test
-    void calculateUniqueId_whenChangeInCustomProperties_thenUniqueIdsAreDifferent() {
-        final LocalSubscription localSubscription = new LocalSubscription(List.of("topicA/+", "topicB/#", "topicC/#"),
-                "destinationTopic",
-                List.of("topicA/topic/", "topicA/topic/", "otherTopic"),
-                List.of(CustomUserProperty.of("key1", "value1"),
-                        CustomUserProperty.of("key2", "value2"),
-                        CustomUserProperty.of("key3", "value3")),
-                true,
-                2);
-
-        // "key1", "value1" => "key4", "value1"
-        final LocalSubscription otherSubscription = new LocalSubscription(List.of("topicA/+", "topicB/#", "topicC/#"),
-                "destinationTopic",
-                List.of("topicA/topic/", "topicA/topic/", "otherTopic"),
-                List.of(CustomUserProperty.of("key4", "value1"),
-                        CustomUserProperty.of("key2", "value2"),
-                        CustomUserProperty.of("key3", "value3")),
-                true,
-                2);
-        assertNotEquals(localSubscription.calculateUniqueId(), otherSubscription.calculateUniqueId());
-    }
-
-    @Test
-    void calculateUniqueId_whenChangeInPreserveRetain_thenUniqueIdsAreDifferent() {
-        final LocalSubscription localSubscription = new LocalSubscription(List.of("topicA/+", "topicB/#", "topicC/#"),
-                "destinationTopic",
-                List.of("topicA/topic/", "topicA/topic/", "otherTopic"),
-                List.of(CustomUserProperty.of("key1", "value1"),
-                        CustomUserProperty.of("key2", "value2"),
-                        CustomUserProperty.of("key3", "value3")),
-                true,
-                2);
-
-        final LocalSubscription otherSubscription = new LocalSubscription(List.of("topicA/+", "topicB/#", "topicC/#"),
-                "destinationTopic",
-                List.of("topicA/topic/", "topicA/topic/", "otherTopic"),
-                List.of(CustomUserProperty.of("key1", "value1"),
-                        CustomUserProperty.of("key2", "value2"),
-                        CustomUserProperty.of("key3", "value3")),
-                false,
-                2);
-        assertNotEquals(localSubscription.calculateUniqueId(), otherSubscription.calculateUniqueId());
-    }
-
-    @Test
-    void calculateUniqueId_whenChangeInMaxQoS_thenUniqueIdsAreDifferent() {
-        final LocalSubscription localSubscription = new LocalSubscription(List.of("topicA/+", "topicB/#", "topicC/#"),
-                "destinationTopic",
-                List.of("topicA/topic/", "topicA/topic/", "otherTopic"),
-                List.of(CustomUserProperty.of("key1", "value1"),
-                        CustomUserProperty.of("key2", "value2"),
-                        CustomUserProperty.of("key3", "value3")),
-                true,
-                2);
-
-        final LocalSubscription otherSubscription = new LocalSubscription(List.of("topicA/+", "topicB/#", "topicC/#"),
-                "destinationTopic",
-                List.of("topicA/topic/", "topicA/topic/", "otherTopic"),
-                List.of(CustomUserProperty.of("key1", "value1"),
-                        CustomUserProperty.of("key2", "value2"),
-                        CustomUserProperty.of("key3", "value3")),
-                true,
-                1);
-        assertNotEquals(localSubscription.calculateUniqueId(), otherSubscription.calculateUniqueId());
-    }
 
     @Test
     void calculateUniqueId_whenStringInDifferentFieldsAreSwapped_thenUniqueIdsAreDifferent() {

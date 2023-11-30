@@ -124,21 +124,18 @@ public class LocalSubscription {
     }
 
     public @NotNull String calculateUniqueId() {
-        // hashcode wont work, it changes per start of the JVM. This means we would not find old queues of clients.
-        // we generate the hash of all strings individually and then combine them in an operation that does not
-        // take the order in account. otherwise changes in orders would lead to changes in the id, which potentially
-        // leads to odd behavior if f.e. two filters get switched while parsing.
-
         if (uniqueId != null) {
             return uniqueId;
         }
-
         final MD5Digest md5Overall = new MD5Digest();
         final int digestSize = md5Overall.getDigestSize();
         byte[] digestOverAll = new byte[digestSize];
 
         if (!filters.isEmpty()) {
-            final byte[] filtersAsBytes = XOR(filters);
+            // input list is immutable, need mutable list
+            ArrayList<String> strings= new ArrayList<>(filters);
+            strings.sort(String::compareTo);
+            final byte[] filtersAsBytes = String.join("", strings).getBytes(StandardCharsets.UTF_8);
             md5Overall.update(filtersAsBytes, 0, filtersAsBytes.length);
         }
 
@@ -147,78 +144,9 @@ public class LocalSubscription {
             md5Overall.update(destBytes, 0, destBytes.length);
         }
 
-        if (!excludes.isEmpty()) {
-            final byte[] excludesAsBytes = XOR(excludes);
-            md5Overall.update(excludesAsBytes, 0, excludesAsBytes.length);
-        }
-
-
-        if (!customUserProperties.isEmpty()) {
-            final List<String> keyValueCombined = new ArrayList<>();
-            for (CustomUserProperty customUserProperty : customUserProperties) {
-                keyValueCombined.add(customUserProperty.getKey() + "/" + customUserProperty.getValue());
-            }
-            final byte[] keyValueCombinedAsBytes = XOR(keyValueCombined);
-            md5Overall.update(keyValueCombinedAsBytes, 0, keyValueCombinedAsBytes.length);
-        }
-
-        byte[] preserveRetainBytes = ("" + preserveRetain).getBytes(StandardCharsets.UTF_8);
-        md5Overall.update(preserveRetainBytes, 0, preserveRetainBytes.length);
-
-        byte[] maxQoSBytes = ("" + maxQoS).getBytes(StandardCharsets.UTF_8);
-        md5Overall.update(maxQoSBytes, 0, maxQoSBytes.length);
-
         md5Overall.doFinal(digestOverAll, 0);
         uniqueId = Base64.toBase64String(digestOverAll);
         return uniqueId;
-    }
-
-
-    private byte[] getMd5DigestIndependentOfOrder(final @NotNull List<String> input) {
-        final MD5Digest md5Overall = new MD5Digest();
-        final int digestSize = md5Overall.getDigestSize();
-        byte[] digestOverAll = new byte[digestSize];
-
-        for (String element : input) {
-            byte[] digest = getMd5Digest(element);
-            for (int i = 0; i < digestSize; i++) {
-                digestOverAll[i] = (byte) (digestOverAll[i] ^ digest[i]);
-            }
-        }
-        return digestOverAll;
-    }
-
-
-    private byte[] XOR(List<String> strings) {
-        final ArrayList<byte[]> stringsAsBytes = new ArrayList<>();
-
-        // we need to find the longest string
-        // meanwhile we can already populate the byte array
-        int maxValue = -1;
-        for (String string : strings) {
-            final byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
-            stringsAsBytes.add(bytes);
-            if (bytes.length > maxValue) {
-                maxValue = bytes.length;
-            }
-        }
-
-        byte[] result = new byte[maxValue];
-        for (byte[] stringsAsByte : stringsAsBytes) {
-            for (int i = 0; i < stringsAsByte.length; i++) {
-                result[i] ^= stringsAsByte[i];
-            }
-        }
-        return result;
-    }
-
-    private byte[] getMd5Digest(final @NotNull String input) {
-        MD5Digest md5 = new MD5Digest();
-        final byte[] filterBytes = input.getBytes(StandardCharsets.UTF_8);
-        md5.update(filterBytes, 0, filterBytes.length);
-        byte[] digest = new byte[md5.getDigestSize()];
-        md5.doFinal(digest, 0);
-        return digest;
     }
 
 }
