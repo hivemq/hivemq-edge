@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useState } from 'react'
 import {
   Accordion,
   AccordionButton,
@@ -59,7 +59,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
           }}
         >
           <AccordionItem>
-            <AccordionButton>
+            <AccordionButton data-testid="metrics-toggle">
               <Box as="span" flex="1" textAlign="left">
                 {t('metrics.editor.title')}
               </Box>
