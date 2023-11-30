@@ -653,16 +653,13 @@
     }
   },
   "metrics": {
+    "editor": {
+      "title": "Configure the metrics",
+      "select-metric": "Select a metric to display",
+      "select-chart": "Select a chart",
+      "add": "Add to panel"
+    },
     "command": {
-      "select-metric": {
-        "ariaLabel": "Select a metric to display"
-      },
-      "select-chart": {
-        "ariaLabel": "Select a chart"
-      },
-      "add": {
-        "ariaLabel": "Add to panel"
-      },
       "showSelector": {
         "ariaLabel": "Show/hide the metrics selector"
       },
