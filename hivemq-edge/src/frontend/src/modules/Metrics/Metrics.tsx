@@ -1,6 +1,16 @@
-import { FC, useState } from 'react'
-import { Card, CardBody, CardHeader, Flex, IconButton, SimpleGrid, useDisclosure } from '@chakra-ui/react'
-import { TbLayoutNavbarCollapse, TbLayoutNavbarExpand } from 'react-icons/tb'
+import { FC } from 'react'
+import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
+  Box,
+  Card,
+  CardBody,
+  SimpleGrid,
+  useDisclosure,
+} from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
@@ -40,30 +50,32 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
 
   return (
     <Card size={'sm'}>
-      {showSelector && (
-        <CardHeader>
-          <Flex justifyContent={'flex-end'}>
-            <IconButton
-              data-testid="metrics-toggle"
-              variant={'ghost'}
-              size={'sm'}
-              aria-label={t('metrics.command.showSelector.ariaLabel')}
-              fontSize={'20px'}
-              icon={!isOpen ? <TbLayoutNavbarExpand /> : <TbLayoutNavbarCollapse />}
-              onClick={() => (isOpen ? onClose() : onOpen())}
-            />
-          </Flex>
-          {isOpen && (
-            <>
+      {showEditor && (
+        <Accordion
+          allowToggle
+          onChange={(expandedIndex) => {
+            if (expandedIndex === -1) onClose()
+            else onOpen()
+          }}
+        >
+          <AccordionItem>
+            <AccordionButton>
+              <Box as="span" flex="1" textAlign="left">
+                {t('metrics.editor.title')}
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+
+            <AccordionPanel pb={4}>
               <MetricEditor
                 filter={id}
                 selectedMetrics={metrics.map((e) => e.selectedTopic)}
                 selectedChart={defaultChartType}
                 onSubmit={handleCreateMetrics}
               />
-            </>
-          )}
-        </CardHeader>
+            </AccordionPanel>
+          </AccordionItem>
+        </Accordion>
       )}
 
       <CardBody>
@@ -74,7 +86,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
                 <Sample
                   key={e.selectedTopic}
                   metricName={e.selectedTopic}
-                  onClose={() => setMetrics((old) => old.filter((x) => x !== e))}
+                  onClose={() => setMetrics((old) => old.filter((x) => x.selectedTopic !== e.selectedTopic))}
                 />
               )
             else
@@ -83,7 +95,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
                   key={e.selectedTopic}
                   chartType={e.selectedChart}
                   metricName={e.selectedTopic}
-                  onClose={() => setMetrics((old) => old.filter((x) => x !== e))}
+                  onClose={() => setMetrics((old) => old.filter((x) => x.selectedTopic !== e.selectedTopic))}
                   canEdit={isOpen}
                 />
               )
