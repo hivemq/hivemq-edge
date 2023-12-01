@@ -25,7 +25,13 @@ describe('NodePropertyDrawer', () => {
     const onClose = cy.stub().as('onClose')
     const onEditEntity = cy.stub().as('onEditEntity')
     cy.mountWithProviders(
-      <NodePropertyDrawer selectedNode={mockNode} isOpen={true} onClose={onClose} onEditEntity={onEditEntity} />
+      <NodePropertyDrawer
+        nodeId="adapter@fgffgf"
+        selectedNode={mockNode}
+        isOpen={true}
+        onClose={onClose}
+        onEditEntity={onEditEntity}
+      />
     )
 
     // check the panel control
@@ -51,7 +57,13 @@ describe('NodePropertyDrawer', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
-      <NodePropertyDrawer selectedNode={mockNode} isOpen={true} onClose={cy.stub()} onEditEntity={cy.stub()} />
+      <NodePropertyDrawer
+        nodeId={'adapter@fgffgf'}
+        selectedNode={mockNode}
+        isOpen={true}
+        onClose={cy.stub()}
+        onEditEntity={cy.stub()}
+      />
     )
 
     cy.checkAccessibility(undefined, {
