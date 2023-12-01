@@ -30,13 +30,19 @@ const Dashboard: FC = () => {
     <>
       <SkipNavLink>{t('translation:action.skipNavLink')}</SkipNavLink>
       <Flex flexDirection="row" h={'100vh'} overflow={'hidden'}>
-          <SidePanel />
+        <SidePanel />
 
-          <Flex as={'main'} flexGrow={1} overflow={'auto'}>
+        <Flex as={'main'} flexGrow={1} overflow={'auto'}>
           <SkipNavContent />
-          <Suspense fallback={<div>Loading...</div>}>
-              <Outlet />
-            </Suspense>
+          <Suspense
+            fallback={
+              <AbsoluteCenter axis="both">
+                <LoaderSpinner />
+              </AbsoluteCenter>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </Flex>
       </Flex>
     </>
