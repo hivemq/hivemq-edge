@@ -224,6 +224,7 @@ const ProtocolAdapters: FC = () => {
           : t('protocolAdapter.loading.activeAdapters')}
       </Text>
       <PaginatedTable<Adapter>
+        aria-label={t('protocolAdapter.tabs.adapters')}
         data={safeData}
         columns={columns}
         getRowStyles={(row: Row<Adapter>) => {

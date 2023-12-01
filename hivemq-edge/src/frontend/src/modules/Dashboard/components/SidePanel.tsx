@@ -21,7 +21,7 @@ const SidePanel: FC = () => {
 
   return (
     <nav>
-      <Flex flexDirection="column" w={256} h={'100%'} bgColor={'#f5f5f5'}>
+      <Flex flexDirection="column" w={256} h={'100%'} bgColor={'#f5f5f5'} overflow={'auto'}>
         <Box p={4} m={'auto'} mb={10}>
           <Image src={logo} alt={t('branding.company') as string} boxSize="200px" />
           {configuration && (

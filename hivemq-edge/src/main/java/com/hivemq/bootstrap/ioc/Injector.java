@@ -86,6 +86,8 @@ public interface Injector {
 
     ModuleLoader moduleLoader();
 
+    Services services();
+
 //    UnsServiceModule uns();
 
 //    ExecutorsModule executors();

@@ -17,22 +17,15 @@ package com.hivemq.api.resources.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
-import com.hivemq.api.model.components.EnvironmentProperties;
-import com.hivemq.api.model.components.ExtensionList;
-import com.hivemq.api.model.components.GatewayConfiguration;
-import com.hivemq.api.model.components.Link;
-import com.hivemq.api.model.components.LinkList;
-import com.hivemq.api.model.components.Listener;
-import com.hivemq.api.model.components.ListenerList;
-import com.hivemq.api.model.components.ModuleList;
-import com.hivemq.api.model.components.Notification;
-import com.hivemq.api.model.components.NotificationList;
+import com.hivemq.api.model.capabilities.CapabilityList;
+import com.hivemq.api.model.components.*;
 import com.hivemq.api.model.firstuse.FirstUseInformation;
 import com.hivemq.api.resources.FrontendApi;
 import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.api.utils.LoremIpsum;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.ModulesAndExtensionsService;
@@ -42,8 +35,6 @@ import com.hivemq.protocols.ProtocolAdapterManager;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -57,6 +48,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull ModulesAndExtensionsService modulesAndExtensionsService;
     private final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService;
+    private final @NotNull HiveMQCapabilityService capabilityService;
     private final @NotNull SystemInformation systemInformation;
 
     @Inject
@@ -65,11 +57,13 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull ModulesAndExtensionsService modulesAndExtensionsService,
             final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService,
+            final @NotNull HiveMQCapabilityService capabilityService,
             final @NotNull SystemInformation systemInformation) {
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.modulesAndExtensionsService = modulesAndExtensionsService;
         this.hiveMQEdgeRemoteConfigurationService = hiveMQEdgeRemoteConfigurationService;
+        this.capabilityService = capabilityService;
         this.systemInformation = systemInformation;
     }
 
@@ -148,13 +142,14 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
             prefillUsername = UsernamePasswordRoles.DEFAULT_USERNAME;
             prefillPassword = UsernamePasswordRoles.DEFAULT_PASSWORD;
             firstUseTitle = "Welcome To HiveMQ Edge";
-            firstUseDescription = "We have determined this is a new installation and have therefore pre-populated the admin credentials with the system defaults. IMPORTANT: Please update the default credentials in your config.xml document.";
+            firstUseDescription =
+                    "We have determined this is a new installation and have therefore pre-populated the admin credentials with the system defaults. IMPORTANT: Please update the default credentials in your config.xml document.";
         }
         return new FirstUseInformation(firstUse, prefillUsername, prefillPassword, firstUseTitle, firstUseDescription);
     }
 
     @Override
-    public @NotNull  Response getNotifications() {
+    public @NotNull Response getNotifications() {
 
         ImmutableList.Builder<Notification> notifs = new ImmutableList.Builder();
         Optional<Long> lastUpdate = configurationService.getLastUpdateTime();
@@ -178,7 +173,14 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
         return Response.ok(new NotificationList(notifs.build())).build();
     }
 
-    protected @NotNull  EnvironmentProperties getEnvironmentProperties() {
+    @Override
+    public @NotNull Response getCapabilities() {
+        final CapabilityList capabilityList = capabilityService.getList();
+        return Response.ok(capabilityList).build();
+    }
+
+
+    protected @NotNull EnvironmentProperties getEnvironmentProperties() {
         Map<String, String> env = new HashMap<>();
         env.put(HiveMQEdgeConstants.VERSION_PROPERTY, systemInformation.getHiveMQVersion());
         env.put(HiveMQEdgeConstants.MUTABLE_CONFIGURAION_ENABLED,
@@ -187,4 +189,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
                 String.valueOf(configurationService.gatewayConfiguration().isConfigurationExportEnabled()));
         return new EnvironmentProperties(env);
     }
+
+
+
 }

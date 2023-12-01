@@ -17,6 +17,8 @@ package com.hivemq.bridge;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
+import java.util.List;
+
 public interface MessageForwarder {
 
     /**
@@ -30,9 +32,11 @@ public interface MessageForwarder {
     /**
      * Remove a topic filter from a forwarder.
      *
-     * @param mqttForwarder the forwarder
+     * @param mqttForwarder       the forwarder
+     * @param clearQueue          whether the current queue for this forwarder should be closed
      */
-    void removeForwarder(@NotNull MqttForwarder mqttForwarder);
+    void removeForwarder(@NotNull MqttForwarder mqttForwarder, final boolean clearQueue);
+
 
     /**
      * Call this method whenever new messages are available for a forwarder.
