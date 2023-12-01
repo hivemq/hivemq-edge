@@ -77,7 +77,7 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
         @JsonProperty(value = "tagName", required = true)
         @ModuleConfigField(title = "Tag Name",
-                           description = "The name to assign to this address",
+                           description = "The name to assign to this address. The tag name must be unique for all subscriptions within this protocol adapter.",
                            required = true,
                            format = ModuleConfigField.FieldType.IDENTIFIER)
         private @NotNull String tagName;
@@ -87,7 +87,6 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
                            description = "The well formed address of the tag to read",
                            required = true)
         private @NotNull String tagAddress;
-
 
         @JsonProperty("dataType")
         @ModuleConfigField(title = "Data Type",
@@ -106,14 +105,14 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
                                                 "Int (int 16)",
                                                 "Dint (int 32)",
                                                 "Lint (int 64)",
-                                                "Real (float)",
-                                                "LReal (double)",
+                                                "Real (float 32)",
+                                                "LReal (double 64)",
                                                 "Char (1 byte char)",
                                                 "WChar (2 byte char)",
                                                 "String",
                                                 "WString",
-                                                "Timing (Duration)",
-                                                "Long Timing (Duration)",
+                                                "Timing (Duration ms)",
+                                                "Long Timing (Duration ns)",
                                                 "Date (DateStamp)",
                                                 "Long Date (DateStamp)",
                                                 "Time Of Day (TimeStamp)",

@@ -30,7 +30,17 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.*;
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.DATE;
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.DATE_AND_TIME;
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.LDATE;
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.LDATE_AND_TIME;
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.LTIME;
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.LTIME_OF_DAY;
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.STRING;
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.TIME;
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.TIME_OF_DAY;
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.WCHAR;
+import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.WSTRING;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -71,8 +81,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
             DATE_AND_TIME,
             LDATE_AND_TIME);
 
-    private final Pattern ADDRESS_PATTERN =
-            Pattern.compile("^%.*?(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])*?:.*");
+    private final Pattern ADDRESS_PATTERN = Pattern.compile("^%.*?(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])*?:.*");
 
     public S7ProtocolAdapter(
             final ProtocolAdapterInformation adapterInformation,
@@ -100,13 +109,12 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
         map.put(REMOTE_SLOT, nullSafe(config.getRemoteSlot()));
         map.put(REMOTE_SLOT_2, nullSafe(config.getRemoteSlot2()));
         map.put(REMOTE_TSAP, nullSafe(config.getRemoteTsap()));
-        map.put(PDU_SIZE, nullSafe(config.getPduSize()));
-        map.put(MAX_AMQ_CALLER, nullSafe(config.getMaxAmqCaller()));
-        map.put(MAX_AMQ_CALLEE, nullSafe(config.getMaxAmqCallee()));
-        map.put(PING, nullSafe(config.getPing()));
-        map.put(PING_TIME, nullSafe(config.getPingTime()));
-        map.put(RETRY_TIME, nullSafe(config.getRetryTime()));
-        map.put(READ_TIMEOUT, nullSafe(config.getReadTimeout()));
+
+        //ping if polling interval greater than default read timeout - 1s grace
+        if (config.getPollingIntervalMillis() >= 7000) {
+            map.put(PING, "true");
+            map.put(PING_TIME, "4");
+        }
         return map;
     }
 
