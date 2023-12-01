@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { FC } from 'react'
 import {
   Accordion,
   AccordionButton,
@@ -50,6 +50,10 @@ const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }
     setMetrics((old) => [...old, { selectedTopic: selectedTopic?.value, selectedChart: selectedChart?.value }])
   }
 
+  const handleRemoveMetrics = (selectedTopic: string) => {
+    setMetrics((old) => old.filter((x) => x.selectedTopic !== selectedTopic))
+  }
+
   return (
     <Card size={'sm'}>
       {showEditor && (
@@ -88,7 +92,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }
                 <Sample
                   key={e.selectedTopic}
                   metricName={e.selectedTopic}
-                  onClose={() => setMetrics((old) => old.filter((x) => x.selectedTopic !== e.selectedTopic))}
+                  onClose={() => handleRemoveMetrics(e.selectedTopic)}
                 />
               )
             else
@@ -97,7 +101,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }
                   key={e.selectedTopic}
                   chartType={e.selectedChart}
                   metricName={e.selectedTopic}
-                  onClose={() => setMetrics((old) => old.filter((x) => x.selectedTopic !== e.selectedTopic))}
+                  onClose={() => handleRemoveMetrics(e.selectedTopic)}
                   canEdit={isOpen}
                 />
               )
