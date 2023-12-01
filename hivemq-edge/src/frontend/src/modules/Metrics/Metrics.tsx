@@ -23,6 +23,7 @@ import ChartContainer from './components/container/ChartContainer.tsx'
 import Sample from './components/container/Sample.tsx'
 
 interface MetricsProps {
+  nodeId: string
   type: NodeTypes
   id: string
   initMetrics?: string[]
