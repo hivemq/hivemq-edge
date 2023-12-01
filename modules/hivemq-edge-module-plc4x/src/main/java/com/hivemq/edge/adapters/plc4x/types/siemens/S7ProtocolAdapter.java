@@ -81,7 +81,9 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
             DATE_AND_TIME,
             LDATE_AND_TIME);
 
-    private final Pattern ADDRESS_PATTERN = Pattern.compile("^%.*?(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])*?:.*");
+    private final Pattern SHORT_BLOCK_ADDRESS_PATTERN = Pattern.compile("^%DB\\d{1,7}:\\d{1,7}(\\.[0-7])*?:.*");
+    private final Pattern BLOCK_ADDRESS_PATTERN = Pattern.compile("^%DB\\d{1,7}\\.DB(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])*?:.*");
+    private final Pattern ADDRESS_PATTERN = Pattern.compile("^%.(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])?(?<shortOffset>(:\\d{1,7})?):(?<type>.*)");
 
     public S7ProtocolAdapter(
             final ProtocolAdapterInformation adapterInformation,
@@ -125,10 +127,23 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
 
         if (SPECIAL_ADDRESS_SCHEME_TYPES.contains(subscription.getDataType())) {
             //correct Siemens` addressing scheme into a valid Plc4x addressing scheme (example replacement: %IW20 -> %IX20)
-            final Matcher matcher = ADDRESS_PATTERN.matcher(formattedAddress);
-            if (matcher.matches()) {
-                final String correctedAddress = new StringBuilder(formattedAddress).replace(matcher.start("dataType"),
-                        matcher.end("dataType"),
+            if(SHORT_BLOCK_ADDRESS_PATTERN.matcher(formattedAddress).matches()){
+                return formattedAddress;
+            }
+            final Matcher blockMatcher = BLOCK_ADDRESS_PATTERN.matcher(formattedAddress);
+            if(blockMatcher.matches()){
+                final String correctedAddress = new StringBuilder(formattedAddress).replace(blockMatcher.start("dataType"),
+                        blockMatcher.end("dataType"),
+                        "X").toString();
+                log.trace("Correcting S7 tag address from '{}' to '{}' to improve compatibility",
+                        formattedAddress,
+                        correctedAddress);
+                return correctedAddress;
+            }
+            final Matcher addressMatcher = ADDRESS_PATTERN.matcher(formattedAddress);
+            if (addressMatcher.matches()) {
+                final String correctedAddress = new StringBuilder(formattedAddress).replace(addressMatcher.start("dataType"),
+                        addressMatcher.end("dataType"),
                         "X").toString();
                 log.trace("Correcting S7 tag address from '{}' to '{}' to improve compatibility",
                         formattedAddress,

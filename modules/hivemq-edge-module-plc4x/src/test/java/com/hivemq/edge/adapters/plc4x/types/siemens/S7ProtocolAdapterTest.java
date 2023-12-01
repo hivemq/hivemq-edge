@@ -25,6 +25,13 @@ public class S7ProtocolAdapterTest {
     }
 
     @Test
+    public void whenTagBitDataType_thenDoNotModifyAddress() {
+        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter();
+        assertEquals("%IX200.2:BOOL",
+                adapter.createTagAddressForSubscription(new S7TestSub("%IX200.2", Plc4xDataType.DATA_TYPE.BOOL)));
+    }
+
+    @Test
     public void whenBlockSpecialDataType_thenModifyAddress() {
         final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter();
         assertEquals("%DB23.DBX200:WCHAR",
@@ -36,6 +43,34 @@ public class S7ProtocolAdapterTest {
         final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter();
         assertEquals("%DB23.DBD200:DINT",
                 adapter.createTagAddressForSubscription(new S7TestSub("%DB23.DBD200", Plc4xDataType.DATA_TYPE.DINT)));
+    }
+
+    @Test
+    public void whenBlockShortSpecialDataType_thenModifyAddress() {
+        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter();
+        assertEquals("%DB23:200:DATE",
+                adapter.createTagAddressForSubscription(new S7TestSub("%DB23:200", Plc4xDataType.DATA_TYPE.DATE)));
+    }
+
+    @Test
+    public void whenBlockBitDataType_thenDoNotModifyAddress() {
+        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter();
+        assertEquals("%DB100:DBX200.2:BOOL",
+                adapter.createTagAddressForSubscription(new S7TestSub("%DB100:DBX200.2", Plc4xDataType.DATA_TYPE.BOOL)));
+    }
+
+    @Test
+    public void whenBlockShortNormalDataType_thenDoNotModifyAddress() {
+        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter();
+        assertEquals("%DB23:200:DINT",
+                adapter.createTagAddressForSubscription(new S7TestSub("%DB23:200", Plc4xDataType.DATA_TYPE.DINT)));
+    }
+
+    @Test
+    public void whenBlockShortBitDataType_thenDoNotModifyAddress() {
+        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter();
+        assertEquals("%DB100:200.2:BOOL",
+                adapter.createTagAddressForSubscription(new S7TestSub("%DB100:200.2", Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
     private static class TestS7ProtocolAdapter extends S7ProtocolAdapter {
