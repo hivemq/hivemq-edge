@@ -12,6 +12,7 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
+import { useLocalStorage } from '@uidotdev/usehooks'
 
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
@@ -35,9 +36,9 @@ export interface MetricSpecStorage {
   selectedChart?: ChartType
 }
 
-const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
-  // const [, saveReport] = useLocalStorage<MetricVisualisation[]>(`reports-${id}`, [])
-  const [metrics, setMetrics] = useState<MetricSpecStorage[]>(
+const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }) => {
+  const [metrics, setMetrics] = useLocalStorage<MetricSpecStorage[]>(
+    `edge.reports-${nodeId}`,
     initMetrics ? initMetrics.map<MetricSpecStorage>((e) => ({ selectedTopic: e })) : []
   )
   const showEditor = config.features.METRICS_SHOW_EDITOR
