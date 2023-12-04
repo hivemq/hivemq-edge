@@ -91,7 +91,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
                   <Tab>{t('bridge.drawer.connection')}</Tab>
                   <Tab>{t('bridge.drawer.broker')}</Tab>
                   <Tab>{t('bridge.drawer.security')}</Tab>
-                  {hasPersistence && <Tab>{hasPersistence.displayName}</Tab>}
+                  {hasPersistence && <Tab>{t('bridge.drawer.persistence')}</Tab>}
                 </TabList>
 
                 <TabPanels>
@@ -125,7 +125,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
 
                   {hasPersistence && (
                     <TabPanel>
-                      <PersistencePanel hasPersistence={hasPersistence} />
+                      <PersistencePanel form={form} hasPersistence={hasPersistence} />
                     </TabPanel>
                   )}
                 </TabPanels>
