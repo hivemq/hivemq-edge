@@ -201,7 +201,6 @@ public class RemoteMqttForwarder implements MqttForwarder {
             final @NotNull QoS originalQoS,
             final @NotNull String uniqueId,
             final @NotNull String queueId) {
-        System.err.println("finishProcessing: " + inflightCounter.decrementAndGet());
         if (afterForwardCallback != null) {
             afterForwardCallback.afterMessage(originalQoS, uniqueId, queueId, false);
         }
