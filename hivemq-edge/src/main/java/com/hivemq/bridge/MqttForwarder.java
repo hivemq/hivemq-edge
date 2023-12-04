@@ -16,7 +16,6 @@
 package com.hivemq.bridge;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.services.publish.Publish;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 
@@ -35,7 +34,10 @@ public interface MqttForwarder {
 
     void drainQueue();
 
-    void setCallback(@NotNull MqttForwarder.AfterForwardCallback callback);
+    void setAfterForwardCallback(@NotNull MqttForwarder.AfterForwardCallback callback);
+
+    void setResetInflightMarkerCallback(@NotNull MqttForwarder.ResetInflightMarkerCallback callback);
+
 
     void setExecutorService(@NotNull ExecutorService executorService);
 
@@ -46,5 +48,10 @@ public interface MqttForwarder {
     @FunctionalInterface
     interface AfterForwardCallback {
         void afterMessage(@NotNull QoS qos, @NotNull String uniqueId, @NotNull String queueId, boolean cancelled);
+    }
+
+    @FunctionalInterface
+    interface ResetInflightMarkerCallback {
+        void afterMessage(@NotNull String sharedSubscription, @NotNull String uniqueId);
     }
 }

@@ -72,9 +72,12 @@ public class RemoteMqttForwarder implements MqttForwarder {
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private @Nullable MqttForwarder.AfterForwardCallback afterForwardCallback;
+    private @NotNull ResetInflightMarkerCallback resetInflightMarkerCallback;
+
     private @Nullable ExecutorService executorService;
 
     private final LinkedList<BufferedPublishInformation> queue = new LinkedList<>();
+    private final LinkedList<OutflightPublishInformation> outflightQueue = new LinkedList<>();
 
 
     public RemoteMqttForwarder(
@@ -97,8 +100,20 @@ public class RemoteMqttForwarder implements MqttForwarder {
     }
 
     @Override
-    public void stop() {
+    public synchronized void stop() {
         running.set(false);
+        while (!queue.isEmpty()) {
+            final BufferedPublishInformation pop = queue.pop();
+            if (resetInflightMarkerCallback != null) {
+                resetInflightMarkerCallback.afterMessage(pop.queueId, pop.publish.getUniqueId());
+            }
+        }
+        while (!outflightQueue.isEmpty()) {
+            final OutflightPublishInformation pop = outflightQueue.pop();
+            if (resetInflightMarkerCallback != null) {
+                resetInflightMarkerCallback.afterMessage(pop.queueId, pop.uniqueId);
+            }
+        }
     }
 
 
@@ -107,9 +122,10 @@ public class RemoteMqttForwarder implements MqttForwarder {
         perBridgeMetrics.getPublishLocalReceivedCounter().inc();
 
         final QoS originalQoS = publish.getQoS();
+        final String originalUniqueId = publish.getUniqueId();
         if (!running.get()) {
             if (afterForwardCallback != null) {
-                afterForwardCallback.afterMessage(originalQoS, publish.getUniqueId(), queueId, true);
+                afterForwardCallback.afterMessage(originalQoS, originalUniqueId, queueId, true);
             }
             return;
         }
@@ -157,7 +173,8 @@ public class RemoteMqttForwarder implements MqttForwarder {
                             case SUCCESS:
                                 sendPublishToRemote(Objects.requireNonNull(result.getPublish()),
                                         queueId,
-                                        publish.getQoS());
+                                        publish.getQoS(),
+                                        originalUniqueId);
                                 break;
                         }
                     } catch (Throwable t) {
@@ -180,8 +197,11 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
     }
 
-    private void finishProcessing(final @NotNull QoS originalQoS, final @NotNull String uniqueId, final @NotNull String queueId) {
-        inflightCounter.decrementAndGet();
+    private void finishProcessing(
+            final @NotNull QoS originalQoS,
+            final @NotNull String uniqueId,
+            final @NotNull String queueId) {
+        System.err.println("finishProcessing: " + inflightCounter.decrementAndGet());
         if (afterForwardCallback != null) {
             afterForwardCallback.afterMessage(originalQoS, uniqueId, queueId, false);
         }
@@ -203,10 +223,10 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
 
     private synchronized void sendPublishToRemote(
-            final @NotNull PUBLISH publish, final @NotNull String queueId, final @NotNull QoS originalQoS) {
+            final @NotNull PUBLISH publish, final @NotNull String queueId, final @NotNull QoS originalQoS, final @NotNull String originalUniqueId) {
 
         if (!remoteMqttClient.isConnected()) {
-            queue.add(new BufferedPublishInformation(queueId, originalQoS, publish));
+            queue.add(new BufferedPublishInformation(queueId, originalUniqueId, originalQoS, publish));
             return;
         }
 
@@ -216,14 +236,17 @@ public class RemoteMqttForwarder implements MqttForwarder {
         final Mqtt5Publish mqtt5Publish = convertPublishForClient(publish);
         final CompletableFuture<Mqtt5PublishResult> publishResult =
                 remoteMqttClient.getMqtt5Client().publish(mqtt5Publish);
+        final OutflightPublishInformation outflightPublishInformation =
+                new OutflightPublishInformation(queueId, publish.getUniqueId());
+        outflightQueue.add(outflightPublishInformation);
         publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
             if (throwable != null) {
                 handlePublishError(publish, throwable);
-                finishProcessing(originalQoS, publish.getUniqueId(), queueId);
             } else {
                 perBridgeMetrics.getPublishForwardSuccessCounter().inc();
-                finishProcessing(originalQoS, publish.getUniqueId(), queueId);
             }
+            outflightQueue.remove(outflightPublishInformation);
+            finishProcessing(originalQoS, originalUniqueId, queueId);
         });
     }
 
@@ -233,16 +256,21 @@ public class RemoteMqttForwarder implements MqttForwarder {
             final BufferedPublishInformation bufferedPublishInformation = queue.pop();
             final CompletableFuture<Mqtt5PublishResult> publishResult = remoteMqttClient.getMqtt5Client()
                     .publish(convertPublishForClient(bufferedPublishInformation.publish));
+            final OutflightPublishInformation outflightPublishInformation = new OutflightPublishInformation(
+                    bufferedPublishInformation.queueId,
+                    bufferedPublishInformation.publish.getUniqueId());
+            outflightQueue.add(outflightPublishInformation);
+
             publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
                 if (throwable != null) {
                     handlePublishError(bufferedPublishInformation.publish, throwable);
-                    finishProcessing(bufferedPublishInformation.originalQqS, bufferedPublishInformation.publish.getUniqueId(), bufferedPublishInformation.queueId);
                 } else {
                     perBridgeMetrics.getPublishForwardSuccessCounter().inc();
-                    finishProcessing(bufferedPublishInformation.originalQqS,
-                            bufferedPublishInformation.publish.getUniqueId(),
-                            bufferedPublishInformation.queueId);
                 }
+                finishProcessing(bufferedPublishInformation.originalQqS,
+                        bufferedPublishInformation.uniqueId,
+                        bufferedPublishInformation.queueId);
+                outflightQueue.remove(outflightPublishInformation);
             });
         }
     }
@@ -373,8 +401,13 @@ public class RemoteMqttForwarder implements MqttForwarder {
     }
 
     @Override
-    public void setCallback(@NotNull final AfterForwardCallback callback) {
+    public void setAfterForwardCallback(@NotNull final AfterForwardCallback callback) {
         this.afterForwardCallback = callback;
+    }
+
+    @Override
+    public void setResetInflightMarkerCallback(@NotNull final ResetInflightMarkerCallback callback) {
+        this.resetInflightMarkerCallback = callback;
     }
 
     @Override
@@ -401,15 +434,32 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
     private static class BufferedPublishInformation {
         private final @NotNull String queueId;
+        private final String uniqueId;
         private final @NotNull QoS originalQqS;
         private final @NotNull PUBLISH publish;
 
 
         private BufferedPublishInformation(
-                final @NotNull String queueId, final @NotNull QoS originalQqS, final @NotNull PUBLISH origPublish) {
+                final @NotNull String queueId,
+                final @NotNull String uniqueId,
+                final @NotNull QoS originalQqS,
+                final @NotNull PUBLISH origPublish) {
             this.queueId = queueId;
+            this.uniqueId = uniqueId;
             this.originalQqS = originalQqS;
             this.publish = origPublish;
+        }
+    }
+
+    private static class OutflightPublishInformation {
+        private final @NotNull String queueId;
+        private final @NotNull String uniqueId;
+
+
+        private OutflightPublishInformation(
+                final @NotNull String queueId, final @NotNull String uniqueId) {
+            this.queueId = queueId;
+            this.uniqueId = uniqueId;
         }
     }
 }
