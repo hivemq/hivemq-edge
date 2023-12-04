@@ -40,6 +40,7 @@ import com.hivemq.persistence.clientsession.*;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import com.hivemq.persistence.ioc.annotation.Persistence;
+import com.hivemq.persistence.ioc.provider.SingleWriterProvider;
 import com.hivemq.persistence.ioc.provider.local.PersistenceExecutorProvider;
 import com.hivemq.persistence.ioc.provider.local.PersistenceScheduledExecutorProvider;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
@@ -68,9 +69,6 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 @Module
 public abstract class PersistenceModule {
-
-    @Binds
-    abstract @NotNull SingleWriterService singleWriterService(@NotNull InMemorySingleWriter inMemorySingleWriter);
 
     @Binds
     abstract @NotNull RetainedMessagePersistence retainedMessagePersistence(
@@ -134,7 +132,11 @@ public abstract class PersistenceModule {
         return publishPayloadPersistenceProvider.get();
     }
 
-
+    @Provides
+    @Singleton
+    static @NotNull SingleWriterService singleWriterService(@NotNull SingleWriterProvider singleWriterProvider) {
+        return singleWriterProvider.get();
+    }
 
     @Provides
     @Singleton
