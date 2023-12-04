@@ -321,6 +321,13 @@
         "legend": "Trust Store"
       }
     },
+    "persistence": {
+      "description": "Mqtt Traffic with QoS greater than 0 will be stored persistently on disc and loaded on restart of Edge",
+      "persist": {
+        "label": "Persist Data for MQTT traffic",
+        "helper": "Mqtt Traffic with QoS greater than 0 will be stored persistently on disc and loaded on restart of Edge"
+      }
+    },
     "noDataWarning": {
       "title": "No bridges currently installed",
       "description": "Configure Bridges to start sending data to your enterprise MQTT broker."
@@ -333,7 +340,8 @@
       },
       "connection": "Connection details",
       "broker": "Broker Configuration",
-      "security": "Security"
+      "security": "Security",
+      "persistence": "Persistence"
     },
     "stepper": {
       "description": "Create a new bridge to a broker",
