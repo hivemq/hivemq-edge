@@ -322,10 +322,10 @@
       }
     },
     "persistence": {
-      "description": "Mqtt Traffic with QoS greater than 0 will be stored persistently on disc and loaded on restart of Edge",
+      "restartWarning": "Change will only be applied after a persisted restart of HIveMQ Edge.",
       "persist": {
-        "label": "Persist Data for MQTT traffic",
-        "helper": "Mqtt Traffic with QoS greater than 0 will be stored persistently on disc and loaded on restart of Edge"
+        "label": "MQTT Persistence",
+        "helper": "Select to store MQTT Traffic greater than QoS 0 on disk."
       }
     },
     "noDataWarning": {
