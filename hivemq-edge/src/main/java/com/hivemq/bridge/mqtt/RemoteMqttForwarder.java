@@ -245,8 +245,8 @@ public class RemoteMqttForwarder implements MqttForwarder {
             } else {
                 perBridgeMetrics.getPublishForwardSuccessCounter().inc();
             }
-            outflightQueue.remove(outflightPublishInformation);
             finishProcessing(originalQoS, originalUniqueId, queueId);
+            outflightQueue.remove(outflightPublishInformation);
         });
     }
 
