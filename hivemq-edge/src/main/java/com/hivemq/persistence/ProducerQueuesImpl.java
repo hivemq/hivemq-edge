@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hivemq.persistence.SingleWriterServiceImpl.Task;
+import static com.hivemq.persistence.InFileSingleWriter.Task;
 
 /**
  * @author Lukas Brandl
@@ -61,7 +61,7 @@ public class ProducerQueuesImpl implements ProducerQueues {
     // Lock.tryLock() seams to park and unpark the thread each time :(
     private final @NotNull ImmutableList<AtomicBoolean> locks;
     private final @NotNull ImmutableList<AtomicLong> queueTaskCounter;
-    private final @NotNull SingleWriterServiceImpl singleWriterServiceImpl;
+    private final @NotNull InFileSingleWriter singleWriterServiceImpl;
 
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -70,7 +70,7 @@ public class ProducerQueuesImpl implements ProducerQueues {
     // Initialized as long max value, to ensure the the grace period condition is not met, when shutdown is true but the start time is net yet set.
 
 
-    public ProducerQueuesImpl(final SingleWriterServiceImpl singleWriterServiceImpl, final int amountOfQueues) {
+    public ProducerQueuesImpl(final InFileSingleWriter singleWriterServiceImpl, final int amountOfQueues) {
         this.singleWriterServiceImpl = singleWriterServiceImpl;
 
         final int bucketCount = singleWriterServiceImpl.getPersistenceBucketCount();
@@ -109,8 +109,8 @@ public class ProducerQueuesImpl implements ProducerQueues {
     public <R> ListenableFuture<R> submit(
             final int bucketIndex,
             @NotNull final Task<R> task,
-            @Nullable final SingleWriterServiceImpl.SuccessCallback<R> successCallback,
-            @Nullable final SingleWriterServiceImpl.FailedCallback failedCallback) {
+            @Nullable final InFileSingleWriter.SuccessCallback<R> successCallback,
+            @Nullable final InFileSingleWriter.FailedCallback failedCallback) {
         return submitInternal(bucketIndex, task, successCallback, failedCallback, false);
     }
 
@@ -118,8 +118,8 @@ public class ProducerQueuesImpl implements ProducerQueues {
     public <R> ListenableFuture<R> submitInternal(
             final int bucketIndex,
             @NotNull final Task<R> task,
-            @Nullable final SingleWriterServiceImpl.SuccessCallback<R> successCallback,
-            @Nullable final SingleWriterServiceImpl.FailedCallback failedCallback,
+            @Nullable final InFileSingleWriter.SuccessCallback<R> successCallback,
+            @Nullable final InFileSingleWriter.FailedCallback failedCallback,
             final boolean ignoreShutdown) {
         if (!ignoreShutdown &&
                 shutdown.get() &&
@@ -307,15 +307,15 @@ public class ProducerQueuesImpl implements ProducerQueues {
         private final @Nullable SettableFuture<T> future;
         private final @NotNull Task task;
         private final int bucketIndex;
-        private final @Nullable SingleWriterServiceImpl.SuccessCallback<T> successCallback;
-        private final @Nullable SingleWriterServiceImpl.FailedCallback failedCallback;
+        private final @Nullable InFileSingleWriter.SuccessCallback<T> successCallback;
+        private final @Nullable InFileSingleWriter.FailedCallback failedCallback;
 
         private TaskWithFuture(
                 final @Nullable SettableFuture<T> future,
                 final @NotNull Task task,
                 final int bucketIndex,
-                final @Nullable SingleWriterServiceImpl.SuccessCallback<T> successCallback,
-                final @Nullable SingleWriterServiceImpl.FailedCallback failedCallback) {
+                final @Nullable InFileSingleWriter.SuccessCallback<T> successCallback,
+                final @Nullable InFileSingleWriter.FailedCallback failedCallback) {
             this.future = future;
             this.task = task;
             this.bucketIndex = bucketIndex;
@@ -337,11 +337,11 @@ public class ProducerQueuesImpl implements ProducerQueues {
             return bucketIndex;
         }
 
-        @Nullable SingleWriterServiceImpl.SuccessCallback<T> getSuccessCallback() {
+        @Nullable InFileSingleWriter.SuccessCallback<T> getSuccessCallback() {
             return successCallback;
         }
 
-        @Nullable SingleWriterServiceImpl.FailedCallback getFailedCallback() {
+        @Nullable InFileSingleWriter.FailedCallback getFailedCallback() {
             return failedCallback;
         }
     }

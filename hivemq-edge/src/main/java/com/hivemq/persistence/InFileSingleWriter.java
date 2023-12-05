@@ -41,9 +41,9 @@ import static com.hivemq.configuration.service.InternalConfigurations.SINGLE_WRI
 /**
  * @author Lukas Brandl
  */
-public class SingleWriterServiceImpl implements SingleWriterService {
+public class InFileSingleWriter implements SingleWriterService {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(SingleWriterServiceImpl.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(InFileSingleWriter.class);
 
     private static final int AMOUNT_OF_PRODUCERS = 5;
     private static final int RETAINED_MESSAGE_QUEUE_INDEX = 0;
@@ -75,7 +75,7 @@ public class SingleWriterServiceImpl implements SingleWriterService {
     private final int amountOfQueues;
 
     @Inject
-    public SingleWriterServiceImpl() {
+    public InFileSingleWriter() {
 
         persistenceBucketCount = InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get();
         threadPoolSize = InternalConfigurations.SINGLE_WRITER_THREAD_POOL_SIZE.get();

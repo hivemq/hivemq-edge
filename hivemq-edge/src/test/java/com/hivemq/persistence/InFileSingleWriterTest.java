@@ -37,9 +37,9 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Lukas Brandl
  */
-public class SingleWriterServiceImplTest {
+public class InFileSingleWriterTest {
 
-    SingleWriterServiceImpl singleWriterServiceImpl;
+    InFileSingleWriter singleWriterServiceImpl;
 
     @Before
     public void setUp() throws Exception {
@@ -48,7 +48,7 @@ public class SingleWriterServiceImplTest {
         InternalConfigurations.PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC.set(200);
         InternalConfigurations.PERSISTENCE_BUCKET_COUNT.set(64);
 
-        singleWriterServiceImpl = new SingleWriterServiceImpl();
+        singleWriterServiceImpl = new InFileSingleWriter();
     }
 
     @After

@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 public class ProducerQueuesImplTest {
 
     @Mock
-    @NotNull SingleWriterServiceImpl singleWriterServiceImpl;
+    @NotNull InFileSingleWriter singleWriterServiceImpl;
 
     @NotNull ProducerQueuesImpl producerQueues;
 
