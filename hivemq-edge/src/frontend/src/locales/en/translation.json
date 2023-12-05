@@ -601,6 +601,12 @@
       "CIRCLE_PACKING": "Circle Packing"
     },
     "grouping": {
+      "command": {
+        "open": "Open group",
+        "close": "Close group"
+      },
+      "create": "Create group",
+      "untitled": "Untitled group",
       "title": "Grouping",
       "by_type": "By type",
       "by_subscriptionCardinality": "By subscription count",
@@ -619,7 +625,8 @@
     "observability": {
       "ariaLabel": "Observability of the connected devices",
       "header_ADAPTER_NODE": "Adapter Observability",
-      "header_BRIDGE_NODE": "Bridge Observability"
+      "header_BRIDGE_NODE": "Bridge Observability",
+      "header_CLUSTER_NODE": "Group Observability"
     }
   },
   "modals": {
