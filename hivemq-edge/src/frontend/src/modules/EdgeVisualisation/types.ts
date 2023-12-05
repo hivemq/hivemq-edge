@@ -1,3 +1,5 @@
+import { Edge, Node, OnConnect, OnEdgesChange, OnNodesChange } from 'reactflow'
+
 export interface EdgeFlowOptions {
   showTopics: boolean
   showStatus: boolean
@@ -42,4 +44,18 @@ export enum IdStubs {
 export interface TopicFilter {
   topic: string
   frequency?: number
+}
+
+export interface Group {
+  childrenNodeIds: string[]
+  title: string
+  isOpen: boolean
+}
+
+export interface RFState {
+  nodes: Node[]
+  edges: Edge[]
+  onNodesChange: OnNodesChange
+  onEdgesChange: OnEdgesChange
+  onConnect: OnConnect
 }
