@@ -7,10 +7,11 @@ import { Adapter, Bridge } from '@/api/__generated__'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 
-import { EdgeTypes, NodeTypes } from '../../types.ts'
+import { EdgeTypes, Group, NodeTypes } from '../../types.ts'
 
 const NodePropertyDrawer = lazy(() => import('../drawers/NodePropertyDrawer.tsx'))
 const LinkPropertyDrawer = lazy(() => import('../drawers/LinkPropertyDrawer.tsx'))
+const GroupPropertyDrawer = lazy(() => import('../drawers/GroupPropertyDrawer.tsx'))
 
 const NodePanelController: FC = () => {
   const navigate = useNavigate()
@@ -20,6 +21,7 @@ const NodePanelController: FC = () => {
   const edges = useEdges()
 
   const { nodeId } = useParams()
+
   const selectedNode = nodes.find(
     (e) => e.id === nodeId && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
   ) as Node<Bridge | Adapter> | undefined
@@ -29,6 +31,10 @@ const NodePanelController: FC = () => {
     if (!link) return undefined
     return e.id === link.source && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
   }) as Node<Bridge | Adapter> | undefined
+
+  const selectedGroup = nodes.find((e) => e.id === nodeId && e.type === NodeTypes.CLUSTER_NODE) as
+    | Node<Group>
+    | undefined
 
   useEffect(() => {
     if (!nodes.length) return
@@ -83,6 +89,15 @@ const NodePanelController: FC = () => {
         <NodePropertyDrawer
           nodeId={nodeId}
           selectedNode={selectedNode}
+          isOpen={isOpen}
+          onClose={handleClose}
+          onEditEntity={handleEditEntity}
+        />
+      )}
+      {selectedGroup && (
+        <GroupPropertyDrawer
+          nodeId={nodeId}
+          selectedNode={selectedGroup}
           isOpen={isOpen}
           onClose={handleClose}
           onEditEntity={handleEditEntity}
