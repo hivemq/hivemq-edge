@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FiMail } from 'react-icons/fi'
-import { useToast, UseToastOptions } from '@chakra-ui/react'
+import { IoNotifications } from 'react-icons/io5'
+import { Icon, useToast, UseToastOptions } from '@chakra-ui/react'
 
 import ButtonBadge from '@/components/Chakra/ButtonBadge.tsx'
 
@@ -35,7 +35,7 @@ const NotificationBadge: FC = () => {
       aria-label={t('notifications.badge.ariaLabel')}
       badgeCount={notifications.length}
       isDisabled={!notifications.length}
-      icon={<FiMail />}
+      icon={<Icon as={IoNotifications} fontSize={'2xl'} />}
       onClick={handleClick}
     />
   )
