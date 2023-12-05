@@ -24,6 +24,8 @@ import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
+import useWorkspaceStore from '@/modules/EdgeVisualisation/utils/store.ts'
+import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
@@ -63,6 +65,7 @@ const ProtocolAdapters: FC = () => {
   const [deleteAdapter, setDeleteAdapter] = useState<string | undefined>(undefined)
   const deleteProtocolAdapter = useDeleteProtocolAdapter()
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
+  const { onDeleteNode } = useWorkspaceStore()
 
   const safeData: Adapter[] = adapters ? adapters : [mockAdapter, mockAdapter, mockAdapter, mockAdapter]
 
@@ -175,6 +178,7 @@ const ProtocolAdapters: FC = () => {
     deleteProtocolAdapter
       .mutateAsync(deleteAdapter)
       .then(() => {
+        onDeleteNode(NodeTypes.ADAPTER_NODE, deleteAdapter)
         successToast({
           title: t('protocolAdapter.toast.delete.title'),
           description: t('protocolAdapter.toast.delete.description'),
