@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import ReactFlow, { Background } from 'reactflow'
 import { Outlet } from 'react-router-dom'
 
@@ -6,15 +6,17 @@ import 'reactflow/dist/style.css'
 
 import { EdgeTypes, NodeTypes } from '../types.ts'
 import useGetFlowElements from '../hooks/useGetFlowElements.tsx'
+import useWorkspaceStore from '../utils/store.ts'
 
 import StatusListener from './controls/StatusListener.tsx'
 import CanvasControls from './controls/CanvasControls.tsx'
 import SelectionListener from './controls/SelectionListener.tsx'
-import { NodeListener, NodeAdapter, NodeGroup, NodeBridge, NodeEdge } from './nodes/'
+import GroupNodesControl from './controls/GroupNodesControl.tsx'
 import MonitoringEdge from './edges/MonitoringEdge.tsx'
+import { NodeAdapter, NodeBridge, NodeEdge, NodeGroup, NodeListener } from './nodes'
 
 const ReactFlowWrapper = () => {
-  const { nodes, edges, onNodesChange, onEdgesChange } = useGetFlowElements()
+  const { nodes: newNodes, edges: newEdges } = useGetFlowElements()
   const nodeTypes = useMemo(
     () => ({
       [NodeTypes.CLUSTER_NODE]: NodeGroup,
@@ -25,6 +27,12 @@ const ReactFlowWrapper = () => {
     }),
     []
   )
+  const { nodes, edges, onNodesChange, onEdgesChange, onAddNodes, onAddEdges } = useWorkspaceStore()
+
+  useEffect(() => {
+    if (newNodes.length) onAddNodes(newNodes.map((e) => ({ item: e, type: 'add' })))
+    if (newEdges.length) onAddEdges(newEdges.map((e) => ({ item: e, type: 'add' })))
+  }, [newEdges, newNodes, onAddEdges, onAddNodes])
 
   const edgeTypes = useMemo(
     () => ({
