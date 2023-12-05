@@ -77,7 +77,7 @@ dependencies {
     edgeModule("com.hivemq:hivemq-edge-module-plc4x")
     edgeModule("com.hivemq:hivemq-edge-module-opcua")
     edgeModule("com.hivemq:hivemq-edge-module-modbus")
-
+    edgeModule("com.hivemq:hivemq-edge-mqtt-persistence")
 }
 
 val hivemqEdgeZip by tasks.registering(Zip::class) {
