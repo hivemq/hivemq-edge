@@ -297,7 +297,7 @@ public class HiveMQEdgeHttpServiceImpl {
             }
         } catch (HiveMQEdgeRemoteConnectivityException e) {
             hasConnectivity = false;
-            logger.warn("connection to http provider {} could not be established, using offline information",
+            logger.debug("connection to http provider {} could not be established, using offline information",
                     serviceDiscoveryEndpoint);
         } finally {
             updateLastAttempt();

@@ -26,25 +26,8 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
         S7_300,
         S7_400,
         S7_1200,
-        S7_1500
-    }
-
-    public enum PduSize {
-        b128("128"),
-        b256("256"),
-        b512("512"),
-        b1024("1024"),
-        b2048("2048");
-
-        PduSize(String value){
-            this.value = value;
-        }
-
-        private String value;
-
-        public String toString() {
-            return value;
-        }
+        S7_1500,
+        LOGO
     }
 
     @JsonProperty("port")
@@ -56,17 +39,11 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
                        defaultValue = "102")
     private int port = 102;
 
-    @JsonProperty("controllerType")
+    @JsonProperty(value = "controllerType", required = true)
     @ModuleConfigField(title = "S7 Controller Type",
                        description = "Http method associated with the request",
-                       defaultValue = "S7_300")
+                       required = true)
     private @NotNull S7AdapterConfig.ControllerType controllerType = ControllerType.S7_300;
-
-    @JsonProperty("pduSize")
-    @ModuleConfigField(title = "Max PDU Size",
-                       description = "Maximum size of a data-packet sent to and received from the remote PLC.",
-                       defaultValue = "b1024")
-    private @NotNull S7AdapterConfig.PduSize pduSize = PduSize.b1024;
 
     @JsonProperty("remoteRack")
     @ModuleConfigField(title = "Remote Rack",
@@ -94,44 +71,13 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
 
     @JsonProperty("remoteTsap")
     @ModuleConfigField(title = "Remote TSAP",
-                       description = "Remote TSAP value.",
+                       description = "Remote TSAP value. The TSAP (Transport Services Access Point) mechanism is used as a further addressing level in the S7 PLC network. Usually only required for PLC from the LOGO series.",
                        defaultValue = "0")
     private @NotNull Integer remoteTsap = 0;
 
-    @JsonProperty("maxAmqCaller")
-    @ModuleConfigField(title = "Maximum AMQ Caller",
-                       description = "Maximum number of unconfirmed requests the PLC will accept in parallel before discarding with errors.",
-                       defaultValue = "8")
-    private @NotNull Integer maxAmqCaller = 8;
 
-    @JsonProperty("maxAmqCallee")
-    @ModuleConfigField(title = "Maximum AMQ Callee",
-                       description = "Maximum number of unconfirmed responses or requests accepted in parallel before discarding with errors.",
-                       defaultValue = "8")
-    private @NotNull Integer maxAmqCallee = 8;
-
-    @JsonProperty("ping")
-    @ModuleConfigField(title = "Send ping during periods of inactivity.",
-                       defaultValue = "false")
-    private @NotNull Boolean ping = false;
-
-    @JsonProperty("pingTime")
-    @ModuleConfigField(title = "Ping Time",
-                       description = "Time value in seconds at which the execution of the PING will be scheduled. Generally should be the same as (read-timeout / 2).",
-                       defaultValue = "-1")
-    private @NotNull Integer pingTime = -1;
-
-    @JsonProperty("retryTime")
-    @ModuleConfigField(title = "Retry Time",
-                       description = "Time for supervision of TCP channels (second).",
-                       defaultValue = "4")
-    private @NotNull Integer retryTime = 4;
-
-    @JsonProperty("readTimeout")
-    @ModuleConfigField(title = "Read Timeout",
-                       description = "This is the maximum waiting time for reading on the TCP channel.",
-                       defaultValue = "8")
-    private @NotNull Integer readTimeout = 8;
+    public S7AdapterConfig() {
+    }
 
     public int getPort() {
         return port;
@@ -157,35 +103,8 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
         return remoteTsap;
     }
 
-    public Integer getMaxAmqCaller() {
-        return maxAmqCaller;
-    }
-
-    public Integer getMaxAmqCallee() {
-        return maxAmqCallee;
-    }
-
-    public Boolean getPing() {
-        return ping;
-    }
-
-    public Integer getPingTime() {
-        return pingTime;
-    }
-
-    public Integer getRetryTime() {
-        return retryTime;
-    }
-
-    public Integer getReadTimeout() {
-        return readTimeout;
-    }
-
     public ControllerType getControllerType() {
         return controllerType;
     }
 
-    public PduSize getPduSize() {
-        return pduSize;
-    }
 }

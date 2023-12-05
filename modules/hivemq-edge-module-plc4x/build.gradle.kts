@@ -59,6 +59,7 @@ configurations {
 }
 
 dependencies {
+    testImplementation("com.hivemq:hivemq-edge")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")
     testImplementation("org.junit.platform:junit-platform-launcher:${property("junit.jupiter.platform.version")}")
