@@ -125,10 +125,6 @@
           "label": "Connect To HiveMQ Cloud"
         }
       }
-    },
-    "metrics": {
-      "select": "Select a metric to display",
-      "display": "Add to panel"
     }
   },
   "bridge": {
@@ -611,14 +607,19 @@
       "by_runtimeDuration": "By duration"
     },
     "property": {
-      "header_ADAPTER_NODE": "Adapter Observability",
-      "header_BRIDGE_NODE": "Bridge Observability",
+      "header_ADAPTER_NODE": "Adapter Overview",
+      "header_BRIDGE_NODE": "Bridge Overview",
       "modify_ADAPTER_NODE": "Modify the adapter",
       "modify_BRIDGE_NODE": "Modify the bridge",
       "eventLog": {
         "header": "The 5 most recent events for $t(workspace.device.type, {'context': '{{ type }}' }) {{ id }}",
         "showMore": "Show more"
       }
+    },
+    "observability": {
+      "ariaLabel": "Observability of the connected devices",
+      "header_ADAPTER_NODE": "Adapter Observability",
+      "header_BRIDGE_NODE": "Bridge Observability"
     }
   },
   "modals": {
@@ -652,6 +653,12 @@
     }
   },
   "metrics": {
+    "editor": {
+      "title": "Configure the metrics",
+      "select-metric": "Select a metric to display",
+      "select-chart": "Select a chart",
+      "add": "Add to panel"
+    },
     "command": {
       "showSelector": {
         "ariaLabel": "Show/hide the metrics selector"
@@ -662,6 +669,17 @@
       "copy": {
         "ariaLabel": "Copy the metric to the clipboard",
         "prompt": "The metric information has been copied to the clipboard"
+      },
+      "resize": {
+        "expand": "Expand the chart",
+        "collapse": "Collapse the chart"
+      }
+    },
+    "charts": {
+      "LineChart": {
+        "ariaLabel": {
+          "legend": "timestamp (s)"
+        }
       }
     },
     "protocol-adapters": {

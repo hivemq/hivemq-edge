@@ -8,9 +8,10 @@ import { toHuman } from './utils/duration.utils.ts'
 interface DateTimeRendererProps extends TextProps {
   date: DateTime
   isApprox?: boolean
+  isShort?: boolean
 }
 
-const DateTimeRenderer: FC<DateTimeRendererProps> = ({ date, isApprox = false, ...props }) => {
+const DateTimeRenderer: FC<DateTimeRendererProps> = ({ date, isApprox = false, isShort = false, ...props }) => {
   const { t } = useTranslation('components')
   const formatLongDate = new Intl.DateTimeFormat(navigator.language, {
     weekday: 'long',
@@ -23,13 +24,23 @@ const DateTimeRenderer: FC<DateTimeRendererProps> = ({ date, isApprox = false, .
     fractionalSecondDigits: 3,
   })
 
+  const formatShortDate = new Intl.DateTimeFormat(navigator.language, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+  })
+
+  const formatter = isShort ? formatShortDate : formatLongDate
+
   if (isApprox) {
     const relative = toHuman(date)
     return (
       <Tooltip
         data-testid={'date-time-tooltip'}
         hasArrow
-        label={formatLongDate.format(date.toJSDate())}
+        label={formatter.format(date.toJSDate())}
         placement="top"
         maxW={'200px'}
       >
@@ -42,7 +53,7 @@ const DateTimeRenderer: FC<DateTimeRendererProps> = ({ date, isApprox = false, .
 
   return (
     <Text data-testid={'date-time-full'} {...props}>
-      {formatLongDate.format(date.toJSDate())}
+      {formatter.format(date.toJSDate())}
     </Text>
   )
 }

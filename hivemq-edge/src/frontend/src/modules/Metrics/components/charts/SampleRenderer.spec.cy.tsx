@@ -1,10 +1,11 @@
 /// <reference types="cypress" />
 
+import { DateTime } from 'luxon'
 import { MOCK_METRIC_SAMPLE, MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 import { extractMetricInfo, MetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
-import SampleRenderer from '@/modules/Metrics/components/SampleRenderer.tsx'
 import { DataPoint } from '@/api/__generated__'
-import { DateTime } from 'luxon'
+
+import SampleRenderer from './SampleRenderer.tsx'
 
 const mockMetricInfo: MetricInfo = extractMetricInfo(MOCK_METRICS[0].name as string)
 

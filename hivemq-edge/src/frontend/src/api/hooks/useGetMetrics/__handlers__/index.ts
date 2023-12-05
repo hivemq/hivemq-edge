@@ -1,6 +1,7 @@
 import { DataPoint, Metric } from '@/api/__generated__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
+import { DateTime } from 'luxon'
 
 export const MOCK_METRICS: Array<Metric> = [
   { name: `com.hivemq.edge.bridge.${mockBridgeId}.forward.publish.count` },
@@ -59,3 +60,10 @@ export const MOCK_METRIC_SAMPLE: DataPoint = {
   sampleTime: '2023-11-18T00:00:00Z',
   value: 50000,
 }
+
+export const MOCK_METRIC_SAMPLE_ARRAY: DataPoint[] = Array.from(Array(10), (_, x) => ({
+  sampleTime: DateTime.fromISO(MOCK_METRIC_SAMPLE.sampleTime as string)
+    .plus({ hour: x })
+    .toISO(),
+  value: (MOCK_METRIC_SAMPLE.value as number) + 1000 * x,
+}))

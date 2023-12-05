@@ -25,20 +25,22 @@ import { MdOutlineEventNote } from 'react-icons/md'
 import { Adapter, Bridge } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
-import Metrics from '@/modules/Metrics/Metrics.tsx'
 import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import Metrics from '@/modules/Metrics/Metrics.tsx'
+import { ChartType } from '@/modules/Metrics/types.ts'
 
+import { NodeTypes } from '../../types.ts'
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import NodeNameCard from '../parts/NodeNameCard.tsx'
 
 interface NodePropertyDrawerProps {
+  nodeId: string
   selectedNode: Node<Bridge | Adapter>
   isOpen: boolean
   onClose: () => void
   onEditEntity: () => void
 }
-const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode, onClose, onEditEntity }) => {
+const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selectedNode, onClose, onEditEntity }) => {
   const { t } = useTranslation()
 
   return (
@@ -53,9 +55,11 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
           <VStack gap={4} alignItems={'stretch'}>
             <NodeNameCard selectedNode={selectedNode} />
             <Metrics
+              nodeId={nodeId}
               type={selectedNode.type as NodeTypes}
               id={selectedNode.data.id}
               initMetrics={getDefaultMetricsFor(selectedNode)}
+              defaultChartType={ChartType.SAMPLE}
             />
             <Card size={'sm'}>
               <CardHeader>
