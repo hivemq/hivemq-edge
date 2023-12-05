@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { FC } from 'react'
 import {
   Accordion,
   AccordionButton,
@@ -12,6 +12,7 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
+import { useLocalStorage } from '@uidotdev/usehooks'
 
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
@@ -23,6 +24,7 @@ import ChartContainer from './components/container/ChartContainer.tsx'
 import Sample from './components/container/Sample.tsx'
 
 interface MetricsProps {
+  nodeId: string
   type: NodeTypes
   id: string
   initMetrics?: string[]
@@ -34,9 +36,9 @@ export interface MetricSpecStorage {
   selectedChart?: ChartType
 }
 
-const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
-  // const [, saveReport] = useLocalStorage<MetricVisualisation[]>(`reports-${id}`, [])
-  const [metrics, setMetrics] = useState<MetricSpecStorage[]>(
+const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }) => {
+  const [metrics, setMetrics] = useLocalStorage<MetricSpecStorage[]>(
+    `edge.reports-${nodeId}`,
     initMetrics ? initMetrics.map<MetricSpecStorage>((e) => ({ selectedTopic: e })) : []
   )
   const showEditor = config.features.METRICS_SHOW_EDITOR
@@ -46,6 +48,10 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
   const handleCreateMetrics = (value: MetricDefinition) => {
     const { selectedTopic, selectedChart } = value
     setMetrics((old) => [...old, { selectedTopic: selectedTopic?.value, selectedChart: selectedChart?.value }])
+  }
+
+  const handleRemoveMetrics = (selectedTopic: string) => {
+    setMetrics((old) => old.filter((x) => x.selectedTopic !== selectedTopic))
   }
 
   return (
@@ -86,7 +92,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
                 <Sample
                   key={e.selectedTopic}
                   metricName={e.selectedTopic}
-                  onClose={() => setMetrics((old) => old.filter((x) => x.selectedTopic !== e.selectedTopic))}
+                  onClose={() => handleRemoveMetrics(e.selectedTopic)}
                 />
               )
             else
@@ -95,7 +101,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
                   key={e.selectedTopic}
                   chartType={e.selectedChart}
                   metricName={e.selectedTopic}
-                  onClose={() => setMetrics((old) => old.filter((x) => x.selectedTopic !== e.selectedTopic))}
+                  onClose={() => handleRemoveMetrics(e.selectedTopic)}
                   canEdit={isOpen}
                 />
               )

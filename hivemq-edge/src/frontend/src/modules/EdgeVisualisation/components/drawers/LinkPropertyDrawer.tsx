@@ -10,12 +10,13 @@ import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import { NodeTypes } from '../../types.ts'
 
 interface LinkPropertyDrawerProps {
+  nodeId: string
   selectedNode: Node<Bridge | Adapter>
   isOpen: boolean
   onClose: () => void
   onEditEntity: () => void
 }
-const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ isOpen, selectedNode, onClose }) => {
+const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selectedNode, onClose }) => {
   const { t } = useTranslation()
 
   return (
@@ -34,6 +35,7 @@ const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ isOpen, selectedNode,
         </DrawerHeader>
         <DrawerBody>
           <Metrics
+            nodeId={nodeId}
             type={selectedNode.type as NodeTypes}
             id={selectedNode.data.id}
             initMetrics={getDefaultMetricsFor(selectedNode)}

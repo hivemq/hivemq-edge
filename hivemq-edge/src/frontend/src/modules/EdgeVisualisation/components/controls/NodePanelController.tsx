@@ -59,6 +59,8 @@ const NodePanelController: FC = () => {
     }
   }
 
+  if (!nodeId) return null
+
   return (
     <Suspense
       // TODO[NVL] Would be good to integrate the loader within the drawer
@@ -70,6 +72,7 @@ const NodePanelController: FC = () => {
     >
       {selectedLinkSource && (
         <LinkPropertyDrawer
+          nodeId={nodeId}
           selectedNode={selectedLinkSource}
           isOpen={isOpen}
           onClose={handleClose}
@@ -78,6 +81,7 @@ const NodePanelController: FC = () => {
       )}
       {selectedNode && (
         <NodePropertyDrawer
+          nodeId={nodeId}
           selectedNode={selectedNode}
           isOpen={isOpen}
           onClose={handleClose}
