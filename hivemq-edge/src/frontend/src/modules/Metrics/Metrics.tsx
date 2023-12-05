@@ -1,7 +1,18 @@
-import { FC, useState } from 'react'
-import { Card, CardBody, CardHeader, Flex, IconButton, SimpleGrid, useDisclosure } from '@chakra-ui/react'
-import { TbLayoutNavbarCollapse, TbLayoutNavbarExpand } from 'react-icons/tb'
+import { FC } from 'react'
+import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
+  Box,
+  Card,
+  CardBody,
+  SimpleGrid,
+  useDisclosure,
+} from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
+import { useLocalStorage } from '@uidotdev/usehooks'
 
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
@@ -13,6 +24,7 @@ import ChartContainer from './components/container/ChartContainer.tsx'
 import Sample from './components/container/Sample.tsx'
 
 interface MetricsProps {
+  nodeId: string
   type: NodeTypes
   id: string
   initMetrics?: string[]
@@ -24,12 +36,12 @@ export interface MetricSpecStorage {
   selectedChart?: ChartType
 }
 
-const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
-  // const [, saveReport] = useLocalStorage<MetricVisualisation[]>(`reports-${id}`, [])
-  const [metrics, setMetrics] = useState<MetricSpecStorage[]>(
+const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }) => {
+  const [metrics, setMetrics] = useLocalStorage<MetricSpecStorage[]>(
+    `edge.reports-${nodeId}`,
     initMetrics ? initMetrics.map<MetricSpecStorage>((e) => ({ selectedTopic: e })) : []
   )
-  const showSelector = config.features.METRICS_SELECT_PANEL
+  const showEditor = config.features.METRICS_SHOW_EDITOR
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation()
 
@@ -38,32 +50,38 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
     setMetrics((old) => [...old, { selectedTopic: selectedTopic?.value, selectedChart: selectedChart?.value }])
   }
 
+  const handleRemoveMetrics = (selectedTopic: string) => {
+    setMetrics((old) => old.filter((x) => x.selectedTopic !== selectedTopic))
+  }
+
   return (
     <Card size={'sm'}>
-      {showSelector && (
-        <CardHeader>
-          <Flex justifyContent={'flex-end'}>
-            <IconButton
-              data-testid="metrics-toggle"
-              variant={'ghost'}
-              size={'sm'}
-              aria-label={t('metrics.command.showSelector.ariaLabel')}
-              fontSize={'20px'}
-              icon={!isOpen ? <TbLayoutNavbarExpand /> : <TbLayoutNavbarCollapse />}
-              onClick={() => (isOpen ? onClose() : onOpen())}
-            />
-          </Flex>
-          {isOpen && (
-            <>
+      {showEditor && (
+        <Accordion
+          allowToggle
+          onChange={(expandedIndex) => {
+            if (expandedIndex === -1) onClose()
+            else onOpen()
+          }}
+        >
+          <AccordionItem>
+            <AccordionButton data-testid="metrics-toggle">
+              <Box as="span" flex="1" textAlign="left">
+                {t('metrics.editor.title')}
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+
+            <AccordionPanel pb={4}>
               <MetricEditor
                 filter={id}
                 selectedMetrics={metrics.map((e) => e.selectedTopic)}
                 selectedChart={defaultChartType}
                 onSubmit={handleCreateMetrics}
               />
-            </>
-          )}
-        </CardHeader>
+            </AccordionPanel>
+          </AccordionItem>
+        </Accordion>
       )}
 
       <CardBody>
@@ -74,7 +92,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
                 <Sample
                   key={e.selectedTopic}
                   metricName={e.selectedTopic}
-                  onClose={() => setMetrics((old) => old.filter((x) => x !== e))}
+                  onClose={() => handleRemoveMetrics(e.selectedTopic)}
                 />
               )
             else
@@ -83,7 +101,7 @@ const Metrics: FC<MetricsProps> = ({ id, initMetrics, defaultChartType }) => {
                   key={e.selectedTopic}
                   chartType={e.selectedChart}
                   metricName={e.selectedTopic}
-                  onClose={() => setMetrics((old) => old.filter((x) => x !== e))}
+                  onClose={() => handleRemoveMetrics(e.selectedTopic)}
                   canEdit={isOpen}
                 />
               )

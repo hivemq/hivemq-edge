@@ -34,12 +34,13 @@ import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import NodeNameCard from '../parts/NodeNameCard.tsx'
 
 interface NodePropertyDrawerProps {
+  nodeId: string
   selectedNode: Node<Bridge | Adapter>
   isOpen: boolean
   onClose: () => void
   onEditEntity: () => void
 }
-const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode, onClose, onEditEntity }) => {
+const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selectedNode, onClose, onEditEntity }) => {
   const { t } = useTranslation()
 
   return (
@@ -54,6 +55,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
           <VStack gap={4} alignItems={'stretch'}>
             <NodeNameCard selectedNode={selectedNode} />
             <Metrics
+              nodeId={nodeId}
               type={selectedNode.type as NodeTypes}
               id={selectedNode.data.id}
               initMetrics={getDefaultMetricsFor(selectedNode)}

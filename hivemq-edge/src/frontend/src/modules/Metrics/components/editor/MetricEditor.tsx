@@ -65,7 +65,7 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
     >
       <VStack gap={2} alignItems={'flex-end'}>
         <FormControl>
-          <FormLabel htmlFor={'metrics-select'}>{t('metrics.command.select-metric.ariaLabel')}</FormLabel>
+          <FormLabel htmlFor={'metrics-select'}>{t('metrics.editor.select-metric')}</FormLabel>
 
           <Controller
             name={'selectedTopic'}
@@ -78,6 +78,10 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
               return (
                 <Select
                   {...rest}
+                  menuPortalTarget={document.body}
+                  styles={{
+                    menuPortal: (provided) => ({ ...provided, zIndex: 1401 }),
+                  }}
                   id={'metrics-select-container'}
                   inputId={'metrics-select'}
                   value={value || null}
@@ -96,7 +100,7 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
         </FormControl>
         {!selectedChart && (
           <FormControl>
-            <FormLabel htmlFor={'chart-select'}>{t('metrics.command.select-chart.ariaLabel')}</FormLabel>
+            <FormLabel htmlFor={'chart-select'}>{t('metrics.editor.select-chart')}</FormLabel>
 
             <Controller
               name={'selectedChart'}
@@ -109,6 +113,10 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
                 return (
                   <Select
                     {...rest}
+                    menuPortalTarget={document.body}
+                    styles={{
+                      menuPortal: (provided) => ({ ...provided, zIndex: 1401 }),
+                    }}
                     id={'chart-select-container'}
                     inputId={'chart-select'}
                     value={value || null}
@@ -127,7 +135,7 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
           </FormControl>
         )}
         <Button isDisabled={!isValid} rightIcon={<BiAddToQueue />} type="submit" form="namespace-form">
-          {t('metrics.command.add.ariaLabel')}
+          {t('metrics.editor.add')}
         </Button>
       </VStack>
     </form>

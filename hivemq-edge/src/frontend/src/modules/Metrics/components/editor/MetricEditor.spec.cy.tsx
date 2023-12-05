@@ -35,7 +35,6 @@ describe('MetricEditor', () => {
         .should('have.text', '[Forward] Publish success (count)')
         .should('have.attr', 'aria-disabled', 'true')
 
-      cy.get('div#metrics-select-container').should('contain.text', '[Local] Publish failed (count)')
       cy.get('div#react-select-2-listbox').find("[role='option']").eq(5).click()
       cy.get("button[type='submit']").should('not.be.disabled')
       cy.get("button[type='submit']").click()
