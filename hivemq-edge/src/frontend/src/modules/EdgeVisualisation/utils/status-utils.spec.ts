@@ -1,5 +1,5 @@
 import { expect } from 'vitest'
-import { Node, NodeProps } from 'reactflow'
+import { Edge, MarkerType, Node, NodeProps } from 'reactflow'
 import * as CSS from 'csstype'
 import { ResponsiveValue, ThemeTypings } from '@chakra-ui/react'
 
@@ -10,8 +10,8 @@ import { MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
 import { Adapter, Bridge, Status } from '@/api/__generated__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 
-import { getThemeForStatus, updateNodeStatus } from '@/modules/EdgeVisualisation/utils/status-utils.ts'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { EdgeStyle, getEdgeStatus, getThemeForStatus, updateEdgesStatus, updateNodeStatus } from './status-utils.ts'
+import { NodeTypes } from '../types.ts'
 
 const disconnectedBridge: NodeProps<Bridge> = {
   ...MOCK_NODE_BRIDGE,
@@ -32,12 +32,13 @@ const disconnectedAdapter: NodeProps<Adapter> = {
   },
 }
 
-interface Suite {
+interface NodeSuite {
   nodes: Node[]
   status: Status[]
   expected: Node[]
 }
-const validationSuite: Suite[] = [
+
+const nodeUpdateTests: NodeSuite[] = [
   {
     nodes: [],
     status: [],
@@ -95,7 +96,7 @@ const validationSuite: Suite[] = [
 ]
 
 describe('updateNodeStatus', () => {
-  it.each<Suite>(validationSuite)('should work', ({ nodes, status, expected }) => {
+  it.each<NodeSuite>(nodeUpdateTests)('should work', ({ nodes, status, expected }) => {
     const updatedNodes = updateNodeStatus(nodes, status)
     expect(updatedNodes.length).toBe(nodes.length)
     expect(updatedNodes).toStrictEqual(expected)
@@ -123,5 +124,103 @@ describe('getThemeForStatus', () => {
   ])('should return $expected for $status', ({ status, expected }) => {
     const color = getThemeForStatus(MOCK_THEME, status)
     expect(color).toBe(expected)
+  })
+})
+
+interface EdgeSuite {
+  edges: Edge[]
+  updates: Status[]
+  expected: Node[]
+}
+
+const edgeUpdateTests: EdgeSuite[] = [
+  {
+    edges: [],
+    updates: [],
+    expected: [],
+  },
+]
+
+describe('updateEdgesStatus', () => {
+  it.each<EdgeSuite>(edgeUpdateTests)('should work', ({ edges, updates, expected }) => {
+    const updatedNodes = updateEdgesStatus(
+      [],
+      edges,
+      updates,
+      () => ({
+        ...MOCK_NODE_ADAPTER,
+        position: { x: 0, y: 0 },
+      }),
+      MOCK_THEME
+    )
+    expect(updatedNodes.length).toBe(edges.length)
+    expect(updatedNodes).toStrictEqual(expected)
+  })
+})
+
+interface StatusStyleSuite {
+  isConnected: boolean
+  hasTopics: boolean
+  expected: EdgeStyle
+}
+
+describe('getEdgeStatus', () => {
+  const color = MOCK_THEME.colors.status.connected[500]
+  const edge: EdgeStyle = {}
+  edge.style = {
+    strokeWidth: 0.5,
+    stroke: color,
+  }
+  edge.animated = true
+  edge.markerEnd = {
+    type: MarkerType.ArrowClosed,
+    width: 20,
+    height: 20,
+    color: color,
+  }
+  it.each<StatusStyleSuite>([
+    {
+      isConnected: true,
+      hasTopics: true,
+      expected: {
+        ...edge,
+        animated: true,
+        style: {
+          ...edge.style,
+          strokeWidth: 1.5,
+        },
+      },
+    },
+    {
+      isConnected: false,
+      hasTopics: true,
+      expected: {
+        ...edge,
+        animated: false,
+      },
+    },
+    {
+      isConnected: true,
+      hasTopics: false,
+      expected: {
+        ...edge,
+        animated: false,
+        style: {
+          ...edge.style,
+          strokeWidth: 1.5,
+        },
+      },
+    },
+    {
+      isConnected: false,
+      hasTopics: false,
+      expected: {
+        ...edge,
+        animated: false,
+      },
+    },
+  ])('should return the correct style for $isConnected and $hasTopics', ({ isConnected, hasTopics, expected }) => {
+    const edgeStyle = getEdgeStatus(isConnected, hasTopics, color)
+    expect(edgeStyle).toStrictEqual(expected)
   })
 })
