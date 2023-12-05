@@ -14,7 +14,7 @@ interface MetricEditorProps {
   onSubmit: SubmitHandler<MetricDefinition>
   selectedMetrics: string[]
   selectedChart?: ChartType
-  filter: string
+  filter: string[]
 }
 
 const chartTypeOptions: ChartTypeOption[] = [

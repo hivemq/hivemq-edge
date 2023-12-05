@@ -26,7 +26,7 @@ import Sample from './components/container/Sample.tsx'
 interface MetricsProps {
   nodeId: string
   type: NodeTypes
-  id: string
+  id: string[]
   initMetrics?: string[]
   defaultChartType?: ChartType
 }

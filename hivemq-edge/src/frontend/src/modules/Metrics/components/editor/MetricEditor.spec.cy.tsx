@@ -18,7 +18,7 @@ describe('MetricEditor', () => {
       const onSubmit = cy.stub().as('onSubmit')
       cy.mountWithProviders(
         <MetricSelector
-          filter={mockBridgeId}
+          filter={[mockBridgeId]}
           onSubmit={onSubmit}
           selectedChart={ChartType.SAMPLE}
           selectedMetrics={[MOCK_METRICS[0].name as string, MOCK_METRICS[0].name as string]}
@@ -51,7 +51,7 @@ describe('MetricEditor', () => {
       cy.injectAxe()
       cy.mountWithProviders(
         <MetricSelector
-          filter={mockBridgeId}
+          filter={[mockBridgeId]}
           onSubmit={cy.stub()}
           selectedChart={ChartType.SAMPLE}
           selectedMetrics={[MOCK_METRICS[0].name as string, MOCK_METRICS[0].name as string]}
