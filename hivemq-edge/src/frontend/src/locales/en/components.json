@@ -3,6 +3,7 @@
     "iconLabel": "Topic"
   },
   "pagination": {
+    "ariaLabel": "Pagination",
     "filter": {
       "label": "Filter column",
       "placeholder": "Search... ({{ size }})",

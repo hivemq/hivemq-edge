@@ -22,11 +22,6 @@ import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-import java.math.BigInteger;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,6 +42,12 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
             format = ModuleConfigField.FieldType.HOSTNAME)
     private @NotNull String host;
 
+    @JsonProperty("publishChangedDataOnly")
+    @ModuleConfigField(title = "Only publish data items that have changed since last poll",
+                       defaultValue = "true",
+                       format = ModuleConfigField.FieldType.BOOLEAN)
+    private boolean publishChangedDataOnly = true;
+
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
                        description = "Map your sensor data to MQTT Topics")
@@ -63,6 +64,10 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         return host;
     }
 
+    public boolean getPublishChangedDataOnly() {
+        return publishChangedDataOnly;
+    }
+
     public @NotNull List<? extends Subscription> getSubscriptions() {
         return subscriptions;
     }
@@ -72,7 +77,7 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
         @JsonProperty(value = "tagName", required = true)
         @ModuleConfigField(title = "Tag Name",
-                           description = "The name to assign to this address",
+                           description = "The name to assign to this address. The tag name must be unique for all subscriptions within this protocol adapter.",
                            required = true,
                            format = ModuleConfigField.FieldType.IDENTIFIER)
         private @NotNull String tagName;
@@ -82,7 +87,6 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
                            description = "The well formed address of the tag to read",
                            required = true)
         private @NotNull String tagAddress;
-
 
         @JsonProperty("dataType")
         @ModuleConfigField(title = "Data Type",
@@ -101,14 +105,14 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
                                                 "Int (int 16)",
                                                 "Dint (int 32)",
                                                 "Lint (int 64)",
-                                                "Real (float)",
-                                                "LReal (double)",
+                                                "Real (float 32)",
+                                                "LReal (double 64)",
                                                 "Char (1 byte char)",
                                                 "WChar (2 byte char)",
                                                 "String",
                                                 "WString",
-                                                "Timing (Duration)",
-                                                "Long Timing (Duration)",
+                                                "Timing (Duration ms)",
+                                                "Long Timing (Duration ns)",
                                                 "Date (DateStamp)",
                                                 "Long Date (DateStamp)",
                                                 "Time Of Day (TimeStamp)",

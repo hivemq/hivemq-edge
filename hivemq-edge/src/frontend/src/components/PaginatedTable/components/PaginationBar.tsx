@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { Table } from '@tanstack/react-table'
 import {
+  Box,
   ButtonGroup,
   Flex,
   FormControl,
@@ -30,12 +31,12 @@ const PaginationButton: FC<IconButtonProps> = (props) => <IconButton {...props} 
 const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
   const { t } = useTranslation()
   return (
-    <HStack gap={8} mt={4}>
+    <HStack as={'nav'} aria-label={t('components:pagination.ariaLabel') as string} gap={8} mt={4}>
       <ButtonGroup isAttached variant={'ghost'}>
         <PaginationButton
           icon={<BiSkipPrevious />}
           onClick={() => table.setPageIndex(0)}
-          aria-label={t('pagination.goFirstPage', { ns: 'components' })}
+          aria-label={t('components:pagination.goFirstPage')}
           isDisabled={!table.getCanPreviousPage()}
         />
         <PaginationButton
@@ -58,12 +59,14 @@ const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
         />
       </ButtonGroup>
 
-      <Text fontSize={'md'} whiteSpace={'nowrap'}>
-        {t('components:pagination.pageOf', {
-          page: table.getState().pagination.pageIndex + 1,
-          max: table.getPageCount(),
-        })}
-      </Text>
+      <Box role={'group'}>
+        <Text fontSize={'md'} whiteSpace={'nowrap'}>
+          {t('components:pagination.pageOf', {
+            page: table.getState().pagination.pageIndex + 1,
+            max: table.getPageCount(),
+          })}
+        </Text>
+      </Box>
 
       <FormControl display={'flex'} alignItems={'center'} w={'inherit'}>
         <FormLabel mb={0}>{t('components:pagination.goPage')}</FormLabel>

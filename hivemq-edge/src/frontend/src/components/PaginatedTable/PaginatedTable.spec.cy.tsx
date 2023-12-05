@@ -32,7 +32,12 @@ describe('PaginatedTable', () => {
 
   it('should render the basic table and pagination bar', () => {
     cy.mountWithProviders(
-      <PaginatedTable<MOCK_TYPE> data={MOCK_DATA(100)} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} />
+      <PaginatedTable<MOCK_TYPE>
+        data={MOCK_DATA(100)}
+        columns={MOCK_COLUMN}
+        pageSizes={[5, 10, 20]}
+        aria-label={'table'}
+      />
     )
 
     cy.get('th').should('have.length', 2)
@@ -45,7 +50,12 @@ describe('PaginatedTable', () => {
 
   it('should sort the columns', () => {
     cy.mountWithProviders(
-      <PaginatedTable<MOCK_TYPE> data={MOCK_DATA(4)} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} />
+      <PaginatedTable<MOCK_TYPE>
+        data={MOCK_DATA(4)}
+        columns={MOCK_COLUMN}
+        pageSizes={[5, 10, 20]}
+        aria-label={'table'}
+      />
     )
 
     const checkRowOrder = (direction?: SortDirection) => {
@@ -85,7 +95,9 @@ describe('PaginatedTable', () => {
   })
 
   it('should indicate when there is no data to render', () => {
-    cy.mountWithProviders(<PaginatedTable<MOCK_TYPE> data={[]} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} />)
+    cy.mountWithProviders(
+      <PaginatedTable<MOCK_TYPE> data={[]} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} aria-label={'table'} />
+    )
 
     cy.get('[role="alert"]').should('contain.text', 'No data received yet.')
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
@@ -98,6 +110,7 @@ describe('PaginatedTable', () => {
         columns={MOCK_COLUMN}
         pageSizes={[5, 10, 20]}
         noDataText={'This is a message'}
+        aria-label={'table'}
       />
     )
 
@@ -112,6 +125,7 @@ describe('PaginatedTable', () => {
         columns={MOCK_COLUMN}
         pageSizes={[5, 10, 20]}
         enableColumnFilters
+        aria-label={'table'}
       />
     )
 
@@ -135,7 +149,12 @@ describe('PaginatedTable', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
-      <PaginatedTable<MOCK_TYPE> data={MOCK_DATA(100)} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} />
+      <PaginatedTable<MOCK_TYPE>
+        data={MOCK_DATA(100)}
+        columns={MOCK_COLUMN}
+        pageSizes={[5, 10, 20]}
+        aria-label={'table'}
+      />
     )
     cy.checkAccessibility()
     cy.percySnapshot('Component: PaginatedTable')
