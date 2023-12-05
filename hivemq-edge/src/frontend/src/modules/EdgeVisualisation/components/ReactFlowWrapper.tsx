@@ -53,6 +53,7 @@ const ReactFlowWrapper = () => {
       onEdgesChange={onEdgesChange}
       fitView
     >
+      <GroupNodesControl />
       <SelectionListener />
       <StatusListener />
       <Background />
