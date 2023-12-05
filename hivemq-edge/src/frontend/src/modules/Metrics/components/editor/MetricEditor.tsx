@@ -91,6 +91,9 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
                 <Select
                   {...rest}
                   menuPortalTarget={document.body}
+                  chakraStyles={{
+                    option: (provided) => ({ ...provided, paddingLeft: '24px' }),
+                  }}
                   styles={{
                     menuPortal: (provided) => ({ ...provided, zIndex: 1401 }),
                   }}
