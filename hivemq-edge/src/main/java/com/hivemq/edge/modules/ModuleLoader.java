@@ -51,8 +51,8 @@ public class ModuleLoader {
     @Inject
     void loadModules() {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-        log.warn(String.format("Welcome '%s' is starting...", "48 69 76 65 4D 51  45 64 67 65"));
         if(Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)){
+            log.warn(String.format("Welcome '%s' is starting...", "48 69 76 65 4D 51  45 64 67 65"));
             log.warn("\n################################################################################################################\n" +
                       "# You are running HiveMQ Edge in Development Mode and Modules will be loaded from your workspace NOT your      #\n" +
                       "# HIVEMQ_HOME/modules directory. To load runtime modules from your HOME directory please remove                #\n" +
