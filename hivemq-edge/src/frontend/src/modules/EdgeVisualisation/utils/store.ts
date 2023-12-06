@@ -49,6 +49,7 @@ const useWorkspaceStore = create<RFState>()(
                   position: { x: pos, y: pos },
                   parentNode: parentNode.id,
                   expandParent: true,
+                  selected: false,
                 }
               }
               return node
