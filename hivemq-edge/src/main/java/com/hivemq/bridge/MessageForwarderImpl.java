@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -100,11 +101,20 @@ public class MessageForwarderImpl implements MessageForwarder {
         }
         final ImmutableSet<String> queueIds = queueIdsBuilder.build();
         mqttForwarder.setExecutorService(executorService);
-        mqttForwarder.setCallback((qos, uniqueId, queueId, cancelled) -> messageProcessed(qos,
+        mqttForwarder.setAfterForwardCallback((qos, uniqueId, queueId, cancelled) -> messageProcessed(qos,
                 uniqueId,
                 forwarderId,
                 queueId,
                 cancelled));
+        mqttForwarder.setResetInflightMarkerCallback((sharedSubscriptionId, uniqueId)->{
+            try {
+                queuePersistence.get().removeInFlightMarker(sharedSubscriptionId, uniqueId).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+
         forwarders.put(forwarderId, mqttForwarder);
         queueIdsForForwarder.put(forwarderId, queueIds);
         notEmptyQueues.addAll(queueIds);
