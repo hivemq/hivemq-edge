@@ -1,32 +1,63 @@
 import { FC } from 'react'
-import { Handle, NodeProps, NodeResizer, NodeToolbar, Position } from 'reactflow'
+import { useTranslation } from 'react-i18next'
+import {
+  Handle,
+  NodeProps,
+  NodeResizer,
+  NodeToolbar,
+  Position,
+  NodeRemoveChange,
+  NodeResetChange,
+  EdgeRemoveChange,
+} from 'reactflow'
 import { useNavigate } from 'react-router-dom'
-import { Box, Button, Text, useTheme, VStack } from '@chakra-ui/react'
+import { Box, HStack, IconButton, Switch, Text, useTheme } from '@chakra-ui/react'
+import { GrObjectUngroup } from 'react-icons/gr'
 
 import { Group } from '../../types.ts'
 import useWorkspaceStore from '../../utils/store.ts'
-import { useTranslation } from 'react-i18next'
 
 const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { colors } = useTheme()
-  const { onToggleGroup } = useWorkspaceStore()
+  const { onToggleGroup, onNodesChange, onEdgesChange, nodes, edges } = useWorkspaceStore()
+
+  const handleToggle = () => {
+    data.isOpen = !data.isOpen
+    onToggleGroup({ id, data }, data.isOpen)
+  }
+
+  const handleUngroup = () => {
+    onToggleGroup({ id, data }, true)
+    onNodesChange(
+      nodes.map((e) => {
+        if (data.childrenNodeIds.includes(e.id)) {
+          // TODO[NVL] Compute position so that nodes don't move on the screen
+          return { item: { ...e, parentNode: undefined }, type: 'reset' } as NodeResetChange
+        } else return { item: e, type: 'reset' } as NodeResetChange
+      })
+    )
+    onNodesChange([{ id, type: 'remove' } as NodeRemoveChange])
+    onEdgesChange(edges.filter((e) => e.source === id).map((e) => ({ id: e.id, type: 'remove' } as EdgeRemoveChange)))
+  }
 
   return (
     <>
       <NodeToolbar isVisible={selected} position={Position.Top}>
-        <VStack alignItems={'flex-start'}>
-          <Button
+        <HStack alignItems={'flex-end'} gap={10}>
+          <Switch
+            aria-label={t('workspace.grouping.command.expand') as string}
+            onChange={handleToggle}
+            defaultChecked={!data.isOpen}
+          />
+          <IconButton
+            icon={<GrObjectUngroup />}
             size={'xs'}
-            onClick={() => {
-              data.isOpen = !data.isOpen
-              onToggleGroup({ id, data }, data.isOpen)
-            }}
-          >
-            {data.isOpen ? t('workspace.grouping.command.close') : t('workspace.grouping.command.open')}
-          </Button>
-        </VStack>
+            aria-label={t('workspace.grouping.command.ungroup')}
+            onClick={handleUngroup}
+          />
+        </HStack>
       </NodeToolbar>
       <NodeResizer isVisible={true} minWidth={180} minHeight={100} />
 
