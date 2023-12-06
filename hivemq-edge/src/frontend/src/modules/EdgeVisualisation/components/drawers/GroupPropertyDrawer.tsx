@@ -30,8 +30,10 @@ const GroupPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, sele
         <DrawerCloseButton />
 
         <DrawerHeader>
-          <Box>
-            <Text>{t('workspace.observability.header', { context: selectedNode.type })}</Text>
+          <Text data-testid={'group-panel-title'}>
+            {t('workspace.observability.header', { context: selectedNode.type })}
+          </Text>
+          <Box data-testid={'group-panel-keys'}>
             {selectedNode.data.childrenNodeIds.map((e) => (
               <Text key={e}>
                 {t('workspace.device.type', { context: NodeTypes.ADAPTER_NODE })}:{' '}
