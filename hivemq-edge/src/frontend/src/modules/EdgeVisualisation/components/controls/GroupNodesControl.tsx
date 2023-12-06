@@ -11,7 +11,7 @@ import { getThemeForStatus } from '../../utils/status-utils.ts'
 
 const GroupNodesControl: FC = () => {
   const { t } = useTranslation()
-  const { onInsertNode } = useWorkspaceStore()
+  const { onInsertGroupNode } = useWorkspaceStore()
   const [currentSelection, setCurrentSelection] = useState<Node[]>([])
   const theme = useTheme()
 
@@ -58,7 +58,7 @@ const GroupNodesControl: FC = () => {
       },
     }
 
-    onInsertNode(newGroupNode, newAEdge)
+    onInsertGroupNode(newGroupNode, newAEdge)
     setCurrentSelection([])
   }
 

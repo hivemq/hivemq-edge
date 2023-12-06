@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import {
-  Connection,
   EdgeChange,
   NodeChange,
   NodeAddChange,
@@ -38,12 +37,7 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
           edges: applyEdgeChanges(changes, get().edges),
         })
       },
-      onConnect: (connection: Connection) => {
-        set({
-          edges: addEdge(connection, get().edges),
-        })
-      },
-      onInsertNode: (parentNode: Node<Group, NodeTypes.CLUSTER_NODE>, edge: Edge) => {
+      onInsertGroupNode: (parentNode: Node<Group, NodeTypes.CLUSTER_NODE>, edge: Edge) => {
         const nodeIds = parentNode.data.childrenNodeIds
         let pos = 0
         set({
