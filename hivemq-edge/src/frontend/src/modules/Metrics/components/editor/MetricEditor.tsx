@@ -60,7 +60,7 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
       })
       .sort((a, b) => a.label.localeCompare(b.label))
 
-    return groupedMetrics
+    return groupedMetrics.length === 1 ? groupedMetrics[0].options : groupedMetrics
   }, [data, filter, selectedMetrics, t])
 
   useEffect(() => {
