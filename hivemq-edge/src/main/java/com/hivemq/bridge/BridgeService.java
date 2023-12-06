@@ -154,15 +154,12 @@ public class BridgeService {
                     messageForwarder.addForwarder(forwarder);
                 }
                 Checkpoints.checkpoint("mqtt-bridge-forwarder-started");
+
             } else {
                 bridgeMqttClient = bridgeToClientMap.get(bridgeName);
             }
             if (!bridgeMqttClient.isConnected()) {
                 ListenableFuture<Void> future = bridgeMqttClient.start();
-                // forwarders MUST NOT be created before the client is connected
-                for (MqttForwarder forwarder : bridgeMqttClient.createForwarders()) {
-                    messageForwarder.addForwarder(forwarder);
-                }
                 Futures.addCallback(future, new FutureCallback<>() {
                     public void onSuccess(@Nullable Void result) {
                         log.info("Bridge '{}' to remote broker {}:{} started in {}ms.",
@@ -177,7 +174,6 @@ public class BridgeService {
                                 String.valueOf(bridge.getHost().endsWith("hivemq.cloud")));
                         startedEvent.addUserData("name", bridgeName);
                         remoteService.fireUsageEvent(startedEvent);
-
                         Checkpoints.checkpoint("mqtt-bridge-connected");
                     }
 
