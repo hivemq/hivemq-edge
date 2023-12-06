@@ -1,4 +1,4 @@
-import { Edge, Node, OnConnect, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange } from 'reactflow'
+import { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange } from 'reactflow'
 
 export interface EdgeFlowOptions {
   showTopics: boolean
@@ -60,10 +60,9 @@ export interface WorkspaceAction {
   reset: () => void
   onNodesChange: OnNodesChange
   onEdgesChange: OnEdgesChange
-  onConnect: OnConnect
   onAddNodes: (changes: NodeAddChange[]) => void
   onAddEdges: (changes: EdgeAddChange[]) => void
-  onInsertNode: (node: Node<Group, NodeTypes.CLUSTER_NODE>, edge: Edge) => void
+  onInsertGroupNode: (node: Node<Group, NodeTypes.CLUSTER_NODE>, edge: Edge) => void
   onDeleteNode: (type: NodeTypes, adapterId: string) => void
   onToggleGroup: (node: Pick<Node<Group, NodeTypes.CLUSTER_NODE>, 'id' | 'data'>, show: boolean) => void
 }
