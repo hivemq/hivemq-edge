@@ -26,7 +26,7 @@ const GroupPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, sele
   return (
     <Drawer isOpen={isOpen} placement="right" size={'lg'} onClose={onClose}>
       {/*<DrawerOverlay />*/}
-      <DrawerContent>
+      <DrawerContent aria-label={t('workspace.observability.header', { context: selectedNode.type }) as string}>
         <DrawerCloseButton />
 
         <DrawerHeader>
