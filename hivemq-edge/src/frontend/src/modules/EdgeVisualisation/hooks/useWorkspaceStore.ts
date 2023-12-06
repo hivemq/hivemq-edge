@@ -11,15 +11,23 @@ import {
   applyEdgeChanges,
   Edge,
 } from 'reactflow'
-import { Group, NodeTypes, RFState } from '@/modules/EdgeVisualisation/types.ts'
+import { Group, NodeTypes, WorkspaceState, WorkspaceAction } from '@/modules/EdgeVisualisation/types.ts'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { Adapter } from '@/api/__generated__'
 
-const useWorkspaceStore = create<RFState>()(
+// define the initial state
+const initialState: WorkspaceState = {
+  nodes: [],
+  edges: [],
+}
+
+const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
   persist(
     (set, get) => ({
-      nodes: [],
-      edges: [],
+      ...initialState,
+      reset: () => {
+        set(initialState)
+      },
       onNodesChange: (changes: NodeChange[]) => {
         set({
           nodes: applyNodeChanges(changes, get().nodes),

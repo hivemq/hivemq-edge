@@ -52,9 +52,12 @@ export interface Group {
   isOpen: boolean
 }
 
-export interface RFState {
+export interface WorkspaceState {
   nodes: Node[]
   edges: Edge[]
+}
+export interface WorkspaceAction {
+  reset: () => void
   onNodesChange: OnNodesChange
   onEdgesChange: OnEdgesChange
   onConnect: OnConnect
