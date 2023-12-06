@@ -602,8 +602,9 @@
     },
     "grouping": {
       "command": {
-        "open": "Open group",
-        "close": "Close group"
+        "expand": "Expand group",
+        "collapse": "Collapse group",
+        "ungroup": "Ungroup"
       },
       "create": "Create group",
       "untitled": "Untitled group",
