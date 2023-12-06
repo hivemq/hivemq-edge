@@ -131,5 +131,4 @@ export const handlers = [
   rest.get('**/frontend/capabilities', (_, res, ctx) => {
     return res(ctx.json<CapabilityList>(MOCK_CAPABILITIES), ctx.status(200))
   }),
-
 ]
