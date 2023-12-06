@@ -97,6 +97,7 @@ const NodePanelController: FC = () => {
       {selectedGroup && (
         <GroupPropertyDrawer
           nodeId={nodeId}
+          nodes={nodes}
           selectedNode={selectedGroup}
           isOpen={isOpen}
           onClose={handleClose}
