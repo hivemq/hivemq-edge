@@ -26,7 +26,7 @@ import Sample from './components/container/Sample.tsx'
 interface MetricsProps {
   nodeId: string
   type: NodeTypes
-  id: string[]
+  adapterIDs: string[]
   initMetrics?: string[]
   defaultChartType?: ChartType
 }
@@ -36,7 +36,7 @@ export interface MetricSpecStorage {
   selectedChart?: ChartType
 }
 
-const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }) => {
+const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultChartType }) => {
   const [metrics, setMetrics] = useLocalStorage<MetricSpecStorage[]>(
     `edge.reports-${nodeId}`,
     initMetrics ? initMetrics.map<MetricSpecStorage>((e) => ({ selectedTopic: e })) : []
@@ -74,7 +74,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }
 
             <AccordionPanel pb={4}>
               <MetricEditor
-                filter={id}
+                filter={adapterIDs}
                 selectedMetrics={metrics.map((e) => e.selectedTopic)}
                 selectedChart={defaultChartType}
                 onSubmit={handleCreateMetrics}

@@ -37,7 +37,7 @@ const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selec
           <Metrics
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}
-            id={[selectedNode.data.id]}
+            adapterIDs={[selectedNode.data.id]}
             initMetrics={getDefaultMetricsFor(selectedNode)}
           />
         </DrawerBody>

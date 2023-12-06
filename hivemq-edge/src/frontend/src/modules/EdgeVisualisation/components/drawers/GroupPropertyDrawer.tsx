@@ -46,7 +46,7 @@ const GroupPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, sele
           <Metrics
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}
-            id={adapterIDs.map((e) => e?.data.id)}
+            adapterIDs={adapterIDs.map((e) => e?.data.id)}
             initMetrics={metrics}
           />
         </DrawerBody>
