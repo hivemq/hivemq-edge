@@ -16,7 +16,8 @@ const GroupNodesControl: FC = () => {
 
   useOnSelectionChange({
     onChange: ({ nodes }) => {
-      if (nodes.length >= 2) setCurrentSelection(() => nodes)
+      if (nodes.length >= 2)
+        setCurrentSelection(() => nodes.filter((e) => e.type === NodeTypes.ADAPTER_NODE && e.parentNode === undefined))
       else setCurrentSelection([])
     },
   })
@@ -28,6 +29,7 @@ const GroupNodesControl: FC = () => {
       id: groupId,
       type: NodeTypes.CLUSTER_NODE,
       data: { childrenNodeIds: currentSelection.map((e) => e.id), title: groupTitle, isOpen: true },
+      // TODO[NVL] Position/size needs to be more elegant, including adjustment of children nodes
       position: { x: 20, y: 20 },
       style: {
         width: 500,
@@ -56,6 +58,7 @@ const GroupNodesControl: FC = () => {
     }
 
     onInsertNode(newGroupNode, newAEdge)
+    setCurrentSelection([])
   }
 
   if (currentSelection.length < 2) return null
