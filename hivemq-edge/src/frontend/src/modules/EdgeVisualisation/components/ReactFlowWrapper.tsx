@@ -6,7 +6,7 @@ import 'reactflow/dist/style.css'
 
 import { EdgeTypes, NodeTypes } from '../types.ts'
 import useGetFlowElements from '../hooks/useGetFlowElements.tsx'
-import useWorkspaceStore from '../utils/store.ts'
+import useWorkspaceStore from '../hooks/useWorkspaceStore.ts'
 
 import StatusListener from './controls/StatusListener.tsx'
 import CanvasControls from './controls/CanvasControls.tsx'

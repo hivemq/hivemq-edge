@@ -15,7 +15,7 @@ import { Box, HStack, IconButton, Switch, Text, useTheme } from '@chakra-ui/reac
 import { GrObjectUngroup } from 'react-icons/gr'
 
 import { Group } from '../../types.ts'
-import useWorkspaceStore from '../../utils/store.ts'
+import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 
 const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
   const { t } = useTranslation()
