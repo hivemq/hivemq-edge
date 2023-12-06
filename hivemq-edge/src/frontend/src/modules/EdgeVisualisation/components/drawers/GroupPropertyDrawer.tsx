@@ -5,24 +5,22 @@ import { Box, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader
 
 import Metrics from '@/modules/Metrics/Metrics.tsx'
 
-import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import { Group, NodeTypes } from '../../types.ts'
 
 interface LinkPropertyDrawerProps {
   nodeId: string
   selectedNode: Node<Group>
+  nodes: Node[]
   isOpen: boolean
   onClose: () => void
   onEditEntity: () => void
 }
 
-const GroupPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selectedNode, onClose }) => {
+const GroupPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selectedNode, nodes, onClose }) => {
   const { t } = useTranslation()
-  const { nodes } = useWorkspaceStore()
 
   const adapterIDs = selectedNode.data.childrenNodeIds.map<Node | undefined>((e) => nodes.find((x) => x.id === e))
-
   const metrics = adapterIDs.map((x) => (x ? getDefaultMetricsFor(x) : [])).flat()
 
   return (
