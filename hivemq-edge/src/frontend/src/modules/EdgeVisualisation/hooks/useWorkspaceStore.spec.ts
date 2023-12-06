@@ -11,7 +11,7 @@ describe('useWorkspaceStore', () => {
   it('should start with an empty store', async () => {
     server.use(...handlers)
 
-    const { result } = renderHook<RFState, any>(useWorkspaceStore)
+    const { result } = renderHook<RFState, unknown>(useWorkspaceStore)
     const { nodes, edges } = result.current
 
     expect(nodes).toHaveLength(0)
