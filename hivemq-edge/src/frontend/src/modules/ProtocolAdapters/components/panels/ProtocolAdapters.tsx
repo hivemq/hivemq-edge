@@ -24,7 +24,7 @@ import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
-import useWorkspaceStore from '@/modules/EdgeVisualisation/utils/store.ts'
+import useWorkspaceStore from '@/modules/EdgeVisualisation/hooks/useWorkspaceStore.ts'
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'

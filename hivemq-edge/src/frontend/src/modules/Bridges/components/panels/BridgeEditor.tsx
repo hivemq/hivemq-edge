@@ -16,7 +16,7 @@ import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import BridgeMainDrawer from '@/modules/Bridges/components/panels/BridgeMainDrawer.tsx'
 import { bridgeInitialState, useBridgeSetup } from '@/modules/Bridges/hooks/useBridgeConfig.tsx'
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
-import useWorkspaceStore from '@/modules/EdgeVisualisation/utils/store.ts'
+import useWorkspaceStore from '@/modules/EdgeVisualisation/hooks/useWorkspaceStore.ts'
 
 interface BridgeEditorProps {
   isNew?: boolean

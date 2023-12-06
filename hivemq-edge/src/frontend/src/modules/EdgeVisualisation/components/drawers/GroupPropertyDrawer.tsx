@@ -5,7 +5,7 @@ import { Box, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader
 
 import Metrics from '@/modules/Metrics/Metrics.tsx'
 
-import useWorkspaceStore from '../../utils/store.ts'
+import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import { Group, NodeTypes } from '../../types.ts'
 

@@ -1,12 +1,13 @@
 import { FC, useState } from 'react'
 import { Edge, MarkerType, Node, Panel, useOnSelectionChange } from 'reactflow'
+import { useTranslation } from 'react-i18next'
 import { IconButton, useTheme } from '@chakra-ui/react'
 import { GrObjectGroup } from 'react-icons/gr'
-import useWorkspaceStore from '@/modules/EdgeVisualisation/utils/store.ts'
-import { EdgeTypes, Group, IdStubs, NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
-import { getThemeForStatus } from '@/modules/EdgeVisualisation/utils/status-utils.ts'
+
 import { Status } from '@/api/__generated__'
-import { useTranslation } from 'react-i18next'
+import { EdgeTypes, Group, IdStubs, NodeTypes } from '../../types.ts'
+import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
+import { getThemeForStatus } from '../../utils/status-utils.ts'
 
 const GroupNodesControl: FC = () => {
   const { t } = useTranslation()
