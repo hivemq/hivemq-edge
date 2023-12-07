@@ -1,9 +1,9 @@
 import { NodeProps, Position } from 'reactflow'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { Listener } from '@/api/__generated__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
+import { Group, NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 const DEFAULT_NODE = {
   selected: false,
@@ -43,5 +43,13 @@ export const MOCK_NODE_LISTENER: NodeProps<Listener> = {
   type: NodeTypes.LISTENER_NODE,
   sourcePosition: Position.Bottom,
   data: mockMqttListener,
+  ...DEFAULT_NODE,
+}
+
+export const MOCK_NODE_GROUP: NodeProps<Group> = {
+  id: 'idGroup',
+  type: NodeTypes.CLUSTER_NODE,
+  sourcePosition: Position.Bottom,
+  data: { childrenNodeIds: ['idAdapter', 'idBridge'], title: 'The group title', isOpen: true },
   ...DEFAULT_NODE,
 }
