@@ -11,8 +11,10 @@ import {
   EdgeRemoveChange,
 } from 'reactflow'
 import { useNavigate } from 'react-router-dom'
-import { Box, HStack, IconButton, Switch, Text, useTheme } from '@chakra-ui/react'
+import { Box, Button, ButtonGroup, Icon, IconButton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
 import { GrObjectUngroup } from 'react-icons/gr'
+
+import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 
 import { Group } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
@@ -22,6 +24,11 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
   const navigate = useNavigate()
   const { colors } = useTheme()
   const { onToggleGroup, onNodesChange, onEdgesChange, nodes, edges } = useWorkspaceStore()
+  const { isOpen: isConfirmUngroupOpen, onOpen: onConfirmUngroupOpen, onClose: onConfirmUngroupClose } = useDisclosure()
+
+  const onConfirmUngroup = () => {
+    onConfirmUngroupOpen()
+  }
 
   const handleToggle = () => {
     data.isOpen = !data.isOpen
@@ -29,6 +36,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
   }
 
   const handleUngroup = () => {
+    // TODO[NVL] Create a store action
     onToggleGroup({ id, data }, true)
     onNodesChange(
       nodes.map((e) => {
@@ -45,23 +53,28 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
   return (
     <>
       <NodeToolbar isVisible={selected} position={Position.Top}>
-        <HStack alignItems={'flex-end'} gap={10}>
-          <Switch
-            aria-label={t('workspace.grouping.command.expand') as string}
-            onChange={handleToggle}
-            defaultChecked={!data.isOpen}
-          />
+        <ButtonGroup
+          size="sm"
+          isAttached
+          variant="outline"
+          aria-controls={`node-group-${id}`}
+          aria-label={t('workspace.grouping.toolbar.aria-label', { id }) as string}
+        >
+          <Button data-testid={'node-group-toolbar-expand'} onClick={handleToggle}>
+            {!data.isOpen ? t('workspace.grouping.command.expand') : t('workspace.grouping.command.collapse')}
+          </Button>
           <IconButton
-            icon={<GrObjectUngroup />}
-            size={'xs'}
+            data-testid={'node-group-toolbar-ungroup'}
+            icon={<Icon as={GrObjectUngroup} />}
             aria-label={t('workspace.grouping.command.ungroup')}
-            onClick={handleUngroup}
+            onClick={onConfirmUngroup}
           />
-        </HStack>
+        </ButtonGroup>
       </NodeToolbar>
-      <NodeResizer isVisible={true} minWidth={180} minHeight={100} />
+      {selected && <NodeResizer isVisible={true} minWidth={180} minHeight={100} />}
 
       <Box
+        id={`node-group-${id}`}
         w={'100%'}
         h={'100%'}
         style={{
@@ -79,6 +92,13 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
         </Text>
       </Box>
       <Handle type="source" position={Position.Bottom} id="a" />
+      <ConfirmationDialog
+        isOpen={isConfirmUngroupOpen}
+        onClose={onConfirmUngroupClose}
+        onSubmit={handleUngroup}
+        message={t('workspace.grouping.modal.description')}
+        header={t('workspace.grouping.modal.title')}
+      />
     </>
   )
 }
