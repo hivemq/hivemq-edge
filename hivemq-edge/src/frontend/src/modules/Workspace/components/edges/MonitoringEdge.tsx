@@ -5,7 +5,7 @@ import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from 'reactflow
 import { IconButton } from '@chakra-ui/react'
 import { BiBarChartSquare } from 'react-icons/bi'
 
-import { useEdgeFlowContext } from '@/modules/EdgeVisualisation/hooks/useEdgeFlowContext.tsx'
+import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.tsx'
 
 const MonitoringEdge: FC<EdgeProps> = ({
   source,

@@ -3,7 +3,7 @@ import { group } from 'd3-array'
 import { hierarchy, pack } from 'd3-hierarchy'
 import { DateTime } from 'luxon'
 
-import { EdgeFlowGrouping, EdgeFlowLayout, IdStubs, NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { EdgeFlowGrouping, EdgeFlowLayout, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
 import { Adapter, Bridge } from '@/api/__generated__'
 
 import { CONFIG_ADAPTER_WIDTH } from './nodes-utils.ts'

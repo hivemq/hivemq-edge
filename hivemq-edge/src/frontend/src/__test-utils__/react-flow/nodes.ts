@@ -3,7 +3,7 @@ import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { Listener } from '@/api/__generated__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
-import { Group, NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { Group, NodeTypes } from '@/modules/Workspace/types.ts'
 
 const DEFAULT_NODE = {
   selected: false,

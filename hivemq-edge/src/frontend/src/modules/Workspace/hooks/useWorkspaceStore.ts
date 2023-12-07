@@ -10,7 +10,7 @@ import {
   applyEdgeChanges,
   Edge,
 } from 'reactflow'
-import { Group, NodeTypes, WorkspaceState, WorkspaceAction } from '@/modules/EdgeVisualisation/types.ts'
+import { Group, NodeTypes, WorkspaceState, WorkspaceAction } from '@/modules/Workspace/types.ts'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { Adapter } from '@/api/__generated__'
 

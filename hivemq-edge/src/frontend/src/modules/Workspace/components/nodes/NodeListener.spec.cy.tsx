@@ -3,7 +3,7 @@
 import { MOCK_NODE_LISTENER } from '@/__test-utils__/react-flow/nodes.ts'
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 
-import NodeListener from '@/modules/EdgeVisualisation/components/nodes/NodeListener.tsx'
+import NodeListener from '@/modules/Workspace/components/nodes/NodeListener.tsx'
 
 describe('NodeListener', () => {
   beforeEach(() => {

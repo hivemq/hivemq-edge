@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
 import NodeGroup from './NodeGroup.tsx'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { MOCK_NODE_GROUP } from '@/__test-utils__/react-flow/nodes.ts'
 import { CustomNodeTesting } from '@/__test-utils__/react-flow/CustomNodeTesting.tsx'
 
