@@ -12,20 +12,16 @@ import {
   FormControl,
   FormHelperText,
   FormLabel,
-  Radio,
-  RadioGroup,
   Stack,
   VStack,
 } from '@chakra-ui/react'
-import { Select } from 'chakra-react-select'
 
-import { EdgeFlowOptions, EdgeFlowLayout } from '../../types.ts'
+import { EdgeFlowOptions } from '../../types.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
-import { groupingAttributes } from '../../utils/layout-utils.ts'
 
 const WorkspaceOptionsDrawer: FC = () => {
   const { t } = useTranslation()
-  const { optionDrawer, options, setOptions, groups, setGroups } = useEdgeFlowContext()
+  const { optionDrawer, options, setOptions } = useEdgeFlowContext()
   const optionKeys: (keyof EdgeFlowOptions)[] = [
     'showTopics',
     'showStatus',
@@ -70,55 +66,6 @@ const WorkspaceOptionsDrawer: FC = () => {
                 </Stack>
               </CheckboxGroup>
               <FormHelperText>{t('workspace.configuration.content.prompt')}</FormHelperText>
-            </FormControl>
-
-            <FormControl as="fieldset" borderWidth="1px" p={2}>
-              <FormLabel as="legend">{t('workspace.configuration.layout.header')}</FormLabel>
-
-              <FormControl>
-                <FormLabel>Layout method</FormLabel>
-                <RadioGroup
-                  colorScheme="brand"
-                  value={groups.layout}
-                  onChange={(v) => setGroups((old) => ({ ...old, layout: v as EdgeFlowLayout }))}
-                >
-                  <Stack direction="row">
-                    <Radio value={EdgeFlowLayout.HORIZONTAL}>{t('workspace.layout.HORIZONTAL')}</Radio>
-                    <Radio value={EdgeFlowLayout.CIRCLE_PACKING}>{t('workspace.layout.CIRCLE_PACKING')}</Radio>
-                  </Stack>
-                </RadioGroup>
-              </FormControl>
-
-              <FormControl mt={4} isDisabled={groups.layout !== EdgeFlowLayout.CIRCLE_PACKING}>
-                <FormLabel>{t('workspace.grouping.title')}</FormLabel>
-                <Select
-                  colorScheme="brand"
-                  isMulti
-                  name="adapters"
-                  defaultValue={groups.keys.map((e) => ({
-                    value: e,
-                    label: t('workspace.grouping.by', { context: e }) as string,
-                  }))}
-                  options={groupingAttributes.map((e) => ({
-                    value: e.key,
-                    label: t('workspace.grouping.by', { context: e.key }) as string,
-                  }))}
-                  onChange={(v) => setGroups((old) => ({ ...old, keys: v.map((e) => e.value) }))}
-                  placeholder="Select some keys"
-                  closeMenuOnSelect={true}
-                />
-                <FormHelperText>{t('workspace.configuration.layout.prompt')}</FormHelperText>
-              </FormControl>
-
-              <Checkbox
-                mt={4}
-                isDisabled={groups.layout !== EdgeFlowLayout.CIRCLE_PACKING}
-                colorScheme="brand"
-                isChecked={groups.showGroups}
-                onChange={(v) => setGroups((old) => ({ ...old, showGroups: v.target.checked }))}
-              >
-                Show clusters as node
-              </Checkbox>
             </FormControl>
           </VStack>
         </DrawerBody>
