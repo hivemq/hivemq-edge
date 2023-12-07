@@ -14,7 +14,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '@uidotdev/usehooks'
 
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 import config from '@/config'
 

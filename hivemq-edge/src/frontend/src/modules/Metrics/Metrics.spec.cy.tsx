@@ -4,7 +4,7 @@ import { MetricList } from '@/api/__generated__'
 import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 
 import Metrics from '@/modules/Metrics/Metrics.tsx'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 
 describe('Metrics', () => {

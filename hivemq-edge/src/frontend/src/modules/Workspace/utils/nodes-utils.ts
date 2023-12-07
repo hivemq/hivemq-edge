@@ -7,7 +7,7 @@ import { Adapter, Bridge, Status, Listener, ProtocolAdapter } from '@/api/__gene
 
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
-import { getThemeForStatus } from '@/modules/EdgeVisualisation/utils/status-utils.ts'
+import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
 

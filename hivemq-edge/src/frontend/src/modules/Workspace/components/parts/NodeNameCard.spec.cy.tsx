@@ -4,7 +4,7 @@ import { Node } from 'reactflow'
 
 import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE } from '@/__test-utils__/react-flow/nodes.ts'
 import { Adapter, Bridge } from '@/api/__generated__'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 import NodeNameCard from './NodeNameCard.tsx'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'

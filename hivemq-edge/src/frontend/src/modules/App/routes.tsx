@@ -12,9 +12,9 @@ import UnifiedNamespacePage from '@/modules/UnifiedNamespace/UnifiedNamespacePag
 import WelcomePage from '@/modules/Welcome/WelcomePage.tsx'
 import LoginPage from '@/modules/Login/LoginPage.tsx'
 import UnifiedNamespaceEditor from '@/modules/UnifiedNamespace/components/UnifiedNamespaceEditor.tsx'
-import EdgeFlowPage from '@/modules/EdgeVisualisation/EdgeFlowPage.tsx'
+import EdgeFlowPage from '@/modules/Workspace/EdgeFlowPage.tsx'
 import EvenLogPage from '@/modules/EventLog/EvenLogPage.tsx'
-import NodePanelController from '@/modules/EdgeVisualisation/components/controls/NodePanelController.tsx'
+import NodePanelController from '@/modules/Workspace/components/controls/NodePanelController.tsx'
 
 export const routes = createBrowserRouter(
   [
