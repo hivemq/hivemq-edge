@@ -44,6 +44,7 @@ const GroupNodesControl: FC = () => {
       targetHandle: 'Top',
       source: groupId,
       hidden: true,
+      focusable: false,
       type: EdgeTypes.REPORT_EDGE,
       markerEnd: {
         type: MarkerType.ArrowClosed,
