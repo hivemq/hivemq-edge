@@ -56,6 +56,7 @@ export const createBridgeNode = (
     id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idBridge}`,
     target: IdStubs.EDGE_NODE,
     targetHandle: 'Bottom',
+    focusable: false,
     source: idBridge,
     type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
@@ -89,6 +90,7 @@ export const createBridgeNode = (
     sourceHandle: 'Bottom',
     source: idBridge,
     type: EdgeTypes.REPORT_EDGE,
+    focusable: false,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
@@ -128,6 +130,7 @@ export const createListenerNode = (
     source: IdStubs.EDGE_NODE,
     targetHandle: 'Listeners',
     target: idListener,
+    focusable: false,
     type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
@@ -173,6 +176,7 @@ export const createAdapterNode = (
     target: IdStubs.EDGE_NODE,
     targetHandle: 'Top',
     source: idAdapter,
+    focusable: false,
     type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
