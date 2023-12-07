@@ -29,8 +29,8 @@ const NodePanelController: FC = () => {
   const selectedLinkSource = nodes.find((e) => {
     const link = edges.find((e) => e.id === nodeId && e.type === EdgeTypes.REPORT_EDGE)
     if (!link) return undefined
-    return e.id === link.source && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
-  }) as Node<Bridge | Adapter> | undefined
+    return e.id === link.source // && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
+  }) as Node<Bridge | Adapter | Group> | undefined
 
   const selectedGroup = nodes.find((e) => e.id === nodeId && e.type === NodeTypes.CLUSTER_NODE) as
     | Node<Group>
@@ -76,10 +76,20 @@ const NodePanelController: FC = () => {
         </AbsoluteCenter>
       }
     >
-      {selectedLinkSource && (
+      {selectedLinkSource && selectedLinkSource.type !== NodeTypes.CLUSTER_NODE && (
         <LinkPropertyDrawer
           nodeId={nodeId}
-          selectedNode={selectedLinkSource}
+          selectedNode={selectedLinkSource as Node<Bridge | Adapter>}
+          isOpen={isOpen}
+          onClose={handleClose}
+          onEditEntity={handleEditEntity}
+        />
+      )}
+      {selectedLinkSource && selectedLinkSource.type === NodeTypes.CLUSTER_NODE && (
+        <GroupPropertyDrawer
+          nodeId={nodeId}
+          nodes={nodes}
+          selectedNode={selectedLinkSource as Node<Group>}
           isOpen={isOpen}
           onClose={handleClose}
           onEditEntity={handleEditEntity}
