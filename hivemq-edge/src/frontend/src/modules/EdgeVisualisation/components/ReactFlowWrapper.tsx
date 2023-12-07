@@ -1,6 +1,8 @@
 import { useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import ReactFlow, { Background } from 'reactflow'
 import { Outlet } from 'react-router-dom'
+import { Box } from '@chakra-ui/react'
 
 import 'reactflow/dist/style.css'
 
@@ -16,6 +18,7 @@ import MonitoringEdge from './edges/MonitoringEdge.tsx'
 import { NodeAdapter, NodeBridge, NodeEdge, NodeGroup, NodeListener } from './nodes'
 
 const ReactFlowWrapper = () => {
+  const { t } = useTranslation()
   const { nodes: newNodes, edges: newEdges } = useGetFlowElements()
   const nodeTypes = useMemo(
     () => ({
@@ -43,6 +46,7 @@ const ReactFlowWrapper = () => {
 
   return (
     <ReactFlow
+      id={'edge-workspace-canvas'}
       deleteKeyCode={null}
       snapToGrid={true}
       nodes={nodes}
@@ -53,11 +57,17 @@ const ReactFlowWrapper = () => {
       onEdgesChange={onEdgesChange}
       fitView
     >
-      <GroupNodesControl />
-      <SelectionListener />
-      <StatusListener />
-      <Background />
-      <CanvasControls />
+      <Box
+        role={'toolbar'}
+        aria-label={t('workspace.controls.aria-label') as string}
+        aria-controls={'edge-workspace-canvas'}
+      >
+        <GroupNodesControl />
+        <SelectionListener />
+        <StatusListener />
+        <Background />
+        <CanvasControls />
+      </Box>
       <Outlet />
     </ReactFlow>
   )
