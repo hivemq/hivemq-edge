@@ -8,6 +8,7 @@ import { BiBarChartSquare } from 'react-icons/bi'
 import { useEdgeFlowContext } from '@/modules/EdgeVisualisation/hooks/useEdgeFlowContext.tsx'
 
 const MonitoringEdge: FC<EdgeProps> = ({
+  source,
   id,
   sourceX,
   sourceY,
@@ -47,7 +48,7 @@ const MonitoringEdge: FC<EdgeProps> = ({
             className="nodrag nopan"
           >
             <IconButton
-              aria-label={t('workspace.observability.ariaLabel')}
+              aria-label={t('workspace.observability.aria-label', { device: source })}
               size={'xs'}
               variant={'outline'}
               icon={<BiBarChartSquare />}
