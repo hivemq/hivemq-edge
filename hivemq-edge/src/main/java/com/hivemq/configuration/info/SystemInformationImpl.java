@@ -102,7 +102,7 @@ public class SystemInformationImpl implements SystemInformation {
         );
 
         licenseFolder = Objects.requireNonNullElseGet(
-                configFolder,
+                licenseFolder,
                 () -> setUpHiveMQFolder(
                         SystemProperties.LICENSE_FOLDER,
                         EnvironmentVariables.LICENSE_FOLDER,
