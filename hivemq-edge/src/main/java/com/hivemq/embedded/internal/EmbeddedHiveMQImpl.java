@@ -36,11 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.function.Function;
 
 /**
@@ -68,22 +64,29 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     private @Nullable Future<?> shutDownFuture;
 
     EmbeddedHiveMQImpl(
-            final @Nullable File conf, final @Nullable File data, final @Nullable File extensions) {
-        this(conf, data, extensions, null);
+            final @Nullable File conf,
+            final @Nullable File data,
+            final @Nullable File extensions,
+            final @Nullable File license
+
+    ) {
+        this(conf, data, extensions, license, null);
     }
 
     EmbeddedHiveMQImpl(
             final @Nullable File conf,
             final @Nullable File data,
             final @Nullable File extensions,
+            final @Nullable File license,
             final @Nullable EmbeddedExtension embeddedExtension) {
-        this(conf, data, extensions, embeddedExtension, ModuleLoader::new);
+        this(conf, data, extensions, license, embeddedExtension, ModuleLoader::new);
     }
 
     EmbeddedHiveMQImpl(
             final @Nullable File conf,
             final @Nullable File data,
             final @Nullable File extensions,
+            final @Nullable File license,
             final @Nullable EmbeddedExtension embeddedExtension,
             final @NotNull Function<SystemInformationImpl, ModuleLoader> moduleLoaderFactory) {
         this.embeddedExtension = embeddedExtension;
@@ -91,7 +94,7 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
         log.info("Setting default authentication behavior to ALLOW ALL");
         InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS.set(false);
 
-        systemInformation = new SystemInformationImpl(true, true, conf, data, extensions, null);
+        systemInformation = new SystemInformationImpl(true, true, conf, data, extensions, null, license);
         // we create the metric registry here to make it accessible before start
         metricRegistry = new MetricRegistry();
 
@@ -160,7 +163,10 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
                         bootstrapConfig();
                     }
 
-                    hiveMQServer = new HiveMQEdgeMain(systemInformation, metricRegistry, configurationService, moduleLoaderFactory.apply(systemInformation));
+                    hiveMQServer = new HiveMQEdgeMain(systemInformation,
+                            metricRegistry,
+                            configurationService,
+                            moduleLoaderFactory.apply(systemInformation));
                     hiveMQServer.bootstrap();
                     hiveMQServer.start(embeddedExtension);
 

@@ -35,6 +35,7 @@ public class EmbeddedHiveMQBuilderImpl implements EmbeddedHiveMQBuilder {
     private @Nullable Path dataFolder = null;
     private @Nullable Path extensionsFolder = null;
     private @Nullable EmbeddedExtension embeddedExtension = null;
+    private @Nullable Path licenseFolder;
 
     @Override
     public @NotNull EmbeddedHiveMQBuilder withConfigurationFolder(final @Nullable Path configFolder) {
@@ -55,6 +56,12 @@ public class EmbeddedHiveMQBuilderImpl implements EmbeddedHiveMQBuilder {
     }
 
     @Override
+    public @NotNull EmbeddedHiveMQBuilder withLicenseFolder(final @Nullable Path licenseFolder) {
+        this.licenseFolder = licenseFolder;
+        return this;
+    }
+
+    @Override
     public @NotNull EmbeddedHiveMQBuilder withEmbeddedExtension(final @NotNull EmbeddedExtension embeddedExtension) {
         this.embeddedExtension = embeddedExtension;
         return this;
@@ -66,8 +73,9 @@ public class EmbeddedHiveMQBuilderImpl implements EmbeddedHiveMQBuilder {
         final File confFile = configFolder == null ? null : configFolder.toFile();
         final File dataFile = dataFolder == null ? null : dataFolder.toFile();
         final File extensionsFile = extensionsFolder == null ? null : extensionsFolder.toFile();
+        final File licenseFile = licenseFolder == null ? null : licenseFolder.toFile();
 
-        return new EmbeddedHiveMQImpl(confFile, dataFile, extensionsFile,  embeddedExtension);
+        return new EmbeddedHiveMQImpl(confFile, dataFile, extensionsFile, licenseFile);
     }
 
 }

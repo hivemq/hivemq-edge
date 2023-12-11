@@ -59,7 +59,7 @@ public class SystemInformationImpl implements SystemInformation {
     }
 
     public SystemInformationImpl(final boolean usePathOfRunningJar) {
-        this(usePathOfRunningJar, false, null, null, null, null);
+        this(usePathOfRunningJar, false, null, null, null, null, null);
     }
 
     public SystemInformationImpl(
@@ -68,13 +68,15 @@ public class SystemInformationImpl implements SystemInformation {
             final @Nullable File configFolder,
             final @Nullable File dataFolder,
             final @Nullable File pluginFolder,
-            final @Nullable File modulesFolder) {
+            final @Nullable File modulesFolder,
+            final @Nullable File licenseFolder) {
         this.usePathOfRunningJar = usePathOfRunningJar;
         this.embedded = embedded;
         this.configFolder = configFolder;
         this.dataFolder = dataFolder;
         this.pluginFolder = pluginFolder;
         this.modulesFolder = modulesFolder;
+        this.licenseFolder = licenseFolder;
         this.runningSince = System.currentTimeMillis();
         processorCount = getPhysicalProcessorCount();
     }
