@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
-public class CoreDiscovery {
+public class CommercialModuleLoaderDiscovery {
 
-    private static final @NotNull Logger log = LoggerFactory.getLogger(CoreDiscovery.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(CommercialModuleLoaderDiscovery.class);
 
     private final @NotNull PersistencesService persistencesService;
     private final @NotNull SystemInformation systemInformation;
@@ -21,7 +21,7 @@ public class CoreDiscovery {
     private final @NotNull ShutdownHooks shutdownHooks;
     private final @NotNull ModuleLoader moduleLoader;
 
-    public CoreDiscovery(
+    public CommercialModuleLoaderDiscovery(
             final @NotNull PersistencesService persistencesService,
             final @NotNull SystemInformation systemInformation,
             final @NotNull MetricRegistry metricRegistry,
@@ -39,6 +39,8 @@ public class CoreDiscovery {
         moduleLoader.loadModules();
         final List<Class<? extends ModuleLoaderMain>> implementations =
                 moduleLoader.findImplementations(ModuleLoaderMain.class);
+        // TODO remove
+        log.info("Found implementations {}", implementations);
         for (Class<? extends ModuleLoaderMain> implementation : implementations) {
             loadAndStartMainClass(implementation);
         }

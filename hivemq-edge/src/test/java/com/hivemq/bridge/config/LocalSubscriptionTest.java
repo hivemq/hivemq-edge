@@ -18,7 +18,7 @@ class LocalSubscriptionTest {
                         CustomUserProperty.of("key2", "value2"),
                         CustomUserProperty.of("key3", "value3")),
                 true,
-                2);
+                2, 1000L);
         final LocalSubscription topicSwitched = new LocalSubscription(List.of("topicC/#", "topicB/#", "topicA/+"),
                 "destinationTopic",
                 List.of("topicA/topic/", "topicA/topic/", "otherTopic"),
@@ -26,7 +26,7 @@ class LocalSubscriptionTest {
                         CustomUserProperty.of("key2", "value2"),
                         CustomUserProperty.of("key3", "value3")),
                 true,
-                2);
+                2, 1000L);
         assertEquals(localSubscription.calculateUniqueId(), topicSwitched.calculateUniqueId());
 
 
@@ -37,7 +37,7 @@ class LocalSubscriptionTest {
                         CustomUserProperty.of("key2", "value2"),
                         CustomUserProperty.of("key3", "value3")),
                 true,
-                2);
+                2, 1000L);
 
         assertEquals(localSubscription.calculateUniqueId(), excludesSwitched.calculateUniqueId());
 
@@ -49,7 +49,7 @@ class LocalSubscriptionTest {
                                 CustomUserProperty.of("key1", "value1"),
                                 CustomUserProperty.of("key3", "value3")),
                         true,
-                        2);
+                        2, 1000L);
 
         assertEquals(localSubscription.calculateUniqueId(), customPropertiesSwitched.calculateUniqueId());
     }
@@ -63,7 +63,7 @@ class LocalSubscriptionTest {
                         CustomUserProperty.of("key2", "value2"),
                         CustomUserProperty.of("key3", "value3")),
                 true,
-                2);
+                2, 1000L);
 
         // "topicA/+" => "topicB/+"
         final LocalSubscription otherSubscription = new LocalSubscription(List.of("topicB/+", "topicB/#", "topicC/#"),
@@ -73,7 +73,7 @@ class LocalSubscriptionTest {
                         CustomUserProperty.of("key2", "value2"),
                         CustomUserProperty.of("key3", "value3")),
                 true,
-                2);
+                2, 1000L);
         assertNotEquals(localSubscription.calculateUniqueId(), otherSubscription.calculateUniqueId());
     }
 
@@ -87,7 +87,7 @@ class LocalSubscriptionTest {
                         CustomUserProperty.of("key2", "value2"),
                         CustomUserProperty.of("key3", "value3")),
                 true,
-                2);
+                2, 1000L);
 
         // "topicA/+" => "topicB/+"
         final LocalSubscription otherSubscription = new LocalSubscription(List.of("topicA/+", "topicB/#", "topicC/#"),
@@ -97,7 +97,7 @@ class LocalSubscriptionTest {
                         CustomUserProperty.of("key2", "value2"),
                         CustomUserProperty.of("key3", "value3")),
                 true,
-                2);
+                2, 1000L);
         assertNotEquals(localSubscription.calculateUniqueId(), otherSubscription.calculateUniqueId());
     }
 
@@ -111,7 +111,7 @@ class LocalSubscriptionTest {
                         CustomUserProperty.of("key2", "value2"),
                         CustomUserProperty.of("key3", "value3")),
                 true,
-                2);
+                2, 1000L);
 
 
         // "topicA/+" and "topicA/topic/" are swapped
@@ -122,7 +122,7 @@ class LocalSubscriptionTest {
                         CustomUserProperty.of("key2", "value2"),
                         CustomUserProperty.of("key3", "value3")),
                 true,
-                1);
+                1, 1000L);
         assertNotEquals(localSubscription.calculateUniqueId(), otherSubscription.calculateUniqueId());
     }
 }

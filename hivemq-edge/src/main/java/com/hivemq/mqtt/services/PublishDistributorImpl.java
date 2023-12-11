@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -43,7 +44,6 @@ import dagger.Lazy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
@@ -208,13 +208,33 @@ public class PublishDistributorImpl implements PublishDistributor {
             @Nullable final ImmutableIntArray subscriptionIdentifier,
             @Nullable final Long queueLimit) {
 
-        int realSubscriptionQos = getRealSubscriptionQos(client, subscriptionQos, shared);
+
+        Long appliedQueueLimit = queueLimit;
+        int appliedQoS = subscriptionQos;
+        if (shared) {
+            // update with the configuration of the bridge, if it is a bridge client
+            final CustomBridgeLimitations customBridgeLimitations = getBridgeConfig(client);
+            if (customBridgeLimitations != null) {
+                final Long queueLimitFromConfig = customBridgeLimitations.queueLimit;
+                if (queueLimitFromConfig != null) {
+                    appliedQueueLimit = queueLimitFromConfig;
+                }
+                if (!customBridgeLimitations.persist) {
+                    appliedQoS = 0;
+                }
+            }
+        }
+
+        // if nothing specified a queue limit, we use the default one.
+        if (appliedQueueLimit == null) {
+            appliedQueueLimit = mqttConfigurationService.maxQueuedMessages();
+        }
 
         final ListenableFuture<Void> future = clientQueuePersistence.add(client,
                 shared,
-                createPublish(publish, realSubscriptionQos, retainAsPublished, subscriptionIdentifier),
+                createPublish(publish, appliedQoS, retainAsPublished, subscriptionIdentifier),
                 false,
-                Objects.requireNonNullElseGet(queueLimit, mqttConfigurationService::maxQueuedMessages));
+                appliedQueueLimit);
 
         final SettableFuture<PublishStatus> statusFuture = SettableFuture.create();
 
@@ -232,27 +252,31 @@ public class PublishDistributorImpl implements PublishDistributor {
         return statusFuture;
     }
 
-    private int getRealSubscriptionQos(@NotNull String client, int subscriptionQos, boolean shared) {
-        if (!shared) {
-            return subscriptionQos;
-        }
-        boolean downGradeQoS = false;
+    private @Nullable CustomBridgeLimitations getBridgeConfig(final @NotNull String clientId) {
         for (MqttBridge bridge : bridgeConfigurationService.getBridges()) {
-            if (!bridge.isPersist()) {
-                final String bridgeClientId = "forwarder#" + bridge.getId();
-                if (client.contains(bridgeClientId)) {
-                    downGradeQoS = true;
+            final String bridgeClientId = "forwarder#" + bridge.getId();
+            if (clientId.contains(bridgeClientId)) {
+                for (LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
+                    final String detailedCBridgeClientId =
+                            "forwarder#" + bridge.getId() + "-" + localSubscription.calculateUniqueId();
+                    // contains as it ends with the topic filter, which we dont know
+                    if (clientId.contains(detailedCBridgeClientId)) {
+                        return new CustomBridgeLimitations(bridge.isPersist(), localSubscription.getQueueLimit());
+                    }
                 }
-                break;
             }
         }
-        int realSubscriptionQos;
-        if (downGradeQoS) {
-            realSubscriptionQos = 0;
-        } else {
-            realSubscriptionQos = subscriptionQos;
+        return null;
+    }
+
+    private static class CustomBridgeLimitations {
+        private final boolean persist;
+        private final @Nullable Long queueLimit;
+
+        private CustomBridgeLimitations(final boolean persist, final @Nullable Long queueLimit) {
+            this.persist = persist;
+            this.queueLimit = queueLimit;
         }
-        return realSubscriptionQos;
     }
 
 

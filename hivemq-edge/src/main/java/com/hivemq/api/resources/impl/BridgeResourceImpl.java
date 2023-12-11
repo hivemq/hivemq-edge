@@ -30,11 +30,7 @@ import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.bridge.BridgeService;
-import com.hivemq.bridge.config.BridgeTls;
-import com.hivemq.bridge.config.CustomUserProperty;
-import com.hivemq.bridge.config.LocalSubscription;
-import com.hivemq.bridge.config.MqttBridge;
-import com.hivemq.bridge.config.RemoteSubscription;
+import com.hivemq.bridge.config.*;
 import com.hivemq.configuration.reader.BridgeConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
@@ -313,9 +309,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     public static void validateValidSubscribeTopicField(
-            final ApiErrorMessages apiErrorMessages,
-            final String fieldName,
-            final List<String> topicFilters) {
+            final ApiErrorMessages apiErrorMessages, final String fieldName, final List<String> topicFilters) {
         try {
             BridgeConfigurator.validateTopicFilters(fieldName, topicFilters);
         } catch (UnrecoverableException e) {
@@ -374,7 +368,8 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                                 .collect(Collectors.toList()) :
                         List.of(),
                 subscription.isPreserveRetain(),
-                subscription.getMaxQoS());
+                subscription.getMaxQoS(),
+                subscription.getQueueLimit());
     }
 
     private static RemoteSubscription unconvertRemote(final @NotNull Bridge.BridgeSubscription subscription) {
