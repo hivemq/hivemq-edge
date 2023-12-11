@@ -48,7 +48,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
           {options.showTopics && <TopicsContainer topics={topics} />}
         </VStack>
       </NodeWrapper>
-      <Handle type="source" position={Position.Bottom} id="Bottom" isConnectable={true} />
+      <Handle type="source" position={Position.Bottom} id="Bottom" isConnectable={false} />
     </>
   )
 }

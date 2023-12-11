@@ -97,7 +97,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
           {data.title}
         </Text>
       </Box>
-      <Handle type="source" position={Position.Bottom} id="a" />
+      <Handle type="source" position={Position.Bottom} id="a" isConnectable={false} />
       <ConfirmationDialog
         isOpen={isConfirmUngroupOpen}
         onClose={onConfirmUngroupClose}
