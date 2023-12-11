@@ -77,7 +77,15 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
           />
         </ButtonGroup>
       </NodeToolbar>
-      {selected && <NodeResizer isVisible={true} minWidth={180} minHeight={100} />}
+      {selected && (
+        <NodeResizer
+          isVisible={true}
+          minWidth={180}
+          minHeight={100}
+          handleStyle={{ width: '8px', height: '8px', backgroundColor: 'transparent', borderColor: 'gray' }}
+          lineStyle={{ borderWidth: 5, borderColor: 'transparent' }}
+        />
+      )}
 
       <Box
         id={`node-group-${id}`}
@@ -87,7 +95,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
           backgroundColor: data.isOpen ? undefined : colors.red[50],
           // borderRadius: '100%',
           // opacity: 0.05,
-          // borderColor: 'red',
+          borderColor: colors.red[100],
           borderWidth: 3,
           borderStyle: 'solid',
         }}
