@@ -71,7 +71,15 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
           />
         </ButtonGroup>
       </NodeToolbar>
-      {selected && <NodeResizer isVisible={true} minWidth={180} minHeight={100} />}
+      {selected && (
+        <NodeResizer
+          handleStyle={{ width: '5px', height: '5px' }}
+          lineStyle={{ borderWidth: 5, borderColor: 'transparent' }}
+          isVisible={true}
+          minWidth={180}
+          minHeight={100}
+        />
+      )}
 
       <Box
         id={`node-group-${id}`}
@@ -80,11 +88,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
         backgroundColor={data.isOpen ? undefined : data.colorScheme ? colors[data.colorScheme][50] : colors.red[50]}
         borderColor={data.colorScheme ? colors[data.colorScheme][500] : colors.red[50]}
         style={{
-          backgroundColor: data.isOpen ? undefined : colors.red[50],
-          // borderRadius: '100%',
-          // opacity: 0.05,
-          // borderColor: 'red',
-          borderWidth: 3,
+          borderWidth: 1,
           borderStyle: 'solid',
         }}
         onDoubleClick={() => navigate(`/edge-flow/group/${id}`)}
