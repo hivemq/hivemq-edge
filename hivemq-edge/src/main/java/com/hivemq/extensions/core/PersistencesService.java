@@ -11,6 +11,8 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 @SuppressWarnings("unused")
 public class PersistencesService {
 
+    private volatile boolean filePersistencesPresent = false;
+
     private @Nullable RetainedMessageLocalPersistenceFactory retainedMessageLocalPersistenceFactory;
     private @Nullable ClientSessionLocalPersistenceFactory clientSessionLocalPersistenceFactory;
     private @Nullable ClientQueueLocalPersistenceFactory clientQueueLocalPersistenceFactory;
@@ -19,24 +21,29 @@ public class PersistencesService {
 
     public void supplyClientSessionLocalPersistenceFactory(final @NotNull ClientSessionLocalPersistenceFactory clientSessionLocalPersistenceFactory) {
         this.clientSessionLocalPersistenceFactory = clientSessionLocalPersistenceFactory;
+        filePersistencesPresent = true;
     }
 
     public void supplyClientQueueLocalPersistenceFactory(
             final @NotNull ClientQueueLocalPersistenceFactory clientQueueLocalPersistenceFactory) {
         this.clientQueueLocalPersistenceFactory = clientQueueLocalPersistenceFactory;
+        filePersistencesPresent = true;
     }
 
     public void supplyClientSessionSubscriptionLocalPersistenceFactory(final @NotNull ClientSessionSubscriptionLocalPersistenceFactory clientSessionSubscriptionLocalPersistenceFactory) {
         this.clientSessionSubscriptionLocalPersistenceFactory = clientSessionSubscriptionLocalPersistenceFactory;
+        filePersistencesPresent = true;
     }
 
     public void supplyPayloadPersistenceFactory(
             final @NotNull PublishPayloadPersistenceFactory publishPayloadPersistenceFactory) {
         this.publishPayloadPersistenceFactory = publishPayloadPersistenceFactory;
+        filePersistencesPresent = true;
     }
 
     public void supplyRetainedMessageLocalPersistenceFactory(final @NotNull RetainedMessageLocalPersistenceFactory retainedMessageLocalPersistenceFactory) {
          this.retainedMessageLocalPersistenceFactory = retainedMessageLocalPersistenceFactory;
+        filePersistencesPresent = true;
     }
 
 
@@ -58,5 +65,9 @@ public class PersistencesService {
 
     public @Nullable RetainedMessageLocalPersistenceFactory getRetainedMessageLocalPersistenceFactory() {
         return retainedMessageLocalPersistenceFactory;
+    }
+
+    public boolean isFilePersistencesPresent() {
+        return filePersistencesPresent;
     }
 }
