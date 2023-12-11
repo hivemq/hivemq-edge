@@ -84,8 +84,17 @@ public class ClassServiceLoader {
                     line = stripComments(line);
                     final String name = line.trim();
                     if (!(name.isEmpty())) {
-                        final Class<?> clazz = Class.forName(name, true, classLoader);
-                        services.add(clazz.asSubclass(classToLoad));
+                        try {
+                            final Class<?> clazz = Class.forName(name, true, classLoader);
+                            try {
+                                services.add(clazz.asSubclass(classToLoad));
+                            } catch (ClassCastException classCastException){
+                                classCastException.printStackTrace();
+                                throw classCastException;
+                            }
+                        }catch(Exception e){
+                            e.printStackTrace();
+                        }
                     }
                 }
             }

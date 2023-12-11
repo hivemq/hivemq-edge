@@ -112,6 +112,9 @@ public interface Injector {
         Builder moduleLoader(ModuleLoader moduleLoader);
 
         @BindsInstance
+        Builder shutdownHooks(ShutdownHooks shutdownHooks);
+
+        @BindsInstance
         Builder persistenceService(PersistencesService persistencesService);
 
         @BindsInstance
