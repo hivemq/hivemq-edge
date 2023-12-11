@@ -43,6 +43,7 @@ public class SystemInformationImpl implements SystemInformation {
     private @NotNull File homeFolder;
     private @NotNull File configFolder;
     private @NotNull File logFolder;
+    private @NotNull File licenseFolder;
     private @NotNull File dataFolder;
     private @NotNull File pluginFolder;
     private @NotNull File modulesFolder;
@@ -99,6 +100,17 @@ public class SystemInformationImpl implements SystemInformation {
                         false
                 )
         );
+
+        licenseFolder = Objects.requireNonNullElseGet(
+                configFolder,
+                () -> setUpHiveMQFolder(
+                        SystemProperties.LICENSE_FOLDER,
+                        EnvironmentVariables.LICENSE_FOLDER,
+                        "license",
+                        false
+                )
+        );
+
 
         logFolder = setUpHiveMQFolder(SystemProperties.LOG_FOLDER, EnvironmentVariables.LOG_FOLDER, "log", !embedded);
         // Set log folder property for logger-xml-config
@@ -173,6 +185,11 @@ public class SystemInformationImpl implements SystemInformation {
     @Override
     public @NotNull File getDataFolder() {
         return dataFolder;
+    }
+
+    @Override
+    public @NotNull File getLicenseFolder() {
+        return licenseFolder;
     }
 
     @Override
