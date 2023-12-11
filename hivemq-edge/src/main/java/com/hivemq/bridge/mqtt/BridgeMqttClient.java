@@ -54,6 +54,7 @@ import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
+import io.reactivex.internal.operators.completable.CompletableDoFinally;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,6 +82,7 @@ public class BridgeMqttClient {
     private final @NotNull ListeningExecutorService executorService;
     private final @NotNull PerBridgeMetrics perBridgeMetrics;
     private final @NotNull EventService eventService;
+    private final @NotNull MetricRegistry metricRegistry;
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicBoolean stopped = new AtomicBoolean(false);
     private final @NotNull List<MqttForwarder> forwarders = Collections.synchronizedList(new ArrayList<>());
@@ -98,6 +100,7 @@ public class BridgeMqttClient {
         this.bridge = bridge;
         this.bridgeInterceptorHandler = bridgeInterceptorHandler;
         this.eventService = eventService;
+        this.metricRegistry = metricRegistry;
         this.mqtt5Client = createClient();
         executorService = MoreExecutors.newDirectExecutorService();
         perBridgeMetrics = new PerBridgeMetrics(bridge.getId(), metricRegistry);
@@ -282,8 +285,12 @@ public class BridgeMqttClient {
     }
 
     public void stop() {
-        stopped.set(true);
-        mqtt5Client.toAsync().disconnect();
+        try {
+            stopped.set(true);
+            mqtt5Client.toAsync().disconnect();
+        } finally {
+            perBridgeMetrics.clearAll(metricRegistry);
+        }
     }
 
     public @NotNull List<MqttForwarder> createForwarders() {

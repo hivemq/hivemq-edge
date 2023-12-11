@@ -19,11 +19,15 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.metrics.HiveMQMetrics;
+import javassist.convert.TransformNew;
+
+import javax.sound.midi.VoiceStatus;
+import java.util.HashSet;
+import java.util.Set;
 
 public class PerBridgeMetrics {
 
     public static final String BRIDGE_PREFIX = HiveMQMetrics.HIVEMQ_PREFIX + "bridge";
-
     private final @NotNull Counter publishForwardSuccessCounter;
     private final @NotNull Counter publishForwardFailCounter;
     private final @NotNull Counter publishRemoteReceivedCounter;
@@ -34,54 +38,65 @@ public class PerBridgeMetrics {
     private final @NotNull Counter remotePublishExcludedCounter;
     private final @NotNull Counter loopPreventionForwardDropCounter;
     private final @NotNull Counter loopPreventionRemoteDropCounter;
+    private final @NotNull Set<String> metricNames = new HashSet<>();
 
     public PerBridgeMetrics(final @NotNull String bridgeName, final @NotNull MetricRegistry metricRegistry) {
 
-        publishForwardSuccessCounter =
-                metricRegistry.counter(MetricRegistry.name(BRIDGE_PREFIX, bridgeName, "forward.publish", "count"));
+        publishForwardSuccessCounter = createBridgeCounter(metricRegistry,
+                bridgeName,
+                "forward.publish",
+                "count");
 
-        publishForwardFailCounter = metricRegistry.counter(MetricRegistry.name(BRIDGE_PREFIX,
+        publishForwardFailCounter = createBridgeCounter(metricRegistry,
                 bridgeName,
                 "forward.publish.failed",
-                "count"));
+                "count");
 
-        publishRemoteReceivedCounter = metricRegistry.counter(MetricRegistry.name(BRIDGE_PREFIX,
+        publishRemoteReceivedCounter = createBridgeCounter(metricRegistry,
                 bridgeName,
                 "remote.publish.received",
-                "count"));
+                "count");
 
-        publishLocalReceivedCounter = metricRegistry.counter(MetricRegistry.name(BRIDGE_PREFIX,
+        publishLocalReceivedCounter = createBridgeCounter(metricRegistry,
                 bridgeName,
                 "local.publish.received",
-                "count"));
+                "count");
 
-        publishLocalSuccessCounter =
-                metricRegistry.counter(MetricRegistry.name(BRIDGE_PREFIX, bridgeName, "local.publish", "count"));
+        publishLocalSuccessCounter = createBridgeCounter(metricRegistry,
+        bridgeName,
+                "local.publish",
+                "count");
 
-        publishLocalNoSubscriberCounter = metricRegistry.counter(MetricRegistry.name(BRIDGE_PREFIX,
+        publishLocalNoSubscriberCounter = createBridgeCounter(metricRegistry,
                 bridgeName,
                 "local.publish.no-subscriber-present",
-                "count"));
+                "count");
 
-        publishLocalFailCounter = metricRegistry.counter(MetricRegistry.name(BRIDGE_PREFIX,
+        publishLocalFailCounter = createBridgeCounter(metricRegistry,
                 bridgeName,
                 "local.publish.failed",
-                "count"));
+                "count");
 
-        remotePublishExcludedCounter = metricRegistry.counter(MetricRegistry.name(BRIDGE_PREFIX,
+        remotePublishExcludedCounter = createBridgeCounter(metricRegistry,
                 bridgeName,
                 "forward.publish.excluded",
-                "count"));
+                "count");
 
-        loopPreventionForwardDropCounter = metricRegistry.counter(MetricRegistry.name(BRIDGE_PREFIX,
+        loopPreventionForwardDropCounter = createBridgeCounter(metricRegistry,
                 bridgeName,
                 "forward.publish.loop-hops-exceeded",
-                "count"));
+                "count");
 
-        loopPreventionRemoteDropCounter = metricRegistry.counter(MetricRegistry.name(BRIDGE_PREFIX,
+        loopPreventionRemoteDropCounter = createBridgeCounter(metricRegistry,
                 bridgeName,
                 "remote.publish.loop-hops-exceeded",
-                "count"));
+                "count");
+    }
+
+    private Counter createBridgeCounter(final @NotNull MetricRegistry metricRegistry, @NotNull final String... names){
+        final String metricName = MetricRegistry.name(BRIDGE_PREFIX, names);
+        metricNames.add(metricName);
+        return metricRegistry.counter(metricName);
     }
 
     public @NotNull Counter getPublishForwardSuccessCounter() {
@@ -122,5 +137,10 @@ public class PerBridgeMetrics {
 
     public @NotNull Counter getLoopPreventionRemoteDropCounter() {
         return loopPreventionRemoteDropCounter;
+    }
+
+    public void clearAll(final @NotNull MetricRegistry metricRegistry){
+        metricNames.forEach(metricRegistry::remove);
+        metricNames.clear();
     }
 }
