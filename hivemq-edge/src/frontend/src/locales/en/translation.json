@@ -616,6 +616,12 @@
         "collapse": "Collapse group",
         "ungroup": "Ungroup"
       },
+      "editor": {
+        "title": "Configure the group",
+        "input-title": "Title",
+        "input-color": "Group colour",
+        "save": "Save changes"
+      },
       "create": "Create group",
       "untitled": "Untitled group",
       "title": "Grouping",
