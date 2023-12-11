@@ -50,6 +50,7 @@ export interface Group {
   childrenNodeIds: string[]
   title: string
   isOpen: boolean
+  colorScheme?: string
 }
 
 export interface WorkspaceState {
@@ -65,4 +66,5 @@ export interface WorkspaceAction {
   onInsertGroupNode: (node: Node<Group, NodeTypes.CLUSTER_NODE>, edge: Edge, rect: Rect) => void
   onDeleteNode: (type: NodeTypes, adapterId: string) => void
   onToggleGroup: (node: Pick<Node<Group, NodeTypes.CLUSTER_NODE>, 'id' | 'data'>, show: boolean) => void
+  onGroupSetData: (id: string, node: Pick<Group, 'title' | 'colorScheme'>) => void
 }

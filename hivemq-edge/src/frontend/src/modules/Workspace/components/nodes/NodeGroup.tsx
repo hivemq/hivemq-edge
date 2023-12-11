@@ -91,6 +91,8 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
         id={`node-group-${id}`}
         w={'100%'}
         h={'100%'}
+        backgroundColor={data.isOpen ? undefined : data.colorScheme ? colors[data.colorScheme][50] : colors.red[50]}
+        borderColor={data.colorScheme ? colors[data.colorScheme][500] : colors.red[50]}
         style={{
           backgroundColor: data.isOpen ? undefined : colors.red[50],
           // borderRadius: '100%',
