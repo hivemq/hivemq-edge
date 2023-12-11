@@ -105,9 +105,10 @@ public class HiveMQEdgeMain {
 
         log.info("Integrating Core Modules");
         final PersistencesService persistencesService = new PersistencesService();
+        final ShutdownHooks shutdownHooks = new ShutdownHooks();
         try {
             final CoreDiscovery coreDiscovery = new CoreDiscovery(persistencesService,
-                    systemInformation, moduleLoader);
+                    systemInformation, metricRegistry, shutdownHooks, moduleLoader);
             coreDiscovery.loadAllCoreModules();
         } catch (Exception e) {
             throw new HiveMQEdgeStartupException(e);
@@ -122,6 +123,7 @@ public class HiveMQEdgeMain {
                 .persistenceService(persistencesService)
                 .persistenceStartUp(persistenceStartup)
                 .moduleLoader(moduleLoader)
+                .shutdownHooks(shutdownHooks)
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
 
