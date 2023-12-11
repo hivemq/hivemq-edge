@@ -1,12 +1,23 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Node } from 'reactflow'
-import { Box, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader, Text } from '@chakra-ui/react'
+import {
+  Box,
+  Drawer,
+  DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
+  DrawerHeader,
+  DrawerOverlay,
+  Text,
+} from '@chakra-ui/react'
 
 import Metrics from '@/modules/Metrics/Metrics.tsx'
 
-import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import { Group, NodeTypes } from '../../types.ts'
+import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
+import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
+import GroupMetadataEditor from '../parts/GroupMetadataEditor.tsx'
 
 interface LinkPropertyDrawerProps {
   nodeId: string
@@ -19,13 +30,14 @@ interface LinkPropertyDrawerProps {
 
 const GroupPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selectedNode, nodes, onClose }) => {
   const { t } = useTranslation()
+  const { onGroupSetData } = useWorkspaceStore()
 
   const adapterIDs = selectedNode.data.childrenNodeIds.map<Node | undefined>((e) => nodes.find((x) => x.id === e))
   const metrics = adapterIDs.map((x) => (x ? getDefaultMetricsFor(x) : [])).flat()
 
   return (
     <Drawer isOpen={isOpen} placement="right" size={'lg'} onClose={onClose}>
-      {/*<DrawerOverlay />*/}
+      <DrawerOverlay />
       <DrawerContent aria-label={t('workspace.observability.header', { context: selectedNode.type }) as string}>
         <DrawerCloseButton />
 
@@ -42,7 +54,13 @@ const GroupPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, sele
             ))}
           </Box>
         </DrawerHeader>
-        <DrawerBody>
+        <DrawerBody display={'flex'} flexDirection={'column'} gap={6}>
+          <GroupMetadataEditor
+            group={selectedNode}
+            onSubmit={(group) => {
+              onGroupSetData(nodeId, group)
+            }}
+          />
           <Metrics
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}
