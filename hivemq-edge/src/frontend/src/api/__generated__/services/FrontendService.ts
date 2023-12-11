@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { CapabilityList } from '../models/CapabilityList';
 import type { GatewayConfiguration } from '../models/GatewayConfiguration';
 import type { NotificationList } from '../models/NotificationList';
 
@@ -11,6 +12,19 @@ import type { BaseHttpRequest } from '../core/BaseHttpRequest';
 export class FrontendService {
 
     constructor(public readonly httpRequest: BaseHttpRequest) {}
+
+    /**
+     * Obtain Capabilities of the HiveMQ Edge Installation
+     * Obtain gateway capabilities.
+     * @returns CapabilityList Success
+     * @throws ApiError
+     */
+    public getCapabilities(): CancelablePromise<CapabilityList> {
+        return this.httpRequest.request({
+            method: 'GET',
+            url: '/api/v1/frontend/capabilities',
+        });
+    }
 
     /**
      * Obtain frontend configuration

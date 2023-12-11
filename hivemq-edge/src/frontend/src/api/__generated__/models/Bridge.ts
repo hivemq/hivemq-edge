@@ -46,6 +46,10 @@ export type Bridge = {
      */
     password?: string | null;
     /**
+     * Shall the publishes for the bridge be persisted.
+     */
+    persist?: boolean | null;
+    /**
      * The port number to connect to
      */
     port: number;

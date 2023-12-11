@@ -321,6 +321,13 @@
         "legend": "Trust Store"
       }
     },
+    "persistence": {
+      "restartWarning": "Change will only be applied after a persisted restart of HIveMQ Edge.",
+      "persist": {
+        "label": "MQTT Persistence",
+        "helper": "Select to store MQTT Traffic greater than QoS 0 on disk."
+      }
+    },
     "noDataWarning": {
       "title": "No bridges currently installed",
       "description": "Configure Bridges to start sending data to your enterprise MQTT broker."
@@ -333,7 +340,8 @@
       },
       "connection": "Connection details",
       "broker": "Broker Configuration",
-      "security": "Security"
+      "security": "Security",
+      "persistence": "Persistence"
     },
     "stepper": {
       "description": "Create a new bridge to a broker",
