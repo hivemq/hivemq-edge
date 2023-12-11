@@ -18,8 +18,14 @@ package com.hivemq.edge.modules.adapters.metrics;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
+import com.hivemq.bootstrap.LoggingBootstrap;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.metrics.HiveMQMetrics;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Ensures the adapters use consistent namespaces for the metrics so they can be derived
@@ -32,6 +38,7 @@ public class ProtocolAdapterMetricsHelper {
     private @NotNull String protocolAdapterType;
     private @NotNull String protocolAdapterId;
     private @NotNull MetricRegistry metricRegistry;
+    private final @NotNull Set<String> metricNames = new HashSet<>();
     static final String SUCCESS_COUNT = "success.count";
     static final String FAILED_COUNT = "failed.count";
     static final String PERIOD = ".";
@@ -98,6 +105,13 @@ public class ProtocolAdapterMetricsHelper {
         metricRegistry.counter(createAdapterMetricsNamespace(metricName, false)).inc();
     }
 
+    public void clearAll(){
+        Preconditions.checkNotNull(metricRegistry);
+        LoggerFactory.getLogger(ProtocolAdapterMetricsHelper.class).info("Clearing all protocol adapter metrics");
+        metricNames.forEach(metricRegistry::remove);
+        metricNames.clear();
+    }
+
     /**
      * Create a deterministic prefix for use in the metrics registry.
      *
@@ -118,6 +132,8 @@ public class ProtocolAdapterMetricsHelper {
         if(trailingPeriod){
             stringBuilder.append(PERIOD);
         }
-        return stringBuilder.toString();
+        String metricName = stringBuilder.toString();
+        metricNames.add(metricName);
+        return metricName;
     }
 }

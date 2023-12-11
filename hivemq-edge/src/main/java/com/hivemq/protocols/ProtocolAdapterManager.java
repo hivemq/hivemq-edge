@@ -293,6 +293,8 @@ public class ProtocolAdapterManager {
             if (protocolAdapters.remove(id) != null) {
                 try {
                     synchronized(lock){
+                        //ensure the instance releases any hard state
+                        adapterInstance.get().getAdapter().destroy();
                         Map<String, Object> mainMap =
                                 configurationService.protocolAdapterConfigurationService().getAllConfigs();
                         List<Map> adapterList = getAdapterListForType(adapterInstance.get().getAdapterInformation().getProtocolId());

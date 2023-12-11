@@ -77,6 +77,13 @@ public interface ProtocolAdapter {
 
     @Nullable String getErrorMessage();
 
+    /**
+     *  Called by the framework when the instance will be discarded
+     */
+    default void destroy() {
+
+    }
+
 
     enum RuntimeStatus {
         STARTED,
