@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { NodeAddChange, EdgeAddChange, Node, Edge } from 'reactflow'
+import { NodeAddChange, EdgeAddChange, Node, Edge, Rect } from 'reactflow'
 
 import { Group, IdStubs, NodeTypes, WorkspaceAction, WorkspaceState } from '../types.ts'
 import useWorkspaceStore from './useWorkspaceStore.ts'
@@ -82,10 +82,11 @@ describe('useWorkspaceStore', () => {
         position: { x: 0, y: 0 },
         data: { childrenNodeIds: ['idAdapter', 'idBridge'], title: 'my title', isOpen: true },
       }
+      const rect: Rect = { x: 0, y: 0, width: 250, height: 250 }
 
       const groupEdge: Edge = { id: '1-233', source: '1', target: IdStubs.EDGE_NODE }
 
-      onInsertGroupNode(group, groupEdge)
+      onInsertGroupNode(group, groupEdge, rect)
     })
 
     expect(result.current.nodes).toHaveLength(4)
