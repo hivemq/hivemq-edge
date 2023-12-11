@@ -29,7 +29,7 @@ const GroupNodesControl: FC = () => {
     const newGroupNode: Node<Group, NodeTypes.CLUSTER_NODE> = {
       id: groupId,
       type: NodeTypes.CLUSTER_NODE,
-      data: { childrenNodeIds: currentSelection.map((e) => e.id), title: groupTitle, isOpen: true },
+      data: { childrenNodeIds: currentSelection.map((e) => e.id), title: groupTitle, isOpen: true, colorScheme: 'red' },
       // TODO[NVL] Position/size needs to be more elegant, including adjustment of children nodes
       position: { x: 20, y: 20 },
       style: {
