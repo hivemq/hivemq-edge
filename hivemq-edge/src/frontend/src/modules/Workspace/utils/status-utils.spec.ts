@@ -167,6 +167,11 @@ interface StatusStyleSuite {
 describe('getEdgeStatus', () => {
   const color = MOCK_THEME.colors.status.connected[500]
   const edge: EdgeStyle = {}
+
+  edge.data = {
+    hasTopics: true,
+    isConnected: true,
+  }
   edge.style = {
     strokeWidth: 0.5,
     stroke: color,
@@ -196,6 +201,10 @@ describe('getEdgeStatus', () => {
       hasTopics: true,
       expected: {
         ...edge,
+        data: {
+          hasTopics: true,
+          isConnected: false,
+        },
         animated: false,
       },
     },
@@ -204,6 +213,10 @@ describe('getEdgeStatus', () => {
       hasTopics: false,
       expected: {
         ...edge,
+        data: {
+          hasTopics: false,
+          isConnected: true,
+        },
         animated: false,
         style: {
           ...edge.style,
@@ -216,6 +229,10 @@ describe('getEdgeStatus', () => {
       hasTopics: false,
       expected: {
         ...edge,
+        data: {
+          hasTopics: false,
+          isConnected: false,
+        },
         animated: false,
       },
     },
