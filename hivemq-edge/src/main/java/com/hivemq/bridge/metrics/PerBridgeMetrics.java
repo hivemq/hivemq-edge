@@ -19,6 +19,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.metrics.HiveMQMetrics;
+import dagger.internal.Preconditions;
 import javassist.convert.TransformNew;
 
 import javax.sound.midi.VoiceStatus;
@@ -140,6 +141,7 @@ public class PerBridgeMetrics {
     }
 
     public void clearAll(final @NotNull MetricRegistry metricRegistry){
+        Preconditions.checkNotNull(metricRegistry);
         metricNames.forEach(metricRegistry::remove);
         metricNames.clear();
     }
