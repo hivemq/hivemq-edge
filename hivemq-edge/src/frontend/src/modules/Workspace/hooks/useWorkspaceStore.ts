@@ -8,7 +8,6 @@ import {
   addEdge,
   applyNodeChanges,
   applyEdgeChanges,
-  Edge,
 } from 'reactflow'
 import { Group, NodeTypes, WorkspaceState, WorkspaceAction } from '@/modules/Workspace/types.ts'
 import { persist, createJSONStorage } from 'zustand/middleware'
@@ -37,18 +36,17 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
           edges: applyEdgeChanges(changes, get().edges),
         })
       },
-      onInsertGroupNode: (parentNode: Node<Group, NodeTypes.CLUSTER_NODE>, edge: Edge) => {
+      onInsertGroupNode: (parentNode, edge, rect) => {
         const nodeIds = parentNode.data.childrenNodeIds
-        let pos = 0
+        // let pos = 0
         set({
           nodes: [
             parentNode,
             ...get().nodes.map((node) => {
               if (nodeIds.includes(node.id)) {
-                pos += 25
                 return {
                   ...node,
-                  position: { x: pos, y: pos },
+                  position: { x: node.position.x - rect.x, y: node.position.y - rect.y },
                   parentNode: parentNode.id,
                   expandParent: true,
                   selected: false,
@@ -61,24 +59,6 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
 
         set({
           edges: addEdge(edge, get().edges),
-        })
-      },
-      updateNodeParent: (nodeIds: string[], parentNode: string | undefined) => {
-        set({
-          nodes: get().nodes.map((node) => {
-            let pos = 0
-            if (nodeIds.includes(node.id)) {
-              pos += 10
-              // it's important to create a new object here, to inform React Flow about the changes
-              return {
-                ...node,
-                position: { x: pos, y: pos },
-                parentNode,
-                expandParent: true,
-              }
-            }
-            return node
-          }),
         })
       },
       onAddNodes: (changes: NodeAddChange[]) => {
