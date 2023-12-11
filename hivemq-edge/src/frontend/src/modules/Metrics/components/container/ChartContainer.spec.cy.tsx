@@ -33,4 +33,18 @@ describe('ChartContainer', () => {
     //
     // cy.getByTestId('metrics-copy').click()
   })
+
+  it('should not allow editing', () => {
+    const onClose = cy.stub().as('onClose')
+    cy.mountWithProviders(
+      <ChartContainer
+        chartType={ChartType.LINE_CHART}
+        onClose={onClose}
+        metricName={MOCK_METRICS[0].name}
+        canEdit={false}
+      />
+    )
+
+    cy.getByTestId('metrics-remove').should('not.exist')
+  })
 })
