@@ -79,11 +79,11 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
       </NodeToolbar>
       {selected && (
         <NodeResizer
-          handleStyle={{ width: '5px', height: '5px' }}
-          lineStyle={{ borderWidth: 5, borderColor: 'transparent' }}
           isVisible={true}
           minWidth={180}
           minHeight={100}
+          handleStyle={{ width: '8px', height: '8px', backgroundColor: 'transparent', borderColor: 'gray' }}
+          lineStyle={{ borderWidth: 5, borderColor: 'transparent' }}
         />
       )}
 
