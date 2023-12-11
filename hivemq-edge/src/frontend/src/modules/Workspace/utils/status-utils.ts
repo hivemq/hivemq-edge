@@ -5,7 +5,7 @@ import { Dict } from '@chakra-ui/utils'
 
 import { Adapter, Bridge, ProtocolAdapter, Status } from '@/api/__generated__'
 
-import { NodeTypes } from '../types.ts'
+import { Group, NodeTypes } from '../types.ts'
 import { discoverAdapterTopics, getBridgeTopics } from './topics-utils.ts'
 
 /**
@@ -59,7 +59,7 @@ export const updateNodeStatus = (currentNodes: Node[], updates: Status[]) => {
   })
 }
 
-export type EdgeStyle = Pick<Edge, 'style' | 'animated' | 'markerEnd'>
+export type EdgeStyle = Pick<Edge, 'style' | 'animated' | 'markerEnd' | 'data'>
 
 export const getEdgeStatus = (isConnected: boolean, hasTopics: boolean, themeForStatus: string): EdgeStyle => {
   const edge: EdgeStyle = {}
@@ -74,6 +74,10 @@ export const getEdgeStatus = (isConnected: boolean, hasTopics: boolean, themeFor
     height: 20,
     color: themeForStatus,
   }
+  edge.data = {
+    isConnected,
+    hasTopics,
+  }
   return edge
 }
 
@@ -84,10 +88,34 @@ export const updateEdgesStatus = (
   getNode: Instance.GetNode<Partial<Bridge | Adapter>>,
   theme: Partial<WithCSSVar<Dict>>
 ): Edge[] => {
-  return currentEdges.map((edge) => {
+  const newEdges: Edge[] = []
+
+  // NOTE (to test): This pattern only work because the groups have to be before the included nodes in the array but the
+  // group's edges are after the node's edges
+  currentEdges.forEach((edge) => {
+    if (edge.id.startsWith('connect-edge-group')) {
+      const group = getNode(edge.source)
+      if (!group || group.type !== NodeTypes.CLUSTER_NODE) return edge
+
+      const groupEdges = newEdges.filter((e) => (group as Node<Group>).data.childrenNodeIds.includes(e.source))
+      const isConnected = groupEdges.every((e) => e.data.isConnected)
+      const hasTopics = groupEdges.every((e) => e.data.hasTopics)
+      // status is mocked from the metadata
+      const status: Status = {
+        runtime: isConnected ? Status.runtime.STARTED : Status.runtime.STOPPED,
+        connection: isConnected ? Status.connection.CONNECTED : Status.connection.DISCONNECTED,
+      }
+
+      newEdges.push({ ...edge, ...getEdgeStatus(isConnected, hasTopics, getThemeForStatus(theme, status)) })
+      return
+    }
+
     const [a, b] = edge.source.split('@')
     const status = updates.find((e) => e.id === b && e.type === a)
-    if (!status) return edge
+    if (!status) {
+      newEdges.push(edge)
+      return
+    }
 
     const source = getNode(edge.source)
     const isConnected =
@@ -98,13 +126,17 @@ export const updateEdgesStatus = (
       const type = adapterTypes?.find((e) => e.id === (source.data as Adapter).type)
       const topics = type ? discoverAdapterTopics(type, (source.data as Adapter).config as GenericObjectType) : []
 
-      return { ...edge, ...getEdgeStatus(isConnected, !!topics.length, getThemeForStatus(theme, status)) }
+      newEdges.push({ ...edge, ...getEdgeStatus(isConnected, !!topics.length, getThemeForStatus(theme, status)) })
+      return
     }
 
     if (source && source.type === NodeTypes.BRIDGE_NODE) {
       const { remote } = getBridgeTopics(source.data as Bridge)
-      return { ...edge, ...getEdgeStatus(isConnected, !!remote.length, getThemeForStatus(theme, status)) }
+      newEdges.push({ ...edge, ...getEdgeStatus(isConnected, !!remote.length, getThemeForStatus(theme, status)) })
+      return
     }
-    return edge
+    newEdges.push(edge)
   })
+
+  return newEdges
 }
