@@ -93,6 +93,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
                   key={e.selectedTopic}
                   metricName={e.selectedTopic}
                   onClose={() => handleRemoveMetrics(e.selectedTopic)}
+                  canEdit={isOpen}
                 />
               )
             else
