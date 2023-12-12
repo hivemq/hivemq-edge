@@ -252,29 +252,6 @@ public class PublishDistributorImpl implements PublishDistributor {
         return statusFuture;
     }
 
-    private int getRealSubscriptionQos(@NotNull String client, int subscriptionQos, boolean shared) {
-        if (!shared) {
-            return subscriptionQos;
-        }
-        boolean downGradeQoS = false;
-        for (MqttBridge bridge : bridgeConfigurationService.getBridges()) {
-            if (!bridge.isPersist()) {
-                final String bridgeClientId = "forwarder#" + bridge.getId();
-                if (client.contains(bridgeClientId)) {
-                    downGradeQoS = true;
-                    break;
-                }
-            }
-        }
-        int realSubscriptionQos;
-        if (downGradeQoS) {
-            realSubscriptionQos = 0;
-        } else {
-            realSubscriptionQos = subscriptionQos;
-        }
-        return realSubscriptionQos;
-    }
-
     private @Nullable CustomBridgeLimitations getBridgeConfig(final @NotNull String clientId) {
         for (MqttBridge bridge : bridgeConfigurationService.getBridges()) {
             final String bridgeClientId = "forwarder#" + bridge.getId();

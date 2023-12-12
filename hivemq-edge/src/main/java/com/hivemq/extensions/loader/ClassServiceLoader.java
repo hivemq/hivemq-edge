@@ -19,6 +19,8 @@ package com.hivemq.extensions.loader;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.annotations.ReadOnly;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -43,6 +45,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Singleton
 public class ClassServiceLoader {
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ClassServiceLoader.class);
+
     private static final String META_INF_SERVICES = "META-INF/services/";
 
     @Inject
@@ -57,14 +61,16 @@ public class ClassServiceLoader {
      * @param classLoader the classloader to load the classes from
      * @param <S>         The type of the class to load
      * @return an immutable Iterable which contains all classes found via the service loader mechanism. All classes get
-     * initialized.
-     * @throws IOException                    If an IO error happens
-     * @throws ClassNotFoundException         If the found class can not be found and thus can't be initialized and
-     *                                        loaded
-     * @throws NullPointerException If <code>null</code> is passed to any parameter
+     *         initialized.
+     * @throws IOException            If an IO error happens
+     * @throws ClassNotFoundException If the found class can not be found and thus can't be initialized and
+     *                                loaded
+     * @throws NullPointerException   If <code>null</code> is passed to any parameter
      */
     @ReadOnly
-    public <S> @NotNull Iterable<Class<? extends S>> load(final @NotNull Class<S> classToLoad, final @NotNull ClassLoader classLoader) throws IOException, ClassNotFoundException {
+    public <S> @NotNull Iterable<Class<? extends S>> load(
+            final @NotNull Class<S> classToLoad, final @NotNull ClassLoader classLoader)
+            throws IOException, ClassNotFoundException {
         checkNotNull(classToLoad, "Class to load mus not be null");
         checkNotNull(classLoader, "Classloader must not be null");
 
@@ -86,14 +92,9 @@ public class ClassServiceLoader {
                     if (!(name.isEmpty())) {
                         try {
                             final Class<?> clazz = Class.forName(name, true, classLoader);
-                            try {
-                                services.add(clazz.asSubclass(classToLoad));
-                            } catch (ClassCastException classCastException){
-                                classCastException.printStackTrace();
-                                throw classCastException;
-                            }
-                        }catch(Exception e){
-                            e.printStackTrace();
+                            services.add(clazz.asSubclass(classToLoad));
+                        } catch (Exception e) {
+                            log.warn("Error while trying to load class {}.", classToLoad, e);
                         }
                     }
                 }
