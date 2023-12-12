@@ -32,7 +32,7 @@ import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.extensions.core.CoreDiscovery;
+import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.metrics.MetricRegistryLogger;
@@ -107,10 +107,15 @@ public class HiveMQEdgeMain {
         final PersistencesService persistencesService = new PersistencesService();
         final ShutdownHooks shutdownHooks = new ShutdownHooks();
         try {
-            final CoreDiscovery coreDiscovery = new CoreDiscovery(persistencesService,
-                    systemInformation, metricRegistry, shutdownHooks, moduleLoader);
+            final CommercialModuleLoaderDiscovery coreDiscovery = new CommercialModuleLoaderDiscovery(
+                    persistencesService,
+                    systemInformation,
+                    metricRegistry,
+                    shutdownHooks,
+                    moduleLoader);
             coreDiscovery.loadAllCoreModules();
         } catch (Exception e) {
+            log.warn("Error on loading the commercial module loader.", e);
             throw new HiveMQEdgeStartupException(e);
         }
 
@@ -225,7 +230,8 @@ public class HiveMQEdgeMain {
         log.info("Starting HiveMQ Edge...");
         final long startTime = System.nanoTime();
         final SystemInformationImpl systemInformation = new SystemInformationImpl(true);
-        final HiveMQEdgeMain server = new HiveMQEdgeMain(systemInformation, new MetricRegistry(), null, new ModuleLoader(systemInformation));
+        final HiveMQEdgeMain server =
+                new HiveMQEdgeMain(systemInformation, new MetricRegistry(), null, new ModuleLoader(systemInformation));
         try {
             server.start(null);
             log.info("Started HiveMQ Edge in {}ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
