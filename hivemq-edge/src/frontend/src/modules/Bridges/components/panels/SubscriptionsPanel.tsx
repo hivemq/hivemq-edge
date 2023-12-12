@@ -187,7 +187,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                       {hasPersistence && type === 'localSubscriptions' && (
                         <FormControl isDisabled={!isPersistEnabled || !isQoSValidForPersistence}>
                           <FormLabel htmlFor="queueLimit">{t('bridge.subscription.queueLimit.label')}</FormLabel>
-                          <NumberInput id="queueLimit" min={100}>
+                          <NumberInput id="queueLimit" min={0}>
                             <NumberInputField
                               {...register(`${type}.${index}.queueLimit`, {
                                 ...getRulesForProperty($LocalBridgeSubscription.properties.queueLimit),
