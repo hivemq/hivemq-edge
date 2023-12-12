@@ -25,11 +25,17 @@ import {
   RadioGroup,
   Radio,
   Switch,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
 } from '@chakra-ui/react'
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons'
 
-import { $BridgeSubscription } from '@/api/__generated__'
+import { $BridgeSubscription, $LocalBridgeSubscription } from '@/api/__generated__'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
+import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
 import { MultiTopicsCreatableSelect } from '@/components/MQTT/TopicCreatableSelect.tsx'
 
 import CustomUserProperties from './CustomUserProperties.tsx'
@@ -42,6 +48,8 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
     name: type, // unique name for your Field Array
   })
   const getRulesForProperty = useValidationRules()
+  const hasPersistence = useGetCapability('mqtt-persistence')
+  const isPersistEnabled = form.watch('persist')
 
   const {
     register,
@@ -52,6 +60,8 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
     <>
       <VStack spacing={4} align="stretch" mt={4}>
         {fields.map((field, index) => {
+          const maxQoS = form.watch(`${type}.${index}.maxQoS`)
+          const isQoSValidForPersistence = maxQoS.toString() === '1' || maxQoS.toString() == '2'
           return (
             <Card shadow="xs" flexDirection={'column'} key={field.id}>
               <HStack>
@@ -151,7 +161,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                       </Box>
                     </AccordionButton>
 
-                    <AccordionPanel m={1}>
+                    <AccordionPanel m={1} as={VStack} gap={4}>
                       <FormControl>
                         <FormLabel htmlFor={`${type}.${index}.maxQoS`} data-testid={`${type}.${index}.maxQoS`}>
                           {t('bridge.subscription.maxQoS.label')}
@@ -173,6 +183,24 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                           }}
                         />
                       </FormControl>
+
+                      {hasPersistence && type === 'localSubscriptions' && (
+                        <FormControl isDisabled={!isPersistEnabled || !isQoSValidForPersistence}>
+                          <FormLabel htmlFor="queueLimit">{t('bridge.subscription.queueLimit.label')}</FormLabel>
+                          <NumberInput id="queueLimit" min={100}>
+                            <NumberInputField
+                              {...register(`${type}.${index}.queueLimit`, {
+                                ...getRulesForProperty($LocalBridgeSubscription.properties.queueLimit),
+                              })}
+                            />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper />
+                              <NumberDecrementStepper />
+                            </NumberInputStepper>
+                          </NumberInput>
+                          <FormHelperText> {t('bridge.subscription.queueLimit.helper')}</FormHelperText>
+                        </FormControl>
+                      )}
 
                       {type === 'localSubscriptions' && (
                         <FormControl>
