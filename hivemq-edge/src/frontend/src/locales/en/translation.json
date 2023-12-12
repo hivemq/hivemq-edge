@@ -204,9 +204,9 @@
         "label": "Max QoS",
         "helper": "Maximum Quality of Service",
         "values": {
-          "0": "At most once",
-          "1": "At least once",
-          "2": "Exactly once"
+          "0": "0 - At most once",
+          "1": "1 - At least once",
+          "2": "2 - Exactly once"
         }
       },
       "queueLimit": {
