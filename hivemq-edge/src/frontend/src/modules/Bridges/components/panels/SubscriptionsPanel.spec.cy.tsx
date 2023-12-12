@@ -40,9 +40,9 @@ describe('SubscriptionsPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
 
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [] }).as('getConfig1')
-    cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [] }).as('getConfig2')
-    cy.intercept('/api/v1/management/bridges', { items: [] }).as('getConfig3')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [] })
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [] })
+    cy.intercept('/api/v1/management/bridges', { items: [] })
   })
 
   it('should be accessible', () => {
@@ -78,7 +78,7 @@ describe('SubscriptionsPanel', () => {
 
   describe('mqtt-persistence capability', () => {
     it('should render properly the persist options', () => {
-      cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES).as('getCapabilities')
+      cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
       cy.mountWithProviders(
         <TestingComponent
           onSubmit={cy.stub}
@@ -94,7 +94,7 @@ describe('SubscriptionsPanel', () => {
     })
 
     it('should disable the persist options if the flag is not activated', () => {
-      cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES).as('getCapabilities')
+      cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
       cy.mountWithProviders(
         <TestingComponent
           onSubmit={cy.stub}
@@ -110,7 +110,7 @@ describe('SubscriptionsPanel', () => {
     })
 
     it('should not render the persist options if mqtt-persistence is not in the capabilities', () => {
-      cy.intercept('/api/v1/frontend/capabilities', { items: [] }).as('getCapabilities')
+      cy.intercept('/api/v1/frontend/capabilities', { items: [] })
       cy.mountWithProviders(
         <TestingComponent
           onSubmit={cy.stub}
