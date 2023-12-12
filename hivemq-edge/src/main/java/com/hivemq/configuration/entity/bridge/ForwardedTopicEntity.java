@@ -53,6 +53,12 @@ public class ForwardedTopicEntity {
     @XmlElement(name = "mqtt-topic-filter")
     private @NotNull List<String> excludes = new ArrayList<>();
 
+    @XmlElement(name = "queue-limit")
+    private @Nullable Long queueLimit;
+
+    public ForwardedTopicEntity() {
+    }
+
     public @NotNull List<String> getFilters() {
         return filters;
     }
@@ -99,5 +105,9 @@ public class ForwardedTopicEntity {
 
     public void setExcludes(final List<String> excludes) {
         this.excludes = excludes;
+    }
+
+    public @Nullable Long getQueueLimit() {
+        return queueLimit;
     }
 }

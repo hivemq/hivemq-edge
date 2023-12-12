@@ -1718,6 +1718,11 @@ components:
         preserveRetain:
           type: boolean
           description: The preserveRetain for this subscription
+        queueLimit:
+          type: integer
+          format: int64
+          description: The limit of this bridge for QoS-1 and QoS-2 messages.
+          nullable: true
       required:
       - destination
       - filters
