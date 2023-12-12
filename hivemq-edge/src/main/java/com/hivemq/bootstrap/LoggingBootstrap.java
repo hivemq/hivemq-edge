@@ -87,7 +87,6 @@ public class LoggingBootstrap {
         context.addListener(logbackChangeListener);
 
         final boolean overridden = tryToOverrideLogbackXml(configFolder);
-
         if (!overridden) {
             reEnableDefaultAppenders();
             context.addTurboFilter(logLevelModifierTurboFilter);
@@ -96,7 +95,6 @@ public class LoggingBootstrap {
         logQueuedEntries();
 
         reset();
-
         logLevelModifierTurboFilter.registerLogLevelModifier(new NettyLogLevelModifier());
         logLevelModifierTurboFilter.registerLogLevelModifier(new MiscLogLevelModifier());
         log.trace("Added Netty log level modifier");
