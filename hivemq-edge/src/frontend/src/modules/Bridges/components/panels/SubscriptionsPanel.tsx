@@ -170,7 +170,12 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                           name={`${type}.${index}.maxQoS`}
                           control={form.control}
                           render={({ field: { value, ...rest } }) => (
-                            <RadioGroup {...rest} value={value.toString()} id={`${type}.${index}.maxQoS`}>
+                            <RadioGroup
+                              {...rest}
+                              value={value.toString()}
+                              id={`${type}.${index}.maxQoS`}
+                              data-testid={`${type}.${index}.maxQoS.options`}
+                            >
                               <Stack direction="row">
                                 <Radio value="0">{t('bridge.subscription.maxQoS.values.0')}</Radio>
                                 <Radio value="1">{t('bridge.subscription.maxQoS.values.1')}</Radio>
@@ -185,7 +190,10 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                       </FormControl>
 
                       {hasPersistence && type === 'localSubscriptions' && (
-                        <FormControl isDisabled={!isPersistEnabled || !isQoSValidForPersistence}>
+                        <FormControl
+                          isDisabled={!isPersistEnabled || !isQoSValidForPersistence}
+                          data-testid={`${type}.${index}.queueLimit`}
+                        >
                           <FormLabel htmlFor="queueLimit">{t('bridge.subscription.queueLimit.label')}</FormLabel>
                           <NumberInput id="queueLimit" min={0}>
                             <NumberInputField
