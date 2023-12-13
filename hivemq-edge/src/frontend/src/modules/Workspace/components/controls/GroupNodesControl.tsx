@@ -31,7 +31,7 @@ const GroupNodesControl: FC = () => {
     const newGroupNode: Node<Group, NodeTypes.CLUSTER_NODE> = {
       id: groupId,
       type: NodeTypes.CLUSTER_NODE,
-      data: { childrenNodeIds: currentSelection.map((e) => e.id), title: groupTitle, isOpen: true },
+      data: { childrenNodeIds: currentSelection.map((e) => e.id), title: groupTitle, isOpen: true, colorScheme: 'red' },
       style: {
         width: rect.width,
         height: rect.height,
