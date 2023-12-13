@@ -48,15 +48,16 @@ const ReactFlowWrapper = () => {
   return (
     <ReactFlow
       id={'edge-workspace-canvas'}
-      deleteKeyCode={null}
-      snapToGrid={true}
       nodes={nodes}
+      edges={edges}
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       onNodesChange={onNodesChange}
-      edges={edges}
       onEdgesChange={onEdgesChange}
       fitView
+      snapToGrid={true}
+      nodesConnectable={false}
+      deleteKeyCode={null}
     >
       <Box
         role={'toolbar'}

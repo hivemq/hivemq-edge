@@ -19,7 +19,7 @@ import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import { Group } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 
-const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
+const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { colors } = useTheme()
@@ -41,8 +41,14 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
     onNodesChange(
       nodes.map((e) => {
         if (data.childrenNodeIds.includes(e.id)) {
-          // TODO[NVL] Compute position so that nodes don't move on the screen
-          return { item: { ...e, parentNode: undefined }, type: 'reset' } as NodeResetChange
+          return {
+            item: {
+              ...e,
+              parentNode: undefined,
+              position: { x: e.position.x + props.xPos, y: e.position.y + props.yPos },
+            },
+            type: 'reset',
+          } as NodeResetChange
         } else return { item: e, type: 'reset' } as NodeResetChange
       })
     )
@@ -71,7 +77,15 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
           />
         </ButtonGroup>
       </NodeToolbar>
-      {selected && <NodeResizer isVisible={true} minWidth={180} minHeight={100} />}
+      {selected && (
+        <NodeResizer
+          isVisible={true}
+          minWidth={180}
+          minHeight={100}
+          handleStyle={{ width: '8px', height: '8px', backgroundColor: 'transparent', borderColor: 'gray' }}
+          lineStyle={{ borderWidth: 5, borderColor: 'transparent' }}
+        />
+      )}
 
       <Box
         id={`node-group-${id}`}
@@ -81,7 +95,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
           backgroundColor: data.isOpen ? undefined : colors.red[50],
           // borderRadius: '100%',
           // opacity: 0.05,
-          // borderColor: 'red',
+          borderColor: colors.red[100],
           borderWidth: 3,
           borderStyle: 'solid',
         }}
@@ -91,7 +105,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected }) => {
           {data.title}
         </Text>
       </Box>
-      <Handle type="source" position={Position.Bottom} id="a" />
+      <Handle type="source" position={Position.Bottom} id="a" isConnectable={false} />
       <ConfirmationDialog
         isOpen={isConfirmUngroupOpen}
         onClose={onConfirmUngroupClose}
