@@ -56,6 +56,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
     onEdgesChange(edges.filter((e) => e.source === id).map((e) => ({ id: e.id, type: 'remove' } as EdgeRemoveChange)))
   }
 
+  console.log('XXXXXXX data', data)
   return (
     <>
       <NodeToolbar isVisible={selected} position={Position.Top}>
@@ -93,14 +94,8 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
         h={'100%'}
         backgroundColor={data.isOpen ? undefined : data.colorScheme ? colors[data.colorScheme][50] : colors.red[50]}
         borderColor={data.colorScheme ? colors[data.colorScheme][500] : colors.red[50]}
-        style={{
-          backgroundColor: data.isOpen ? undefined : colors.red[50],
-          // borderRadius: '100%',
-          // opacity: 0.05,
-          borderColor: colors.red[100],
-          borderWidth: 3,
-          borderStyle: 'solid',
-        }}
+        borderWidth={1}
+        borderStyle={'solid'}
         onDoubleClick={() => navigate(`/edge-flow/group/${id}`)}
       >
         <Text m={2} color={'blackAlpha.900'}>
