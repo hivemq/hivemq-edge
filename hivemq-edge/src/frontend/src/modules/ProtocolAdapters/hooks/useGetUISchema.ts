@@ -59,6 +59,11 @@ const useGetUiSchema = (isNewAdapter = true) => {
       properties: ['sourceAmsPort', 'targetAmsPort', 'sourceAmsNetId', 'targetAmsNetId'],
     },
     {
+      id: 'eip',
+      title: t('protocolAdapter.uiSchema.groups.eip'),
+      properties: ['slot', 'backplane'],
+    },
+    {
       id: 's7advanced',
       title: t('protocolAdapter.uiSchema.groups.s7advanced'),
       properties: [
