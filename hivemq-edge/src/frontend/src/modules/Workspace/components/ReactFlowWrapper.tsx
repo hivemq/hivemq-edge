@@ -5,6 +5,7 @@ import { Outlet } from 'react-router-dom'
 import { Box } from '@chakra-ui/react'
 
 import 'reactflow/dist/style.css'
+import './reactflow-chakra.fix.css'
 
 import { EdgeTypes, NodeTypes } from '../types.ts'
 import useGetFlowElements from '../hooks/useGetFlowElements.tsx'
