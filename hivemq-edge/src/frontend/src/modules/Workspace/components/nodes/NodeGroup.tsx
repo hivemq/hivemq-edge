@@ -10,21 +10,21 @@ import {
   NodeResetChange,
   EdgeRemoveChange,
 } from 'reactflow'
-import { useNavigate } from 'react-router-dom'
 import { Box, Button, ButtonGroup, Icon, IconButton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
-import { GrObjectUngroup } from 'react-icons/gr'
+import { GrDocumentConfig, GrObjectUngroup } from 'react-icons/gr'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 
 import { Group } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
+import { useContextMenu } from '../../hooks/useContextMenu.tsx'
 
 const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const { colors } = useTheme()
   const { onToggleGroup, onNodesChange, onEdgesChange, nodes, edges } = useWorkspaceStore()
   const { isOpen: isConfirmUngroupOpen, onOpen: onConfirmUngroupOpen, onClose: onConfirmUngroupClose } = useDisclosure()
+  const { onContextMenu } = useContextMenu(id, selected, '/edge-flow/group')
 
   const onConfirmUngroup = () => {
     onConfirmUngroupOpen()
@@ -59,14 +59,23 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
   console.log('XXXXXXX data', data)
   return (
     <>
-      <NodeToolbar isVisible={selected} position={Position.Top}>
-        <ButtonGroup
+      <NodeToolbar
+        isVisible={selected}
+        position={Position.Top}
+        role={'toolbar'}
+        aria-controls={`node-group-${id}`}
+        aria-label={t('workspace.grouping.toolbar.aria-label', { id }) as string}
+        style={{ display: 'flex', gap: '12px' }}
+      >
+        <IconButton
           size="sm"
-          isAttached
           variant="outline"
-          aria-controls={`node-group-${id}`}
-          aria-label={t('workspace.grouping.toolbar.aria-label', { id }) as string}
-        >
+          data-testid={'node-group-toolbar-panel'}
+          icon={<Icon as={GrDocumentConfig} />}
+          aria-label={t('workspace.grouping.command.overview')}
+          onClick={onContextMenu}
+        />
+        <ButtonGroup size="sm" isAttached variant="outline">
           <Button data-testid={'node-group-toolbar-expand'} onClick={handleToggle}>
             {!data.isOpen ? t('workspace.grouping.command.expand') : t('workspace.grouping.command.collapse')}
           </Button>
@@ -96,8 +105,8 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
         borderColor={data.colorScheme ? colors[data.colorScheme][500] : colors.red[50]}
         borderWidth={1}
         borderStyle={'solid'}
-        onDoubleClick={() => navigate(`/edge-flow/group/${id}`)}
         onDoubleClick={onContextMenu}
+        onContextMenu={onContextMenu}
       >
         <Text m={2} color={'blackAlpha.900'}>
           {data.title}
