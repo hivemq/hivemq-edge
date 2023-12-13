@@ -95,6 +95,22 @@ const useWorkspaceStore = create<WorkspaceState & WorkspaceAction>()(
           }),
         })
       },
+      onGroupSetData: (id: string, group: Pick<Group, 'title' | 'colorScheme'>) => {
+        set({
+          nodes: get().nodes.map((n) => {
+            if (id === n.id) {
+              return {
+                ...n,
+                data: {
+                  ...n.data,
+                  ...group,
+                },
+              }
+            }
+            return n
+          }),
+        })
+      },
     }),
     {
       name: 'edge.workspace',
