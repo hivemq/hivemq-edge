@@ -97,6 +97,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
         borderWidth={1}
         borderStyle={'solid'}
         onDoubleClick={() => navigate(`/edge-flow/group/${id}`)}
+        onDoubleClick={onContextMenu}
       >
         <Text m={2} color={'blackAlpha.900'}>
           {data.title}
