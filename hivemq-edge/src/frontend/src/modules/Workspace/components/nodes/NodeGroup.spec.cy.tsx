@@ -22,6 +22,11 @@ describe('NodeGroup', () => {
 
     cy.get("[role='button']").should('contain.text', 'The group title')
     cy.get("[role='button']").click({ force: true })
+
+    cy.getByTestId('node-group-toolbar-panel')
+      .should('exist')
+      .should('have.attr', 'aria-label', 'Open the overview panel')
+
     cy.getByTestId('node-group-toolbar-expand').should('exist').should('have.text', 'Collapse group')
 
     cy.getByTestId('node-group-toolbar-expand').click()

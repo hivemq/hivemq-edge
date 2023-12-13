@@ -54,7 +54,7 @@ const MonitoringEdge: FC<EdgeProps> = ({
               icon={<BiBarChartSquare />}
               backgroundColor={'white'}
               color={style?.stroke}
-              onDoubleClick={() => navigate(`/edge-flow/link/${id}`)}
+              onClick={() => navigate(`/edge-flow/link/${id}`)}
               borderRadius={25}
             />
           </div>
