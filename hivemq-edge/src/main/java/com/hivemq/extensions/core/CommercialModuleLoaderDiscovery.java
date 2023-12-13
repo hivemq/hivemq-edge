@@ -43,8 +43,6 @@ public class CommercialModuleLoaderDiscovery {
         moduleLoader.loadModules();
         final List<Class<? extends ModuleLoaderMain>> implementations =
                 moduleLoader.findImplementations(ModuleLoaderMain.class);
-        // TODO remove
-        log.info("Found implementations {}", implementations);
         for (Class<? extends ModuleLoaderMain> implementation : implementations) {
             loadAndStartMainClass(implementation);
         }
