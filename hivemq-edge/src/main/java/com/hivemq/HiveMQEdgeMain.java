@@ -146,6 +146,8 @@ public class HiveMQEdgeMain {
 
         //Stop the API Webserver
         stopApiServer();
+
+        LoggingBootstrap.resetLogging();
     }
 
     protected void initializeApiServer(@NotNull final Injector injector) {
