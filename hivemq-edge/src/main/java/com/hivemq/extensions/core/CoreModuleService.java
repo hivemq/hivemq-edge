@@ -19,4 +19,5 @@ public interface CoreModuleService {
 
     @NotNull ModuleLoader moduleLoader();
 
+    @NotNull ConfigurationService getConfigService();
 }
