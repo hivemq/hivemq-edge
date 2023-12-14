@@ -3,6 +3,7 @@ package com.hivemq.extensions.core;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
@@ -20,18 +21,21 @@ public class CommercialModuleLoaderDiscovery {
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ShutdownHooks shutdownHooks;
     private final @NotNull ModuleLoader moduleLoader;
+    private final @NotNull ConfigurationService configService;
 
     public CommercialModuleLoaderDiscovery(
             final @NotNull PersistencesService persistencesService,
             final @NotNull SystemInformation systemInformation,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ShutdownHooks shutdownHooks,
-            final @NotNull ModuleLoader moduleLoader) {
+            final @NotNull ModuleLoader moduleLoader,
+            final @NotNull ConfigurationService configService) {
         this.persistencesService = persistencesService;
         this.systemInformation = systemInformation;
         this.metricRegistry = metricRegistry;
         this.shutdownHooks = shutdownHooks;
         this.moduleLoader = moduleLoader;
+        this.configService = configService;
     }
 
     public void loadAllCoreModules()
@@ -39,8 +43,6 @@ public class CommercialModuleLoaderDiscovery {
         moduleLoader.loadModules();
         final List<Class<? extends ModuleLoaderMain>> implementations =
                 moduleLoader.findImplementations(ModuleLoaderMain.class);
-        // TODO remove
-        log.info("Found implementations {}", implementations);
         for (Class<? extends ModuleLoaderMain> implementation : implementations) {
             loadAndStartMainClass(implementation);
         }
@@ -53,7 +55,8 @@ public class CommercialModuleLoaderDiscovery {
                 systemInformation,
                 metricRegistry,
                 shutdownHooks,
-                moduleLoader);
+                moduleLoader,
+                configService);
         instance.start(coreModuleService);
     }
 }

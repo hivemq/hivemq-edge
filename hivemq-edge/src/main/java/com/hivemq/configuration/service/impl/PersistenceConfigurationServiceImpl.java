@@ -31,7 +31,7 @@ public class PersistenceConfigurationServiceImpl implements PersistenceConfigura
     }
 
     @Override
-    public void setMode(final PersistenceMode mode) {
+    public void setMode(final @NotNull PersistenceMode mode) {
         this.mode = mode;
     }
 }

@@ -1,6 +1,8 @@
 package com.hivemq.bootstrap.provider;
 
 import com.hivemq.bootstrap.factories.ClientSessionLocalPersistenceFactory;
+import com.hivemq.configuration.service.PersistenceConfigurationService;
+import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.logging.EventLog;
@@ -10,11 +12,15 @@ import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.memory.ClientSessionMemoryLocalPersistence;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.util.LocalPersistenceFileUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
 
 public class ClientSessionLocalPersistenceProvider {
+
+    private static final Logger log = LoggerFactory.getLogger(ClientSessionLocalPersistenceProvider.class);
 
     private final @NotNull PersistencesService persistencesService;
     private final @NotNull ClientSessionMemoryLocalPersistence clientSessionMemoryLocalPersistence;
@@ -23,6 +29,7 @@ public class ClientSessionLocalPersistenceProvider {
     private final @NotNull EventLog eventLog;
     private final @NotNull MetricsHolder metricsHolder;
     private final @NotNull PersistenceStartup persistenceStartup;
+    private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
 
     @Inject
     ClientSessionLocalPersistenceProvider(
@@ -32,7 +39,8 @@ public class ClientSessionLocalPersistenceProvider {
             final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull EventLog eventLog,
             final @NotNull MetricsHolder metricsHolder,
-            final @NotNull PersistenceStartup persistenceStartup) {
+            final @NotNull PersistenceStartup persistenceStartup,
+            final @NotNull PersistenceConfigurationService persistenceConfigurationService) {
         this.persistencesService = persistencesService;
         this.clientSessionMemoryLocalPersistence = clientQueueMemoryLocalPersistence;
         this.localPersistenceFileUtil = localPersistenceFileUtil;
@@ -40,6 +48,7 @@ public class ClientSessionLocalPersistenceProvider {
         this.eventLog = eventLog;
         this.metricsHolder = metricsHolder;
         this.persistenceStartup = persistenceStartup;
+        this.persistenceConfigurationService = persistenceConfigurationService;
     }
 
     public @NotNull ClientSessionLocalPersistence get() {
@@ -47,9 +56,17 @@ public class ClientSessionLocalPersistenceProvider {
         final ClientSessionLocalPersistenceFactory persistenceFactory =
                 persistencesService.getClientSessionLocalPersistenceFactory();
 
-        if (persistenceFactory == null) {
+        if (persistenceConfigurationService.getMode() == PersistenceConfigurationService.PersistenceMode.IN_MEMORY) {
             return clientSessionMemoryLocalPersistence;
         }
+
+        if (persistenceFactory == null) {
+            log.error(
+                    "File Persistence is specified in config.xml, but no provider for a file persistence is available. Check that the commercial module is present in the module folder and a valid license is present in the license folder.");
+            throw new UnrecoverableException();
+        }
+
+
         return persistenceFactory.buildClientSessionLocalPersistence(localPersistenceFileUtil,
                 payloadPersistence,
                 eventLog,
