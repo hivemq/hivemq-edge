@@ -4,7 +4,6 @@ import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { Box, useTheme } from '@chakra-ui/react'
 
-import ChartTooltip from '../parts/ChartTooltip.tsx'
 import { ChartProps } from '../../types.ts'
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 import ChartTooltip from '../parts/ChartTooltip.tsx'
