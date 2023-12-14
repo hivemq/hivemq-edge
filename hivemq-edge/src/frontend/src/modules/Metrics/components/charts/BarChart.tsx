@@ -96,7 +96,12 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, c
           legendOffset: 32,
           truncateTickAt: 0,
           format: (value) => {
-            return '+' + DateTime.fromISO(value).second
+            const duration = DateTime.fromISO(value).diffNow(['second'])
+            const rescaledDuration = duration
+              .negate()
+              .mapUnits((x) => Math.floor(x))
+              .rescale()
+            return rescaledDuration.as('seconds')
           },
         }}
         axisLeft={{
