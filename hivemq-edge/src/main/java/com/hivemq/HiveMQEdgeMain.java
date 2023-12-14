@@ -107,13 +107,14 @@ public class HiveMQEdgeMain {
         final PersistencesService persistencesService = new PersistencesService();
         final ShutdownHooks shutdownHooks = new ShutdownHooks();
         try {
-            final CommercialModuleLoaderDiscovery coreDiscovery = new CommercialModuleLoaderDiscovery(
+            final CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(
                     persistencesService,
                     systemInformation,
                     metricRegistry,
                     shutdownHooks,
-                    moduleLoader);
-            coreDiscovery.loadAllCoreModules();
+                    moduleLoader,
+                    configService);
+            commercialModuleLoaderDiscovery.loadAllCoreModules();
         } catch (Exception e) {
             log.warn("Error on loading the commercial module loader.", e);
             throw new HiveMQEdgeStartupException(e);

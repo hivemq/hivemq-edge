@@ -13,8 +13,8 @@ import com.hivemq.util.LocalPersistenceFileUtil;
 public interface ClientQueueLocalPersistenceFactory {
 
      @NotNull ClientQueueLocalPersistence buildClientSessionLocalPersistence(
-            final @NotNull LocalPersistenceFileUtil localPersistenceFileUtil,
-            final @NotNull PublishPayloadPersistence payloadPersistence,
-            final @NotNull MessageDroppedService messageDroppedService,
-            final @NotNull PersistenceStartup persistenceStartup);
+             @NotNull LocalPersistenceFileUtil localPersistenceFileUtil,
+             @NotNull PublishPayloadPersistence payloadPersistence,
+             @NotNull MessageDroppedService messageDroppedService,
+             @NotNull PersistenceStartup persistenceStartup);
 }

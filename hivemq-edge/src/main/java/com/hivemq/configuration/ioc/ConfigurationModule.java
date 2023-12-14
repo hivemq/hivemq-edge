@@ -21,6 +21,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
+import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
@@ -79,6 +80,12 @@ public class ConfigurationModule {
     @Singleton
     static @NotNull DynamicConfigurationService gatewayConfigurationService(final @NotNull ConfigurationService configurationService) {
         return configurationService.gatewayConfiguration();
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull PersistenceConfigurationService persistenceConfigurationService(final @NotNull ConfigurationService configurationService) {
+        return configurationService.persistenceConfigurationService();
     }
 
 }

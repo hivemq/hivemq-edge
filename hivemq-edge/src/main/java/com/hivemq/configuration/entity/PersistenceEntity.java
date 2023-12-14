@@ -30,15 +30,28 @@ public class PersistenceEntity {
     @XmlEnum
     @XmlType(name = "mode")
     public enum PersistenceMode {
-        @XmlEnumValue("file") FILE,
-        @XmlEnumValue("in-memory") IN_MEMORY
+        @XmlEnumValue("file-native") FILE_NATIVE("file-native"),
+        @XmlEnumValue("file") FILE("file"),
+        @XmlEnumValue("in-memory") IN_MEMORY("in-memory");
+
+        private final @NotNull String configRepresentation;
+
+        PersistenceMode(final @NotNull String configRepresentation) {
+            this.configRepresentation = configRepresentation;
+        }
+
+        public @NotNull String getConfigRepresentation() {
+            return configRepresentation;
+        }
     }
 
-    @XmlElement(name = "mode", defaultValue = "file")
+    @XmlElement(name = "mode", defaultValue = "in-memory")
     private @NotNull PersistenceEntity.PersistenceMode mode = PersistenceMode.IN_MEMORY;
 
     @NotNull
     public PersistenceMode getMode() {
         return mode;
     }
+
+
 }
