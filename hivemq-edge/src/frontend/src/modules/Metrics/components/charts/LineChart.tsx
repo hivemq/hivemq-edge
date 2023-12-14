@@ -65,7 +65,12 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
           // tickRotation: 0,
           // // format: '.2f',
           format: (value) => {
-            return '+' + DateTime.fromMillis(value).second
+            const duration = DateTime.fromMillis(value).diffNow(['second'])
+            const rescaledDuration = duration
+              .negate()
+              .mapUnits((x) => Math.floor(x))
+              .rescale()
+            return rescaledDuration.as('seconds')
           },
           legend: t('metrics.charts.LineChart.ariaLabel.legend'),
           legendOffset: 36,
