@@ -204,10 +204,14 @@
         "label": "Max QoS",
         "helper": "Maximum Quality of Service",
         "values": {
-          "0": "At most once",
-          "1": "At least once",
-          "2": "Exactly once"
+          "0": "0 - At most once",
+          "1": "1 - At least once",
+          "2": "2 - Exactly once"
         }
+      },
+      "queueLimit": {
+        "label": "Message Queue Limit",
+        "helper": "The maximum number of messages persisted for QoS-1 and QoS-2."
       },
       "preserveRetain": {
         "label": "Preserve Retain",

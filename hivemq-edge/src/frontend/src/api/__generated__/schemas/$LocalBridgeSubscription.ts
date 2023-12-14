@@ -41,5 +41,11 @@ export const $LocalBridgeSubscription = {
             type: 'boolean',
             description: `The preserveRetain for this subscription`,
         },
+        queueLimit: {
+            type: 'number',
+            description: `The limit of this bridge for QoS-1 and QoS-2 messages.`,
+            isNullable: true,
+            format: 'int64',
+        },
     },
 } as const;
