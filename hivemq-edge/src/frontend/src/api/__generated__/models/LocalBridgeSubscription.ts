@@ -33,6 +33,10 @@ export type LocalBridgeSubscription = {
      * The preserveRetain for this subscription
      */
     preserveRetain?: boolean;
+    /**
+     * The limit of this bridge for QoS-1 and QoS-2 messages.
+     */
+    queueLimit?: number | null;
 };
 
 export namespace LocalBridgeSubscription {
