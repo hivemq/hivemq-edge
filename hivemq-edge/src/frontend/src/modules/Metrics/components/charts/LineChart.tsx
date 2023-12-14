@@ -118,6 +118,27 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
         //     ],
         //   },
         // ]}
+        legends={[
+          {
+            direction: 'row',
+            anchor: 'bottom-right',
+            itemDirection: 'right-to-left',
+            translateY: 70,
+
+            itemWidth: 0,
+            itemHeight: 20,
+            // itemOpacity: 0.85,
+            // symbolSize: 20,
+            effects: [
+              {
+                on: 'hover',
+                style: {
+                  itemOpacity: 1,
+                },
+              },
+            ],
+          },
+        ]}
       />
     </Box>
   )
