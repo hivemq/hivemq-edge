@@ -1,6 +1,6 @@
+import { useTheme } from '@chakra-ui/react'
 import { useEffect } from 'react'
 import { useReactFlow } from 'reactflow'
-import { useTheme } from '@chakra-ui/react'
 
 import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.tsx'
 import { useGetBridgesStatus } from '@/api/hooks/useConnection/useGetBridgesStatus.tsx'
@@ -24,10 +24,11 @@ const StatusListener = () => {
         return updateNodeStatus(currentNodes, updates)
       })
 
-      if (items)
+      if (items) {
         setEdges((currentEdges) => {
           return updateEdgesStatus(items, currentEdges, updates, getNode, theme)
         })
+      }
     }
   }, [adapterConnections, adapterTypes, bridgeConnections, getNode, setEdges, setNodes, theme])
 

@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import NamespaceDisplay from './NamespaceDisplay.tsx'
 import { MOCK_BREADCRUMB, MOCK_NAMESPACE } from '@/__test-utils__/mocks.ts'
+import NamespaceDisplay from './NamespaceDisplay.tsx'
 
 describe('NamespaceDisplay', () => {
   beforeEach(() => {

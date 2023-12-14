@@ -1,13 +1,13 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter } from 'react-router-dom'
 import { renderHook, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect } from 'vitest'
 
 import '@/config/i18n.config.ts'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
-import queryClient from '@/api/queryClient.ts'
 import { handlers as handlerGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
+import queryClient from '@/api/queryClient.ts'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
 import { useOnboarding } from './useOnboarding.tsx'

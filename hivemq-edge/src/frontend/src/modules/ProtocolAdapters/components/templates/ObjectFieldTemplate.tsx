@@ -1,14 +1,14 @@
+import { UITab } from '@/modules/ProtocolAdapters/types.ts'
+import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
 import {
   FormContextType,
-  getTemplate,
-  getUiOptions,
   ObjectFieldTemplateProps,
   RJSFSchema,
   StrictRJSFSchema,
+  getTemplate,
+  getUiOptions,
   titleId,
 } from '@rjsf/utils'
-import { Box, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
-import { UITab } from '@/modules/ProtocolAdapters/types.ts'
 
 export const ObjectFieldTemplate = <
   T = never,
@@ -47,7 +47,7 @@ export const ObjectFieldTemplate = <
   }
 
   // TODO[NVL] Not efficient. Build a cluster
-  const allGrouped = tabs.map((e) => e.properties).flat()
+  const allGrouped = tabs.flatMap((e) => e.properties)
 
   return (
     <>
@@ -55,7 +55,9 @@ export const ObjectFieldTemplate = <
         <TabList>
           {tabs.map((e) => {
             const filteredProps = properties.filter((p) => e.properties.includes(p.name))
-            if (!filteredProps.length) return null
+            if (!filteredProps.length) {
+              return null
+            }
             return (
               <Tab fontSize="md" key={e.id}>
                 {e.title}
@@ -67,7 +69,9 @@ export const ObjectFieldTemplate = <
         <TabPanels>
           {tabs.map((e) => {
             const filteredProps = properties.filter((p) => e.properties.includes(p.name))
-            if (!filteredProps.length) return null
+            if (!filteredProps.length) {
+              return null
+            }
             return (
               <TabPanel key={e.id} p={0} pt={'1px'} mb={6}>
                 <>

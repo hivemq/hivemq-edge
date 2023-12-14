@@ -1,14 +1,14 @@
-import { FC } from 'react'
-import { FormControl, FormHelperText, FormLabel, Input, HStack, Switch } from '@chakra-ui/react'
+import { FormControl, FormHelperText, FormLabel, HStack, Input, Switch } from '@chakra-ui/react'
 import { Select } from 'chakra-react-select'
-import { useTranslation } from 'react-i18next'
+import { FC } from 'react'
 import { Controller, useWatch } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
-import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
 import { $TlsConfiguration } from '@/api/__generated__'
+import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
 
-import { CYPHER_SUITES, TLS_PROTOCOLS } from '../../utils/tlsConfiguration.ts'
 import { BridgePanelType } from '../../types.ts'
+import { CYPHER_SUITES, TLS_PROTOCOLS } from '../../utils/tlsConfiguration.ts'
 
 const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
   const { t } = useTranslation()

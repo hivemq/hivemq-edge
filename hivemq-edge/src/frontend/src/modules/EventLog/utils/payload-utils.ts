@@ -1,5 +1,7 @@
 export const prettyJSON = (payload: string | undefined) => {
-  if (!payload) return null
+  if (!payload) {
+    return null
+  }
   try {
     return JSON.stringify(JSON.parse(payload), null, 2)
   } catch (e) {
@@ -8,7 +10,9 @@ export const prettyJSON = (payload: string | undefined) => {
 }
 
 export const prettifyXml = (sourceXml: string | undefined) => {
-  if (!sourceXml) return null
+  if (!sourceXml) {
+    return null
+  }
 
   const xmlDoc = new DOMParser().parseFromString(sourceXml, 'application/xml')
   const xsltDoc = new DOMParser().parseFromString(

@@ -1,12 +1,12 @@
-import { describe, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClientProvider } from '@tanstack/react-query'
+import { render, screen, waitFor } from '@testing-library/react'
+import { describe, expect, vi } from 'vitest'
 
 import '@/config/i18n.config.ts'
 
 import { StatusTransitionResult } from '@/api/__generated__'
-import { DeviceTypes } from '@/api/types/api-devices.ts'
 import queryClient from '@/api/queryClient.ts'
+import { DeviceTypes } from '@/api/types/api-devices.ts'
 
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 

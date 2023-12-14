@@ -1,15 +1,15 @@
-import { RefAttributes } from 'react'
 import {
-  CreatableSelect,
-  createFilter,
-  OptionBase,
-  SingleValue,
-  SelectComponentsConfig,
-  GroupBase,
   CreatableProps,
+  CreatableSelect,
+  GroupBase,
+  OptionBase,
+  SelectComponentsConfig,
   SelectInstance,
+  SingleValue,
   chakraComponents,
+  createFilter,
 } from 'chakra-react-select'
+import { RefAttributes } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import TopicIcon from '@/components/Icons/TopicIcon.tsx'

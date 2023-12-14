@@ -1,7 +1,7 @@
-import { ApiBearerToken, UsernamePasswordCredentials } from '../../../__generated__'
 // @ts-ignore an import is not working
 import { CyHttpMessages } from 'cypress/types/net-stubbing'
 import { rest } from 'msw'
+import { ApiBearerToken, UsernamePasswordCredentials } from '../../../__generated__'
 
 const TOKEN =
   'eyJraWQiOiIwMDAwMSIsImFsZyI6IlJTMjU2In0.' +
@@ -14,12 +14,13 @@ export const mockValidCredentials: UsernamePasswordCredentials = {
 }
 
 export const mockAuthApi = (credentials: UsernamePasswordCredentials) => {
-  if (credentials.userName === 'admin' && credentials.password === 'password')
+  if (credentials.userName === 'admin' && credentials.password === 'password') {
     return (req: CyHttpMessages.IncomingHttpRequest) => {
       req.reply({
         token: TOKEN,
       })
     }
+  }
   return (req: CyHttpMessages.IncomingHttpRequest) => {
     req.reply({
       statusCode: 401,

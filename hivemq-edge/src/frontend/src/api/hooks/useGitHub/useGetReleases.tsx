@@ -1,5 +1,5 @@
-import axios from 'axios'
 import { useQuery } from '@tanstack/react-query'
+import axios from 'axios'
 
 import { ApiError } from '@/api/__generated__'
 import { GitHubReleases } from '@/api/hooks/useGitHub/types.ts'

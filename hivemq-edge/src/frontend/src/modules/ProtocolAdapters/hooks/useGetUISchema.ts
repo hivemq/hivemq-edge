@@ -1,6 +1,6 @@
 import { UITab } from '@/modules/ProtocolAdapters/types.ts'
-import { useTranslation } from 'react-i18next'
 import { UiSchema } from '@rjsf/utils'
+import { useTranslation } from 'react-i18next'
 
 const useGetUiSchema = (isNewAdapter = true) => {
   const { t } = useTranslation()

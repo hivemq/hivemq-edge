@@ -1,13 +1,13 @@
+import { FC } from 'react'
 /// <reference types="cypress" />
 import { useForm } from 'react-hook-form'
-import { FC } from 'react'
 
 import { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 
-import SubscriptionsPanel from './SubscriptionsPanel.tsx'
 import { SubscriptionType } from '@/modules/Bridges/types.ts'
+import SubscriptionsPanel from './SubscriptionsPanel.tsx'
 
 interface TestingComponentProps {
   onSubmit: (data: Bridge) => void
@@ -64,13 +64,13 @@ describe('SubscriptionsPanel', () => {
     cy.mountWithProviders(<TestingComponent onSubmit={cy.stub} defaultValues={mockBridge} />)
     cy.getByTestId('bridge-subscription-add').click()
     // force validation to trigger error messages. Better alternative?
-    cy.getByTestId(`form-submit`).click()
+    cy.getByTestId('form-submit').click()
 
     cy.getByTestId(`${MOCK_TYPE}.0.filters`).should('be.visible').find('label').should('not.have.attr', 'data-invalid')
 
     cy.get('input[id="remoteSubscriptions.0.filters"').type('my topic{Enter}')
     // force validation to trigger error messages. Better alternative?
-    cy.getByTestId(`form-submit`).click()
+    cy.getByTestId('form-submit').click()
     cy.getByTestId(`${MOCK_TYPE}.0.destination`).should('be.visible').find('label').should('have.attr', 'data-invalid')
   })
 })

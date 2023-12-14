@@ -1,6 +1,6 @@
-import { useContext } from 'react'
-import { describe, it, expect, vi } from 'vitest'
 import { render, waitFor } from '@testing-library/react'
+import { useContext } from 'react'
+import { describe, expect, it, vi } from 'vitest'
 
 import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
 

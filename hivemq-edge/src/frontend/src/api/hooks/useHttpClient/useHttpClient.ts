@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import axios, { AxiosError } from 'axios'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { BaseHttpRequest, CancelablePromise, HiveMqClient, OpenAPIConfig } from '@/api/__generated__'
@@ -12,10 +12,6 @@ import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 const axiosInstance = axios.create()
 
 export class AxiosHttpRequestWithInterceptors extends BaseHttpRequest {
-  constructor(config: OpenAPIConfig) {
-    super(config)
-  }
-
   public override request<T>(options: ApiRequestOptions): CancelablePromise<T> {
     return __request(this.config, options, axiosInstance)
   }
@@ -36,7 +32,7 @@ export const useHttpClient = () => {
     })
 
     axiosInstance.interceptors.response.use(
-      function (response) {
+      (response) => {
         // Any status code that lie within the range of 2xx cause this function to trigger
         // Do something with response data
         const { 'x-bearer-token-reissue': reissuedToken } = response.headers
@@ -47,7 +43,7 @@ export const useHttpClient = () => {
         }
         return response
       },
-      function (error: AxiosError) {
+      (error: AxiosError) => {
         // Any status codes that falls outside the range of 2xx cause this function to trigger
         // Do something with response error
         if (error.response?.status === 401) {

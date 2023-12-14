@@ -1,4 +1,4 @@
-import { FC, ReactNode, useMemo } from 'react'
+import { NotAllowedIcon } from '@chakra-ui/icons'
 import {
   HStack,
   Spinner,
@@ -11,7 +11,7 @@ import {
   Text,
   Tooltip,
 } from '@chakra-ui/react'
-import { NotAllowedIcon } from '@chakra-ui/icons'
+import { FC, ReactNode, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError, DataPoint } from '@/api/__generated__'
@@ -33,7 +33,9 @@ const SampleRenderer: FC<SampleRendererProps> = ({ metricInfo, series, isLoading
   const diff = (current: number, previous: number) => current - previous
 
   const change = useMemo(() => {
-    if (series.length < 2) return undefined
+    if (series.length < 2) {
+      return undefined
+    }
     const d = diff(series[0].value as number, series[1].value as number)
     return Number.isFinite(d) ? d : undefined
   }, [series])
@@ -50,14 +52,14 @@ const SampleRenderer: FC<SampleRendererProps> = ({ metricInfo, series, isLoading
           <Text>{id}</Text>
         </StatLabel>
 
-        <StatNumber py={2} data-testid={`metric-value`}>
-          {isLoading && <Spinner data-testid={`metric-loader`} />}
+        <StatNumber py={2} data-testid={'metric-value'}>
+          {isLoading && <Spinner data-testid={'metric-loader'} />}
           {!!error && <NotAllowedIcon color="red.100" />}
-          {isNaN(n) && '-'}
-          {!isNaN(n) && formatNumber.format(n)}
+          {Number.isNaN(n) && '-'}
+          {!Number.isNaN(n) && formatNumber.format(n)}
         </StatNumber>
         {!!change && (
-          <StatHelpText data-testid={`metric-change`}>
+          <StatHelpText data-testid={'metric-change'}>
             <StatArrow type={change > 0 ? 'increase' : 'decrease'} />
             {formatNumber.format(Math.abs(change))}
           </StatHelpText>

@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 
-import { MultiTopicsCreatableSelect, SingleTopicCreatableSelect } from './TopicCreatableSelect.tsx'
-import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { MultiTopicsCreatableSelect, SingleTopicCreatableSelect } from './TopicCreatableSelect.tsx'
 
 const MOCK_ID = 'my-id'
 

@@ -1,17 +1,19 @@
-import { FC } from 'react'
+import { Badge, Box, Card, Text } from '@chakra-ui/react'
 import { ResponsiveLine } from '@nivo/line'
 import { DateTime } from 'luxon'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Badge, Box, Card, Text } from '@chakra-ui/react'
 
-import { ChartProps } from '../../types.ts'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import { extractMetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
+import { ChartProps } from '../../types.ts'
 
 const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, ...props }) => {
   const { t } = useTranslation()
 
-  if (!metricName) return null
+  if (!metricName) {
+    return null
+  }
 
   const boundaries = {
     x: Math.min(...data.map((e) => e.value as number)),
@@ -67,7 +69,7 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
           // tickRotation: 0,
           // // format: '.2f',
           format: (value) => {
-            return '+' + DateTime.fromMillis(value).second
+            return `+${DateTime.fromMillis(value).second}`
           },
           legend: t('metrics.charts.LineChart.ariaLabel.legend'),
           legendOffset: 36,

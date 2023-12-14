@@ -1,9 +1,9 @@
-import { FC } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from 'reactflow'
 import { IconButton } from '@chakra-ui/react'
+import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BiBarChartSquare } from 'react-icons/bi'
+import { useNavigate } from 'react-router-dom'
+import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from 'reactflow'
 
 import { useEdgeFlowContext } from '@/modules/EdgeVisualisation/hooks/useEdgeFlowContext.tsx'
 

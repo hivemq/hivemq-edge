@@ -1,6 +1,6 @@
-import { FC } from 'react'
-import { HStack, Tag, TagLabel, VStack } from '@chakra-ui/react'
 import Topic from '@/components/MQTT/Topic.tsx'
+import { HStack, Tag, TagLabel, VStack } from '@chakra-ui/react'
+import { FC } from 'react'
 
 import { TopicFilter } from '../../types.ts'
 

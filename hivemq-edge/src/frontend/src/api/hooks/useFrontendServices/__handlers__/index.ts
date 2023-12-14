@@ -102,7 +102,7 @@ export const mockGatewayConfiguration: GatewayConfiguration = {
   },
 }
 
-export const MOCK_NOTIFICATIONS: Array<Notification> = [
+export const MOCK_NOTIFICATIONS: Notification[] = [
   {
     level: Notification.level.WARNING,
     title: 'Default Credentials Need Changing!',

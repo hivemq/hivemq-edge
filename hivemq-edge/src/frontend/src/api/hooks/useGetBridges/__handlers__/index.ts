@@ -1,6 +1,6 @@
+import { MOCK_TOPIC_ACT1, MOCK_TOPIC_ALL, MOCK_TOPIC_BRIDGE_DESTINATION } from '@/__test-utils__/react-flow/topics.ts'
 import { Bridge, BridgeList, Status } from '@/api/__generated__'
 import { rest } from 'msw'
-import { MOCK_TOPIC_ACT1, MOCK_TOPIC_ALL, MOCK_TOPIC_BRIDGE_DESTINATION } from '@/__test-utils__/react-flow/topics.ts'
 
 export const mockBridgeId = 'bridge-id-01'
 

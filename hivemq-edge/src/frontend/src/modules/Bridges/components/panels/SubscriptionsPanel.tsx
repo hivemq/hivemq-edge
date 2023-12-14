@@ -1,39 +1,39 @@
-import { FC } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Controller, useFieldArray } from 'react-hook-form'
-import { CreatableSelect } from 'chakra-react-select'
+import { AddIcon, DeleteIcon } from '@chakra-ui/icons'
 import {
   Accordion,
-  AccordionItem,
   AccordionButton,
-  AccordionPanel,
   AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
   Box,
   ButtonGroup,
-  FormControl,
-  FormErrorMessage,
-  FormLabel,
-  IconButton,
-  VStack,
-  Flex,
   Card,
   CardBody,
-  FormHelperText,
-  Stack,
-  HStack,
   CardHeader,
-  RadioGroup,
+  Flex,
+  FormControl,
+  FormErrorMessage,
+  FormHelperText,
+  FormLabel,
+  HStack,
+  IconButton,
   Radio,
+  RadioGroup,
+  Stack,
   Switch,
+  VStack,
 } from '@chakra-ui/react'
-import { AddIcon, DeleteIcon } from '@chakra-ui/icons'
+import { CreatableSelect } from 'chakra-react-select'
+import { FC } from 'react'
+import { Controller, useFieldArray } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 import { $BridgeSubscription } from '@/api/__generated__'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
 import { MultiTopicsCreatableSelect } from '@/components/MQTT/TopicCreatableSelect.tsx'
 
-import CustomUserProperties from './CustomUserProperties.tsx'
 import { BridgeSubscriptionsProps } from '../../types.ts'
+import CustomUserProperties from './CustomUserProperties.tsx'
 
 const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
   const { t } = useTranslation()

@@ -1,7 +1,7 @@
-import { Edge, Instance, MarkerType, Node } from 'reactflow'
-import { GenericObjectType } from '@rjsf/utils'
 import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
+import { GenericObjectType } from '@rjsf/utils'
+import { Edge, Instance, MarkerType, Node } from 'reactflow'
 
 import { Adapter, Bridge, ProtocolAdapter, Status } from '@/api/__generated__'
 
@@ -16,11 +16,19 @@ import { discoverAdapterTopics, getBridgeTopics } from './topics-utils.ts'
  * @see ConnectionStatusBadge
  */
 export const getThemeForStatus = (theme: Partial<WithCSSVar<Dict>>, status: Status | undefined) => {
-  if (status?.runtime === Status.runtime.STOPPED) return theme.colors.status.error[500]
+  if (status?.runtime === Status.runtime.STOPPED) {
+    return theme.colors.status.error[500]
+  }
 
-  if (status?.connection === Status.connection.CONNECTED) return theme.colors.status.connected[500]
-  if (status?.connection === Status.connection.DISCONNECTED) return theme.colors.status.disconnected[500]
-  if (status?.connection === Status.connection.STATELESS) return theme.colors.status.stateless[500]
+  if (status?.connection === Status.connection.CONNECTED) {
+    return theme.colors.status.connected[500]
+  }
+  if (status?.connection === Status.connection.DISCONNECTED) {
+    return theme.colors.status.disconnected[500]
+  }
+  if (status?.connection === Status.connection.STATELESS) {
+    return theme.colors.status.stateless[500]
+  }
 
   // if (status?.connection === Status.connection.ERROR) return theme.colors.status.error[500]
   // if (status?.connection === Status.connection.UNKNOWN) return theme.colors.status.error[500]
@@ -32,8 +40,12 @@ export const updateNodeStatus = (currentNodes: Node[], updates: Status[]) => {
     if (n.type === NodeTypes.BRIDGE_NODE) {
       const newData = { ...n.data } as Bridge
       const newStatus = updates.find((s) => s.id === newData.id)
-      if (!newStatus) return n
-      if (newStatus.connection === newData.status?.connection) return n
+      if (!newStatus) {
+        return n
+      }
+      if (newStatus.connection === newData.status?.connection) {
+        return n
+      }
 
       n.data = {
         ...newData,
@@ -46,7 +58,9 @@ export const updateNodeStatus = (currentNodes: Node[], updates: Status[]) => {
     if (n.type === NodeTypes.ADAPTER_NODE) {
       const newData = { ...n.data } as Adapter
       const newStatus = updates.find((s) => s.id === newData.id)
-      if (!newStatus) return n
+      if (!newStatus) {
+        return n
+      }
       // if (newStatus.connection === newData.status?.connection) return n
 
       n.data = {
@@ -87,7 +101,9 @@ export const updateEdgesStatus = (
   return currentEdges.map((edge) => {
     const [a, b] = edge.source.split('@')
     const status = updates.find((e) => e.id === b && e.type === a)
-    if (!status) return edge
+    if (!status) {
+      return edge
+    }
 
     const source = getNode(edge.source)
     const isConnected =

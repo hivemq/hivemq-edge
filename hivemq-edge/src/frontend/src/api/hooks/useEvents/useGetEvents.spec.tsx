@@ -1,12 +1,12 @@
-import { expect } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { renderHook, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { expect } from 'vitest'
 
 import '@/config/i18n.config.ts'
 
-import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.tsx'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
+import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.tsx'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
 import { handlers } from './__handlers__'

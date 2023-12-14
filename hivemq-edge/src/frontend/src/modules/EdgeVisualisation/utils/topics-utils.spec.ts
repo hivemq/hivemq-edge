@@ -1,14 +1,14 @@
-import { expect } from 'vitest'
 import { GenericObjectType, RJSFSchema } from '@rjsf/utils'
+import { expect } from 'vitest'
 
 import { Adapter, ProtocolAdapter } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { TopicFilter } from '@/modules/EdgeVisualisation/types.ts'
 
-import { MOCK_PROTOCOL_MODBUS, MOCK_ADAPTER_MODBUS } from '@/__test-utils__/adapters/modbus.ts'
-import { MOCK_PROTOCOL_SIMULATION, MOCK_ADAPTER_SIMULATION } from '@/__test-utils__/adapters/simulation.ts'
-import { MOCK_PROTOCOL_OPC_UA, MOCK_ADAPTER_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
-import { MOCK_PROTOCOL_HTTP, MOCK_ADAPTER_HTTP } from '@/__test-utils__/adapters/http.ts'
+import { MOCK_ADAPTER_HTTP, MOCK_PROTOCOL_HTTP } from '@/__test-utils__/adapters/http.ts'
+import { MOCK_ADAPTER_MODBUS, MOCK_PROTOCOL_MODBUS } from '@/__test-utils__/adapters/modbus.ts'
+import { MOCK_ADAPTER_OPC_UA, MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
+import { MOCK_ADAPTER_SIMULATION, MOCK_PROTOCOL_SIMULATION } from '@/__test-utils__/adapters/simulation.ts'
 
 import { discoverAdapterTopics, flattenObject, getBridgeTopics, getTopicPaths, mergeAllTopics } from './topics-utils.ts'
 
@@ -118,7 +118,7 @@ describe('flattenObject', () => {
 
 describe('discoverAdapterTopics', () => {
   it.each<Suite>(validationSuite)(
-    `should return $expectedTopics.length with $protocol.id`,
+    'should return $expectedTopics.length with $protocol.id',
     ({ protocol, formData, expectedPath, expectedTopics }) => {
       const paths = getTopicPaths(protocol?.configSchema as RJSFSchema)
 

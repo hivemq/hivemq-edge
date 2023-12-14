@@ -1,28 +1,28 @@
-import { FC } from 'react'
-import { useTranslation } from 'react-i18next'
-import { SiHomebridge } from 'react-icons/si'
-import { BsThreeDotsVertical } from 'react-icons/bs'
-import { BiShare } from 'react-icons/bi'
 import {
   Avatar,
   Box,
+  Button,
   Card,
   CardBody,
   CardFooter,
   CardHeader,
   Flex,
   Heading,
-  Button,
-  TableContainer,
   Menu,
   MenuButton,
-  MenuList,
   MenuItem,
+  MenuList,
+  TableContainer,
 } from '@chakra-ui/react'
+import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
+import { BiShare } from 'react-icons/bi'
+import { BsThreeDotsVertical } from 'react-icons/bs'
+import { SiHomebridge } from 'react-icons/si'
 
 import { Bridge, Status, StatusTransitionCommand } from '@/api/__generated__'
-import { useSetConnectionStatus } from '@/api/hooks/useGetBridges/useSetConnectionStatus.tsx'
 import { useDeleteBridge } from '@/api/hooks/useGetBridges/useDeleteBridge.tsx'
+import { useSetConnectionStatus } from '@/api/hooks/useGetBridges/useSetConnectionStatus.tsx'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import SubscriptionStats from '@/modules/Bridges/components/overview/SubscriptionStats.tsx'

@@ -1,5 +1,5 @@
-import { vi, expect } from 'vitest'
 import { renderHook } from '@testing-library/react'
+import { expect, vi } from 'vitest'
 
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
 import '@/config/i18n.config.ts'

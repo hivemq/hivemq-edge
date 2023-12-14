@@ -1,5 +1,3 @@
-import { FC } from 'react'
-import { useTranslation } from 'react-i18next'
 import {
   Box,
   Flex,
@@ -13,6 +11,8 @@ import {
   NumberInputField,
   NumberInputStepper,
 } from '@chakra-ui/react'
+import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { $Bridge } from '@/api/__generated__'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
@@ -32,7 +32,7 @@ const ConnectionPanel: FC<BridgePanelType> = ({ form }) => {
         <FormControl isInvalid={!!errors.host} isRequired>
           <FormLabel htmlFor="host">{t('bridge.connection.host')}</FormLabel>
           <Input id="host" type="text" required {...register('host', getRulesForProperty($Bridge.properties.host))} />
-          <FormErrorMessage>{errors.host && errors.host.message}</FormErrorMessage>
+          <FormErrorMessage>{errors.host?.message}</FormErrorMessage>
         </FormControl>
 
         <FormControl isInvalid={!!errors.port} isRequired w={'unset'}>
@@ -44,7 +44,7 @@ const ConnectionPanel: FC<BridgePanelType> = ({ form }) => {
               <NumberDecrementStepper />
             </NumberInputStepper>
           </NumberInput>
-          <FormErrorMessage>{errors.port && errors.port.message}</FormErrorMessage>
+          <FormErrorMessage>{errors.port?.message}</FormErrorMessage>
         </FormControl>
       </FormControl>
 
@@ -58,7 +58,7 @@ const ConnectionPanel: FC<BridgePanelType> = ({ form }) => {
               autoComplete="username"
               {...register('username', getRulesForProperty($Bridge.properties.username))}
             />
-            <FormErrorMessage>{errors.username && errors.username.message}</FormErrorMessage>
+            <FormErrorMessage>{errors.username?.message}</FormErrorMessage>
           </FormControl>
         </Box>
         <Box flexGrow={1}>
@@ -70,7 +70,7 @@ const ConnectionPanel: FC<BridgePanelType> = ({ form }) => {
               autoComplete="current-password"
               {...register('password', getRulesForProperty($Bridge.properties.password))}
             />
-            <FormErrorMessage>{errors.password && errors.password.message}</FormErrorMessage>
+            <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
           </FormControl>
         </Box>
       </FormControl>

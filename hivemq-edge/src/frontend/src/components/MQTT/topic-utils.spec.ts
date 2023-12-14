@@ -1,5 +1,5 @@
-import { expect } from 'vitest'
 import { formatTopicString } from '@/components/MQTT/topic-utils.ts'
+import { expect } from 'vitest'
 
 interface TestEachSuite {
   topic: string

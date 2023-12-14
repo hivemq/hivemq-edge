@@ -1,5 +1,5 @@
-import { createMultiStyleConfigHelpers } from '@chakra-ui/react'
 import { formAnatomy } from '@chakra-ui/anatomy'
+import { createMultiStyleConfigHelpers } from '@chakra-ui/react'
 
 const { definePartsStyle, defineMultiStyleConfig } = createMultiStyleConfigHelpers(formAnatomy.keys)
 

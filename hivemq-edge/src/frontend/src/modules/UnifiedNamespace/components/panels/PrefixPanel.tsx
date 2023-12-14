@@ -1,4 +1,3 @@
-import { FC } from 'react'
 import {
   Card,
   CardBody,
@@ -11,12 +10,13 @@ import {
   Skeleton,
   Switch,
 } from '@chakra-ui/react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError, ISA95ApiBean } from '@/api/__generated__'
 import { useSetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useSetUnifiedNamespace.tsx'
-import NamespaceDisplay from '@/modules/UnifiedNamespace/components/NamespaceDisplay.tsx'
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
+import NamespaceDisplay from '@/modules/UnifiedNamespace/components/NamespaceDisplay.tsx'
 
 interface PrefixPanelProps {
   data: ISA95ApiBean

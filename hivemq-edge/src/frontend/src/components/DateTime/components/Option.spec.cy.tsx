@@ -1,8 +1,8 @@
 import { GroupBase, OptionProps } from 'chakra-react-select'
 
-import { RangeOption } from '../types.ts'
-import Option from '../components/Option.tsx'
 import { MOCK_RANGE_OPTION } from '@/components/DateTime/utils/range-option.mocks.ts'
+import Option from '../components/Option.tsx'
+import { RangeOption } from '../types.ts'
 
 const MOCK_OPTIONS: readonly RangeOption[] = [{ value: 'purple', label: 'last minute', colorScheme: '#5243AA' }]
 

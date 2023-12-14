@@ -1,6 +1,6 @@
-import { FC } from 'react'
 import { useBridgeSetup } from '@/modules/Bridges/hooks/useBridgeConfig.tsx'
 import { Code } from '@chakra-ui/react'
+import { FC } from 'react'
 
 const StepperDebugger: FC = () => {
   const { bridge } = useBridgeSetup()

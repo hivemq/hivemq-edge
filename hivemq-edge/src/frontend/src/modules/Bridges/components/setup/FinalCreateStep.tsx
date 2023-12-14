@@ -1,11 +1,11 @@
+import { Box, Button, Flex } from '@chakra-ui/react'
 import { FC } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
-import { Box, Button, Flex } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { ProblemDetails } from '@/api/types/http-problem-details.ts'
-import { useCreateBridge } from '@/api/hooks/useGetBridges/useCreateBridge.tsx'
 import { Bridge } from '@/api/__generated__'
+import { useCreateBridge } from '@/api/hooks/useGetBridges/useCreateBridge.tsx'
+import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import NamePanel from '@/modules/Bridges/components/panels/NamePanel.tsx'

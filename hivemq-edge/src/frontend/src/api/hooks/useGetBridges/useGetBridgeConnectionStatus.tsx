@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
+import { useQuery } from '@tanstack/react-query'
 
-import config from '@/config'
 import { QUERY_KEYS } from '@/api/utils.ts'
+import config from '@/config'
 
 /**
  * @deprecated Prefer using useGetConnectionStatus

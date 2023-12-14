@@ -1,6 +1,6 @@
-import { FC } from 'react'
 import { Bridge } from '@/api/__generated__'
 import { Box, Table, Tbody, Td, Tooltip, Tr } from '@chakra-ui/react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatHost } from '../../utils/formatters.tsx'
 

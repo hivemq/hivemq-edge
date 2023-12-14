@@ -1,8 +1,8 @@
-import { FC } from 'react'
 import { Badge, type BadgeProps } from '@chakra-ui/react'
+import { FC } from 'react'
 
-import { RangeOption } from '../types.ts'
 import { useRangeTranslation } from '../hooks/useRangeTranslation.ts'
+import { RangeOption } from '../types.ts'
 
 interface OptionBadgeProps extends BadgeProps {
   data: RangeOption
@@ -12,7 +12,9 @@ const OptionBadge: FC<OptionBadgeProps> = ({ data }) => {
   const { translateBadgeFrom } = useRangeTranslation()
   const badge = translateBadgeFrom(data)
 
-  if (!badge) return null
+  if (!badge) {
+    return null
+  }
 
   return (
     <Badge

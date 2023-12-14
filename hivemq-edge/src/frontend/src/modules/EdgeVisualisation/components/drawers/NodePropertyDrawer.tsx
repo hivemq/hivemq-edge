@@ -1,7 +1,4 @@
-import { FC } from 'react'
-import { Link as RouterLink } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { Node } from 'reactflow'
+import { EditIcon } from '@chakra-ui/icons'
 import {
   Button,
   Card,
@@ -19,8 +16,11 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
-import { EditIcon } from '@chakra-ui/icons'
+import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MdOutlineEventNote } from 'react-icons/md'
+import { Link as RouterLink } from 'react-router-dom'
+import { Node } from 'reactflow'
 
 import { Adapter, Bridge } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'

@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import ButtonBadge from './ButtonBadge.tsx'
 import { FiMail } from 'react-icons/fi'
+import ButtonBadge from './ButtonBadge.tsx'
 
 describe('ButtonBadge', () => {
   beforeEach(() => {

@@ -1,9 +1,9 @@
-import { FC } from 'react'
-import { Flex } from '@chakra-ui/react'
-import { useBridgeSetup } from '@/modules/Bridges/hooks/useBridgeConfig.tsx'
-import OptionsPanel from '@/modules/Bridges/components/panels/OptionsPanel.tsx'
-import { SubmitHandler, useForm } from 'react-hook-form'
 import { Bridge } from '@/api/__generated__'
+import OptionsPanel from '@/modules/Bridges/components/panels/OptionsPanel.tsx'
+import { useBridgeSetup } from '@/modules/Bridges/hooks/useBridgeConfig.tsx'
+import { Flex } from '@chakra-ui/react'
+import { FC } from 'react'
+import { SubmitHandler, useForm } from 'react-hook-form'
 
 const OptionsStep: FC = () => {
   const { bridge, setBridge } = useBridgeSetup()

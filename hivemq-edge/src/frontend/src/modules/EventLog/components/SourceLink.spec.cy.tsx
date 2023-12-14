@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import SourceLink from './SourceLink.tsx'
 import { mockEdgeEvent } from '@/api/hooks/useEvents/__handlers__'
+import SourceLink from './SourceLink.tsx'
 
 describe('SourceLink', () => {
   beforeEach(() => {

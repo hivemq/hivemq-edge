@@ -1,20 +1,20 @@
-import { FC } from 'react'
 import {
+  Button,
   Drawer,
   DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
   DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
-  DrawerContent,
-  DrawerCloseButton,
-  Button,
   Flex,
 } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
+import { FC } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
-import { AdapterType } from '@/modules/ProtocolAdapters/types.ts'
 import AdapterTypeSelector from '@/modules/ProtocolAdapters/components/drawers/AdapterTypeSelector.tsx'
+import { AdapterType } from '@/modules/ProtocolAdapters/types.ts'
 
 interface ProtocolSelectorDrawerProps {
   isOpen: boolean

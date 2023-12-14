@@ -1,13 +1,13 @@
 import { describe, expect } from 'vitest'
 
-import { extractMetricInfo, MetricInfo } from './metrics-name.utils.ts'
+import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 import {
+  MOCK_METRICS,
   MOCK_METRIC_ADAPTER,
   MOCK_METRIC_BRIDGE,
   MOCK_METRIC_MESSAGE,
-  MOCK_METRICS,
 } from '@/api/hooks/useGetMetrics/__handlers__'
-import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
+import { MetricInfo, extractMetricInfo } from './metrics-name.utils.ts'
 
 interface MetricInfoSuite {
   metricName: string

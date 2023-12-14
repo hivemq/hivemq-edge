@@ -1,9 +1,9 @@
 /// <reference types="cypress" />
 
-import { FC, PropsWithChildren } from 'react'
 import { Box } from '@chakra-ui/react'
+import { FC, PropsWithChildren } from 'react'
 
-import { MOCK_METRIC_SAMPLE_ARRAY, MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
+import { MOCK_METRICS, MOCK_METRIC_SAMPLE_ARRAY } from '@/api/hooks/useGetMetrics/__handlers__'
 import LineChart from './LineChart.tsx'
 
 const mockAriaLabel = 'aria-label'

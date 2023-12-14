@@ -1,7 +1,7 @@
-import { createContext, Dispatch, FunctionComponent, PropsWithChildren, SetStateAction, useState } from 'react'
-import { useDisclosure, UseDisclosureReturn } from '@chakra-ui/react'
+import { UseDisclosureReturn, useDisclosure } from '@chakra-ui/react'
+import { Dispatch, FunctionComponent, PropsWithChildren, SetStateAction, createContext, useState } from 'react'
 
-import { EdgeFlowGrouping, EdgeFlowOptions, EdgeFlowLayout } from '../types.ts'
+import { EdgeFlowGrouping, EdgeFlowLayout, EdgeFlowOptions } from '../types.ts'
 
 export interface EdgeFlowContextType {
   options: EdgeFlowOptions

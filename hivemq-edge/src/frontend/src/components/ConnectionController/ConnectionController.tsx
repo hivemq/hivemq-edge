@@ -2,15 +2,15 @@ import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError, Status, StatusTransitionCommand } from '@/api/__generated__'
-import { DeviceTypes } from '@/api/types/api-devices.ts'
-import { useSetConnectionStatus as useSetAdapterConnectionStatus } from '@/api/hooks/useProtocolAdapters/useSetConnectionStatus.tsx'
 import { useSetConnectionStatus as useSetBridgeConnectionStatus } from '@/api/hooks/useGetBridges/useSetConnectionStatus.tsx'
+import { useSetConnectionStatus as useSetAdapterConnectionStatus } from '@/api/hooks/useProtocolAdapters/useSetConnectionStatus.tsx'
+import { DeviceTypes } from '@/api/types/api-devices.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
+import { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
 import ConnectionButton from './components/ConnectionButton.tsx'
 import ConnectionMenu from './components/ConnectionMenu.tsx'
-import { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
 
 interface ConnectionControllerProps {
   type: DeviceTypes
@@ -51,7 +51,9 @@ const ConnectionController: FC<ConnectionControllerProps> = ({ type, id, status,
     statusPromise
       .then((results) => {
         const { callbackTimeoutMillis } = results
-        if (callbackTimeoutMillis) setIsLoading(callbackTimeoutMillis)
+        if (callbackTimeoutMillis) {
+          setIsLoading(callbackTimeoutMillis)
+        }
         successToast({
           title: t('protocolAdapter.toast.status.title'),
           description: t('protocolAdapter.toast.status.description', {

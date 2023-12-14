@@ -1,8 +1,8 @@
-import { rest } from 'msw'
 import { Event, EventList, Payload, TypeIdentifier } from '@/api/__generated__'
+import { rest } from 'msw'
 
-import { DateTime } from 'luxon'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { DateTime } from 'luxon'
 
 const makeID = (type: TypeIdentifier.type, inc: number): TypeIdentifier => ({
   identifier: `${type}-${inc}`,

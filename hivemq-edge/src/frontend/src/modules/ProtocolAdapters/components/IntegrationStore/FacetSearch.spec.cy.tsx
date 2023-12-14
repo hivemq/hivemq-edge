@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import FacetSearch from '@/modules/ProtocolAdapters/components/IntegrationStore/FacetSearch.tsx'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import FacetSearch from '@/modules/ProtocolAdapters/components/IntegrationStore/FacetSearch.tsx'
 
 describe('FacetSearch', () => {
   beforeEach(() => {

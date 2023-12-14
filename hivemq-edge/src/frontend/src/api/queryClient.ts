@@ -1,5 +1,5 @@
-import { QueryClient } from '@tanstack/react-query'
 import config from '@/config'
+import { QueryClient } from '@tanstack/react-query'
 
 const queryClient = new QueryClient({
   defaultOptions: {

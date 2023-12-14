@@ -1,5 +1,6 @@
-import { FC } from 'react'
-import { useTranslation } from 'react-i18next'
+import { $Bridge } from '@/api/__generated__'
+import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
+import { BridgePanelType } from '@/modules/Bridges/types.ts'
 import {
   Checkbox,
   FormControl,
@@ -13,9 +14,8 @@ import {
   NumberInputField,
   NumberInputStepper,
 } from '@chakra-ui/react'
-import { $Bridge } from '@/api/__generated__'
-import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
-import { BridgePanelType } from '@/modules/Bridges/types.ts'
+import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
   const { t } = useTranslation()
@@ -32,7 +32,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
           {t('bridge.options.cleanStart.label')}
         </Checkbox>
         <FormHelperText> {t('bridge.options.cleanStart.helper')}</FormHelperText>
-        <FormErrorMessage>{errors.cleanStart && errors.cleanStart.message}</FormErrorMessage>
+        <FormErrorMessage>{errors.cleanStart?.message}</FormErrorMessage>
       </FormControl>
 
       <FormControl isInvalid={!!errors.keepAlive}>
@@ -49,7 +49,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
           </NumberInputStepper>
         </NumberInput>
         <FormHelperText> {t('bridge.options.keepAlive.helper')}</FormHelperText>
-        <FormErrorMessage>{errors.keepAlive && errors.keepAlive.message}</FormErrorMessage>
+        <FormErrorMessage>{errors.keepAlive?.message}</FormErrorMessage>
       </FormControl>
 
       <FormControl>
@@ -77,7 +77,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
         >
           {t('bridge.options.loopPrevention.label')}
         </Checkbox>
-        <FormErrorMessage>{errors.loopPreventionEnabled && errors.loopPreventionEnabled.message}</FormErrorMessage>
+        <FormErrorMessage>{errors.loopPreventionEnabled?.message}</FormErrorMessage>
       </FormControl>
 
       <FormControl isInvalid={!!errors.loopPreventionHopCount}>
@@ -94,7 +94,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
           </NumberInputStepper>
         </NumberInput>
         <FormHelperText> {t('bridge.options.hopCount.helper')}</FormHelperText>
-        <FormErrorMessage>{errors.loopPreventionHopCount && errors.loopPreventionHopCount.message}</FormErrorMessage>
+        <FormErrorMessage>{errors.loopPreventionHopCount?.message}</FormErrorMessage>
       </FormControl>
 
       <FormControl isInvalid={!!errors.clientId}>
@@ -107,7 +107,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
           })}
         />
         <FormHelperText> {t('bridge.options.clientid.helper')}</FormHelperText>
-        <FormErrorMessage>{errors.clientId && errors.clientId.message}</FormErrorMessage>
+        <FormErrorMessage>{errors.clientId?.message}</FormErrorMessage>
       </FormControl>
     </FormControl>
   )

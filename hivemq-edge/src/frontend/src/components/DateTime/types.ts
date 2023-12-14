@@ -1,5 +1,5 @@
-import { GetOptionLabel, GetOptionValue } from 'chakra-react-select'
 import { ThemeTypings } from '@chakra-ui/react'
+import { GetOptionLabel, GetOptionValue } from 'chakra-react-select'
 import { Duration } from 'luxon'
 
 // Not properly exported from chakra-react-select

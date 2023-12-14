@@ -1,5 +1,3 @@
-import { FC } from 'react'
-import { useTranslation } from 'react-i18next'
 import {
   Checkbox,
   CheckboxGroup,
@@ -18,9 +16,11 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { Select } from 'chakra-react-select'
+import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import { EdgeFlowOptions, EdgeFlowLayout } from '../../types.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
+import { EdgeFlowLayout, EdgeFlowOptions } from '../../types.ts'
 import { groupingAttributes } from '../../utils/layout-utils.ts'
 
 const WorkspaceOptionsDrawer: FC = () => {

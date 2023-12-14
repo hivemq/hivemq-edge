@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import AdapterTypeSummary from '@/modules/ProtocolAdapters/components/adapters/AdapterTypeSummary.tsx'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import AdapterTypeSummary from '@/modules/ProtocolAdapters/components/adapters/AdapterTypeSummary.tsx'
 
 describe('AdapterTypeSummary', () => {
   beforeEach(() => {

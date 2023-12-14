@@ -1,7 +1,7 @@
+import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
+import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
 import { Adapter, AdaptersList, JsonNode, ProtocolAdapter, ProtocolAdaptersList, Status } from '@/api/__generated__'
 import { rest } from 'msw'
-import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
-import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
 export const mockJSONSchema: JsonNode = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',

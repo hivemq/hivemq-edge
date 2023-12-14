@@ -1,9 +1,9 @@
-import { initReactI18next } from 'react-i18next'
 import i18n from 'i18next'
 import Pseudo from 'i18next-pseudo'
+import { initReactI18next } from 'react-i18next'
 
-import main_en from '../locales/en/translation.json'
 import component_en from '../locales/en/components.json'
+import main_en from '../locales/en/translation.json'
 
 const resources = {
   en: {

@@ -1,5 +1,5 @@
-import { FC } from 'react'
 import { FieldTemplateProps, getTemplate, getUiOptions } from '@rjsf/utils'
+import { FC } from 'react'
 
 import { RenderFieldTemplate } from './__internals/RenderFieldTemplate.tsx'
 

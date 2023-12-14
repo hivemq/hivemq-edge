@@ -1,6 +1,6 @@
+import { Button, Center, HStack, Text } from '@chakra-ui/react'
 import { FC } from 'react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
-import { Button, Center, HStack, Text } from '@chakra-ui/react'
 
 import { MainNavLinkType } from '../types.ts'
 

@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 
+import { FormErrorMessage, FormLabel, Input } from '@chakra-ui/react'
 import { FieldTemplateProps } from '@rjsf/utils'
 import { RenderFieldTemplate } from './RenderFieldTemplate.tsx'
-import { FormErrorMessage, FormLabel, Input } from '@chakra-ui/react'
 
 const MOCK_TEXT = 'You will have to type something'
 const MOCK_ERROR = 'This is an error message'

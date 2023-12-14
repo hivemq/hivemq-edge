@@ -1,5 +1,4 @@
-import { FC, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
+import { EditIcon } from '@chakra-ui/icons'
 import {
   Box,
   Card,
@@ -7,15 +6,16 @@ import {
   CardFooter,
   CardHeader,
   Flex,
-  Heading,
   HStack,
+  Heading,
   IconButton,
   Image,
   Skeleton,
   Stack,
   Text,
 } from '@chakra-ui/react'
-import { EditIcon } from '@chakra-ui/icons'
+import { FC, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import BridgeLogo from '@/assets/app/bridges.svg'
 
@@ -23,8 +23,8 @@ import { Bridge } from '@/api/__generated__'
 import { useGetBridgesStatus } from '@/api/hooks/useConnection/useGetBridgesStatus.tsx'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 
-import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
+import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 
 import ConnectionSummary from './ConnectionSummary.tsx'
 
@@ -80,7 +80,7 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, ...props }) =>
                 display: 'inline-block',
                 marginLeft: '.2rem',
                 marginRight: '.2rem',
-                width: `.5rem`,
+                width: '.5rem',
                 height: '.5rem',
                 background: isFetching ? 'lightgrey' : 'transparent',
                 transition: !isFetching ? 'all .3s ease' : 'none',

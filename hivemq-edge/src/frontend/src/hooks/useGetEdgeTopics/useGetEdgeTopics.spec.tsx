@@ -1,21 +1,21 @@
 /// <reference types="cypress" />
 
-import { expect } from 'vitest'
-import { MemoryRouter } from 'react-router-dom'
-import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { renderHook, waitFor } from '@testing-library/react'
 import { rest } from 'msw'
+import { MemoryRouter } from 'react-router-dom'
+import { expect } from 'vitest'
 
-import { server } from '@/__test-utils__/msw/mockServer.ts'
-import { MOCK_ADAPTER_OPC_UA, MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
 import { MOCK_ADAPTER_MODBUS, MOCK_PROTOCOL_MODBUS } from '@/__test-utils__/adapters/modbus.ts'
+import { MOCK_ADAPTER_OPC_UA, MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
+import { server } from '@/__test-utils__/msw/mockServer.ts'
 
 import { Adapter, AdaptersList, Bridge, BridgeList, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
-import { EdgeTopicsOptions, useGetEdgeTopics, reduceTopicsBy } from './useGetEdgeTopics.tsx'
+import { EdgeTopicsOptions, reduceTopicsBy, useGetEdgeTopics } from './useGetEdgeTopics.tsx'
 
 interface Suite {
   topic: string
@@ -64,9 +64,9 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = (
 )
 
 const customHandlers = (
-  types: Array<ProtocolAdapter> | undefined,
-  adapters?: Array<Adapter> | undefined,
-  bridges?: Array<Bridge> | undefined,
+  types: ProtocolAdapter[] | undefined,
+  adapters?: Adapter[] | undefined,
+  bridges?: Bridge[] | undefined,
 ) => [
   rest.get('**/protocol-adapters/types', (_, res, ctx) => {
     return types ? res(ctx.json<ProtocolAdaptersList>({ items: types }), ctx.status(200)) : res(ctx.status(500))

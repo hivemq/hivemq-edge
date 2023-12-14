@@ -1,5 +1,5 @@
-import { DateTime, Duration } from 'luxon'
 import { RangeOption } from '@/components/DateTime/types.ts'
+import { DateTime, Duration } from 'luxon'
 
 const defaultRangeOption: readonly RangeOption[] = [
   { value: 'more', label: 'More...', colorScheme: 'yellow', isCommand: true, isDisabled: true },
@@ -7,21 +7,29 @@ const defaultRangeOption: readonly RangeOption[] = [
 
 export const sortRangeOption = (a: RangeOption, b: RangeOption) => {
   // not sure that's the case
-  if (!a.duration || !b.duration) return 0
+  if (!a.duration || !b.duration) {
+    return 0
+  }
 
-  if (a.duration?.toMillis() < b.duration?.toMillis()) return -1
-  else if (a.duration?.toMillis() > b.duration?.toMillis()) return 1
+  if (a.duration?.toMillis() < b.duration?.toMillis()) {
+    return -1
+  }
+  if (a.duration?.toMillis() > b.duration?.toMillis()) {
+    return 1
+  }
   return 0
 }
 
 export const makeDefaultRangeOption = (min: DateTime | undefined, max: DateTime | undefined): RangeOption[] => {
-  if (!min || !max) return []
+  if (!min || !max) {
+    return []
+  }
 
   // TODO[NVL} wrong!!!
   const diff = max.diff(min, ['months', 'weeks', 'days', 'hours', 'minutes']).toObject()
   const options: RangeOption[] = []
 
-  if (diff['months']) {
+  if (diff.months) {
     options.push({
       value: 'month1',
       label: 'last month',
@@ -29,7 +37,7 @@ export const makeDefaultRangeOption = (min: DateTime | undefined, max: DateTime 
       duration: Duration.fromDurationLike({ month: 1 }),
     })
   }
-  if (diff['weeks']) {
+  if (diff.weeks) {
     options.push({
       value: 'week1',
       label: 'last week',
@@ -37,7 +45,7 @@ export const makeDefaultRangeOption = (min: DateTime | undefined, max: DateTime 
       duration: Duration.fromDurationLike({ week: 1 }),
     })
   }
-  if (diff['days']) {
+  if (diff.days) {
     options.push({
       value: 'day1',
       label: 'last day',
@@ -45,7 +53,7 @@ export const makeDefaultRangeOption = (min: DateTime | undefined, max: DateTime 
       duration: Duration.fromDurationLike({ day: 1 }),
     })
   }
-  if (diff['hours']) {
+  if (diff.hours) {
     options.push(
       ...[
         {
@@ -69,7 +77,7 @@ export const makeDefaultRangeOption = (min: DateTime | undefined, max: DateTime 
       ],
     )
   }
-  if (diff['minutes']) {
+  if (diff.minutes) {
     options.push(
       ...[
         {

@@ -1,7 +1,7 @@
-import { FC } from 'react'
+import { StatusTransitionCommand } from '@/api/__generated__'
 import { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
 import { MenuItem } from '@chakra-ui/react'
-import { StatusTransitionCommand } from '@/api/__generated__'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
 const ConnectionMenu: FC<ConnectionElementProps> = ({ id, isRunning, isLoading, onChangeStatus }) => {

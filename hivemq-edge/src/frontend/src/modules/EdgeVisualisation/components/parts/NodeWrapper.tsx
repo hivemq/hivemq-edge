@@ -1,5 +1,5 @@
+import { type BoxProps, VStack, useTheme } from '@chakra-ui/react'
 import { FC } from 'react'
-import { type BoxProps, useTheme, VStack } from '@chakra-ui/react'
 
 interface NodeWrapperProps extends BoxProps {
   isSelected?: boolean

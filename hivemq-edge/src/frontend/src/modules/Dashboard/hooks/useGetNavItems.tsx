@@ -1,12 +1,12 @@
-import { useTranslation } from 'react-i18next'
 import { Icon } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
 
-import { IoHomeOutline } from 'react-icons/io5'
-import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
 import { BsIntersect } from 'react-icons/bs'
-import { HiOutlinePuzzle } from 'react-icons/hi'
 import { GoLinkExternal } from 'react-icons/go'
+import { HiOutlinePuzzle } from 'react-icons/hi'
+import { IoHomeOutline } from 'react-icons/io5'
 import { MdOutlineEventNote } from 'react-icons/md'
+import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
 
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'

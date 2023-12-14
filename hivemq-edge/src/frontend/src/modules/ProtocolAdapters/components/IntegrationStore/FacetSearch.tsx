@@ -1,20 +1,20 @@
-import { ChangeEvent, FC, useMemo } from 'react'
+import { SearchIcon } from '@chakra-ui/icons'
 import {
+  Box,
+  Button,
+  CloseButton,
   Flex,
   FormControl,
-  InputGroup,
   FormLabel,
   Input,
+  InputGroup,
+  InputLeftElement,
   InputRightElement,
-  Box,
   List,
   ListItem,
-  Button,
-  InputLeftElement,
-  CloseButton,
   Skeleton,
 } from '@chakra-ui/react'
-import { SearchIcon } from '@chakra-ui/icons'
+import { ChangeEvent, FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ProtocolAdapter, ProtocolAdapterCategory } from '@/api/__generated__'
@@ -36,9 +36,13 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
     const categories =
       items?.reduce(
         (acc, cur) => {
-          if (!cur?.category) return acc
+          if (!cur?.category) {
+            return acc
+          }
           const setSoFar = acc.map((e) => e.name)
-          if (setSoFar.includes(cur.category.name)) return acc
+          if (setSoFar.includes(cur.category.name)) {
+            return acc
+          }
           return [...acc, cur.category]
         },
         [] as ProtocolAdapterCategory[],
@@ -96,7 +100,7 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
             <ListItem>
               <Skeleton isLoaded={!isLoading}>
                 <Button
-                  data-testid={`facet-filter-clear`}
+                  data-testid={'facet-filter-clear'}
                   justifyContent={'flex-start'}
                   variant={!facet?.filter ? 'outline' : 'ghost'}
                   aria-pressed={!facet?.filter}

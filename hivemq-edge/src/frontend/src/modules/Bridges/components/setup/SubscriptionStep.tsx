@@ -1,11 +1,11 @@
-import { FC, useRef } from 'react'
+import { BridgeSubscription } from '@/api/__generated__'
+import Topic from '@/components/MQTT/Topic.tsx'
+import SubscriptionEditor from '@/modules/Bridges/components/setup/SubscriptionEditor.tsx'
+import { AddIcon, DeleteIcon, EditIcon } from '@chakra-ui/icons'
 import { ButtonGroup, IconButton, Table, Tbody, Td, Th, Thead, Tr, useDisclosure } from '@chakra-ui/react'
+import { FC, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useBridgeSetup } from '../../hooks/useBridgeConfig.tsx'
-import { BridgeSubscription } from '@/api/__generated__'
-import { AddIcon, DeleteIcon, EditIcon } from '@chakra-ui/icons'
-import SubscriptionEditor from '@/modules/Bridges/components/setup/SubscriptionEditor.tsx'
-import Topic from '@/components/MQTT/Topic.tsx'
 
 interface SubscriptionSetupProps {
   type: 'local' | 'remote'
@@ -26,9 +26,8 @@ const SubscriptionStep: FC<SubscriptionSetupProps> = ({ type }) => {
 
       if (type === 'local') {
         return { ...old, localSubscriptions: append(localSubscriptions, sub) }
-      } else {
-        return { ...old, remoteSubscriptions: append(remoteSubscriptions, sub) }
       }
+      return { ...old, remoteSubscriptions: append(remoteSubscriptions, sub) }
     })
     onClose()
   }
@@ -45,9 +44,8 @@ const SubscriptionStep: FC<SubscriptionSetupProps> = ({ type }) => {
 
       if (type === 'local') {
         return { ...old, localSubscriptions: del(localSubscriptions) }
-      } else {
-        return { ...old, remoteSubscriptions: del(remoteSubscriptions) }
       }
+      return { ...old, remoteSubscriptions: del(remoteSubscriptions) }
     })
   }
 
@@ -88,7 +86,7 @@ const SubscriptionStep: FC<SubscriptionSetupProps> = ({ type }) => {
             </Tr>
           ))}
           <Tr>
-            <Td colSpan={3}></Td>
+            <Td colSpan={3} />
             <Td>
               <ButtonGroup size="sm" isAttached variant="outline">
                 <IconButton

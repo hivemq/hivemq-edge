@@ -1,5 +1,5 @@
-import { ProtocolFacetType } from '@/modules/ProtocolAdapters/types.ts'
 import { ProtocolAdapter } from '@/api/__generated__'
+import { ProtocolFacetType } from '@/modules/ProtocolAdapters/types.ts'
 
 export const applyFacets = (facet: ProtocolFacetType): ((e: ProtocolAdapter) => boolean) => {
   return (adapter) => {

@@ -1,9 +1,9 @@
 import { describe, expect } from 'vitest'
 
-import { applyFacets } from './facets-utils.ts'
-import { ProtocolFacetType } from '@/modules/ProtocolAdapters/types.ts'
 import { ProtocolAdapter } from '@/api/__generated__'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { ProtocolFacetType } from '@/modules/ProtocolAdapters/types.ts'
+import { applyFacets } from './facets-utils.ts'
 
 interface TestEachSuite {
   a: ProtocolFacetType

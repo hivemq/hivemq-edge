@@ -1,6 +1,6 @@
-import { FC } from 'react'
-import { Circle, Flex, Heading, Image, Text, type HTMLChakraProps } from '@chakra-ui/react'
 import DefaultLogo from '@/assets/app/bridge-empty.svg'
+import { Circle, Flex, type HTMLChakraProps, Heading, Image, Text } from '@chakra-ui/react'
+import { FC } from 'react'
 
 interface WarningMessageProps extends HTMLChakraProps<'div'> {
   title?: string

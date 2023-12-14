@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import ButtonCTA from './ButtonCTA.tsx'
 import { hexToRgb } from '@/__test-utils__/color.ts'
+import ButtonCTA from './ButtonCTA.tsx'
 
 const MOCK_TITLE = 'Primary CTA Button'
 

@@ -1,14 +1,14 @@
-import { FC, useEffect, useMemo } from 'react'
+import { Button, FormControl, FormLabel, VStack } from '@chakra-ui/react'
 import { Select } from 'chakra-react-select'
+import { FC, useEffect, useMemo } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { Button, FormControl, FormLabel, VStack } from '@chakra-ui/react'
 import { BiAddToQueue } from 'react-icons/bi'
 
 import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.tsx'
 
-import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 import { ChartType, ChartTypeOption, MetricDefinition, MetricNameOption } from '../../types.ts'
+import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 
 interface MetricEditorProps {
   onSubmit: SubmitHandler<MetricDefinition>
@@ -36,10 +36,12 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
   })
 
   const sortedItems: MetricNameOption[] = useMemo(() => {
-    if (!data || !data.items) return []
+    if (!data || !data.items) {
+      return []
+    }
 
     return data.items
-      .filter((e) => e.name && e.name.includes(filter))
+      .filter((e) => e.name?.includes(filter))
       .map((e) => {
         const { device, suffix } = extractMetricInfo(e.name as string)
         return {

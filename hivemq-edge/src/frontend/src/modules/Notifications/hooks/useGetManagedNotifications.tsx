@@ -1,12 +1,12 @@
+import { ExternalLinkIcon } from '@chakra-ui/icons'
+import { Badge, Link, Text, UseToastOptions } from '@chakra-ui/react'
+import { useLocalStorage } from '@uidotdev/usehooks'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocalStorage } from '@uidotdev/usehooks'
-import { Badge, Link, Text, UseToastOptions } from '@chakra-ui/react'
-import { ExternalLinkIcon } from '@chakra-ui/icons'
 
-import { useGetReleases } from '@/api/hooks/useGitHub/useGetReleases.tsx'
-import { useGetNotifications } from '@/api/hooks/useFrontendServices/useGetNotifications.tsx'
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
+import { useGetNotifications } from '@/api/hooks/useFrontendServices/useGetNotifications.tsx'
+import { useGetReleases } from '@/api/hooks/useGitHub/useGetReleases.tsx'
 
 export const useGetManagedNotifications = () => {
   const { t } = useTranslation()
@@ -50,7 +50,7 @@ export const useGetManagedNotifications = () => {
     if (configuration && releases && releases.length > 0) {
       const { name, html_url } = releases[0]
       const currentVersion = configuration.environment?.properties?.version
-      if (currentVersion !== name && !readNotifications.includes(name) && !skip.includes(name))
+      if (currentVersion !== name && !readNotifications.includes(name) && !skip.includes(name)) {
         list.push({
           ...defaults,
           id: name,
@@ -70,6 +70,7 @@ export const useGetManagedNotifications = () => {
           ),
           onCloseComplete: () => handleReadNotification(name),
         })
+      }
     }
 
     return list

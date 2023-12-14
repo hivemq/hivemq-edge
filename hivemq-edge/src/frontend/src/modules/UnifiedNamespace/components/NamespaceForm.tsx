@@ -1,23 +1,23 @@
-import { FC } from 'react'
-import { SubmitHandler, useForm } from 'react-hook-form'
 import {
   Checkbox,
   Flex,
-  Text,
   FormControl,
   FormErrorMessage,
   FormHelperText,
   FormLabel,
   Grid,
   Input,
+  Text,
 } from '@chakra-ui/react'
+import { FC } from 'react'
+import { SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
 import { $ISA95ApiBean, ISA95ApiBean } from '@/api/__generated__'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
 
-import NamespaceDisplay from './NamespaceDisplay.tsx'
 import { NAMESPACE_SEPARATOR } from '../namespace-utils.ts'
+import NamespaceDisplay from './NamespaceDisplay.tsx'
 
 interface NamespaceFormProps {
   defaultValues: ISA95ApiBean
@@ -63,7 +63,7 @@ const NamespaceForm: FC<NamespaceFormProps> = ({ defaultValues, onSubmit }) => {
                 })}
               />
               {!errors.enterprise && <FormHelperText>{t('unifiedNamespace.enterprise.helper')}</FormHelperText>}
-              <FormErrorMessage>{errors.enterprise && errors.enterprise.message}</FormErrorMessage>
+              <FormErrorMessage>{errors.enterprise?.message}</FormErrorMessage>
             </FormControl>
 
             <FormControlSeparator />
@@ -134,7 +134,7 @@ const NamespaceForm: FC<NamespaceFormProps> = ({ defaultValues, onSubmit }) => {
             {t('unifiedNamespace.prefixAllTopics.label')}
           </Checkbox>
           <FormHelperText> {t('unifiedNamespace.prefixAllTopics.helper')}</FormHelperText>
-          <FormErrorMessage>{errors.prefixAllTopics && errors.prefixAllTopics.message}</FormErrorMessage>
+          <FormErrorMessage>{errors.prefixAllTopics?.message}</FormErrorMessage>
         </FormControl>
       </Flex>
     </form>

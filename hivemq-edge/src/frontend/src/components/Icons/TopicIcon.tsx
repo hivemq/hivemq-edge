@@ -1,7 +1,7 @@
-import { FC } from 'react'
 import { Icon, type IconProps } from '@chakra-ui/react'
-import { SiMqtt } from 'react-icons/si'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import { SiMqtt } from 'react-icons/si'
 
 const TopicIcon: FC<IconProps> = (props) => {
   const { t } = useTranslation('components')

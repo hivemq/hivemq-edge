@@ -1,7 +1,7 @@
-import { FC, lazy, Suspense, useEffect } from 'react'
+import { AbsoluteCenter, useDisclosure } from '@chakra-ui/react'
+import { FC, Suspense, lazy, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Node, useEdges, useNodes } from 'reactflow'
-import { AbsoluteCenter, useDisclosure } from '@chakra-ui/react'
 
 import { Adapter, Bridge } from '@/api/__generated__'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
@@ -26,12 +26,16 @@ const NodePanelController: FC = () => {
 
   const selectedLinkSource = nodes.find((e) => {
     const link = edges.find((e) => e.id === nodeId && e.type === EdgeTypes.REPORT_EDGE)
-    if (!link) return undefined
+    if (!link) {
+      return undefined
+    }
     return e.id === link.source && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
   }) as Node<Bridge | Adapter> | undefined
 
   useEffect(() => {
-    if (!nodes.length) return
+    if (!nodes.length) {
+      return
+    }
     // if (!selectedNode || !nodeId) {
     //   navigate('/edge-flow', { replace: true })
     //   return
@@ -63,7 +67,9 @@ const NodePanelController: FC = () => {
     }
   }
 
-  if (!nodeId) return null
+  if (!nodeId) {
+    return null
+  }
 
   return (
     <Suspense

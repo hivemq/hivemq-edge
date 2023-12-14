@@ -1,7 +1,7 @@
-/// <reference types="cypress" />
-import NamespaceForm from './NamespaceForm.tsx'
 import { MOCK_BREADCRUMB, MOCK_NAMESPACE } from '@/__test-utils__/mocks.ts'
 import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
+/// <reference types="cypress" />
+import NamespaceForm from './NamespaceForm.tsx'
 
 describe('NamespaceForm', () => {
   beforeEach(() => {

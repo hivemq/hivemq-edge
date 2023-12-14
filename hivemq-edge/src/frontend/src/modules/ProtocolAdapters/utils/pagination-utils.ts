@@ -13,8 +13,12 @@ export function compareStatus(rowA: Status.connection | undefined, rowB: Status.
   const a = STATUS_ORDER[rowA || STATUS_ERROR]
   const b = STATUS_ORDER[rowB || STATUS_ERROR]
 
-  if (a > b) return 1
-  if (a < b) return -1
+  if (a > b) {
+    return 1
+  }
+  if (a < b) {
+    return -1
+  }
   return 0
 }
 
@@ -29,7 +33,11 @@ export function compareSeverity(rowA: Event.severity | undefined, rowB: Event.se
   const a = rowA ? severityWeight[rowA] : -1
   const b = rowB ? severityWeight[rowB] : -1
 
-  if (a > b) return 1
-  if (a < b) return -1
+  if (a > b) {
+    return 1
+  }
+  if (a < b) {
+    return -1
+  }
   return 0
 }

@@ -1,34 +1,34 @@
-import { FC, useMemo, useState } from 'react'
 import { Box, HStack, IconButton, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
 import { ColumnDef, Row } from '@tanstack/react-table'
-import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
+import { FC, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
-import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
-import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDeleteProtocolAdapter.tsx'
 import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.tsx'
-import { ProblemDetails } from '@/api/types/http-problem-details.ts'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDeleteProtocolAdapter.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
+import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 
-import ErrorMessage from '@/components/ErrorMessage.tsx'
-import WarningMessage from '@/components/WarningMessage.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
+import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
+import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
-import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
-import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
+import WarningMessage from '@/components/WarningMessage.tsx'
 
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
-import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
 import { compareStatus } from '../../utils/pagination-utils.ts'
+import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
 
 const DEFAULT_PER_PAGE = 10
 
@@ -80,7 +80,9 @@ const ProtocolAdapters: FC = () => {
         protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
         protocolAdapterType: type,
       }
-      if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: adapterNavigateState })
+      if (adapterId) {
+        navigate(`/protocol-adapters/${adapterId}`, { state: adapterNavigateState })
+      }
     }
 
     const handleOnDelete = (adapterId: string) => {
@@ -89,7 +91,9 @@ const ProtocolAdapters: FC = () => {
     }
 
     const handleViewWorkspace = (adapterId: string, type: string) => {
-      if (adapterId) navigate(`/edge-flow`, { state: { selectedAdapter: { adapterId, type } } })
+      if (adapterId) {
+        navigate('/edge-flow', { state: { selectedAdapter: { adapterId, type } } })
+      }
     }
 
     return [
@@ -170,7 +174,9 @@ const ProtocolAdapters: FC = () => {
   }
 
   const handleConfirmOnSubmit = () => {
-    if (!deleteAdapter) return
+    if (!deleteAdapter) {
+      return
+    }
 
     deleteProtocolAdapter
       .mutateAsync(deleteAdapter)
@@ -202,7 +208,7 @@ const ProtocolAdapters: FC = () => {
     )
   }
 
-  if (safeData.length === 0)
+  if (safeData.length === 0) {
     return (
       <WarningMessage
         image={AdapterEmptyLogo}
@@ -212,6 +218,7 @@ const ProtocolAdapters: FC = () => {
         mt={10}
       />
     )
+  }
 
   return (
     <>

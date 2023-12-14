@@ -1,4 +1,3 @@
-import { FC } from 'react'
 import {
   Accordion,
   AccordionButton,
@@ -11,17 +10,18 @@ import {
   SimpleGrid,
   useDisclosure,
 } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '@uidotdev/usehooks'
+import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 import config from '@/config'
 
-import { ChartType, MetricDefinition } from './types.ts'
-import MetricEditor from './components/editor/MetricEditor.tsx'
 import ChartContainer from './components/container/ChartContainer.tsx'
 import Sample from './components/container/Sample.tsx'
+import MetricEditor from './components/editor/MetricEditor.tsx'
+import { ChartType, MetricDefinition } from './types.ts'
 
 interface MetricsProps {
   nodeId: string
@@ -60,8 +60,11 @@ const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }
         <Accordion
           allowToggle
           onChange={(expandedIndex) => {
-            if (expandedIndex === -1) onClose()
-            else onOpen()
+            if (expandedIndex === -1) {
+              onClose()
+            } else {
+              onOpen()
+            }
           }}
         >
           <AccordionItem>
@@ -87,7 +90,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }
       <CardBody>
         <SimpleGrid spacing={4} templateColumns="repeat(auto-fill, minmax(200px, 1fr))">
           {metrics.map((e) => {
-            if (!e.selectedChart || e.selectedChart === ChartType.SAMPLE)
+            if (!e.selectedChart || e.selectedChart === ChartType.SAMPLE) {
               return (
                 <Sample
                   key={e.selectedTopic}
@@ -95,16 +98,16 @@ const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }
                   onClose={() => handleRemoveMetrics(e.selectedTopic)}
                 />
               )
-            else
-              return (
-                <ChartContainer
-                  key={e.selectedTopic}
-                  chartType={e.selectedChart}
-                  metricName={e.selectedTopic}
-                  onClose={() => handleRemoveMetrics(e.selectedTopic)}
-                  canEdit={isOpen}
-                />
-              )
+            }
+            return (
+              <ChartContainer
+                key={e.selectedTopic}
+                chartType={e.selectedChart}
+                metricName={e.selectedTopic}
+                onClose={() => handleRemoveMetrics(e.selectedTopic)}
+                canEdit={isOpen}
+              />
+            )
           })}
         </SimpleGrid>
       </CardBody>

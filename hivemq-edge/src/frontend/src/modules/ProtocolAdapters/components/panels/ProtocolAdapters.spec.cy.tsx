@@ -1,9 +1,9 @@
 /// <reference types="cypress" />
 
-import ProtocolAdapters from '@/modules/ProtocolAdapters/components/panels/ProtocolAdapters.tsx'
-import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { mockAdapterConnectionStatus } from '@/api/hooks/useConnection/__handlers__'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
+import { mockAdapterConnectionStatus } from '@/api/hooks/useConnection/__handlers__'
+import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import ProtocolAdapters from '@/modules/ProtocolAdapters/components/panels/ProtocolAdapters.tsx'
 
 describe('ProtocolAdapters', () => {
   beforeEach(() => {

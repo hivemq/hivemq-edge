@@ -1,18 +1,18 @@
+import { Box, Flex, SimpleGrid } from '@chakra-ui/react'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { Box, Flex, SimpleGrid } from '@chakra-ui/react'
 
+import { mockISA95ApiBean } from '@/api/hooks/useUnifiedNamespace/__handlers__'
 import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUnifiedNamespace.tsx'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PageContainer from '@/components/PageContainer.tsx'
 import InfoPanel from '@/modules/UnifiedNamespace/components/panels/InfoPanel.tsx'
-import RecommendationPanel from '@/modules/UnifiedNamespace/components/panels/RecommendationPanel.tsx'
 import PrefixPanel from '@/modules/UnifiedNamespace/components/panels/PrefixPanel.tsx'
+import RecommendationPanel from '@/modules/UnifiedNamespace/components/panels/RecommendationPanel.tsx'
 import { BiPlus } from 'react-icons/bi'
-import { mockISA95ApiBean } from '@/api/hooks/useUnifiedNamespace/__handlers__'
 
 const UnifiedNamespacePage: FC = () => {
   const { t } = useTranslation()

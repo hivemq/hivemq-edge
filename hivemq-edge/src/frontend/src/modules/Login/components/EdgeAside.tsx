@@ -1,6 +1,6 @@
-import { FC } from 'react'
-import { Box, Heading, Image, Stack, Text } from '@chakra-ui/react'
 import logo from '@/assets/edge/04-hivemq-industrial-edge-vert-neg.svg'
+import { Box, Heading, Image, Stack, Text } from '@chakra-ui/react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
 const EdgeAside: FC = () => {

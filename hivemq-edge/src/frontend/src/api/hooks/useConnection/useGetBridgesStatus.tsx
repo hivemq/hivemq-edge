@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
-import config from '@/config'
 import { QUERY_KEYS } from '@/api/utils.ts'
+import config from '@/config'
+import { useQuery } from '@tanstack/react-query'
 
 export const useGetBridgesStatus = () => {
   const appClient = useHttpClient()

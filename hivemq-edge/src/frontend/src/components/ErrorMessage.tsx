@@ -1,5 +1,5 @@
-import { FC } from 'react'
 import { Alert, AlertDescription, AlertIcon, AlertTitle } from '@chakra-ui/react'
+import { FC } from 'react'
 
 interface ErrorMessageProps {
   type?: string | number

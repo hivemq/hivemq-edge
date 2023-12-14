@@ -1,8 +1,8 @@
-import { FC, ReactNode, useEffect, useState } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { FC, ReactNode, useEffect, useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { Adapter, ApiError } from '@/api/__generated__'
 import { useCreateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useCreateProtocolAdapter.tsx'
@@ -10,9 +10,9 @@ import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpd
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
-import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
-import AdapterInstanceDrawer from '@/modules/ProtocolAdapters/components/drawers/AdapterInstanceDrawer.tsx'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
+import AdapterInstanceDrawer from '@/modules/ProtocolAdapters/components/drawers/AdapterInstanceDrawer.tsx'
+import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 
 interface AdapterEditorProps {
   isNew?: boolean
@@ -39,7 +39,9 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
   }, [state])
 
   useEffect(() => {
-    if (!allAdapters) return
+    if (!allAdapters) {
+      return
+    }
     const instance = allAdapters?.find((e) => e.id === adapterId)
     if (!isNew && !instance) {
       errorToast(

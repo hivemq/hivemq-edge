@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { IoLinkOutline } from 'react-icons/io5'
 import { GoLinkExternal } from 'react-icons/go'
+import { IoLinkOutline } from 'react-icons/io5'
 
-import { OnboardingTask } from '@/modules/Welcome/types.ts'
-import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 import { ApiError } from '@/api/__generated__'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
+import { OnboardingTask } from '@/modules/Welcome/types.ts'
 
 export interface OnboardingFetchType {
   data?: OnboardingTask[]
@@ -54,7 +54,9 @@ export const useOnboarding = (): OnboardingFetchType => {
     },
   ]
 
-  if (isLoading || !isError) tasks.push(cloud)
+  if (isLoading || !isError) {
+    tasks.push(cloud)
+  }
 
   return {
     error,

@@ -1,6 +1,3 @@
-import { FC } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
 import {
   Box,
   Step,
@@ -8,24 +5,27 @@ import {
   StepIcon,
   StepIndicator,
   StepNumber,
-  Stepper,
   StepSeparator,
   StepStatus,
   StepTitle,
+  Stepper,
   useDisclosure,
   useSteps,
 } from '@chakra-ui/react'
+import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import PageContainer from '@/components/PageContainer.tsx'
 
+import { BridgeProvider } from '../../hooks/useBridgeConfig.tsx'
 import ConnectionStep from './ConnectionStep.tsx'
 import FinalCreateStep from './FinalCreateStep.tsx'
 import OptionsStep from './OptionsStep.tsx'
+import StepperDebugger from './StepperDebugger.tsx'
 import StepperNavigation from './StepperNavigation.tsx'
 import SubscriptionStep from './SubscriptionStep.tsx'
-import StepperDebugger from './StepperDebugger.tsx'
-import { BridgeProvider } from '../../hooks/useBridgeConfig.tsx'
 
 interface BridgeStepperProps {
   name?: string

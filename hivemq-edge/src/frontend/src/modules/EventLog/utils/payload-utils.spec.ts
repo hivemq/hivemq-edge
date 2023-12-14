@@ -1,6 +1,6 @@
-import { expect } from 'vitest'
 import { Payload } from '@/api/__generated__'
 import { mockEdgeEvent, mockXmlPayload } from '@/api/hooks/useEvents/__handlers__'
+import { expect } from 'vitest'
 
 import { prettifyXml, prettyJSON } from './payload-utils.ts'
 

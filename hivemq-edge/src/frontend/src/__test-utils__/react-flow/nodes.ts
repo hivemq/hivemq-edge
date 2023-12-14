@@ -1,9 +1,9 @@
-import { NodeProps, Position } from 'reactflow'
-import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
-import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { Listener } from '@/api/__generated__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
+import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { NodeProps, Position } from 'reactflow'
 
 const DEFAULT_NODE = {
   selected: false,

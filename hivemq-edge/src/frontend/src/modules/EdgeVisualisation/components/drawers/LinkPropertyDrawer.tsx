@@ -1,13 +1,13 @@
+import { Box, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader, Text } from '@chakra-ui/react'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Node } from 'reactflow'
-import { Box, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader, Text } from '@chakra-ui/react'
 
 import { Adapter, Bridge } from '@/api/__generated__'
 import Metrics from '@/modules/Metrics/Metrics.tsx'
 
-import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import { NodeTypes } from '../../types.ts'
+import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 
 interface LinkPropertyDrawerProps {
   nodeId: string

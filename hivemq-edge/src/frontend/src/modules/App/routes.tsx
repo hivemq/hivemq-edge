@@ -1,20 +1,20 @@
 import { createBrowserRouter } from 'react-router-dom'
 
+import PageContainer from '../../components/PageContainer.tsx'
 import Dashboard from '../Dashboard/Dashboard.tsx'
 import ErrorPage from './components/ErrorPage.tsx'
-import PageContainer from '../../components/PageContainer.tsx'
 
 import BridgePage from '@/modules/Bridges/BridgePage.tsx'
-import ProtocolAdapterPage from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
 import BridgeEditor from '@/modules/Bridges/components/panels/BridgeEditor.tsx'
+import EdgeFlowPage from '@/modules/EdgeVisualisation/EdgeFlowPage.tsx'
+import NodePanelController from '@/modules/EdgeVisualisation/components/controls/NodePanelController.tsx'
+import EvenLogPage from '@/modules/EventLog/EvenLogPage.tsx'
+import LoginPage from '@/modules/Login/LoginPage.tsx'
+import ProtocolAdapterPage from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
 import AdapterController from '@/modules/ProtocolAdapters/components/AdapterController.tsx'
 import UnifiedNamespacePage from '@/modules/UnifiedNamespace/UnifiedNamespacePage.tsx'
-import WelcomePage from '@/modules/Welcome/WelcomePage.tsx'
-import LoginPage from '@/modules/Login/LoginPage.tsx'
 import UnifiedNamespaceEditor from '@/modules/UnifiedNamespace/components/UnifiedNamespaceEditor.tsx'
-import EdgeFlowPage from '@/modules/EdgeVisualisation/EdgeFlowPage.tsx'
-import EvenLogPage from '@/modules/EventLog/EvenLogPage.tsx'
-import NodePanelController from '@/modules/EdgeVisualisation/components/controls/NodePanelController.tsx'
+import WelcomePage from '@/modules/Welcome/WelcomePage.tsx'
 
 export const routes = createBrowserRouter(
   [

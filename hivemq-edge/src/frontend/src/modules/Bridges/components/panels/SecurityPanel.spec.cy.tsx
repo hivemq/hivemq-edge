@@ -1,6 +1,6 @@
+import { FC } from 'react'
 /// <reference types="cypress" />
 import { useForm } from 'react-hook-form'
-import { FC } from 'react'
 
 import { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'

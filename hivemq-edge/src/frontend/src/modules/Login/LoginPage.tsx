@@ -1,15 +1,15 @@
-import { FC } from 'react'
 import { Box, Flex, Image, Stack } from '@chakra-ui/react'
+import { FC } from 'react'
 
-import logo from '@/assets/edge/01-hivemq-industrial-edge.svg'
 import bgImage from '@/assets/app/background-sidepanel.svg'
+import logo from '@/assets/edge/01-hivemq-industrial-edge.svg'
 
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
-import Login from './components/Login.tsx'
-import EdgeAside from './components/EdgeAside.tsx'
 import { useTranslation } from 'react-i18next'
+import EdgeAside from './components/EdgeAside.tsx'
+import Login from './components/Login.tsx'
 
 const LoginPage: FC = () => {
   const { data, isLoading, error } = useGetConfiguration()
@@ -35,7 +35,7 @@ const LoginPage: FC = () => {
             {isLoading && <LoaderSpinner />}
             {!isLoading && <Login first={data?.firstUseInformation} preLoadError={error} />}
           </div>
-          <Box flex={1}></Box>
+          <Box flex={1} />
         </Flex>
       </Stack>
     </main>

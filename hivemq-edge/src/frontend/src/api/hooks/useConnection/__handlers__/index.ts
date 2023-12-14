@@ -1,6 +1,6 @@
-import { rest } from 'msw'
-import { Status, StatusList } from '@/api/__generated__'
 import { MOCK_ADAPTER_ID, MOCK_BRIDGE_ID } from '@/__test-utils__/mocks.ts'
+import { Status, StatusList } from '@/api/__generated__'
+import { rest } from 'msw'
 
 export const mockBridgeConnectionStatus: Status = {
   id: MOCK_BRIDGE_ID,

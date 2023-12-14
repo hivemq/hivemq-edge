@@ -1,17 +1,17 @@
 import { useMemo } from 'react'
-import ReactFlow, { Background } from 'reactflow'
 import { Outlet } from 'react-router-dom'
+import ReactFlow, { Background } from 'reactflow'
 
 import 'reactflow/dist/style.css'
 
-import { EdgeTypes, NodeTypes } from '../types.ts'
 import useGetFlowElements from '../hooks/useGetFlowElements.tsx'
+import { EdgeTypes, NodeTypes } from '../types.ts'
 
-import StatusListener from './controls/StatusListener.tsx'
 import CanvasControls from './controls/CanvasControls.tsx'
 import SelectionListener from './controls/SelectionListener.tsx'
-import { NodeListener, NodeAdapter, NodeGroup, NodeBridge, NodeEdge } from './nodes/'
+import StatusListener from './controls/StatusListener.tsx'
 import MonitoringEdge from './edges/MonitoringEdge.tsx'
+import { NodeAdapter, NodeBridge, NodeEdge, NodeGroup, NodeListener } from './nodes/'
 
 const ReactFlowWrapper = () => {
   const { nodes, edges, onNodesChange, onEdgesChange } = useGetFlowElements()

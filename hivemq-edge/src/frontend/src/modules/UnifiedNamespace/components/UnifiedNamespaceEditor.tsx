@@ -1,4 +1,3 @@
-import { FC, useEffect } from 'react'
 import {
   Drawer,
   DrawerBody,
@@ -9,9 +8,10 @@ import {
   DrawerOverlay,
   useDisclosure,
 } from '@chakra-ui/react'
+import { FC, useEffect } from 'react'
 import { SubmitHandler } from 'react-hook-form'
-import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 import { ApiError, ISA95ApiBean } from '@/api/__generated__'
 import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUnifiedNamespace.tsx'
@@ -66,7 +66,9 @@ const UnifiedNamespaceEditor: FC<UnifiedNamespaceEditorProps> = () => {
     onClose()
     navigate('/namespace')
   }
-  if (!data) return null
+  if (!data) {
+    return null
+  }
 
   return (
     <Drawer closeOnOverlayClick={false} size={'lg'} isOpen={isOpen} placement="right" onClose={handleEditorOnClose}>

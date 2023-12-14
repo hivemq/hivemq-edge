@@ -1,9 +1,9 @@
 import { renderHook } from '@testing-library/react'
 import { describe, expect } from 'vitest'
 
-import { useEdgeFlowContext } from './useEdgeFlowContext.tsx'
-import { EdgeFlowProvider } from './FlowContext.tsx'
 import { EdgeFlowOptions } from '@/modules/EdgeVisualisation/types.ts'
+import { EdgeFlowProvider } from './FlowContext.tsx'
+import { useEdgeFlowContext } from './useEdgeFlowContext.tsx'
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
   <EdgeFlowProvider>{children}</EdgeFlowProvider>

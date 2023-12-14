@@ -1,8 +1,8 @@
-import { FC, useMemo } from 'react'
-import { Node } from 'reactflow'
 import { Card, CardBody, HStack, Icon, StackDivider, Tag, Text, VStack } from '@chakra-ui/react'
-import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
+import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
+import { Node } from 'reactflow'
 
 import { Adapter, Bridge } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
@@ -19,15 +19,19 @@ const NodeNameCard: FC<NodeNameCardProps> = ({ selectedNode }) => {
   const { type } = selectedNode
 
   const adapterType = useMemo(() => {
-    if (!data) return undefined
-    if (type === NodeTypes.BRIDGE_NODE) return undefined
+    if (!data) {
+      return undefined
+    }
+    if (type === NodeTypes.BRIDGE_NODE) {
+      return undefined
+    }
 
     const adapterType = (selectedNode as Node<Adapter>).data.type
     return data?.items?.find((e) => e.id === adapterType)
   }, [data, selectedNode, type])
 
   const EntityIcon = useMemo(() => {
-    if (type === NodeTypes.BRIDGE_NODE)
+    if (type === NodeTypes.BRIDGE_NODE) {
       return (
         <Icon
           data-testid={'node-type-icon'}
@@ -36,6 +40,7 @@ const NodeNameCard: FC<NodeNameCardProps> = ({ selectedNode }) => {
           fontSize={'40px'}
         />
       )
+    }
     return <Icon data-testid={'node-type-icon'} data-nodeicon={NodeTypes.ADAPTER_NODE} as={PiPlugsConnectedFill} />
   }, [type])
 

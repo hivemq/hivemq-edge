@@ -1,6 +1,6 @@
+import { Box, Flex, Heading, Text, VisuallyHidden } from '@chakra-ui/react'
 import { FC, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Box, Text, Flex, Heading, VisuallyHidden } from '@chakra-ui/react'
 
 interface PageContainerProps {
   title?: string

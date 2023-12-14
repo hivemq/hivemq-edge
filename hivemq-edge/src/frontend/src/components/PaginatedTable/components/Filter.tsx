@@ -1,9 +1,9 @@
-import { useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Box } from '@chakra-ui/react'
 import { Column } from '@tanstack/react-table'
 import { CreatableSelect } from 'chakra-react-select'
-import { Box } from '@chakra-ui/react'
 import { DateTime } from 'luxon'
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import DateTimeRangeSelector from '@/components/DateTime/DateTimeRangeSelector.tsx'
 
@@ -47,8 +47,11 @@ export const Filter = <T,>({
           min={DateTime.fromMillis(min)}
           max={DateTime.fromMillis(max)}
           setFilterValue={(v) => {
-            if (v) setFilterValue([v[0], v[1]])
-            else setFilterValue(undefined)
+            if (v) {
+              setFilterValue([v[0], v[1]])
+            } else {
+              setFilterValue(undefined)
+            }
           }}
         />
       </Box>
@@ -56,7 +59,9 @@ export const Filter = <T,>({
   }
 
   // we are not supporting numbers yet
-  if (typeof firstValue === 'number') return null
+  if (typeof firstValue === 'number') {
+    return null
+  }
 
   return (
     <Box w={'100%'} textTransform={'none'} fontWeight={'initial'}>

@@ -1,17 +1,17 @@
+import { useTheme } from '@chakra-ui/react'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Edge, Node, useEdgesState, useNodesState } from 'reactflow'
-import { useTheme } from '@chakra-ui/react'
 
 import { Adapter, Bridge, ProtocolAdapter } from '@/api/__generated__'
-import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
-import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { useGetListeners } from '@/api/hooks/useGateway/useGetListeners.tsx'
+import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 
-import { createEdgeNode, createBridgeNode, createAdapterNode, createListenerNode } from '../utils/nodes-utils.ts'
-import { applyLayout } from '../utils/layout-utils.ts'
 import { useEdgeFlowContext } from '../hooks/useEdgeFlowContext.tsx'
+import { applyLayout } from '../utils/layout-utils.ts'
+import { createAdapterNode, createBridgeNode, createEdgeNode, createListenerNode } from '../utils/nodes-utils.ts'
 
 const useGetFlowElements = () => {
   const { t } = useTranslation()
@@ -27,8 +27,12 @@ const useGetFlowElements = () => {
   const { items: listeners } = listenerList || {}
 
   useEffect(() => {
-    if (!bridges) return
-    if (!adapters) return
+    if (!bridges) {
+      return
+    }
+    if (!adapters) {
+      return
+    }
 
     const nodes: Node[] = []
     const edges: Edge[] = []

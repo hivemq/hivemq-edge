@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
 
-import { parseJWT, verifyJWT } from './utils'
 import { JWTPayload } from './types/jwt-payload.ts'
+import { parseJWT, verifyJWT } from './utils'
 
 const MOCK_DURATION = 30 * 60
 const MOCK_BEFORE = 120

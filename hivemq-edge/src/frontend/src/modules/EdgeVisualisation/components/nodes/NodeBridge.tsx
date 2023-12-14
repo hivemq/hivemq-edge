@@ -1,17 +1,17 @@
-import { FC } from 'react'
-import { Handle, Position, NodeProps } from 'reactflow'
 import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
+import { Handle, NodeProps, Position } from 'reactflow'
 
 import { Bridge } from '@/api/__generated__'
-import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import logo from '@/assets/hivemq/05-icon-hivemq-bridge-extension.svg'
+import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 
+import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
+import { getBridgeTopics } from '../../utils/topics-utils.ts'
 import NodeWrapper from '../parts/NodeWrapper.tsx'
 import TopicsContainer from '../parts/TopicsContainer.tsx'
-import { getBridgeTopics } from '../../utils/topics-utils.ts'
-import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
 
 const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
   const { t } = useTranslation()

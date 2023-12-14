@@ -1,6 +1,3 @@
-import { FC, useEffect } from 'react'
-import { SubmitHandler, useForm } from 'react-hook-form'
-import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Alert,
   AlertDescription,
@@ -16,10 +13,13 @@ import {
   Input,
   Text,
 } from '@chakra-ui/react'
+import { FC, useEffect } from 'react'
+import { SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-import { usePostAuthentication } from '@/api/hooks/usePostAuthentication'
 import { ApiBearerToken, ApiError, FirstUseInformation, UsernamePasswordCredentials } from '@/api/__generated__'
+import { usePostAuthentication } from '@/api/hooks/usePostAuthentication'
 import { parseJWT } from '@/api/utils.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
@@ -46,20 +46,21 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
   const showFirstUseMessage = (!!first?.firstUseDescription || !!first?.firstUseTitle) && !errors.root
 
   const verifyCredential = (e: ApiBearerToken) => {
-    if (!e.token)
+    if (!e.token) {
       setError('root.ApiError', {
         type: t('login.error.tokenType') as string,
         message: t('login.error.tokenInvalid') as string,
       })
-    else if (!parseJWT(e.token))
+    } else if (!parseJWT(e.token)) {
       setError('root.ApiError', {
         type: t('login.error.tokenType') as string,
         message: t('login.error.tokenExpired') as string,
       })
-    else
+    } else {
       auth.login({ token: e.token }, () => {
         navigate(location.state?.from?.pathname || '/', { replace: true })
       })
+    }
   }
 
   const onSubmit: SubmitHandler<UsernamePasswordCredentials> = (data) => {
@@ -71,7 +72,9 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
   }
 
   useEffect(() => {
-    if (!isError) return
+    if (!isError) {
+      return
+    }
 
     setError('root.ApiError', {
       type: error.message,
@@ -80,7 +83,9 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
   }, [isError, error, setError, t])
 
   useEffect(() => {
-    if (!preLoadError) return
+    if (!preLoadError) {
+      return
+    }
 
     setError('root.ApiError', {
       type: preLoadError.message,
@@ -124,7 +129,7 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
                 required: t('translation:login.username.error.required') as string,
               })}
             />
-            <FormErrorMessage>{errors.userName && errors.userName.message}</FormErrorMessage>
+            <FormErrorMessage>{errors.userName?.message}</FormErrorMessage>
           </FormControl>
           <FormControl isInvalid={!!errors.password} mt={'2em'} isRequired>
             <FormLabel htmlFor="password">{t('translation:login.password.label')}</FormLabel>
@@ -138,7 +143,7 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
                 required: t('translation:login.password.error.required') as string,
               }}
             />
-            <FormErrorMessage>{errors.password && errors.password.message}</FormErrorMessage>
+            <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
           </FormControl>
           <Button
             data-testid="loginPage-submit"

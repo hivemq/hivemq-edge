@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import ConnectionButton from './ConnectionButton.tsx'
 import { StatusTransitionCommand } from '@/api/__generated__'
+import ConnectionButton from './ConnectionButton.tsx'
 
 const MOCK_ID = 'my-id'
 

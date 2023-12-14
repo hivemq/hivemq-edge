@@ -1,8 +1,8 @@
-import { describe, expect } from 'vitest'
 import { DateTime, Duration } from 'luxon'
+import { describe, expect } from 'vitest'
 
-import { makeDefaultRangeOption, sortRangeOption } from '../utils/range-option.utils.ts'
 import { MOCK_DATE_TIME_NOW, MOCK_RANGE_OPTION } from '../utils/range-option.mocks.ts'
+import { makeDefaultRangeOption, sortRangeOption } from '../utils/range-option.utils.ts'
 
 describe('sortRangeOption', () => {
   it('should sort RangeOption based on duration ', () => {

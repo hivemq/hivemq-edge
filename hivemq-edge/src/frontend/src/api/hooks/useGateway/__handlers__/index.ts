@@ -1,5 +1,5 @@
-import { rest } from 'msw'
 import { Listener, ListenerList } from '@/api/__generated__'
+import { rest } from 'msw'
 
 export const mockMqttListener: Listener = {
   name: 'tcp-listener-1883',

@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 import { IoLinkOutline } from 'react-icons/io5'
 
-import Onboarding from './Onboarding.tsx'
 import { OnboardingFetchType } from '@/modules/Welcome/hooks/useOnboarding.tsx'
+import Onboarding from './Onboarding.tsx'
 
 const MOCK_ONBOARDING: OnboardingFetchType = {
   data: [

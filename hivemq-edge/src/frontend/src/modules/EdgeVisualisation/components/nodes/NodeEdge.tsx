@@ -1,7 +1,7 @@
-import { FC } from 'react'
-import { Handle, Position, NodeProps } from 'reactflow'
 import { Image, Text } from '@chakra-ui/react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Handle, NodeProps, Position } from 'reactflow'
 
 import logo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'
 import NodeWrapper from '../parts/NodeWrapper.tsx'

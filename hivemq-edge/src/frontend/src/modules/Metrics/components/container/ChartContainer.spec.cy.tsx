@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { MOCK_METRIC_SAMPLE, MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
+import { MOCK_METRICS, MOCK_METRIC_SAMPLE } from '@/api/hooks/useGetMetrics/__handlers__'
 import { ChartType } from '@/modules/Metrics/types.ts'
 
 import ChartContainer from './ChartContainer.tsx'
@@ -8,7 +8,7 @@ import ChartContainer from './ChartContainer.tsx'
 describe('ChartContainer', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept(`/api/v1/metrics/**`, MOCK_METRIC_SAMPLE)
+    cy.intercept('/api/v1/metrics/**', MOCK_METRIC_SAMPLE)
   })
 
   it('should render the chart container', () => {

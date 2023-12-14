@@ -1,8 +1,8 @@
+import { setupWorker } from 'msw'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import MainApp from './modules/App/MainApp.tsx'
 import { handlers } from './__test-utils__/msw/handlers.ts'
-import { setupWorker } from 'msw'
+import MainApp from './modules/App/MainApp.tsx'
 
 import './config/i18n.config'
 
@@ -18,7 +18,7 @@ if (import.meta.env.MODE === 'development') {
 
 const body = document.querySelector('body')
 if (body) {
-  body.dataset['appVersion'] = import.meta.env.VITE_APP_VERSION
+  body.dataset.appVersion = import.meta.env.VITE_APP_VERSION
 }
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(

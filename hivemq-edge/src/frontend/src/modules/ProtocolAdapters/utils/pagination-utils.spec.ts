@@ -1,5 +1,5 @@
-import { describe, expect } from 'vitest'
 import { Event, Status } from '@/api/__generated__'
+import { describe, expect } from 'vitest'
 
 import { compareSeverity, compareStatus } from './pagination-utils.ts'
 

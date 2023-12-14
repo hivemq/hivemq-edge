@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import PrefixPanel from './PrefixPanel.tsx'
 import { MOCK_NAMESPACE } from '@/__test-utils__/mocks.ts'
+import PrefixPanel from './PrefixPanel.tsx'
 
 describe('PrefixPanel', () => {
   beforeEach(() => {

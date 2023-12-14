@@ -1,10 +1,10 @@
-import { FC, useEffect, useState } from 'react'
-import { DateTime } from 'luxon'
 import { ActionMeta, CreatableSelect, SingleValue } from 'chakra-react-select'
+import { DateTime } from 'luxon'
+import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { RangeOption } from './types.ts'
 import Option from './components/Option.tsx'
+import { RangeOption } from './types.ts'
 import { makeDefaultRangeOption } from './utils/range-option.utils.ts'
 
 interface DateTimeRangeSelectorProps {
@@ -20,7 +20,9 @@ const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max, setFi
 
   useEffect(() => {
     const dd = makeDefaultRangeOption(min, max)
-    if (dd) setOptions(dd)
+    if (dd) {
+      setOptions(dd)
+    }
   }, [min, max])
 
   const handleCreate = (inputValue: string) => {
@@ -29,7 +31,9 @@ const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max, setFi
       const old = [...prev]
       const last = old.pop()
       const newOptions = [...old, newOption]
-      if (last) newOptions.push(last)
+      if (last) {
+        newOptions.push(last)
+      }
       return newOptions
     })
   }

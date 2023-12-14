@@ -1,12 +1,12 @@
-import { FC } from 'react'
+import { Badge, Box, Card, Text } from '@chakra-ui/react'
 import { BarDatum, ResponsiveBar } from '@nivo/bar'
 import { DateTime } from 'luxon'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Badge, Box, Card, Text } from '@chakra-ui/react'
 
-import { ChartProps } from '../../types.ts'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import { extractMetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
+import { ChartProps } from '../../types.ts'
 
 interface Datum extends BarDatum {
   sampleTime: string
@@ -15,7 +15,9 @@ interface Datum extends BarDatum {
 const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, ...props }) => {
   const { t } = useTranslation()
 
-  if (!metricName) return null
+  if (!metricName) {
+    return null
+  }
 
   const { suffix, device } = extractMetricInfo(metricName)
   const seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
@@ -91,7 +93,7 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, .
           legendOffset: 32,
           truncateTickAt: 0,
           format: (value) => {
-            return '+' + DateTime.fromISO(value).second
+            return `+${DateTime.fromISO(value).second}`
           },
         }}
         axisLeft={{

@@ -1,5 +1,5 @@
-import { BoxProps } from '@chakra-ui/react'
 import { DataPoint } from '@/api/__generated__'
+import { BoxProps } from '@chakra-ui/react'
 
 export enum ChartType {
   SAMPLE = 'SAMPLE',

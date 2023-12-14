@@ -1,4 +1,4 @@
-import { Text, useToast, UseToastOptions } from '@chakra-ui/react'
+import { Text, UseToastOptions, useToast } from '@chakra-ui/react'
 
 import { ApiError } from '@/api/__generated__'
 import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
@@ -15,7 +15,7 @@ export const useEdgeToast = () => {
 
   const errorToast = (options: UseToastOptions, err: Error) => {
     const { body } = err as ApiError
-    if ((options.id && !createToast.isActive(options.id)) || !options.id)
+    if ((options.id && !createToast.isActive(options.id)) || !options.id) {
       createToast({
         ...DEFAULT_TOAST_OPTION,
         ...options,
@@ -24,7 +24,7 @@ export const useEdgeToast = () => {
           <>
             <Text>{options?.description}</Text>
             {!body && <Text>{err.message}</Text>}
-            {body && body.message && <Text>{body.message}</Text>}
+            {body?.message && <Text>{body.message}</Text>}
             {body?.errors?.map((e: ProblemDetailsExtended) => (
               <Text key={e.fieldName as string}>
                 {e.fieldName as string} : {e.detail || e.title}
@@ -33,6 +33,7 @@ export const useEdgeToast = () => {
           </>
         ),
       })
+    }
   }
 
   return { successToast, errorToast }

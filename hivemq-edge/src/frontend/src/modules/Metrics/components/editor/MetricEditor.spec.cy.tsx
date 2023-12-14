@@ -1,11 +1,11 @@
 /// <reference types="cypress" />
 
 import { MetricList } from '@/api/__generated__'
-import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
+import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 
-import MetricSelector from './MetricEditor.tsx'
 import { ChartType } from '@/modules/Metrics/types.ts'
+import MetricSelector from './MetricEditor.tsx'
 
 describe('MetricEditor', () => {
   beforeEach(() => {

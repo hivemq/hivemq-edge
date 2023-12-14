@@ -1,10 +1,10 @@
+import { Button, Input, InputGroup, InputProps as CUIInputProps, InputRightElement } from '@chakra-ui/react'
 import { FC, useState } from 'react'
-import { Button, Input, InputGroup, InputRightElement, InputProps as CUIInputProps } from '@chakra-ui/react'
 
 import {
   FieldValues,
-  UseFormRegister,
   RegisterOptions,
+  UseFormRegister,
   // useForm, // don't need this import
 } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'

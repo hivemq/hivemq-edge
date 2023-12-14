@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { ApiError, ListenerList } from '@/api/__generated__'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
-import { ApiError, ListenerList } from '@/api/__generated__'
+import { useQuery } from '@tanstack/react-query'
 
 export const useGetListeners = () => {
   const appClient = useHttpClient()
