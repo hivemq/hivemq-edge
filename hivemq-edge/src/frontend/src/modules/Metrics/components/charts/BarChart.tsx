@@ -116,18 +116,16 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, c
         }}
         legends={[
           {
-            dataFrom: 'keys',
+            direction: 'row',
             anchor: 'bottom-right',
-            direction: 'column',
-            justify: false,
-            translateX: 120,
-            translateY: 0,
-            itemsSpacing: 2,
-            itemWidth: 100,
+            dataFrom: 'keys',
+            itemDirection: 'right-to-left',
+            translateY: 70,
+
+            itemWidth: 0,
             itemHeight: 20,
-            itemDirection: 'left-to-right',
-            itemOpacity: 0.85,
-            symbolSize: 20,
+            // itemOpacity: 0.85,
+            // symbolSize: 20,
             effects: [
               {
                 on: 'hover',
