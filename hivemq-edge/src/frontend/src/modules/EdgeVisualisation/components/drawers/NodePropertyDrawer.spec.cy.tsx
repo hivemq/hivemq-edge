@@ -31,7 +31,7 @@ describe('NodePropertyDrawer', () => {
         isOpen={true}
         onClose={onClose}
         onEditEntity={onEditEntity}
-      />
+      />,
     )
 
     // check the panel control
@@ -63,7 +63,7 @@ describe('NodePropertyDrawer', () => {
         isOpen={true}
         onClose={cy.stub()}
         onEditEntity={cy.stub()}
-      />
+      />,
     )
 
     cy.checkAccessibility(undefined, {

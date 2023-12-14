@@ -7,7 +7,9 @@ import config from '@/config'
 
 const InfoPanel: FC = () => {
   const { t } = useTranslation()
-  const descriptions = t('unifiedNamespace.container.info.descriptions', { returnObjects: true }) as string[]
+  const descriptions = t('unifiedNamespace.container.info.descriptions', {
+    returnObjects: true,
+  }) as string[]
 
   return (
     <Card>

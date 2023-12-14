@@ -59,8 +59,8 @@ const UnifiedNamespaceEditor: FC<UnifiedNamespaceEditorProps> = () => {
             title: t('unifiedNamespace.toast.update.title'),
             description: t('unifiedNamespace.toast.update.error'),
           },
-          err
-        )
+          err,
+        ),
       )
 
     onClose()

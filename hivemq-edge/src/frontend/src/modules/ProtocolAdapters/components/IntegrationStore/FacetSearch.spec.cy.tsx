@@ -12,7 +12,11 @@ describe('FacetSearch', () => {
     const mockOnSubmit = cy.spy().as('onSubmit')
 
     cy.mountWithProviders(
-      <FacetSearch items={[mockProtocolAdapter]} facet={{ search: '123', filter: undefined }} onChange={mockOnSubmit} />
+      <FacetSearch
+        items={[mockProtocolAdapter]}
+        facet={{ search: '123', filter: undefined }}
+        onChange={mockOnSubmit}
+      />,
     )
     cy.get('#facet-search-input').should('contain.value', '123')
     cy.getByTestId('facet-filter-clear').should('contain.text', 'No filter').should('have.attr', 'aria-pressed', 'true')
@@ -30,7 +34,7 @@ describe('FacetSearch', () => {
         items={[mockProtocolAdapter]}
         facet={{ search: undefined, filter: { key: 'tags', value: 'tag1' } }}
         onChange={mockOnSubmit}
-      />
+      />,
     )
     cy.get('#facet-search-input').should('not.contain.value')
     cy.getByTestId('facet-filter-clear')
@@ -46,7 +50,11 @@ describe('FacetSearch', () => {
     const mockOnSubmit = cy.spy().as('onSubmit')
 
     cy.mountWithProviders(
-      <FacetSearch items={[mockProtocolAdapter]} facet={{ search: '123', filter: undefined }} onChange={mockOnSubmit} />
+      <FacetSearch
+        items={[mockProtocolAdapter]}
+        facet={{ search: '123', filter: undefined }}
+        onChange={mockOnSubmit}
+      />,
     )
     cy.get('#facet-search-input').type('4')
     cy.get('@onSubmit').should('have.been.calledWith', { search: '1234' })
@@ -56,7 +64,11 @@ describe('FacetSearch', () => {
     const mockOnSubmit = cy.spy().as('onSubmit')
 
     cy.mountWithProviders(
-      <FacetSearch items={[mockProtocolAdapter]} facet={{ search: '123', filter: undefined }} onChange={mockOnSubmit} />
+      <FacetSearch
+        items={[mockProtocolAdapter]}
+        facet={{ search: '123', filter: undefined }}
+        onChange={mockOnSubmit}
+      />,
     )
     cy.get('#facet-search-clear').click()
     cy.get('@onSubmit').should('have.been.calledWith', { search: null })
@@ -69,7 +81,7 @@ describe('FacetSearch', () => {
         items={[mockProtocolAdapter]}
         facet={{ search: 'ny term', filter: undefined }}
         onChange={cy.stub()}
-      />
+      />,
     )
 
     cy.checkAccessibility()

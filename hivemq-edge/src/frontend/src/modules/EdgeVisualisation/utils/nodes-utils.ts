@@ -32,7 +32,7 @@ export const createBridgeNode = (
   nbBridge: number,
   maxBridge: number,
   theme: Partial<WithCSSVar<Dict>>,
-  positionStorage?: Record<string, XYPosition>
+  positionStorage?: Record<string, XYPosition>,
 ) => {
   const idBridge = `${IdStubs.BRIDGE_NODE}@${bridge.id}`
   const isConnected =
@@ -108,7 +108,7 @@ export const createBridgeNode = (
 export const createListenerNode = (
   listener: Listener,
   nbListener: number,
-  positionStorage?: Record<string, XYPosition>
+  positionStorage?: Record<string, XYPosition>,
 ) => {
   const idListener = `${IdStubs.LISTENER_NODE}@${listener.name}`
 
@@ -145,7 +145,7 @@ export const createAdapterNode = (
   nbAdapter: number,
   maxAdapter: number,
   theme: Partial<WithCSSVar<Dict>>,
-  positionStorage?: Record<string, XYPosition>
+  positionStorage?: Record<string, XYPosition>,
 ) => {
   const idAdapter = `${IdStubs.ADAPTER_NODE}@${adapter.id}`
   const isConnected =

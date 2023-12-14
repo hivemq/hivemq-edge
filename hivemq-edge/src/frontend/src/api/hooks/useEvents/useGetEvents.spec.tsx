@@ -33,7 +33,7 @@ describe('useGetEvents', () => {
         expect(result.current.isLoading).toBeFalsy()
         expect(result.current.isSuccess).toBeTruthy()
       },
-      { timeout: 25000 }
+      { timeout: 25000 },
     )
     expect(result.current.data?.items).toHaveLength(200)
   })

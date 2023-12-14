@@ -82,7 +82,7 @@ export const updateEdgesStatus = (
   currentEdges: Edge[],
   updates: Status[],
   getNode: Instance.GetNode<Partial<Bridge | Adapter>>,
-  theme: Partial<WithCSSVar<Dict>>
+  theme: Partial<WithCSSVar<Dict>>,
 ): Edge[] => {
   return currentEdges.map((edge) => {
     const [a, b] = edge.source.split('@')
@@ -98,12 +98,18 @@ export const updateEdgesStatus = (
       const type = adapterTypes?.find((e) => e.id === (source.data as Adapter).type)
       const topics = type ? discoverAdapterTopics(type, (source.data as Adapter).config as GenericObjectType) : []
 
-      return { ...edge, ...getEdgeStatus(isConnected, !!topics.length, getThemeForStatus(theme, status)) }
+      return {
+        ...edge,
+        ...getEdgeStatus(isConnected, !!topics.length, getThemeForStatus(theme, status)),
+      }
     }
 
     if (source && source.type === NodeTypes.BRIDGE_NODE) {
       const { remote } = getBridgeTopics(source.data as Bridge)
-      return { ...edge, ...getEdgeStatus(isConnected, !!remote.length, getThemeForStatus(theme, status)) }
+      return {
+        ...edge,
+        ...getEdgeStatus(isConnected, !!remote.length, getThemeForStatus(theme, status)),
+      }
     }
     return edge
   })

@@ -33,7 +33,7 @@ export const FieldTemplate: FC<FieldTemplateProps> = (props) => {
   const WrapIfAdditionalTemplate = getTemplate<'WrapIfAdditionalTemplate'>(
     'WrapIfAdditionalTemplate',
     registry,
-    uiOptions
+    uiOptions,
   )
 
   if (hidden) {

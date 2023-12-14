@@ -21,7 +21,11 @@ export const mockAuthApi = (credentials: UsernamePasswordCredentials) => {
       })
     }
   return (req: CyHttpMessages.IncomingHttpRequest) => {
-    req.reply({ statusCode: 401, status: 401, body: { title: 'Invalid username and/or password', code: 401 } })
+    req.reply({
+      statusCode: 401,
+      status: 401,
+      body: { title: 'Invalid username and/or password', code: 401 },
+    })
   }
 }
 
@@ -32,7 +36,7 @@ export const handlers = [
         token: TOKEN,
       }),
 
-      ctx.status(200)
+      ctx.status(200),
     )
   }),
 ]

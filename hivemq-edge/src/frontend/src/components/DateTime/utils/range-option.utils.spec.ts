@@ -12,26 +12,26 @@ describe('sortRangeOption', () => {
     expect(
       sortRangeOption(
         { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ minute: 1 }) },
-        { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ minute: 1 }) }
-      )
+        { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ minute: 1 }) },
+      ),
     ).toEqual(0)
     expect(
       sortRangeOption(
         { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ minute: 10 }) },
-        { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ minute: 1 }) }
-      )
+        { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ minute: 1 }) },
+      ),
     ).toEqual(1)
     expect(
       sortRangeOption(
         { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ minute: 1 }) },
-        { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ minute: 10 }) }
-      )
+        { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ minute: 10 }) },
+      ),
     ).toEqual(-1)
     expect(
       sortRangeOption(
         { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ minute: 1 }) },
-        { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ hour: 10 }) }
-      )
+        { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ hour: 10 }) },
+      ),
     ).toEqual(-1)
   })
 })

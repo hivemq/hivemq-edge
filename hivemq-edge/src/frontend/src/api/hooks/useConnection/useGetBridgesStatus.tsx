@@ -18,6 +18,6 @@ export const useGetBridgesStatus = () => {
         // return data ? 4 * 1000 : Math.max(Math.min(query.state.errorUpdateCount, 5 * 60), 4) * 1000
         return config.httpClient.pollingRefetchInterval
       },
-    }
+    },
   )
 }

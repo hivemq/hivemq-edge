@@ -11,6 +11,6 @@ export const useGetBridge = (name: string | undefined) => {
       const item = await appClient.bridges.getBridgeByName(name as string)
       return item
     },
-    { enabled: name !== undefined }
+    { enabled: name !== undefined },
   )
 }

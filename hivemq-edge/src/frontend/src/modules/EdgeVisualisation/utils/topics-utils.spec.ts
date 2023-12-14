@@ -24,7 +24,11 @@ describe('getBridgeTopics', () => {
   })
 
   it('should handle empty subscriptions', async () => {
-    const actual = getBridgeTopics({ ...mockBridge, localSubscriptions: undefined, remoteSubscriptions: undefined })
+    const actual = getBridgeTopics({
+      ...mockBridge,
+      localSubscriptions: undefined,
+      remoteSubscriptions: undefined,
+    })
     const expected: { local: TopicFilter[]; remote: TopicFilter[] } = {
       local: [],
       remote: [],
@@ -121,7 +125,7 @@ describe('discoverAdapterTopics', () => {
       expect(paths).toEqual(expectedPath)
 
       expect(discoverAdapterTopics(protocol, formData?.config)).toEqual(expectedTopics)
-    }
+    },
   )
 })
 
@@ -130,7 +134,7 @@ describe('mergeAllTopics', () => {
     const actual = mergeAllTopics(
       { items: [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS] },
       [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
-      [mockBridge, mockBridge]
+      [mockBridge, mockBridge],
     )
 
     expect(actual).toStrictEqual([
@@ -152,7 +156,7 @@ describe('mergeAllTopics', () => {
     const actual = mergeAllTopics(
       { items: [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS] },
       [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
-      undefined
+      undefined,
     )
 
     expect(actual).toStrictEqual([

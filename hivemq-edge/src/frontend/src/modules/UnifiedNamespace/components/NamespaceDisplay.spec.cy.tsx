@@ -28,7 +28,7 @@ describe('NamespaceDisplay', () => {
         .each((e, index) => {
           cy.wrap(e).should('contain.text', selector.breadcrumb[index])
         })
-    }
+    },
   )
 
   it('should render properly an empty breadcrumb with an empty namespace', () => {

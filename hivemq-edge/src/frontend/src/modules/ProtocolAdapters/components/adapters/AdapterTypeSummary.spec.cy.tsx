@@ -17,7 +17,7 @@ describe('AdapterTypeSummary', () => {
     cy.getByTestId('protocol-author').should('contain.text', 'HiveMQ')
     cy.getByTestId('protocol-description').should(
       'contain.text',
-      'Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.'
+      'Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.',
     )
 
     cy.get('a').each(($a) => {

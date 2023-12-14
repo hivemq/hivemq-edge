@@ -55,14 +55,26 @@ const nodeUpdateTests: NodeSuite[] = [
   {
     // @ts-ignore
     nodes: [{ ...disconnectedBridge }, disconnectedAdapter],
-    status: [{ connection: Status.connection.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' }],
+    status: [
+      {
+        connection: Status.connection.CONNECTED,
+        type: NodeTypes.BRIDGE_NODE,
+        id: 'non-existing-bridge',
+      },
+    ],
     // @ts-ignore
     expected: [disconnectedBridge, disconnectedAdapter],
   },
   {
     // @ts-ignore
     nodes: [MOCK_NODE_LISTENER],
-    status: [{ connection: Status.connection.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' }],
+    status: [
+      {
+        connection: Status.connection.CONNECTED,
+        type: NodeTypes.BRIDGE_NODE,
+        id: 'non-existing-bridge',
+      },
+    ],
     // @ts-ignore
     expected: [MOCK_NODE_LISTENER],
   },
@@ -71,7 +83,11 @@ const nodeUpdateTests: NodeSuite[] = [
     nodes: [{ ...disconnectedBridge }, disconnectedAdapter],
     status: [
       { connection: Status.connection.DISCONNECTED, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
-      { connection: Status.connection.DISCONNECTED, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
+      {
+        connection: Status.connection.DISCONNECTED,
+        type: NodeTypes.ADAPTER_NODE,
+        id: MOCK_ADAPTER_ID,
+      },
     ],
     // @ts-ignore
     expected: [disconnectedBridge, disconnectedAdapter],
@@ -81,7 +97,11 @@ const nodeUpdateTests: NodeSuite[] = [
     nodes: [disconnectedBridge, disconnectedAdapter],
     status: [
       { connection: Status.connection.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
-      { connection: Status.connection.CONNECTED, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
+      {
+        connection: Status.connection.CONNECTED,
+        type: NodeTypes.ADAPTER_NODE,
+        id: MOCK_ADAPTER_ID,
+      },
     ],
     expected: expect.arrayContaining([
       expect.objectContaining({
@@ -151,7 +171,7 @@ describe('updateEdgesStatus', () => {
         ...MOCK_NODE_ADAPTER,
         position: { x: 0, y: 0 },
       }),
-      MOCK_THEME
+      MOCK_THEME,
     )
     expect(updatedNodes.length).toBe(edges.length)
     expect(updatedNodes).toStrictEqual(expected)

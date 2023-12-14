@@ -75,5 +75,9 @@ export const useGetManagedNotifications = () => {
     return list
   }, [notification?.items, configuration, releases, readNotifications, skip, t])
 
-  return { notifications, isSuccess: isNotificationsSuccess && isReleasesSuccess, readNotifications }
+  return {
+    notifications,
+    isSuccess: isNotificationsSuccess && isReleasesSuccess,
+    readNotifications,
+  }
 }

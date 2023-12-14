@@ -39,7 +39,7 @@ export interface MetricSpecStorage {
 const Metrics: FC<MetricsProps> = ({ nodeId, id, initMetrics, defaultChartType }) => {
   const [metrics, setMetrics] = useLocalStorage<MetricSpecStorage[]>(
     `edge.reports-${nodeId}`,
-    initMetrics ? initMetrics.map<MetricSpecStorage>((e) => ({ selectedTopic: e })) : []
+    initMetrics ? initMetrics.map<MetricSpecStorage>((e) => ({ selectedTopic: e })) : [],
   )
   const showEditor = config.features.METRICS_SHOW_EDITOR
   const { isOpen, onOpen, onClose } = useDisclosure()

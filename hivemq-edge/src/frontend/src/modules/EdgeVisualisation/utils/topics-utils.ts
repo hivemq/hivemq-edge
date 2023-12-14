@@ -50,7 +50,7 @@ export const getTopicPaths = (configSchema: RJSFSchema) => {
           // The leaf of the path will always be "format"
           .replace('.format', '')
           // A `type: 'array'` property will have a `items: { properties: {}}` pattern [?]
-          .replace(/items\.properties/gi, TOPIC_PATH_ITEMS_TOKEN)
+          .replace(/items\.properties/gi, TOPIC_PATH_ITEMS_TOKEN),
       )
   )
 }
@@ -92,7 +92,7 @@ export const discoverAdapterTopics = (protocol: ProtocolAdapter, instance: Gener
 export const mergeAllTopics = (
   types: ProtocolAdaptersList | undefined,
   adapters: Adapter[] | undefined,
-  bridges: Bridge[] | undefined
+  bridges: Bridge[] | undefined,
 ) => {
   const data: string[] = []
   if (bridges) {

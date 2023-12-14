@@ -68,8 +68,8 @@ const ConnectionController: FC<ConnectionControllerProps> = ({ type, id, status,
               device: type,
             }),
           },
-          err
-        )
+          err,
+        ),
       )
   }
 

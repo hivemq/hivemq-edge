@@ -32,7 +32,7 @@ describe('EdgeFlowProvider', () => {
     const { getByTestId } = render(
       <EdgeFlowProvider defaults={{ [option]: true }}>
         <ProviderTestingMock />
-      </EdgeFlowProvider>
+      </EdgeFlowProvider>,
     )
 
     const checkOption = getByTestId(option) as HTMLInputElement

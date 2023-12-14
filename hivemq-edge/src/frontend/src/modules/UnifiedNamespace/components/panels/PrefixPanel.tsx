@@ -42,9 +42,12 @@ const PrefixPanel: FC<PrefixPanelProps> = ({ data, isLoading }) => {
       })
       .catch((err: ApiError) =>
         errorToast(
-          { title: t('unifiedNamespace.toast.update.title'), description: t('unifiedNamespace.toast.update.error') },
-          err
-        )
+          {
+            title: t('unifiedNamespace.toast.update.title'),
+            description: t('unifiedNamespace.toast.update.error'),
+          },
+          err,
+        ),
       )
   }
   return (

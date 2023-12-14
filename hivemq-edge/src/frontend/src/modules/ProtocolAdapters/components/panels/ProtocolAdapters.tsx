@@ -186,8 +186,8 @@ const ProtocolAdapters: FC = () => {
             title: t('protocolAdapter.toast.delete.title'),
             description: t('protocolAdapter.toast.create.error'),
           },
-          err
-        )
+          err,
+        ),
       )
   }
 

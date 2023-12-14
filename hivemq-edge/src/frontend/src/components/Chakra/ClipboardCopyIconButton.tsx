@@ -37,7 +37,7 @@ const ClipboardCopyIconButton: FC<ClipboardCopyIconButtonProps> = ({ content, pl
       },
       () => {
         setState(CopyStatus.ERROR)
-      }
+      },
     )
     setState(CopyStatus.COPIED)
   }

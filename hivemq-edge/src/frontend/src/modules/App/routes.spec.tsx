@@ -19,7 +19,7 @@ describe('createBrowserRouter', () => {
           ]),
         }),
         expect.objectContaining({ path: '/login' }),
-      ])
+      ]),
     )
   })
 })

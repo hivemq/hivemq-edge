@@ -30,7 +30,7 @@ describe('BarChart', () => {
           metricName={MOCK_METRICS[0].name as string}
           aria-label={mockAriaLabel}
         />
-      </Wrapper>
+      </Wrapper>,
     )
 
     const formatShortDate = new Intl.DateTimeFormat(navigator.language, {
@@ -48,7 +48,7 @@ describe('BarChart', () => {
       .should('contain.text', '[Forward] Publish success (count)')
       .should(
         'contain.text',
-        formatShortDate.format(DateTime.fromISO(MOCK_METRIC_SAMPLE_ARRAY[5].sampleTime as string).toJSDate())
+        formatShortDate.format(DateTime.fromISO(MOCK_METRIC_SAMPLE_ARRAY[5].sampleTime as string).toJSDate()),
       )
       .should('contain.text', '55000')
     cy.checkAccessibility()

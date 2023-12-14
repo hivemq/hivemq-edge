@@ -20,7 +20,7 @@ export const handlers = [
       ctx.json<StatusList>({
         items: [mockBridgeConnectionStatus],
       }),
-      ctx.status(200)
+      ctx.status(200),
     )
   }),
 
@@ -29,7 +29,7 @@ export const handlers = [
       ctx.json<StatusList>({
         items: [mockBridgeConnectionStatus],
       }),
-      ctx.status(200)
+      ctx.status(200),
     )
   }),
 ]

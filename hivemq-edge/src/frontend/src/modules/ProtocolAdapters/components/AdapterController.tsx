@@ -48,7 +48,7 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
           title: t('protocolAdapter.toast.view.title'),
           description: t('protocolAdapter.toast.view.error'),
         },
-        new Error(t('protocolAdapter.toast.view.noLongerExist', { id: adapterId }) as string)
+        new Error(t('protocolAdapter.toast.view.noLongerExist', { id: adapterId }) as string),
       )
       navigate('/protocol-adapters', { replace: true })
       return
@@ -61,7 +61,9 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
 
   const handleInstanceClose = () => {
     onInstanceClose()
-    navigate('/protocol-adapters', { state: { protocolAdapterTabIndex: ProtocolAdapterTabIndex.protocols } })
+    navigate('/protocol-adapters', {
+      state: { protocolAdapterTabIndex: ProtocolAdapterTabIndex.protocols },
+    })
   }
 
   const handleInstanceSubmit: SubmitHandler<Adapter> = (props) => {
@@ -90,8 +92,8 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
               title: t('protocolAdapter.toast.create.title'),
               description: t('protocolAdapter.toast.create.error'),
             },
-            err
-          )
+            err,
+          ),
         )
     } else {
       updateProtocolAdapter
@@ -116,8 +118,8 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
               title: t('protocolAdapter.toast.update.title'),
               description: t('protocolAdapter.toast.update.error'),
             },
-            err
-          )
+            err,
+          ),
         )
     }
 

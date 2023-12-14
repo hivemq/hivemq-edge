@@ -23,14 +23,14 @@ const ReactFlowWrapper = () => {
       [NodeTypes.BRIDGE_NODE]: NodeBridge,
       [NodeTypes.LISTENER_NODE]: NodeListener,
     }),
-    []
+    [],
   )
 
   const edgeTypes = useMemo(
     () => ({
       [EdgeTypes.REPORT_EDGE]: MonitoringEdge,
     }),
-    []
+    [],
   )
 
   return (

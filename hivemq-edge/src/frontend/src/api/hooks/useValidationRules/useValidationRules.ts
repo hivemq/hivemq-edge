@@ -39,7 +39,10 @@ export const useValidationRules = () => {
       if (!patternString.endsWith('$')) patternString = `${patternString}$`
       try {
         const pattern = new RegExp(patternString)
-        options.pattern = { value: pattern, message: t('validation.pattern', { pattern: schema.pattern }) }
+        options.pattern = {
+          value: pattern,
+          message: t('validation.pattern', { pattern: schema.pattern }),
+        }
       } catch (e: unknown) {
         const error = e as Error
         console.warn(`[openAPI - ${error.name}]`, error.message)

@@ -66,7 +66,7 @@ export const makeDefaultRangeOption = (min: DateTime | undefined, max: DateTime 
           colorScheme: 'blue',
           duration: Duration.fromDurationLike({ hour: 6 }),
         },
-      ]
+      ],
     )
   }
   if (diff['minutes']) {
@@ -96,7 +96,7 @@ export const makeDefaultRangeOption = (min: DateTime | undefined, max: DateTime 
           colorScheme: 'orange',
           duration: Duration.fromDurationLike({ minute: 30 }),
         },
-      ]
+      ],
     )
   }
 

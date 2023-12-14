@@ -7,7 +7,7 @@ export const processToken = (
   authToken: string | undefined,
   setAuthToken: Dispatch<SetStateAction<string | undefined>>,
   login: (newUser: ApiBearerToken, callback: VoidFunction) => void,
-  setLoading: Dispatch<SetStateAction<boolean>>
+  setLoading: Dispatch<SetStateAction<boolean>>,
 ) => {
   if (!authToken) {
     setAuthToken(undefined)

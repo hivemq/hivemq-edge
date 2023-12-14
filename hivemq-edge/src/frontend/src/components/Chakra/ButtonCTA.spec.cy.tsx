@@ -29,7 +29,7 @@ describe('ButtonCTA', () => {
       cy.wrap(e).should(
         'have.css',
         'background-color',
-        hexToRgb(styles.getPropertyValue('--chakra-colors-yellow-400'), true)
+        hexToRgb(styles.getPropertyValue('--chakra-colors-yellow-400'), true),
       )
     })
   })
@@ -40,7 +40,7 @@ describe('ButtonCTA', () => {
     cy.mountWithProviders(
       <ButtonCTA data-testid={'button-cta'} onClick={mockOnClick}>
         {MOCK_TITLE}
-      </ButtonCTA>
+      </ButtonCTA>,
     )
 
     cy.getByTestId('button-cta').click()

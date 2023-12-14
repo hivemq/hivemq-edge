@@ -29,7 +29,7 @@ export const Filter = <T,>({
   const facetedUniqueValues = getFacetedUniqueValues()
   const sortedUniqueValues = useMemo(
     () => (typeof firstValue === 'number' ? [] : Array.from(facetedUniqueValues.keys()).sort()),
-    [facetedUniqueValues, firstValue]
+    [facetedUniqueValues, firstValue],
   )
 
   // @ts-ignore Find a better to fix this
@@ -66,8 +66,16 @@ export const Filter = <T,>({
         menuPortalTarget={document.body}
         // value={{ value: columnFilterValue, label: columnFilterValue }}
         onChange={(item) => setFilterValue(item?.value)}
-        options={sortedUniqueValues.map((value: string) => ({ value: value, label: value, group: 'DDD' }))}
-        placeholder={t('components:pagination.filter.placeholder', { size: getFacetedUniqueValues().size }) as string}
+        options={sortedUniqueValues.map((value: string) => ({
+          value: value,
+          label: value,
+          group: 'DDD',
+        }))}
+        placeholder={
+          t('components:pagination.filter.placeholder', {
+            size: getFacetedUniqueValues().size,
+          }) as string
+        }
         noOptionsMessage={() => t('components:pagination.filter.noOptions')}
         formatCreateLabel={(e) => t('components:pagination.filter.create', { topic: e })}
         aria-label={t('components:pagination.filter.label') as string}

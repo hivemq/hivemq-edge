@@ -19,7 +19,7 @@ i18n
       languageToPseudo: 'en',
       letterMultiplier: 4,
       repeatedLetters: ['B', 'o', 'a', 't'],
-    })
+    }),
   )
   .use(initReactI18next)
   .init({

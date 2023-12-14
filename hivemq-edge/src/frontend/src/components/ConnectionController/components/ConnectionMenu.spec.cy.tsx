@@ -24,7 +24,7 @@ describe('ConnectionMenu', () => {
     cy.mountWithProviders(
       <Wrapper>
         <ConnectionMenu id={'my-id'} isRunning />
-      </Wrapper>
+      </Wrapper>,
     )
     cy.checkAccessibility()
     cy.getByTestId('mock-trigger').click()
@@ -37,7 +37,7 @@ describe('ConnectionMenu', () => {
     cy.mountWithProviders(
       <Wrapper>
         <ConnectionMenu id={'my-id'} isRunning onChangeStatus={onChangeStatus} />
-      </Wrapper>
+      </Wrapper>,
     )
 
     cy.getByTestId('mock-trigger').click()
@@ -54,7 +54,7 @@ describe('ConnectionMenu', () => {
     cy.mountWithProviders(
       <Wrapper>
         <ConnectionMenu id={'my-id'} isRunning={false} onChangeStatus={onChangeStatus} />
-      </Wrapper>
+      </Wrapper>,
     )
 
     cy.getByTestId('mock-trigger').click()
@@ -71,7 +71,7 @@ describe('ConnectionMenu', () => {
     cy.mountWithProviders(
       <Wrapper>
         <ConnectionMenu id={'my-id'} isRunning={false} onChangeStatus={onChangeStatus} />
-      </Wrapper>
+      </Wrapper>,
     )
 
     cy.getByTestId('mock-trigger').click()
@@ -86,7 +86,7 @@ describe('ConnectionMenu', () => {
     cy.mountWithProviders(
       <Wrapper>
         <ConnectionMenu id={'my-id'} isRunning={true} onChangeStatus={onChangeStatus} />
-      </Wrapper>
+      </Wrapper>,
     )
 
     cy.getByTestId('mock-trigger').click()
@@ -100,7 +100,7 @@ describe('ConnectionMenu', () => {
     cy.mountWithProviders(
       <Wrapper>
         <ConnectionMenu id={'my-id'} isRunning isLoading />
-      </Wrapper>
+      </Wrapper>,
     )
 
     cy.getByTestId('device-action-stop').should('be.disabled')
@@ -111,7 +111,7 @@ describe('ConnectionMenu', () => {
     cy.mountWithProviders(
       <Wrapper>
         <ConnectionMenu id={'my-id'} isRunning={false} isLoading />
-      </Wrapper>
+      </Wrapper>,
     )
 
     cy.getByTestId('device-action-start').should('be.disabled')

@@ -64,7 +64,10 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
             <Card size={'sm'}>
               <CardHeader>
                 <Text>
-                  {t('workspace.property.eventLog.header', { type: selectedNode.type, id: selectedNode.data.id })}
+                  {t('workspace.property.eventLog.header', {
+                    type: selectedNode.type,
+                    id: selectedNode.data.id,
+                  })}
                 </Text>
               </CardHeader>
               <CardBody>

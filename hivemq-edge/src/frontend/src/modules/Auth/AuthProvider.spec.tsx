@@ -41,7 +41,7 @@ describe('AuthProvider', () => {
     const { getByTestId } = render(
       <AuthProvider>
         <TestingComponent />
-      </AuthProvider>
+      </AuthProvider>,
     )
     expect(getByTestId('credentials').textContent).toEqual('')
 

@@ -73,7 +73,10 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
   useEffect(() => {
     if (!isError) return
 
-    setError('root.ApiError', { type: error.message, message: error.body?.title || t('login.error.verifyCredentials') })
+    setError('root.ApiError', {
+      type: error.message,
+      message: error.body?.title || t('login.error.verifyCredentials'),
+    })
   }, [isError, error, setError, t])
 
   useEffect(() => {

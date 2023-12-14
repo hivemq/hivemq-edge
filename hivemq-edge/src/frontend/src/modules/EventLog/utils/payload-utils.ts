@@ -25,7 +25,7 @@ export const prettifyXml = (sourceXml: string | undefined) => {
       '  <xsl:output indent="yes"/>',
       '</xsl:stylesheet>',
     ].join('\n'),
-    'application/xml'
+    'application/xml',
   )
 
   try {

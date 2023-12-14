@@ -49,7 +49,7 @@ const handlers: RequestHandler[] = [
       ctx.status(200),
       ctx.json({
         bodyContent: bodyContent,
-      })
+      }),
     )
   }),
 
@@ -58,7 +58,7 @@ const handlers: RequestHandler[] = [
       ctx.status(401),
       ctx.json({
         bodyContent: 'an error message',
-      })
+      }),
     )
   }),
 
@@ -70,7 +70,7 @@ const handlers: RequestHandler[] = [
       }),
       ctx.json({
         bodyContent: 'A new token has been added to the response',
-      })
+      }),
     )
   }),
 ]

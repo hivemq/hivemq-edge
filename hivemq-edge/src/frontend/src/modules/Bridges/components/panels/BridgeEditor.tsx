@@ -49,7 +49,7 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
             title: t('bridge.toast.view.title'),
             description: t('bridge.toast.view.error'),
           },
-          new Error(t('bridge.toast.view.noLongerExist', { id: bridgeId }) as string)
+          new Error(t('bridge.toast.view.noLongerExist', { id: bridgeId }) as string),
         )
         navigate('/mqtt-bridges', { replace: true })
       }
@@ -81,8 +81,8 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
                 title: t('bridge.toast.update.title'),
                 description: t('bridge.toast.update.error'),
               },
-              err
-            )
+              err,
+            ),
           )
       }
     } else {
@@ -100,8 +100,8 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
               title: t('bridge.toast.create.title'),
               description: t('bridge.toast.create.error'),
             },
-            err
-          )
+            err,
+          ),
         )
     }
 

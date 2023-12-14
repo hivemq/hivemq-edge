@@ -34,7 +34,7 @@ export const groupingAttributes: ClusterFunctionCatalog[] = [
 
 const groupingAttributesAsObject = groupingAttributes.reduce<{ [key: string]: ClusterFunction }>(
   (a, c) => ({ ...a, [c.key]: c.function }),
-  {}
+  {},
 )
 
 export const applyLayout = (nodes: Node<Bridge | Adapter>[], groupOption: EdgeFlowGrouping): Node[] => {
@@ -70,7 +70,7 @@ export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOptio
       .sum(() => 1)
       .sort((a, b) => {
         return (b.value || 0) - (a.value || 0)
-      })
+      }),
   )
 
   // @ts-ignore

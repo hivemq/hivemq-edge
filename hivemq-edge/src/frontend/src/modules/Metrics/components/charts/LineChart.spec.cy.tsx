@@ -29,7 +29,7 @@ describe('LineChart', () => {
           metricName={MOCK_METRICS[0].name as string}
           aria-label={mockAriaLabel}
         />
-      </Wrapper>
+      </Wrapper>,
     )
 
     cy.get("[role='application']").should('have.attr', 'aria-label', mockAriaLabel)

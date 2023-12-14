@@ -92,5 +92,5 @@ export const routes = createBrowserRouter(
       element: <LoginPage />,
     },
   ],
-  { basename: '/app' }
+  { basename: '/app' },
 )

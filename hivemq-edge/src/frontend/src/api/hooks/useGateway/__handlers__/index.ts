@@ -16,7 +16,7 @@ export const handlers = [
       ctx.json<ListenerList>({
         items: [mockMqttListener],
       }),
-      ctx.status(200)
+      ctx.status(200),
     )
   }),
 ]

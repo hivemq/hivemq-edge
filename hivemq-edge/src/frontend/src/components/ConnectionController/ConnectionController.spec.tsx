@@ -100,7 +100,7 @@ describe('ConnectionController', () => {
         },
         {
           errors: err,
-        }
+        },
       )
     })
   })

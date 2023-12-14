@@ -37,9 +37,15 @@ const BridgeStepper: FC<BridgeStepperProps> = () => {
 
   const { isOpen, onOpen, onClose } = useDisclosure()
   const steps = [
-    { title: t('bridge.stepper.source.title'), description: t('bridge.stepper.source.description') },
+    {
+      title: t('bridge.stepper.source.title'),
+      description: t('bridge.stepper.source.description'),
+    },
     { title: t('bridge.stepper.local.title'), description: t('bridge.stepper.local.description') },
-    { title: t('bridge.stepper.remote.title'), description: t('bridge.stepper.remote.description') },
+    {
+      title: t('bridge.stepper.remote.title'),
+      description: t('bridge.stepper.remote.description'),
+    },
     { title: t('bridge.stepper.options.title') },
     { title: t('bridge.stepper.publish.title') },
   ]

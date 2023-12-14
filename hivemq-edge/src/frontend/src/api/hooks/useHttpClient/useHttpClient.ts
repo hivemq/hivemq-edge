@@ -54,7 +54,7 @@ export const useHttpClient = () => {
           logout(() => navigate('/login'))
         }
         return Promise.reject(error)
-      }
+      },
     )
 
     return new HiveMqClient(
@@ -62,7 +62,7 @@ export const useHttpClient = () => {
         BASE: config.apiBaseUrl,
         TOKEN: credentials?.token,
       },
-      AxiosHttpRequestWithInterceptors
+      AxiosHttpRequestWithInterceptors,
     )
   }
 

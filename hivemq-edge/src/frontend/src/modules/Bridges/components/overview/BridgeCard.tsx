@@ -41,7 +41,7 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, ...props }) =>
 
   const status = useMemo(
     () => connections?.items?.find((connection) => connection.id === props.id && connection.type === 'bridge'),
-    [connections, props.id]
+    [connections, props.id],
   )
 
   return (

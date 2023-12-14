@@ -49,7 +49,7 @@ const useGetFlowElements = () => {
         bridge,
         incBridgeNb,
         bridges.length,
-        theme
+        theme,
       )
       nodes.push(nodeBridge)
       edges.push(edgeConnector)
@@ -67,7 +67,7 @@ const useGetFlowElements = () => {
         adapter,
         incAdapterNb,
         adapters.length,
-        theme
+        theme,
       )
       nodes.push(nodeAdapter)
       edges.push(edgeConnector)

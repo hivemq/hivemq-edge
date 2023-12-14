@@ -21,7 +21,7 @@ const NodePanelController: FC = () => {
 
   const { nodeId } = useParams()
   const selectedNode = nodes.find(
-    (e) => e.id === nodeId && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
+    (e) => e.id === nodeId && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE),
   ) as Node<Bridge | Adapter> | undefined
 
   const selectedLinkSource = nodes.find((e) => {
@@ -49,7 +49,11 @@ const NodePanelController: FC = () => {
       const adapterNavigateState: AdapterNavigateState = {
         protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
         protocolAdapterType: (selectedNode?.data as Adapter).type,
-        selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selectedNode?.data as Adapter).id },
+        selectedActiveAdapter: {
+          isNew: false,
+          isOpen: false,
+          adapterId: (selectedNode?.data as Adapter).id,
+        },
       }
       navigate(`/protocol-adapters/${(selectedNode?.data as Adapter).id}`, {
         state: adapterNavigateState,

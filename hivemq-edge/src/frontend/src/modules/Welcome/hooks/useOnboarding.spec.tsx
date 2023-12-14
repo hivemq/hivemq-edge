@@ -44,7 +44,7 @@ describe('useOnboarding()', () => {
     expect(data?.[0].sections).toEqual(expect.arrayContaining([expect.objectContaining({ to: '/protocol-adapters' })]))
     expect(data?.[1].sections).toEqual(expect.arrayContaining([expect.objectContaining({ to: '/mqtt-bridges' })]))
     expect(data?.[2].sections).toEqual(
-      expect.arrayContaining([expect.objectContaining({ to: 'https://hivemq.com/cloud' })])
+      expect.arrayContaining([expect.objectContaining({ to: 'https://hivemq.com/cloud' })]),
     )
   })
 })

@@ -14,7 +14,7 @@ describe('ChartContainer', () => {
   it('should render the chart container', () => {
     const onClose = cy.stub().as('onClose')
     cy.mountWithProviders(
-      <ChartContainer chartType={ChartType.LINE_CHART} onClose={onClose} metricName={MOCK_METRICS[0].name} />
+      <ChartContainer chartType={ChartType.LINE_CHART} onClose={onClose} metricName={MOCK_METRICS[0].name} />,
     )
 
     cy.getByTestId('chart-container').should('exist')

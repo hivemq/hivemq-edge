@@ -20,7 +20,7 @@ describe('TopicsContainer', () => {
             topic: 'my/second/topic',
           },
         ]}
-      />
+      />,
     )
 
     cy.getByTestId('topic-wrapper').should('have.length', 2)
@@ -44,7 +44,7 @@ describe('TopicsContainer', () => {
             topic: 'my/second/topic',
           },
         ]}
-      />
+      />,
     )
 
     cy.getByTestId('topic-wrapper').should('have.length', 2)

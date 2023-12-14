@@ -13,9 +13,9 @@ import { UITab } from '@/modules/ProtocolAdapters/types.ts'
 export const ObjectFieldTemplate = <
   T = never,
   S extends StrictRJSFSchema = RJSFSchema,
-  F extends FormContextType = never
+  F extends FormContextType = never,
 >(
-  props: ObjectFieldTemplateProps<T, S, F>
+  props: ObjectFieldTemplateProps<T, S, F>,
 ) => {
   const { registry, properties, title, description, uiSchema, required, schema, idSchema } = props
   const options = getUiOptions<T, S, F>(uiSchema)

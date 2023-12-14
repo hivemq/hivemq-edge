@@ -15,7 +15,7 @@ describe('SingleTopicCreatableSelect', () => {
     const mockOnChange = cy.stub().as('onChange')
 
     cy.mountWithProviders(
-      <SingleTopicCreatableSelect options={[]} isLoading={false} id={MOCK_ID} value={''} onChange={mockOnChange} />
+      <SingleTopicCreatableSelect options={[]} isLoading={false} id={MOCK_ID} value={''} onChange={mockOnChange} />,
     )
 
     cy.get('#my-id').click()
@@ -33,7 +33,7 @@ describe('SingleTopicCreatableSelect', () => {
         id={MOCK_ID}
         value={mockOptions[0]}
         onChange={mockOnChange}
-      />
+      />,
     )
     cy.get('#my-id').contains('topic/1')
     cy.getByAriaLabel('Clear selected options').should('be.visible')
@@ -54,7 +54,7 @@ describe('SingleTopicCreatableSelect', () => {
         id={MOCK_ID}
         value={mockOptions[0]}
         onChange={mockOnChange}
-      />
+      />,
     )
     cy.get('#my-id').click()
     cy.checkAccessibility()

@@ -66,7 +66,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = (
 const customHandlers = (
   types: Array<ProtocolAdapter> | undefined,
   adapters?: Array<Adapter> | undefined,
-  bridges?: Array<Bridge> | undefined
+  bridges?: Array<Bridge> | undefined,
 ) => [
   rest.get('**/protocol-adapters/types', (_, res, ctx) => {
     return types ? res(ctx.json<ProtocolAdaptersList>({ items: types }), ctx.status(200)) : res(ctx.status(500))
@@ -108,7 +108,7 @@ describe('useGetEdgeTopics', () => {
     expect(result.current).toStrictEqual(
       expect.objectContaining({
         data: ['root/topic/act/1'],
-      })
+      }),
     )
   })
 
@@ -124,7 +124,7 @@ describe('useGetEdgeTopics', () => {
     expect(result.current).toStrictEqual(
       expect.objectContaining({
         data: ['#', 'root/topic/act/1'],
-      })
+      }),
     )
   })
 
@@ -133,8 +133,8 @@ describe('useGetEdgeTopics', () => {
       ...customHandlers(
         [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS],
         [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
-        [mockBridge]
-      )
+        [mockBridge],
+      ),
     )
     server.printHandlers()
 
@@ -151,7 +151,7 @@ describe('useGetEdgeTopics', () => {
           'a/valid/topic/opc-ua-client/2',
           'root/topic/act/1',
         ],
-      })
+      }),
     )
   })
 })

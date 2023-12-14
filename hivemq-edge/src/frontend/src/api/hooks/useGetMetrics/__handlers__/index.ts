@@ -32,15 +32,33 @@ export const MOCK_METRICS: Array<Metric> = [
   { name: `com.hivemq.edge.persistence.client-sessions.in-memory.total-size` },
   { name: `com.hivemq.edge.persistence.queued-messages.in-memory.total-size` },
   { name: `com.hivemq.edge.persistence.retained-messages.in-memory.total-size` },
-  { name: `com.hivemq.edge.protocol-adapters.opc-ua-client.${MOCK_ADAPTER_ID}.connection.failed.count` },
-  { name: `com.hivemq.edge.protocol-adapters.opc-ua-client.${MOCK_ADAPTER_ID}.connection.success.count` },
-  { name: `com.hivemq.edge.protocol-adapters.opc-ua-client.${MOCK_ADAPTER_ID}.read.publish.failed.count` },
-  { name: `com.hivemq.edge.protocol-adapters.opc-ua-client.${MOCK_ADAPTER_ID}.read.publish.success.count` },
-  { name: `com.hivemq.edge.protocol-adapters.opc-ua-client.${MOCK_ADAPTER_ID}.subscription.transfer.failed.count` },
-  { name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID}.connection.failed.count` },
-  { name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID}.connection.success.count` },
-  { name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID}.read.publish.failed.count` },
-  { name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID}.read.publish.success.count` },
+  {
+    name: `com.hivemq.edge.protocol-adapters.opc-ua-client.${MOCK_ADAPTER_ID}.connection.failed.count`,
+  },
+  {
+    name: `com.hivemq.edge.protocol-adapters.opc-ua-client.${MOCK_ADAPTER_ID}.connection.success.count`,
+  },
+  {
+    name: `com.hivemq.edge.protocol-adapters.opc-ua-client.${MOCK_ADAPTER_ID}.read.publish.failed.count`,
+  },
+  {
+    name: `com.hivemq.edge.protocol-adapters.opc-ua-client.${MOCK_ADAPTER_ID}.read.publish.success.count`,
+  },
+  {
+    name: `com.hivemq.edge.protocol-adapters.opc-ua-client.${MOCK_ADAPTER_ID}.subscription.transfer.failed.count`,
+  },
+  {
+    name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID}.connection.failed.count`,
+  },
+  {
+    name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID}.connection.success.count`,
+  },
+  {
+    name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID}.read.publish.failed.count`,
+  },
+  {
+    name: `com.hivemq.edge.protocol-adapters.simulation.${MOCK_ADAPTER_ID}.read.publish.success.count`,
+  },
   { name: `com.hivemq.edge.sessions.overall.current` },
   { name: `com.hivemq.edge.subscriptions.overall.current` },
   { name: `com.hivemq.messages.governance.count` },

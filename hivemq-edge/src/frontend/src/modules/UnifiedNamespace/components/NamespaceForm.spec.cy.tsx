@@ -26,14 +26,14 @@ describe('NamespaceForm', () => {
         <ButtonCTA type={'submit'} form="namespace-form" data-testid={'form-submit'}>
           dfdfdf
         </ButtonCTA>
-      </div>
+      </div>,
     )
     cy.getByTestId('form-submit').click()
 
     cy.get('@onSubmit').should(
       'be.calledWith',
       { ...MOCK_NAMESPACE, prefixAllTopics: false, enabled: true },
-      Cypress.sinon.match.object
+      Cypress.sinon.match.object,
     )
   })
 
@@ -46,7 +46,7 @@ describe('NamespaceForm', () => {
         <ButtonCTA type={'submit'} form="namespace-form" data-testid={'form-submit'}>
           dfdfdf
         </ButtonCTA>
-      </div>
+      </div>,
     )
     cy.getByTestId('unifiedNamespace-prefixAllTopics').click()
     cy.getByTestId('form-submit').click()
@@ -54,7 +54,7 @@ describe('NamespaceForm', () => {
     cy.get('@onSubmit').should(
       'be.calledWith',
       { ...MOCK_NAMESPACE, prefixAllTopics: true, enabled: true },
-      Cypress.sinon.match.object
+      Cypress.sinon.match.object,
     )
   })
 
@@ -67,7 +67,7 @@ describe('NamespaceForm', () => {
         <ButtonCTA type={'submit'} form="namespace-form" data-testid={'form-submit'}>
           dfdfdf
         </ButtonCTA>
-      </div>
+      </div>,
     )
     cy.get('#unifiedNamespace-enterprise').clear()
     cy.get('#unifiedNamespace-enterprise').type('one')
@@ -92,7 +92,7 @@ describe('NamespaceForm', () => {
         prefixAllTopics: false,
         enabled: true,
       },
-      Cypress.sinon.match.object
+      Cypress.sinon.match.object,
     )
   })
 

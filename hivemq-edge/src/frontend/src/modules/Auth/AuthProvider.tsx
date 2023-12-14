@@ -43,7 +43,13 @@ export const AuthProvider: FunctionComponent<PropsWithChildren> = ({ children })
 
   return (
     <AuthContext.Provider
-      value={{ credentials, login, logout, isLoading, isAuthenticated: authUtilities.isAuthenticated }}
+      value={{
+        credentials,
+        login,
+        logout,
+        isLoading,
+        isAuthenticated: authUtilities.isAuthenticated,
+      }}
     >
       {children}
     </AuthContext.Provider>

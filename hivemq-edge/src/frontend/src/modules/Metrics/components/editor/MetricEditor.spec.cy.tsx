@@ -22,7 +22,7 @@ describe('MetricEditor', () => {
           onSubmit={onSubmit}
           selectedChart={ChartType.SAMPLE}
           selectedMetrics={[MOCK_METRICS[0].name as string, MOCK_METRICS[0].name as string]}
-        />
+        />,
       )
       cy.get('div#react-select-2-placeholder').should('contain.text', 'Select...')
       cy.get("button[type='submit']").should('be.disabled')
@@ -55,7 +55,7 @@ describe('MetricEditor', () => {
           onSubmit={cy.stub()}
           selectedChart={ChartType.SAMPLE}
           selectedMetrics={[MOCK_METRICS[0].name as string, MOCK_METRICS[0].name as string]}
-        />
+        />,
       )
       cy.checkAccessibility()
       cy.percySnapshot('Component: MetricEditor')

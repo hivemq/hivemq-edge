@@ -49,7 +49,7 @@ describe('AdapterActionMenu', () => {
     const onDelete = cy.stub().as('onDelete')
 
     cy.mountWithProviders(
-      <AdapterActionMenu adapter={mockAdapter} onEdit={onEdit} onCreate={onCreate} onDelete={onDelete} />
+      <AdapterActionMenu adapter={mockAdapter} onEdit={onEdit} onCreate={onCreate} onDelete={onDelete} />,
     )
 
     cy.getByAriaLabel('Actions').click()

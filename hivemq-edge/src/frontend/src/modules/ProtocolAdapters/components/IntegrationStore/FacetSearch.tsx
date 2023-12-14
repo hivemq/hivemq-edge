@@ -34,16 +34,22 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
   const { categories, tags } = useMemo(() => {
     // const categories = Array.from(new Set(data?.items?.map((e) => e.category) || []))
     const categories =
-      items?.reduce((acc, cur) => {
-        if (!cur?.category) return acc
-        const setSoFar = acc.map((e) => e.name)
-        if (setSoFar.includes(cur.category.name)) return acc
-        return [...acc, cur.category]
-      }, [] as ProtocolAdapterCategory[]) || []
+      items?.reduce(
+        (acc, cur) => {
+          if (!cur?.category) return acc
+          const setSoFar = acc.map((e) => e.name)
+          if (setSoFar.includes(cur.category.name)) return acc
+          return [...acc, cur.category]
+        },
+        [] as ProtocolAdapterCategory[],
+      ) || []
     const tags =
-      items?.reduce((acc, cur) => {
-        return Array.from(new Set([...acc, ...(cur?.tags || [])]))
-      }, [] as string[]) || []
+      items?.reduce(
+        (acc, cur) => {
+          return Array.from(new Set([...acc, ...(cur?.tags || [])]))
+        },
+        [] as string[],
+      ) || []
     return { categories, tags }
   }, [items])
 

@@ -31,7 +31,10 @@ export const EdgeFlowProvider: FunctionComponent<PropsWithChildren<{ defaults?: 
   children,
   defaults,
 }) => {
-  const [options, setOptions] = useState<EdgeFlowOptions>({ ...defaultEdgeFlowContext, ...defaults })
+  const [options, setOptions] = useState<EdgeFlowOptions>({
+    ...defaultEdgeFlowContext,
+    ...defaults,
+  })
   const [groups, setGroups] = useState<EdgeFlowGrouping>(defaultEdgeFlowGrouping)
   const optionDrawer = useDisclosure()
 

@@ -44,7 +44,7 @@ describe('ProtocolsBrowser', () => {
     const mockOnCreate = cy.stub().as('createAdapter')
 
     cy.mountWithProviders(
-      <ProtocolsBrowser items={MOCK_ADAPTERS} facet={{ search: 'from an edge device' }} onCreate={mockOnCreate} />
+      <ProtocolsBrowser items={MOCK_ADAPTERS} facet={{ search: 'from an edge device' }} onCreate={mockOnCreate} />,
     )
 
     cy.getByTestId('protocol-create-adapter').should('have.length', 4)
@@ -54,7 +54,7 @@ describe('ProtocolsBrowser', () => {
     const mockOnCreate = cy.stub().as('createAdapter')
 
     cy.mountWithProviders(
-      <ProtocolsBrowser items={MOCK_ADAPTERS} facet={{ search: 'from an edge device' }} onCreate={mockOnCreate} />
+      <ProtocolsBrowser items={MOCK_ADAPTERS} facet={{ search: 'from an edge device' }} onCreate={mockOnCreate} />,
     )
 
     cy.getByTestId('protocol-create-adapter').eq(0).click()
@@ -72,7 +72,7 @@ describe('ProtocolsBrowser', () => {
         items={MOCK_ADAPTERS}
         onCreate={mockOnCreate}
         facet={{ filter: { key: 'category', value: 'cat1' } }}
-      />
+      />,
     )
 
     cy.getByTestId('protocol-create-adapter').should('have.length', 2)
@@ -88,7 +88,7 @@ describe('ProtocolsBrowser', () => {
         items={MOCK_ADAPTERS}
         onCreate={mockOnCreate}
         facet={{ filter: { key: 'tags', value: 'tag2' } }}
-      />
+      />,
     )
 
     cy.getByTestId('protocol-create-adapter').should('have.length', 2)
@@ -104,7 +104,7 @@ describe('ProtocolsBrowser', () => {
         items={MOCK_ADAPTERS}
         onCreate={mockOnCreate}
         facet={{ search: 'Fake', filter: { key: 'category', value: 'cat1' } }}
-      />
+      />,
     )
 
     cy.getByTestId('protocol-create-adapter').should('have.length', 1)
@@ -129,7 +129,7 @@ describe('ProtocolsBrowser', () => {
         ]}
         facet={{ search: undefined }}
         onCreate={mockOnCreate}
-      />
+      />,
     )
     cy.getByTestId('protocol-name').should('have.length', 3)
     cy.getByTestId('protocol-create-adapter').should('have.length', 2)
@@ -138,7 +138,7 @@ describe('ProtocolsBrowser', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
-      <ProtocolsBrowser items={MOCK_ADAPTERS} facet={{ search: 'from an edge device' }} onCreate={cy.stub()} />
+      <ProtocolsBrowser items={MOCK_ADAPTERS} facet={{ search: 'from an edge device' }} onCreate={cy.stub()} />,
     )
 
     cy.checkAccessibility()
