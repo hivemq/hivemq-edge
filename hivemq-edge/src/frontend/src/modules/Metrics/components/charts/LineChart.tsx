@@ -4,9 +4,9 @@ import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { Box, useTheme } from '@chakra-ui/react'
 
+import ChartTooltip from '../parts/ChartTooltip.tsx'
 import { ChartProps } from '../../types.ts'
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
-import ChartTooltip from '../parts/ChartTooltip.tsx'
 
 const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, chartTheme, ...props }) => {
   const { t } = useTranslation()
@@ -19,9 +19,8 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
     y: Math.max(...data.map((e) => e.value as number)),
   }
 
-  const { suffix, device, id } = extractMetricInfo(metricName)
-  let seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
-  seriesName = `${seriesName} - ${id}`
+  const { suffix, device } = extractMetricInfo(metricName)
+  const seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
 
   const colorScheme = chartTheme?.colourScheme || 'red'
   const colorElement = colors[colorScheme][500]
@@ -66,12 +65,7 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
           // tickRotation: 0,
           // // format: '.2f',
           format: (value) => {
-            const duration = DateTime.fromMillis(value).diffNow(['second'])
-            const rescaledDuration = duration
-              .negate()
-              .mapUnits((x) => Math.floor(x))
-              .rescale()
-            return rescaledDuration.as('seconds')
+            return '+' + DateTime.fromMillis(value).second
           },
           legend: t('metrics.charts.LineChart.ariaLabel.legend'),
           legendOffset: 36,
@@ -124,36 +118,6 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
         //     ],
         //   },
         // ]}
-
-        tooltip={(d) => (
-          <ChartTooltip
-            color={d.point.serieColor}
-            id={d.point.serieId}
-            date={DateTime.fromMillis(d.point.data.x as number)}
-            formattedValue={d.point.data.yFormatted.toString()}
-          />
-        )}
-        legends={[
-          {
-            direction: 'row',
-            anchor: 'bottom-right',
-            itemDirection: 'right-to-left',
-            translateY: 70,
-
-            itemWidth: 0,
-            itemHeight: 20,
-            // itemOpacity: 0.85,
-            // symbolSize: 20,
-            effects: [
-              {
-                on: 'hover',
-                style: {
-                  itemOpacity: 1,
-                },
-              },
-            ],
-          },
-        ]}
       />
     </Box>
   )
