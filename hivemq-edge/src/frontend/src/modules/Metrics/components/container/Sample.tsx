@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from 'react'
-import { Box, CloseButton, VStack, StackProps } from '@chakra-ui/react'
+import { Box, CloseButton, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
@@ -10,7 +10,7 @@ import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 import SampleRenderer from '../charts/SampleRenderer.tsx'
 import { ChartTheme } from '@/modules/Metrics/types.ts'
 
-interface SampleProps extends StackProps {
+interface SampleProps {
   metricName?: string
   chartTheme?: ChartTheme
   onClose?: () => void
@@ -19,7 +19,7 @@ interface SampleProps extends StackProps {
 
 const MAX_SERIES = 10
 
-const Sample: FC<SampleProps> = ({ metricName, chartTheme, onClose, canEdit = true, ...props }) => {
+const Sample: FC<SampleProps> = ({ metricName, chartTheme, onClose, canEdit = true }) => {
   const { t } = useTranslation()
   const { data, isLoading, error } = useGetSample(metricName)
   const [series, setSeries] = useState<DataPoint[]>([])
@@ -49,7 +49,6 @@ const Sample: FC<SampleProps> = ({ metricName, chartTheme, onClose, canEdit = tr
       series={series}
       chartTheme={chartTheme}
       {...(isMajor ? { gridColumn: '1 / span 2' } : {})}
-      {...props}
     >
       <VStack ml={1}>
         {canEdit && (
