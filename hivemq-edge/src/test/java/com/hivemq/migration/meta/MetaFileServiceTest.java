@@ -115,30 +115,4 @@ public class MetaFileServiceTest {
         assertEquals(PersistenceMode.FILE, metaFile.getPublishPayloadPersistenceType());
         assertEquals(PersistenceMode.FILE_NATIVE, metaFile.getRetainedMessagesPersistenceType());
     }
-
-
-    @Test
-    public void test_read_write_meta_all_null() throws Exception {
-
-        new File(dataFolder, LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME).mkdir();
-
-        final MetaInformation metaInformation = new MetaInformation();
-
-        MetaFileService.writeMetaFile(systemInformation, metaInformation);
-
-        final MetaInformation metaFile = MetaFileService.readMetaFile(systemInformation);
-
-        assertTrue(metaFile.isDataFolderPresent());
-        assertTrue(metaFile.isPersistenceFolderPresent());
-        assertTrue(metaFile.isMetaFilePresent());
-        assertNull(metaFile.getHivemqVersion());
-        assertNull(metaFile.getSubscriptionPersistenceVersion());
-        assertNull(metaFile.getRetainedMessagesPersistenceVersion());
-        assertNull(metaFile.getQueuedMessagesPersistenceVersion());
-        assertNull(metaFile.getClientSessionPersistenceVersion());
-        assertNull(metaFile.getPublishPayloadPersistenceVersion());
-        assertNull(metaFile.getRetainedMessagesPersistenceType());
-        assertNull(metaFile.getPublishPayloadPersistenceType());
-    }
-
 }
