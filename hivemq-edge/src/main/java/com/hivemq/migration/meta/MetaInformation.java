@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 package com.hivemq.migration.meta;
-
-
+import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 /**
@@ -31,8 +30,8 @@ public class MetaInformation {
     private @Nullable String retainedMessagesPersistenceVersion = null;
     private @Nullable String publishPayloadPersistenceVersion = null;
 
-    private @Nullable PersistenceType retainedMessagesPersistenceType = null;
-    private @Nullable PersistenceType publishPayloadPersistenceType = null;
+    private @Nullable PersistenceMode retainedMessagesPersistenceType = null;
+    private @Nullable PersistenceMode publishPayloadPersistenceType = null;
 
     private boolean dataFolderPresent = false;
     private boolean persistenceFolderPresent = false;
@@ -118,20 +117,20 @@ public class MetaInformation {
 
 
     @Nullable
-    public PersistenceType getRetainedMessagesPersistenceType() {
+    public PersistenceMode getRetainedMessagesPersistenceType() {
         return retainedMessagesPersistenceType;
     }
 
-    public void setRetainedMessagesPersistenceType(final @Nullable PersistenceType retainedMessagesPersistenceType) {
+    public void setRetainedMessagesPersistenceType(final @Nullable PersistenceMode retainedMessagesPersistenceType) {
         this.retainedMessagesPersistenceType = retainedMessagesPersistenceType;
     }
 
     @Nullable
-    public PersistenceType getPublishPayloadPersistenceType() {
+    public PersistenceMode getPublishPayloadPersistenceType() {
         return publishPayloadPersistenceType;
     }
 
-    public void setPublishPayloadPersistenceType(final @Nullable PersistenceType publishPayloadPersistenceType) {
+    public void setPublishPayloadPersistenceType(final @Nullable PersistenceMode publishPayloadPersistenceType) {
         this.publishPayloadPersistenceType = publishPayloadPersistenceType;
     }
 

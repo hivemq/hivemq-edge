@@ -1,5 +1,6 @@
 package com.hivemq.bootstrap.factories;
 
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.logging.EventLog;
@@ -18,5 +19,6 @@ public interface PublishPayloadPersistenceFactory {
                                                                       @NotNull MessageDroppedService messageDroppedService,
                                                                       @NotNull ScheduledExecutorService scheduledExecutorService,
                                                                       @NotNull PersistenceStartup persistenceStartup,
-                                                                      @NotNull PersistenceConfigurationService persistenceConfigurationService);
+                                                                      @NotNull PersistenceConfigurationService persistenceConfigurationService,
+                                                                      @NotNull SystemInformation systemInformation);
 }

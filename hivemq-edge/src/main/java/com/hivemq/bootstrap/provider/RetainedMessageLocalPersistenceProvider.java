@@ -1,7 +1,9 @@
 package com.hivemq.bootstrap.provider;
 
 import com.hivemq.bootstrap.factories.RetainedMessageLocalPersistenceFactory;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
+import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -19,7 +21,7 @@ import javax.inject.Inject;
 
 public class RetainedMessageLocalPersistenceProvider {
 
-    private static final Logger log = LoggerFactory.getLogger(RetainedMessageLocalPersistenceProvider.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(RetainedMessageLocalPersistenceProvider.class);
 
     private final @NotNull PersistencesService persistencesService;
     private final @NotNull RetainedMessageMemoryLocalPersistence retainedMessageMemoryLocalPersistence;
@@ -27,6 +29,7 @@ public class RetainedMessageLocalPersistenceProvider {
     private final @NotNull PublishPayloadPersistence payloadPersistence;
     private final @NotNull PersistenceStartup persistenceStartup;
     private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
+    private final @NotNull SystemInformation systemInformation;
 
     @Inject
     RetainedMessageLocalPersistenceProvider(
@@ -35,13 +38,15 @@ public class RetainedMessageLocalPersistenceProvider {
             final @NotNull LocalPersistenceFileUtil localPersistenceFileUtil,
             final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull PersistenceStartup persistenceStartup,
-            final @NotNull PersistenceConfigurationService persistenceConfigurationService) {
+            final @NotNull PersistenceConfigurationService persistenceConfigurationService,
+            final @NotNull SystemInformation systemInformation) {
         this.persistencesService = persistencesService;
         this.retainedMessageMemoryLocalPersistence = retainedMessageMemoryLocalPersistence;
         this.localPersistenceFileUtil = localPersistenceFileUtil;
         this.payloadPersistence = payloadPersistence;
         this.persistenceStartup = persistenceStartup;
         this.persistenceConfigurationService = persistenceConfigurationService;
+        this.systemInformation = systemInformation;
     }
 
     public @NotNull RetainedMessageLocalPersistence get() {
@@ -49,7 +54,7 @@ public class RetainedMessageLocalPersistenceProvider {
         final @Nullable RetainedMessageLocalPersistenceFactory persistenceFactory =
                 persistencesService.getRetainedMessageLocalPersistenceFactory();
 
-        if (persistenceConfigurationService.getMode() == PersistenceConfigurationService.PersistenceMode.IN_MEMORY) {
+        if (persistenceConfigurationService.getMode() == PersistenceMode.IN_MEMORY) {
             return retainedMessageMemoryLocalPersistence;
         }
 
@@ -62,6 +67,7 @@ public class RetainedMessageLocalPersistenceProvider {
         return persistenceFactory.buildRetainedMessageLocalPersistence(localPersistenceFileUtil,
                 payloadPersistence,
                 persistenceStartup,
-                persistenceConfigurationService);
+                persistenceConfigurationService,
+                systemInformation);
     }
 }

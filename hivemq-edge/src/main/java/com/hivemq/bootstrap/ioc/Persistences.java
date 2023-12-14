@@ -24,6 +24,7 @@ import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.ClientSessionSubscriptionLocalPersistence;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.retained.RetainedMessageLocalPersistence;
+import com.hivemq.persistence.retained.RetainedMessagePersistence;
 
 import javax.inject.Inject;
 
@@ -34,6 +35,7 @@ public class Persistences {
     private final @NotNull PublishPayloadPersistence payloadPersistence;
     private final @NotNull ClientSessionSubscriptionLocalPersistence clientSessionSubscriptionLocalPersistence;
     private final @NotNull RetainedMessageLocalPersistence retainedMessageLocalPersistence;
+    private final @NotNull RetainedMessagePersistence retainedMessagePersistence;
     private final @NotNull ConnectionPersistence connectionPersistence;
     private final @NotNull ScheduledCleanUpService scheduledCleanUpService;
     private final @NotNull MessageDroppedService messageDroppedService;
@@ -45,6 +47,7 @@ public class Persistences {
             final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull ClientSessionSubscriptionLocalPersistence clientSessionSubscriptionLocalPersistence,
             final @NotNull RetainedMessageLocalPersistence retainedMessageLocalPersistence,
+            final @NotNull RetainedMessagePersistence retainedMessagePersistence,
             final @NotNull ConnectionPersistence connectionPersistence,
             final @NotNull ScheduledCleanUpService scheduledCleanUpService,
             final @NotNull MessageDroppedService messageDroppedService) {
@@ -53,6 +56,7 @@ public class Persistences {
         this.payloadPersistence = payloadPersistence;
         this.clientSessionSubscriptionLocalPersistence = clientSessionSubscriptionLocalPersistence;
         this.retainedMessageLocalPersistence = retainedMessageLocalPersistence;
+        this.retainedMessagePersistence = retainedMessagePersistence;
         this.connectionPersistence = connectionPersistence;
         this.scheduledCleanUpService = scheduledCleanUpService;
         this.messageDroppedService = messageDroppedService;

@@ -16,11 +16,9 @@
 package com.hivemq.configuration.service;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.migration.meta.PersistenceType;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class InternalConfigurations {
 
