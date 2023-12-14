@@ -2,12 +2,11 @@ import { FC } from 'react'
 import { BarDatum, ResponsiveBar } from '@nivo/bar'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { Badge, Box, Card, Text, useTheme } from '@chakra-ui/react'
-
-import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
+import { Box, useTheme } from '@chakra-ui/react'
 
 import { ChartProps } from '../../types.ts'
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
+import ChartTooltip from '../parts/ChartTooltip.tsx'
 
 interface Datum extends BarDatum {
   sampleTime: string
@@ -38,49 +37,15 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, c
         valueScale={{ type: 'linear' }}
         indexScale={{ type: 'band', round: true }}
         colors={[colorElement]}
-        tooltip={(d) => (
-          <Card p={1} data-testid={'bar-chart-tooltip'}>
-            <Badge backgroundColor={d.color} color={'white'}>
-              {d.id}
-            </Badge>
-            <DateTimeRenderer date={DateTime.fromISO(d.indexValue as string)} isShort />
-            <Text fontWeight={'bold'}>{d.formattedValue}</Text>
-          </Card>
-        )}
-        // defs={[
-        //   {
-        //     id: 'dots',
-        //     type: 'patternDots',
-        //     background: 'inherit',
-        //     color: '#38bcb2',
-        //     size: 4,
-        //     padding: 1,
-        //     stagger: true,
-        //   },
-        //   {
-        //     id: 'lines',
-        //     type: 'patternLines',
-        //     background: 'inherit',
-        //     color: '#eed312',
-        //     rotation: -45,
-        //     lineWidth: 6,
-        //     spacing: 10,
-        //   },
-        // ]}
-        // fill={[
-        //   {
-        //     match: {
-        //       id: 'fries',
-        //     },
-        //     id: 'dots',
-        //   },
-        //   {
-        //     match: {
-        //       id: 'sandwich',
-        //     },
-        //     id: 'lines',
-        //   },
-        // ]}
+        // tooltip={(d) => (
+        //   <Card p={1} data-testid={'bar-chart-tooltip'}>
+        //     <Badge backgroundColor={d.color} color={'white'}>
+        //       {d.id}
+        //     </Badge>
+        //     <DateTimeRenderer date={DateTime.fromISO(d.indexValue as string)} isShort />
+        //     <Text fontWeight={'bold'}>{d.formattedValue}</Text>
+        //   </Card>
+        // )}
         borderColor={{
           from: 'color',
           modifiers: [['darker', 1.6]],
@@ -119,6 +84,16 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, c
           from: 'color',
           modifiers: [['darker', 1.6]],
         }}
+        margin={{ top: 5, right: 0, bottom: 70, left: 40 }}
+        padding={0.3}
+        tooltip={(d) => (
+          <ChartTooltip
+            color={d.color}
+            id={d.id}
+            date={DateTime.fromISO(d.indexValue as string)}
+            formattedValue={d.formattedValue.toString()}
+          />
+        )}
         legends={[
           {
             direction: 'row',
