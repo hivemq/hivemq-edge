@@ -14,7 +14,7 @@ const NotificationBadge: FC = () => {
   const { notifications } = useGetManagedNotifications()
 
   const handleClick = () => {
-    notifications.forEach((notification) => {
+    for (const notification of notifications) {
       if (notification.id && !toast.isActive(notification.id)) {
         const notificationWithSkip: UseToastOptions = {
           ...notification,
@@ -27,7 +27,7 @@ const NotificationBadge: FC = () => {
         }
         toast(notificationWithSkip)
       }
-    })
+    }
   }
 
   return (

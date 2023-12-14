@@ -6,9 +6,6 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "complexity": {
-        "noForEach": "off"
-      },
       "style": {
         "useBlockStatements": "error",
         "useShorthandArrayType": "error",

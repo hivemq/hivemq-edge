@@ -83,10 +83,10 @@ export const discoverAdapterTopics = (protocol: ProtocolAdapter, instance: Gener
   const paths = getTopicPaths(protocol?.configSchema || {})
   const topics: string[] = []
 
-  paths.forEach((path) => {
+  for (const path of paths) {
     const gg = getTopicsFromPath(path, instance)
     topics.push(...gg)
-  })
+  }
 
   return topics
 }

@@ -96,10 +96,10 @@ export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOptio
 
     const grpNodes: Node<string>[] =
       root.children?.map<Node>((e, n) => {
-        e.leaves().forEach((e) => {
+        for (const leaf of e.leaves()) {
           // @ts-ignore
-          e.data.parentNode = `${IdStubs.GROUP_NODE}-${n}`
-        })
+          leaf.data.parentNode = `${IdStubs.GROUP_NODE}-${n}`
+        }
         return {
           id: `${IdStubs.GROUP_NODE}-${n}`,
           type: NodeTypes.CLUSTER_NODE,

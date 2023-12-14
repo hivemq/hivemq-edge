@@ -39,16 +39,20 @@ const useGetFlowElements = () => {
 
     const nodeEdge = createEdgeNode(t('branding.appName'))
 
-    listeners?.forEach((listener, nb) => {
-      const { nodeListener, edgeConnector } = createListenerNode(listener, nb)
+    if (listeners) {
+      for (let nb = 0; nb < listeners.length; nb++) {
+        const listener = listeners[nb]
 
-      if (options.showGateway) {
-        nodes.push(nodeListener)
-        edges.push(edgeConnector)
+        const { nodeListener, edgeConnector } = createListenerNode(listener, nb)
+
+        if (options.showGateway) {
+          nodes.push(nodeListener)
+          edges.push(edgeConnector)
+        }
       }
-    })
+    }
 
-    bridges.forEach((bridge, incBridgeNb) => {
+    for (const [incBridgeNb, bridge] of bridges.entries()) {
       const { nodeBridge, edgeConnector, nodeHost, hostConnector } = createBridgeNode(
         bridge,
         incBridgeNb,
@@ -61,9 +65,10 @@ const useGetFlowElements = () => {
         nodes.push(nodeHost)
         edges.push(hostConnector)
       }
-    })
+    }
 
-    adapters.forEach((adapter, incAdapterNb) => {
+    for (let incAdapterNb = 0; incAdapterNb < adapters.length; incAdapterNb++) {
+      const adapter = adapters[incAdapterNb]
       const type = adapterTypes?.items?.find((e) => e.id === adapter.type)
 
       const { nodeAdapter, edgeConnector } = createAdapterNode(
@@ -75,7 +80,7 @@ const useGetFlowElements = () => {
       )
       nodes.push(nodeAdapter)
       edges.push(edgeConnector)
-    })
+    }
 
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])
     setEdges([...edges])
