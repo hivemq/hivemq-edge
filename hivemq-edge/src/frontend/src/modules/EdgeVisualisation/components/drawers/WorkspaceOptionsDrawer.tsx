@@ -53,8 +53,8 @@ const WorkspaceOptionsDrawer: FC = () => {
                 colorScheme="brand"
                 defaultValue={initValues}
                 onChange={(options) => {
-                  const newOptions = options.reduce((a, opt) => ({ ...a, [opt]: true }), {})
-                  const oldOptions = optionKeys.reduce((a, opt) => ({ ...a, [opt]: false }), {})
+                  const newOptions = options.reduce((a, opt) => Object.assign({}, a, { [opt]: true }), {})
+                  const oldOptions = optionKeys.reduce((a, opt) => Object.assign({}, a, { [opt]: false }), {})
 
                   setOptions((old) => ({ ...old, ...oldOptions, ...newOptions }))
                 }}

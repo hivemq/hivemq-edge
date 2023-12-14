@@ -43,14 +43,16 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
           if (setSoFar.includes(cur.category.name)) {
             return acc
           }
-          return [...acc, cur.category]
+          acc.push(cur.category)
+          return acc
         },
         [] as ProtocolAdapterCategory[],
       ) || []
     const tags =
       items?.reduce(
         (acc, cur) => {
-          return Array.from(new Set([...acc, ...(cur?.tags || [])]))
+          acc.concat(...(cur?.tags || []))
+          return Array.from(new Set(acc))
         },
         [] as string[],
       ) || []

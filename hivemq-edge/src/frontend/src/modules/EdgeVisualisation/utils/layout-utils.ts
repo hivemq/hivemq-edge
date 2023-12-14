@@ -35,7 +35,7 @@ export const groupingAttributes: ClusterFunctionCatalog[] = [
 ]
 
 const groupingAttributesAsObject = groupingAttributes.reduce<{ [key: string]: ClusterFunction }>(
-  (a, c) => ({ ...a, [c.key]: c.function }),
+  (a, c) => Object.assign({}, a, { [c.key]: c.function }),
   {},
 )
 
@@ -78,7 +78,7 @@ export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOptio
   )
 
   // @ts-ignore
-  const mapping = root.leaves().reduce((a, v) => ({ ...a, [v.data.id]: { x: v.x, y: v.y } }), {})
+  const mapping = root.leaves().reduce((a, v) => Object.assign({}, a, { [v.data.id]: { x: v.x, y: v.y } }), {})
 
   const reloc = nodes.map<Node>((e) => {
     // @ts-ignore
