@@ -56,7 +56,6 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
     onEdgesChange(edges.filter((e) => e.source === id).map((e) => ({ id: e.id, type: 'remove' } as EdgeRemoveChange)))
   }
 
-  console.log('XXXXXXX data', data)
   return (
     <>
       <NodeToolbar
