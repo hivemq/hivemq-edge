@@ -122,7 +122,6 @@ public class RetainedMessagePersistenceImpl extends AbstractPersistence implemen
             payloadPersistence.add(retainedMessage.getMessage(), retainedMessage.getPublishId());
 
             return singleWriter.submit(topic, (bucketIndex) -> {
-                System.err.println("bucketIndex: "+ bucketIndex);
                 localPersistence.put(retainedMessage, topic, bucketIndex);
                 return null;
             });
