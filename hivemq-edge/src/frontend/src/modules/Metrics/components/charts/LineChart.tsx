@@ -2,14 +2,15 @@ import { FC } from 'react'
 import { ResponsiveLine } from '@nivo/line'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { Badge, Box, Card, Text } from '@chakra-ui/react'
+import { Box, useTheme } from '@chakra-ui/react'
 
+import ChartTooltip from '../parts/ChartTooltip.tsx'
 import { ChartProps } from '../../types.ts'
-import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
-import { extractMetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
+import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 
-const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, ...props }) => {
+const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, chartTheme, ...props }) => {
   const { t } = useTranslation()
+  const { colors } = useTheme()
 
   if (!metricName) return null
 
@@ -20,6 +21,9 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
 
   const { suffix, device } = extractMetricInfo(metricName)
   const seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
+
+  const colorScheme = chartTheme?.colourScheme || 'red'
+  const colorElement = colors[colorScheme][500]
 
   return (
     <Box w={'100%'} {...props} role={'application'} aria-label={ariaLabel}>
@@ -36,15 +40,9 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
               .map((e) => ({ x: DateTime.fromISO(e.sampleTime as string).toMillis(), y: e.value })),
           },
         ]}
-        colors={{ scheme: 'nivo' }}
-        tooltip={(d) => (
-          <Card p={1} data-testid={'line-chart-tooltip'}>
-            <Badge backgroundColor={d.point.serieColor}>{d.point.serieId}</Badge>
-            <DateTimeRenderer date={DateTime.fromMillis(d.point.data.x as number)} isShort />
-            <Text fontWeight={'bold'}>{d.point.data.yFormatted}</Text>
-          </Card>
-        )}
-        margin={{ top: 0, right: 10, bottom: 50, left: 50 }}
+        // colors={{ scheme: 'nivo' }}
+        colors={[colorElement]}
+        margin={{ top: 0, right: 10, bottom: 70, left: 50 }}
         yScale={{ type: 'linear', min: boundaries.x, max: boundaries.y, stacked: true }}
         // xScale={{ type: 'linear' }}
         // yScale={{ type: 'linear', stacked: true, min: 0, max: 2500 }}
