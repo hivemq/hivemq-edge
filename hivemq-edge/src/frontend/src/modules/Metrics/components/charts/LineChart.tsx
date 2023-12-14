@@ -4,6 +4,7 @@ import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { Box, useTheme } from '@chakra-ui/react'
 
+import ChartTooltip from '../parts/ChartTooltip.tsx'
 import { ChartProps } from '../../types.ts'
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 import ChartTooltip from '../parts/ChartTooltip.tsx'
@@ -28,6 +29,9 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
   const { suffix, device, id } = extractMetricInfo(metricName)
   let seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
   seriesName = `${seriesName} - ${id}`
+
+  const colorScheme = chartTheme?.colourScheme || 'red'
+  const colorElement = colors[colorScheme][500]
 
   const colorScheme = chartTheme?.colourScheme || 'red'
   const colorElement = colors[colorScheme][500]
