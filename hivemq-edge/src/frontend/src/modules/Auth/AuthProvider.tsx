@@ -20,9 +20,9 @@ export const AuthProvider: FunctionComponent<PropsWithChildren> = ({ children })
   const [isAuthToken, setAuthToken] = useLocalStorage<string | undefined>('auth', undefined)
   const [isLoading, setLoading] = useState(true)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     processToken(isAuthToken, setAuthToken, login, setLoading)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const login = (newUser: ApiBearerToken, callback: VoidFunction) => {

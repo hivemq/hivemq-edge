@@ -59,7 +59,7 @@ const BridgeStepper: FC<BridgeStepperProps> = () => {
       <PageContainer title={t('bridge.title') as string} subtitle={t('bridge.stepper.description') as string}>
         <Stepper index={activeStep} colorScheme="yellow">
           {steps.map((step, index) => (
-            <Step key={index}>
+            <Step key={`step_${index}`}>
               <StepIndicator>
                 <StepStatus complete={<StepIcon />} incomplete={<StepNumber />} active={<StepNumber />} />
               </StepIndicator>

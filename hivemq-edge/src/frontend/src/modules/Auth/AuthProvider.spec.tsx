@@ -17,6 +17,7 @@ const TestingComponent = () => {
       <p data-testid="isLoading">{context?.isLoading ? 'true' : 'false'}</p>
       <p data-testid="isAuthenticated">{context?.isLoading ? 'true' : 'false'}</p>
       <button
+        type="button"
         data-testid="login"
         onClick={() => {
           context?.login({ token: MOCK_JWT }, loginCallback)
@@ -25,6 +26,7 @@ const TestingComponent = () => {
         Login
       </button>
       <button
+        type="button"
         data-testid="logout"
         onClick={() => {
           context?.logout(logoutCallback)

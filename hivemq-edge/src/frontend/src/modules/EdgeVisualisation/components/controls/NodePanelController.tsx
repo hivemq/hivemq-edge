@@ -41,7 +41,7 @@ const NodePanelController: FC = () => {
     //   return
     // }
     onOpen()
-  }, [navigate, nodeId, nodes.length, onOpen, selectedNode])
+  }, [nodes.length, onOpen])
 
   const handleClose = () => {
     onClose()

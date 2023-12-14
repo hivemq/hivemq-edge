@@ -30,7 +30,7 @@ const ClipboardCopyIconButton: FC<ClipboardCopyIconButtonProps> = ({ content, pl
       setState(CopyStatus.READY)
     }, COPY_LATENCY)
     return () => clearInterval(interval)
-  }, [setState, state])
+  }, [state])
 
   function handleClick() {
     navigator.clipboard.writeText(content).then(

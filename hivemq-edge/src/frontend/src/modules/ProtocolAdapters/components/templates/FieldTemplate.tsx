@@ -55,7 +55,7 @@ export const FieldTemplate: FC<FieldTemplateProps> = (props) => {
       uiSchema={uiSchema}
       registry={registry}
     >
-      <RenderFieldTemplate {...props} children={children} />
+      <RenderFieldTemplate {...props}>{children}</RenderFieldTemplate>
     </WrapIfAdditionalTemplate>
   )
 }

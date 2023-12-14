@@ -42,23 +42,20 @@ export const handlers = [
   }),
 
   rest.post('*/bridges', (_, res, ctx) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return res(ctx.json<any>({}), ctx.status(200))
+    return res(ctx.json({}), ctx.status(200))
   }),
 
   rest.delete('*/bridges/:bridgeId', (req, res, ctx) => {
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { bridgeId } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return res(ctx.json<any>({}), ctx.status(200))
+    return res(ctx.json({}), ctx.status(200))
   }),
 
   rest.put('*/bridges/:bridgeId', (req, res, ctx) => {
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { bridgeId } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return res(ctx.json<any>({}), ctx.status(200))
+    return res(ctx.json({}), ctx.status(200))
   }),
 ]

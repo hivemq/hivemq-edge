@@ -39,7 +39,7 @@ describe('DateTimeRangeSelector > Option', () => {
 
   it('should render properly', () => {
     // @ts-ignore force mocked partial object
-    cy.mountWithProviders(<Option children={MOCK_OPTIONS[0].label} {...MOCK_PROPS} />)
+    cy.mountWithProviders(<Option {...MOCK_PROPS}>{MOCK_OPTIONS[0].label}</Option>)
 
     // cy.getByAriaLabel('Go to the first page').should('be.visible').click()
     // cy.get('@setPageIndex').should('have.been.calledOnceWith', 0)

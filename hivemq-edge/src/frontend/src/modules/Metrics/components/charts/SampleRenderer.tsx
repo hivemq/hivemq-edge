@@ -25,12 +25,12 @@ interface SampleRendererProps extends StatProps {
   children?: ReactNode
 }
 
+const diff = (current: number, previous: number) => current - previous
+
 const SampleRenderer: FC<SampleRendererProps> = ({ metricInfo, series, isLoading, error, children, ...props }) => {
   const { t } = useTranslation()
   const { device, suffix, id } = metricInfo
   const formatNumber = Intl.NumberFormat(navigator.language)
-
-  const diff = (current: number, previous: number) => current - previous
 
   const change = useMemo(() => {
     if (series.length < 2) {
