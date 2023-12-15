@@ -82,7 +82,7 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, c
         labelSkipHeight={12}
         labelTextColor={{
           from: 'color',
-          modifiers: [['darker', 1.6]],
+          modifiers: [['darker', 0]],
         }}
         margin={{ top: 5, right: 0, bottom: 70, left: 40 }}
         padding={0.3}
