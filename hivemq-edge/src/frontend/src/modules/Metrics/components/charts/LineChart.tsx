@@ -19,8 +19,9 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
     y: Math.max(...data.map((e) => e.value as number)),
   }
 
-  const { suffix, device } = extractMetricInfo(metricName)
-  const seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
+  const { suffix, device, id } = extractMetricInfo(metricName)
+  let seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
+  seriesName = `${seriesName} - ${id}`
 
   const colorScheme = chartTheme?.colourScheme || 'red'
   const colorElement = colors[colorScheme][500]

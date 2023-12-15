@@ -18,8 +18,9 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, c
 
   if (!metricName) return null
 
-  const { suffix, device } = extractMetricInfo(metricName)
-  const seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
+  const { suffix, device, id } = extractMetricInfo(metricName)
+  let seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
+  seriesName = `${seriesName} - ${id}`
 
   const barSeries: Datum[] = [...data]
     .reverse()
