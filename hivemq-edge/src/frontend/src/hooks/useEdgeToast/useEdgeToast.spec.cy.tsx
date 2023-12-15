@@ -1,9 +1,9 @@
 /// <reference types="cypress" />
 
-import { useEdgeToast } from './useEdgeToast.tsx'
-import { Button } from '@chakra-ui/react'
 import { ApiError } from '@/api/__generated__'
 import { ApiResult } from '@/api/__generated__/core/ApiResult.ts'
+import { Button } from '@chakra-ui/react'
+import { useEdgeToast } from './useEdgeToast.tsx'
 
 const result: ApiResult = {
   url: 'http://fake.url.com',

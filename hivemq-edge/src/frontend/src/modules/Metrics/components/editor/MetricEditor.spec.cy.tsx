@@ -1,11 +1,11 @@
 /// <reference types="cypress" />
 
 import { MetricList } from '@/api/__generated__'
-import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
+import { MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
 
-import MetricSelector from './MetricEditor.tsx'
 import { ChartType } from '@/modules/Metrics/types.ts'
+import MetricSelector from './MetricEditor.tsx'
 
 describe('MetricEditor', () => {
   beforeEach(() => {
@@ -22,7 +22,7 @@ describe('MetricEditor', () => {
           onSubmit={onSubmit}
           selectedChart={ChartType.SAMPLE}
           selectedMetrics={[MOCK_METRICS[0].name as string, MOCK_METRICS[0].name as string]}
-        />
+        />,
       )
       cy.get('div#react-select-2-placeholder').should('contain.text', 'Select...')
       cy.get("button[type='submit']").should('be.disabled')
@@ -55,7 +55,7 @@ describe('MetricEditor', () => {
           onSubmit={cy.stub()}
           selectedChart={ChartType.SAMPLE}
           selectedMetrics={[MOCK_METRICS[0].name as string, MOCK_METRICS[0].name as string]}
-        />
+        />,
       )
       cy.checkAccessibility()
       cy.percySnapshot('Component: MetricEditor')

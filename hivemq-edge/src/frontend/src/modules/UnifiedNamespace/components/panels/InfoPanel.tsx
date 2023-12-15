@@ -1,13 +1,15 @@
-import { FC } from 'react'
-import { Button, Card, CardBody, CardFooter, CardHeader, Heading, Text } from '@chakra-ui/react'
-import { GoLinkExternal } from 'react-icons/go'
-import { useTranslation } from 'react-i18next'
-import { Link as RouterLink } from 'react-router-dom'
 import config from '@/config'
+import { Button, Card, CardBody, CardFooter, CardHeader, Heading, Text } from '@chakra-ui/react'
+import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
+import { GoLinkExternal } from 'react-icons/go'
+import { Link as RouterLink } from 'react-router-dom'
 
 const InfoPanel: FC = () => {
   const { t } = useTranslation()
-  const descriptions = t('unifiedNamespace.container.info.descriptions', { returnObjects: true }) as string[]
+  const descriptions = t('unifiedNamespace.container.info.descriptions', {
+    returnObjects: true,
+  }) as string[]
 
   return (
     <Card>

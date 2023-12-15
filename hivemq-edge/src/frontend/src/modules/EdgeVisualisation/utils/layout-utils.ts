@@ -1,10 +1,10 @@
-import { Node, XYPosition } from 'reactflow'
 import { group } from 'd3-array'
 import { hierarchy, pack } from 'd3-hierarchy'
 import { DateTime } from 'luxon'
+import { Node, XYPosition } from 'reactflow'
 
-import { EdgeFlowGrouping, EdgeFlowLayout, IdStubs, NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 import { Adapter, Bridge } from '@/api/__generated__'
+import { EdgeFlowGrouping, EdgeFlowLayout, IdStubs, NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
 
 import { CONFIG_ADAPTER_WIDTH } from './nodes-utils.ts'
 
@@ -25,7 +25,9 @@ export const groupingAttributes: ClusterFunctionCatalog[] = [
       // TODO[NVL] Can we breakt time down in unit groups ?
       const gg = d.data.status?.startedAt
 
-      if (!gg) return 0
+      if (!gg) {
+        return 0
+      }
       const ss = DateTime.fromISO(gg).toMillis()
       return ss % 3
     },
@@ -33,12 +35,14 @@ export const groupingAttributes: ClusterFunctionCatalog[] = [
 ]
 
 const groupingAttributesAsObject = groupingAttributes.reduce<{ [key: string]: ClusterFunction }>(
-  (a, c) => ({ ...a, [c.key]: c.function }),
-  {}
+  (a, c) => Object.assign({}, a, { [c.key]: c.function }),
+  {},
 )
 
 export const applyLayout = (nodes: Node<Bridge | Adapter>[], groupOption: EdgeFlowGrouping): Node[] => {
-  if (groupOption.layout === EdgeFlowLayout.CIRCLE_PACKING) return computeCirclePacking(nodes, groupOption)
+  if (groupOption.layout === EdgeFlowLayout.CIRCLE_PACKING) {
+    return computeCirclePacking(nodes, groupOption)
+  }
   return nodes
 }
 
@@ -70,28 +74,32 @@ export const computeCirclePacking = (nodes: Node<Bridge | Adapter>[], groupOptio
       .sum(() => 1)
       .sort((a, b) => {
         return (b.value || 0) - (a.value || 0)
-      })
+      }),
   )
 
   // @ts-ignore
-  const mapping = root.leaves().reduce((a, v) => ({ ...a, [v.data.id]: { x: v.x, y: v.y } }), {})
+  const mapping = root.leaves().reduce((a, v) => Object.assign({}, a, { [v.data.id]: { x: v.x, y: v.y } }), {})
 
   const reloc = nodes.map<Node>((e) => {
     // @ts-ignore
     const pos: XYPosition = mapping[e.id]
-    if (!pos) return e
+    if (!pos) {
+      return e
+    }
     return { ...e, position: { x: pos.x - 600 - 60, y: pos.y - 800 - 40 } }
   })
 
   const createGroupNodes = () => {
-    if (!groupOption.showGroups) return []
+    if (!groupOption.showGroups) {
+      return []
+    }
 
     const grpNodes: Node<string>[] =
       root.children?.map<Node>((e, n) => {
-        e.leaves().forEach((e) => {
+        for (const leaf of e.leaves()) {
           // @ts-ignore
-          e.data.parentNode = `${IdStubs.GROUP_NODE}-${n}`
-        })
+          leaf.data.parentNode = `${IdStubs.GROUP_NODE}-${n}`
+        }
         return {
           id: `${IdStubs.GROUP_NODE}-${n}`,
           type: NodeTypes.CLUSTER_NODE,

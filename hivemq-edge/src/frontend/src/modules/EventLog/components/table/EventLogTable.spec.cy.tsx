@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 
+import { TypeIdentifier } from '@/api/__generated__'
 import { mockEdgeEvent } from '@/api/hooks/useEvents/__handlers__'
 import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'
-import { TypeIdentifier } from '@/api/__generated__'
 
 describe('EventLogTable', () => {
   beforeEach(() => {

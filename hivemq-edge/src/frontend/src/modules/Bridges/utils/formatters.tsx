@@ -3,9 +3,11 @@ export const leadSHA = (sha: string, length: number): string => {
 }
 
 export const formatHost = (host: string | undefined, length = 7): string => {
-  if (!host) return ''
+  if (!host) {
+    return ''
+  }
 
   const [domain, ...rest] = host.split('.')
   const reducedHost = leadSHA(domain, length)
-  return [reducedHost === domain ? reducedHost : reducedHost + '[...]', ...rest].join('.')
+  return [reducedHost === domain ? reducedHost : `${reducedHost}[...]`, ...rest].join('.')
 }

@@ -1,11 +1,11 @@
-import { FC } from 'react'
-import { Flex, Stat, StatHelpText, StatLabel, StatNumber } from '@chakra-ui/react'
 import { BridgeSubscription } from '@/api/__generated__'
+import { Flex, Stat, StatHelpText, StatLabel, StatNumber } from '@chakra-ui/react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
 interface SubscriptionStatsProps {
-  local?: Array<BridgeSubscription>
-  remote?: Array<BridgeSubscription>
+  local?: BridgeSubscription[]
+  remote?: BridgeSubscription[]
 }
 
 const SubscriptionStats: FC<SubscriptionStatsProps> = ({ local, remote }) => {

@@ -1,6 +1,6 @@
+import { FormControl, FormErrorMessage, FormLabel, Select } from '@chakra-ui/react'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FormControl, FormErrorMessage, FormLabel, Select } from '@chakra-ui/react'
 
 import { ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
@@ -38,7 +38,7 @@ const AdapterTypeSelector: FC<GenericPanelType<AdapterType>> = ({ form }) => {
 
       {selectedAdapter && <AdapterTypeSummary adapter={selectedAdapter} />}
 
-      <FormErrorMessage>{errors.adapterType && errors.adapterType.message}</FormErrorMessage>
+      <FormErrorMessage>{errors.adapterType?.message}</FormErrorMessage>
     </FormControl>
   )
 }

@@ -1,6 +1,6 @@
+import { FormControl, FormErrorMessage, FormHelperText, FormLabel, Input } from '@chakra-ui/react'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FormControl, FormErrorMessage, FormHelperText, FormLabel, Input } from '@chakra-ui/react'
 
 import { $Bridge } from '@/api/__generated__'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
@@ -30,7 +30,9 @@ const NamePanel: FC<BridgePanelType> = ({ form, isNewBridge = false }) => {
           ...getRulesForProperty($Bridge.properties.id),
           validate: {
             notUnique: (value) => {
-              if (!isNewBridge) return true
+              if (!isNewBridge) {
+                return true
+              }
               const isIncluded = data?.map((e) => e.id).includes(value)
               return !isIncluded || (t('bridge.options.id.error.notUnique') as string)
             },
@@ -38,7 +40,7 @@ const NamePanel: FC<BridgePanelType> = ({ form, isNewBridge = false }) => {
         })}
       />
       {!validationErrors.id && <FormHelperText>{t('bridge.options.id.helper')}</FormHelperText>}
-      <FormErrorMessage>{validationErrors.id && validationErrors.id.message}</FormErrorMessage>
+      <FormErrorMessage>{validationErrors.id?.message}</FormErrorMessage>
     </FormControl>
   )
 }

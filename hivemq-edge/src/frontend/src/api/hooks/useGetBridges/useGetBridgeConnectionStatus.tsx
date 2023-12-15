@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
+import { useQuery } from '@tanstack/react-query'
 
-import config from '@/config'
 import { QUERY_KEYS } from '@/api/utils.ts'
+import config from '@/config'
 
 /**
  * @deprecated Prefer using useGetConnectionStatus
@@ -23,6 +23,6 @@ export const useGetBridgeConnectionStatus = (name: string | undefined) => {
         // return data ? 4 * 1000 : Math.max(Math.min(query.state.errorUpdateCount, 5 * 60), 4) * 1000
         return config.httpClient.pollingRefetchInterval
       },
-    }
+    },
   )
 }

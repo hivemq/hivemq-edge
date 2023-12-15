@@ -27,6 +27,6 @@ describe('ConnectionStatusBadge', () => {
       cy.injectAxe()
       cy.mountWithProviders(<ConnectionStatusBadge status={selector} />)
       cy.checkAccessibility()
-    }
+    },
   )
 })

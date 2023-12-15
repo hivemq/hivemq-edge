@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next'
 import { Box, Card, CardBody, CardHeader, Flex, Heading, Text } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
 
 import NamespaceDisplay from '@/modules/UnifiedNamespace/components/NamespaceDisplay.tsx'
 

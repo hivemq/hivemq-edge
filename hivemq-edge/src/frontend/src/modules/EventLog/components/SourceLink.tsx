@@ -1,8 +1,8 @@
-import { FC } from 'react'
-import { Link as ReactRouterLink } from 'react-router-dom'
 import { Box, Icon, Link as ChakraLink } from '@chakra-ui/react'
-import { PiBridgeThin, PiPlugsConnectedFill, PiUserFill } from 'react-icons/pi'
+import { FC } from 'react'
 import { MdOutlineEventNote } from 'react-icons/md'
+import { PiBridgeThin, PiPlugsConnectedFill, PiUserFill } from 'react-icons/pi'
+import { Link as ReactRouterLink } from 'react-router-dom'
 
 import { TypeIdentifier } from '@/api/__generated__'
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
@@ -45,12 +45,13 @@ const LinkWrapper: Record<TypeIdentifier.type, LinkWrapperProps> = {
 const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
   const SourceType = source?.type && LinkWrapper[source?.type]
 
-  if (!SourceType?.To)
+  if (!SourceType?.To) {
     return (
       <Box whiteSpace={'nowrap'} display={'inline-flex'}>
         {source?.identifier}
       </Box>
     )
+  }
 
   return (
     <ChakraLink

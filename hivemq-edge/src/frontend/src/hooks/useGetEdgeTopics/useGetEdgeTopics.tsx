@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 
 import { ApiError } from '@/api/__generated__'
+import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
-import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 
 import { mergeAllTopics } from '@/modules/EdgeVisualisation/utils/topics-utils.ts'
 
@@ -23,11 +23,15 @@ export interface EdgeTopicsOptions {
 const defaultOptions: EdgeTopicsOptions = { publishOnly: true, branchOnly: false }
 
 export const reduceTopicsBy = (options: EdgeTopicsOptions) => (prev: string[], cur: string) => {
-  if (options.publishOnly && cur.match(/[+#$]/gi)) return prev
+  if (options.publishOnly && cur.match(/[+#$]/gi)) {
+    return prev
+  }
   if (options.branchOnly) {
     const branch = cur.split('/')
     const res = branch.slice(0, -1).join('/')
-    if (res.length) prev.push(res)
+    if (res.length) {
+      prev.push(res)
+    }
     return prev
   }
   prev.push(cur)

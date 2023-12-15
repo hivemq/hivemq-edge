@@ -1,6 +1,6 @@
+import { Badge } from '@chakra-ui/react'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Badge } from '@chakra-ui/react'
 
 import { Status } from '@/api/__generated__'
 

@@ -1,5 +1,5 @@
-import { FC, ReactNode } from 'react'
 import { Tag, TagLabel, TagProps } from '@chakra-ui/react'
+import { FC, ReactNode } from 'react'
 
 import TopicIcon from '@/components/Icons/TopicIcon.tsx'
 import { formatTopicString } from '@/components/MQTT/topic-utils.ts'

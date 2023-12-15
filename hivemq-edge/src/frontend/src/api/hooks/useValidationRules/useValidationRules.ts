@@ -9,7 +9,9 @@ export const useValidationRules = () => {
     const options: RegisterOptions = {}
 
     const assert = (type: 'string' | 'number') => {
-      if (schema.type !== type) console.warn(`[openAPI - SyntaxError] Expecting type to be "string"`, { schema })
+      if (schema.type !== type) {
+        console.warn(`[openAPI - SyntaxError] Expecting type to be "string"`, { schema })
+      }
     }
 
     if (schema.isRequired) {
@@ -35,11 +37,18 @@ export const useValidationRules = () => {
     if (schema.pattern) {
       assert('string')
       let patternString = schema.pattern as string
-      if (!patternString.startsWith('^')) patternString = `^${patternString}`
-      if (!patternString.endsWith('$')) patternString = `${patternString}$`
+      if (!patternString.startsWith('^')) {
+        patternString = `^${patternString}`
+      }
+      if (!patternString.endsWith('$')) {
+        patternString = `${patternString}$`
+      }
       try {
         const pattern = new RegExp(patternString)
-        options.pattern = { value: pattern, message: t('validation.pattern', { pattern: schema.pattern }) }
+        options.pattern = {
+          value: pattern,
+          message: t('validation.pattern', { pattern: schema.pattern }),
+        }
       } catch (e: unknown) {
         const error = e as Error
         console.warn(`[openAPI - ${error.name}]`, error.message)

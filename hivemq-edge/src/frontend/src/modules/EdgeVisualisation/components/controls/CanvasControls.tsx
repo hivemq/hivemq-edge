@@ -1,7 +1,7 @@
-import { FC } from 'react'
-import { ControlButton, Controls } from 'reactflow'
 import { useEdgeFlowContext } from '@/modules/EdgeVisualisation/hooks/useEdgeFlowContext.tsx'
+import { FC } from 'react'
 import { IoMdOptions } from 'react-icons/io'
+import { ControlButton, Controls } from 'reactflow'
 
 const CanvasControls: FC = () => {
   const { optionDrawer } = useEdgeFlowContext()

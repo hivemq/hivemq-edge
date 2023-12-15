@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
+import { useQuery } from '@tanstack/react-query'
 
 export const useGetBridge = (name: string | undefined) => {
   const appClient = useHttpClient()
@@ -11,6 +11,6 @@ export const useGetBridge = (name: string | undefined) => {
       const item = await appClient.bridges.getBridgeByName(name as string)
       return item
     },
-    { enabled: name !== undefined }
+    { enabled: name !== undefined },
   )
 }

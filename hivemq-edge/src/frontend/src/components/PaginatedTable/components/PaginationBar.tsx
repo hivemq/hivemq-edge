@@ -1,5 +1,3 @@
-import { FC } from 'react'
-import { Table } from '@tanstack/react-table'
 import {
   Box,
   ButtonGroup,
@@ -17,9 +15,11 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { type IconButtonProps } from '@chakra-ui/react'
-import { MdArrowLeft, MdArrowRight } from 'react-icons/md'
-import { BiSkipNext, BiSkipPrevious } from 'react-icons/bi'
+import { Table } from '@tanstack/react-table'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import { BiSkipNext, BiSkipPrevious } from 'react-icons/bi'
+import { MdArrowLeft, MdArrowRight } from 'react-icons/md'
 
 interface PaginationProps<T> {
   table: Table<T>

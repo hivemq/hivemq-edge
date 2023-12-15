@@ -1,5 +1,5 @@
-import { describe, expect } from 'vitest'
 import { DateTime } from 'luxon'
+import { describe, expect } from 'vitest'
 
 import { toHuman } from './duration.utils.ts'
 import { MOCK_DATE_TIME_NOW } from './range-option.mocks.ts'

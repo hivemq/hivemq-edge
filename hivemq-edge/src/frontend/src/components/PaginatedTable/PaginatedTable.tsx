@@ -1,8 +1,8 @@
-import { useState, CSSProperties } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Alert, Button, Icon, Table, TableContainer, Tbody, Td, Text, Th, Thead, Tr, VStack } from '@chakra-ui/react'
 import {
   ColumnDef,
   ColumnFiltersState,
+  Row,
   flexRender,
   getCoreRowModel,
   getFacetedMinMaxValues,
@@ -11,18 +11,18 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  Row,
   useReactTable,
 } from '@tanstack/react-table'
-import { Table, Thead, Tbody, Tr, Th, Td, TableContainer, Text, Alert, VStack, Button, Icon } from '@chakra-ui/react'
+import { CSSProperties, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import PaginationBar from './components/PaginationBar.tsx'
-import { Filter } from './components/Filter.tsx'
-import { BiSortDown, BiSortUp } from 'react-icons/bi'
 import { getAriaSort } from '@/components/PaginatedTable/utils/table-utils.ts'
+import { BiSortDown, BiSortUp } from 'react-icons/bi'
+import { Filter } from './components/Filter.tsx'
+import PaginationBar from './components/PaginationBar.tsx'
 
 interface PaginatedTableProps<T> {
-  data: Array<T>
+  data: T[]
   columns: ColumnDef<T>[]
   pageSizes?: number[]
   noDataText?: string

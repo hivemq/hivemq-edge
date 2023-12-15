@@ -1,9 +1,9 @@
-import { useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Box } from '@chakra-ui/react'
 import { Column } from '@tanstack/react-table'
 import { CreatableSelect } from 'chakra-react-select'
-import { Box } from '@chakra-ui/react'
 import { DateTime } from 'luxon'
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import DateTimeRangeSelector from '@/components/DateTime/DateTimeRangeSelector.tsx'
 
@@ -29,7 +29,7 @@ export const Filter = <T,>({
   const facetedUniqueValues = getFacetedUniqueValues()
   const sortedUniqueValues = useMemo(
     () => (typeof firstValue === 'number' ? [] : Array.from(facetedUniqueValues.keys()).sort()),
-    [facetedUniqueValues, firstValue]
+    [facetedUniqueValues, firstValue],
   )
 
   // @ts-ignore Find a better to fix this
@@ -47,8 +47,11 @@ export const Filter = <T,>({
           min={DateTime.fromMillis(min)}
           max={DateTime.fromMillis(max)}
           setFilterValue={(v) => {
-            if (v) setFilterValue([v[0], v[1]])
-            else setFilterValue(undefined)
+            if (v) {
+              setFilterValue([v[0], v[1]])
+            } else {
+              setFilterValue(undefined)
+            }
           }}
         />
       </Box>
@@ -56,7 +59,9 @@ export const Filter = <T,>({
   }
 
   // we are not supporting numbers yet
-  if (typeof firstValue === 'number') return null
+  if (typeof firstValue === 'number') {
+    return null
+  }
 
   return (
     <Box w={'100%'} textTransform={'none'} fontWeight={'initial'}>
@@ -66,8 +71,16 @@ export const Filter = <T,>({
         menuPortalTarget={document.body}
         // value={{ value: columnFilterValue, label: columnFilterValue }}
         onChange={(item) => setFilterValue(item?.value)}
-        options={sortedUniqueValues.map((value: string) => ({ value: value, label: value, group: 'DDD' }))}
-        placeholder={t('components:pagination.filter.placeholder', { size: getFacetedUniqueValues().size }) as string}
+        options={sortedUniqueValues.map((value: string) => ({
+          value: value,
+          label: value,
+          group: 'DDD',
+        }))}
+        placeholder={
+          t('components:pagination.filter.placeholder', {
+            size: getFacetedUniqueValues().size,
+          }) as string
+        }
         noOptionsMessage={() => t('components:pagination.filter.noOptions')}
         formatCreateLabel={(e) => t('components:pagination.filter.create', { topic: e })}
         aria-label={t('components:pagination.filter.label') as string}

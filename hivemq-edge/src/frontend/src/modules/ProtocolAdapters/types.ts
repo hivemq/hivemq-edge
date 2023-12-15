@@ -1,5 +1,5 @@
-import { UseFormReturn, FieldValues } from 'react-hook-form'
 import { Adapter, ProtocolAdapter } from '@/api/__generated__'
+import { FieldValues, UseFormReturn } from 'react-hook-form'
 
 export type SubscriptionType = 'remoteSubscriptions' | 'localSubscriptions'
 

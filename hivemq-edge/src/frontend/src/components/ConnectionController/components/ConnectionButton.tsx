@@ -1,9 +1,9 @@
-import { FC } from 'react'
-import { ButtonGroup, IconButton } from '@chakra-ui/react'
-import { MdPlayArrow, MdRestartAlt, MdStop } from 'react-icons/md'
 import { StatusTransitionCommand } from '@/api/__generated__'
 import { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
+import { ButtonGroup, IconButton } from '@chakra-ui/react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
+import { MdPlayArrow, MdRestartAlt, MdStop } from 'react-icons/md'
 
 const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeStatus, isLoading }) => {
   const { t } = useTranslation()

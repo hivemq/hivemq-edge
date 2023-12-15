@@ -1,6 +1,6 @@
-import { FC } from 'react'
-import { IconButton, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Text } from '@chakra-ui/react'
 import { ChevronDownIcon } from '@chakra-ui/icons'
+import { IconButton, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Text } from '@chakra-ui/react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Adapter } from '@/api/__generated__'

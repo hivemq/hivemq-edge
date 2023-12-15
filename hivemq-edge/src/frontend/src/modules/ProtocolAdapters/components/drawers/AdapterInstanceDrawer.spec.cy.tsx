@@ -19,7 +19,7 @@ describe('AdapterInstanceDrawer', () => {
         isSubmitting={false}
         onSubmit={cy.stub().as('onSubmit')}
         onClose={cy.stub().as('onClose')}
-      />
+      />,
     )
     cy.get('.chakra-modal__close-btn').click()
     cy.get('@onClose').should('have.been.called')
@@ -33,7 +33,7 @@ describe('AdapterInstanceDrawer', () => {
         isSubmitting={false}
         onSubmit={cy.stub().as('onSubmit')}
         onClose={cy.stub().as('onClose')}
-      />
+      />,
     )
     cy.get('button[type="submit"]').click()
     cy.get('@onSubmit').should('not.have.been.called')
@@ -48,7 +48,7 @@ describe('AdapterInstanceDrawer', () => {
         isSubmitting={false}
         onSubmit={cy.stub().as('onSubmit')}
         onClose={cy.stub().as('onClose')}
-      />
+      />,
     )
 
     cy.get('#root_id').type('a new identifier')
@@ -67,7 +67,7 @@ describe('AdapterInstanceDrawer', () => {
         isSubmitting={false}
         onSubmit={cy.stub().as('onSubmit')}
         onClose={cy.stub().as('onClose')}
-      />
+      />,
     )
     cy.checkAccessibility()
     cy.percySnapshot('Component: AdapterInstanceDrawer')

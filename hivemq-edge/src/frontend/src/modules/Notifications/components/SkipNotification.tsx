@@ -1,7 +1,7 @@
-import { ChangeEvent, FC } from 'react'
 import { Checkbox, HStack } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
 import { useLocalStorage } from '@uidotdev/usehooks'
+import { ChangeEvent, FC } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface SkipNotificationProps {
   id: string
@@ -15,7 +15,7 @@ export const SkipNotification: FC<SkipNotificationProps> = ({ id }) => {
     if (e.target.checked) {
       setSkip((old) => [...old, id])
     } else {
-      setSkip((old) => old.filter((e) => e != id))
+      setSkip((old) => old.filter((e) => e !== id))
     }
   }
   return (

@@ -1,7 +1,7 @@
-import { FC, KeyboardEventHandler, MutableRefObject, useState } from 'react'
-import { CreatableSelect } from 'chakra-react-select'
-import { useTranslation } from 'react-i18next'
 import { FormControl, FormLabel, Input } from '@chakra-ui/react'
+import { CreatableSelect } from 'chakra-react-select'
+import { FC, KeyboardEventHandler, MutableRefObject, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface TopicAutoCompleteProps {
   name: string
@@ -30,7 +30,9 @@ const TopicAutoComplete: FC<TopicAutoCompleteProps> = ({
   const [value, setValue] = useState<readonly Option[]>([])
 
   const handleKeyDown: KeyboardEventHandler = (event) => {
-    if (!inputValue) return
+    if (!inputValue) {
+      return
+    }
     switch (event.key) {
       case 'Enter':
       case 'Tab':
@@ -60,7 +62,9 @@ const TopicAutoComplete: FC<TopicAutoCompleteProps> = ({
           setValue(newValue)
         }}
         onInputChange={(newValue) => {
-          if (maxCount === undefined || value.length < maxCount) setInputValue(newValue)
+          if (maxCount === undefined || value.length < maxCount) {
+            setInputValue(newValue)
+          }
         }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder || t('bridge.subscription.topic.placeholder')}

@@ -20,7 +20,6 @@ export const handlers = [
     // @ts-ignore
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { adapterType } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return res(ctx.json<any>({}), ctx.status(200))
+    return res(ctx.json({}), ctx.status(200))
   }),
 ]

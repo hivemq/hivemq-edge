@@ -1,6 +1,6 @@
+import { Box, Card, CardBody, CloseButton, HStack, Icon, IconButton, type StackProps, VStack } from '@chakra-ui/react'
 import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Box, Card, CardBody, CloseButton, HStack, Icon, IconButton, type StackProps, VStack } from '@chakra-ui/react'
 import { BiCollapseHorizontal, BiExpandHorizontal } from 'react-icons/bi'
 
 import { DataPoint } from '@/api/__generated__'
@@ -9,8 +9,8 @@ import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton
 
 import { ChartType } from '../../types.ts'
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
-import LineChart from '../charts/LineChart.tsx'
 import BarChart from '../charts/BarChart.tsx'
+import LineChart from '../charts/LineChart.tsx'
 
 interface ChartContainerProps extends StackProps {
   chartType: ChartType
@@ -28,7 +28,9 @@ const ChartContainer: FC<ChartContainerProps> = ({ chartType, metricName, onClos
   const [gridSpan, setGridSpan] = useState(true)
 
   useEffect(() => {
-    if (!data) return
+    if (!data) {
+      return
+    }
 
     setSeries((old) => {
       const newTime: DataPoint = {
@@ -41,7 +43,9 @@ const ChartContainer: FC<ChartContainerProps> = ({ chartType, metricName, onClos
     })
   }, [data, gridSpan])
 
-  if (!metricName) return null
+  if (!metricName) {
+    return null
+  }
 
   const metricInfo = extractMetricInfo(metricName)
   const { device, suffix } = metricInfo

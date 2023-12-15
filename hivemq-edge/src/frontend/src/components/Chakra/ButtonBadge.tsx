@@ -1,5 +1,5 @@
-import { FC } from 'react'
 import { Avatar, AvatarBadge, AvatarProps, IconButton, Text } from '@chakra-ui/react'
+import { FC } from 'react'
 
 interface ButtonBadgeProps extends Omit<AvatarProps, 'aria-label'> {
   badgeCount?: number
@@ -8,7 +8,7 @@ interface ButtonBadgeProps extends Omit<AvatarProps, 'aria-label'> {
 }
 
 const ButtonBadge: FC<ButtonBadgeProps> = ({
-  ['aria-label']: ariaLabel,
+  'aria-label': ariaLabel,
   badgeCount,
   icon,
   isDisabled,

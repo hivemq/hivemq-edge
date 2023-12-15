@@ -12,11 +12,14 @@ export const toHuman = (timestamp: DateTime, alternativeNow?: DateTime) => {
     .mapUnits((x) => Math.floor(x))
     .rescale()
 
-  if (rescaledDuration.valueOf() < 30 * 1000) return null
-  if (rescaledDuration.valueOf() < 60 * 1000)
+  if (rescaledDuration.valueOf() < 30 * 1000) {
+    return null
+  }
+  if (rescaledDuration.valueOf() < 60 * 1000) {
     return DateTime.local()
       .minus(rescaledDuration.set({ minute: 1 }))
       .toRelative()
+  }
 
   return DateTime.local().minus(rescaledDuration).toRelative()
 }

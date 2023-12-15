@@ -1,6 +1,6 @@
+import { Center, Flex, Image } from '@chakra-ui/react'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Center, Flex, Image } from '@chakra-ui/react'
 
 import ReactLogo from '@/assets/welcome-first-time-logo.svg'
 

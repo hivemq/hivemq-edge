@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 
+import { FormErrorMessage, FormLabel, Input } from '@chakra-ui/react'
 import { FieldTemplateProps } from '@rjsf/utils'
 import { RenderFieldTemplate } from './RenderFieldTemplate.tsx'
-import { FormErrorMessage, FormLabel, Input } from '@chakra-ui/react'
 
 const MOCK_TEXT = 'You will have to type something'
 const MOCK_ERROR = 'This is an error message'
@@ -39,7 +39,7 @@ describe('CustomFieldTemplate', () => {
     cy.injectAxe()
 
     // @ts-ignore
-    cy.mountWithProviders(<RenderFieldTemplate {...rest} children={children} />)
+    cy.mountWithProviders(<RenderFieldTemplate {...rest}>{children}</RenderFieldTemplate>)
     cy.get('[role="group"]').should('not.contain.text', MOCK_TEXT)
     cy.get('[role="group"]').should('contain.text', MOCK_ERROR)
     cy.checkAccessibility()
@@ -50,7 +50,7 @@ describe('CustomFieldTemplate', () => {
     cy.injectAxe()
 
     // @ts-ignore
-    cy.mountWithProviders(<RenderFieldTemplate {...rest} children={children} />)
+    cy.mountWithProviders(<RenderFieldTemplate {...rest}>{children}</RenderFieldTemplate>)
     cy.get('[role="group"]').should('contain.text', MOCK_TEXT)
     cy.get('[role="group"]').should('not.contain.text', MOCK_ERROR)
     cy.checkAccessibility()

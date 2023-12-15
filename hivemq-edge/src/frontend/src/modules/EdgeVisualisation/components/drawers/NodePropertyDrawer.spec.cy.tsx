@@ -1,10 +1,10 @@
 /// <reference types="cypress" />
 
-import NodePropertyDrawer from '@/modules/EdgeVisualisation/components/drawers/NodePropertyDrawer.tsx'
 import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'
-import { Node } from 'reactflow'
 import { Adapter, Bridge } from '@/api/__generated__'
+import NodePropertyDrawer from '@/modules/EdgeVisualisation/components/drawers/NodePropertyDrawer.tsx'
 import { NodeTypes } from '@/modules/EdgeVisualisation/types.ts'
+import { Node } from 'reactflow'
 
 const mockNode: Node<Bridge | Adapter> = {
   position: { x: 0, y: 0 },
@@ -31,7 +31,7 @@ describe('NodePropertyDrawer', () => {
         isOpen={true}
         onClose={onClose}
         onEditEntity={onEditEntity}
-      />
+      />,
     )
 
     // check the panel control
@@ -63,7 +63,7 @@ describe('NodePropertyDrawer', () => {
         isOpen={true}
         onClose={cy.stub()}
         onEditEntity={cy.stub()}
-      />
+      />,
     )
 
     cy.checkAccessibility(undefined, {

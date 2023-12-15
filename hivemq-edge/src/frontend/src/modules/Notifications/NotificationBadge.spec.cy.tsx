@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import NotificationBadge from '@/modules/Notifications/NotificationBadge.tsx'
 import { MOCK_NOTIFICATIONS } from '@/api/hooks/useFrontendServices/__handlers__'
+import NotificationBadge from '@/modules/Notifications/NotificationBadge.tsx'
 
 describe('NotificationBadge', () => {
   beforeEach(() => {

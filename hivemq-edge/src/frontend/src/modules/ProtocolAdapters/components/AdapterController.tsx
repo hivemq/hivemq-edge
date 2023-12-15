@@ -1,8 +1,8 @@
-import { FC, ReactNode, useEffect, useState } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { FC, ReactNode, useEffect, useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { Adapter, ApiError } from '@/api/__generated__'
 import { useCreateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useCreateProtocolAdapter.tsx'
@@ -10,9 +10,9 @@ import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpd
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
-import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
-import AdapterInstanceDrawer from '@/modules/ProtocolAdapters/components/drawers/AdapterInstanceDrawer.tsx'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
+import AdapterInstanceDrawer from '@/modules/ProtocolAdapters/components/drawers/AdapterInstanceDrawer.tsx'
+import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 
 interface AdapterEditorProps {
   isNew?: boolean
@@ -39,7 +39,9 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
   }, [state])
 
   useEffect(() => {
-    if (!allAdapters) return
+    if (!allAdapters) {
+      return
+    }
     const instance = allAdapters?.find((e) => e.id === adapterId)
     if (!isNew && !instance) {
       errorToast(
@@ -48,7 +50,7 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
           title: t('protocolAdapter.toast.view.title'),
           description: t('protocolAdapter.toast.view.error'),
         },
-        new Error(t('protocolAdapter.toast.view.noLongerExist', { id: adapterId }) as string)
+        new Error(t('protocolAdapter.toast.view.noLongerExist', { id: adapterId }) as string),
       )
       navigate('/protocol-adapters', { replace: true })
       return
@@ -61,7 +63,9 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
 
   const handleInstanceClose = () => {
     onInstanceClose()
-    navigate('/protocol-adapters', { state: { protocolAdapterTabIndex: ProtocolAdapterTabIndex.protocols } })
+    navigate('/protocol-adapters', {
+      state: { protocolAdapterTabIndex: ProtocolAdapterTabIndex.protocols },
+    })
   }
 
   const handleInstanceSubmit: SubmitHandler<Adapter> = (props) => {
@@ -90,8 +94,8 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
               title: t('protocolAdapter.toast.create.title'),
               description: t('protocolAdapter.toast.create.error'),
             },
-            err
-          )
+            err,
+          ),
         )
     } else {
       updateProtocolAdapter
@@ -116,8 +120,8 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
               title: t('protocolAdapter.toast.update.title'),
               description: t('protocolAdapter.toast.update.error'),
             },
-            err
-          )
+            err,
+          ),
         )
     }
 

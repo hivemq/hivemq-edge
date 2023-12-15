@@ -1,14 +1,14 @@
-import { FC, ReactNode, useEffect } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { FC, ReactNode, useEffect } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { ApiError, Bridge } from '@/api/__generated__'
-import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { useCreateBridge } from '@/api/hooks/useGetBridges/useCreateBridge.tsx'
-import { useUpdateBridge } from '@/api/hooks/useGetBridges/useUpdateBridge.tsx'
 import { useDeleteBridge } from '@/api/hooks/useGetBridges/useDeleteBridge.tsx'
+import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
+import { useUpdateBridge } from '@/api/hooks/useGetBridges/useUpdateBridge.tsx'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
@@ -36,7 +36,9 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
 
   useEffect(() => {
-    if (!data) return
+    if (!data) {
+      return
+    }
     if (bridgeId) {
       const b = data?.find((e) => e.id === bridgeId)
       if (b) {
@@ -49,7 +51,7 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
             title: t('bridge.toast.view.title'),
             description: t('bridge.toast.view.error'),
           },
-          new Error(t('bridge.toast.view.noLongerExist', { id: bridgeId }) as string)
+          new Error(t('bridge.toast.view.noLongerExist', { id: bridgeId }) as string),
         )
         navigate('/mqtt-bridges', { replace: true })
       }
@@ -81,8 +83,8 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
                 title: t('bridge.toast.update.title'),
                 description: t('bridge.toast.update.error'),
               },
-              err
-            )
+              err,
+            ),
           )
       }
     } else {
@@ -100,8 +102,8 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
               title: t('bridge.toast.create.title'),
               description: t('bridge.toast.create.error'),
             },
-            err
-          )
+            err,
+          ),
         )
     }
 
@@ -119,13 +121,14 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
   }
 
   const handleConfirmOnSubmit = () => {
-    if (bridgeId)
+    if (bridgeId) {
       deleteBridge.mutateAsync(bridgeId).then(() => {
         successToast({
           title: t('bridge.toast.delete.title'),
           description: t('bridge.toast.delete.description'),
         })
       })
+    }
   }
 
   return (

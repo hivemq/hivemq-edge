@@ -1,6 +1,6 @@
+import { useDisclosure } from '@chakra-ui/react'
 import { FC, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useDisclosure } from '@chakra-ui/react'
 
 import { Event } from '@/api/__generated__'
 import PageContainer from '@/components/PageContainer.tsx'

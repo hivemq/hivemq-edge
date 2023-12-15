@@ -1,11 +1,11 @@
-import { FC, useMemo } from 'react'
-import { Box, Button, Card, CardBody, CardFooter, SimpleGrid, Skeleton } from '@chakra-ui/react'
 import { ArrowForwardIcon } from '@chakra-ui/icons'
+import { Box, Button, Card, CardBody, CardFooter, SimpleGrid, Skeleton } from '@chakra-ui/react'
+import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ProtocolAdapter } from '@/api/__generated__'
-import WarningMessage from '@/components/WarningMessage.tsx'
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
+import WarningMessage from '@/components/WarningMessage.tsx'
 
 import { ProtocolFacetType } from '../../types.ts'
 import { applyFacets } from '../../utils/facets-utils.ts'
@@ -21,11 +21,13 @@ interface ProtocolsBrowserProps {
 const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, isLoading }) => {
   const { t } = useTranslation()
   const filteredAdapters = useMemo(() => {
-    if (!facet) return items
+    if (!facet) {
+      return items
+    }
     return items.filter(applyFacets(facet))
   }, [items, facet])
 
-  if (!filteredAdapters.length)
+  if (!filteredAdapters.length) {
     return (
       <Box width={'100%'}>
         <WarningMessage
@@ -36,6 +38,7 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, i
         />
       </Box>
     )
+  }
 
   return (
     <SimpleGrid templateColumns={{ base: 'repeat(1, 1fr)', xl: 'repeat(2, 1fr)' }} spacing={4} gap={6}>

@@ -1,6 +1,6 @@
-import { FC } from 'react'
-import { BaseInputTemplateProps } from '@rjsf/utils'
 import { Templates } from '@rjsf/chakra-ui'
+import { BaseInputTemplateProps } from '@rjsf/utils'
+import { FC } from 'react'
 
 import { TopicInputTemplate } from './__internals/TopicInputTemplate.tsx'
 

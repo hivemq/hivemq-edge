@@ -1,17 +1,17 @@
-import { expect } from 'vitest'
-import { Edge, MarkerType, Node, NodeProps } from 'reactflow'
-import * as CSS from 'csstype'
 import { ResponsiveValue, ThemeTypings } from '@chakra-ui/react'
+import * as CSS from 'csstype'
+import { Edge, MarkerType, Node, NodeProps } from 'reactflow'
+import { expect } from 'vitest'
 
-import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_LISTENER } from '@/__test-utils__/react-flow/nodes.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
+import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_LISTENER } from '@/__test-utils__/react-flow/nodes.ts'
 import { MOCK_THEME } from '@/__test-utils__/react-flow/utils.ts'
 
 import { Adapter, Bridge, Status } from '@/api/__generated__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 
-import { EdgeStyle, getEdgeStatus, getThemeForStatus, updateEdgesStatus, updateNodeStatus } from './status-utils.ts'
 import { NodeTypes } from '../types.ts'
+import { EdgeStyle, getEdgeStatus, getThemeForStatus, updateEdgesStatus, updateNodeStatus } from './status-utils.ts'
 
 const disconnectedBridge: NodeProps<Bridge> = {
   ...MOCK_NODE_BRIDGE,
@@ -55,14 +55,26 @@ const nodeUpdateTests: NodeSuite[] = [
   {
     // @ts-ignore
     nodes: [{ ...disconnectedBridge }, disconnectedAdapter],
-    status: [{ connection: Status.connection.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' }],
+    status: [
+      {
+        connection: Status.connection.CONNECTED,
+        type: NodeTypes.BRIDGE_NODE,
+        id: 'non-existing-bridge',
+      },
+    ],
     // @ts-ignore
     expected: [disconnectedBridge, disconnectedAdapter],
   },
   {
     // @ts-ignore
     nodes: [MOCK_NODE_LISTENER],
-    status: [{ connection: Status.connection.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: 'non-existing-bridge' }],
+    status: [
+      {
+        connection: Status.connection.CONNECTED,
+        type: NodeTypes.BRIDGE_NODE,
+        id: 'non-existing-bridge',
+      },
+    ],
     // @ts-ignore
     expected: [MOCK_NODE_LISTENER],
   },
@@ -71,7 +83,11 @@ const nodeUpdateTests: NodeSuite[] = [
     nodes: [{ ...disconnectedBridge }, disconnectedAdapter],
     status: [
       { connection: Status.connection.DISCONNECTED, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
-      { connection: Status.connection.DISCONNECTED, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
+      {
+        connection: Status.connection.DISCONNECTED,
+        type: NodeTypes.ADAPTER_NODE,
+        id: MOCK_ADAPTER_ID,
+      },
     ],
     // @ts-ignore
     expected: [disconnectedBridge, disconnectedAdapter],
@@ -81,7 +97,11 @@ const nodeUpdateTests: NodeSuite[] = [
     nodes: [disconnectedBridge, disconnectedAdapter],
     status: [
       { connection: Status.connection.CONNECTED, type: NodeTypes.BRIDGE_NODE, id: mockBridgeId },
-      { connection: Status.connection.CONNECTED, type: NodeTypes.ADAPTER_NODE, id: MOCK_ADAPTER_ID },
+      {
+        connection: Status.connection.CONNECTED,
+        type: NodeTypes.ADAPTER_NODE,
+        id: MOCK_ADAPTER_ID,
+      },
     ],
     expected: expect.arrayContaining([
       expect.objectContaining({
@@ -151,7 +171,7 @@ describe('updateEdgesStatus', () => {
         ...MOCK_NODE_ADAPTER,
         position: { x: 0, y: 0 },
       }),
-      MOCK_THEME
+      MOCK_THEME,
     )
     expect(updatedNodes.length).toBe(edges.length)
     expect(updatedNodes).toStrictEqual(expected)

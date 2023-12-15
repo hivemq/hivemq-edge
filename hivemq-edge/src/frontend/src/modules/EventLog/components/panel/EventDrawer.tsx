@@ -1,28 +1,28 @@
+import { DateTime } from 'luxon'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DateTime } from 'luxon'
 
 import {
+  Badge,
+  Card,
+  CardBody,
+  CardHeader,
+  Code,
   Drawer,
   DrawerBody,
-  DrawerHeader,
-  DrawerContent,
   DrawerCloseButton,
-  Text,
-  Card,
-  CardHeader,
-  CardBody,
+  DrawerContent,
+  DrawerHeader,
   Grid,
   GridItem,
+  Text,
   VStack,
-  Code,
-  Badge,
 } from '@chakra-ui/react'
 
 import { Event, Payload } from '@/api/__generated__'
+import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import SeverityBadge from '@/modules/EventLog/components/SeverityBadge.tsx'
 import { prettifyXml, prettyJSON } from '@/modules/EventLog/utils/payload-utils.ts'
-import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 
 import SourceLink from '../SourceLink.tsx'
 

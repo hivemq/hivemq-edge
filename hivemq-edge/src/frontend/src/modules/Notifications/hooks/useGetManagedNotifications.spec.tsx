@@ -1,7 +1,7 @@
-import { vi, expect, beforeEach } from 'vitest'
-import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import { beforeEach, expect, vi } from 'vitest'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { handlers as frontendHandler } from '@/api/hooks/useFrontendServices/__handlers__'

@@ -1,6 +1,6 @@
+import { Icon, IconButton, IconButtonProps, PlacementWithLogical, Tooltip } from '@chakra-ui/react'
 import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Icon, IconButton, IconButtonProps, Tooltip, PlacementWithLogical } from '@chakra-ui/react'
 import { LuClipboardCopy } from 'react-icons/lu'
 import { VscCheck, VscError } from 'react-icons/vsc'
 
@@ -22,13 +22,15 @@ const ClipboardCopyIconButton: FC<ClipboardCopyIconButtonProps> = ({ content, pl
   const [state, setState] = useState<CopyStatus>(CopyStatus.READY)
 
   useEffect(() => {
-    if (state === CopyStatus.READY) return
+    if (state === CopyStatus.READY) {
+      return
+    }
 
     const interval = setInterval(() => {
       setState(CopyStatus.READY)
     }, COPY_LATENCY)
     return () => clearInterval(interval)
-  }, [setState, state])
+  }, [state])
 
   function handleClick() {
     navigator.clipboard.writeText(content).then(
@@ -37,7 +39,7 @@ const ClipboardCopyIconButton: FC<ClipboardCopyIconButtonProps> = ({ content, pl
       },
       () => {
         setState(CopyStatus.ERROR)
-      }
+      },
     )
     setState(CopyStatus.COPIED)
   }
@@ -50,7 +52,7 @@ const ClipboardCopyIconButton: FC<ClipboardCopyIconButtonProps> = ({ content, pl
       isOpen={state !== CopyStatus.READY}
     >
       <IconButton
-        isLoading={state != CopyStatus.READY}
+        isLoading={state !== CopyStatus.READY}
         data-state={state}
         spinner={
           state === CopyStatus.ERROR ? (

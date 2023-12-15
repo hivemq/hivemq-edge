@@ -1,7 +1,7 @@
+import { Box, VisuallyHidden, useTheme } from '@chakra-ui/react'
 import { FC } from 'react'
-import { Handle, NodeProps, Position } from 'reactflow'
-import { Box, useTheme, VisuallyHidden } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom'
+import { Handle, NodeProps, Position } from 'reactflow'
 
 const NodeGroup: FC<NodeProps<string>> = ({ id, data }) => {
   const navigate = useNavigate()

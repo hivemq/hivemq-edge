@@ -1,9 +1,9 @@
-import { FC, useEffect, useState } from 'react'
 import { Box, CloseButton, VStack } from '@chakra-ui/react'
+import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
 import { DataPoint } from '@/api/__generated__'
+import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
 
 import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton.tsx'
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
@@ -23,7 +23,7 @@ const Sample: FC<SampleProps> = ({ metricName, onClose }) => {
   const [isMajor] = useState(false)
 
   useEffect(() => {
-    if (data)
+    if (data) {
       setSeries((old) => {
         const newTime: DataPoint = {
           value: data.value as number,
@@ -33,9 +33,12 @@ const Sample: FC<SampleProps> = ({ metricName, onClose }) => {
         newSeries.length = Math.min(newSeries.length, MAX_SERIES)
         return newSeries
       })
+    }
   }, [data])
 
-  if (!metricName) return null
+  if (!metricName) {
+    return null
+  }
 
   const metricInfo = extractMetricInfo(metricName)
   return (

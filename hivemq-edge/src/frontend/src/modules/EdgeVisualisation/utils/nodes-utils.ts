@@ -1,13 +1,13 @@
-import { Edge, MarkerType, Node, Position, XYPosition } from 'reactflow'
 import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 import { GenericObjectType } from '@rjsf/utils'
+import { Edge, MarkerType, Node, Position, XYPosition } from 'reactflow'
 
-import { Adapter, Bridge, Status, Listener, ProtocolAdapter } from '@/api/__generated__'
+import { Adapter, Bridge, Listener, ProtocolAdapter, Status } from '@/api/__generated__'
 
-import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
-import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
 import { getThemeForStatus } from '@/modules/EdgeVisualisation/utils/status-utils.ts'
+import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
+import { discoverAdapterTopics, getBridgeTopics } from '../utils/topics-utils.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
 
@@ -32,7 +32,7 @@ export const createBridgeNode = (
   nbBridge: number,
   maxBridge: number,
   theme: Partial<WithCSSVar<Dict>>,
-  positionStorage?: Record<string, XYPosition>
+  positionStorage?: Record<string, XYPosition>,
 ) => {
   const idBridge = `${IdStubs.BRIDGE_NODE}@${bridge.id}`
   const isConnected =
@@ -108,7 +108,7 @@ export const createBridgeNode = (
 export const createListenerNode = (
   listener: Listener,
   nbListener: number,
-  positionStorage?: Record<string, XYPosition>
+  positionStorage?: Record<string, XYPosition>,
 ) => {
   const idListener = `${IdStubs.LISTENER_NODE}@${listener.name}`
 
@@ -145,7 +145,7 @@ export const createAdapterNode = (
   nbAdapter: number,
   maxAdapter: number,
   theme: Partial<WithCSSVar<Dict>>,
-  positionStorage?: Record<string, XYPosition>
+  positionStorage?: Record<string, XYPosition>,
 ) => {
   const idAdapter = `${IdStubs.ADAPTER_NODE}@${adapter.id}`
   const isConnected =

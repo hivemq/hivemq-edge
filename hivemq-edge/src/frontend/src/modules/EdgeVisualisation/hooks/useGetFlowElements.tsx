@@ -1,17 +1,17 @@
+import { useTheme } from '@chakra-ui/react'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Edge, Node, useEdgesState, useNodesState } from 'reactflow'
-import { useTheme } from '@chakra-ui/react'
 
 import { Adapter, Bridge, ProtocolAdapter } from '@/api/__generated__'
-import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
-import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { useGetListeners } from '@/api/hooks/useGateway/useGetListeners.tsx'
+import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 
-import { createEdgeNode, createBridgeNode, createAdapterNode, createListenerNode } from '../utils/nodes-utils.ts'
-import { applyLayout } from '../utils/layout-utils.ts'
 import { useEdgeFlowContext } from '../hooks/useEdgeFlowContext.tsx'
+import { applyLayout } from '../utils/layout-utils.ts'
+import { createAdapterNode, createBridgeNode, createEdgeNode, createListenerNode } from '../utils/nodes-utils.ts'
 
 const useGetFlowElements = () => {
   const { t } = useTranslation()
@@ -27,29 +27,37 @@ const useGetFlowElements = () => {
   const { items: listeners } = listenerList || {}
 
   useEffect(() => {
-    if (!bridges) return
-    if (!adapters) return
+    if (!bridges) {
+      return
+    }
+    if (!adapters) {
+      return
+    }
 
     const nodes: Node[] = []
     const edges: Edge[] = []
 
     const nodeEdge = createEdgeNode(t('branding.appName'))
 
-    listeners?.forEach((listener, nb) => {
-      const { nodeListener, edgeConnector } = createListenerNode(listener, nb)
+    if (listeners) {
+      for (let nb = 0; nb < listeners.length; nb++) {
+        const listener = listeners[nb]
 
-      if (options.showGateway) {
-        nodes.push(nodeListener)
-        edges.push(edgeConnector)
+        const { nodeListener, edgeConnector } = createListenerNode(listener, nb)
+
+        if (options.showGateway) {
+          nodes.push(nodeListener)
+          edges.push(edgeConnector)
+        }
       }
-    })
+    }
 
-    bridges.forEach((bridge, incBridgeNb) => {
+    for (const [incBridgeNb, bridge] of bridges.entries()) {
       const { nodeBridge, edgeConnector, nodeHost, hostConnector } = createBridgeNode(
         bridge,
         incBridgeNb,
         bridges.length,
-        theme
+        theme,
       )
       nodes.push(nodeBridge)
       edges.push(edgeConnector)
@@ -57,9 +65,10 @@ const useGetFlowElements = () => {
         nodes.push(nodeHost)
         edges.push(hostConnector)
       }
-    })
+    }
 
-    adapters.forEach((adapter, incAdapterNb) => {
+    for (let incAdapterNb = 0; incAdapterNb < adapters.length; incAdapterNb++) {
+      const adapter = adapters[incAdapterNb]
       const type = adapterTypes?.items?.find((e) => e.id === adapter.type)
 
       const { nodeAdapter, edgeConnector } = createAdapterNode(
@@ -67,11 +76,11 @@ const useGetFlowElements = () => {
         adapter,
         incAdapterNb,
         adapters.length,
-        theme
+        theme,
       )
       nodes.push(nodeAdapter)
       edges.push(edgeConnector)
-    })
+    }
 
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])
     setEdges([...edges])

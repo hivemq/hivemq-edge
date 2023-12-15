@@ -1,7 +1,7 @@
+import '@/config/i18n.config.ts'
 import { renderHook } from '@testing-library/react'
 import { describe, expect } from 'vitest'
 import useGetUiSchema from './useGetUISchema.ts'
-import '@/config/i18n.config.ts'
 
 describe('useGetUiSchema()', () => {
   beforeEach(() => {

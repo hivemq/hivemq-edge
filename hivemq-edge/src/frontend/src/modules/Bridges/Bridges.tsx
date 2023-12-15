@@ -1,13 +1,13 @@
-import { FC, useMemo } from 'react'
 import { Box, Flex, SimpleGrid } from '@chakra-ui/react'
+import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import BridgeEmptyLogo from '@/assets/app/bridge-empty.svg'
 
-import { ProblemDetails } from '@/api/types/http-problem-details.ts'
-import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
+import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import WarningMessage from '@/components/WarningMessage.tsx'
@@ -42,7 +42,7 @@ const Bridges: FC = () => {
       </Flex>
     )
   }
-  if (isEmpty)
+  if (isEmpty) {
     return (
       <WarningMessage
         image={BridgeEmptyLogo}
@@ -52,6 +52,7 @@ const Bridges: FC = () => {
         mt={10}
       />
     )
+  }
 
   return (
     <SimpleGrid mt={8} spacing={4} templateColumns={{ base: 'repeat(1, 1fr)', lg: 'repeat(2, 1fr)' }} gap={6}>

@@ -1,5 +1,5 @@
-import { FC } from 'react'
 import { FieldTemplateProps, getTemplate, getUiOptions } from '@rjsf/utils'
+import { FC } from 'react'
 
 import { RenderFieldTemplate } from './__internals/RenderFieldTemplate.tsx'
 
@@ -33,7 +33,7 @@ export const FieldTemplate: FC<FieldTemplateProps> = (props) => {
   const WrapIfAdditionalTemplate = getTemplate<'WrapIfAdditionalTemplate'>(
     'WrapIfAdditionalTemplate',
     registry,
-    uiOptions
+    uiOptions,
   )
 
   if (hidden) {
@@ -55,7 +55,7 @@ export const FieldTemplate: FC<FieldTemplateProps> = (props) => {
       uiSchema={uiSchema}
       registry={registry}
     >
-      <RenderFieldTemplate {...props} children={children} />
+      <RenderFieldTemplate {...props}>{children}</RenderFieldTemplate>
     </WrapIfAdditionalTemplate>
   )
 }

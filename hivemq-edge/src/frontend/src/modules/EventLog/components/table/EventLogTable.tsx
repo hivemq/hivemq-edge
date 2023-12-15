@@ -1,23 +1,23 @@
-import { FC, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Box, Button, Flex, Icon, IconButton, Skeleton, Text } from '@chakra-ui/react'
 import { ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
-import { Box, Button, Flex, Icon, IconButton, Skeleton, Text } from '@chakra-ui/react'
-import { MdOutlineEventNote } from 'react-icons/md'
+import { FC, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BiRefresh } from 'react-icons/bi'
+import { MdOutlineEventNote } from 'react-icons/md'
 
 import { Event } from '@/api/__generated__'
-import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { mockEdgeEvent } from '@/api/hooks/useEvents/__handlers__'
 import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.tsx'
-import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
-import { compareSeverity } from '@/modules/ProtocolAdapters/utils/pagination-utils.ts'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
+import { compareSeverity } from '@/modules/ProtocolAdapters/utils/pagination-utils.ts'
 
-import SourceLink from '../SourceLink.tsx'
 import SeverityBadge from '../SeverityBadge.tsx'
+import SourceLink from '../SourceLink.tsx'
 
 interface EventLogTableProps {
   onOpen?: (t: Event) => void
@@ -30,7 +30,9 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
   const { data, isLoading, isFetching, error, refetch } = useGetEvents()
 
   const safeData = useMemo<Event[]>(() => {
-    if (!data || !data?.items) return [...mockEdgeEvent(5)]
+    if (!data || !data?.items) {
+      return [...mockEdgeEvent(5)]
+    }
     if (globalSourceFilter) {
       return data.items.filter((e: Event) => e.source?.identifier === globalSourceFilter).slice(0, 5)
     }

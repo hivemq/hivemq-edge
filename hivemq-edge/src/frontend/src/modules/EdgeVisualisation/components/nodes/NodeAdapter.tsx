@@ -1,18 +1,18 @@
-import { FC, useMemo } from 'react'
-import { Handle, NodeProps, Position } from 'reactflow'
 import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
+import { FC, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Handle, NodeProps, Position } from 'reactflow'
 
 import { Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 
-import NodeWrapper from '../parts/NodeWrapper.tsx'
-import TopicsContainer from '../parts/TopicsContainer.tsx'
-import { discoverAdapterTopics } from '../../utils/topics-utils.ts'
-import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
 import { TopicFilter } from '../../types.ts'
+import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils.ts'
+import { discoverAdapterTopics } from '../../utils/topics-utils.ts'
+import NodeWrapper from '../parts/NodeWrapper.tsx'
+import TopicsContainer from '../parts/TopicsContainer.tsx'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) => {
   const { data: protocols } = useGetAdapterTypes()
@@ -20,8 +20,12 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
   const { options } = useEdgeFlowContext()
   const navigate = useNavigate()
   const topics = useMemo<TopicFilter[]>(() => {
-    if (!adapterProtocol) return []
-    if (!adapter.config) return []
+    if (!adapterProtocol) {
+      return []
+    }
+    if (!adapter.config) {
+      return []
+    }
     return discoverAdapterTopics(adapterProtocol, adapter.config).map((e) => ({ topic: e }))
   }, [adapter.config, adapterProtocol])
 

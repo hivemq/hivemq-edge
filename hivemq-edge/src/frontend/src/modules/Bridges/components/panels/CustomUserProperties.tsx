@@ -1,7 +1,5 @@
-import { FC } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Controller, useFieldArray } from 'react-hook-form'
 import { BridgePanelType, SubscriptionType } from '@/modules/Bridges/types.ts'
+import { AddIcon } from '@chakra-ui/icons'
 import {
   ButtonGroup,
   FormControl,
@@ -15,7 +13,9 @@ import {
   Thead,
   Tr,
 } from '@chakra-ui/react'
-import { AddIcon } from '@chakra-ui/icons'
+import { FC } from 'react'
+import { Controller, useFieldArray } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 import { MdRemove } from 'react-icons/md'
 
 interface CustomUserPropertiesProps extends BridgePanelType {

@@ -1,7 +1,7 @@
-import { FC, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Box, Flex, Text } from '@chakra-ui/react'
+import { FC, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 
@@ -14,10 +14,10 @@ import config from '@/config'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import WarningMessage from '@/components/WarningMessage.tsx'
 
-import { AdapterNavigateState, ProtocolAdapterTabIndex, ProtocolFacetType } from '../../types.ts'
-import ProtocolsBrowser from '../IntegrationStore/ProtocolsBrowser.tsx'
-import FacetSearch from '../IntegrationStore/FacetSearch.tsx'
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { AdapterNavigateState, ProtocolAdapterTabIndex, ProtocolFacetType } from '../../types.ts'
+import FacetSearch from '../IntegrationStore/FacetSearch.tsx'
+import ProtocolsBrowser from '../IntegrationStore/ProtocolsBrowser.tsx'
 
 const ProtocolIntegrationStore: FC = () => {
   const { t } = useTranslation()
@@ -59,7 +59,7 @@ const ProtocolIntegrationStore: FC = () => {
     )
   }
 
-  if (safeData.length === 0)
+  if (safeData.length === 0) {
     return (
       <WarningMessage
         image={AdapterEmptyLogo}
@@ -69,6 +69,7 @@ const ProtocolIntegrationStore: FC = () => {
         mt={10}
       />
     )
+  }
 
   return (
     <Flex flexDirection={'column'} gap={4}>

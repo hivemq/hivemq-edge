@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ApiError, Bridge } from '../../__generated__'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { ApiError, Bridge } from '../../__generated__'
 
 interface UpdateBridgeProps {
   name: string

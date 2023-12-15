@@ -1,6 +1,6 @@
+import { FC } from 'react'
 /// <reference types="cypress" />
 import { useForm } from 'react-hook-form'
-import { FC } from 'react'
 
 import { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
@@ -49,7 +49,7 @@ describe('SecurityPanel', () => {
     cy.getByTestId('form-submit').click()
     cy.get('@onSubmit').should(
       'have.been.calledWith',
-      Cypress.sinon.match({ ...mockBridge, tlsConfiguration: { enabled: false } })
+      Cypress.sinon.match({ ...mockBridge, tlsConfiguration: { enabled: false } }),
     )
   })
 
@@ -59,13 +59,13 @@ describe('SecurityPanel', () => {
       <TestingComponent
         onSubmit={mockOnSubmit}
         defaultValues={{ ...mockBridge, tlsConfiguration: { enabled: true } }}
-      />
+      />,
     )
 
     cy.getByTestId('form-submit').click()
     cy.get('@onSubmit').should(
       'have.been.calledWith',
-      Cypress.sinon.match({ ...mockBridge, tlsConfiguration: { enabled: true } })
+      Cypress.sinon.match({ ...mockBridge, tlsConfiguration: { enabled: true } }),
     )
   })
 })

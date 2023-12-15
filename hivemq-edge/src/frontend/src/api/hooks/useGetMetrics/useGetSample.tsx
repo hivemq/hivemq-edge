@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { ApiError, DataPoint } from '@/api/__generated__'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
-import { ApiError, DataPoint } from '@/api/__generated__'
 import config from '@/config'
+import { useQuery } from '@tanstack/react-query'
 
 export const useGetSample = (metricName: string | undefined) => {
   const appClient = useHttpClient()
@@ -20,6 +20,6 @@ export const useGetSample = (metricName: string | undefined) => {
         // return data ? 4 * 1000 : Math.max(Math.min(query.state.errorUpdateCount, 5 * 60), 4) * 1000
         return config.httpClient.pollingRefetchInterval * 2
       },
-    }
+    },
   )
 }

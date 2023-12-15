@@ -1,8 +1,8 @@
 import { GroupBase, OptionProps } from 'chakra-react-select'
 
-import { RangeOption } from '../types.ts'
-import Option from '../components/Option.tsx'
 import { MOCK_RANGE_OPTION } from '@/components/DateTime/utils/range-option.mocks.ts'
+import Option from '../components/Option.tsx'
+import { RangeOption } from '../types.ts'
 
 const MOCK_OPTIONS: readonly RangeOption[] = [{ value: 'purple', label: 'last minute', colorScheme: '#5243AA' }]
 
@@ -39,7 +39,7 @@ describe('DateTimeRangeSelector > Option', () => {
 
   it('should render properly', () => {
     // @ts-ignore force mocked partial object
-    cy.mountWithProviders(<Option children={MOCK_OPTIONS[0].label} {...MOCK_PROPS} />)
+    cy.mountWithProviders(<Option {...MOCK_PROPS}>{MOCK_OPTIONS[0].label}</Option>)
 
     // cy.getByAriaLabel('Go to the first page').should('be.visible').click()
     // cy.get('@setPageIndex').should('have.been.calledOnceWith', 0)

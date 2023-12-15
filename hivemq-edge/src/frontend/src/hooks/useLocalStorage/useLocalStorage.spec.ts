@@ -15,7 +15,7 @@ class LocalStorageMock {
   }
 
   setItem(key: string, value: unknown) {
-    this.store[key] = value + ''
+    this.store[key] = `${value}`
   }
 
   removeItem(key: string) {

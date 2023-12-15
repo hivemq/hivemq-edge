@@ -1,5 +1,5 @@
-import { FC } from 'react'
 import { Box, SkeletonCircle, SkeletonText } from '@chakra-ui/react'
+import { FC } from 'react'
 
 const Skeleton: FC = () => {
   return (

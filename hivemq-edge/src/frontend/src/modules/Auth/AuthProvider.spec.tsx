@@ -1,6 +1,6 @@
-import { useContext } from 'react'
-import { describe, it, expect, vi } from 'vitest'
 import { render, waitFor } from '@testing-library/react'
+import { useContext } from 'react'
+import { describe, expect, it, vi } from 'vitest'
 
 import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
 
@@ -17,6 +17,7 @@ const TestingComponent = () => {
       <p data-testid="isLoading">{context?.isLoading ? 'true' : 'false'}</p>
       <p data-testid="isAuthenticated">{context?.isLoading ? 'true' : 'false'}</p>
       <button
+        type="button"
         data-testid="login"
         onClick={() => {
           context?.login({ token: MOCK_JWT }, loginCallback)
@@ -25,6 +26,7 @@ const TestingComponent = () => {
         Login
       </button>
       <button
+        type="button"
         data-testid="logout"
         onClick={() => {
           context?.logout(logoutCallback)
@@ -41,7 +43,7 @@ describe('AuthProvider', () => {
     const { getByTestId } = render(
       <AuthProvider>
         <TestingComponent />
-      </AuthProvider>
+      </AuthProvider>,
     )
     expect(getByTestId('credentials').textContent).toEqual('')
 

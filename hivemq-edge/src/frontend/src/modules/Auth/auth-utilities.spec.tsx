@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
-import { processToken } from '@/modules/Auth/auth-utilities.ts'
 import { MOCK_JWT } from '@/__test-utils__/mocks.ts'
+import { processToken } from '@/modules/Auth/auth-utilities.ts'
+import { describe, expect, it, vi } from 'vitest'
 
 describe('processToken', () => {
   const mockSetAuthToken = vi.fn()

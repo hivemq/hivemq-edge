@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import SeverityBadge from './SeverityBadge.tsx'
 import { mockEdgeEvent } from '@/api/hooks/useEvents/__handlers__'
+import SeverityBadge from './SeverityBadge.tsx'
 
 describe('SeverityBadge', () => {
   beforeEach(() => {

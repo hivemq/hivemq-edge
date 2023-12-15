@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import { Table, TableState } from '@tanstack/react-table'
 import { Adapter } from '@/api/__generated__'
+import { Table, TableState } from '@tanstack/react-table'
 
 import PaginationBar from './PaginationBar.tsx'
 
@@ -15,7 +15,7 @@ const MOCK_TABLE: Partial<Table<Adapter>> = {
   setPageIndex: () => {},
   getCanPreviousPage: () => true,
   getCanNextPage: () => true,
-  getState: () => ({ pagination: { pageIndex: MOCK_PAGE_INDEX } } as TableState),
+  getState: () => ({ pagination: { pageIndex: MOCK_PAGE_INDEX } }) as TableState,
   getPageCount: () => MOCK_PAGE_COUNT,
   setPageSize: () => undefined,
   previousPage: () => undefined,

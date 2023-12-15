@@ -1,5 +1,5 @@
-import { FormValidation, UiSchema, RJSFSchema, StrictRJSFSchema } from '@rjsf/utils'
 import { Adapter } from '@/api/__generated__'
+import { FormValidation, RJSFSchema, StrictRJSFSchema, UiSchema } from '@rjsf/utils'
 import { TFunction } from 'i18next'
 
 import { AdapterConfig } from '@/modules/ProtocolAdapters/types.ts'
@@ -24,10 +24,7 @@ export const customValidate =
   (jsonSchema: RJSFSchema, existingAdapters: Adapter[] | undefined, t: TFunction) =>
   (formData: Record<string, unknown>, errors: FormValidation<AdapterConfig>, uiSchema?: UiSchema<AdapterConfig>) => {
     // Check for uniqueness of `id` ONLY if `format` = `identifier` and not `ui:disabled`
-    if (
-      !uiSchema?.id?.['ui:disabled'] &&
-      (jsonSchema.properties?.['id'] as StrictRJSFSchema)?.format === 'identifier'
-    ) {
+    if (!uiSchema?.id?.['ui:disabled'] && (jsonSchema.properties?.id as StrictRJSFSchema)?.format === 'identifier') {
       if (existingAdapters?.map((e) => e.id).includes(formData.id as string)) {
         errors.id?.addError(t('validation.jsonSchema.identifier.unique'))
       }

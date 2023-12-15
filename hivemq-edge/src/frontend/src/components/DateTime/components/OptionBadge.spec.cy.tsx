@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import OptionBadge from './OptionBadge.tsx'
 import { MOCK_RANGE_OPTION } from '../utils/range-option.mocks.ts'
+import OptionBadge from './OptionBadge.tsx'
 
 describe('OptionBadge', () => {
   beforeEach(() => {

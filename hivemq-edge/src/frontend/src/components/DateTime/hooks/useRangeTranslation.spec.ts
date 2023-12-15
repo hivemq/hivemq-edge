@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react'
-import { describe, expect } from 'vitest'
 import { Duration } from 'luxon'
+import { describe, expect } from 'vitest'
 
 import '@/config/i18n.config.ts'
 

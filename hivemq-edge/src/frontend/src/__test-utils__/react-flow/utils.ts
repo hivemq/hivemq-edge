@@ -1,8 +1,8 @@
+import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
+import { IdStubs } from '@/modules/EdgeVisualisation/types.ts'
 import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 import { XYPosition } from 'reactflow'
-import { IdStubs } from '@/modules/EdgeVisualisation/types.ts'
-import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
 export const MOCK_THEME: Partial<WithCSSVar<Dict>> = {
   colors: {

@@ -1,6 +1,6 @@
-import { ComponentType } from 'react'
-import { chakraComponents, GroupBase, OptionProps } from 'chakra-react-select'
 import { HStack, Text } from '@chakra-ui/react'
+import { GroupBase, OptionProps, chakraComponents } from 'chakra-react-select'
+import { ComponentType } from 'react'
 
 import { RangeOption } from '../types.ts'
 import OptionBadge from './OptionBadge.tsx'

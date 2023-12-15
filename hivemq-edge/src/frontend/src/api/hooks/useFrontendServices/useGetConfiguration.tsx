@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { ApiError, GatewayConfiguration } from '@/api/__generated__'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { QUERY_KEYS } from '@/api/utils.ts'
-import { ApiError, GatewayConfiguration } from '@/api/__generated__'
+import { useQuery } from '@tanstack/react-query'
 
 export const useGetConfiguration = () => {
   const appClient = useHttpClient()

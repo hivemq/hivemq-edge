@@ -50,7 +50,7 @@ export const getTopicPaths = (configSchema: RJSFSchema) => {
           // The leaf of the path will always be "format"
           .replace('.format', '')
           // A `type: 'array'` property will have a `items: { properties: {}}` pattern [?]
-          .replace(/items\.properties/gi, TOPIC_PATH_ITEMS_TOKEN)
+          .replace(/items\.properties/gi, TOPIC_PATH_ITEMS_TOKEN),
       )
   )
 }
@@ -63,7 +63,9 @@ const getTopicsFromPath = (path: string, instance: RJSFSchema): string[] => {
   }
   const [property, ...rest] = path.split('.')
 
-  if (!rest.length) return [instance?.[property]]
+  if (!rest.length) {
+    return [instance?.[property]]
+  }
   if (property === TOPIC_PATH_ITEMS_TOKEN) {
     const res: string[] = []
 
@@ -81,10 +83,10 @@ export const discoverAdapterTopics = (protocol: ProtocolAdapter, instance: Gener
   const paths = getTopicPaths(protocol?.configSchema || {})
   const topics: string[] = []
 
-  paths.forEach((path) => {
+  for (const path of paths) {
     const gg = getTopicsFromPath(path, instance)
     topics.push(...gg)
-  })
+  }
 
   return topics
 }
@@ -92,7 +94,7 @@ export const discoverAdapterTopics = (protocol: ProtocolAdapter, instance: Gener
 export const mergeAllTopics = (
   types: ProtocolAdaptersList | undefined,
   adapters: Adapter[] | undefined,
-  bridges: Bridge[] | undefined
+  bridges: Bridge[] | undefined,
 ) => {
   const data: string[] = []
   if (bridges) {
@@ -107,7 +109,9 @@ export const mergeAllTopics = (
   if (adapters) {
     const adapterTopics = adapters.reduce<string[]>((acc, cur) => {
       const type = types?.items?.find((e) => e.id === cur.type)
-      if (!type) return acc
+      if (!type) {
+        return acc
+      }
       const topics = discoverAdapterTopics(type, cur.config as GenericObjectType)
       acc.push(...topics)
       // const topics = getAdapterTopics(cur)

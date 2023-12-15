@@ -1,33 +1,33 @@
-import { FC, useEffect } from 'react'
 import {
+  Button,
   Drawer,
   DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
   DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
-  DrawerContent,
-  DrawerCloseButton,
-  Button,
-  Tabs,
-  TabList,
-  Tab,
-  TabPanels,
-  TabPanel,
   Flex,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
   Text,
 } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
+import { FC, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 import { ApiError, Bridge } from '@/api/__generated__'
 import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 
+import { useBridgeSetup } from '../../hooks/useBridgeConfig.tsx'
 import ConnectionPanel from '../panels/ConnectionPanel.tsx'
 import NamePanel from '../panels/NamePanel.tsx'
 import OptionsPanel from '../panels/OptionsPanel.tsx'
-import SubscriptionsPanel from '../panels/SubscriptionsPanel.tsx'
 import SecurityPanel from '../panels/SecurityPanel.tsx'
-import { useBridgeSetup } from '../../hooks/useBridgeConfig.tsx'
+import SubscriptionsPanel from '../panels/SubscriptionsPanel.tsx'
 
 interface BridgeMainDrawerProps {
   isNewBridge?: boolean
@@ -56,7 +56,9 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
   })
 
   useEffect(() => {
-    if (isOpen) form.reset(bridge)
+    if (isOpen) {
+      form.reset(bridge)
+    }
   }, [bridge, isOpen, form])
 
   return (

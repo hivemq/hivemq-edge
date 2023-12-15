@@ -1,12 +1,12 @@
-import { FC } from 'react'
 import { Table, TableCaption, Tbody, Td, Th, Thead, Tr } from '@chakra-ui/react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { BridgeSubscription } from '@/api/__generated__'
 
 interface SubscriptionsProps {
   type: 'local' | 'remote'
-  subscriptions: Array<BridgeSubscription>
+  subscriptions: BridgeSubscription[]
 }
 
 const SubscriptionSummary: FC<SubscriptionsProps> = ({ subscriptions, type }) => {

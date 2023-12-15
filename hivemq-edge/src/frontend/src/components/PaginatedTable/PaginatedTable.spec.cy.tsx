@@ -37,7 +37,7 @@ describe('PaginatedTable', () => {
         columns={MOCK_COLUMN}
         pageSizes={[5, 10, 20]}
         aria-label={'table'}
-      />
+      />,
     )
 
     cy.get('th').should('have.length', 2)
@@ -55,7 +55,7 @@ describe('PaginatedTable', () => {
         columns={MOCK_COLUMN}
         pageSizes={[5, 10, 20]}
         aria-label={'table'}
-      />
+      />,
     )
 
     const checkRowOrder = (direction?: SortDirection) => {
@@ -96,7 +96,7 @@ describe('PaginatedTable', () => {
 
   it('should indicate when there is no data to render', () => {
     cy.mountWithProviders(
-      <PaginatedTable<MOCK_TYPE> data={[]} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} aria-label={'table'} />
+      <PaginatedTable<MOCK_TYPE> data={[]} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} aria-label={'table'} />,
     )
 
     cy.get('[role="alert"]').should('contain.text', 'No data received yet.')
@@ -111,7 +111,7 @@ describe('PaginatedTable', () => {
         pageSizes={[5, 10, 20]}
         noDataText={'This is a message'}
         aria-label={'table'}
-      />
+      />,
     )
 
     cy.get('[role="alert"]').should('contain.text', 'This is a message')
@@ -126,7 +126,7 @@ describe('PaginatedTable', () => {
         pageSizes={[5, 10, 20]}
         enableColumnFilters
         aria-label={'table'}
-      />
+      />,
     )
 
     cy.getByAriaLabel('Clear selected options').should('not.exist')
@@ -154,7 +154,7 @@ describe('PaginatedTable', () => {
         columns={MOCK_COLUMN}
         pageSizes={[5, 10, 20]}
         aria-label={'table'}
-      />
+      />,
     )
     cy.checkAccessibility()
     cy.percySnapshot('Component: PaginatedTable')

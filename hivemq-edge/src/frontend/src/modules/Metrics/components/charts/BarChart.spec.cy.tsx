@@ -1,11 +1,11 @@
 /// <reference types="cypress" />
 
-import { FC, PropsWithChildren } from 'react'
 import { Box } from '@chakra-ui/react'
+import { FC, PropsWithChildren } from 'react'
 
-import { MOCK_METRIC_SAMPLE_ARRAY, MOCK_METRICS } from '@/api/hooks/useGetMetrics/__handlers__'
-import BarChart from './BarChart.tsx'
+import { MOCK_METRICS, MOCK_METRIC_SAMPLE_ARRAY } from '@/api/hooks/useGetMetrics/__handlers__'
 import { DateTime } from 'luxon'
+import BarChart from './BarChart.tsx'
 
 const mockAriaLabel = 'aria-label'
 const Wrapper: FC<PropsWithChildren> = ({ children }) => (
@@ -30,7 +30,7 @@ describe('BarChart', () => {
           metricName={MOCK_METRICS[0].name as string}
           aria-label={mockAriaLabel}
         />
-      </Wrapper>
+      </Wrapper>,
     )
 
     const formatShortDate = new Intl.DateTimeFormat(navigator.language, {
@@ -48,7 +48,7 @@ describe('BarChart', () => {
       .should('contain.text', '[Forward] Publish success (count)')
       .should(
         'contain.text',
-        formatShortDate.format(DateTime.fromISO(MOCK_METRIC_SAMPLE_ARRAY[5].sampleTime as string).toJSDate())
+        formatShortDate.format(DateTime.fromISO(MOCK_METRIC_SAMPLE_ARRAY[5].sampleTime as string).toJSDate()),
       )
       .should('contain.text', '55000')
     cy.checkAccessibility()

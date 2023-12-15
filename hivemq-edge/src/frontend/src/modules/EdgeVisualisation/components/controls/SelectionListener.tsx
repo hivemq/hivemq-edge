@@ -11,7 +11,9 @@ const SelectionListener = () => {
   useEffect(() => {
     const { selectedAdapter } = state || {}
     const { adapterId, type } = selectedAdapter || {}
-    if (!adapterId || !type) return
+    if (!adapterId || !type) {
+      return
+    }
 
     addSelectedNodes([`adapter@${adapterId}`])
   }, [addSelectedNodes, state])

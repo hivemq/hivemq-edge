@@ -1,4 +1,4 @@
-import { FC, FormEvent, MutableRefObject, useRef } from 'react'
+import { BridgeSubscription } from '@/api/__generated__'
 import {
   Modal,
   ModalBody,
@@ -12,9 +12,9 @@ import {
   Switch,
 } from '@chakra-ui/react'
 import { Button, FormControl, FormLabel, ModalFooter } from '@chakra-ui/react'
-import TopicAutoComplete from './TopicAutoComplete.tsx'
+import { FC, FormEvent, MutableRefObject, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BridgeSubscription } from '@/api/__generated__'
+import TopicAutoComplete from './TopicAutoComplete.tsx'
 
 interface SubscriptionEditorProps {
   isOpen: boolean

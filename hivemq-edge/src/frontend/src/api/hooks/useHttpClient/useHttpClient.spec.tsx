@@ -1,14 +1,14 @@
-import { MemoryRouter } from 'react-router-dom'
-import { RequestHandler, rest } from 'msw'
-import { vi, expect, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
+import { RequestHandler, rest } from 'msw'
+import { MemoryRouter } from 'react-router-dom'
+import { beforeEach, expect, vi } from 'vitest'
 
-import config from '@/config'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
+import config from '@/config'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
-import { AxiosHttpRequestWithInterceptors, useHttpClient } from './useHttpClient.ts'
 import { ApiBearerToken, ApiError } from '@/api/__generated__'
+import { AxiosHttpRequestWithInterceptors, useHttpClient } from './useHttpClient.ts'
 
 enum auth {
   HEADER_ATTACHED = 'HEADER_ATTACHED',
@@ -49,7 +49,7 @@ const handlers: RequestHandler[] = [
       ctx.status(200),
       ctx.json({
         bodyContent: bodyContent,
-      })
+      }),
     )
   }),
 
@@ -58,7 +58,7 @@ const handlers: RequestHandler[] = [
       ctx.status(401),
       ctx.json({
         bodyContent: 'an error message',
-      })
+      }),
     )
   }),
 
@@ -70,7 +70,7 @@ const handlers: RequestHandler[] = [
       }),
       ctx.json({
         bodyContent: 'A new token has been added to the response',
-      })
+      }),
     )
   }),
 ]

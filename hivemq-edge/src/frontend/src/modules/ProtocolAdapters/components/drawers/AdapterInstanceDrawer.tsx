@@ -1,35 +1,35 @@
-import { FC, useMemo } from 'react'
 import {
   Drawer,
   DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
   DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
-  DrawerContent,
-  DrawerCloseButton,
   Flex,
-  Text,
-  Image,
   HStack,
+  Image,
+  Text,
 } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router-dom'
+import Form from '@rjsf/chakra-ui'
 import { IChangeEvent } from '@rjsf/core'
 import { RJSFSchema } from '@rjsf/utils'
-import Form from '@rjsf/chakra-ui'
+import { FC, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useParams } from 'react-router-dom'
 
-import { ApiError, Adapter, ProtocolAdapter } from '@/api/__generated__'
+import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 
 import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
-import { FieldTemplate } from '../templates/FieldTemplate.tsx'
-import { ObjectFieldTemplate } from '../templates/ObjectFieldTemplate.tsx'
-import { BaseInputTemplate } from '../templates/BaseInputTemplate.tsx'
 import useGetUiSchema from '../../hooks/useGetUISchema.ts'
 import { customFormatsValidator, customValidate } from '../../utils/validation-utils.ts'
+import { BaseInputTemplate } from '../templates/BaseInputTemplate.tsx'
+import { FieldTemplate } from '../templates/FieldTemplate.tsx'
+import { ObjectFieldTemplate } from '../templates/ObjectFieldTemplate.tsx'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -61,14 +61,18 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   }, [data, adapterType])
 
   const defaultValues = useMemo(() => {
-    if (isNewAdapter || !adapterId) return undefined
+    if (isNewAdapter || !adapterId) {
+      return undefined
+    }
     const { config } = allAdapters?.find((e) => e.id === adapterId) || {}
     return config
   }, [allAdapters, adapterId, isNewAdapter])
   const uiSchema = useGetUiSchema(isNewAdapter)
 
   const onValidate = (data: IChangeEvent<Adapter, RJSFSchema>) => {
-    if (data.formData) onSubmit(data.formData)
+    if (data.formData) {
+      onSubmit(data.formData)
+    }
   }
 
   return (

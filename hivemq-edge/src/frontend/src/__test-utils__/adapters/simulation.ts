@@ -1,5 +1,5 @@
-import { GenericObjectType } from '@rjsf/utils'
 import { ProtocolAdapter } from '@/api/__generated__'
+import { GenericObjectType } from '@rjsf/utils'
 
 export const MOCK_PROTOCOL_SIMULATION: ProtocolAdapter = {
   id: 'simulation',

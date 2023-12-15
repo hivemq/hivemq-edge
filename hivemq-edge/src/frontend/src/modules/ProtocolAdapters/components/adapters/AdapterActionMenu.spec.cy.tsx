@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { Adapter, Status } from '@/api/__generated__'
+import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import AdapterActionMenu from '@/modules/ProtocolAdapters/components/adapters/AdapterActionMenu.tsx'
 
 describe('AdapterActionMenu', () => {
@@ -49,7 +49,7 @@ describe('AdapterActionMenu', () => {
     const onDelete = cy.stub().as('onDelete')
 
     cy.mountWithProviders(
-      <AdapterActionMenu adapter={mockAdapter} onEdit={onEdit} onCreate={onCreate} onDelete={onDelete} />
+      <AdapterActionMenu adapter={mockAdapter} onEdit={onEdit} onCreate={onCreate} onDelete={onDelete} />,
     )
 
     cy.getByAriaLabel('Actions').click()

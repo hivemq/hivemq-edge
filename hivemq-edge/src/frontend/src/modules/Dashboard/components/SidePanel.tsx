@@ -1,16 +1,16 @@
+import { Box, Button, Flex, Image, Text } from '@chakra-ui/react'
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
-import { Box, Button, Flex, Image, Text } from '@chakra-ui/react'
 import { FiLogOut } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom'
 
-import logo from '@/assets/edge/03-hivemq-industrial-edge-vert.svg'
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
+import logo from '@/assets/edge/03-hivemq-industrial-edge-vert.svg'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 import NotificationBadge from '@/modules/Notifications/NotificationBadge.tsx'
 
-import NavLinksBlock from './NavLinksBlock.tsx'
 import useGetNavItems from '../hooks/useGetNavItems.tsx'
+import NavLinksBlock from './NavLinksBlock.tsx'
 
 const SidePanel: FC = () => {
   const { data: configuration } = useGetConfiguration()
@@ -41,7 +41,7 @@ const SidePanel: FC = () => {
           ))}
         </Flex>
 
-        <Flex flexDirection="column" flex={1}></Flex>
+        <Flex flexDirection="column" flex={1} />
         <Flex p={4} flexDirection={'column'} alignItems={'flex-start'} ml={2}>
           <Button leftIcon={<FiLogOut />} variant="link" onClick={() => auth.logout(() => navigate('/login'))}>
             {t('translation:action.logout')}
