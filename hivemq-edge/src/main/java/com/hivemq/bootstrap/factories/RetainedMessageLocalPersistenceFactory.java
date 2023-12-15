@@ -1,5 +1,6 @@
 package com.hivemq.bootstrap.factories;
 
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.PersistenceStartup;
@@ -12,5 +13,6 @@ public interface RetainedMessageLocalPersistenceFactory {
     @NotNull RetainedMessageLocalPersistence buildRetainedMessageLocalPersistence(@NotNull LocalPersistenceFileUtil localPersistenceFileUtil,
                                                                                   @NotNull PublishPayloadPersistence payloadPersistence,
                                                                                   @NotNull PersistenceStartup persistenceStartup,
-                                                                                  @NotNull PersistenceConfigurationService persistenceConfigurationService);
+                                                                                  @NotNull PersistenceConfigurationService persistenceConfigurationService,
+                                                                                  @NotNull SystemInformation systemInformation);
 }

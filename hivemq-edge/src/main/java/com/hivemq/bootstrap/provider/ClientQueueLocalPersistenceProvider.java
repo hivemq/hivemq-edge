@@ -2,6 +2,7 @@ package com.hivemq.bootstrap.provider;
 
 import com.hivemq.bootstrap.factories.ClientQueueLocalPersistenceFactory;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
+import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.core.PersistencesService;
@@ -53,7 +54,7 @@ public class ClientQueueLocalPersistenceProvider {
         final ClientQueueLocalPersistenceFactory persistenceFactory =
                 persistencesService.getClientQueueLocalPersistenceFactory();
 
-        if (persistenceConfigurationService.getMode() == PersistenceConfigurationService.PersistenceMode.IN_MEMORY) {
+        if (persistenceConfigurationService.getMode() == PersistenceMode.IN_MEMORY) {
             return clientQueueMemoryLocalPersistence;
         }
 

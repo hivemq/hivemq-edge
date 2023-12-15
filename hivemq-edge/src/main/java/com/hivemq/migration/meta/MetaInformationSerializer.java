@@ -15,6 +15,7 @@
  */
 package com.hivemq.migration.meta;
 
+import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -96,8 +97,8 @@ public class MetaInformationSerializer {
         final String clientSessionPersistenceVersion = getStringFromBuffer(metaFileAsByteBuffer);
         final String queuedMessagesPersistenceVersion = getStringFromBuffer(metaFileAsByteBuffer);
 
-        final PersistenceType retainedMessagePersistenceType = getTypeFromBuffer(metaFileAsByteBuffer);
-        final PersistenceType publishPayloadPersistenceType = getTypeFromBuffer(metaFileAsByteBuffer);
+        final PersistenceMode retainedMessagePersistenceType = getTypeFromBuffer(metaFileAsByteBuffer);
+        final PersistenceMode publishPayloadPersistenceType = getTypeFromBuffer(metaFileAsByteBuffer);
 
         final MetaInformation metaInformation = new MetaInformation();
 
@@ -119,9 +120,9 @@ public class MetaInformationSerializer {
         return metaInformation;
     }
 
-    private PersistenceType getTypeFromBuffer(final ByteBuffer metaFileAsByteBuffer) {
+    private PersistenceMode getTypeFromBuffer(final ByteBuffer metaFileAsByteBuffer) {
         final byte typeAsByte = metaFileAsByteBuffer.get();
-        return typeAsByte > -1 ? PersistenceType.forCode(typeAsByte) : null;
+        return typeAsByte > -1 ? PersistenceMode.forCode(typeAsByte) : null;
     }
 
     @Nullable

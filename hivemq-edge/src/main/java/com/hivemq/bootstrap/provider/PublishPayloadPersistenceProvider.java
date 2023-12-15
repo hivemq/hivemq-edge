@@ -2,7 +2,9 @@ package com.hivemq.bootstrap.provider;
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.hivemq.bootstrap.factories.PublishPayloadPersistenceFactory;
+import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
+import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.exceptions.UnrecoverableException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.core.PersistencesService;
@@ -31,6 +33,7 @@ public class PublishPayloadPersistenceProvider {
     private final @NotNull PersistenceStartup persistenceStartup;
     private final @NotNull MetricsHolder metricsHolder;
     private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
+    private final @NotNull SystemInformation systemInformation;
 
     @Inject
     PublishPayloadPersistenceProvider(
@@ -41,7 +44,8 @@ public class PublishPayloadPersistenceProvider {
             final @NotNull @Persistence ListeningScheduledExecutorService payloadPersistenceExecutor,
             final @NotNull PersistenceStartup persistenceStartup,
             final @NotNull MetricsHolder metricsHolder,
-            final @NotNull PersistenceConfigurationService persistenceConfigurationService) {
+            final @NotNull PersistenceConfigurationService persistenceConfigurationService,
+            final @NotNull SystemInformation systemInformation) {
         this.persistencesService = persistencesService;
         this.noopPersistence = noopPersistence;
         this.localPersistenceFileUtil = localPersistenceFileUtil;
@@ -50,6 +54,7 @@ public class PublishPayloadPersistenceProvider {
         this.persistenceStartup = persistenceStartup;
         this.metricsHolder = metricsHolder;
         this.persistenceConfigurationService = persistenceConfigurationService;
+        this.systemInformation = systemInformation;
     }
 
     public @NotNull PublishPayloadPersistence get() {
@@ -57,7 +62,7 @@ public class PublishPayloadPersistenceProvider {
         final PublishPayloadPersistenceFactory persistenceFactory =
                 persistencesService.getPublishPayloadPersistenceFactory();
 
-        if (persistenceConfigurationService.getMode() == PersistenceConfigurationService.PersistenceMode.IN_MEMORY) {
+        if (persistenceConfigurationService.getMode() == PersistenceMode.IN_MEMORY) {
             return noopPersistence;
         }
 
@@ -73,6 +78,7 @@ public class PublishPayloadPersistenceProvider {
                 messageDroppedService,
                 payloadPersistenceExecutor,
                 persistenceStartup,
-                persistenceConfigurationService);
+                persistenceConfigurationService,
+                systemInformation);
     }
 }

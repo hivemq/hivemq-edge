@@ -132,7 +132,7 @@ public class HiveMQEdgeMain {
                 .shutdownHooks(shutdownHooks)
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
-
+        injector.persistences();
         log.trace("Initializing classes");
         final long startInit = System.currentTimeMillis();
         Objects.requireNonNull(injector).persistences();
