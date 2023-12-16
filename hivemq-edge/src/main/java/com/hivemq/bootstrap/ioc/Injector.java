@@ -26,6 +26,7 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.ioc.ConfigurationModule;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.datagov.ioc.DataGovernanceModule;
+import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.ioc.ModulesModule;
@@ -120,7 +121,11 @@ public interface Injector {
         @BindsInstance
         Builder persistenceStartUp(PersistenceStartup persistenceStartup);
 
+        @BindsInstance
+        Builder capabilityService(HiveMQCapabilityService capabilityService);
+
         Injector build();
+
     }
 
 }

@@ -25,5 +25,17 @@ public class Capability {
         this.displayName = displayName;
         this.description = description;
     }
+
+    public @NotNull String getId() {
+        return id;
+    }
+
+    public @NotNull String getDisplayName() {
+        return displayName;
+    }
+
+    public @NotNull String getDescription() {
+        return description;
+    }
 }
 

@@ -4,6 +4,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
@@ -22,6 +23,7 @@ public class CommercialModuleLoaderDiscovery {
     private final @NotNull ShutdownHooks shutdownHooks;
     private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull ConfigurationService configService;
+    private final @NotNull HiveMQCapabilityService hiveMQCapabilityService;
 
     public CommercialModuleLoaderDiscovery(
             final @NotNull PersistencesService persistencesService,
@@ -29,13 +31,15 @@ public class CommercialModuleLoaderDiscovery {
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ShutdownHooks shutdownHooks,
             final @NotNull ModuleLoader moduleLoader,
-            final @NotNull ConfigurationService configService) {
+            final @NotNull ConfigurationService configService,
+            final @NotNull HiveMQCapabilityService hiveMQCapabilityService) {
         this.persistencesService = persistencesService;
         this.systemInformation = systemInformation;
         this.metricRegistry = metricRegistry;
         this.shutdownHooks = shutdownHooks;
         this.moduleLoader = moduleLoader;
         this.configService = configService;
+        this.hiveMQCapabilityService = hiveMQCapabilityService;
     }
 
     public void loadAllCoreModules()
@@ -56,7 +60,8 @@ public class CommercialModuleLoaderDiscovery {
                 metricRegistry,
                 shutdownHooks,
                 moduleLoader,
-                configService);
+                configService,
+                hiveMQCapabilityService);
         instance.start(coreModuleService);
     }
 }

@@ -27,6 +27,8 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.edge.HiveMQCapabilityService;
+import com.hivemq.edge.impl.capability.CapabilityServiceImpl;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
@@ -106,6 +108,7 @@ public class HiveMQEdgeMain {
         log.info("Integrating Core Modules");
         final PersistencesService persistencesService = new PersistencesService();
         final ShutdownHooks shutdownHooks = new ShutdownHooks();
+        final HiveMQCapabilityService capabilityService = new CapabilityServiceImpl();
         try {
             final CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(
                     persistencesService,
@@ -113,7 +116,8 @@ public class HiveMQEdgeMain {
                     metricRegistry,
                     shutdownHooks,
                     moduleLoader,
-                    configService);
+                    configService,
+                    capabilityService);
             commercialModuleLoaderDiscovery.loadAllCoreModules();
         } catch (Exception e) {
             log.warn("Error on loading the commercial module loader.", e);
@@ -130,6 +134,7 @@ public class HiveMQEdgeMain {
                 .persistenceStartUp(persistenceStartup)
                 .moduleLoader(moduleLoader)
                 .shutdownHooks(shutdownHooks)
+                .capabilityService(capabilityService)
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
         injector.persistences();
