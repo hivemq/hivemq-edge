@@ -167,7 +167,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
         if (ApiUtils.hasDefaultUser(configurationService.apiConfiguration().getUserList())) {
             notifs.add(new Notification(Notification.LEVEL.WARNING,
                     "Default Credentials Need Changing!",
-                    "Your gateway access is configured to use the default username/password combination. This is a security risk. Please ensure you modify your access credentials in your configuration.xml file.",
+                    "Your gateway access is configured to use the default username/password combination. This is a security risk. Please ensure you modify your access credentials in your config.xml file.",
                     null));
         }
         return Response.ok(new NotificationList(notifs.build())).build();
