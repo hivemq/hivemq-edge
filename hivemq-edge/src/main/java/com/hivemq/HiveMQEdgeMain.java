@@ -138,7 +138,6 @@ public class HiveMQEdgeMain {
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
         injector.persistences();
-        log.trace("Initializing classes");
         final long startInit = System.currentTimeMillis();
         Objects.requireNonNull(injector).persistences();
         try {
@@ -146,8 +145,9 @@ public class HiveMQEdgeMain {
         } catch (InterruptedException e) {
             throw new HiveMQEdgeStartupException(e);
         }
-        Objects.requireNonNull(injector).initEagerSingletons();
 
+        log.trace("Initializing classes");
+        Objects.requireNonNull(injector).initEagerSingletons();
         log.trace("Initialized classes in {}ms", (System.currentTimeMillis() - startInit));
 
     }

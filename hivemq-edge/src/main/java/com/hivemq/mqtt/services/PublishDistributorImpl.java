@@ -44,6 +44,7 @@ import dagger.Lazy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
@@ -167,13 +168,32 @@ public class PublishDistributorImpl implements PublishDistributor {
             @Nullable final ImmutableIntArray subscriptionIdentifier) {
 
         if (sharedSubscription) {
+            int appliedQoS = subscriptionQos;
+            // if nothing specified a queue limit, we use the default one.
+            Long appliedQueueLimit = mqttConfigurationService.maxQueuedMessages();
+            // update with the configuration of the bridge, if it is a bridge client
+            final CustomBridgeLimitations customBridgeLimitations = getBridgeConfig(client);
+
+            // only do the bridge iterations for client ids that can even be bridge clients
+            if(client.startsWith("forwarder")) {
+                if (customBridgeLimitations != null) {
+                    final Long queueLimitFromConfig = customBridgeLimitations.queueLimit;
+                    if (queueLimitFromConfig != null) {
+                        appliedQueueLimit = queueLimitFromConfig;
+                    }
+                    if (!customBridgeLimitations.persist) {
+                        appliedQoS = 0;
+                    }
+                }
+            }
+
             return queuePublish(client,
                     publish,
-                    subscriptionQos,
+                    appliedQoS,
                     true,
                     retainAsPublished,
                     subscriptionIdentifier,
-                    null);
+                    appliedQueueLimit);
         }
 
         final boolean qos0Message = Math.min(subscriptionQos, publish.getQoS().getQosNumber()) == 0;
@@ -208,31 +228,11 @@ public class PublishDistributorImpl implements PublishDistributor {
             @Nullable final ImmutableIntArray subscriptionIdentifier,
             @Nullable final Long queueLimit) {
 
-
-        Long appliedQueueLimit = queueLimit;
-        int appliedQoS = subscriptionQos;
-        if (shared) {
-            // update with the configuration of the bridge, if it is a bridge client
-            final CustomBridgeLimitations customBridgeLimitations = getBridgeConfig(client);
-            if (customBridgeLimitations != null) {
-                final Long queueLimitFromConfig = customBridgeLimitations.queueLimit;
-                if (queueLimitFromConfig != null) {
-                    appliedQueueLimit = queueLimitFromConfig;
-                }
-                if (!customBridgeLimitations.persist) {
-                    appliedQoS = 0;
-                }
-            }
-        }
-
-        // if nothing specified a queue limit, we use the default one.
-        if (appliedQueueLimit == null) {
-            appliedQueueLimit = mqttConfigurationService.maxQueuedMessages();
-        }
-
+        final Long appliedQueueLimit =
+                Objects.requireNonNullElseGet(queueLimit, mqttConfigurationService::maxQueuedMessages);
         final ListenableFuture<Void> future = clientQueuePersistence.add(client,
                 shared,
-                createPublish(publish, appliedQoS, retainAsPublished, subscriptionIdentifier),
+                createPublish(publish, subscriptionQos, retainAsPublished, subscriptionIdentifier),
                 false,
                 appliedQueueLimit);
 
