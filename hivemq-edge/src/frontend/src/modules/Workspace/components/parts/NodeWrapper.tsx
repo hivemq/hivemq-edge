@@ -1,14 +1,12 @@
 import { FC } from 'react'
-import { type BoxProps, Card, useTheme } from '@chakra-ui/react'
+import { type BoxProps, Card } from '@chakra-ui/react'
 
 interface NodeWrapperProps extends BoxProps {
   isSelected?: boolean
 }
 
 const NodeWrapper: FC<NodeWrapperProps> = ({ children, isSelected = false, ...rest }) => {
-  const { colors, ...props } = useTheme()
-
-  console.log('XXXXXX', props)
+  // const {  ...props } = useTheme()
 
   const selectedStyle: Partial<BoxProps> = {
     // boxShadow: 'dark-lg',
