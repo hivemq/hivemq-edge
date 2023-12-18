@@ -64,11 +64,9 @@ public class HiveMQEdgeGateway {
 
     public void start(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
         try {
-            //   payloadPersistence.init();
             extensionBootstrap.startExtensionSystem(embeddedExtension).get();
             bridgeService.updateBridges();
             protocolAdapterManager.start();
-            persistenceStartup.finish();
 
             final List<ListenerStartupInformation> startupInformation = nettyBootstrap.bootstrapServer().get();
             Checkpoints.checkpoint("listener-started");
