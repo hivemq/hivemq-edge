@@ -55,11 +55,6 @@ public class ADSProtocolAdapterInformation
     }
 
     @Override
-    public String getVersion() {
-        return super.getVersion() + " (ALPHA)";
-    }
-
-    @Override
     public String getLogoUrl() {
         return "/images/beckhoff-icon.gif";
     }
