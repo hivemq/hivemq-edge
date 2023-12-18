@@ -49,7 +49,7 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
     : (t('workspace.observability.header', { context: selectedNode.type }) as string)
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size={'lg'} onClose={onClose}>
+    <Drawer isOpen={isOpen} placement="right" size={'lg'} onClose={onClose} variant={'hivemq'}>
       <DrawerOverlay />
       <DrawerContent aria-label={panelTitle}>
         <DrawerCloseButton />
