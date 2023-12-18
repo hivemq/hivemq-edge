@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import ReactFlow, { Background } from 'reactflow'
+import ReactFlow, { Background, MiniMap } from 'reactflow'
 import { Outlet } from 'react-router-dom'
 import { Box } from '@chakra-ui/react'
 
@@ -16,7 +16,7 @@ import CanvasControls from './controls/CanvasControls.tsx'
 import SelectionListener from './controls/SelectionListener.tsx'
 import GroupNodesControl from './controls/GroupNodesControl.tsx'
 import MonitoringEdge from './edges/MonitoringEdge.tsx'
-import { NodeAdapter, NodeBridge, NodeEdge, NodeGroup, NodeListener } from './nodes'
+import { NodeAdapter, NodeBridge, NodeEdge, NodeGroup, NodeListener, NodeHost } from './nodes'
 
 const ReactFlowWrapper = () => {
   const { t } = useTranslation()
@@ -28,6 +28,7 @@ const ReactFlowWrapper = () => {
       [NodeTypes.ADAPTER_NODE]: NodeAdapter,
       [NodeTypes.BRIDGE_NODE]: NodeBridge,
       [NodeTypes.LISTENER_NODE]: NodeListener,
+      [NodeTypes.HOST_NODE]: NodeHost,
     }),
     []
   )

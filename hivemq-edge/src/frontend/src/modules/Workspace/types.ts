@@ -25,6 +25,7 @@ export enum NodeTypes {
   ADAPTER_NODE = 'ADAPTER_NODE',
   LISTENER_NODE = 'LISTENER_NODE',
   CLUSTER_NODE = 'CLUSTER_NODE',
+  HOST_NODE = 'HOST_NODE',
 }
 
 export enum EdgeTypes {
@@ -57,6 +58,7 @@ export interface WorkspaceState {
   nodes: Node[]
   edges: Edge[]
 }
+
 export interface WorkspaceAction {
   reset: () => void
   onNodesChange: OnNodesChange
