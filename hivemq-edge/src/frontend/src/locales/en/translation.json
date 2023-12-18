@@ -12,7 +12,9 @@
     "next": "Next",
     "start": "Start",
     "stop": "Stop",
-    "restart": "Restart"
+    "restart": "Restart",
+    "mode_light": "Switch to dark mode",
+    "mode_dark": "Switch to light mode"
   },
   "hivemq": {
     "topic": "Topic",
@@ -56,7 +58,9 @@
   },
   "error": {
     "backHome": "Back to Home",
-    "notfound": { "heading": "Sorry, an unexpected error has occurred" },
+    "notfound": {
+      "heading": "Sorry, an unexpected error has occurred"
+    },
     "wip": {
       "message": "This is a work in progress. Be patient with us"
     }
@@ -85,7 +89,9 @@
         "required": "The password is required"
       }
     },
-    "submit": { "label": "Sign in" },
+    "submit": {
+      "label": "Sign in"
+    },
     "error": {
       "defaultCredentials": "We cannot load your default credentials. Please try again later",
       "verifyCredentials": "We cannot verify your credentials. Please try again later",
@@ -337,11 +343,24 @@
     },
     "stepper": {
       "description": "Create a new bridge to a broker",
-      "source": { "title": "Source", "description": "MQTT Broker" },
-      "local": { "title": "Local", "description": "Local subscriptions" },
-      "remote": { "title": "Remote", "description": "Remote subscriptions" },
-      "options": { "title": "Options" },
-      "publish": { "title": "Publish" }
+      "source": {
+        "title": "Source",
+        "description": "MQTT Broker"
+      },
+      "local": {
+        "title": "Local",
+        "description": "Local subscriptions"
+      },
+      "remote": {
+        "title": "Remote",
+        "description": "Remote subscriptions"
+      },
+      "options": {
+        "title": "Options"
+      },
+      "publish": {
+        "title": "Publish"
+      }
     }
   },
   "protocolAdapter": {
@@ -514,7 +533,6 @@
           "A Unified Namespace is a middleware solution that allows you to collect data from various industrial systems, add context to it, and transform it into a format that other systems can understand.",
           "ISA 95 provides a convenient way of structuring data sources in relation to their position within a manufacturing enterprise, hierarchically. "
         ],
-
         "link": "Go to hivemq website to know more"
       },
       "recommend": {
@@ -556,7 +574,9 @@
       "label": "Add prefix to all topics",
       "helper": "MQTT topics will use the namespace defined"
     },
-    "submit": { "label": "Submit" },
+    "submit": {
+      "label": "Submit"
+    },
     "toast": {
       "update": {
         "title": "Updating namespace",
