@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import ReactFlow, { Background, MiniMap } from 'reactflow'
+import ReactFlow, { Background } from 'reactflow'
 import { Outlet } from 'react-router-dom'
 import { Box } from '@chakra-ui/react'
 
