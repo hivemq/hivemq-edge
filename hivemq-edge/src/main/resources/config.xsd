@@ -1015,11 +1015,6 @@
             </xs:element>
         </xs:all>
     </xs:complexType>
-
-    <xs:complexType name="moduleEntity">
-
-    </xs:complexType>
-
     <xs:complexType name="unsEntity">
         <xs:all>
             <xs:element name="isa95" type="isa95Entity" minOccurs="0"/>
