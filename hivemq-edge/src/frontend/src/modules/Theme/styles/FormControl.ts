@@ -6,6 +6,9 @@ const { definePartsStyle, defineMultiStyleConfig } = createMultiStyleConfigHelpe
 const hivemq = definePartsStyle({
   container: {
     backgroundColor: 'white',
+    _dark: {
+      backgroundColor: 'gray.700',
+    },
     padding: 4,
     borderRadius: 6,
     borderWidth: 1,
