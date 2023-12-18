@@ -26,7 +26,7 @@ const customComponents = (isMulti: boolean): SelectComponentsConfig<TopicOption,
   DropdownIndicator: null,
   Option: ({ children, ...props }) => (
     <chakraComponents.Option {...props}>
-      {props.data.iconColor && <TopicIcon color={props.data.iconColor} mr={2} h={5} w={5} />}
+      <TopicIcon mr={2} h={5} w={5} />
       {children}
     </chakraComponents.Option>
   ),
@@ -39,8 +39,9 @@ const customComponents = (isMulti: boolean): SelectComponentsConfig<TopicOption,
   ),
 
   MultiValueContainer: ({ children, ...props }) => {
+    // TODO[NVL] removing the default style might cause side effects
     return (
-      <chakraComponents.MultiValueContainer {...props}>
+      <chakraComponents.MultiValueContainer {...props} sx={{}}>
         <Topic topic={children} mr={3} />
       </chakraComponents.MultiValueContainer>
     )
