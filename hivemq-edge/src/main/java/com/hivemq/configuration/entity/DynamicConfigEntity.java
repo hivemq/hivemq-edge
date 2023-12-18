@@ -15,8 +15,6 @@
  */
 package com.hivemq.configuration.entity;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -31,10 +29,10 @@ import javax.xml.bind.annotation.XmlRootElement;
 public class DynamicConfigEntity {
 
     @XmlElement(name = "allow-configuration-export", defaultValue = "false")
-    private @NotNull boolean configurationExportEnabled = false;
+    private boolean configurationExportEnabled = false;
 
-    @XmlElement(name = "allow-mutable-configuration", defaultValue = "false")
-    private @NotNull boolean mutableConfigurationEnabled = false;
+    @XmlElement(name = "allow-mutable-configuration", defaultValue = "true")
+    private boolean mutableConfigurationEnabled = true;
 
     public boolean isConfigurationExportEnabled() {
         return configurationExportEnabled;
