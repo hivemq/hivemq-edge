@@ -44,7 +44,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
   const { t } = useTranslation()
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={onClose}>
+    <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={onClose} variant={'hivemq'}>
       <DrawerOverlay />
       <DrawerContent aria-label={t('workspace.property.header', { context: selectedNode.type }) as string}>
         <DrawerCloseButton />
