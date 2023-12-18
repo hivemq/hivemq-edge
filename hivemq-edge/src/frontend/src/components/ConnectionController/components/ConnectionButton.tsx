@@ -9,7 +9,7 @@ const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeS
   const { t } = useTranslation()
 
   return (
-    <ButtonGroup size="sm" isAttached variant="outline">
+    <ButtonGroup size="sm" isAttached>
       {!isRunning && (
         <IconButton
           isDisabled={isLoading}
