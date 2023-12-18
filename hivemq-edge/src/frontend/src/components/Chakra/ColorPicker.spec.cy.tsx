@@ -32,19 +32,19 @@ describe('ColorPicker', () => {
       />
     )
 
-    cy.getByTestId('colorPicker-trigger').should('have.attr', 'data-colorScheme', mockColorScheme)
+    cy.getByTestId('colorPicker-trigger').should('have.attr', 'data-color-scheme', mockColorScheme)
     cy.getByTestId('colorPicker-trigger').click()
     cy.getByTestId('colorPicker-popover').should('be.visible')
     cy.getByTestId('colorPicker-sample').should('have.text', mockColorScheme)
     cy.get("[data-testId^='colorPicker-selector']")
       .should('have.length', 10)
       .eq(5)
-      .should('have.attr', 'data-colorScheme', 'blue')
+      .should('have.attr', 'data-color-scheme', 'blue')
       .click()
 
     cy.get('@onChange').should('have.been.calledWith', 'blue')
     cy.getByTestId('colorPicker-sample').should('have.text', 'blue')
-    cy.getByTestId('colorPicker-trigger').should('have.attr', 'data-colorScheme', 'blue')
+    cy.getByTestId('colorPicker-trigger').should('have.attr', 'data-color-scheme', 'blue')
 
     // cy.getByTestId('colorPicker-trigger').click()
     // cy.getByTestId('colorPicker-popover').should('not.be.visible')
