@@ -12,7 +12,6 @@ import {
   IconButton,
   Image,
   Skeleton,
-  Stack,
   Text,
 } from '@chakra-ui/react'
 import { EditIcon } from '@chakra-ui/icons'
@@ -45,36 +44,34 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, ...props }) =>
   )
 
   return (
-    <Card direction={{ base: 'column', md: 'column' }} mt={0} overflow="hidden" variant="outline">
-      <HStack>
-        <Skeleton isLoaded={!isLoading}>
-          <Image boxSize="100px" src={BridgeLogo} alt={t('bridge.title') as string} />
+    <Card overflow="hidden">
+      <CardHeader>
+        <Skeleton isLoaded={!isLoading} display={'flex'}>
+          <Heading size="md" flex={1} m={'auto'} data-testid={'bridge-name'}>
+            {props.id}
+          </Heading>
+          <Box>
+            <IconButton
+              aria-label={t('bridge.subscription.edit')}
+              icon={<EditIcon />}
+              onClick={() => onNavigate?.(`/mqtt-bridges/${props.id}`)}
+            />
+          </Box>
         </Skeleton>
-        <Stack>
+      </CardHeader>
+      <CardBody py={0}>
+        <HStack>
           <Skeleton isLoaded={!isLoading}>
-            <CardHeader display={'flex'} pb={0} w={300}>
-              <Heading size="md" flexGrow={1} m={'auto'} data-testid={'bridge-name'}>
-                {props.id}
-              </Heading>
-
-              <IconButton
-                variant="ghost"
-                aria-label={t('bridge.subscription.edit')}
-                icon={<EditIcon />}
-                onClick={() => onNavigate?.(`/mqtt-bridges/${props.id}`)}
-              />
-            </CardHeader>
+            <Image boxSize="100px" src={BridgeLogo} alt={t('bridge.title') as string} />
           </Skeleton>
           <Skeleton isLoaded={!isLoading}>
-            <CardBody py={0}>
-              <ConnectionSummary {...props} />
-            </CardBody>
+            <ConnectionSummary {...props} />
           </Skeleton>
-        </Stack>
-      </HStack>
-      <Skeleton mt={2} isLoaded={!isLoading}>
-        <CardFooter flexDirection={'row'} gap={2}>
-          <Box alignSelf="center">
+        </HStack>
+      </CardBody>
+      <CardFooter>
+        <Skeleton isLoaded={!isLoading} as={Flex} w={'100%'}>
+          <Box flex={1}>
             <span
               style={{
                 display: 'inline-block',
@@ -92,11 +89,11 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, ...props }) =>
             </Text>
             <ConnectionStatusBadge status={status} />
           </Box>
-          <Flex flex="1" justifyContent={'flex-end'}>
+          <Flex justifyContent={'flex-end'} role={'toolbar'}>
             <ConnectionController type={DeviceTypes.BRIDGE} id={props.id} status={props.status} />
           </Flex>
-        </CardFooter>
-      </Skeleton>
+        </Skeleton>
+      </CardFooter>
     </Card>
   )
 }
