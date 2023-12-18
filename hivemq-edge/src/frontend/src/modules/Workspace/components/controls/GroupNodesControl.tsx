@@ -1,8 +1,8 @@
 import { FC, useState } from 'react'
 import { Edge, MarkerType, Node, Panel, useOnSelectionChange } from 'reactflow'
 import { useTranslation } from 'react-i18next'
-import { IconButton, useTheme } from '@chakra-ui/react'
-import { GrObjectGroup } from 'react-icons/gr'
+import { Icon, IconButton, useTheme } from '@chakra-ui/react'
+import { ImMakeGroup } from 'react-icons/im'
 
 import { Adapter, Status } from '@/api/__generated__'
 import { EdgeTypes, Group, IdStubs, NodeTypes } from '../../types.ts'
@@ -79,7 +79,7 @@ const GroupNodesControl: FC = () => {
   return (
     <Panel position="top-left">
       <IconButton
-        icon={<GrObjectGroup />}
+        icon={<Icon as={ImMakeGroup} boxSize={5} />}
         aria-label={t('workspace.grouping.create')}
         onClick={onCreateGroup}
         isDisabled={currentSelection.length < 2}
