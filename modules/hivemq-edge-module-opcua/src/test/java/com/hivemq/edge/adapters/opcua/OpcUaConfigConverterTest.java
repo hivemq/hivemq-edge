@@ -93,7 +93,8 @@ class OpcUaConfigConverterTest {
                 mock(UnsConfigurator.class),
                 mock(DynamicConfigConfigurator.class),
                 mock(UsageTrackingConfigurator.class),
-                mock(ProtocolAdapterConfigurator.class));
+                mock(ProtocolAdapterConfigurator.class),
+                mock(InternalConfigurator.class));
         final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
 
         final Map<String, Object> config = hiveMQConfigEntity.getProtocolAdapterConfig();
