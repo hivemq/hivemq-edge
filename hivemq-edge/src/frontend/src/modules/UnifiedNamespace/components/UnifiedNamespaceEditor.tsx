@@ -1,5 +1,6 @@
 import { FC, useEffect } from 'react'
 import {
+  Button,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
@@ -16,8 +17,6 @@ import { useTranslation } from 'react-i18next'
 import { ApiError, ISA95ApiBean } from '@/api/__generated__'
 import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUnifiedNamespace.tsx'
 import { useSetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useSetUnifiedNamespace.tsx'
-
-import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 
 import NamespaceForm from '@/modules/UnifiedNamespace/components/NamespaceForm.tsx'
 
@@ -81,9 +80,9 @@ const UnifiedNamespaceEditor: FC<UnifiedNamespaceEditorProps> = () => {
           <NamespaceForm defaultValues={data} onSubmit={handleOnSubmit} />
         </DrawerBody>
         <DrawerFooter>
-          <ButtonCTA isLoading={isUploading} type="submit" form="namespace-form">
+          <Button variant={'primary'} isLoading={isUploading} type="submit" form="namespace-form">
             {t('unifiedNamespace.submit.label')}
-          </ButtonCTA>
+          </Button>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

@@ -11,6 +11,7 @@ import {
   Text,
   Image,
   HStack,
+  Button,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
@@ -22,7 +23,6 @@ import { ApiError, Adapter, ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 
-import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
 import { FieldTemplate } from '../templates/FieldTemplate.tsx'
@@ -127,9 +127,9 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
 
             <DrawerFooter borderTopWidth="1px">
               <Flex flexGrow={1} justifyContent={'flex-end'}>
-                <ButtonCTA type="submit" form="adapter-instance-form">
+                <Button variant={'primary'} type="submit" form="adapter-instance-form">
                   {isNewAdapter ? t('protocolAdapter.action.create') : t('protocolAdapter.action.update')}
-                </ButtonCTA>
+                </Button>
               </Flex>
             </DrawerFooter>
           </>
