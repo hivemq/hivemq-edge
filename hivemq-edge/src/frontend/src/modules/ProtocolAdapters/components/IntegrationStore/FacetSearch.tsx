@@ -60,7 +60,14 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
   }
 
   return (
-    <Flex flexDirection={'column'} gap={4} maxW={'250px'} minW={'fit-content'} role={'navigation'}>
+    <Flex
+      flexDirection={'column'}
+      gap={4}
+      maxW={'250px'}
+      minW={'fit-content'}
+      role="region"
+      aria-label={t('protocolAdapter.facet.description') as string}
+    >
       <FormControl role={'search'}>
         <FormLabel>{t('protocolAdapter.facet.search.label')}</FormLabel>
         <InputGroup>
@@ -86,10 +93,11 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
 
       <Flex flexDirection={'column'}>
         <Box pb={4} pt={4}>
-          <List spacing={3}>
+          <List spacing={3} aria-labelledby={'facet-filter-clear'}>
             <ListItem>
               <Skeleton isLoaded={!isLoading}>
                 <Button
+                  id={`facet-filter-clear`}
                   data-testid={`facet-filter-clear`}
                   justifyContent={'flex-start'}
                   variant={!facet?.filter ? 'outline' : 'ghost'}
@@ -104,9 +112,11 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
             </ListItem>
           </List>
         </Box>
-        <div>{t('protocolAdapter.facet.filter.category')}</div>
+        <Box aria-hidden={true} id={`facet-filter-category`}>
+          {t('protocolAdapter.facet.filter.category')}
+        </Box>
         <Box pb={4} pt={4}>
-          <List spacing={3}>
+          <List spacing={3} aria-labelledby={'facet-filter-category'}>
             {categories.map((item) => (
               <ListItem key={item.name}>
                 <Skeleton isLoaded={!isLoading}>
@@ -126,9 +136,11 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
             ))}
           </List>
         </Box>
-        <div>{t('protocolAdapter.facet.filter.tags')}</div>
+        <Box aria-hidden={true} id={`facet-filter-tags`}>
+          {t('protocolAdapter.facet.filter.tags')}
+        </Box>
         <Box pb={4} pt={4}>
-          <List spacing={3}>
+          <List spacing={3} aria-labelledby={'facet-filter-tags'}>
             {tags.map((item) => (
               <ListItem key={item}>
                 <Skeleton isLoaded={!isLoading}>

@@ -413,6 +413,7 @@
       "description_other": "Select one of the following $t(protocolAdapter.protocols.adapterCount, {\"count\": {{count}} }) to start creating your connection"
     },
     "facet": {
+      "description": "Search and filter protocol adapters",
       "search": {
         "label": "Search",
         "placeholder": "Search for a protocol",
