@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useEffect } from 'react'
 import {
   Accordion,
   AccordionButton,
@@ -12,13 +12,13 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { useLocalStorage } from '@uidotdev/usehooks'
 
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 import config from '@/config'
 
 import { ChartType, MetricDefinition } from './types.ts'
+import useMetricsStore from './hooks/useMetricsStore.ts'
 import MetricEditor from './components/editor/MetricEditor.tsx'
 import ChartContainer from './components/container/ChartContainer.tsx'
 import Sample from './components/container/Sample.tsx'
@@ -37,22 +37,31 @@ export interface MetricSpecStorage {
 }
 
 const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultChartType }) => {
-  const [metrics, setMetrics] = useLocalStorage<MetricSpecStorage[]>(
-    `edge.reports-${nodeId}`,
-    initMetrics ? initMetrics.map<MetricSpecStorage>((e) => ({ selectedTopic: e })) : []
-  )
-  const showEditor = config.features.METRICS_SHOW_EDITOR
-  const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation()
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const { addMetrics, getMetricsFor, removeMetrics } = useMetricsStore()
+  const showEditor = config.features.METRICS_SHOW_EDITOR
 
   const handleCreateMetrics = (value: MetricDefinition) => {
     const { selectedTopic, selectedChart } = value
-    setMetrics((old) => [...old, { selectedTopic: selectedTopic?.value, selectedChart: selectedChart?.value }])
+    addMetrics(nodeId, selectedTopic.value, selectedChart?.value)
   }
 
   const handleRemoveMetrics = (selectedTopic: string) => {
-    setMetrics((old) => old.filter((x) => x.selectedTopic !== selectedTopic))
+    removeMetrics(nodeId, selectedTopic)
   }
+
+  const metrics = getMetricsFor(nodeId)
+
+  useEffect(() => {
+    const gg = getMetricsFor(nodeId)
+    if (gg.length === 0 && initMetrics) {
+      initMetrics.map((e) => {
+        addMetrics(nodeId, e, defaultChartType)
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <Card size={'sm'}>
@@ -75,7 +84,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
             <AccordionPanel pb={4}>
               <MetricEditor
                 filter={adapterIDs}
-                selectedMetrics={metrics.map((e) => e.selectedTopic)}
+                selectedMetrics={metrics.map((e) => e.metrics)}
                 selectedChart={defaultChartType}
                 onSubmit={handleCreateMetrics}
               />
@@ -87,22 +96,22 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
       <CardBody>
         <SimpleGrid spacing={4} templateColumns="repeat(auto-fill, minmax(200px, 1fr))">
           {metrics.map((e) => {
-            if (!e.selectedChart || e.selectedChart === ChartType.SAMPLE)
+            if (!e.chart || e.chart === ChartType.SAMPLE)
               return (
                 <Sample
-                  key={e.selectedTopic}
-                  metricName={e.selectedTopic}
-                  onClose={() => handleRemoveMetrics(e.selectedTopic)}
+                  key={e.metrics}
+                  metricName={e.metrics}
+                  onClose={() => handleRemoveMetrics(e.metrics)}
                   canEdit={isOpen}
                 />
               )
             else
               return (
                 <ChartContainer
-                  key={e.selectedTopic}
-                  chartType={e.selectedChart}
-                  metricName={e.selectedTopic}
-                  onClose={() => handleRemoveMetrics(e.selectedTopic)}
+                  key={e.metrics}
+                  chartType={e.chart}
+                  metricName={e.metrics}
+                  onClose={() => handleRemoveMetrics(e.metrics)}
                   canEdit={isOpen}
                 />
               )
