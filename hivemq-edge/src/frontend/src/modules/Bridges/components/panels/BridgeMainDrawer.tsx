@@ -130,15 +130,15 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
               </Button>
             )}
             <Flex flexGrow={1} justifyContent={'flex-end'}>
-              <ButtonCTA
+              <Button
                 isDisabled={!form.formState.isValid}
                 isLoading={isSubmitting}
-                variant="solid"
+                variant={'primary'}
                 type="submit"
                 form="bridge-form"
               >
                 {isNewBridge ? t('bridge.action.create') : t('bridge.action.update')}
-              </ButtonCTA>
+              </Button>
             </Flex>
           </DrawerFooter>
         </DrawerContent>
