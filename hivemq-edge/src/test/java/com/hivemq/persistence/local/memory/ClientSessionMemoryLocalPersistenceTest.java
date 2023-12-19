@@ -19,7 +19,9 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.Lists;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.logging.EventLog;
@@ -76,13 +78,16 @@ public class ClientSessionMemoryLocalPersistenceTest {
     private MetricRegistry metricRegistry;
     private Gauge<Long> memoryGauge;
 
+    private final @NotNull InternalConfigurationService
+            internalConfigurationService = new InternalConfigurationServiceImpl();
+
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
 
         InternalConfigurations.PERSISTENCE_CLOSE_RETRIES.set(3);
         InternalConfigurations.PERSISTENCE_CLOSE_RETRY_INTERVAL_MSEC.set(5);
-        InternalConfigurations.PERSISTENCE_BUCKET_COUNT.set(BUCKET_COUNT);
+        internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, ""+BUCKET_COUNT);
         when(localPersistenceFileUtil.getVersionedLocalPersistenceFolder(anyString(), anyString())).thenReturn(
                 temporaryFolder.newFolder());
 
@@ -90,7 +95,7 @@ public class ClientSessionMemoryLocalPersistenceTest {
         when(metricsHolder.getStoredWillMessagesCount()).thenReturn(mock(Counter.class));
 
         metricRegistry = new MetricRegistry();
-        persistence = new ClientSessionMemoryLocalPersistence(payloadPersistence, metricRegistry, metricsHolder, eventLog);
+        persistence = new ClientSessionMemoryLocalPersistence(payloadPersistence, metricRegistry, metricsHolder, eventLog, internalConfigurationService);
         memoryGauge = metricRegistry.gauge(HiveMQMetrics.CLIENT_SESSIONS_MEMORY_PERSISTENCE_TOTAL_SIZE.name(), null);
     }
 

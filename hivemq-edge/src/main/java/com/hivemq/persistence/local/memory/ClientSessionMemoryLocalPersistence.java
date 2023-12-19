@@ -19,6 +19,7 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSet;
 import com.hivemq.annotations.ExecuteInSingleWriter;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -52,6 +53,7 @@ import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
 import static com.hivemq.mqtt.message.connect.Mqtt5CONNECT.SESSION_EXPIRE_ON_DISCONNECT;
 import static com.hivemq.mqtt.message.disconnect.DISCONNECT.SESSION_EXPIRY_NOT_SET;
 import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
@@ -77,13 +79,15 @@ public class ClientSessionMemoryLocalPersistence implements ClientSessionLocalPe
             final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull MetricsHolder metricsHolder,
-            final @NotNull EventLog eventLog) {
+            final @NotNull EventLog eventLog,
+            final @NotNull InternalConfigurationService internalConfigurationService) {
 
         this.payloadPersistence = payloadPersistence;
         this.metricsHolder = metricsHolder;
         this.eventLog = eventLog;
 
-        bucketCount = InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get();
+        bucketCount = internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
+
 
         //noinspection unchecked
         buckets = new Map[bucketCount];

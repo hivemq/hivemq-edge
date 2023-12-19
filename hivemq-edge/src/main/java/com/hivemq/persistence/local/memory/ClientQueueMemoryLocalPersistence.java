@@ -22,8 +22,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.annotations.ExecuteInSingleWriter;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.metrics.HiveMQMetrics;
@@ -66,6 +68,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
 
     private final @NotNull Map<String, Messages> @NotNull [] buckets;
     private final @NotNull Map<String, Messages> @NotNull [] sharedBuckets;
+    private final @NotNull InternalConfigurationService internalConfigurationService;
 
     private static class Messages {
         final @NotNull LinkedList<MessageWithID> qos1Or2Messages = new LinkedList<>();
@@ -88,9 +91,11 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
     ClientQueueMemoryLocalPersistence(
             final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull MessageDroppedService messageDroppedService,
-            final @NotNull MetricRegistry metricRegistry) {
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull InternalConfigurationService internalConfigurationService) {
+        this.internalConfigurationService = internalConfigurationService;
 
-        final int bucketCount = InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get();
+        final int bucketCount = internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT);
         //noinspection unchecked
         buckets = new HashMap[bucketCount];
         //noinspection unchecked

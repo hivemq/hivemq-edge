@@ -16,6 +16,7 @@
 package com.hivemq.persistence;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
@@ -24,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.concurrent.Executor;
+
+import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
 
 /**
  * @author Daniel Krüger
@@ -50,9 +53,9 @@ public class InMemorySingleWriter implements SingleWriterService {
     private final int persistenceBucketCount;
 
     @Inject
-    public InMemorySingleWriter() {
+    public InMemorySingleWriter(final @NotNull InternalConfigurationService internalConfigurationService) {
 
-        persistenceBucketCount = InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get();
+        persistenceBucketCount =  internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
         final int threadPoolSize = InternalConfigurations.SINGLE_WRITER_THREAD_POOL_SIZE.get();
         final int amountOfQueues = validAmountOfQueues(threadPoolSize, persistenceBucketCount);
 

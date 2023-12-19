@@ -19,6 +19,7 @@ import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
@@ -28,6 +29,7 @@ import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
@@ -37,25 +39,27 @@ import com.hivemq.configuration.service.impl.SecurityConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UnsConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.UsageTrackingConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationServiceImpl;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
  * @author Christoph Schäbel
  */
 public class TestConfigurationBootstrap {
 
-    private ListenerConfigurationServiceImpl listenerConfigurationService;
-    private MqttConfigurationServiceImpl mqttConfigurationService;
-    private MqttsnConfigurationServiceImpl mqttsnConfigurationService;
-    private RestrictionsConfigurationServiceImpl restrictionsConfigurationService;
-    private final SecurityConfigurationServiceImpl securityConfigurationService;
-    private ConfigurationServiceImpl configurationService;
-    private final PersistenceConfigurationService persistenceConfigurationService;
-    private final BridgeConfigurationService bridgeConfigurationService;
-    private final ApiConfigurationService apiConfigurationService;
-    private final UnsConfigurationService unsConfigurationService;
-    private final DynamicConfigurationService dynamicConfigurationService;
-    private final UsageTrackingConfigurationService usageTrackingConfigurationService;
-    private final ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
+    private @NotNull ListenerConfigurationServiceImpl listenerConfigurationService;
+    private @NotNull MqttConfigurationServiceImpl mqttConfigurationService;
+    private @NotNull MqttsnConfigurationServiceImpl mqttsnConfigurationService;
+    private @NotNull RestrictionsConfigurationServiceImpl restrictionsConfigurationService;
+    private final @NotNull SecurityConfigurationServiceImpl securityConfigurationService;
+    private @NotNull ConfigurationServiceImpl configurationService;
+    private final @NotNull PersistenceConfigurationService persistenceConfigurationService;
+    private final @NotNull BridgeConfigurationService bridgeConfigurationService;
+    private final @NotNull ApiConfigurationService apiConfigurationService;
+    private final @NotNull UnsConfigurationService unsConfigurationService;
+    private final @NotNull DynamicConfigurationService dynamicConfigurationService;
+    private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
+    private final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
+    private final @NotNull InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
 
     public TestConfigurationBootstrap() {
         listenerConfigurationService = new ListenerConfigurationServiceImpl();
@@ -89,70 +93,71 @@ public class TestConfigurationBootstrap {
                 unsConfigurationService,
                 dynamicConfigurationService,
                 usageTrackingConfigurationService,
-                protocolAdapterConfigurationService);
+                protocolAdapterConfigurationService,
+                internalConfigurationService);
     }
 
-    public SecurityConfigurationService getSecurityConfigurationService() {
+    public @NotNull SecurityConfigurationService getSecurityConfigurationService() {
         return securityConfigurationService;
     }
 
-    public ConfigurationService getConfigurationService() {
+    public @NotNull ConfigurationService getConfigurationService() {
         return configurationService;
     }
 
-    public ListenerConfigurationServiceImpl getListenerConfigurationService() {
+    public @NotNull ListenerConfigurationServiceImpl getListenerConfigurationService() {
         return listenerConfigurationService;
     }
 
-    public void setListenerConfigurationService(final ListenerConfigurationServiceImpl listenerConfigurationService) {
+    public void setListenerConfigurationService(final @NotNull ListenerConfigurationServiceImpl listenerConfigurationService) {
         this.listenerConfigurationService = listenerConfigurationService;
     }
 
-    public MqttConfigurationServiceImpl getMqttConfigurationService() {
+    public @NotNull MqttConfigurationServiceImpl getMqttConfigurationService() {
         return mqttConfigurationService;
     }
 
-    public void setMqttConfigurationService(final MqttConfigurationServiceImpl mqttConfigurationService) {
+    public void setMqttConfigurationService(final @NotNull MqttConfigurationServiceImpl mqttConfigurationService) {
         this.mqttConfigurationService = mqttConfigurationService;
     }
 
-    public RestrictionsConfigurationServiceImpl getRestrictionsConfigurationService() {
+    public @NotNull RestrictionsConfigurationServiceImpl getRestrictionsConfigurationService() {
         return restrictionsConfigurationService;
     }
 
-    public void setRestrictionsConfigurationService(final RestrictionsConfigurationServiceImpl restrictionsConfigurationService) {
+    public void setRestrictionsConfigurationService(final @NotNull RestrictionsConfigurationServiceImpl restrictionsConfigurationService) {
         this.restrictionsConfigurationService = restrictionsConfigurationService;
     }
 
-    public void setConfigurationService(final ConfigurationServiceImpl configurationService) {
+    public void setConfigurationService(final @NotNull ConfigurationServiceImpl configurationService) {
         this.configurationService = configurationService;
     }
 
-    public PersistenceConfigurationService getPersistenceConfigurationService() {
+    public @NotNull PersistenceConfigurationService getPersistenceConfigurationService() {
         return persistenceConfigurationService;
     }
 
-    public MqttsnConfigurationServiceImpl getMqttsnConfigurationService() {
+    public @NotNull MqttsnConfigurationServiceImpl getMqttsnConfigurationService() {
         return mqttsnConfigurationService;
     }
 
-    public void setMqttsnConfigurationService(final MqttsnConfigurationServiceImpl mqttsnConfigurationService) {
+    public void setMqttsnConfigurationService(final @NotNull MqttsnConfigurationServiceImpl mqttsnConfigurationService) {
         this.mqttsnConfigurationService = mqttsnConfigurationService;
     }
 
-    public BridgeConfigurationService getBridgeConfigurationService() {
+    public @NotNull BridgeConfigurationService getBridgeConfigurationService() {
         return bridgeConfigurationService;
     }
 
-    public ApiConfigurationService getApiConfigurationService() {
+    public @NotNull ApiConfigurationService getApiConfigurationService() {
         return apiConfigurationService;
     }
 
-    public DynamicConfigurationService getGatewayConfigurationService() {
+    public @NotNull DynamicConfigurationService getGatewayConfigurationService() {
         return dynamicConfigurationService;
     }
 
-    public UsageTrackingConfigurationService getUsageTrackingConfigurationService() {
+    public @NotNull UsageTrackingConfigurationService getUsageTrackingConfigurationService() {
         return usageTrackingConfigurationService;
     }
 }

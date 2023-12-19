@@ -61,6 +61,7 @@
             <xs:element name="uns" type="unsEntity" minOccurs="0"/>
             <xs:element name="dynamic-configuration" type="dynamicConfigEntity" minOccurs="0"/>
             <xs:element name="usage-tracking" type="usageTrackingEntity" minOccurs="0"/>
+            <xs:element name="internal" type="internalConfigEntity" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
 
@@ -1047,6 +1048,20 @@
             <xs:element name="allow-configuration-export" type="xs:boolean" minOccurs="0"/>
             <xs:element name="allow-mutable-configuration" type="xs:boolean" minOccurs="0"/>
         </xs:all>
+    </xs:complexType>
+
+    <!-- Internal -->
+    <xs:complexType name="internalConfigEntity">
+        <xs:sequence>
+            <xs:element name="option" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="key" type="nonEmptyString"/>
+                        <xs:element name="value" type="xs:string"/>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
     </xs:complexType>
 
 

@@ -20,7 +20,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.annotations.ExecuteInSingleWriter;
-import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.extensions.iteration.BucketChunkResult;
@@ -34,11 +34,16 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
 import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
 
 /**
@@ -53,16 +58,17 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
     final @NotNull AtomicLong currentMemorySize = new AtomicLong();
 
     @VisibleForTesting
-    @NotNull
-    final PublishTopicTree[] topicTrees;
+    final PublishTopicTree @NotNull [] topicTrees;
 
-    final private @NotNull Map<String, RetainedMessage>[] buckets;
+    final private Map<String, RetainedMessage> @NotNull [] buckets;
 
     private final int bucketCount;
 
     @Inject
-    public RetainedMessageMemoryLocalPersistence(@NotNull final MetricRegistry metricRegistry) {
-        bucketCount = InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get();
+    public RetainedMessageMemoryLocalPersistence(
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull InternalConfigurationService internalConfigurationService) {
+        bucketCount = internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
 
         //noinspection unchecked
         buckets = new HashMap[bucketCount];
@@ -74,8 +80,7 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
             topicTrees[i] = new PublishTopicTree();
         }
 
-        metricRegistry.register(
-                HiveMQMetrics.RETAINED_MESSAGES_MEMORY_PERSISTENCE_TOTAL_SIZE.name(),
+        metricRegistry.register(HiveMQMetrics.RETAINED_MESSAGES_MEMORY_PERSISTENCE_TOTAL_SIZE.name(),
                 (Gauge<Long>) currentMemorySize::get);
     }
 
@@ -190,32 +195,34 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
 
     // in contrast to the file persistence method we already have everything in memory. The sizing and pagination are ignored.
     @Override
-    public @NotNull BucketChunkResult<Map<String, @NotNull RetainedMessage>> getAllRetainedMessagesChunk(final int bucketIndex,
-                                                                                                         final @Nullable String ignored,
-                                                                                                         final int alsoIgnored) {
+    public @NotNull BucketChunkResult<Map<String, @NotNull RetainedMessage>> getAllRetainedMessagesChunk(
+            final int bucketIndex, final @Nullable String ignored, final int alsoIgnored) {
 
-        final ImmutableMap<String, RetainedMessage> collectedRetainedMessages = buckets[bucketIndex].entrySet()
-                .stream()
-                .map(entry -> {
-                    final String topic = entry.getKey();
-                    final RetainedMessage retainedMessage = entry.getValue();
+        final ImmutableMap<String, RetainedMessage> collectedRetainedMessages =
+                buckets[bucketIndex].entrySet()
+                        .stream()
+                        .map(entry -> {
+                            final String topic = entry.getKey();
+                            final RetainedMessage retainedMessage = entry.getValue();
 
-                    // ignore messages with exceeded message expiry interval
-                    if (retainedMessage.hasExpired()) {
-                        return null;
-                    }
+                            // ignore messages with exceeded message expiry interval
+                            if (retainedMessage.hasExpired()) {
+                                return null;
+                            }
 
-                    final Long payloadId = retainedMessage.getPublishId();
-                    if (payloadId == null) {
-                        log.warn("Could not dereference payload for retained message on topic \"{}\" as payload was null.", topic);
-                        return null;
-                    }
+                            final Long payloadId = retainedMessage.getPublishId();
+                            if (payloadId == null) {
+                                log.warn(
+                                        "Could not dereference payload for retained message on topic \"{}\" as payload was null.",
+                                        topic);
+                                return null;
+                            }
 
-                    return new AbstractMap.SimpleEntry<>(topic, retainedMessage);
+                            return new AbstractMap.SimpleEntry<>(topic, retainedMessage);
 
-                })
-                .filter(entry -> !Objects.isNull(entry))
-                .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
+                        })
+                        .filter(entry -> !Objects.isNull(entry))
+                        .collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return new BucketChunkResult<>(collectedRetainedMessages, true, null, bucketIndex);
     }
@@ -225,8 +232,6 @@ public class RetainedMessageMemoryLocalPersistence implements RetainedMessageLoc
         throw new UnsupportedOperationException(
                 "Iterate is only used for migrations which are not needed for memory persistences");
     }
-
-
 
 
     @Override

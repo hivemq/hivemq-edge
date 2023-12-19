@@ -82,6 +82,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator;
     private final @NotNull UsageTrackingConfigurator usageTrackingConfigurator;
     private final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator;
+    private final InternalConfigurator internalConfigurator;
     protected HiveMQConfigEntity configEntity;
     private final Object lock = new Object();
     private boolean defaultBackupConfig = true;
@@ -99,7 +100,8 @@ public class ConfigFileReaderWriter {
             final @NotNull UnsConfigurator unsConfigurator,
             final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator,
             final @NotNull UsageTrackingConfigurator usageTrackingConfigurator,
-            final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator) {
+            final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator,
+            final @NotNull InternalConfigurator internalConfigurator) {
 
         this.configurationFile = configurationFile;
         this.listenerConfigurator = listenerConfigurator;
@@ -114,6 +116,7 @@ public class ConfigFileReaderWriter {
         this.dynamicConfigConfigurator = dynamicConfigConfigurator;
         this.usageTrackingConfigurator = usageTrackingConfigurator;
         this.protocolAdapterConfigurator = protocolAdapterConfigurator;
+        this.internalConfigurator = internalConfigurator;
     }
 
     public @NotNull HiveMQConfigEntity applyConfig() {
