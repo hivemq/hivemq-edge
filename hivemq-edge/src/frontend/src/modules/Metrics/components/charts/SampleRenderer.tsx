@@ -41,6 +41,7 @@ const SampleRenderer: FC<SampleRendererProps> = ({
   const { device, suffix, id } = metricInfo
   const formatNumber = Intl.NumberFormat(navigator.language)
   const { colors } = useTheme()
+  const { role, ...rest } = props
 
   const diff = (current: number, previous: number) => current - previous
 
@@ -56,10 +57,10 @@ const SampleRenderer: FC<SampleRendererProps> = ({
   const colorElement = colors[colorScheme][500]
 
   return (
-    <HStack alignItems={'flex-start'} gap={0}>
+    <HStack alignItems={'flex-start'} gap={0} role={role} aria-labelledby={'sample-title'}>
       <Stat
         variant="hivemq"
-        {...props}
+        {...rest}
         overflowX={'hidden'}
         h={'100%'}
         sx={{
@@ -69,7 +70,7 @@ const SampleRenderer: FC<SampleRendererProps> = ({
           },
         }}
       >
-        <StatLabel isTruncated h={'100%'}>
+        <StatLabel isTruncated h={'100%'} id={'sample-title'}>
           <Tooltip label={t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')} placement={'top'}>
             <Text textOverflow={'ellipsis'}>{t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')}</Text>
           </Tooltip>

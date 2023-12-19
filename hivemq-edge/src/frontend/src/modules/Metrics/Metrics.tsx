@@ -110,31 +110,32 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
             const { id } = extractMetricInfo(e.metrics)
             const colorSchemeIndex = adapterIDs.indexOf(id as string)
 
-            if (!e.chart || e.chart === ChartType.SAMPLE)
-              return (
-                <Sample
-                  key={e.metrics}
-                  metricName={e.metrics}
-                  chartTheme={{ colourScheme: chartTheme[colorSchemeIndex] }}
-                  onClose={() => handleRemoveMetrics(e.metrics)}
-                  canEdit={isOpen}
-                />
-              )
-            else
-              return (
-                <ChartContainer
-                  key={e.metrics}
-                  chartType={e.chart}
-                  metricName={e.metrics}
-                  chartTheme={{ colourScheme: chartTheme[colorSchemeIndex] }}
-                  onClose={() => handleRemoveMetrics(e.metrics)}
-                  canEdit={isOpen}
-                />
-              )
-          })}
-        </SimpleGrid>
-      </CardBody>
-    </Card>
+          if (!e.chart || e.chart === ChartType.SAMPLE)
+            return (
+              <Sample
+                key={e.metrics}
+                metricName={e.metrics}
+                chartTheme={{ colourScheme: chartTheme[colorSchemeIndex] }}
+                onClose={() => handleRemoveMetrics(e.metrics)}
+                canEdit={isOpen}
+                role={'listitem'}
+              />
+            )
+          else
+            return (
+              <ChartContainer
+                key={e.metrics}
+                chartType={e.chart}
+                metricName={e.metrics}
+                chartTheme={{ colourScheme: chartTheme[colorSchemeIndex] }}
+                onClose={() => handleRemoveMetrics(e.metrics)}
+                canEdit={isOpen}
+                role={'listitem'}
+              />
+            )
+        })}
+      </SimpleGrid>
+    </>
   )
 }
 
