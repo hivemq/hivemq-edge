@@ -723,6 +723,7 @@
       }
     },
     "charts": {
+      "list": "List of metrics",
       "LineChart": {
         "ariaLabel": {
           "legend": "timestamp (seconds ago)"
