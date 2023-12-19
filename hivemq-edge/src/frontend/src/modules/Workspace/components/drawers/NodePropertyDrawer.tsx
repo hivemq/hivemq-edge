@@ -40,6 +40,7 @@ interface NodePropertyDrawerProps {
   onClose: () => void
   onEditEntity: () => void
 }
+
 const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selectedNode, onClose, onEditEntity }) => {
   const { t } = useTranslation()
 
@@ -88,13 +89,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
         </DrawerBody>
         <DrawerFooter borderTopWidth="1px">
           <Flex flexGrow={1} justifyContent={'flex-start'} gap={5}>
-            <Button
-              data-testid={'protocol-create-adapter'}
-              variant={'outline'}
-              size={'sm'}
-              rightIcon={<EditIcon />}
-              onClick={onEditEntity}
-            >
+            <Button data-testid={'protocol-create-adapter'} size={'sm'} rightIcon={<EditIcon />} onClick={onEditEntity}>
               {t('workspace.property.modify', { context: selectedNode.type })}
             </Button>
             <ConnectionController
