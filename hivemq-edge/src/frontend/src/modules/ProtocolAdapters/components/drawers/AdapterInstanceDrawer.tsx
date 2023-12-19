@@ -28,6 +28,8 @@ import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { FieldTemplate } from '../templates/FieldTemplate.tsx'
 import { ObjectFieldTemplate } from '../templates/ObjectFieldTemplate.tsx'
 import { BaseInputTemplate } from '../templates/BaseInputTemplate.tsx'
+import { ArrayFieldTemplate } from '../templates/ArrayFieldTemplate.tsx'
+import { ArrayFieldItemTemplate } from '../templates/ArrayFieldItemTemplate.tsx'
 import useGetUiSchema from '../../hooks/useGetUISchema.ts'
 import { customFormatsValidator, customValidate } from '../../utils/validation-utils.ts'
 
@@ -104,7 +106,13 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                     id="adapter-instance-form"
                     schema={schema}
                     uiSchema={uiSchema}
-                    templates={{ ObjectFieldTemplate, FieldTemplate, BaseInputTemplate }}
+                    templates={{
+                      ObjectFieldTemplate,
+                      FieldTemplate,
+                      BaseInputTemplate,
+                      ArrayFieldTemplate,
+                      ArrayFieldItemTemplate,
+                    }}
                     liveValidate
                     onSubmit={onValidate}
                     validator={customFormatsValidator}
