@@ -106,6 +106,7 @@ const NodePanelController: FC = () => {
       )}
       {selectedGroup && (
         <GroupPropertyDrawer
+          showConfig
           nodeId={nodeId}
           nodes={nodes}
           selectedNode={selectedGroup}
