@@ -55,7 +55,6 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, i
               {!!e.installed && (
                 <Button
                   data-testid={'protocol-create-adapter'}
-                  variant={'outline'}
                   size={'sm'}
                   rightIcon={<ArrowForwardIcon />}
                   onClick={() => onCreate?.(e.id)}

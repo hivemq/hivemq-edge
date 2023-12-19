@@ -20,7 +20,6 @@ import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 
 import { ApiError, Bridge } from '@/api/__generated__'
-import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 
 import ConnectionPanel from '../panels/ConnectionPanel.tsx'
 import NamePanel from '../panels/NamePanel.tsx'
@@ -125,7 +124,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
 
           <DrawerFooter borderTopWidth="1px">
             {!isNewBridge && (
-              <Button colorScheme="red" type="button" variant="outline" form="bridge-form" onClick={onDelete}>
+              <Button type="button" variant="danger" form="bridge-form" onClick={onDelete}>
                 {t('bridge.action.delete')}
               </Button>
             )}
