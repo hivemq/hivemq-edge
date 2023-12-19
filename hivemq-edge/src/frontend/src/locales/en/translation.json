@@ -136,6 +136,7 @@
   "bridge": {
     "title": "MQTT bridges",
     "description": "An MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
+    "list": "List of bridges",
     "action": {
       "add": "Add bridge connection",
       "edit": "Edit",

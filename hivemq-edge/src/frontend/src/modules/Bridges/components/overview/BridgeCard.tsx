@@ -44,10 +44,10 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, ...props }) =>
   )
 
   return (
-    <Card overflow="hidden">
+    <Card overflow="hidden" role={'listitem'} aria-labelledby={'bridge-name'}>
       <CardHeader>
         <Skeleton isLoaded={!isLoading} display={'flex'}>
-          <Heading size="md" flex={1} m={'auto'} data-testid={'bridge-name'}>
+          <Heading size="md" flex={1} m={'auto'} data-testid={'bridge-name'} id={'bridge-name'}>
             {props.id}
           </Heading>
           <Box>
