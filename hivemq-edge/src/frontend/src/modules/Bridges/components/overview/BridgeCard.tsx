@@ -30,9 +30,10 @@ import ConnectionSummary from './ConnectionSummary.tsx'
 interface BridgeCardProps extends Bridge {
   isLoading?: boolean
   onNavigate?: (route: string) => void
+  role?: string
 }
 
-const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, ...props }) => {
+const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, role, ...props }) => {
   const { t } = useTranslation()
 
   // const { isFetching } = useGetBridgeConnectionStatus(props.id)
@@ -44,7 +45,7 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, ...props }) =>
   )
 
   return (
-    <Card overflow="hidden" role={'listitem'} aria-labelledby={'bridge-name'}>
+    <Card overflow="hidden" aria-labelledby={'bridge-name'} role={role}>
       <CardHeader>
         <Skeleton isLoaded={!isLoading} display={'flex'}>
           <Heading size="md" flex={1} m={'auto'} data-testid={'bridge-name'} id={'bridge-name'}>

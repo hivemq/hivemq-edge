@@ -63,7 +63,7 @@ const Bridges: FC = () => {
       aria-label={t('bridge.list') as string}
     >
       {data?.map((bridge, i) => (
-        <BridgeCard key={`${bridge.id}-${i}`} {...bridge} onNavigate={handleNavigate} />
+        <BridgeCard key={`${bridge.id}-${i}`} {...bridge} onNavigate={handleNavigate} role={'listitem'} />
       ))}
     </SimpleGrid>
   )

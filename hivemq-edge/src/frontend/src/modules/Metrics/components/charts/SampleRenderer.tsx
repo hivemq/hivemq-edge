@@ -57,7 +57,7 @@ const SampleRenderer: FC<SampleRendererProps> = ({
   const colorElement = colors[colorScheme][500]
 
   return (
-    <HStack alignItems={'flex-start'} gap={0} role={role} aria-labelledby={'sample-title'}>
+    <HStack alignItems={'flex-start'} gap={0} role={role} aria-labelledby={`sample-title-${id}-${suffix}`}>
       <Stat
         variant="hivemq"
         {...rest}
@@ -70,7 +70,7 @@ const SampleRenderer: FC<SampleRendererProps> = ({
           },
         }}
       >
-        <StatLabel isTruncated h={'100%'} id={'sample-title'}>
+        <StatLabel isTruncated h={'100%'} id={`sample-title-${id}-${suffix}`}>
           <Tooltip label={t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')} placement={'top'}>
             <Text textOverflow={'ellipsis'}>{t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')}</Text>
           </Tooltip>
