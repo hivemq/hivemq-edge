@@ -33,7 +33,7 @@ describe('LineChart', () => {
     )
 
     cy.get("[role='application']").should('have.attr', 'aria-label', mockAriaLabel)
-    cy.get('text').should('contain.text', 'timestamp (s)')
+    cy.get('text').should('contain.text', 'timestamp (seconds ago)')
 
     cy.checkAccessibility()
     cy.percySnapshot('Component: LineChart')

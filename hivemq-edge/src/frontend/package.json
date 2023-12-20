@@ -9,7 +9,7 @@
     "lint:eslint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:prettier": "prettier --check .",
     "lint:prettier:write": "prettier --write .",
-    "lint:stylelint": "stylelint '{src}/**/*.{css}'",
+    "lint:stylelint": "stylelint './src/**/*.css'",
     "lint:all": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0 && prettier --check .",
     "dev:openAPI": "openapi --input '../../../../hivemq-edge/ext/hivemq-edge-openapi-2023.8.yaml' -o ./src/api/__generated__ -c axios --name HiveMqClient --exportSchemas true",
     "cypress:open": "cypress open",
@@ -63,7 +63,8 @@
     "react-i18next": "^12.3.0",
     "react-icons": "^4.10.1",
     "react-router-dom": "^6.11.2",
-    "reactflow": "^11.8.2"
+    "reactflow": "^11.8.2",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@percy/cli": "^1.24.2",

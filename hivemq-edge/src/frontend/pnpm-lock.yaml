@@ -118,6 +118,9 @@ dependencies:
   reactflow:
     specifier: ^11.8.2
     version: 11.8.2(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+  zustand:
+    specifier: ^4.4.7
+    version: 4.4.7(@types/react@18.0.28)(react@18.2.0)
 
 devDependencies:
   '@percy/cli':
@@ -2629,7 +2632,7 @@ packages:
       classcat: 5.0.4
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      zustand: 4.4.1(@types/react@18.0.28)(react@18.2.0)
+      zustand: 4.4.7(@types/react@18.0.28)(react@18.2.0)
     transitivePeerDependencies:
       - '@types/react'
       - immer
@@ -2645,7 +2648,7 @@ packages:
       classcat: 5.0.4
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      zustand: 4.4.1(@types/react@18.0.28)(react@18.2.0)
+      zustand: 4.4.7(@types/react@18.0.28)(react@18.2.0)
     transitivePeerDependencies:
       - '@types/react'
       - immer
@@ -2667,7 +2670,7 @@ packages:
       d3-zoom: 3.0.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      zustand: 4.4.1(@types/react@18.0.28)(react@18.2.0)
+      zustand: 4.4.7(@types/react@18.0.28)(react@18.2.0)
     transitivePeerDependencies:
       - '@types/react'
       - immer
@@ -2687,7 +2690,7 @@ packages:
       d3-zoom: 3.0.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      zustand: 4.4.1(@types/react@18.0.28)(react@18.2.0)
+      zustand: 4.4.7(@types/react@18.0.28)(react@18.2.0)
     transitivePeerDependencies:
       - '@types/react'
       - immer
@@ -2705,7 +2708,7 @@ packages:
       d3-selection: 3.0.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      zustand: 4.4.1(@types/react@18.0.28)(react@18.2.0)
+      zustand: 4.4.7(@types/react@18.0.28)(react@18.2.0)
     transitivePeerDependencies:
       - '@types/react'
       - immer
@@ -2721,7 +2724,7 @@ packages:
       classcat: 5.0.4
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      zustand: 4.4.1(@types/react@18.0.28)(react@18.2.0)
+      zustand: 4.4.7(@types/react@18.0.28)(react@18.2.0)
     transitivePeerDependencies:
       - '@types/react'
       - immer
@@ -8483,8 +8486,8 @@ packages:
     engines: {node: '>=12.20'}
     dev: true
 
-  /zustand@4.4.1(@types/react@18.0.28)(react@18.2.0):
-    resolution: {integrity: sha512-QCPfstAS4EBiTQzlaGP1gmorkh/UL1Leaj2tdj+zZCZ/9bm0WS7sI2wnfD5lpOszFqWJ1DcPnGoY8RDL61uokw==}
+  /zustand@4.4.7(@types/react@18.0.28)(react@18.2.0):
+    resolution: {integrity: sha512-QFJWJMdlETcI69paJwhSMJz7PPWjVP8Sjhclxmxmxv/RYI7ZOvR5BHX+ktH0we9gTWQMxcne8q1OY8xxz604gw==}
     engines: {node: '>=12.7.0'}
     peerDependencies:
       '@types/react': '>=16.8'

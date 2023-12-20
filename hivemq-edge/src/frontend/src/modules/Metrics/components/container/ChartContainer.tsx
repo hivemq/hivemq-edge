@@ -7,13 +7,14 @@ import { DataPoint } from '@/api/__generated__'
 import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
 import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton.tsx'
 
-import { ChartType } from '../../types.ts'
+import { ChartTheme, ChartType } from '../../types.ts'
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 import LineChart from '../charts/LineChart.tsx'
 import BarChart from '../charts/BarChart.tsx'
 
 interface ChartContainerProps extends StackProps {
   chartType: ChartType
+  chartTheme?: ChartTheme
   metricName?: string
   onClose?: () => void
   canEdit?: boolean
@@ -21,7 +22,14 @@ interface ChartContainerProps extends StackProps {
 
 const MAX_SERIES = 10
 
-const ChartContainer: FC<ChartContainerProps> = ({ chartType, metricName, onClose, canEdit = true, ...props }) => {
+const ChartContainer: FC<ChartContainerProps> = ({
+  chartType,
+  chartTheme,
+  metricName,
+  onClose,
+  canEdit = true,
+  ...props
+}) => {
   const { t } = useTranslation()
   const { data } = useGetSample(metricName)
   const [series, setSeries] = useState<DataPoint[]>([])
@@ -56,6 +64,7 @@ const ChartContainer: FC<ChartContainerProps> = ({ chartType, metricName, onClos
             data={series}
             metricName={metricName}
             aria-label={t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')}
+            chartTheme={chartTheme}
           />
         </CardBody>
       </Card>
