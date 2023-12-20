@@ -1,5 +1,5 @@
 import { FC, useEffect, useMemo } from 'react'
-import { Select } from 'chakra-react-select'
+import { Select, OptionsOrGroups, GroupBase } from 'chakra-react-select'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { Button, FormControl, FormLabel, VStack } from '@chakra-ui/react'
@@ -14,7 +14,7 @@ interface MetricEditorProps {
   onSubmit: SubmitHandler<MetricDefinition>
   selectedMetrics: string[]
   selectedChart?: ChartType
-  filter: string
+  filter: string[]
 }
 
 const chartTypeOptions: ChartTypeOption[] = [
@@ -35,20 +35,32 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
     // defaultValues: { selectedChart: { value: selectedChart || ChartType.SAMPLE, label: 'ddd' } },
   })
 
-  const sortedItems: MetricNameOption[] = useMemo(() => {
+  const sortedItems: OptionsOrGroups<MetricNameOption, GroupBase<MetricNameOption>> = useMemo(() => {
     if (!data || !data.items) return []
+    const { items } = data
 
-    return data.items
-      .filter((e) => e.name && e.name.includes(filter))
-      .map((e) => {
-        const { device, suffix } = extractMetricInfo(e.name as string)
+    const groupedMetrics = filter
+      .map((adapter) => {
+        const metrics: MetricNameOption[] = items
+          .filter((e) => e.name && e.name.includes(adapter))
+          .map((e) => {
+            const { device, suffix } = extractMetricInfo(e.name as string)
+            return {
+              label: t(`metrics.${device}.${suffix}`),
+              value: e.name as string,
+              isDisabled: selectedMetrics?.includes(e.name as string),
+            }
+          })
+          .sort((a, b) => a.label.localeCompare(b.label))
+
         return {
-          label: t(`metrics.${device}.${suffix}`),
-          value: e.name as string,
-          isDisabled: selectedMetrics?.includes(e.name as string),
+          label: adapter,
+          options: metrics,
         }
       })
       .sort((a, b) => a.label.localeCompare(b.label))
+
+    return groupedMetrics.length === 1 ? groupedMetrics[0].options : groupedMetrics
   }, [data, filter, selectedMetrics, t])
 
   useEffect(() => {
@@ -79,6 +91,9 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
                 <Select
                   {...rest}
                   menuPortalTarget={document.body}
+                  chakraStyles={{
+                    option: (provided) => ({ ...provided, paddingLeft: '24px' }),
+                  }}
                   styles={{
                     menuPortal: (provided) => ({ ...provided, zIndex: 1401 }),
                   }}

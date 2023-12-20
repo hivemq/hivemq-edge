@@ -15,6 +15,8 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import BridgeMainDrawer from '@/modules/Bridges/components/panels/BridgeMainDrawer.tsx'
 import { bridgeInitialState, useBridgeSetup } from '@/modules/Bridges/hooks/useBridgeConfig.tsx'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 
 interface BridgeEditorProps {
   isNew?: boolean
@@ -34,6 +36,7 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
   const updateBridge = useUpdateBridge()
   const deleteBridge = useDeleteBridge()
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
+  const { onDeleteNode } = useWorkspaceStore()
 
   useEffect(() => {
     if (!data) return
@@ -121,6 +124,8 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
   const handleConfirmOnSubmit = () => {
     if (bridgeId)
       deleteBridge.mutateAsync(bridgeId).then(() => {
+        onDeleteNode(NodeTypes.BRIDGE_NODE, bridgeId)
+
         successToast({
           title: t('bridge.toast.delete.title'),
           description: t('bridge.toast.delete.description'),
