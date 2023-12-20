@@ -3,7 +3,6 @@ import { Theme } from '@nivo/core'
 import { BarDatum, ResponsiveBar } from '@nivo/bar'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { Badge, Box, Card, Text, useTheme } from '@chakra-ui/react'
 import { Box, useTheme } from '@chakra-ui/react'
 
 import { ChartProps } from '../../types.ts'

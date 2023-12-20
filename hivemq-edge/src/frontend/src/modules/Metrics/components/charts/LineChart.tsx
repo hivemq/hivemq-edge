@@ -32,9 +32,6 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
   const colorScheme = chartTheme?.colourScheme || 'red'
   const colorElement = colors[colorScheme][500]
 
-  const colorScheme = chartTheme?.colourScheme || 'red'
-  const colorElement = colors[colorScheme][500]
-
   return (
     <Box w={'100%'} {...props} role={'application'} aria-label={ariaLabel}>
       <ResponsiveLine
