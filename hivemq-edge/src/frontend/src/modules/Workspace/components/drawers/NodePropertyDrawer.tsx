@@ -17,7 +17,6 @@ import {
   DrawerOverlay,
   Flex,
   Text,
-  VStack,
 } from '@chakra-ui/react'
 import { EditIcon } from '@chakra-ui/icons'
 import { MdOutlineEventNote } from 'react-icons/md'
@@ -52,44 +51,48 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
         <DrawerHeader>
           <Text> {t('workspace.property.header', { context: selectedNode.type })}</Text>
         </DrawerHeader>
-        <DrawerBody>
-          <VStack gap={4} alignItems={'stretch'}>
-            <NodeNameCard selectedNode={selectedNode} />
-            <Metrics
-              nodeId={nodeId}
-              type={selectedNode.type as NodeTypes}
-              adapterIDs={[selectedNode.data.id]}
-              initMetrics={getDefaultMetricsFor(selectedNode)}
-              defaultChartType={ChartType.SAMPLE}
-            />
-            <Card size={'sm'}>
-              <CardHeader>
-                <Text>
-                  {t('workspace.property.eventLog.header', { type: selectedNode.type, id: selectedNode.data.id })}
-                </Text>
-              </CardHeader>
-              <CardBody>
-                <EventLogTable globalSourceFilter={(selectedNode?.data as Adapter).id} variant={'summary'} />
-              </CardBody>
-              <CardFooter justifyContent={'flex-end'} pt={0}>
-                <Button
-                  data-testid={'navigate-eventLog-filtered'}
-                  variant="link"
-                  as={RouterLink}
-                  // URL options not yet supported
-                  to={`/event-logs?source=${selectedNode.data.id}`}
-                  rightIcon={<MdOutlineEventNote />}
-                  size="sm"
-                >
-                  {t('workspace.property.eventLog.showMore')}
-                </Button>
-              </CardFooter>
-            </Card>
-          </VStack>
+        <DrawerBody display={'flex'} flexDirection={'column'} gap={6}>
+          <NodeNameCard selectedNode={selectedNode} />
+          <Metrics
+            nodeId={nodeId}
+            type={selectedNode.type as NodeTypes}
+            adapterIDs={[selectedNode.data.id]}
+            initMetrics={getDefaultMetricsFor(selectedNode)}
+            defaultChartType={ChartType.SAMPLE}
+          />
+          <Card size={'sm'}>
+            <CardHeader>
+              <Text>
+                {t('workspace.property.eventLog.header', { type: selectedNode.type, id: selectedNode.data.id })}
+              </Text>
+            </CardHeader>
+            <CardBody>
+              <EventLogTable globalSourceFilter={(selectedNode?.data as Adapter).id} variant={'summary'} />
+            </CardBody>
+            <CardFooter justifyContent={'flex-end'} pt={0}>
+              <Button
+                data-testid={'navigate-eventLog-filtered'}
+                variant="link"
+                as={RouterLink}
+                // URL options not yet supported
+                to={`/event-logs?source=${selectedNode.data.id}`}
+                rightIcon={<MdOutlineEventNote />}
+                size="sm"
+              >
+                {t('workspace.property.eventLog.showMore')}
+              </Button>
+            </CardFooter>
+          </Card>
         </DrawerBody>
         <DrawerFooter borderTopWidth="1px">
           <Flex flexGrow={1} justifyContent={'flex-start'} gap={5}>
-            <Button data-testid={'protocol-create-adapter'} size={'sm'} rightIcon={<EditIcon />} onClick={onEditEntity}>
+            <Button
+              data-testid={'protocol-create-adapter'}
+              variant={'outline'}
+              size={'sm'}
+              rightIcon={<EditIcon />}
+              onClick={onEditEntity}
+            >
               {t('workspace.property.modify', { context: selectedNode.type })}
             </Button>
             <ConnectionController
