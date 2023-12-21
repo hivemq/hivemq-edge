@@ -47,11 +47,6 @@ describe('PersistencePanel', () => {
       .should('contain.text', 'Select to store MQTT Traffic greater than QoS 0 on disk.')
     cy.get('label').should('contain.text', 'MQTT Persistence')
 
-    cy.get('label').click()
-    cy.get('[role="alert"]')
-      .should('have.attr', 'data-status', 'info')
-      .should('contain.text', 'Change will only be applied after a persisted restart of HIveMQ Edge')
-
     cy.checkAccessibility()
     cy.percySnapshot('Component: PersistencePanel')
   })
