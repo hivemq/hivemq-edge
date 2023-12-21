@@ -56,7 +56,8 @@ public class InMemorySingleWriter implements SingleWriterService {
     public InMemorySingleWriter(final @NotNull InternalConfigurationService internalConfigurationService) {
 
         persistenceBucketCount =  internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
-        final int threadPoolSize = InternalConfigurations.SINGLE_WRITER_THREAD_POOL_SIZE.get();
+        final int threadPoolSize =internalConfigurationService.getInteger(InternalConfigurations.MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE);
+
         final int amountOfQueues = validAmountOfQueues(threadPoolSize, persistenceBucketCount);
 
         for (int i = 0; i < producers.length; i++) {

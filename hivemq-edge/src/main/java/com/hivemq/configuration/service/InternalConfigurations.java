@@ -38,8 +38,9 @@ public class InternalConfigurations {
     @VisibleForTesting
     static @NotNull Map<String, String> initializeDefaultValues() {
         final Map<String, String> defaultValuesMap = new HashMap<>();
-        // TODO migrate Internal Options
         defaultValuesMap.put(PERSISTENCE_BUCKET_COUNT, "1");
+        defaultValuesMap.put(FILE_SINGLE_WRITER_THREAD_POOL_SIZE, String.valueOf(AVAILABLE_PROCESSORS_TIMES_TWO));
+        defaultValuesMap.put(MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE, String.valueOf(AVAILABLE_PROCESSORS));
         return defaultValuesMap;
     }
 
@@ -71,8 +72,9 @@ public class InternalConfigurations {
 
 
     public static final String PERSISTENCE_BUCKET_COUNT = "persistence.bucket.count";
+    public static final String FILE_SINGLE_WRITER_THREAD_POOL_SIZE = "file_single_writer.thread_pool_size";
+    public static final String MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE = "memory_single_writer.thread_pool_size";
 
-    public static final @NotNull AtomicInteger SINGLE_WRITER_THREAD_POOL_SIZE = new AtomicInteger(AVAILABLE_PROCESSORS);
     public static final @NotNull AtomicInteger SINGLE_WRITER_CREDITS_PER_EXECUTION = new AtomicInteger(65);
     public static final @NotNull AtomicInteger SINGLE_WRITER_INTERVAL_TO_CHECK_PENDING_TASKS_AND_SCHEDULE_MSEC = new AtomicInteger(500);
 

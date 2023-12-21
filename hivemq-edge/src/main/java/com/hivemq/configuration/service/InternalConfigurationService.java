@@ -1,10 +1,13 @@
 package com.hivemq.configuration.service;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+import java.util.Map;
 
 public interface InternalConfigurationService {
 
-    @NotNull String get(@NotNull String key);
+    @Nullable String get(@NotNull String key);
 
     void set(@NotNull String key, @NotNull String value);
 
@@ -17,5 +20,7 @@ public interface InternalConfigurationService {
     long getLong(@NotNull String key);
 
     boolean isConfigSetByUser(@NotNull String key);
+
+    Map<String,String> getConfigsSetByUser();
 
 }

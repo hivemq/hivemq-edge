@@ -81,7 +81,8 @@ public class InFileSingleWriter implements SingleWriterService {
 
         persistenceBucketCount = internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
 
-        threadPoolSize = InternalConfigurations.SINGLE_WRITER_THREAD_POOL_SIZE.get();
+        threadPoolSize =internalConfigurationService.getInteger(InternalConfigurations.FILE_SINGLE_WRITER_THREAD_POOL_SIZE);
+        log.info("Allocating {} threads for file single writer.", threadPoolSize);
         creditsPerExecution = InternalConfigurations.SINGLE_WRITER_CREDITS_PER_EXECUTION.get();
         shutdownGracePeriod = InternalConfigurations.PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC.get();
 

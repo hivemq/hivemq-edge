@@ -28,7 +28,7 @@ public class TestSingleWriterFactory {
 
     public static SingleWriterService defaultSingleWriter(final @NotNull InternalConfigurationService internalConfigurationService) {
         internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "4");
-        InternalConfigurations.SINGLE_WRITER_THREAD_POOL_SIZE.set(1);
+        internalConfigurationService.set(InternalConfigurations.MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE, "1");
         InternalConfigurations.SINGLE_WRITER_CREDITS_PER_EXECUTION.set(100);
         InternalConfigurations.PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC.set(1000);
         InternalConfigurations.SINGLE_WRITER_INTERVAL_TO_CHECK_PENDING_TASKS_AND_SCHEDULE_MSEC.set(100);

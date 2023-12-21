@@ -96,6 +96,11 @@ public class InternalConfigurationServiceImpl implements InternalConfigurationSe
         return values.containsKey(key);
     }
 
+    @Override
+    public @NotNull Map<String, String> getConfigsSetByUser() {
+        return values;
+    }
+
     /**
      * Resets the Internal Configuration to its default values,
      * this is needed for Tests and Integration Tests to prevent pollution between tests
@@ -104,5 +109,4 @@ public class InternalConfigurationServiceImpl implements InternalConfigurationSe
     public void resetToDefaults() {
         values.clear();
     }
-
 }

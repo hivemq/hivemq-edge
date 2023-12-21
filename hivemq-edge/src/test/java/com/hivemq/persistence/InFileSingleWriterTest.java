@@ -42,14 +42,14 @@ import static org.junit.Assert.assertTrue;
  */
 public class InFileSingleWriterTest {
 
-    InFileSingleWriter singleWriterServiceImpl;
+    private final @NotNull InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
+    private @NotNull InFileSingleWriter singleWriterServiceImpl;
 
     @Before
     public void setUp() throws Exception {
-        InternalConfigurations.SINGLE_WRITER_THREAD_POOL_SIZE.set(4);
+        internalConfigurationService.set(InternalConfigurations.MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE, "4");
         InternalConfigurations.SINGLE_WRITER_CREDITS_PER_EXECUTION.set(200);
         InternalConfigurations.PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC.set(200);
-        InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
         internalConfigurationService.set(PERSISTENCE_BUCKET_COUNT, "64");
         singleWriterServiceImpl = new InFileSingleWriter(internalConfigurationService);
     }

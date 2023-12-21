@@ -82,8 +82,8 @@ public class ConfigFileReaderWriter {
     private final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator;
     private final @NotNull UsageTrackingConfigurator usageTrackingConfigurator;
     private final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator;
-    private final InternalConfigurator internalConfigurator;
-    protected HiveMQConfigEntity configEntity;
+    private final @NotNull InternalConfigurator internalConfigurator;
+    protected @NotNull HiveMQConfigEntity configEntity;
     private final Object lock = new Object();
     private boolean defaultBackupConfig = true;
 
@@ -335,6 +335,7 @@ public class ConfigFileReaderWriter {
         unsConfigurator.setUnsConfig(config.getUns());
         dynamicConfigConfigurator.setConfig(config.getGatewayConfig());
         usageTrackingConfigurator.setConfig(config.getUsageTracking());
+        internalConfigurator.setConfig(config.getInternal());
     }
 
     public void syncConfiguration() {
