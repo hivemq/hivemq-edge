@@ -7,7 +7,6 @@ import {
   FormControl,
   FormLabel,
   HStack,
-  IconButton,
   NumberDecrementStepper,
   NumberIncrementStepper,
   NumberInput,
@@ -20,13 +19,16 @@ import { type IconButtonProps } from '@chakra-ui/react'
 import { MdArrowLeft, MdArrowRight } from 'react-icons/md'
 import { BiSkipNext, BiSkipPrevious } from 'react-icons/bi'
 import { useTranslation } from 'react-i18next'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 
 interface PaginationProps<T> {
   table: Table<T>
   pageSizes: number[]
 }
 
-const PaginationButton: FC<IconButtonProps> = (props) => <IconButton {...props} size={'sm'} fontSize={'24px'} />
+const PaginationButton: FC<IconButtonProps> = (props) => (
+  <IconButton {...props} size={'sm'} fontSize={'24px'} icon={<BiSkipNext />} />
+)
 
 const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
   const { t } = useTranslation()
