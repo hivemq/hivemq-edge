@@ -17,6 +17,7 @@ package com.hivemq.persistence;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.local.xodus.bucket.BucketUtils;
@@ -36,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
 import static com.hivemq.configuration.service.InternalConfigurations.SINGLE_WRITER_INTERVAL_TO_CHECK_PENDING_TASKS_AND_SCHEDULE_MSEC;
 
 /**
@@ -75,10 +77,12 @@ public class InFileSingleWriter implements SingleWriterService {
     private final int amountOfQueues;
 
     @Inject
-    public InFileSingleWriter() {
+    public InFileSingleWriter(final @NotNull InternalConfigurationService internalConfigurationService) {
 
-        persistenceBucketCount = InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get();
-        threadPoolSize = InternalConfigurations.SINGLE_WRITER_THREAD_POOL_SIZE.get();
+        persistenceBucketCount = internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
+
+        threadPoolSize =internalConfigurationService.getInteger(InternalConfigurations.FILE_SINGLE_WRITER_THREAD_POOL_SIZE);
+        log.info("Allocating {} threads for file single writer.", threadPoolSize);
         creditsPerExecution = InternalConfigurations.SINGLE_WRITER_CREDITS_PER_EXECUTION.get();
         shutdownGracePeriod = InternalConfigurations.PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC.get();
 

@@ -15,8 +15,11 @@
  */
 package com.hivemq.configuration.service;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,6 +28,21 @@ public class InternalConfigurations {
     private static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
     public static final int AVAILABLE_PROCESSORS_TIMES_TWO = Runtime.getRuntime().availableProcessors() * 2;
     private static final int AVAILABLE_PROCESSORS_TIMES_FOUR = Runtime.getRuntime().availableProcessors() * 4;
+
+    /* *****************
+     *  Default Values *
+     *******************/
+
+    public static final @NotNull Map<String, String> DEFAULT_VALUES = initializeDefaultValues();
+
+    @VisibleForTesting
+    static @NotNull Map<String, String> initializeDefaultValues() {
+        final Map<String, String> defaultValuesMap = new HashMap<>();
+        defaultValuesMap.put(PERSISTENCE_BUCKET_COUNT, "1");
+        defaultValuesMap.put(FILE_SINGLE_WRITER_THREAD_POOL_SIZE, String.valueOf(AVAILABLE_PROCESSORS_TIMES_TWO));
+        defaultValuesMap.put(MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE, String.valueOf(AVAILABLE_PROCESSORS));
+        return defaultValuesMap;
+    }
 
     /* ***************
      *  Persistences *
@@ -52,8 +70,11 @@ public class InternalConfigurations {
      */
     public static final @NotNull AtomicInteger PERSISTENCE_SHUTDOWN_TIMEOUT_SEC = new AtomicInteger(300);
 
-    public static final @NotNull AtomicInteger PERSISTENCE_BUCKET_COUNT = new AtomicInteger(1);
-    public static final @NotNull AtomicInteger SINGLE_WRITER_THREAD_POOL_SIZE = new AtomicInteger(AVAILABLE_PROCESSORS);
+
+    public static final String PERSISTENCE_BUCKET_COUNT = "persistence.bucket.count";
+    public static final String FILE_SINGLE_WRITER_THREAD_POOL_SIZE = "file_single_writer.thread_pool_size";
+    public static final String MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE = "memory_single_writer.thread_pool_size";
+
     public static final @NotNull AtomicInteger SINGLE_WRITER_CREDITS_PER_EXECUTION = new AtomicInteger(65);
     public static final @NotNull AtomicInteger SINGLE_WRITER_INTERVAL_TO_CHECK_PENDING_TASKS_AND_SCHEDULE_MSEC = new AtomicInteger(500);
 

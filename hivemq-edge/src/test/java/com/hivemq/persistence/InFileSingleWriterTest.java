@@ -16,7 +16,9 @@
 package com.hivemq.persistence;
 
 import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
@@ -31,6 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hivemq.configuration.service.InternalConfigurations.PERSISTENCE_BUCKET_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -39,16 +42,16 @@ import static org.junit.Assert.assertTrue;
  */
 public class InFileSingleWriterTest {
 
-    InFileSingleWriter singleWriterServiceImpl;
+    private final @NotNull InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
+    private @NotNull InFileSingleWriter singleWriterServiceImpl;
 
     @Before
     public void setUp() throws Exception {
-        InternalConfigurations.SINGLE_WRITER_THREAD_POOL_SIZE.set(4);
+        internalConfigurationService.set(InternalConfigurations.MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE, "4");
         InternalConfigurations.SINGLE_WRITER_CREDITS_PER_EXECUTION.set(200);
         InternalConfigurations.PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC.set(200);
-        InternalConfigurations.PERSISTENCE_BUCKET_COUNT.set(64);
-
-        singleWriterServiceImpl = new InFileSingleWriter();
+        internalConfigurationService.set(PERSISTENCE_BUCKET_COUNT, "64");
+        singleWriterServiceImpl = new InFileSingleWriter(internalConfigurationService);
     }
 
     @After
@@ -81,7 +84,7 @@ public class InFileSingleWriterTest {
 
         singleWriterServiceImpl.incrementNonemptyQueueCounter();
         assertEquals(5, singleWriterServiceImpl.getNonemptyQueueCounter().get());
-        assertEquals(4, singleWriterServiceImpl.getRunningThreadsCount().get());
+        assertEquals(5, singleWriterServiceImpl.getRunningThreadsCount().get());
     }
 
     @Test

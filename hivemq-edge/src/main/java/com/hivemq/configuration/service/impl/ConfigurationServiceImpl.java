@@ -43,7 +43,7 @@ import java.util.stream.Stream;
  */
 public class ConfigurationServiceImpl implements ConfigurationService {
 
-    private static final Logger log = LoggerFactory.getLogger(ConfigurationServiceImpl.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ConfigurationServiceImpl.class);
 
     private final @NotNull ListenerConfigurationService listenerConfigurationService;
     private final @NotNull MqttConfigurationService mqttConfigurationService;
@@ -57,9 +57,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
     private final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
+    private final @NotNull InternalConfigurationService internalConfigurationService;
     private @Nullable ConfigFileReaderWriter configFileReaderWriter;
-    private ReadWriteLock lock = new ReentrantReadWriteLock();
-    private AtomicLong lastWrite = new AtomicLong(0L);
+    private final @NotNull ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final @NotNull AtomicLong lastWrite = new AtomicLong(0L);
 
 
     public ConfigurationServiceImpl(
@@ -74,7 +75,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             final @NotNull UnsConfigurationService unsConfigurationService,
             final @NotNull DynamicConfigurationService dynamicConfigurationService,
             final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService,
-            final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService) {
+            final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService,
+            final @NotNull InternalConfigurationService internalConfigurationService) {
         this.listenerConfigurationService = listenerConfigurationService;
         this.mqttConfigurationService = mqttConfigurationService;
         this.restrictionsConfigurationService = restrictionsConfigurationService;
@@ -87,6 +89,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.dynamicConfigurationService = dynamicConfigurationService;
         this.usageTrackingConfigurationService = usageTrackingConfigurationService;
         this.protocolAdapterConfigurationService = protocolAdapterConfigurationService;
+        this.internalConfigurationService = internalConfigurationService;
     }
 
     @Override
@@ -139,6 +142,11 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     @Override
+    public @NotNull InternalConfigurationService internalConfigurationService() {
+        return internalConfigurationService;
+    }
+
+    @Override
     public @NotNull BridgeConfigurationService bridgeConfiguration() {
         return proxy(BridgeConfigurationService.class, bridgeConfigurationService);
     }
@@ -153,9 +161,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.configFileReaderWriter = configFileReaderWriter;
     }
 
-    public <T> T proxy(final @NotNull Class<? extends T> type,
-                       final @NotNull Object instance,
-                       final @Nullable Class<?>...ifs) {
+    public <T> @NotNull T proxy(final @NotNull Class<? extends T> type,
+                                final @NotNull Object instance,
+                                final @Nullable Class<?>...ifs) {
 
         if(configFileReaderWriter == null){
             //-- This is the initial loading phase from the XML through the configurators

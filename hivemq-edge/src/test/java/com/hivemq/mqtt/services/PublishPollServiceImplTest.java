@@ -21,7 +21,9 @@ import com.google.common.primitives.ImmutableIntArray;
 import com.google.common.util.concurrent.Futures;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.bootstrap.ClientState;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishFlowHandler;
 import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
@@ -109,6 +111,8 @@ public class PublishPollServiceImplTest {
 
     private @NotNull SingleWriterService singleWriterService;
     private ClientConnection clientConnection;
+    private final @NotNull InternalConfigurationService
+            internalConfigurationService = new InternalConfigurationServiceImpl();
 
     @Before
     public void setUp() throws Exception {
@@ -130,7 +134,7 @@ public class PublishPollServiceImplTest {
         InternalConfigurations.PUBLISH_POLL_BATCH_SIZE = 50;
         InternalConfigurations.MAX_INFLIGHT_WINDOW_SIZE_MESSAGES = 50;
 
-        singleWriterService = TestSingleWriterFactory.defaultSingleWriter();
+        singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
 
         publishPollService = new PublishPollServiceImpl(clientQueuePersistence,
                 connectionPersistence,
