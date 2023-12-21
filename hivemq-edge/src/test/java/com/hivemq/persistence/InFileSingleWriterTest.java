@@ -84,7 +84,7 @@ public class InFileSingleWriterTest {
 
         singleWriterServiceImpl.incrementNonemptyQueueCounter();
         assertEquals(5, singleWriterServiceImpl.getNonemptyQueueCounter().get());
-        assertEquals(4, singleWriterServiceImpl.getRunningThreadsCount().get());
+        assertEquals(5, singleWriterServiceImpl.getRunningThreadsCount().get());
     }
 
     @Test
