@@ -503,6 +503,7 @@
         "publishing": "Publishing",
         "http": "HTTP",
         "ads": "ADS",
+        "eip": "Ethernet IP",
         "s7advanced": "S7 Device",
         "authentication": "Authentication"
       }

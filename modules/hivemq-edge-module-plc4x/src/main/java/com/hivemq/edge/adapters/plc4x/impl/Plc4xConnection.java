@@ -23,9 +23,9 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
 
     private static final Logger log = LoggerFactory.getLogger(Plc4xConnection.class);
     private final Object lock = new Object();
-    private final @NotNull PlcDriverManager plcDriverManager;
-    private final @NotNull T config;
-    private final @NotNull Plc4xConnectionQueryStringProvider connectionQueryStringProvider;
+    protected final @NotNull PlcDriverManager plcDriverManager;
+    protected final @NotNull T config;
+    protected final @NotNull Plc4xConnectionQueryStringProvider connectionQueryStringProvider;
     protected volatile PlcConnection plcConnection;
 
     public Plc4xConnection(final @NotNull PlcDriverManager plcDriverManager,

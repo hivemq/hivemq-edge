@@ -13,42 +13,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.plc4x.types.ab;
+package com.hivemq.edge.adapters.plc4x.types.eip;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.types.ab.ABAdapterConfig;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
+import java.math.BigInteger;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ABAdapterConfig extends Plc4xAdapterConfig {
 
-    @JsonProperty("station")
-    @ModuleConfigField(title = "Station",
-                       description = "IP Address or hostname of the device you wish to connect to",
+public class EIPAdapterConfig extends Plc4xAdapterConfig {
+
+    @JsonProperty("backplane")
+    @ModuleConfigField(title = "Backplane",
+                       description = "Backplane device value",
                        required = true)
-    private @NotNull String station;
+    private @NotNull Integer backplane;
+
+    @JsonProperty("slot")
+    @ModuleConfigField(title = "Slot",
+                       description = "Slot device value",
+                       defaultValue = "0",
+                       required = true)
+    private @NotNull Integer slot;
 
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
                        description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<? extends Subscription> subscriptions = new ArrayList<>();
+    private @NotNull List<? extends EIPAdapterConfig.Subscription> subscriptions = new ArrayList<>();
 
-    public String getStation() {
-        return station;
-    }
-
-    public enum AB_DATA_TYPE {
-
-        WORD((short) 0x03, Short.class),
+    public enum EIP_DATA_TYPE {
+        BOOL((short) 0x01, Boolean.class),
         DWORD((short) 0x04, Integer.class),
-        INTEGER((short) 0x71, Byte.class);
+        SINT((short) 0x21, Byte.class),
+        INT((short) 0x22, Short.class),
+        DINT((short) 0x23, Integer.class),
+        LINT((short) 0x24, Long.class),
+        REAL((short) 0x31, Float.class);
 
-        AB_DATA_TYPE(short code, Class<?> javaType){
+        EIP_DATA_TYPE(short code, Class<?> javaType){
             this.code = code;
             this.javaType = javaType;
         }
@@ -68,19 +81,31 @@ public class ABAdapterConfig extends Plc4xAdapterConfig {
     @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "destination", "qos"})
     @JsonIgnoreProperties({"dataType"})
     public static class Subscription extends Plc4xAdapterConfig.Subscription {
-        @JsonProperty("abDataType")
+        @JsonProperty("eipDataType")
         @ModuleConfigField(title = "Data Type",
                            description = "The expected data type of the tag",
                            enumDisplayValues = {
-                                   "Word (unit 16)",
+                                   "Boolean (unit 16)",
                                    "DWord (uint 32)",
+                                   "SInt (int 16)",
                                    "Integer (int 16)",
+                                   "DInt (int 32)",
+                                   "LInt (int 64)",
+                                   "Real (float 32)",
                            },
                            required = true)
-        private @NotNull ABAdapterConfig.AB_DATA_TYPE abDataType;
+        private @NotNull EIPAdapterConfig.EIP_DATA_TYPE eipDataType;
 
-        public ABAdapterConfig.AB_DATA_TYPE getAbDataType() {
-            return abDataType;
+        public EIPAdapterConfig.EIP_DATA_TYPE getEipDataType() {
+            return eipDataType;
         }
+    }
+
+    public Integer getBackplane() {
+        return backplane;
+    }
+
+    public Integer getSlot() {
+        return slot;
     }
 }
