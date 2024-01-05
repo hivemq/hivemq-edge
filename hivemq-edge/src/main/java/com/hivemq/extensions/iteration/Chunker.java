@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
@@ -39,8 +40,8 @@ public class Chunker {
     private final int bucketCount;
 
     @Inject
-    public Chunker() {
-        bucketCount = InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get();
+    public Chunker(final @NotNull InternalConfigurationService internalConfigurationService) {
+        bucketCount = internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT);
     }
 
     public <T> @NotNull ListenableFuture<MultipleChunkResult<Map<String, @NotNull T>>> getAllLocalChunk(final @NotNull ChunkCursor cursor,

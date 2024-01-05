@@ -17,6 +17,7 @@ package com.hivemq.configuration.reader;
 
 import com.hivemq.configuration.entity.PersistenceEntity;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
+import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
@@ -32,7 +33,7 @@ public class PersistenceConfigurator {
     }
 
     public void setPersistenceConfig(@NotNull final PersistenceEntity persistenceConfig) {
-        persistenceConfigurationService.setMode(PersistenceConfigurationService.PersistenceMode.valueOf(
+        persistenceConfigurationService.setMode(PersistenceMode.valueOf(
                 persistenceConfig.getMode().name()));
 
     }

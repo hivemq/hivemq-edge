@@ -22,8 +22,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.annotations.ExecuteInSingleWriter;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.MqttConfigurationService.QueuedMessagesStrategy;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.metrics.HiveMQMetrics;
@@ -66,6 +68,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
 
     private final @NotNull Map<String, Messages> @NotNull [] buckets;
     private final @NotNull Map<String, Messages> @NotNull [] sharedBuckets;
+    private final @NotNull InternalConfigurationService internalConfigurationService;
 
     private static class Messages {
         final @NotNull LinkedList<MessageWithID> qos1Or2Messages = new LinkedList<>();
@@ -88,9 +91,11 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
     ClientQueueMemoryLocalPersistence(
             final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull MessageDroppedService messageDroppedService,
-            final @NotNull MetricRegistry metricRegistry) {
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull InternalConfigurationService internalConfigurationService) {
+        this.internalConfigurationService = internalConfigurationService;
 
-        final int bucketCount = InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get();
+        final int bucketCount = internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT);
         //noinspection unchecked
         buckets = new HashMap[bucketCount];
         //noinspection unchecked
@@ -297,7 +302,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                 continue;
             }
 
-            if (publishWithRetained.hasExpired()) {
+            if (publishWithRetained.isExpired()) {
                 iterator.remove();
                 payloadPersistence.decrementReferenceCounter(publishWithRetained.getPublishId());
                 if (publishWithRetained.retained) {
@@ -320,7 +325,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
 
             // poll a qos 0 message
             final PUBLISH qos0Publish = pollQos0Message(messages);
-            if ((qos0Publish != null) && !qos0Publish.hasExpired()) {
+            if ((qos0Publish != null) && !qos0Publish.isExpired()) {
                 publishes.add(qos0Publish);
                 messageCount++;
                 bytes += qos0Publish.getEstimatedSizeInMemory();
@@ -343,7 +348,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
             if (qos0Publish == null) {
                 break;
             }
-            if (!qos0Publish.hasExpired()) {
+            if (!qos0Publish.isExpired()) {
                 publishes.add(qos0Publish);
                 qos0MessagesFound++;
                 qos0Bytes += qos0Publish.getEstimatedSizeInMemory();
@@ -533,20 +538,6 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         final Map<String, Messages> bucket = shared ? sharedBuckets[bucketIndex] : buckets[bucketIndex];
         final Messages messages = bucket.get(queueId);
         return (messages == null) ? 0 : (messages.qos1Or2Messages.size() + messages.qos0Messages.size());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    @ExecuteInSingleWriter
-    public int qos0Size(final @NotNull String queueId, final boolean shared, final int bucketIndex) {
-        checkNotNull(queueId, "Queue ID must not be null");
-        ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX); // QueueSizes are not thread save
-
-        final Map<String, Messages> bucket = shared ? sharedBuckets[bucketIndex] : buckets[bucketIndex];
-        final Messages messages = bucket.get(queueId);
-        return (messages == null) ? 0 : messages.qos0Messages.size();
     }
 
     /**
@@ -809,7 +800,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         final Iterator<PublishWithRetained> iterator = messages.qos0Messages.iterator();
         while (iterator.hasNext()) {
             final PublishWithRetained publishWithRetained = iterator.next();
-            if (publishWithRetained.hasExpired()) {
+            if (publishWithRetained.isExpired()) {
                 increaseQos0MessagesMemory(-publishWithRetained.getEstimatedSize());
                 increaseClientQos0MessagesMemory(messages, -publishWithRetained.getEstimatedSize());
                 increaseMessagesMemory(-publishWithRetained.getEstimatedSize());
@@ -842,7 +833,7 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                 final PublishWithRetained publish = (PublishWithRetained) messageWithID;
                 final boolean expireInflight = InternalConfigurations.EXPIRE_INFLIGHT_MESSAGES_ENABLED;
                 final boolean isInflight = publish.getQoS() == QoS.EXACTLY_ONCE && publish.getPacketIdentifier() > 0;
-                final boolean drop = publish.hasExpired() && (!isInflight || expireInflight);
+                final boolean drop = publish.isExpired() && (!isInflight || expireInflight);
                 if (drop) {
                     payloadPersistence.decrementReferenceCounter(publish.getPublishId());
                     if (publish.retained) {

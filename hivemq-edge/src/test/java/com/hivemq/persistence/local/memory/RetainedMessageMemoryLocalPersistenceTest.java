@@ -19,6 +19,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
 import com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.mqtt.message.QoS;
@@ -39,13 +40,18 @@ import static org.junit.Assert.*;
  */
 public class RetainedMessageMemoryLocalPersistenceTest {
 
+    public final @NotNull InternalConfigurationServiceImpl internalConfigurationService =
+            new InternalConfigurationServiceImpl();
     private @NotNull RetainedMessageMemoryLocalPersistence persistence;
 
-    private final int bucketCount = InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get();
+    private int bucketCount;
 
     @Before
     public void setUp() throws Exception {
-        persistence = new RetainedMessageMemoryLocalPersistence(new MetricRegistry());
+        internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "4");
+
+        bucketCount = internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT);
+        persistence = new RetainedMessageMemoryLocalPersistence(new MetricRegistry(), internalConfigurationService);
     }
 
     @Test

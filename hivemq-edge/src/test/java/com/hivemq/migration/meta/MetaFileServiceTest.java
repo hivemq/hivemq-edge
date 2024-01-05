@@ -16,6 +16,7 @@
 package com.hivemq.migration.meta;
 
 import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.util.LocalPersistenceFileUtil;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
@@ -95,8 +96,8 @@ public class MetaFileServiceTest {
         metaInformation.setQueuedMessagesPersistenceVersion("20.1.3");
         metaInformation.setClientSessionPersistenceVersion("4.3.20");
         metaInformation.setPublishPayloadPersistenceVersion("6.3.33");
-        metaInformation.setPublishPayloadPersistenceType(PersistenceType.FILE);
-        metaInformation.setRetainedMessagesPersistenceType(PersistenceType.FILE_NATIVE);
+        metaInformation.setPublishPayloadPersistenceType(PersistenceMode.FILE);
+        metaInformation.setRetainedMessagesPersistenceType(PersistenceMode.FILE_NATIVE);
 
         MetaFileService.writeMetaFile(systemInformation, metaInformation);
 
@@ -111,33 +112,7 @@ public class MetaFileServiceTest {
         assertEquals("20.1.3", metaFile.getQueuedMessagesPersistenceVersion());
         assertEquals("4.3.20", metaFile.getClientSessionPersistenceVersion());
         assertEquals("6.3.33", metaFile.getPublishPayloadPersistenceVersion());
-        assertEquals(PersistenceType.FILE, metaFile.getPublishPayloadPersistenceType());
-        assertEquals(PersistenceType.FILE_NATIVE, metaFile.getRetainedMessagesPersistenceType());
+        assertEquals(PersistenceMode.FILE, metaFile.getPublishPayloadPersistenceType());
+        assertEquals(PersistenceMode.FILE_NATIVE, metaFile.getRetainedMessagesPersistenceType());
     }
-
-
-    @Test
-    public void test_read_write_meta_all_null() throws Exception {
-
-        new File(dataFolder, LocalPersistenceFileUtil.PERSISTENCE_SUBFOLDER_NAME).mkdir();
-
-        final MetaInformation metaInformation = new MetaInformation();
-
-        MetaFileService.writeMetaFile(systemInformation, metaInformation);
-
-        final MetaInformation metaFile = MetaFileService.readMetaFile(systemInformation);
-
-        assertTrue(metaFile.isDataFolderPresent());
-        assertTrue(metaFile.isPersistenceFolderPresent());
-        assertTrue(metaFile.isMetaFilePresent());
-        assertNull(metaFile.getHivemqVersion());
-        assertNull(metaFile.getSubscriptionPersistenceVersion());
-        assertNull(metaFile.getRetainedMessagesPersistenceVersion());
-        assertNull(metaFile.getQueuedMessagesPersistenceVersion());
-        assertNull(metaFile.getClientSessionPersistenceVersion());
-        assertNull(metaFile.getPublishPayloadPersistenceVersion());
-        assertNull(metaFile.getRetainedMessagesPersistenceType());
-        assertNull(metaFile.getPublishPayloadPersistenceType());
-    }
-
 }

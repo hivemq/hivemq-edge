@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ public class ModuleLoader {
     private static final Logger log = LoggerFactory.getLogger(ModuleLoader.class);
 
     private final @NotNull SystemInformation systemInformation;
-    private final @NotNull Set<EdgeModule> modules = new HashSet<>();
+    protected final @NotNull Set<EdgeModule> modules = new HashSet<>();
     private final @NotNull ClassServiceLoader classServiceLoader = new ClassServiceLoader();
 
     @Inject
@@ -49,32 +48,33 @@ public class ModuleLoader {
     }
 
     @Inject
-    void loadModules() {
+    public void loadModules() {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         if(Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)){
             log.info(String.format("Welcome '%s' is starting...", "48 69 76 65 4D 51  45 64 67 65"));
-            log.warn("\n################################################################################################################\n" +
-                      "# You are running HiveMQ Edge in Development Mode and Modules will be loaded from your workspace NOT your      #\n" +
-                      "# HIVEMQ_HOME/modules directory. To load runtime modules from your HOME directory please remove                #\n" +
-                      "#  '-Dhivemq.edge.workspace.modules=true' from your startup script                                             #\n" +
-                      "################################################################################################################");
+            log.warn(
+                    "\n################################################################################################################\n" +
+                            "# You are running HiveMQ Edge in Development Mode and Modules will be loaded from your workspace NOT your      #\n" +
+                            "# HIVEMQ_HOME/modules directory. To load runtime modules from your HOME directory please remove                #\n" +
+                            "#  '-Dhivemq.edge.workspace.modules=true' from your startup script                                             #\n" +
+                            "################################################################################################################");
             loadFromWorkspace(contextClassLoader);
         } else {
             loadFromModulesDirectory(contextClassLoader);
         }
     }
 
-    private void loadFromWorkspace(final ClassLoader parentClassloader){
+    protected void loadFromWorkspace(final ClassLoader parentClassloader) {
         log.debug("Loading modules from development workspace.");
         File userDir = new File(System.getProperty("user.dir"));
-        if(userDir.getName().equals("hivemq-edge")){
+        if (userDir.getName().equals("hivemq-edge")) {
             discoverWorkspaceModule(new File(userDir, "modules"), parentClassloader);
-        } else if(userDir.getName().equals("hivemq-edge-composite")){
+        } else if (userDir.getName().equals("hivemq-edge-composite")) {
             discoverWorkspaceModule(new File(userDir, "../hivemq-edge/modules"), parentClassloader);
         }
     }
 
-    private void discoverWorkspaceModule(final File dir, final ClassLoader parentClassloader) {
+    protected void discoverWorkspaceModule(final File dir, final ClassLoader parentClassloader) {
         if(dir.exists()){
             File[] files = dir.listFiles(pathname -> pathname.isDirectory() && pathname.canRead()
                      && new File(pathname,"build").exists());
@@ -85,9 +85,9 @@ public class ModuleLoader {
                     urls.add(new File(files[i], "build/classes/java/main").toURI().toURL());
                     urls.add(new File(files[i], "build/resources/main").toURI().toURL());
                     File deps = new File(files[i], "build/deps/libs");
-                    if(deps.exists()){
+                    if (deps.exists()) {
                         File[] jars = deps.listFiles(pathname -> pathname.getName().endsWith(".jar"));
-                        for (File jar : jars){
+                        for (File jar : jars) {
                             urls.add(jar.toURI().toURL());
                         }
                     }
@@ -104,7 +104,7 @@ public class ModuleLoader {
         }
     }
 
-    private void loadFromModulesDirectory(final ClassLoader parentClassloader){
+    protected void loadFromModulesDirectory(final ClassLoader parentClassloader) {
         log.debug("Loading modules from HiveMQ Home.");
         final File modulesFolder = systemInformation.getModulesFolder();
         final File[] libs = modulesFolder.listFiles();
@@ -156,7 +156,7 @@ public class ModuleLoader {
         public EdgeModule(final @NotNull File root, final @NotNull ClassLoader classloader) {
             this.classloader = classloader;
             this.root = root;
-            if(classloader != null){
+            if (classloader != null) {
                 AlternativeClassloadingStaticFileHandler.addClassLoader(classloader);
             }
         }
@@ -165,7 +165,7 @@ public class ModuleLoader {
             return classloader;
         }
 
-        public File getRoot(){
+        public File getRoot() {
             return root;
         }
 

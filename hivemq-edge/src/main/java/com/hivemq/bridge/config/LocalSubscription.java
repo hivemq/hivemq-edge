@@ -33,6 +33,7 @@ public class LocalSubscription {
     private final boolean preserveRetain;
     private final int maxQoS;
     private @Nullable String uniqueId;
+    private final @Nullable Long queueLimit;
 
     public LocalSubscription(@NotNull final List<String> filters, @Nullable final String destination) {
         this.filters = filters;
@@ -41,6 +42,7 @@ public class LocalSubscription {
         this.customUserProperties = List.of();
         this.maxQoS = 2;
         this.preserveRetain = false;
+        this.queueLimit = null;
     }
 
     public LocalSubscription(
@@ -49,7 +51,8 @@ public class LocalSubscription {
             @NotNull List<String> excludes,
             @NotNull List<CustomUserProperty> customUserProperties,
             boolean preserveRetain,
-            int maxQoS) {
+            int maxQoS,
+            final @Nullable Long queueLimit) {
 
         this.filters = filters;
         this.destination = destination;
@@ -57,6 +60,7 @@ public class LocalSubscription {
         this.customUserProperties = customUserProperties;
         this.maxQoS = maxQoS;
         this.preserveRetain = preserveRetain;
+        this.queueLimit = queueLimit;
     }
 
     public @NotNull List<String> getFilters() {
@@ -83,33 +87,25 @@ public class LocalSubscription {
         return maxQoS;
     }
 
+    public @Nullable Long getQueueLimit() {
+        return queueLimit;
+    }
+
     @Override
-    public boolean equals(final @Nullable Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof LocalSubscription)) {
-            return false;
-        }
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
         LocalSubscription that = (LocalSubscription) o;
 
-        if (preserveRetain != that.preserveRetain) {
-            return false;
-        }
-        if (maxQoS != that.maxQoS) {
-            return false;
-        }
-        if (!filters.equals(that.filters)) {
-            return false;
-        }
-        if (!Objects.equals(destination, that.destination)) {
-            return false;
-        }
-        if (!excludes.equals(that.excludes)) {
-            return false;
-        }
-        return customUserProperties.equals(that.customUserProperties);
+        if (preserveRetain != that.preserveRetain) return false;
+        if (maxQoS != that.maxQoS) return false;
+        if (!filters.equals(that.filters)) return false;
+        if (!Objects.equals(destination, that.destination)) return false;
+        if (!excludes.equals(that.excludes)) return false;
+        if (!customUserProperties.equals(that.customUserProperties)) return false;
+        if (!Objects.equals(uniqueId, that.uniqueId)) return false;
+        return Objects.equals(queueLimit, that.queueLimit);
     }
 
     @Override
@@ -120,6 +116,8 @@ public class LocalSubscription {
         result = 31 * result + customUserProperties.hashCode();
         result = 31 * result + (preserveRetain ? 1 : 0);
         result = 31 * result + maxQoS;
+        result = 31 * result + (uniqueId != null ? uniqueId.hashCode() : 0);
+        result = 31 * result + (queueLimit != null ? queueLimit.hashCode() : 0);
         return result;
     }
 

@@ -21,6 +21,7 @@ import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -86,6 +87,9 @@ public class HiveMQConfigEntity {
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
     private @NotNull Map<String, Object> protocolAdapterConfig = new HashMap<>();
 
+    @XmlElementRef(required = false)
+    private final @NotNull InternalConfigEntity internal = new InternalConfigEntity();
+
     public @NotNull List<ListenerEntity> getMqttListenerConfig() {
         return mqttListeners;
     }
@@ -132,5 +136,9 @@ public class HiveMQConfigEntity {
 
     public @NotNull UsageTrackingConfigEntity getUsageTracking() {
         return usageTracking;
+    }
+
+    public @NotNull InternalConfigEntity getInternal() {
+        return internal;
     }
 }

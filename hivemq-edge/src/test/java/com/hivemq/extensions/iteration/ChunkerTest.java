@@ -18,7 +18,9 @@ package com.hivemq.extensions.iteration;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
@@ -32,24 +34,17 @@ import static org.junit.Assert.*;
 
 public class ChunkerTest {
 
-
-    private int bucketCount;
+    private final @NotNull InternalConfigurationService
+            internalConfigurationService = new InternalConfigurationServiceImpl();
 
     @Before
     public void setUp() throws Exception {
-        bucketCount = InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get();
-        InternalConfigurations.PERSISTENCE_BUCKET_COUNT.set(4);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        InternalConfigurations.PERSISTENCE_BUCKET_COUNT.set(bucketCount);
-
+        internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "4");
     }
 
     @Test
     public void calculatesMaxResults() {
-        final Chunker chunker = new Chunker();
+        final Chunker chunker = new Chunker(internalConfigurationService);
 
         chunker.getAllLocalChunk(new ChunkCursor(), 4, new Chunker.SingleWriterCall<String>() {
             @Override
@@ -63,7 +58,7 @@ public class ChunkerTest {
     @Test
     public void callsAllBuckets() throws Exception {
         final int[] counter = {0};
-        final Chunker chunker = new Chunker();
+        final Chunker chunker = new Chunker(internalConfigurationService);
 
         final MultipleChunkResult<Map<String, @NotNull String>> multi = chunker.getAllLocalChunk(new ChunkCursor(), 4, new Chunker.SingleWriterCall<String>() {
             @Override
@@ -91,7 +86,7 @@ public class ChunkerTest {
     @Test
     public void doesNotCallFinishedBuckets() throws Exception {
         final int[] counter = {0};
-        final Chunker chunker = new Chunker();
+        final Chunker chunker = new Chunker(internalConfigurationService);
 
         final ChunkCursor cursor = new ChunkCursor(new HashMap<>(), ImmutableSet.of(1, 3));
         final MultipleChunkResult<Map<String, @NotNull String>> multi = chunker.getAllLocalChunk(cursor, 4, new Chunker.SingleWriterCall<String>() {

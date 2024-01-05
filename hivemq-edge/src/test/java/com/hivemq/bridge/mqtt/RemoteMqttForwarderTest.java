@@ -334,7 +334,7 @@ class RemoteMqttForwarderTest {
             final @NotNull List<CustomUserProperty> customProps,
             final int maxQoS) {
         final LocalSubscription localSubscription =
-                new LocalSubscription(List.of("#"), destination, excludes, customProps, preserveRetain, maxQoS);
+                new LocalSubscription(List.of("#"), destination, excludes, customProps, preserveRetain, maxQoS, 1000L);
         final MqttBridge bridge = new MqttBridge.Builder().withId("testbridge")
                 .withHost("1")
                 .withClientId("testcid")

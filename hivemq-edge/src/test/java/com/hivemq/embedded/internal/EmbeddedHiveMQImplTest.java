@@ -52,6 +52,7 @@ public class EmbeddedHiveMQImplTest {
 
     private final String extensionName = "extension-1";
     private File data;
+    private File license;
     private File extensions;
     private File conf;
     private int randomPort;
@@ -60,6 +61,7 @@ public class EmbeddedHiveMQImplTest {
     @Before
     public void setUp() throws Exception {
         data = tmp.newFolder("data");
+        license = tmp.newFolder("license");
         extensions = tmp.newFolder("extensions");
         conf = tmp.newFolder("conf");
         randomPort = RandomPortGenerator.get();
@@ -88,7 +90,7 @@ public class EmbeddedHiveMQImplTest {
 
     @Test(timeout = 20000L)
     public void embeddedHiveMQ_readsConfig() {
-        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions);
+        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license);
         embeddedHiveMQ.start().join();
 
         final ListenerConfigurationService listenerConfigurationService =
@@ -103,7 +105,7 @@ public class EmbeddedHiveMQImplTest {
 
     @Test(timeout = 20000L)
     public void embeddedHiveMQ_usesExtensionsFolder() {
-        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions);
+        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license);
         embeddedHiveMQ.start().join();
 
         final HiveMQExtensions hiveMQExtensions = embeddedHiveMQ.getInjector().extensions().hivemqExtensions();
@@ -116,7 +118,7 @@ public class EmbeddedHiveMQImplTest {
 
     @Test(timeout = 20000L)
     public void start_multipleStartsAreIdempotent() {
-        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions);
+        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license);
         final CountDownLatch blockingLatch = new CountDownLatch(1);
 
         embeddedHiveMQ.stateChangeExecutor.submit(() -> {
@@ -134,7 +136,7 @@ public class EmbeddedHiveMQImplTest {
 
     @Test(timeout = 20000L)
     public void stop_multipleStopsAreIdempotent() {
-        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions);
+        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license);
         embeddedHiveMQ.start().join();
 
         final CountDownLatch blockingLatch = new CountDownLatch(1);
@@ -153,7 +155,7 @@ public class EmbeddedHiveMQImplTest {
 
     @Test(timeout = 20000L)
     public void start_startCancelsStop() {
-        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions);
+        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license);
         embeddedHiveMQ.start().join();
 
         final CountDownLatch blockingLatch = new CountDownLatch(1);
@@ -174,7 +176,7 @@ public class EmbeddedHiveMQImplTest {
 
     @Test(timeout = 20000L)
     public void stop_stopCancelsStart() {
-        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions);
+        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license);
 
         final CountDownLatch blockingLatch = new CountDownLatch(1);
 
@@ -194,7 +196,7 @@ public class EmbeddedHiveMQImplTest {
 
     @Test(timeout = 20000L)
     public void close_preventsStart() throws ExecutionException, InterruptedException {
-        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions);
+        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license);
 
         embeddedHiveMQ.close();
         final CompletableFuture<Void> start = embeddedHiveMQ.start();
@@ -204,7 +206,7 @@ public class EmbeddedHiveMQImplTest {
 
     @Test(timeout = 20000L)
     public void close_preventsStop() throws ExecutionException, InterruptedException {
-        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions);
+        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license);
 
         embeddedHiveMQ.close();
         final CompletableFuture<Void> stop = embeddedHiveMQ.stop();
@@ -214,7 +216,7 @@ public class EmbeddedHiveMQImplTest {
 
     @Test(timeout = 20000L)
     public void close_calledMultipleTimes() throws InterruptedException {
-        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions);
+        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license);
         final CountDownLatch blockingLatch = new CountDownLatch(1);
 
         embeddedHiveMQ.stateChangeExecutor.submit(() -> {
@@ -255,7 +257,7 @@ public class EmbeddedHiveMQImplTest {
         final EmbeddedExtensionImpl extension =
                 new EmbeddedExtensionImpl("id", "name", "123", "luke_skywalker", 0, 1000, embeddedMain);
 
-        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, extension);
+        final EmbeddedHiveMQImpl embeddedHiveMQ = new EmbeddedHiveMQImpl(conf, data, extensions, license, extension);
         embeddedHiveMQ.start().get();
 
         assertTrue(embeddedMain.running.get());

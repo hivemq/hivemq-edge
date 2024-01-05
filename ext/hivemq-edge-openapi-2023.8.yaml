@@ -14,7 +14,7 @@ info:
     ## OpenAPI
     HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
   title: HiveMQ Edge REST API
-  version: "2023.7"
+  version: "2023.8"
   x-logo:
     url: https://www.hivemq.com/img/svg/hivemq-bee.svg
 tags:
@@ -138,6 +138,34 @@ paths:
       tags:
         - Authentication
         - Authentication Endpoint
+  /api/v1/frontend/capabilities:
+    get:
+      description: Obtain gateway capabilities.
+      operationId: get-capabilities
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                capabilities:
+                  description: An example capability list.
+                  summary: Example capabilities
+                  value: |-
+                    {
+                        "items": [
+                            {
+                                "id": "test-capability"
+                                "displayName": "Super useful Capability"
+                                "description": "This capability is really useful for so many reasons."
+                            }
+                        ]
+                    }
+              schema:
+                $ref: '#/components/schemas/CapabilityList'
+          description: Success
+      summary: Obtain Capabilities of the HiveMQ Edge Installation
+      tags:
+        - Frontend
   /api/v1/frontend/configuration:
     get:
       description: Obtain configuration.
@@ -1240,6 +1268,10 @@ components:
           description: The password value associated the the MQTT connection.
           maxLength: 65535
           nullable: true
+        persist:
+          type: boolean
+          description: Shall the publishes for the bridge be persisted.
+          nullable: true
         port:
           type: integer
           format: int32
@@ -1337,6 +1369,28 @@ components:
         - destination
         - filters
         - maxQoS
+    Capability:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        description:
+          type: string
+          description: A description for the capability
+        displayName:
+          type: string
+          description: "A human readable name, intended to be used to display at front\
+            \ end."
+        id:
+          type: string
+          description: The identifier of this capability
+    CapabilityList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Capability'
     DataPoint:
       type: object
       properties:

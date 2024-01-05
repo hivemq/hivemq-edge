@@ -37,6 +37,7 @@ public class MqttBridge {
     private final @NotNull List<LocalSubscription> localSubscriptions;
     private final boolean loopPreventionEnabled;
     private final int loopPreventionHopCount;
+    private final boolean persist;
 
     private MqttBridge(
             final @NotNull String id,
@@ -52,7 +53,8 @@ public class MqttBridge {
             final @NotNull List<RemoteSubscription> remoteSubscriptions,
             final @NotNull List<LocalSubscription> localSubscriptions,
             final boolean loopPreventionEnabled,
-            final int loopPreventionHopCount) {
+            final int loopPreventionHopCount,
+            final boolean persist) {
         this.id = id;
         this.host = host;
         this.port = port;
@@ -67,6 +69,7 @@ public class MqttBridge {
         this.localSubscriptions = localSubscriptions;
         this.loopPreventionEnabled = loopPreventionEnabled;
         this.loopPreventionHopCount = loopPreventionHopCount;
+        this.persist = persist;
     }
 
     public @NotNull String getId() {
@@ -125,6 +128,10 @@ public class MqttBridge {
         return loopPreventionHopCount;
     }
 
+    public boolean isPersist() {
+        return persist;
+    }
+
     public static class Builder {
         private @Nullable String id;
         private @Nullable String host;
@@ -140,6 +147,7 @@ public class MqttBridge {
         private @NotNull List<LocalSubscription> localSubscriptions = List.of();
         private boolean loopPreventionEnabled = true;
         private int loopPreventionHopCount = 1;
+        private boolean persist = true;
 
         public @NotNull Builder withId(@NotNull String id) {
             this.id = id;
@@ -211,6 +219,11 @@ public class MqttBridge {
             return this;
         }
 
+        public @NotNull Builder persist(boolean persist) {
+            this.persist = persist;
+            return this;
+        }
+
         public @NotNull MqttBridge build() {
             return new MqttBridge(Objects.requireNonNull(id),
                     Objects.requireNonNull(host),
@@ -225,7 +238,8 @@ public class MqttBridge {
                     remoteSubscriptions,
                     localSubscriptions,
                     loopPreventionEnabled,
-                    loopPreventionHopCount);
+                    loopPreventionHopCount,
+                    persist);
         }
     }
 
@@ -302,7 +316,7 @@ public class MqttBridge {
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         final StringBuilder sb = new StringBuilder("MqttBridge{");
         sb.append("id='").append(id).append('\'');
         sb.append(", host='").append(host).append('\'');

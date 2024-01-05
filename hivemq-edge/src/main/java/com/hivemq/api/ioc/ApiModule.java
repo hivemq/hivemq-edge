@@ -90,10 +90,6 @@ public abstract class ApiModule {
     @Binds
     abstract @NotNull ITokenGenerator tokenGenerator(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
 
-    @Binds
-    @Singleton
-    abstract @NotNull HiveMQCapabilityService capabilityService(@NotNull CapabilityServiceImpl CapabilityServiceImpl);
-
     @Provides
     @Singleton
     static @NotNull JwtAuthenticationProvider jwtAuthenticationProvider(ApiConfigurationService apiConfigurationService) {
