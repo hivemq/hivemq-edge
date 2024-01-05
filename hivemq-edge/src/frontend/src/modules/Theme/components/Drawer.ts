@@ -13,5 +13,9 @@ const hivemq = definePartsStyle({
 })
 
 export const drawerTheme = defineMultiStyleConfig({
+  defaultProps: {
+    colorScheme: 'brand',
+    variant: 'hivemq',
+  },
   variants: { hivemq },
 })

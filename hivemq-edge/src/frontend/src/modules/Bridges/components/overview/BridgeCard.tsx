@@ -9,7 +9,6 @@ import {
   Flex,
   Heading,
   HStack,
-  IconButton,
   Image,
   Skeleton,
   Text,
@@ -26,6 +25,7 @@ import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
 
 import ConnectionSummary from './ConnectionSummary.tsx'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 
 interface BridgeCardProps extends Bridge {
   isLoading?: boolean
@@ -53,7 +53,7 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, role, ...props
           </Heading>
           <Box>
             <IconButton
-              aria-label={t('bridge.subscription.edit')}
+              aria-label={t('bridge.action.edit')}
               icon={<EditIcon />}
               onClick={() => onNavigate?.(`/mqtt-bridges/${props.id}`)}
             />

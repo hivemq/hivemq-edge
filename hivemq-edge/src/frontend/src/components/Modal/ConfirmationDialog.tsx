@@ -38,12 +38,11 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({ isOpen, onClose, head
               {t('action.cancel')}
             </Button>
             <Button
-              colorScheme="red"
               onClick={() => {
                 onClose()
                 onSubmit?.()
               }}
-              variant="solid"
+              variant="danger"
               ml={3}
             >
               {t('action.delete')}

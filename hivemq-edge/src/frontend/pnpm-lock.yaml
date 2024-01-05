@@ -123,6 +123,9 @@ dependencies:
     version: 4.4.7(@types/react@18.0.28)(react@18.2.0)
 
 devDependencies:
+  '@chakra-ui/cli':
+    specifier: ^2.4.1
+    version: 2.4.1
   '@percy/cli':
     specifier: ^1.24.2
     version: 1.24.2
@@ -595,6 +598,19 @@ packages:
       '@zag-js/focus-visible': 0.2.2
       react: 18.2.0
     dev: false
+
+  /@chakra-ui/cli@2.4.1:
+    resolution: {integrity: sha512-GZZuHUA1cXJWpmYNiVTLPihvY4VhIssRl+AXgw/0IbeodTMop3jWlIioPKLAQeXu5CwvRA6iESyGjnu1V8Zykg==}
+    hasBin: true
+    dependencies:
+      chokidar: 3.5.3
+      cli-check-node: 1.3.4
+      cli-handle-unhandled: 1.1.1
+      cli-welcome: 2.2.2
+      commander: 9.5.0
+      esbuild: 0.17.19
+      prettier: 2.8.8
+    dev: true
 
   /@chakra-ui/clickable@2.0.14(react@18.2.0):
     resolution: {integrity: sha512-jfsM1qaD74ZykLHmvmsKRhDyokLUxEfL8Il1VoZMNX5RBI0xW/56vKpLTFF/v/+vLPLS+Te2cZdD4+2O+G6ulA==}
@@ -4080,11 +4096,35 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
+  /clear-any-console@1.16.2:
+    resolution: {integrity: sha512-OL/7wZpNy9x0GBSzz3poWja84Nr7iaH8aYNsJ5Uet2BVLj6Lm1zvWpZN/yH46Vv3ae7YfHmLLMmfHj911fshJg==}
+    dev: true
+
+  /cli-check-node@1.3.4:
+    resolution: {integrity: sha512-iLGgQXm82iP8eH3R67qbOWs5qqUOLmNnMy5Lzl/RybcMh3y+H2zWU5POzuQ6oDUOdz4XWuxcFhP75szqd6frLg==}
+    dependencies:
+      chalk: 3.0.0
+      log-symbols: 3.0.0
+    dev: true
+
   /cli-cursor@3.1.0:
     resolution: {integrity: sha512-I/zHAwsKf9FqGoXM4WWRACob9+SNukZTd94DWF57E4toouRulbCxcUh6RKUEOQlYTHJnzkPMySvPNaaSLNfLZw==}
     engines: {node: '>=8'}
     dependencies:
       restore-cursor: 3.1.0
+    dev: true
+
+  /cli-handle-error@4.4.0:
+    resolution: {integrity: sha512-RyBCnKlc7xVr79cKb9RfBq+4fjwQeX8HKeNzIPnI/W+DWWIUUKh2ur576DpwJ3kZt2UGHlIAOF7N9txy+mgZsA==}
+    dependencies:
+      chalk: 3.0.0
+      log-symbols: 3.0.0
+    dev: true
+
+  /cli-handle-unhandled@1.1.1:
+    resolution: {integrity: sha512-Em91mJvU7VdgT2MxQpyY633vW1tDzRjPDbii6ZjEBHHLLh0xDoVkFt/wjvi9nSvJcz9rJmvtJSK8KL/hvF0Stg==}
+    dependencies:
+      cli-handle-error: 4.4.0
     dev: true
 
   /cli-spinners@2.9.0:
@@ -4107,6 +4147,14 @@ packages:
     dependencies:
       slice-ansi: 3.0.0
       string-width: 4.2.3
+    dev: true
+
+  /cli-welcome@2.2.2:
+    resolution: {integrity: sha512-LgDGS0TW4nIf8v81wpuZzfOEDPcy68u0jKR0Fy5IaWftqdminI6FoDiMFt1mjPylqKGNv/wFsZ7fCs93IeDMIw==}
+    dependencies:
+      chalk: 2.4.2
+      clear-any-console: 1.16.2
+      prettier: 2.8.8
     dev: true
 
   /cli-width@3.0.0:
@@ -4181,6 +4229,11 @@ packages:
   /commander@6.2.1:
     resolution: {integrity: sha512-U7VdrJFnJgo4xjrHpTzu0yrHPGImdsmD95ZlgYSEajAn2JKzDhDTPG9kBTefmObL2w/ngeZnilk+OV9CG3d7UA==}
     engines: {node: '>= 6'}
+    dev: true
+
+  /commander@9.5.0:
+    resolution: {integrity: sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==}
+    engines: {node: ^12.20.0 || >=14}
     dev: true
 
   /common-tags@1.8.2:
@@ -6241,6 +6294,13 @@ packages:
 
   /lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
+
+  /log-symbols@3.0.0:
+    resolution: {integrity: sha512-dSkNGuI7iG3mfvDzUuYZyvk5dD9ocYCYzNU6CYDE6+Xqd+gwme6Z00NS3dUh8mq/73HaEtT7m6W+yUPtU6BZnQ==}
+    engines: {node: '>=8'}
+    dependencies:
+      chalk: 2.4.2
+    dev: true
 
   /log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}
