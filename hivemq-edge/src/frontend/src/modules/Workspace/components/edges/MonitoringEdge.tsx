@@ -2,10 +2,11 @@ import { FC } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from 'reactflow'
-import { Icon, IconButton, useColorMode } from '@chakra-ui/react'
+import { Icon, useColorMode } from '@chakra-ui/react'
 import { BiBarChartSquare } from 'react-icons/bi'
 
 import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.tsx'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const MonitoringEdge: FC<EdgeProps> = ({
   source,
@@ -50,9 +51,9 @@ const MonitoringEdge: FC<EdgeProps> = ({
           >
             <IconButton
               aria-label={t('workspace.observability.aria-label', { device: source })}
-              variant={'outline'}
+              variant={colorMode === 'light' ? 'outline' : 'solid'}
               icon={<Icon as={BiBarChartSquare} boxSize={6} />}
-              backgroundColor={colorMode === 'light' ? 'white' : 'gray.800'}
+              backgroundColor={colorMode === 'light' ? 'white' : 'gray.700'}
               color={style?.stroke}
               onClick={() => navigate(`/edge-flow/link/${id}`)}
               borderRadius={25}

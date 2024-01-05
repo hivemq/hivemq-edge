@@ -10,17 +10,7 @@ import {
   NodeResetChange,
   EdgeRemoveChange,
 } from 'reactflow'
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Icon,
-  IconButton,
-  Text,
-  useColorMode,
-  useDisclosure,
-  useTheme,
-} from '@chakra-ui/react'
+import { Box, Button, ButtonGroup, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
 import { LuPanelRightOpen } from 'react-icons/lu'
 import { ImUngroup } from 'react-icons/im'
 
@@ -29,6 +19,7 @@ import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import { Group } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.tsx'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()

@@ -13,7 +13,6 @@ import {
   FormControl,
   FormErrorMessage,
   FormLabel,
-  IconButton,
   VStack,
   Flex,
   Card,
@@ -34,6 +33,7 @@ import { MultiTopicsCreatableSelect } from '@/components/MQTT/TopicCreatableSele
 
 import CustomUserProperties from './CustomUserProperties.tsx'
 import { BridgeSubscriptionsProps } from '../../types.ts'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
   const { t } = useTranslation()

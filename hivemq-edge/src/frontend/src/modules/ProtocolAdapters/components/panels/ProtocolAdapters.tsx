@@ -1,5 +1,5 @@
 import { FC, useMemo, useState } from 'react'
-import { Box, HStack, IconButton, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
+import { Box, HStack, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
 import { ColumnDef, Row } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
@@ -31,6 +31,7 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
 import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
 import { compareStatus } from '../../utils/pagination-utils.ts'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const DEFAULT_PER_PAGE = 10
 
