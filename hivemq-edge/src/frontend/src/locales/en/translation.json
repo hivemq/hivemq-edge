@@ -136,6 +136,7 @@
   "bridge": {
     "title": "MQTT bridges",
     "description": "An MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
+    "list": "List of bridges",
     "action": {
       "add": "Add bridge connection",
       "edit": "Edit",
@@ -366,6 +367,7 @@
   "protocolAdapter": {
     "title": "Protocol Adapters",
     "description": "Protocol adapters provide the ability to connect your HiveMQ Edge installation to local and remote devices. Once a connection has been established, you can consolidate data from this connection into your HiveMQ MQTT Broker.",
+    "list": "List of protocol adapters",
     "action": {
       "add": "Add",
       "delete": "Delete",
@@ -411,6 +413,7 @@
       "description_other": "Select one of the following $t(protocolAdapter.protocols.adapterCount, {\"count\": {{count}} }) to start creating your connection"
     },
     "facet": {
+      "description": "Search and filter protocol adapters",
       "search": {
         "label": "Search",
         "placeholder": "Search for a protocol",
@@ -590,7 +593,12 @@
   },
   "workspace": {
     "controls": {
-      "aria-label": "Workspace toolbar"
+      "aria-label": "Workspace toolbar",
+      "zoomIn": "Zoom in",
+      "zoomIOut": "Zoom out",
+      "fitView": "Fit to the canvas",
+      "toggleInteractivity": "Lock the canvas",
+      "group": "Group the selected entities"
     },
     "configuration": {
       "header": "Workspace configuration",
@@ -643,7 +651,6 @@
         "input-color": "Group colour",
         "save": "Save changes"
       },
-      "create": "Create group",
       "untitled": "Untitled group",
       "title": "Grouping",
       "by_type": "By type",
@@ -662,7 +669,7 @@
       }
     },
     "observability": {
-      "aria-label": "Open Observability panel for {{ device }}",
+      "aria-label": "Open the Observability panel",
       "header_ADAPTER_NODE": "Adapter Observability",
       "header_BRIDGE_NODE": "Bridge Observability",
       "header_CLUSTER_NODE": "Group Observability"
@@ -722,6 +729,7 @@
       }
     },
     "charts": {
+      "list": "List of metrics",
       "LineChart": {
         "ariaLabel": {
           "legend": "timestamp (seconds ago)"

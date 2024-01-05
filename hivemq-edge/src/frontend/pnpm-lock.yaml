@@ -41,17 +41,17 @@ dependencies:
     specifier: ^0.84.0
     version: 0.84.0(react-dom@18.2.0)(react@18.2.0)
   '@rjsf/chakra-ui':
-    specifier: ^5.10.0
-    version: 5.10.0(@chakra-ui/icons@2.0.19)(@chakra-ui/react@2.7.1)(@chakra-ui/system@2.5.8)(@rjsf/core@5.10.0)(@rjsf/utils@5.10.0)(@types/react@18.0.28)(chakra-react-select@4.7.6)(framer-motion@10.12.21)(react-dom@18.2.0)(react@18.2.0)
+    specifier: ^5.15.1
+    version: 5.15.1(@chakra-ui/icons@2.0.19)(@chakra-ui/react@2.7.1)(@chakra-ui/system@2.5.8)(@rjsf/core@5.15.1)(@rjsf/utils@5.15.1)(@types/react@18.0.28)(chakra-react-select@4.7.6)(framer-motion@10.12.21)(react-dom@18.2.0)(react@18.2.0)
   '@rjsf/core':
-    specifier: ^5.10.0
-    version: 5.10.0(@rjsf/utils@5.10.0)(react@18.2.0)
+    specifier: ^5.15.1
+    version: 5.15.1(@rjsf/utils@5.15.1)(react@18.2.0)
   '@rjsf/utils':
-    specifier: ^5.10.0
-    version: 5.10.0(react@18.2.0)
+    specifier: ^5.15.1
+    version: 5.15.1(react@18.2.0)
   '@rjsf/validator-ajv8':
-    specifier: ^5.10.0
-    version: 5.10.0(@rjsf/utils@5.10.0)
+    specifier: ^5.15.1
+    version: 5.15.1(@rjsf/utils@5.15.1)
   '@tanstack/react-query':
     specifier: ^4.29.7
     version: 4.29.7(react-dom@18.2.0)(react@18.2.0)
@@ -123,6 +123,9 @@ dependencies:
     version: 4.4.7(@types/react@18.0.28)(react@18.2.0)
 
 devDependencies:
+  '@chakra-ui/cli':
+    specifier: ^2.4.1
+    version: 2.4.1
   '@percy/cli':
     specifier: ^1.24.2
     version: 1.24.2
@@ -595,6 +598,19 @@ packages:
       '@zag-js/focus-visible': 0.2.2
       react: 18.2.0
     dev: false
+
+  /@chakra-ui/cli@2.4.1:
+    resolution: {integrity: sha512-GZZuHUA1cXJWpmYNiVTLPihvY4VhIssRl+AXgw/0IbeodTMop3jWlIioPKLAQeXu5CwvRA6iESyGjnu1V8Zykg==}
+    hasBin: true
+    dependencies:
+      chokidar: 3.5.3
+      cli-check-node: 1.3.4
+      cli-handle-unhandled: 1.1.1
+      cli-welcome: 2.2.2
+      commander: 9.5.0
+      esbuild: 0.17.19
+      prettier: 2.8.8
+    dev: true
 
   /@chakra-ui/clickable@2.0.14(react@18.2.0):
     resolution: {integrity: sha512-jfsM1qaD74ZykLHmvmsKRhDyokLUxEfL8Il1VoZMNX5RBI0xW/56vKpLTFF/v/+vLPLS+Te2cZdD4+2O+G6ulA==}
@@ -2735,15 +2751,15 @@ packages:
     engines: {node: '>=14'}
     dev: false
 
-  /@rjsf/chakra-ui@5.10.0(@chakra-ui/icons@2.0.19)(@chakra-ui/react@2.7.1)(@chakra-ui/system@2.5.8)(@rjsf/core@5.10.0)(@rjsf/utils@5.10.0)(@types/react@18.0.28)(chakra-react-select@4.7.6)(framer-motion@10.12.21)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-XCFgx4dNJfHMOFaE5rml/pdGxhwDqj3t6K8DdC7AoEQust/bbBXhcOn4w2b06CeLmL+xNbuNhnVPBxynUKckLg==}
+  /@rjsf/chakra-ui@5.15.1(@chakra-ui/icons@2.0.19)(@chakra-ui/react@2.7.1)(@chakra-ui/system@2.5.8)(@rjsf/core@5.15.1)(@rjsf/utils@5.15.1)(@types/react@18.0.28)(chakra-react-select@4.7.6)(framer-motion@10.12.21)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-FN4becquAeof/8dHi+PQMg20vNMjmI0819VskpJJGxiuXShnvIPNtpQalKfaGXJ7wFmiqn8l+kIh5BOvfk/PXA==}
     engines: {node: '>=14'}
     peerDependencies:
       '@chakra-ui/icons': '>=1.1.1'
       '@chakra-ui/react': '>=1.7.3'
       '@chakra-ui/system': '>=1.12.1'
-      '@rjsf/core': ^5.8.x
-      '@rjsf/utils': ^5.8.x
+      '@rjsf/core': ^5.12.x
+      '@rjsf/utils': ^5.12.x
       chakra-react-select: '>=3.3.8'
       framer-motion: '>=5.6.0'
       react: ^16.14.0 || >=17
@@ -2751,35 +2767,35 @@ packages:
       '@chakra-ui/icons': 2.0.19(@chakra-ui/system@2.5.8)(react@18.2.0)
       '@chakra-ui/react': 2.7.1(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.0.28)(framer-motion@10.12.21)(react-dom@18.2.0)(react@18.2.0)
       '@chakra-ui/system': 2.5.8(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(react@18.2.0)
-      '@rjsf/core': 5.10.0(@rjsf/utils@5.10.0)(react@18.2.0)
-      '@rjsf/utils': 5.10.0(react@18.2.0)
+      '@rjsf/core': 5.15.1(@rjsf/utils@5.15.1)(react@18.2.0)
+      '@rjsf/utils': 5.15.1(react@18.2.0)
       chakra-react-select: 4.7.6(@chakra-ui/form-control@2.0.18)(@chakra-ui/icon@3.0.16)(@chakra-ui/layout@2.2.0)(@chakra-ui/media-query@3.2.12)(@chakra-ui/menu@2.1.15)(@chakra-ui/spinner@2.0.13)(@chakra-ui/system@2.5.8)(@emotion/react@11.11.1)(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
       framer-motion: 10.12.21(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
-      react-select: 5.7.4(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      react-select: 5.7.7(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
     transitivePeerDependencies:
       - '@types/react'
       - react-dom
     dev: false
 
-  /@rjsf/core@5.10.0(@rjsf/utils@5.10.0)(react@18.2.0):
-    resolution: {integrity: sha512-G9KapNurCpP9l/CK4rR3/pQ1rKuaD1BxdzHjaWUWrpUbEqbDTeNu+5630ymUf0y8A04JuSN1guQRVyYl0Dlfxw==}
+  /@rjsf/core@5.15.1(@rjsf/utils@5.15.1)(react@18.2.0):
+    resolution: {integrity: sha512-Ysn9G7sAS9A/fY4tCXv0LUUM8rNgXpVUkkoeOg3Yx6Y0vTctLVM7eorfmKuRKOrUZFCVe/MY0RjJfP3n2v1Fbg==}
     engines: {node: '>=14'}
     peerDependencies:
-      '@rjsf/utils': ^5.8.x
+      '@rjsf/utils': ^5.12.x
       react: ^16.14.0 || >=17
     dependencies:
-      '@rjsf/utils': 5.10.0(react@18.2.0)
+      '@rjsf/utils': 5.15.1(react@18.2.0)
       lodash: 4.17.21
       lodash-es: 4.17.21
-      markdown-to-jsx: 7.2.1(react@18.2.0)
+      markdown-to-jsx: 7.3.2(react@18.2.0)
       nanoid: 3.3.6
       prop-types: 15.8.1
       react: 18.2.0
     dev: false
 
-  /@rjsf/utils@5.10.0(react@18.2.0):
-    resolution: {integrity: sha512-HGytUxCGtV6OCOw4PbjFcksxrPIxUt0y3T9oqCTsP4xiqnLfve4ZfY9FkbHzPSGOXVp57yCNNEZTWiK6tcV9uA==}
+  /@rjsf/utils@5.15.1(react@18.2.0):
+    resolution: {integrity: sha512-ko1hpwy5gK7qwUpiD9fULekBShSrnFDWaIuhLkrN6HsNYGhN9PHZKrlTGcxl3seQvAzXkWfh1aRxNYw4YLCywg==}
     engines: {node: '>=14'}
     peerDependencies:
       react: ^16.14.0 || >=17
@@ -2792,13 +2808,13 @@ packages:
       react-is: 18.2.0
     dev: false
 
-  /@rjsf/validator-ajv8@5.10.0(@rjsf/utils@5.10.0):
-    resolution: {integrity: sha512-KHpQwQsBL9ItP9K4zuknKCXlGYenaochz2VoSzyeP68xmZC+RC3qbWow/2ki7auRQhUNrGYZAYZDLFN85DUuDg==}
+  /@rjsf/validator-ajv8@5.15.1(@rjsf/utils@5.15.1):
+    resolution: {integrity: sha512-QEbjdpLTmDCq4pdmeNaCiMiq3CId7IJ/Iri5FI794fhH8mn8Geu5hWqisMBTbrptfGdItY4RapKvoIglQEZKOg==}
     engines: {node: '>=14'}
     peerDependencies:
-      '@rjsf/utils': ^5.8.x
+      '@rjsf/utils': ^5.12.x
     dependencies:
-      '@rjsf/utils': 5.10.0(react@18.2.0)
+      '@rjsf/utils': 5.15.1(react@18.2.0)
       ajv: 8.12.0
       ajv-formats: 2.1.1(ajv@8.12.0)
       lodash: 4.17.21
@@ -4080,11 +4096,35 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
+  /clear-any-console@1.16.2:
+    resolution: {integrity: sha512-OL/7wZpNy9x0GBSzz3poWja84Nr7iaH8aYNsJ5Uet2BVLj6Lm1zvWpZN/yH46Vv3ae7YfHmLLMmfHj911fshJg==}
+    dev: true
+
+  /cli-check-node@1.3.4:
+    resolution: {integrity: sha512-iLGgQXm82iP8eH3R67qbOWs5qqUOLmNnMy5Lzl/RybcMh3y+H2zWU5POzuQ6oDUOdz4XWuxcFhP75szqd6frLg==}
+    dependencies:
+      chalk: 3.0.0
+      log-symbols: 3.0.0
+    dev: true
+
   /cli-cursor@3.1.0:
     resolution: {integrity: sha512-I/zHAwsKf9FqGoXM4WWRACob9+SNukZTd94DWF57E4toouRulbCxcUh6RKUEOQlYTHJnzkPMySvPNaaSLNfLZw==}
     engines: {node: '>=8'}
     dependencies:
       restore-cursor: 3.1.0
+    dev: true
+
+  /cli-handle-error@4.4.0:
+    resolution: {integrity: sha512-RyBCnKlc7xVr79cKb9RfBq+4fjwQeX8HKeNzIPnI/W+DWWIUUKh2ur576DpwJ3kZt2UGHlIAOF7N9txy+mgZsA==}
+    dependencies:
+      chalk: 3.0.0
+      log-symbols: 3.0.0
+    dev: true
+
+  /cli-handle-unhandled@1.1.1:
+    resolution: {integrity: sha512-Em91mJvU7VdgT2MxQpyY633vW1tDzRjPDbii6ZjEBHHLLh0xDoVkFt/wjvi9nSvJcz9rJmvtJSK8KL/hvF0Stg==}
+    dependencies:
+      cli-handle-error: 4.4.0
     dev: true
 
   /cli-spinners@2.9.0:
@@ -4107,6 +4147,14 @@ packages:
     dependencies:
       slice-ansi: 3.0.0
       string-width: 4.2.3
+    dev: true
+
+  /cli-welcome@2.2.2:
+    resolution: {integrity: sha512-LgDGS0TW4nIf8v81wpuZzfOEDPcy68u0jKR0Fy5IaWftqdminI6FoDiMFt1mjPylqKGNv/wFsZ7fCs93IeDMIw==}
+    dependencies:
+      chalk: 2.4.2
+      clear-any-console: 1.16.2
+      prettier: 2.8.8
     dev: true
 
   /cli-width@3.0.0:
@@ -4181,6 +4229,11 @@ packages:
   /commander@6.2.1:
     resolution: {integrity: sha512-U7VdrJFnJgo4xjrHpTzu0yrHPGImdsmD95ZlgYSEajAn2JKzDhDTPG9kBTefmObL2w/ngeZnilk+OV9CG3d7UA==}
     engines: {node: '>= 6'}
+    dev: true
+
+  /commander@9.5.0:
+    resolution: {integrity: sha512-KRs7WVDKg86PWiuAqhDrAQnTXZKraVcCc6vFdL14qrZ/DcWwuRo7VoiYXalXO7S5GKpqYiVEwCbgFDfxNHKJBQ==}
+    engines: {node: ^12.20.0 || >=14}
     dev: true
 
   /common-tags@1.8.2:
@@ -6242,6 +6295,13 @@ packages:
   /lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
 
+  /log-symbols@3.0.0:
+    resolution: {integrity: sha512-dSkNGuI7iG3mfvDzUuYZyvk5dD9ocYCYzNU6CYDE6+Xqd+gwme6Z00NS3dUh8mq/73HaEtT7m6W+yUPtU6BZnQ==}
+    engines: {node: '>=8'}
+    dependencies:
+      chalk: 2.4.2
+    dev: true
+
   /log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}
     engines: {node: '>=10'}
@@ -6319,8 +6379,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /markdown-to-jsx@7.2.1(react@18.2.0):
-    resolution: {integrity: sha512-9HrdzBAo0+sFz9ZYAGT5fB8ilzTW+q6lPocRxrIesMO+aB40V9MgFfbfMXxlGjf22OpRy+IXlvVaQenicdpgbg==}
+  /markdown-to-jsx@7.3.2(react@18.2.0):
+    resolution: {integrity: sha512-B+28F5ucp83aQm+OxNrPkS8z0tMKaeHiy0lHJs3LqCyDQFtWuenaIrkaVTgAm1pf1AU85LXltva86hlaT17i8Q==}
     engines: {node: '>= 10'}
     peerDependencies:
       react: '>= 0.14.0'
@@ -7075,27 +7135,6 @@ packages:
     dependencies:
       '@remix-run/router': 1.6.2
       react: 18.2.0
-    dev: false
-
-  /react-select@5.7.4(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-NhuE56X+p9QDFh4BgeygHFIvJJszO1i1KSkg/JPcIJrbovyRtI+GuOEa4XzFCEpZRAEoEI8u/cAHK+jG/PgUzQ==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0
-      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
-    dependencies:
-      '@babel/runtime': 7.22.6
-      '@emotion/cache': 11.11.0
-      '@emotion/react': 11.11.1(@types/react@18.0.28)(react@18.2.0)
-      '@floating-ui/dom': 1.4.5
-      '@types/react-transition-group': 4.4.6
-      memoize-one: 6.0.0
-      prop-types: 15.8.1
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
-      react-transition-group: 4.4.5(react-dom@18.2.0)(react@18.2.0)
-      use-isomorphic-layout-effect: 1.1.2(@types/react@18.0.28)(react@18.2.0)
-    transitivePeerDependencies:
-      - '@types/react'
     dev: false
 
   /react-select@5.7.7(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):

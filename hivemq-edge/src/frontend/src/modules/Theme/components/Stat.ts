@@ -9,6 +9,10 @@ const hivemq = definePartsStyle({
     border: '4px solid',
     borderColor: 'blue.500',
     p: 1,
+    backgroundColor: 'white',
+    _dark: {
+      backgroundColor: 'gray.700',
+    },
   },
   helpText: {
     fontWeight: 'bold',

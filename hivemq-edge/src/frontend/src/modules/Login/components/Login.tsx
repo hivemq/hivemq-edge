@@ -143,8 +143,7 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
             mt={'7em'}
             type="submit"
             isLoading={isLoading}
-            colorScheme={'yellow'}
-            variant={'solid'}
+            variant={'primary'}
           >
             {t('translation:login.submit.label')}
           </Button>

@@ -27,8 +27,10 @@ import { ChakraProvider, VisuallyHidden } from '@chakra-ui/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
-import { themeHiveMQ } from '@/modules/Theme/themeHiveMQ.ts'
+import themeHiveMQ from '@/modules/Theme/themeHiveMQ.ts'
 import '@/config/i18n.config.ts'
+import '@fontsource/roboto/400.css'
+import '@fontsource/roboto/700.css'
 
 // Augment the Cypress namespace to include type definitions for
 // your custom command.
@@ -39,6 +41,7 @@ declare global {
   namespace Cypress {
     interface Chainable {
       mount: typeof mount
+
       mountWithProviders(
         component: React.ReactNode,
         options?: MountOptions & { routerProps?: MemoryRouterProps }

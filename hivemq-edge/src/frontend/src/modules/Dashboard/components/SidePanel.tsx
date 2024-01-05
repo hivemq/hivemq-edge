@@ -62,7 +62,7 @@ const SidePanel: FC = () => {
           <Button leftIcon={<FiLogOut />} variant="link" onClick={() => auth.logout(() => navigate('/login'))}>
             {t('translation:action.logout')}
           </Button>
-          <SwitchModeButton />
+          <SwitchModeButton size={'sm'} />
         </Flex>
       </Flex>
     </nav>

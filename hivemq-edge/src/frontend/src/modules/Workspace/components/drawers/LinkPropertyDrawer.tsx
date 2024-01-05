@@ -34,7 +34,7 @@ const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selec
             </Text>
           </Box>
         </DrawerHeader>
-        <DrawerBody>
+        <DrawerBody display={'flex'} flexDirection={'column'} gap={6}>
           <Metrics
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}

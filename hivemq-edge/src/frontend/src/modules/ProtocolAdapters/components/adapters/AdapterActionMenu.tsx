@@ -25,6 +25,7 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEd
       <MenuButton
         variant="outline"
         size={'sm'}
+        // Cannot have tooltip because of the popup menu
         as={IconButton}
         icon={<ChevronDownIcon />}
         aria-label={t('protocolAdapter.table.actions.label') as string}

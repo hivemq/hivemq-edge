@@ -1,7 +1,8 @@
 import { FC } from 'react'
-import { Bridge } from '@/api/__generated__'
-import { Box, Table, Tbody, Td, Tooltip, Tr } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
+import { Box, Tooltip, chakra as Chakra, VisuallyHidden, Badge } from '@chakra-ui/react'
+
+import { Bridge } from '@/api/__generated__'
 import { formatHost } from '../../utils/formatters.tsx'
 
 type BridgeConnection = Pick<
@@ -13,45 +14,34 @@ const ConnectionSummary: FC<BridgeConnection> = ({ host, port, clientId, localSu
   const { t } = useTranslation()
 
   return (
-    <Table variant="simple" size="sm">
-      <Tbody>
-        <Tr>
-          <Td px={0} colSpan={2}>
-            <Tooltip label={host} hasArrow placement="top">
-              <Box overflow={'hidden'} textOverflow={'ellipsis'} fontWeight={'bold'}>
-                {formatHost(host, 20)}
-              </Box>
-            </Tooltip>
-          </Td>
-        </Tr>
-        <Tr>
-          <Td px={0}>{t('bridge.connection.port')}</Td>
-          <Td px={0} isNumeric>
-            {port}
-          </Td>
-        </Tr>
-        <Tr>
-          <Td px={0}>{t('bridge.connection.clientId')}</Td>
-          <Td px={0} isNumeric>
-            {clientId}
-          </Td>
-        </Tr>
-        <Tr>
-          <Td px={0}>{t('bridge.subscription.type', { context: 'local', count: localSubscriptions?.length || 0 })}</Td>
-          <Td px={0} isNumeric data-testid={'bridge-local-subscriptions'}>
-            {localSubscriptions?.length || 0}
-          </Td>
-        </Tr>
-        <Tr>
-          <Td px={0}>
-            {t('bridge.subscription.type', { context: 'remote', count: remoteSubscriptions?.length || 0 })}
-          </Td>
-          <Td px={0} isNumeric data-testid={'bridge-remote-subscriptions'}>
-            {remoteSubscriptions?.length || 0}
-          </Td>
-        </Tr>
-      </Tbody>
-    </Table>
+    <Chakra.dl display={'grid'} gridTemplateColumns={'repeat(2, minmax(0px, 1fr))'} columnGap={4} alignItems={'center'}>
+      <Chakra.dt>
+        <VisuallyHidden>{t('bridge.connection.host')}</VisuallyHidden>
+      </Chakra.dt>
+      <Chakra.dd gridColumn={'1/ span 2'}>
+        <Tooltip label={host} hasArrow placement="top">
+          <Box overflow={'hidden'} textOverflow={'ellipsis'} fontWeight={'bold'}>
+            {formatHost(host, 20)}
+          </Box>
+        </Tooltip>
+      </Chakra.dd>
+      <Chakra.dt>{t('bridge.connection.port')}</Chakra.dt>
+      <Chakra.dd>{port}</Chakra.dd>
+      <Chakra.dt>{t('bridge.connection.clientId')}</Chakra.dt>
+      <Chakra.dd>{clientId}</Chakra.dd>
+      <Chakra.dt>
+        {t('bridge.subscription.type', { context: 'local', count: localSubscriptions?.length || 0 })}
+      </Chakra.dt>
+      <Chakra.dd>
+        <Badge variant="subtle">{localSubscriptions?.length || 0}</Badge>
+      </Chakra.dd>
+      <Chakra.dt>
+        {t('bridge.subscription.type', { context: 'remote', count: remoteSubscriptions?.length || 0 })}
+      </Chakra.dt>
+      <Chakra.dd>
+        <Badge variant="subtle">{remoteSubscriptions?.length || 0} </Badge>
+      </Chakra.dd>
+    </Chakra.dl>
   )
 }
 

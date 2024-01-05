@@ -18,7 +18,12 @@ describe('SwitchModeButton', () => {
 
     cy.getByTestId('chakra-ui-switch-mode').click()
     cy.get('body').should('have.class', 'chakra-ui-light')
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        // TODO[NVL] CTooltip seems to generate false positives
+        region: { enabled: false },
+      },
+    })
     cy.percySnapshot('Component: SwitchModeButton')
   })
 })
