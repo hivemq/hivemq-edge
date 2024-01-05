@@ -3,6 +3,16 @@
     "iconLabel": "Topic"
   },
   "pagination": {
+    "ariaLabel": "Pagination",
+    "filter": {
+      "label": "Filter column",
+      "placeholder": "Search... ({{ size }})",
+      "noOptions": "No options available",
+      "create": "Add filter... {{ topic }}",
+      "clear": "Clear filter"
+    },
+    "noDataText": "No data received yet.",
+    "noDataFiltered": "No data matching your filters.",
     "goFirstPage": "Go to the first page",
     "goPreviousPage": "Go to the previous page",
     "goNextPage": "Go to the next page",
@@ -18,5 +28,37 @@
       "noOptionsMessage": "No topic loaded",
       "createLabel": "Add the topic ... {{topic}}"
     }
+  },
+  "DateTimeRenderer": {
+    "seconds_minus": "a few seconds ago",
+    "seconds_plus": "in a few seconds"
+  },
+  "ColorPicker": {
+    "trigger": "Selected color scheme: {{ scheme }}",
+    "popover": "Select one of the options",
+    "option": "Select {{ scheme }}"
+  },
+  "DateTimeRangeSelector": {
+    "placeholder": "Select a date",
+    "noOptionsMessage": "Not a valid date",
+    "formatCreateLabel": "Create {{ date }}",
+    "ariaLabel": "Select a date",
+    "label": {
+      "badge": {
+        "years": "{{ value }}y",
+        "months": "{{ value }}mo",
+        "weeks": "{{ value }}w",
+        "days": "{{ value }}d",
+        "hours": "{{ value }}h",
+        "minutes": "{{ value }}m",
+        "seconds": "{{ value }}s"
+      }
+    }
+  },
+  "ClipboardCopyIconButton": {
+    "ariaLabel": "Copy to the clipboard",
+    "action_READY": "Ready!",
+    "action_COPIED": "Copied!",
+    "action_ERROR": "Error!"
   }
 }

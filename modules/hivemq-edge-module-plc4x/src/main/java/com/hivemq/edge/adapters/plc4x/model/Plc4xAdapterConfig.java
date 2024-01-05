@@ -42,10 +42,16 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
             format = ModuleConfigField.FieldType.HOSTNAME)
     private @NotNull String host;
 
+    @JsonProperty("publishChangedDataOnly")
+    @ModuleConfigField(title = "Only publish data items that have changed since last poll",
+                       defaultValue = "true",
+                       format = ModuleConfigField.FieldType.BOOLEAN)
+    private boolean publishChangedDataOnly = true;
+
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
-            description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+                       description = "Map your sensor data to MQTT Topics")
+    private @NotNull List<? extends Subscription> subscriptions = new ArrayList<>();
 
     public Plc4xAdapterConfig() {
     }
@@ -58,16 +64,20 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         return host;
     }
 
-    public @NotNull List<Subscription> getSubscriptions() {
+    public boolean getPublishChangedDataOnly() {
+        return publishChangedDataOnly;
+    }
+
+    public @NotNull List<? extends Subscription> getSubscriptions() {
         return subscriptions;
     }
 
-    @JsonPropertyOrder({"tagName", "tagAddress", "destination", "qos"})
+    @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "destination", "qos"})
     public static class Subscription extends AbstractProtocolAdapterConfig.Subscription {
 
         @JsonProperty(value = "tagName", required = true)
         @ModuleConfigField(title = "Tag Name",
-                           description = "The name to assign to this address",
+                           description = "The name to assign to this address. The tag name must be unique for all subscriptions within this protocol adapter.",
                            required = true,
                            format = ModuleConfigField.FieldType.IDENTIFIER)
         private @NotNull String tagName;
@@ -78,12 +88,52 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
                            required = true)
         private @NotNull String tagAddress;
 
+        @JsonProperty("dataType")
+        @ModuleConfigField(title = "Data Type",
+                           description = "The expected data type of the tag",
+                           enumDisplayValues = {"Null",
+                                                "Boolean",
+                                                "Byte",
+                                                "Word (unit 16)",
+                                                "DWord (uint 32)",
+                                                "LWord (uint 64)",
+                                                "USint (uint 8)",
+                                                "Uint (uint 16)",
+                                                "UDint (uint 32)",
+                                                "ULint (uint 64)",
+                                                "Sint (int 8)",
+                                                "Int (int 16)",
+                                                "Dint (int 32)",
+                                                "Lint (int 64)",
+                                                "Real (float 32)",
+                                                "LReal (double 64)",
+                                                "Char (1 byte char)",
+                                                "WChar (2 byte char)",
+                                                "String",
+                                                "WString",
+                                                "Timing (Duration ms)",
+                                                "Long Timing (Duration ns)",
+                                                "Date (DateStamp)",
+                                                "Long Date (DateStamp)",
+                                                "Time Of Day (TimeStamp)",
+                                                "Long Time Of Day (TimeStamp)",
+                                                "Date Time (DateTimeStamp)",
+                                                "Long Date Time (DateTimeStamp)",
+                                                "Raw Byte Array"
+                           },
+                           required = true)
+        private @NotNull Plc4xDataType.DATA_TYPE dataType;
+
         public @NotNull String getTagName() {
             return tagName;
         }
 
         public String getTagAddress() {
             return tagAddress;
+        }
+
+        public Plc4xDataType.DATA_TYPE getDataType() {
+            return dataType;
         }
     }
 }

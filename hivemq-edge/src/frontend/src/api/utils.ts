@@ -7,9 +7,12 @@ export const QUERY_KEYS = {
   ADAPTERS: 'adapters',
   UNIFIED_NAMESPACE: 'unified.namespace',
   FRONTEND_CONFIGURATION: 'frontend.configuration',
+  FRONTEND_NOTIFICATION: 'frontend.notification',
   LISTENERS: 'gateway.listeners',
   METRICS: 'metrics',
   METRICS_SAMPLE: 'sample',
+  EVENTS: 'events',
+  GITHUB_RELEASES: 'github.releases',
 }
 
 export const parseJWT = (token: string): JWTPayload | null => {

@@ -10,6 +10,7 @@ export const NavLink: FC<{ link: MainNavLinkType }> = ({ link }) => {
   const { href, icon, isExternal, isDisabled, isActive, label } = link
   const active = location.pathname === href || !!isActive
 
+  // TODO[NVL] Styling should be done in a proper theme's variant
   return (
     <Button
       justifyContent={'flex-start'}
@@ -20,12 +21,11 @@ export const NavLink: FC<{ link: MainNavLinkType }> = ({ link }) => {
       to={href}
       target={isExternal ? '_blank' : undefined}
       h={'40px'}
-      borderLeftColor={active ? '#FFC000' : 'white'}
-      borderLeftWidth={8}
+      borderLeftColor={active ? '#FFC000' : '#f5f5f5'}
+      borderLeftWidth={active ? 8 : 0}
       borderRadius={0}
-      // _hover={!isExternal ? { borderLeftColor: '#FFC000' } : {}}
     >
-      <HStack spacing="3" fontSize="sm" fontWeight={active ? 'semibold' : 'medium'}>
+      <HStack spacing="3" fontSize="sm" fontWeight={active ? 'semibold' : 'medium'} ml={active ? 0 : 2}>
         <Center w="6" h="6">
           {icon}
         </Center>

@@ -14,6 +14,8 @@ Seamlessly defining UNS by deployment, using targeted data model & transformatio
 
 It is a Java-based open source MQTT and MQTT-SN broker that fully supports MQTT 3.x,5 and MQTT-SN 1.2.
 
+image::docs/edge-intro.gif[title=Edge Intro, align="center"]
+
 * Website: https://www.hivemq.com/
 * Documentation: https://github.com/hivemq/hivemq-edge/wiki
 * Community Forum: https://community.hivemq.com/
@@ -55,7 +57,9 @@ More Protocol adapters will be added to the project over time.
 
 * OPC UA
 * Modbus
-* S7 footnoteref:[tba, coming soon]
+* S7
+* ADS
+* HTTP
 * Allen-Bradley footnoteref:[tba]
 * and many more
 
@@ -83,7 +87,7 @@ The ideal place for questions or discussions about the HiveMQ Edge Edition is ou
 
 === Quick Start
 
-* Download the latest https://github.com/hivemq/hivemq-edge/releases/download/2023.6/hivemq-edge-2023.6.zip[HiveMQ Edge binary package].
+* Download the latest https://github.com/hivemq/hivemq-edge/releases/download/2023.9/hivemq-edge-2023.9.zip[HiveMQ Edge binary package].
 * Unzip the package.
 * Run the run.sh (Linux/OSX) or run.bat (Windows) in the bin folder of the package.
 

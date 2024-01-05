@@ -1,4 +1,4 @@
-import { GatewayConfiguration } from '@/api/__generated__'
+import { GatewayConfiguration, Notification, NotificationList } from '@/api/__generated__'
 import { rest } from 'msw'
 
 const lorem =
@@ -102,8 +102,21 @@ export const mockGatewayConfiguration: GatewayConfiguration = {
   },
 }
 
+export const MOCK_NOTIFICATIONS: Array<Notification> = [
+  {
+    level: Notification.level.WARNING,
+    title: 'Default Credentials Need Changing!',
+    description:
+      'Your gateway access is configured to use the default username/password combination. This is a security risk. Please ensure you modify your access credentials in your configuration.xml file.',
+  },
+]
+
 export const handlers = [
   rest.get('**/frontend/configuration', (_, res, ctx) => {
     return res(ctx.json<GatewayConfiguration>(mockGatewayConfiguration), ctx.status(200))
+  }),
+
+  rest.get('**/frontend/notifications', (_, res, ctx) => {
+    return res(ctx.json<NotificationList>({ items: MOCK_NOTIFICATIONS }), ctx.status(200))
   }),
 ]

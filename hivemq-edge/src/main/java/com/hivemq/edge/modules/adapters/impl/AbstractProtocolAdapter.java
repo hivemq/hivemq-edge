@@ -15,12 +15,19 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
+import ch.qos.logback.core.joran.conditional.ElseAction;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
+import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterMultiPublishJsonPayload;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload;
+import com.hivemq.edge.modules.adapters.data.TagSample;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryOutput;
@@ -31,13 +38,21 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.EventUtils;
+import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig.Subscription.MessageHandlingOptions;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /**
  * The abstract adapter contains the baseline coupling and basic lifecycle operations of
@@ -56,6 +71,8 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull ObjectMapper objectMapper;
 
+    protected @Nullable EventService eventService;
+
     protected @Nullable ProtocolAdapterPublishService adapterPublishService;
     protected @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
 
@@ -63,8 +80,10 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected @Nullable Long lastStartAttemptTime;
     protected @Nullable String errorMessage;
     protected @Nullable volatile Object lock = new Object();
-    protected @Nullable volatile RuntimeStatus runtimeStatus = RuntimeStatus.STOPPED;
-    protected @Nullable volatile ConnectionStatus connectionStatus = ConnectionStatus.DISCONNECTED;
+    protected @NotNull AtomicReference<RuntimeStatus> runtimeStatus =
+            new AtomicReference<>(RuntimeStatus.STOPPED);
+    protected @NotNull AtomicReference<ConnectionStatus> connectionStatus =
+            new AtomicReference<>(ConnectionStatus.DISCONNECTED);
 
     public AbstractProtocolAdapter(final @NotNull ProtocolAdapterInformation adapterInformation,
                                    final @NotNull T adapterConfig,
@@ -93,26 +112,60 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * @param data - The data you wish to wrap into the standard JSONB envelope
      * @return a valid JSON document encoded to UTF-8 with the supplied value wrapped as an attribute on the envelope
      */
-    public byte[] convertToJson(final @NotNull ProtocolAdapterDataSample data) throws ProtocolAdapterException {
+    public List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(final @NotNull ProtocolAdapterDataSample<?> data) {
+        Preconditions.checkNotNull(data);
+        List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
+        //-- Only include the timestamp if the settings say so
+        Long timestamp = data.getSubscription().getIncludeTimestamp() ? data.getTimestamp() : null;
+        if(data.getDataPoints().size() > 1 &&
+                data.getSubscription().getMessageHandlingOptions() ==
+                        MessageHandlingOptions.MQTTMessagePerSubscription){
+            //-- Put all derived samples into a single MQTT message
+            list.add(createMultiPublishPayload(timestamp, data.getDataPoints(), data.getSubscription().getIncludeTagNames()));
+        } else {
+            //-- Put all derived samples into individual publish messages
+            data.getDataPoints().stream().map(dp ->
+                    createPublishPayload(timestamp, dp, data.getSubscription().getIncludeTagNames())).
+                    forEach(list::add);
+        }
+        return list;
+    }
+
+    protected ProtocolAdapterPublisherJsonPayload createPublishPayload(final Long timestamp, ProtocolAdapterDataSample.DataPoint dataPoint, boolean includeTagName){
+        return new ProtocolAdapterPublisherJsonPayload(timestamp, createTagSample(dataPoint, includeTagName));
+    }
+
+    protected AbstractProtocolAdapterJsonPayload createMultiPublishPayload(final Long timestamp, List<ProtocolAdapterDataSample.DataPoint> dataPoint, boolean includeTagName){
+        return new ProtocolAdapterMultiPublishJsonPayload(timestamp, dataPoint.stream().map(dp -> createTagSample(dp, includeTagName)).collect(Collectors.toList()));
+    }
+
+    protected static TagSample createTagSample(final @NotNull ProtocolAdapterDataSample.DataPoint dataPoint, boolean includeTagName){
+        return new TagSample(includeTagName ? dataPoint.getTagName() : null, dataPoint.getTagValue());
+    }
+
+    /**
+     * Converts the supplied object into a valid JSON document which wraps a new timestamp and the
+     * supplied object as the value
+     * @param data - The data you wish to wrap into the standard JSONB envelope
+     * @return a valid JSON document encoded to UTF-8 with the supplied value wrapped as an attribute on the envelope
+     */
+    public byte[] convertToJson(final @NotNull AbstractProtocolAdapterJsonPayload data) throws ProtocolAdapterException {
         try {
             Preconditions.checkNotNull(data);
-            ProtocolAdapterPublisherJsonPayload payload = new ProtocolAdapterPublisherJsonPayload();
-            payload.setValue(data);
-            if(data.getTimestamp() > 0){
-                payload.setTimestamp(data.getTimestamp());
-            } else {
-                payload.setTimestamp(System.currentTimeMillis());
-            }
-            return objectMapper.writeValueAsBytes(payload);
+            return objectMapper.writeValueAsBytes(data);
         } catch(JsonProcessingException e){
             throw new ProtocolAdapterException("Error Wrapping Adapter Data", e);
         }
     }
 
-    protected void bindServices(final @NotNull ModuleServices moduleServices){
+    @VisibleForTesting
+    public void bindServices(final @NotNull ModuleServices moduleServices){
         Preconditions.checkNotNull(moduleServices);
         if(adapterPublishService == null){
             adapterPublishService = moduleServices.adapterPublishService();
+        }
+        if(eventService == null){
+            eventService = moduleServices.eventService();
         }
     }
 
@@ -128,9 +181,16 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * give an indication of the status of an adapter runtime.
      * @param errorMessage
      */
-    protected void reportErrorMessage(@Nullable final Throwable throwable, @NotNull final String errorMessage){
-        Preconditions.checkNotNull(throwable);
-        this.errorMessage = errorMessage == null ? throwable.getMessage() : errorMessage;
+    protected void reportErrorMessage(@Nullable final Throwable throwable, @NotNull final String errorMessage, final boolean sendEvent){
+        this.errorMessage = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
+        if(sendEvent){
+            eventService.fireEvent(
+                    eventBuilder(Event.SEVERITY.ERROR).
+                            withMessage(String.format("Adapter '%s' encountered an error.",
+                            adapterConfig.getId())).
+                            withPayload(EventUtils.generateErrorPayload(throwable)).
+                            build());
+        }
     }
 
     @Override
@@ -210,45 +270,35 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * Set the internal status indication, used by the frameworks and APIs to monitor the adapter status and offer controls around
      * state transitions.
      * @param connectionStatus - set the new status of the adapter to that supplied
+     * @return was the value updated by the operation
      */
-    protected void setConnectionStatus(@NotNull final ConnectionStatus connectionStatus){
+    protected boolean setConnectionStatus(@NotNull final ConnectionStatus connectionStatus){
         Preconditions.checkNotNull(connectionStatus);
-        synchronized (lock){
-            this.connectionStatus = connectionStatus;
-        }
+        return this.connectionStatus.getAndSet(connectionStatus) != connectionStatus;
     }
 
     /**
      * A convenience method that sets the ConnectionStatus to Error
      * and the errorMessage to that supplied.
      */
-    protected void setErrorConnectionStatus(@NotNull final String errorMessage){
-        Preconditions.checkNotNull(errorMessage);
-        synchronized (lock){
-            this.connectionStatus = ConnectionStatus.ERROR;
-            reportErrorMessage(null, errorMessage);
-        }
+    protected void setErrorConnectionStatus(@Nullable final Throwable t, @NotNull final String errorMessage){
+        boolean changed = setConnectionStatus(ConnectionStatus.ERROR);
+        reportErrorMessage(t, errorMessage, changed);
     }
+
 
     protected void setErrorConnectionStatus(@NotNull final Throwable t){
         Preconditions.checkNotNull(t);
-        synchronized (lock){
-            this.connectionStatus = ConnectionStatus.ERROR;
-            reportErrorMessage(t, t.getMessage());
-        }
+        setErrorConnectionStatus(t, null);
     }
 
     protected void setRuntimeStatus(@NotNull final RuntimeStatus runtimeStatus){
         Preconditions.checkNotNull(runtimeStatus);
-        synchronized (lock){
-            this.runtimeStatus = runtimeStatus;
-        }
+        this.runtimeStatus.set(runtimeStatus);
     }
 
     protected boolean running(){
-        synchronized (lock){
-            return runtimeStatus == RuntimeStatus.STARTED;
-        }
+        return runtimeStatus.get() == RuntimeStatus.STARTED;
     }
 
     @Override
@@ -266,31 +316,39 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
 
     @Override
     public ConnectionStatus getConnectionStatus() {
-        return connectionStatus;
+        return connectionStatus.get();
     }
 
     @Override
     public RuntimeStatus getRuntimeStatus() {
-        return runtimeStatus;
+        return runtimeStatus.get();
     }
 
     protected void onStartFail(@NotNull final ProtocolAdapterStartOutput output, @NotNull final Throwable throwable){
-        setErrorConnectionStatus(throwable);
+        setErrorConnectionStatus(throwable, null);
         output.failStart(throwable, throwable.getMessage());
-        //-- TODO add system event
+        eventService.fireEvent(
+                eventBuilder(Event.SEVERITY.CRITICAL).
+                        withPayload(EventUtils.generateErrorPayload(throwable)).
+                        withMessage("Error starting adapter").build());
     }
 
     protected void onStartSuccess(@NotNull final ProtocolAdapterStartOutput output){
         setRuntimeStatus(RuntimeStatus.STARTED);
         output.startedSuccessfully("adapter start OK");
-        //-- TODO add system event
+        eventService.fireEvent(
+                eventBuilder(Event.SEVERITY.INFO).
+                        withMessage(String.format("Adapter '%s' started OK.",
+                        adapterConfig.getId())).build());
     }
 
     protected void onStop(){
         setRuntimeStatus(RuntimeStatus.STOPPED);
-        //-- TODO add system event
+        eventService.fireEvent(
+                eventBuilder(Event.SEVERITY.INFO).
+                        withMessage(String.format("Adapter '%s' stopped OK.",
+                        adapterConfig.getId())).build());
     }
-
 
     /**
      * Provide a method to lazily traverse tag-data on your external device.
@@ -306,4 +364,14 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected abstract CompletableFuture<ProtocolAdapterStartOutput> startInternal(final ProtocolAdapterStartOutput output);
 
     protected abstract CompletableFuture<Void> stopInternal();
+
+    protected Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity){
+        Event.Builder builder = new Event.Builder();
+        builder.withTimestamp(System.currentTimeMillis());
+        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterConfig.getId()));
+        builder.withAssociatedObject(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER_TYPE,
+                adapterInformation.getProtocolId()));
+        builder.withSeverity(severity);
+        return builder;
+    }
 }

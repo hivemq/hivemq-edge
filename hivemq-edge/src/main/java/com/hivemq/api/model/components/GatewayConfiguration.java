@@ -17,6 +17,7 @@ package com.hivemq.api.model.components;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.api.model.capabilities.CapabilityList;
 import com.hivemq.api.model.firstuse.FirstUseInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -61,7 +62,6 @@ public class GatewayConfiguration {
     @JsonProperty("extensions")
     @Schema(description = "The extensions available for installation")
     private ExtensionList extensions;
-
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public GatewayConfiguration(

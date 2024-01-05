@@ -1,10 +1,10 @@
 /// <reference types="cypress" />
 import { useForm } from 'react-hook-form'
 import { FC } from 'react'
+import { Button } from '@chakra-ui/react'
 
 import { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
-import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 
 import SubscriptionsPanel from './SubscriptionsPanel.tsx'
 import { SubscriptionType } from '@/modules/Bridges/types.ts'
@@ -27,9 +27,9 @@ const TestingComponent: FC<TestingComponentProps> = ({ onSubmit, defaultValues }
       <form id="bridge-form" onSubmit={form.handleSubmit(onSubmit)}>
         <SubscriptionsPanel form={form} type={MOCK_TYPE} />
       </form>
-      <ButtonCTA type={'submit'} form="bridge-form" data-testid={'form-submit'} mt={8}>
+      <Button variant={'primary'} type={'submit'} form="bridge-form" data-testid={'form-submit'} mt={8}>
         Submit
-      </ButtonCTA>
+      </Button>
     </div>
   )
 }
@@ -37,6 +37,10 @@ const TestingComponent: FC<TestingComponentProps> = ({ onSubmit, defaultValues }
 describe('SubscriptionsPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [] }).as('getConfig1')
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [] }).as('getConfig2')
+    cy.intercept('/api/v1/management/bridges', { items: [] }).as('getConfig3')
   })
 
   it('should be accessible', () => {
@@ -51,6 +55,8 @@ describe('SubscriptionsPanel', () => {
       rules: {
         // TODO[#111] Color-contrast fixed but still not passing. Flaky with expandable panel
         'color-contrast': { enabled: false },
+        // TODO[NVL] CTooltip seems to generate false positives
+        region: { enabled: false },
       },
     })
     cy.percySnapshot('Component: SubscriptionsPanel')
@@ -62,9 +68,11 @@ describe('SubscriptionsPanel', () => {
     // force validation to trigger error messages. Better alternative?
     cy.getByTestId(`form-submit`).click()
 
-    cy.getByTestId(`${MOCK_TYPE}.0.filters`).should('be.visible').find('label').should('have.attr', 'data-invalid')
+    cy.getByTestId(`${MOCK_TYPE}.0.filters`).should('be.visible').find('label').should('not.have.attr', 'data-invalid')
 
-    cy.get('input[id="remoteSubscriptions.0.filters"').type('my topic{Enter}')
+    cy.get('input[id="remoteSubscriptions.0.filters"]').type('my topic{Enter}')
+    // force validation to trigger error messages. Better alternative?
+    cy.getByTestId(`form-submit`).click()
     cy.getByTestId(`${MOCK_TYPE}.0.destination`).should('be.visible').find('label').should('have.attr', 'data-invalid')
   })
 })

@@ -247,8 +247,11 @@ public class InternalConfigurations {
 
     /**
      * When this amount of in-flight messages is reached, the forwarder stops message polling.
+     * 32 is the default as the client will block the publish() call when more than 64 messages are outgoing (broken connection f.e.)
+     * This means that we might poll when 31 are outgoing and will poll 32 messages then => 31 + 32 = 63 < 64.
+     * This way the publish call should never block.
      */
-    public static final int FORWARDER_POLL_THRESHOLD_MESSAGES = 100;
+    public static final int FORWARDER_POLL_THRESHOLD_MESSAGES = 32;
 
     /* ********************
      *       HTTP API     *
@@ -265,4 +268,5 @@ public class InternalConfigurations {
     public static final AtomicInteger ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF = new AtomicInteger(60 * 10 * 1000); //-- 10 minutes
     public static final AtomicInteger ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS = new AtomicInteger(60 * 1000);  //-- 60 Seconds
     public static final AtomicInteger ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT = new AtomicInteger(10);
+    public static final AtomicInteger EDGE_RUNTIME_MAX_EVENTS_IN_INMEMORY_LIST = new AtomicInteger(250);
 }

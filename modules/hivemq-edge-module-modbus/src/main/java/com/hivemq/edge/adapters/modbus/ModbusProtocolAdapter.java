@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.modbus;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.impl.AbstractPollingPerSubscriptionAdapter;
 import com.hivemq.edge.modules.adapters.model.NodeTree;
 import com.hivemq.edge.modules.adapters.model.NodeType;
@@ -33,8 +34,8 @@ import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -107,13 +108,13 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected CompletableFuture<PublishReturnCode> captureDataSample(@NotNull final ModBusData data) {
+    protected CompletableFuture<?> captureDataSample(@NotNull final ModBusData data) {
         boolean publishData = true;
         if (adapterConfig.getPublishChangedDataOnly()) {
             ModBusData previousSample = lastSamples.put(data.getType(), data);
             if (previousSample != null) {
-                Object[][] objects = (Object[][]) previousSample.getData();
-                publishData = !Arrays.deepEquals(objects, (Object[][]) data.getData());
+                List<ProtocolAdapterDataSample.DataPoint> dataPoints = previousSample.getDataPoints();
+                publishData = !dataPoints.equals(data.getDataPoints());
             }
         }
         if (publishData) {
@@ -150,22 +151,31 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
             if(modbusClient != null){
                 if (!modbusClient.isConnected()) {
                     modbusClient.connect().thenRun(() ->
-                            setConnectionStatus(ConnectionStatus.CONNECTED));
+                                setConnectionStatus(ConnectionStatus.CONNECTED)).get();
                 }
-                //TODO - check out the async API
-                ModbusAdapterConfig.AddressRange addressRange = ((ModbusAdapterConfig.Subscription)subscription).getAddressRange();
-                Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
-                        addressRange.endIdx - addressRange.startIdx);
-                ModBusData data = new ModBusData(null,subscription.getDestination(), subscription.getQos(),
-                        ModBusData.TYPE.HOLDING_REGISTERS);
-                data.setData(addressRange.startIdx, registers);
-                return CompletableFuture.completedFuture(data);
+                return CompletableFuture.supplyAsync(() -> readRegisters(subscription));
             } else {
                 return CompletableFuture.failedFuture(new IllegalStateException("client not initialised"));
             }
         } catch(Exception e){
-            setErrorConnectionStatus(e);
             return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    protected ModBusData readRegisters(@NotNull final AbstractProtocolAdapterConfig.Subscription sub) {
+        try {
+            ModbusAdapterConfig.Subscription subscription = (ModbusAdapterConfig.Subscription) sub;
+            ModbusAdapterConfig.AddressRange addressRange = subscription.getAddressRange();
+            Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
+                    addressRange.endIdx - addressRange.startIdx);
+            ModBusData data = new ModBusData(subscription, ModBusData.TYPE.HOLDING_REGISTERS);
+            //add data point per register
+            for (int i = 0; i < registers.length; i++){
+                data.addDataPoint("register-"+(addressRange.startIdx + i), registers[i]);
+            }
+            return data;
+        } catch(Exception e){
+            throw new RuntimeException(e);
         }
     }
 

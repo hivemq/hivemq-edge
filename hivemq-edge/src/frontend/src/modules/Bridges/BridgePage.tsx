@@ -21,10 +21,10 @@ const BridgePage: FC = () => {
       cta={
         <Flex height={'100%'} justifyContent={'flex-end'} alignItems={'flex-end'} pb={6}>
           <Button
-            variant="outline"
             leftIcon={<BiAddToQueue />}
             onClick={() => navigate('/mqtt-bridges/new')}
             isDisabled={isLoading || isError}
+            variant={'primary'}
           >
             {t('bridge.action.add')}
           </Button>

@@ -16,10 +16,7 @@
 package com.hivemq.edge.adapters.modbus.model;
 
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.message.QoS;
-
-import java.util.Arrays;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 
 /**
  * @author Simon L Johnson
@@ -34,21 +31,12 @@ public class ModBusData extends ProtocolAdapterDataSample {
 
     private final TYPE type;
 
-    public ModBusData(final Object data, final String topic, final int qos, final TYPE type) {
-        super(data, topic, qos);
+    public ModBusData(AbstractProtocolAdapterConfig.Subscription subscription, final TYPE type) {
+        super(subscription);
         this.type = type;
     }
 
     public TYPE getType() {
         return type;
-    }
-
-    public void setData(int startIdx, Object[] data) {
-        Object[][] arr = new Object[data.length][2];
-        for(int i = 0; i < data.length; i++){
-            arr[i][0] = startIdx + i;
-            arr[i][1] = data[i];
-        }
-        this.data = arr;
     }
 }

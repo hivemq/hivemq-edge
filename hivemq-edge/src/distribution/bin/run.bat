@@ -12,20 +12,19 @@ rem  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 rem  See the License for the specific language governing permissions and
 rem  limitations under the License.
 
-  @echo off
-  echo -------------------------------------------------------------------------
-  echo.
-  echo                   _    _  _              __  __   ____
-  echo                  ^| ^|  ^| ^|(_)            ^|  \/  ^| / __ \
-  echo                  ^| ^|__^| ^| _ __   __ ___ ^| \  / ^|^| ^|  ^| ^|
-  echo                  ^|  __  ^|^| ^|\ \ / // _ \^| ^|\/^| ^|^| ^|  ^| ^|
-  echo                  ^| ^|  ^| ^|^| ^| \ V /^|  __/^| ^|  ^| ^|^| ^|__^| ^|
-  echo                  ^|_^|  ^|_^|^|_^|  \_/  \___^|^|_^|  ^|_^| \___\_\
-  echo.
-  echo -------------------------------------------------------------------------
-  echo.
-  echo   HiveMQ Start Script for Windows v1.6
-  echo.
+@echo off
+echo -------------------------------------------------------------------------
+echo '  _    _ _           __  __  ____             _                          '
+echo ' | |  | (_)         |  \/  |/ __ \           | |                         '
+echo ' | |__| |___   _____| \  / | |  | |   ___  __| | __ _  ___               '
+echo ' |  __  | \ \ / / _ \ |\/| | |  | |  / _ \/ _` |/ _` |/ _ \              '
+echo ' | |  | | |\ V /  __/ |  | | |__| | |  __/ (_| | (_| |  __/              '
+echo ' |_|  |_|_| \_/ \___|_|  |_|\___\_\  \___|\__,_|\__, |\___|              '
+echo '                                                __/ |                    '
+echo "-------------------------------------------------------------------------"
+echo.
+echo   HiveMQ Edge Start Script for Windows v1.6
+echo.
 
   call :isAdmin
   if %errorlevel% == 0 (

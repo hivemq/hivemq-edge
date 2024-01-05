@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Encapsulate the management of the schema, anbd ensure we external managed API instances to decouple from
+ * Encapsulate the management of the schema, and ensure we internally managed API instances to decouple from
  * schema parser
  *
  * @author Simon L Johnson

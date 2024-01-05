@@ -33,18 +33,20 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
       <Heading>{t('welcome.onboarding.title')}</Heading>
       <SimpleGrid spacing={6} templateColumns="repeat(auto-fill, minmax(33vw, 10fr))">
         {data &&
-          data.map((e) => (
-            <Card flex={1} key={e.header}>
+          data.map((e, i) => (
+            <Card flex={1} key={e.header} as={'aside'} aria-labelledby={`heading-task-${i}`}>
               <CardHeader>
                 <Skeleton isLoaded={!e.isLoading}>
-                  <Heading size="md">{e.header}</Heading>
+                  <Heading as="h3" size="md" id={`heading-task-${i}`}>
+                    {e.header}
+                  </Heading>
                 </Skeleton>
               </CardHeader>
 
               <CardBody pt={0}>
                 <Stack divider={<StackDivider />} spacing="4">
                   {e.sections.map((s) => (
-                    <Stack key={s.title} spacing={8} direction="row" gap={4}>
+                    <Stack as="section" key={s.title} spacing={8} direction="row" gap={4}>
                       <Skeleton isLoaded={!e.isLoading}>
                         <Box>
                           <BsClipboardCheck />
@@ -52,7 +54,7 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
                       </Skeleton>
                       <Skeleton isLoaded={!e.isLoading}>
                         <Box>
-                          <Text fontSize="sm">{s.title}</Text>
+                          <Text>{s.title}</Text>
                           <Button
                             variant="link"
                             as={RouterLink}
@@ -60,7 +62,6 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
                             target={s.isExternal ? '_blank' : undefined}
                             aria-label={s.label}
                             leftIcon={s.leftIcon}
-                            size="lg"
                           >
                             {s.label}
                           </Button>

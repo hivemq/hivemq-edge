@@ -12,7 +12,9 @@
     "next": "Next",
     "start": "Start",
     "stop": "Stop",
-    "restart": "Restart"
+    "restart": "Restart",
+    "mode_light": "Switch to dark mode",
+    "mode_dark": "Switch to light mode"
   },
   "hivemq": {
     "topic": "Topic",
@@ -35,20 +37,20 @@
         "workspace": "Workspace",
         "bridges": "MQTT Bridges",
         "protocolAdapters": "Protocol Adapters",
-        "eventLogs": "Event logs"
+        "eventLogs": "Event Logs"
       }
     },
     "extensions": {
       "title": "Extensions",
       "routes": {
         "modules": "Modules",
-        "namespace": "Unified namespace"
+        "namespace": "Unified Namespace"
       }
     },
     "resources": {
       "title": "External resources",
       "routes": {
-        "articles": "Useful articles",
+        "articles": "Useful Articles",
         "github": "GitHub",
         "help": "Documentation"
       }
@@ -56,7 +58,9 @@
   },
   "error": {
     "backHome": "Back to Home",
-    "notfound": { "heading": "Sorry, an unexpected error has occurred" },
+    "notfound": {
+      "heading": "Sorry, an unexpected error has occurred"
+    },
     "wip": {
       "message": "This is a work in progress. Be patient with us"
     }
@@ -85,7 +89,9 @@
         "required": "The password is required"
       }
     },
-    "submit": { "label": "Sign in" },
+    "submit": {
+      "label": "Sign in"
+    },
     "error": {
       "defaultCredentials": "We cannot load your default credentials. Please try again later",
       "verifyCredentials": "We cannot verify your credentials. Please try again later",
@@ -119,21 +125,18 @@
         }
       },
       "connectCloud": {
-        "header": "Connect To HiveMQ Cloud\n",
-        "bridge": {
-          "title": "Connect your HiveMQ Edge MQTT Broker to your Enterprise using MQTT Bridge connections.",
-          "label": "Use a Bridge"
+        "header": "Connect To HiveMQ Cloud",
+        "section": {
+          "title": "You should connect your HiveMQ Edge deployment with a HiveMQ Cloud MQTT Broker, which will be the source of truth for your business data",
+          "label": "Connect To HiveMQ Cloud"
         }
       }
-    },
-    "metrics": {
-      "select": "Select a metric to display",
-      "display": "Add to panel"
     }
   },
   "bridge": {
     "title": "MQTT bridges",
-    "description": "A MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
+    "description": "An MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
+    "list": "List of bridges",
     "action": {
       "add": "Add bridge connection",
       "edit": "Edit",
@@ -160,6 +163,11 @@
         "title": "Creating Bridge",
         "description": "We've successfully created a new bridge for you.",
         "error": "There was a problem trying to create the bridge"
+      },
+      "view": {
+        "title": "Viewing Bridge",
+        "error": "There was a problem trying to view the bridge",
+        "noLongerExist": "The bridge {{id}} doesn't exist anymore"
       }
     },
     "status": {
@@ -336,16 +344,30 @@
     },
     "stepper": {
       "description": "Create a new bridge to a broker",
-      "source": { "title": "Source", "description": "MQTT Broker" },
-      "local": { "title": "Local", "description": "Local subscriptions" },
-      "remote": { "title": "Remote", "description": "Remote subscriptions" },
-      "options": { "title": "Options" },
-      "publish": { "title": "Publish" }
+      "source": {
+        "title": "Source",
+        "description": "MQTT Broker"
+      },
+      "local": {
+        "title": "Local",
+        "description": "Local subscriptions"
+      },
+      "remote": {
+        "title": "Remote",
+        "description": "Remote subscriptions"
+      },
+      "options": {
+        "title": "Options"
+      },
+      "publish": {
+        "title": "Publish"
+      }
     }
   },
   "protocolAdapter": {
     "title": "Protocol Adapters",
     "description": "Protocol adapters provide the ability to connect your HiveMQ Edge installation to local and remote devices. Once a connection has been established, you can consolidate data from this connection into your HiveMQ MQTT Broker.",
+    "list": "List of protocol adapters",
     "action": {
       "add": "Add",
       "delete": "Delete",
@@ -391,6 +413,7 @@
       "description_other": "Select one of the following $t(protocolAdapter.protocols.adapterCount, {\"count\": {{count}} }) to start creating your connection"
     },
     "facet": {
+      "description": "Search and filter protocol adapters",
       "search": {
         "label": "Search",
         "placeholder": "Search for a protocol",
@@ -437,16 +460,12 @@
     "toast": {
       "status": {
         "title": "Connection updating",
-        "action_STOP": "stopped",
-        "action_START": "started",
-        "action_RESTART": "restarted",
         "device": "the device",
         "device_BRIDGE": "the bridge",
         "device_ADAPTER": "the adapter",
-        "callbackTimeoutMillis_zero": "a little bit of time",
-        "callbackTimeoutMillis_one": "up to {{count}} second",
-        "callbackTimeoutMillis_other": "up to {{count}} seconds",
-        "description": "We've successfully $t(protocolAdapter.toast.status.action, {'context': '{{action}}' }) $t(protocolAdapter.toast.status.device, {'context': '{{device}}' }). It might take $t(protocolAdapter.toast.status.callbackTimeoutMillis, {'count': {{callbackTimeoutMillis}} }) to update the status.",
+        "description_STOP": "We've successfully stopped $t(protocolAdapter.toast.status.device, {'context': '{{device}}' }). It might take a moment to update the status.",
+        "description_START": "We've successfully started $t(protocolAdapter.toast.status.device, {'context': '{{device}}' }). It might take a moment to update the status.",
+        "description_RESTART": "We've successfully restarted $t(protocolAdapter.toast.status.device, {'context': '{{device}}' }). It might take a moment to update the status.",
         "error": "There was a problem trying to reconnect $t(protocolAdapter.toast.status.device, {'context': '{{device}}' })"
       },
       "delete": {
@@ -463,6 +482,11 @@
         "title": "Creating Protocol Adapter",
         "description": "We've successfully created a new Protocol Adapter for you.",
         "error": "There was a problem trying to create the Protocol Adapter"
+      },
+      "view": {
+        "title": "Viewing Protocol Adapter",
+        "error": "There was a problem trying to view the protocol adapter",
+        "noLongerExist": "The Protocol Adapter {{id}} doesn't exist"
       }
     },
     "type": {
@@ -478,6 +502,8 @@
         "security": "Security",
         "publishing": "Publishing",
         "http": "HTTP",
+        "ads": "ADS",
+        "eip": "Ethernet IP",
         "s7advanced": "S7 Device",
         "authentication": "Authentication"
       }
@@ -511,7 +537,6 @@
           "A Unified Namespace is a middleware solution that allows you to collect data from various industrial systems, add context to it, and transform it into a format that other systems can understand.",
           "ISA 95 provides a convenient way of structuring data sources in relation to their position within a manufacturing enterprise, hierarchically. "
         ],
-
         "link": "Go to hivemq website to know more"
       },
       "recommend": {
@@ -553,7 +578,9 @@
       "label": "Add prefix to all topics",
       "helper": "MQTT topics will use the namespace defined"
     },
-    "submit": { "label": "Submit" },
+    "submit": {
+      "label": "Submit"
+    },
     "toast": {
       "update": {
         "title": "Updating namespace",
@@ -566,6 +593,14 @@
     }
   },
   "workspace": {
+    "controls": {
+      "aria-label": "Workspace toolbar",
+      "zoomIn": "Zoom in",
+      "zoomIOut": "Zoom out",
+      "fitView": "Fit to the canvas",
+      "toggleInteractivity": "Lock the canvas",
+      "group": "Group the selected entities"
+    },
     "configuration": {
       "header": "Workspace configuration",
       "content": {
@@ -589,21 +624,56 @@
       "gateway": "Node: Gateway",
       "group": "Node: Group"
     },
+    "device": {
+      "type_ADAPTER_NODE": "adapter",
+      "type_BRIDGE_NODE": "bridge"
+    },
     "layout": {
       "HORIZONTAL": "Horizontal",
       "CIRCLE_PACKING": "Circle Packing"
     },
     "grouping": {
+      "toolbar": {
+        "aria-label": "Toolbar for the group {{ id }}"
+      },
+      "modal": {
+        "title": "Ungroup the adapters",
+        "description": "Are you sure you want to delete this group? The adapters inside the group will revert to their original state."
+      },
+      "command": {
+        "overview": "Open the overview panel",
+        "expand": "Expand group",
+        "collapse": "Collapse group",
+        "ungroup": "Ungroup"
+      },
+      "editor": {
+        "title": "Configure the group",
+        "input-title": "Title",
+        "input-color": "Group colour",
+        "save": "Save changes"
+      },
+      "untitled": "Untitled group",
       "title": "Grouping",
       "by_type": "By type",
       "by_subscriptionCardinality": "By subscription count",
       "by_runtimeDuration": "By duration"
     },
-    "observability": {
-      "adapter": {
-        "header": "Adapter Observability",
-        "modify": "Modify the adapter"
+    "property": {
+      "header_ADAPTER_NODE": "Adapter Overview",
+      "header_BRIDGE_NODE": "Bridge Overview",
+      "header_CLUSTER_NODE": "Group Overview",
+      "modify_ADAPTER_NODE": "Modify the adapter",
+      "modify_BRIDGE_NODE": "Modify the bridge",
+      "eventLog": {
+        "header": "The 5 most recent events for $t(workspace.device.type, {'context': '{{ type }}' }) {{ id }}",
+        "showMore": "Show more"
       }
+    },
+    "observability": {
+      "aria-label": "Open the Observability panel",
+      "header_ADAPTER_NODE": "Adapter Observability",
+      "header_BRIDGE_NODE": "Bridge Observability",
+      "header_CLUSTER_NODE": "Group Observability"
     }
   },
   "modals": {
@@ -637,18 +707,93 @@
     }
   },
   "metrics": {
-    "protocolAdapters": {
+    "editor": {
+      "title": "Configure the metrics",
+      "select-metric": "Select a metric to display",
+      "select-chart": "Select a chart",
+      "add": "Add to panel"
+    },
+    "command": {
+      "showSelector": {
+        "ariaLabel": "Show/hide the metrics selector"
+      },
+      "remove": {
+        "ariaLabel": "Remove from panel"
+      },
+      "copy": {
+        "ariaLabel": "Copy the metric to the clipboard",
+        "prompt": "The metric information has been copied to the clipboard"
+      },
+      "resize": {
+        "expand": "Expand the chart",
+        "collapse": "Collapse the chart"
+      }
+    },
+    "charts": {
+      "list": "List of metrics",
+      "LineChart": {
+        "ariaLabel": {
+          "legend": "timestamp (seconds ago)"
+        }
+      }
+    },
+    "protocol-adapters": {
       "connection.success.count": "Connection success (count)",
       "connection.failed.count": "Connection failed (count)",
       "read.publish.failed.count": "Publish failed (count)",
       "read.publish.success.count": "Publish success (count)"
     },
     "bridge": {
-      "publish.loop-hops-exceeded.count": "",
-      "publish.count": "",
-      "publish.failed.count": "",
-      "publish.excluded.count": ""
+      "forward.publish.loop-hops-exceeded.count": "[Forward] Loop hops exceeded (count)",
+      "forward.publish.count": "[Forward] Publish success (count)",
+      "forward.publish.failed.count": "[Forward] Publish failed (count)",
+      "forward.publish.excluded.count": "[Forward] Publish excluded (count)",
+      "local.publish.loop-hops-exceeded.count": "[Local] Loop hops exceeded (count)",
+      "local.publish.count": "[Local] Publish success (count)",
+      "local.publish.failed.count": "[Local] Publish failed (count)",
+      "local.publish.excluded.count": "[Local] Publish excluded (count)",
+      "local.publish.received.count": "[Local] Publish received (count)",
+      "local.publish.no-subscriber-present.count": "[Local] No subscriber (count)",
+      "remote.publish.received.count": "[Remote] Publish received (count)",
+      "remote.publish.loop-hops-exceeded.count": "[Remote] Loop hops exceeded (count)"
     },
     "messages.retained.current": "Message retained"
+  },
+  "eventLog": {
+    "title": "Event Log",
+    "description": "System components generate events in the system which can help in the diagnosis of issues or general system monitoring. The Event Log allows you to interact with the events and explore the system",
+    "table": {
+      "header": {
+        "id": "Details",
+        "created": "Created",
+        "severity": "Severity",
+        "message": "Event",
+        "source": "Source",
+        "associatedObject": "Associated Object",
+        "payload": "Payload"
+      },
+      "cta": {
+        "open": "View details of event",
+        "refetch": "Update the Event Log"
+      }
+    },
+    "panel": {
+      "title": "Event"
+    },
+    "error": {
+      "loading": "We cannot load the events at this time. Please try again later"
+    }
+  },
+  "notifications": {
+    "badge": {
+      "ariaLabel": "Notifications"
+    },
+    "toast": {
+      "skipNotification": "Do not notify me again"
+    },
+    "releases": {
+      "title": "A new version of $t(branding.appName) is available",
+      "description": "Visit the GitHub repository to learn more about the latest version of $t(branding.appName)"
+    }
   }
 }

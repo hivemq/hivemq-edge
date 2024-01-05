@@ -42,7 +42,12 @@ import javax.inject.Singleton;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -96,10 +101,20 @@ public class MessageForwarderImpl implements MessageForwarder {
         }
         final ImmutableSet<String> queueIds = queueIdsBuilder.build();
         mqttForwarder.setExecutorService(executorService);
-        mqttForwarder.setCallback((message, queueId, cancelled) -> messageProcessed(message,
+        mqttForwarder.setAfterForwardCallback((qos, uniqueId, queueId, cancelled) -> messageProcessed(qos,
+                uniqueId,
                 forwarderId,
                 queueId,
                 cancelled));
+        mqttForwarder.setResetInflightMarkerCallback((sharedSubscriptionId, uniqueId)->{
+            try {
+                queuePersistence.get().removeInFlightMarker(sharedSubscriptionId, uniqueId).get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+
         forwarders.put(forwarderId, mqttForwarder);
         queueIdsForForwarder.put(forwarderId, queueIds);
         notEmptyQueues.addAll(queueIds);
@@ -108,32 +123,33 @@ public class MessageForwarderImpl implements MessageForwarder {
     }
 
     @Override
-    public void removeForwarder(final @NotNull MqttForwarder mqttForwarder) {
+    public void removeForwarder(final @NotNull MqttForwarder mqttForwarder, final boolean clearQueue) {
         final String forwarderId = mqttForwarder.getId();
         final String clientId = forwarderId + hivemqId.get();
         for (String topic : mqttForwarder.getTopics()) {
             topicTree.removeSubscriber(clientId, topic, FORWARDER_PREFIX + forwarderId);
             final String queueId = createQueueId(forwarderId, topic);
             notEmptyQueues.remove(queueId);
-            queuePersistence.get().clear(queueId, true); //clear up queue
+            if(clearQueue) {
+                queuePersistence.get().clear(queueId, true); //clear up queue
+            }
         }
         queueIdsForForwarder.remove(forwarderId);
         forwarders.get(forwarderId).stop();
         forwarders.remove(forwarderId);
-
     }
 
     public void messageProcessed(
-            final @NotNull PUBLISH message,
+            final @NotNull QoS qos,
+            final @NotNull String uniqueId,
             final @NotNull String forwarderId,
             final @NotNull String queueId,
             boolean cancelled) {
         singleWriterService.callbackExecutor(queueId).execute(() -> {
             //QoS 0 has no inflight marker
-            if (message.getQoS() != QoS.AT_MOST_ONCE) {
+            if (qos != QoS.AT_MOST_ONCE) {
                 //-- 15665 - > QoS 0 causes republishing
-                FutureUtils.addExceptionLogger(queuePersistence.get()
-                        .removeShared(queueId, message.getUniqueId()));
+                FutureUtils.addExceptionLogger(queuePersistence.get().removeShared(queueId, uniqueId));
             }
             continueForwarding(queueId, forwarders.get(forwarderId));
         });
@@ -154,8 +170,7 @@ public class MessageForwarderImpl implements MessageForwarder {
         });
     }
 
-    @NotNull
-    private String createQueueId(final @NotNull String forwarderId, final @NotNull String topic) {
+    private static @NotNull String createQueueId(final @NotNull String forwarderId, final @NotNull String topic) {
         return FORWARDER_PREFIX + forwarderId + "/" + topic;
     }
 

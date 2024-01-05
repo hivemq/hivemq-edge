@@ -1,1 +1,3 @@
 com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterFactory
+com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory
+com.hivemq.edge.adapters.plc4x.types.eip.EIPProtocolAdapterFactory

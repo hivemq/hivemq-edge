@@ -26,19 +26,22 @@ import com.hivemq.http.core.HttpConstants;
 import java.util.ArrayList;
 import java.util.List;
 
-@JsonPropertyOrder({"url",
-                    "destination",
-                    "qos",
-                    "httpRequestMethod",
-                    "httpConnectTimeout",
-                    "httpRequestBodyContentType",
-                    "httpRequestBody",
-                    "httpPublishSuccessStatusCodeOnly",
-                    "httpHeaders"})
+@JsonPropertyOrder({
+        "url",
+        "destination",
+        "qos",
+        "httpRequestMethod",
+        "httpConnectTimeout",
+        "httpRequestBodyContentType",
+        "httpRequestBody",
+        "httpPublishSuccessStatusCodeOnly",
+        "httpHeaders"})
 public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
     public enum HttpMethod {
-        GET, POST, PUT
+        GET,
+        POST,
+        PUT
     }
 
     public enum HttpContentType {
@@ -48,7 +51,7 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         XML("application/xml"),
         YAML("application/yaml");
 
-        HttpContentType(String contentType){
+        HttpContentType(String contentType) {
             this.contentType = contentType;
         }
 
@@ -60,11 +63,9 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
     }
 
     @JsonProperty("url")
-    @ModuleConfigField(title = "URL",
-                       description = "The url of the http request you would like to make",
+    @ModuleConfigField(title = "URL", description = "The url of the http request you would like to make",
 //                       stringPattern = HttpConstants.HTTP_URL_REGEX,
-                       format = ModuleConfigField.FieldType.URI,
-                       required = true)
+                       format = ModuleConfigField.FieldType.URI, required = true)
     private @NotNull String url;
 
     @JsonProperty(value = "destination", required = true)
@@ -96,18 +97,18 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
     private @NotNull HttpAdapterConfig.HttpContentType httpRequestBodyContentType = HttpContentType.JSON;
 
     @JsonProperty("httpRequestBody")
-    @ModuleConfigField(title = "Http Request Body",
-                       description = "The body to include in the HTTP request")
+    @ModuleConfigField(title = "Http Request Body", description = "The body to include in the HTTP request")
     private @NotNull String httpRequestBody;
 
     @JsonProperty("httpConnectTimeout")
     @ModuleConfigField(title = "Http Connection Timeout",
-                       description = "Timeout (in second) to wait for the HTTP Request to complete", required = true, defaultValue = HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS + "")
+                       description = "Timeout (in second) to wait for the HTTP Request to complete",
+                       required = true,
+                       defaultValue = HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS + "")
     private @NotNull Integer httpConnectTimeout = HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 
     @JsonProperty("httpHeaders")
-    @ModuleConfigField(title = "HTTP Headers",
-                       description = "HTTP headers to be added to your requests")
+    @ModuleConfigField(title = "HTTP Headers", description = "HTTP headers to be added to your requests")
     private @NotNull List<HttpHeader> httpHeaders = new ArrayList<>();
 
     @JsonProperty("httpPublishSuccessStatusCodeOnly")
@@ -116,12 +117,23 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private boolean httpPublishSuccessStatusCodeOnly = true;
 
+    @JsonProperty("allowUntrustedCertificates")
+    @ModuleConfigField(title = "Allow the adapter to read from untrusted SSL sources (for example expired certificates).",
+                       defaultValue = "false",
+                       format = ModuleConfigField.FieldType.BOOLEAN)
+    private boolean allowUntrustedCertificates = false;
+
     public HttpAdapterConfig() {
+    }
+
+    public HttpAdapterConfig(final @NotNull String adapterId) {
+        this.id = adapterId;
     }
 
     public boolean isHttpPublishSuccessStatusCodeOnly() {
         return httpPublishSuccessStatusCodeOnly;
     }
+
     public @NotNull HttpMethod getHttpRequestMethod() {
         return httpRequestMethod;
     }
@@ -154,16 +166,18 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         return qos;
     }
 
+    public boolean isAllowUntrustedCertificates() {
+        return allowUntrustedCertificates;
+    }
+
     public static class HttpHeader {
 
         @JsonProperty("name")
-        @ModuleConfigField(title = "Http Header Name",
-                           description = "The name of the HTTP header")
+        @ModuleConfigField(title = "Http Header Name", description = "The name of the HTTP header")
         private String name;
 
         @JsonProperty("value")
-        @ModuleConfigField(title = "Http Header Value",
-                           description = "The value of the HTTP header")
+        @ModuleConfigField(title = "Http Header Value", description = "The value of the HTTP header")
         private String value;
 
         public HttpHeader() {

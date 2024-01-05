@@ -7,11 +7,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import PageContainer from '@/components/PageContainer.tsx'
 import ProtocolAdapters from '@/modules/ProtocolAdapters/components/panels/ProtocolAdapters.tsx'
 import ProtocolIntegrationStore from '@/modules/ProtocolAdapters/components/panels/ProtocolIntegrationStore.tsx'
-
-export enum ProtocolAdapterTabIndex {
-  protocols = 0,
-  adapters = 1,
-}
+import { AdapterNavigateState } from '@/modules/ProtocolAdapters/types.ts'
 
 const ProtocolAdapterPage: FC = () => {
   const { t } = useTranslation()
@@ -19,7 +15,7 @@ const ProtocolAdapterPage: FC = () => {
   const [tabIndex, setTabIndex] = useState(0)
 
   useEffect(() => {
-    if (state?.protocolAdapterTabIndex) {
+    if ((state as AdapterNavigateState)?.protocolAdapterTabIndex) {
       setTabIndex(state.protocolAdapterTabIndex)
     }
   }, [state])
@@ -30,7 +26,7 @@ const ProtocolAdapterPage: FC = () => {
 
   return (
     <PageContainer title={t('protocolAdapter.title') as string} subtitle={t('protocolAdapter.description') as string}>
-      <Tabs onChange={handleTabsChange} index={tabIndex} isLazy>
+      <Tabs onChange={handleTabsChange} index={tabIndex} isLazy colorScheme={'brand'}>
         <TabList>
           <Tab fontSize="lg" fontWeight={'bold'}>
             {t('protocolAdapter.tabs.protocols')}

@@ -1,6 +1,6 @@
 import { FC, ReactNode, useEffect, useState } from 'react'
 import { useDisclosure } from '@chakra-ui/react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
@@ -10,8 +10,9 @@ import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpd
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
-import { ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
+import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 import AdapterInstanceDrawer from '@/modules/ProtocolAdapters/components/drawers/AdapterInstanceDrawer.tsx'
+import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 
 interface AdapterEditorProps {
   isNew?: boolean
@@ -28,19 +29,35 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
   const updateProtocolAdapter = useUpdateProtocolAdapter()
   const navigate = useNavigate()
   const { state } = useLocation()
-  const { selectedAdapterId } = state || {}
+  const { data: allAdapters } = useListProtocolAdapters()
+  const { adapterId } = useParams()
 
   useEffect(() => {
-    if (selectedAdapterId) {
-      setAdaptorType(selectedAdapterId)
+    if ((state as AdapterNavigateState)?.protocolAdapterType) {
+      setAdaptorType(state.protocolAdapterType)
     }
-  }, [selectedAdapterId])
+  }, [state])
 
   useEffect(() => {
+    if (!allAdapters) return
+    const instance = allAdapters?.find((e) => e.id === adapterId)
+    if (!isNew && !instance) {
+      errorToast(
+        {
+          id: 'adapter-open-noExist',
+          title: t('protocolAdapter.toast.view.title'),
+          description: t('protocolAdapter.toast.view.error'),
+        },
+        new Error(t('protocolAdapter.toast.view.noLongerExist', { id: adapterId }) as string)
+      )
+      navigate('/protocol-adapters', { replace: true })
+      return
+    }
+
     if (adaptorType) {
       onInstanceOpen()
     }
-  }, [adaptorType, onInstanceOpen])
+  }, [adapterId, adaptorType, allAdapters, errorToast, isNew, navigate, onInstanceOpen, t])
 
   const handleInstanceClose = () => {
     onInstanceClose()
@@ -105,11 +122,12 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
     }
 
     onInstanceClose()
+    const adapterNavigateState: AdapterNavigateState = {
+      protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+      selectedActiveAdapter: { isNew: !!isNew, isOpen: false, adapterId: id },
+    }
     navigate('/protocol-adapters', {
-      state: {
-        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
-        selectedAdapter: { isNew: isNew, adapterId: id },
-      },
+      state: adapterNavigateState,
     })
   }
 
