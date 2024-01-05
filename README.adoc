@@ -57,7 +57,9 @@ More Protocol adapters will be added to the project over time.
 
 * OPC UA
 * Modbus
-* S7 footnoteref:[tba, coming soon]
+* S7
+* ADS
+* HTTP
 * Allen-Bradley footnoteref:[tba]
 * and many more
 
@@ -85,7 +87,7 @@ The ideal place for questions or discussions about the HiveMQ Edge Edition is ou
 
 === Quick Start
 
-* Download the latest https://github.com/hivemq/hivemq-edge/releases/download/2023.8/hivemq-edge-2023.8.zip[HiveMQ Edge binary package].
+* Download the latest https://github.com/hivemq/hivemq-edge/releases/download/2023.9/hivemq-edge-2023.9.zip[HiveMQ Edge binary package].
 * Unzip the package.
 * Run the run.sh (Linux/OSX) or run.bat (Windows) in the bin folder of the package.
 

@@ -34,4 +34,10 @@ export interface ChartProps extends BoxProps {
   metricName: string
   'aria-label': string
   data: DataPoint[]
+  chartTheme?: ChartTheme
+}
+
+export interface ChartTheme {
+  colourScheme: string
+  deviceId?: string
 }

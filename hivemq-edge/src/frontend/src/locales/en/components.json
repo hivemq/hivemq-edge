@@ -33,6 +33,11 @@
     "seconds_minus": "a few seconds ago",
     "seconds_plus": "in a few seconds"
   },
+  "ColorPicker": {
+    "trigger": "Selected color scheme: {{ scheme }}",
+    "popover": "Select one of the options",
+    "option": "Select {{ scheme }}"
+  },
   "DateTimeRangeSelector": {
     "placeholder": "Select a date",
     "noOptionsMessage": "Not a valid date",

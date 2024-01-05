@@ -45,12 +45,9 @@ import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -76,8 +73,8 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
     private @Nullable ExecutorService executorService;
 
-    private final LinkedList<BufferedPublishInformation> queue = new LinkedList<>();
-    private final LinkedList<OutflightPublishInformation> outflightQueue = new LinkedList<>();
+    private final ConcurrentLinkedQueue<BufferedPublishInformation> queue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<OutflightPublishInformation> outflightQueue = new ConcurrentLinkedQueue<>();
 
 
     public RemoteMqttForwarder(
@@ -102,17 +99,16 @@ public class RemoteMqttForwarder implements MqttForwarder {
     @Override
     public synchronized void stop() {
         running.set(false);
-        while (!queue.isEmpty()) {
-            final BufferedPublishInformation pop = queue.pop();
-            if (resetInflightMarkerCallback != null) {
-                resetInflightMarkerCallback.afterMessage(pop.queueId, pop.publish.getUniqueId());
-            }
+        BufferedPublishInformation bufferedMessage = queue.poll();
+        while (bufferedMessage != null) {
+            resetInflightMarkerCallback.afterMessage(bufferedMessage.queueId, bufferedMessage.publish.getUniqueId());
+            bufferedMessage = queue.poll();
         }
-        while (!outflightQueue.isEmpty()) {
-            final OutflightPublishInformation pop = outflightQueue.pop();
-            if (resetInflightMarkerCallback != null) {
-                resetInflightMarkerCallback.afterMessage(pop.queueId, pop.uniqueId);
-            }
+
+        OutflightPublishInformation inClientBufferedMessage = outflightQueue.poll();
+        while (inClientBufferedMessage != null) {
+            resetInflightMarkerCallback.afterMessage(inClientBufferedMessage.queueId, inClientBufferedMessage.uniqueId);
+            inClientBufferedMessage = outflightQueue.poll();
         }
     }
 
@@ -198,9 +194,7 @@ public class RemoteMqttForwarder implements MqttForwarder {
     }
 
     private void finishProcessing(
-            final @NotNull QoS originalQoS,
-            final @NotNull String uniqueId,
-            final @NotNull String queueId) {
+            final @NotNull QoS originalQoS, final @NotNull String uniqueId, final @NotNull String queueId) {
         inflightCounter.decrementAndGet();
         if (afterForwardCallback != null) {
             afterForwardCallback.afterMessage(originalQoS, uniqueId, queueId, false);
@@ -223,7 +217,10 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
 
     private synchronized void sendPublishToRemote(
-            final @NotNull PUBLISH publish, final @NotNull String queueId, final @NotNull QoS originalQoS, final @NotNull String originalUniqueId) {
+            final @NotNull PUBLISH publish,
+            final @NotNull String queueId,
+            final @NotNull QoS originalQoS,
+            final @NotNull String originalUniqueId) {
 
         if (!remoteMqttClient.isConnected()) {
             queue.add(new BufferedPublishInformation(queueId, originalUniqueId, originalQoS, publish));
@@ -252,8 +249,8 @@ public class RemoteMqttForwarder implements MqttForwarder {
 
     @Override
     public synchronized void drainQueue() {
-        while (!queue.isEmpty()) {
-            final BufferedPublishInformation bufferedPublishInformation = queue.pop();
+        BufferedPublishInformation bufferedPublishInformation = queue.poll();
+        while (bufferedPublishInformation!=null) {
             final CompletableFuture<Mqtt5PublishResult> publishResult = remoteMqttClient.getMqtt5Client()
                     .publish(convertPublishForClient(bufferedPublishInformation.publish));
             final OutflightPublishInformation outflightPublishInformation = new OutflightPublishInformation(
@@ -261,17 +258,20 @@ public class RemoteMqttForwarder implements MqttForwarder {
                     bufferedPublishInformation.publish.getUniqueId());
             outflightQueue.add(outflightPublishInformation);
 
+            // lambdas hate this trick. (we need a final variable for the lamdba)
+            final BufferedPublishInformation finalBufferedPublishInformation = bufferedPublishInformation;
             publishResult.whenComplete((mqtt5PublishResult, throwable) -> {
                 if (throwable != null) {
-                    handlePublishError(bufferedPublishInformation.publish, throwable);
+                    handlePublishError(finalBufferedPublishInformation.publish, throwable);
                 } else {
                     perBridgeMetrics.getPublishForwardSuccessCounter().inc();
                 }
-                finishProcessing(bufferedPublishInformation.originalQqS,
-                        bufferedPublishInformation.uniqueId,
-                        bufferedPublishInformation.queueId);
+                finishProcessing(finalBufferedPublishInformation.originalQqS,
+                        finalBufferedPublishInformation.uniqueId,
+                        finalBufferedPublishInformation.queueId);
                 outflightQueue.remove(outflightPublishInformation);
             });
+            bufferedPublishInformation = queue.poll();
         }
     }
 

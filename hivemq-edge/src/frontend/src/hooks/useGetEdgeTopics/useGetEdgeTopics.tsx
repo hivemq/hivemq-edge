@@ -5,7 +5,7 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
 
-import { mergeAllTopics } from '@/modules/EdgeVisualisation/utils/topics-utils.ts'
+import { mergeAllTopics } from '@/modules/Workspace/utils/topics-utils.ts'
 
 interface EdgeTopics {
   data: string[]
