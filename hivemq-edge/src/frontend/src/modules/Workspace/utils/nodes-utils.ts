@@ -75,7 +75,7 @@ export const createBridgeNode = (
   const idBridgeHost = `${IdStubs.HOST_NODE}@${bridge.id}`
   const nodeHost: Node = {
     id: idBridgeHost,
-    type: 'output',
+    type: NodeTypes.HOST_NODE,
     targetPosition: Position.Top,
     data: { label: bridge.host },
     position: positionStorage?.[idBridgeHost] ?? {
@@ -89,7 +89,7 @@ export const createBridgeNode = (
     target: idBridgeHost,
     sourceHandle: 'Bottom',
     source: idBridge,
-    type: EdgeTypes.REPORT_EDGE,
+    // type: EdgeTypes.REPORT_EDGE,
     focusable: false,
     markerEnd: {
       type: MarkerType.ArrowClosed,
@@ -131,7 +131,7 @@ export const createListenerNode = (
     targetHandle: 'Listeners',
     target: idListener,
     focusable: false,
-    type: EdgeTypes.REPORT_EDGE,
+    // type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,

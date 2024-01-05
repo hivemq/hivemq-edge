@@ -16,11 +16,12 @@ interface LinkPropertyDrawerProps {
   onClose: () => void
   onEditEntity: () => void
 }
+
 const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selectedNode, onClose }) => {
   const { t } = useTranslation()
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={onClose}>
+    <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={onClose} variant={'hivemq'}>
       {/*<DrawerOverlay />*/}
       <DrawerContent>
         <DrawerCloseButton />
@@ -33,7 +34,7 @@ const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selec
             </Text>
           </Box>
         </DrawerHeader>
-        <DrawerBody>
+        <DrawerBody display={'flex'} flexDirection={'column'} gap={6}>
           <Metrics
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}

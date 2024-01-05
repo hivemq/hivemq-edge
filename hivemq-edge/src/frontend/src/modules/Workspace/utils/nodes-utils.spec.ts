@@ -57,7 +57,7 @@ describe('createBridgeNode', () => {
       nodeHost: expect.objectContaining({
         id: 'host@bridge-id-01',
         targetPosition: Position.Top,
-        type: 'output',
+        type: NodeTypes.HOST_NODE,
       }),
       hostConnector: expect.objectContaining({
         id: 'connect-host@bridge-id-01',

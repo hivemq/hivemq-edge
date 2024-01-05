@@ -20,7 +20,7 @@ describe('ButtonBadge', () => {
       />
     )
 
-    cy.getByAriaLabel('You have no notification').click()
+    cy.getByAriaLabel('You have no notification').click({ force: true })
     cy.get('@onClick').should('not.have.been.called')
   })
 
@@ -38,6 +38,6 @@ describe('ButtonBadge', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ButtonBadge aria-label={'You have one notification'} badgeCount={1} icon={<FiMail />} />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: Primary CTA Button')
+    cy.percySnapshot('Component: ButtonBadge')
   })
 })

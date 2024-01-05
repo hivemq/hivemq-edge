@@ -54,9 +54,16 @@ const Bridges: FC = () => {
     )
 
   return (
-    <SimpleGrid mt={8} spacing={4} templateColumns={{ base: 'repeat(1, 1fr)', lg: 'repeat(2, 1fr)' }} gap={6}>
+    <SimpleGrid
+      mt={8}
+      spacing={4}
+      templateColumns={{ base: 'repeat(1, 1fr)', lg: 'repeat(2, 1fr)', '2xl': 'repeat(3, 1fr)' }}
+      gap={6}
+      role={'list'}
+      aria-label={t('bridge.list') as string}
+    >
       {data?.map((bridge, i) => (
-        <BridgeCard key={`${bridge.id}-${i}`} {...bridge} onNavigate={handleNavigate} />
+        <BridgeCard key={`${bridge.id}-${i}`} {...bridge} onNavigate={handleNavigate} role={'listitem'} />
       ))}
     </SimpleGrid>
   )

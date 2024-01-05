@@ -1,31 +1,34 @@
 import { FC } from 'react'
-import { type BoxProps, useTheme, VStack } from '@chakra-ui/react'
+import { type BoxProps, Card } from '@chakra-ui/react'
 
 interface NodeWrapperProps extends BoxProps {
   isSelected?: boolean
 }
 
 const NodeWrapper: FC<NodeWrapperProps> = ({ children, isSelected = false, ...rest }) => {
-  const { colors } = useTheme()
+  // const {  ...props } = useTheme()
 
   const selectedStyle: Partial<BoxProps> = {
-    boxShadow: 'dark-lg',
-    bg: '#dddfe2',
+    // boxShadow: 'dark-lg',
+    // bg: '#dddfe2',
+    boxShadow: 'var(--chakra-shadows-outline)',
   }
 
   return (
-    <VStack
+    <Card
+      variant={'elevated'}
+      // colorScheme={'green'}
       p={6}
       rounded={'md'}
-      borderColor={'#bec3c9'}
-      backgroundColor={colors.white}
       border={`1px`}
-      _hover={{ bg: '#ebedf0' }}
+      // borderColor={'#bec3c9'}
+      // backgroundColor={colors.white}
+      // _hover={{ bg: '#ebedf0' }}
       {...(isSelected ? { ...selectedStyle } : {})}
       {...rest}
     >
-      {children}
-    </VStack>
+      <>{children}</>
+    </Card>
   )
 }
 

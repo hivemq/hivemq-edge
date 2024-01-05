@@ -38,9 +38,15 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, i
     )
 
   return (
-    <SimpleGrid templateColumns={{ base: 'repeat(1, 1fr)', xl: 'repeat(2, 1fr)' }} spacing={4} gap={6}>
+    <SimpleGrid
+      templateColumns={{ base: 'repeat(1, 1fr)', xl: 'repeat(2, 1fr)' }}
+      spacing={4}
+      gap={6}
+      role={'list'}
+      aria-label={t('protocolAdapter.list') as string}
+    >
       {filteredAdapters?.map((e) => (
-        <Card key={e.id} minW={'300px'}>
+        <Card key={e.id} minW={'300px'} role={'listitem'} aria-labelledby={`adapter-${e.id}`}>
           <CardBody p={2}>
             <AdapterTypeSummary key={e.id} adapter={e} searchQuery={facet?.search} isLoading={isLoading} />
           </CardBody>
@@ -49,7 +55,6 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, i
               {!!e.installed && (
                 <Button
                   data-testid={'protocol-create-adapter'}
-                  variant={'outline'}
                   size={'sm'}
                   rightIcon={<ArrowForwardIcon />}
                   onClick={() => onCreate?.(e.id)}

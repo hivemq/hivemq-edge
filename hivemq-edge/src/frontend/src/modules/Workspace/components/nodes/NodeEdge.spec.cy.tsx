@@ -13,7 +13,7 @@ describe('NodeEdge', () => {
   it('should render properly', () => {
     cy.mountWithProviders(mockReactFlow(<NodeEdge {...MOCK_NODE_EDGE} />))
 
-    cy.getByTestId('edge-node-name').should('contain', 'HiveMQ Edge')
+    cy.getByTestId('edge-node').should('have.attr', 'alt', 'Node: HiveMQ Edge')
     cy.get('[data-handleid]').should('have.length', 3)
   })
 

@@ -10,14 +10,16 @@ import {
   NodeResetChange,
   EdgeRemoveChange,
 } from 'reactflow'
-import { Box, Button, ButtonGroup, Icon, IconButton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
-import { GrDocumentConfig, GrObjectUngroup } from 'react-icons/gr'
+import { Box, Button, ButtonGroup, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
+import { LuPanelRightOpen } from 'react-icons/lu'
+import { ImUngroup } from 'react-icons/im'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 
 import { Group } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.tsx'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()
@@ -25,6 +27,8 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
   const { onToggleGroup, onNodesChange, onEdgesChange, nodes, edges } = useWorkspaceStore()
   const { isOpen: isConfirmUngroupOpen, onOpen: onConfirmUngroupOpen, onClose: onConfirmUngroupClose } = useDisclosure()
   const { onContextMenu } = useContextMenu(id, selected, '/edge-flow/group')
+  const { colorMode } = useColorMode()
+  const isLight = colorMode === 'light'
 
   const onConfirmUngroup = () => {
     onConfirmUngroupOpen()
@@ -66,25 +70,26 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
         aria-label={t('workspace.grouping.toolbar.aria-label', { id }) as string}
         style={{ display: 'flex', gap: '12px' }}
       >
-        <IconButton
-          size="sm"
-          variant="outline"
-          data-testid={'node-group-toolbar-panel'}
-          icon={<Icon as={GrDocumentConfig} />}
-          aria-label={t('workspace.grouping.command.overview')}
-          onClick={onContextMenu}
-        />
-        <ButtonGroup size="sm" isAttached variant="outline">
+        <ButtonGroup size="sm" isAttached variant="outline" colorScheme={'gray'}>
           <Button data-testid={'node-group-toolbar-expand'} onClick={handleToggle}>
             {!data.isOpen ? t('workspace.grouping.command.expand') : t('workspace.grouping.command.collapse')}
           </Button>
           <IconButton
             data-testid={'node-group-toolbar-ungroup'}
-            icon={<Icon as={GrObjectUngroup} />}
+            icon={<Icon as={ImUngroup} boxSize={5} />}
             aria-label={t('workspace.grouping.command.ungroup')}
             onClick={onConfirmUngroup}
           />
         </ButtonGroup>
+        <IconButton
+          size="sm"
+          variant="solid"
+          colorScheme={'gray'}
+          data-testid={'node-group-toolbar-panel'}
+          icon={<Icon as={LuPanelRightOpen} boxSize={5} />}
+          aria-label={t('workspace.grouping.command.overview')}
+          onClick={onContextMenu}
+        />
       </NodeToolbar>
       {selected && (
         <NodeResizer
@@ -100,14 +105,16 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
         id={`node-group-${id}`}
         w={'100%'}
         h={'100%'}
-        backgroundColor={data.isOpen ? undefined : data.colorScheme ? colors[data.colorScheme][50] : colors.red[50]}
+        backgroundColor={
+          data.isOpen ? undefined : data.colorScheme ? colors[data.colorScheme][isLight ? 50 : 900] : colors.red[50]
+        }
         borderColor={data.colorScheme ? colors[data.colorScheme][500] : colors.red[50]}
         borderWidth={1}
         borderStyle={'solid'}
         onDoubleClick={onContextMenu}
         onContextMenu={onContextMenu}
       >
-        <Text m={2} color={'blackAlpha.900'}>
+        <Text m={2} colorScheme={'black'}>
           {data.title}
         </Text>
       </Box>

@@ -27,6 +27,11 @@ const NodeListener: FC<NodeProps<Listener>> = ({ selected, data }) => {
         borderRadius={60}
         backgroundColor={selected ? '#dddfe2' : 'white'}
         alignContent={'center'}
+        sx={{
+          _dark: {
+            backgroundColor: selected ? '#dddfe2' : 'lightslategrey',
+          },
+        }}
       >
         <Image src={getLogo()} alt={t('workspace.node.gateway') as string} boxSize="48px" />
       </NodeWrapper>

@@ -1,7 +1,8 @@
 /// <reference types="cypress" />
-import NamespaceForm from './NamespaceForm.tsx'
+import { Button } from '@chakra-ui/react'
 import { MOCK_BREADCRUMB, MOCK_NAMESPACE } from '@/__test-utils__/mocks.ts'
-import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
+
+import NamespaceForm from './NamespaceForm.tsx'
 
 describe('NamespaceForm', () => {
   beforeEach(() => {
@@ -23,9 +24,9 @@ describe('NamespaceForm', () => {
     cy.mountWithProviders(
       <div>
         <NamespaceForm onSubmit={mockOnSubmit} defaultValues={MOCK_NAMESPACE} />
-        <ButtonCTA type={'submit'} form="namespace-form" data-testid={'form-submit'}>
-          dfdfdf
-        </ButtonCTA>
+        <Button variant="primary" type={'submit'} form="namespace-form" data-testid={'form-submit'}>
+          Submit
+        </Button>
       </div>
     )
     cy.getByTestId('form-submit').click()
@@ -43,9 +44,9 @@ describe('NamespaceForm', () => {
     cy.mountWithProviders(
       <div>
         <NamespaceForm onSubmit={mockOnSubmit} defaultValues={MOCK_NAMESPACE} />
-        <ButtonCTA type={'submit'} form="namespace-form" data-testid={'form-submit'}>
-          dfdfdf
-        </ButtonCTA>
+        <Button variant="primary" type={'submit'} form="namespace-form" data-testid={'form-submit'}>
+          Submit
+        </Button>
       </div>
     )
     cy.getByTestId('unifiedNamespace-prefixAllTopics').click()
@@ -64,9 +65,9 @@ describe('NamespaceForm', () => {
     cy.mountWithProviders(
       <div>
         <NamespaceForm onSubmit={mockOnSubmit} defaultValues={MOCK_NAMESPACE} />
-        <ButtonCTA type={'submit'} form="namespace-form" data-testid={'form-submit'}>
-          dfdfdf
-        </ButtonCTA>
+        <Button variant="primary" type={'submit'} form="namespace-form" data-testid={'form-submit'}>
+          Submit
+        </Button>
       </div>
     )
     cy.get('#unifiedNamespace-enterprise').clear()

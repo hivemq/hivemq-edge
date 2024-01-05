@@ -40,7 +40,7 @@ const GroupMetadataEditor: FC<GroupMetadataEditorProps> = ({ group, onSubmit }) 
 
   return (
     <Card size={'sm'}>
-      <Accordion allowToggle defaultIndex={0}>
+      <Accordion allowToggle>
         <AccordionItem>
           <AccordionButton data-testid="metrics-toggle">
             <Box as="span" flex="1" textAlign="left">

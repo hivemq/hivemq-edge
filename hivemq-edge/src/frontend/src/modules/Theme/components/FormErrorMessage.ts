@@ -7,6 +7,9 @@ const hivemq = definePartsStyle({
   text: {
     // Fix "color-contrast" (WCAG)
     color: 'red.600',
+    _dark: {
+      color: 'red.300',
+    },
   },
 })
 

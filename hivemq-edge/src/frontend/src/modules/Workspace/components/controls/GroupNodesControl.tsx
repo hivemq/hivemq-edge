@@ -1,14 +1,15 @@
 import { FC, useState } from 'react'
 import { Edge, MarkerType, Node, Panel, useOnSelectionChange } from 'reactflow'
 import { useTranslation } from 'react-i18next'
-import { IconButton, useTheme } from '@chakra-ui/react'
-import { GrObjectGroup } from 'react-icons/gr'
+import { Icon, useTheme } from '@chakra-ui/react'
+import { ImMakeGroup } from 'react-icons/im'
 
 import { Adapter, Status } from '@/api/__generated__'
 import { EdgeTypes, Group, IdStubs, NodeTypes } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { getThemeForStatus } from '../../utils/status-utils.ts'
 import { getGroupLayout } from '../../utils/group.utils.ts'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const GroupNodesControl: FC = () => {
   const { t } = useTranslation()
@@ -79,8 +80,8 @@ const GroupNodesControl: FC = () => {
   return (
     <Panel position="top-left">
       <IconButton
-        icon={<GrObjectGroup />}
-        aria-label={t('workspace.grouping.create')}
+        icon={<Icon as={ImMakeGroup} boxSize={5} />}
+        aria-label={t('workspace.controls.group')}
         onClick={onCreateGroup}
         isDisabled={currentSelection.length < 2}
       />

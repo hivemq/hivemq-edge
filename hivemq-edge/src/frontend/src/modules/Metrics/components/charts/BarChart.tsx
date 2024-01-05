@@ -1,4 +1,5 @@
 import { FC } from 'react'
+import { Theme } from '@nivo/core'
 import { BarDatum, ResponsiveBar } from '@nivo/bar'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
@@ -15,6 +16,11 @@ interface Datum extends BarDatum {
 const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, chartTheme, ...props }) => {
   const { t } = useTranslation()
   const { colors } = useTheme()
+  const nivoTheme: Theme = {
+    text: {
+      fill: 'var(--chakra-colors-chakra-body-text)',
+    },
+  }
 
   if (!metricName) return null
 
@@ -121,6 +127,7 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, c
         ariaLabel={ariaLabel}
         // TODO[NVL]: Cannot have aria-label without a role (a11y)
         // barAriaLabel={(e) => e.id + ': ' + e.formattedValue + ' in country: ' + e.indexValue}
+        theme={nivoTheme}
       />
     </Box>
   )

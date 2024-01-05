@@ -7,7 +7,6 @@ import {
   AccordionPanel,
   Box,
   Card,
-  CardBody,
   SimpleGrid,
   useDisclosure,
   useTheme,
@@ -75,66 +74,73 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
   }, [])
 
   return (
-    <Card size={'sm'}>
+    <>
       {showEditor && (
-        <Accordion
-          allowToggle
-          onChange={(expandedIndex) => {
-            if (expandedIndex === -1) onClose()
-            else onOpen()
-          }}
-        >
-          <AccordionItem>
-            <AccordionButton data-testid="metrics-toggle">
-              <Box as="span" flex="1" textAlign="left">
-                {t('metrics.editor.title')}
-              </Box>
-              <AccordionIcon />
-            </AccordionButton>
+        <Card size={'sm'}>
+          <Accordion
+            allowToggle
+            onChange={(expandedIndex) => {
+              if (expandedIndex === -1) onClose()
+              else onOpen()
+            }}
+          >
+            <AccordionItem>
+              <AccordionButton data-testid="metrics-toggle">
+                <Box as="span" flex="1" textAlign="left">
+                  {t('metrics.editor.title')}
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
 
-            <AccordionPanel pb={4}>
-              <MetricEditor
-                filter={adapterIDs}
-                selectedMetrics={metrics.map((e) => e.metrics)}
-                selectedChart={defaultChartType}
-                onSubmit={handleCreateMetrics}
-              />
-            </AccordionPanel>
-          </AccordionItem>
-        </Accordion>
+              <AccordionPanel pb={4}>
+                <MetricEditor
+                  filter={adapterIDs}
+                  selectedMetrics={metrics.map((e) => e.metrics)}
+                  selectedChart={defaultChartType}
+                  onSubmit={handleCreateMetrics}
+                />
+              </AccordionPanel>
+            </AccordionItem>
+          </Accordion>
+        </Card>
       )}
 
-      <CardBody>
-        <SimpleGrid spacing={4} templateColumns="repeat(auto-fill, minmax(200px, 1fr))">
-          {metrics.map((e) => {
-            const { id } = extractMetricInfo(e.metrics)
-            const colorSchemeIndex = adapterIDs.indexOf(id as string)
+      <SimpleGrid
+        spacing={4}
+        templateColumns="repeat(auto-fill, minmax(200px, 1fr))"
+        role={'list'}
+        aria-label={t('metrics.charts.list') as string}
+      >
+        {metrics.map((e) => {
+          const { id } = extractMetricInfo(e.metrics)
+          const colorSchemeIndex = adapterIDs.indexOf(id as string)
 
-            if (!e.chart || e.chart === ChartType.SAMPLE)
-              return (
-                <Sample
-                  key={e.metrics}
-                  metricName={e.metrics}
-                  chartTheme={{ colourScheme: chartTheme[colorSchemeIndex] }}
-                  onClose={() => handleRemoveMetrics(e.metrics)}
-                  canEdit={isOpen}
-                />
-              )
-            else
-              return (
-                <ChartContainer
-                  key={e.metrics}
-                  chartType={e.chart}
-                  metricName={e.metrics}
-                  chartTheme={{ colourScheme: chartTheme[colorSchemeIndex] }}
-                  onClose={() => handleRemoveMetrics(e.metrics)}
-                  canEdit={isOpen}
-                />
-              )
-          })}
-        </SimpleGrid>
-      </CardBody>
-    </Card>
+          if (!e.chart || e.chart === ChartType.SAMPLE)
+            return (
+              <Sample
+                key={e.metrics}
+                metricName={e.metrics}
+                chartTheme={{ colourScheme: chartTheme[colorSchemeIndex] }}
+                onClose={() => handleRemoveMetrics(e.metrics)}
+                canEdit={isOpen}
+                role={'listitem'}
+              />
+            )
+          else
+            return (
+              <ChartContainer
+                key={e.metrics}
+                chartType={e.chart}
+                metricName={e.metrics}
+                chartTheme={{ colourScheme: chartTheme[colorSchemeIndex] }}
+                onClose={() => handleRemoveMetrics(e.metrics)}
+                canEdit={isOpen}
+                role={'listitem'}
+              />
+            )
+        })}
+      </SimpleGrid>
+    </>
   )
 }
 

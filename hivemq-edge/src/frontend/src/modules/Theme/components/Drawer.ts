@@ -6,9 +6,16 @@ const { definePartsStyle, defineMultiStyleConfig } = createMultiStyleConfigHelpe
 const hivemq = definePartsStyle({
   dialog: {
     backgroundColor: 'gray.50',
+    _dark: {
+      backgroundColor: 'gray.800',
+    },
   },
 })
 
 export const drawerTheme = defineMultiStyleConfig({
+  defaultProps: {
+    colorScheme: 'brand',
+    variant: 'hivemq',
+  },
   variants: { hivemq },
 })

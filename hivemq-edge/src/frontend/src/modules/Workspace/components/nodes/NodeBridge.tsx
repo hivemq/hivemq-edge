@@ -40,7 +40,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
         </VStack>
       </NodeWrapper>
       <Handle type="source" position={Position.Top} id="Top" isConnectable={false} />
-      {options.showHosts && <Handle type="source" position={Position.Bottom} id="Bottom" isConnectable={false} />}
+      <Handle type="source" position={Position.Bottom} id="Bottom" isConnectable={false} />
     </>
   )
 }

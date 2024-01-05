@@ -25,6 +25,7 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEd
       <MenuButton
         variant="outline"
         size={'sm'}
+        // Cannot have tooltip because of the popup menu
         as={IconButton}
         icon={<ChevronDownIcon />}
         aria-label={t('protocolAdapter.table.actions.label') as string}
@@ -42,7 +43,14 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEd
         <MenuItem data-testid={'adapter-action-edit'} onClick={() => onEdit?.(id, type as string)}>
           {t('protocolAdapter.table.actions.edit')}
         </MenuItem>
-        <MenuItem data-testid={'adapter-action-delete'} color={'red.500'} onClick={() => onDelete?.(id)}>
+        <MenuItem
+          data-testid={'adapter-action-delete'}
+          onClick={() => onDelete?.(id)}
+          sx={{
+            color: 'red.500',
+            _dark: { color: 'red.200' },
+          }}
+        >
           <Text>{t('protocolAdapter.table.actions.delete')}</Text>
         </MenuItem>
       </MenuList>
