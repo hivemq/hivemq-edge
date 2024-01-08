@@ -1,20 +1,22 @@
+/* eslint-disable react-refresh/only-export-components */
+import { lazy } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
+
+import WelcomePage from '@/modules/Welcome/WelcomePage.tsx'
+import LoginPage from '@/modules/Login/LoginPage.tsx'
+
+const BridgePage = lazy(() => import('@/modules/Bridges/BridgePage.tsx'))
+const BridgeEditor = lazy(() => import('@/modules/Bridges/components/panels/BridgeEditor.tsx'))
+const ProtocolAdapterPage = lazy(() => import('@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'))
+const AdapterController = lazy(() => import('@/modules/ProtocolAdapters/components/AdapterController.tsx'))
+const UnifiedNamespaceEditor = lazy(() => import('@/modules/UnifiedNamespace/components/UnifiedNamespaceEditor.tsx'))
+const UnifiedNamespacePage = lazy(() => import('@/modules/UnifiedNamespace/UnifiedNamespacePage.tsx'))
+const EdgeFlowPage = lazy(() => import('@/modules/Workspace/EdgeFlowPage.tsx'))
+const NodePanelController = lazy(() => import('@/modules/Workspace/components/controls/NodePanelController.tsx'))
+const EvenLogPage = lazy(() => import('@/modules/EventLog/EvenLogPage.tsx'))
 
 import Dashboard from '../Dashboard/Dashboard.tsx'
 import ErrorPage from './components/ErrorPage.tsx'
-import PageContainer from '../../components/PageContainer.tsx'
-
-import BridgePage from '@/modules/Bridges/BridgePage.tsx'
-import ProtocolAdapterPage from '@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'
-import BridgeEditor from '@/modules/Bridges/components/panels/BridgeEditor.tsx'
-import AdapterController from '@/modules/ProtocolAdapters/components/AdapterController.tsx'
-import UnifiedNamespacePage from '@/modules/UnifiedNamespace/UnifiedNamespacePage.tsx'
-import WelcomePage from '@/modules/Welcome/WelcomePage.tsx'
-import LoginPage from '@/modules/Login/LoginPage.tsx'
-import UnifiedNamespaceEditor from '@/modules/UnifiedNamespace/components/UnifiedNamespaceEditor.tsx'
-import EdgeFlowPage from '@/modules/Workspace/EdgeFlowPage.tsx'
-import EvenLogPage from '@/modules/EventLog/EvenLogPage.tsx'
-import NodePanelController from '@/modules/Workspace/components/controls/NodePanelController.tsx'
 
 export const routes = createBrowserRouter(
   [
@@ -70,10 +72,6 @@ export const routes = createBrowserRouter(
         {
           path: 'event-logs/',
           element: <EvenLogPage />,
-        },
-        {
-          path: 'modules/',
-          element: <PageContainer />,
         },
         {
           path: 'namespace/',
