@@ -38,7 +38,7 @@ public class InternalConfigurations {
     @VisibleForTesting
     static @NotNull Map<String, String> initializeDefaultValues() {
         final Map<String, String> defaultValuesMap = new HashMap<>();
-        defaultValuesMap.put(PERSISTENCE_BUCKET_COUNT, "1");
+        defaultValuesMap.put(PERSISTENCE_BUCKET_COUNT, String.valueOf(AVAILABLE_PROCESSORS_TIMES_TWO));
         defaultValuesMap.put(FILE_SINGLE_WRITER_THREAD_POOL_SIZE, String.valueOf(AVAILABLE_PROCESSORS_TIMES_TWO));
         defaultValuesMap.put(MEMORY_SINGLE_WRITER_THREAD_POOL_SIZE, String.valueOf(AVAILABLE_PROCESSORS));
         return defaultValuesMap;
