@@ -47,17 +47,6 @@ tasks.register("testClasses") {
         dependsOn(it.task(":$name"))
     }
 }
-
-gradle.startParameter.taskNames.forEach { task ->
-    if (tasks.findByName(task) == null) {
-        tasks.register(task) {
-            gradle.includedBuilds.forEach {
-                dependsOn(it.task(":$name"))
-            }
-        }
-    }
-}
-
 /* ******************** release tasks ******************** */
 
 val hivemq: Configuration by configurations.creating { isCanBeConsumed = false; isCanBeResolved = false }
