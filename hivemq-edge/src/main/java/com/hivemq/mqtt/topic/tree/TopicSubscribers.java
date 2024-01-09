@@ -38,4 +38,9 @@ public class TopicSubscribers {
     public @NotNull ImmutableSet<String> getSharedSubscriptions() {
         return sharedSubscriptions;
     }
+
+    @Override
+    public String toString() {
+        return "TopicSubscribers{" + "subscriber=" + subscriber + ", sharedSubscriptions=" + sharedSubscriptions + '}';
+    }
 }

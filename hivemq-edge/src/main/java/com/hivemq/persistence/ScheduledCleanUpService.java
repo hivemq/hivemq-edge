@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableScheduledFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
@@ -97,14 +98,15 @@ public class ScheduledCleanUpService {
                                    final @NotNull ClientSessionPersistence clientSessionPersistence,
                                    final @NotNull ClientSessionSubscriptionPersistence subscriptionPersistence,
                                    final @NotNull RetainedMessagePersistence retainedMessagePersistence,
-                                   final @NotNull ClientQueuePersistence clientQueuePersistence) {
+                                   final @NotNull ClientQueuePersistence clientQueuePersistence,
+                                   final @NotNull InternalConfigurationService internalConfigurationService) {
 
         this.scheduledExecutorService = scheduledExecutorService;
         this.clientSessionPersistence = clientSessionPersistence;
         this.subscriptionPersistence = subscriptionPersistence;
         this.retainedMessagePersistence = retainedMessagePersistence;
         this.clientQueuePersistence = clientQueuePersistence;
-        this.persistenceBucketCount = PERSISTENCE_BUCKET_COUNT.get();
+        this.persistenceBucketCount = internalConfigurationService.getInteger(PERSISTENCE_BUCKET_COUNT);
         this.cleanUpJobSchedule = INTERVAL_BETWEEN_CLEANUP_JOBS_SEC.get();
         this.cleanUpTaskTimeoutSec = CLEANUP_JOB_TASK_TIMEOUT_SEC;
     }

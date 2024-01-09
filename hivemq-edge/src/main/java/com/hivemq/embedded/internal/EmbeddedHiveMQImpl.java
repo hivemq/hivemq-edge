@@ -24,6 +24,7 @@ import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.embedded.EmbeddedHiveMQ;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -35,11 +36,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
+import java.util.function.Function;
 
 /**
  * @author Georg Held
@@ -55,6 +53,7 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     private final @Nullable EmbeddedExtension embeddedExtension;
     private @Nullable ConfigurationService configurationService;
     private @Nullable HiveMQEdgeMain hiveMQServer;
+    private final @NotNull Function<SystemInformationImpl, ModuleLoader> moduleLoaderFactory;
 
     private @NotNull State currentState = State.STOPPED;
     private @NotNull State desiredState = State.STOPPED;
@@ -65,21 +64,37 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     private @Nullable Future<?> shutDownFuture;
 
     EmbeddedHiveMQImpl(
-            final @Nullable File conf, final @Nullable File data, final @Nullable File extensions) {
-        this(conf, data, extensions, null);
+            final @Nullable File conf,
+            final @Nullable File data,
+            final @Nullable File extensions,
+            final @Nullable File license
+
+    ) {
+        this(conf, data, extensions, license, null);
     }
 
     EmbeddedHiveMQImpl(
             final @Nullable File conf,
             final @Nullable File data,
             final @Nullable File extensions,
+            final @Nullable File license,
             final @Nullable EmbeddedExtension embeddedExtension) {
-        this.embeddedExtension = embeddedExtension;
+        this(conf, data, extensions, license, embeddedExtension, ModuleLoader::new);
+    }
 
+    EmbeddedHiveMQImpl(
+            final @Nullable File conf,
+            final @Nullable File data,
+            final @Nullable File extensions,
+            final @Nullable File license,
+            final @Nullable EmbeddedExtension embeddedExtension,
+            final @NotNull Function<SystemInformationImpl, ModuleLoader> moduleLoaderFactory) {
+        this.embeddedExtension = embeddedExtension;
+        this.moduleLoaderFactory = moduleLoaderFactory;
         log.info("Setting default authentication behavior to ALLOW ALL");
         InternalConfigurations.AUTH_DENY_UNAUTHENTICATED_CONNECTIONS.set(false);
 
-        systemInformation = new SystemInformationImpl(true, true, conf, data, extensions, null);
+        systemInformation = new SystemInformationImpl(true, true, conf, data, extensions, null, license);
         // we create the metric registry here to make it accessible before start
         metricRegistry = new MetricRegistry();
 
@@ -148,7 +163,10 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
                         bootstrapConfig();
                     }
 
-                    hiveMQServer = new HiveMQEdgeMain(systemInformation, metricRegistry, configurationService);
+                    hiveMQServer = new HiveMQEdgeMain(systemInformation,
+                            metricRegistry,
+                            configurationService,
+                            moduleLoaderFactory.apply(systemInformation));
                     hiveMQServer.bootstrap();
                     hiveMQServer.start(embeddedExtension);
 

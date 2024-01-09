@@ -17,13 +17,16 @@ package com.hivemq.api.model.bridge;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.core.TlsConfiguration;
-import com.hivemq.bridge.config.*;
+import com.hivemq.api.model.status.Status;
+import com.hivemq.bridge.config.BridgeTls;
+import com.hivemq.bridge.config.CustomUserProperty;
+import com.hivemq.bridge.config.LocalSubscription;
+import com.hivemq.bridge.config.MqttBridge;
+import com.hivemq.bridge.config.RemoteSubscription;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.statistics.entity.Statistic;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -115,9 +118,7 @@ public class Bridge {
     private final @Nullable String password;
 
     @JsonProperty("loopPreventionEnabled")
-    @Schema(description = "Is loop prevention enabled on the connection",
-            defaultValue = "true",
-            format = "boolean")
+    @Schema(description = "Is loop prevention enabled on the connection", defaultValue = "true", format = "boolean")
     private final boolean loopPreventionEnabled;
 
     @JsonProperty("loopPreventionHopCount")
@@ -144,6 +145,11 @@ public class Bridge {
     @Schema(description = "status associated with the bridge", nullable = true)
     private final @Nullable Status status;
 
+    @JsonProperty("persist")
+    @Schema(description = "If this flag is set to true, any outgoing mqtt messages with QoS-1 or QoS-2 will be persisted on disc in case disc persistence is active." +
+                          "If this flag is set to false, the QoS of any outgoing mqtt messages will be set to QoS-0 and no traffic will be persisted on disc.", nullable = true)
+    private boolean persist = true;
+
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public Bridge(
@@ -161,7 +167,8 @@ public class Bridge {
             @NotNull @JsonProperty("remoteSubscriptions") final List<BridgeSubscription> remoteSubscriptions,
             @NotNull @JsonProperty("localSubscriptions") final List<LocalBridgeSubscription> localSubscriptions,
             @Nullable @JsonProperty("tlsConfiguration") final TlsConfiguration tlsConfiguration,
-            @Nullable @JsonProperty("status") final Status status) {
+            @Nullable @JsonProperty("status") final Status status,
+            @Nullable @JsonProperty("persist") final Boolean persist) {
         this.id = id;
         this.host = host;
         this.port = port;
@@ -177,6 +184,7 @@ public class Bridge {
         this.localSubscriptions = localSubscriptions;
         this.tlsConfiguration = tlsConfiguration;
         this.status = status;
+        this.persist = persist != null ? persist : true; // true is default
     }
 
     public Status getStatus() {
@@ -239,6 +247,10 @@ public class Bridge {
         return tlsConfiguration;
     }
 
+    public boolean isPersist() {
+        return persist;
+    }
+
     public static class BridgeSubscription {
 
         @JsonProperty("filters")
@@ -274,6 +286,7 @@ public class Bridge {
                 example = "some/topic/value")
         private final @NotNull String destination;
 
+
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
         public BridgeSubscription(
                 @NotNull @JsonProperty("filters") final List<String> filters,
@@ -297,7 +310,6 @@ public class Bridge {
         }
 
 
-
         public @NotNull List<BridgeCustomUserProperty> getCustomUserProperties() {
             return customUserProperties;
         }
@@ -317,19 +329,29 @@ public class Bridge {
         @Schema(description = "The exclusion patterns", nullable = true)
         private final @Nullable List<String> excludes;
 
+        @JsonProperty("queueLimit")
+        @Schema(description = "The limit of this bridge for QoS-1 and QoS-2 messages.", nullable = true)
+        private @Nullable Long queueLimit;
+
         public LocalBridgeSubscription(
                 @NotNull @JsonProperty("filters") final List<String> filters,
                 @NotNull @JsonProperty("destination") final String destination,
                 @Nullable @JsonProperty("excludes") final List<String> excludes,
                 @NotNull @JsonProperty("customUserProperties") final List<BridgeCustomUserProperty> customUserProperties,
                 @JsonProperty("preserveRetain") final boolean preserveRetain,
-                @JsonProperty("maxQoS") final int maxQoS) {
+                @JsonProperty("maxQoS") final int maxQoS,
+                @JsonProperty("queueLimit") final @Nullable Long queueLimit) {
             super(filters, destination, customUserProperties, preserveRetain, maxQoS);
             this.excludes = excludes;
+            this.queueLimit = queueLimit;
         }
 
         public @Nullable List<String> getExcludes() {
             return excludes;
+        }
+
+        public @Nullable Long getQueueLimit() {
+            return queueLimit;
         }
     }
 
@@ -374,30 +396,32 @@ public class Bridge {
                 mqttBridge.getLoopPreventionHopCount() < 1 ? 0 : mqttBridge.getLoopPreventionHopCount(),
                 mqttBridge.getRemoteSubscriptions()
                         .stream()
-                        .map(m -> convertRemoteSubscription(m))
+                        .map(Bridge::convertRemoteSubscription)
                         .collect(Collectors.toList()),
                 mqttBridge.getLocalSubscriptions()
                         .stream()
-                        .map(m -> convertLocalSubscription(m))
+                        .map(Bridge::convertLocalSubscription)
                         .collect(Collectors.toList()),
-                convertTls(mqttBridge.getBridgeTls()), status);
+                convertTls(mqttBridge.getBridgeTls()),
+                status,
+                mqttBridge.isPersist());
         return bridge;
     }
 
-    public static LocalBridgeSubscription convertLocalSubscription(LocalSubscription localSubscription) {
+    public static @NotNull LocalBridgeSubscription convertLocalSubscription(final @Nullable LocalSubscription localSubscription) {
         if (localSubscription == null) {
             return null;
         }
-        LocalBridgeSubscription subscription = new LocalBridgeSubscription(localSubscription.getFilters(),
+        return new LocalBridgeSubscription(localSubscription.getFilters(),
                 localSubscription.getDestination(),
                 localSubscription.getExcludes(),
                 localSubscription.getCustomUserProperties()
                         .stream()
-                        .map(f -> convertProperty(f))
+                        .map(Bridge::convertProperty)
                         .collect(Collectors.toList()),
                 localSubscription.isPreserveRetain(),
-                localSubscription.getMaxQoS());
-        return subscription;
+                localSubscription.getMaxQoS(),
+                localSubscription.getQueueLimit());
     }
 
     public static BridgeSubscription convertRemoteSubscription(RemoteSubscription remoteSubscription) {
@@ -408,7 +432,7 @@ public class Bridge {
                 remoteSubscription.getDestination(),
                 remoteSubscription.getCustomUserProperties()
                         .stream()
-                        .map(f -> convertProperty(f))
+                        .map(Bridge::convertProperty)
                         .collect(Collectors.toList()),
                 remoteSubscription.isPreserveRetain(),
                 remoteSubscription.getMaxQoS());

@@ -22,13 +22,6 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
  */
 public interface PersistenceConfigurationService {
 
-    enum PersistenceMode {
-        /**
-         * All persistent data like queued messages, retained messages subscriptions and so on, will be stored in RAM.
-         */
-        IN_MEMORY;
-    }
-
     /**
      * The mode that determines where persistent data is stored.
      *

@@ -33,6 +33,12 @@ public class EnvironmentVariables {
     public static final String LOG_FOLDER = "HIVEMQ_LOG_FOLDER";
 
     /**
+     * Name of the environment variable for configuring the license folder.
+     */
+    public static final String LICENSE_FOLDER = "HIVEMQ_LICENSE_FOLDER";
+
+
+    /**
      * Name of the environment variable for configuring the config folder.
      */
     public static final String CONFIG_FOLDER = "HIVEMQ_CONFIG_FOLDER";

@@ -16,6 +16,7 @@
 package com.hivemq.configuration.service.impl;
 
 import com.hivemq.configuration.service.PersistenceConfigurationService;
+import com.hivemq.configuration.service.PersistenceMode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
@@ -31,7 +32,7 @@ public class PersistenceConfigurationServiceImpl implements PersistenceConfigura
     }
 
     @Override
-    public void setMode(final PersistenceMode mode) {
+    public void setMode(final @NotNull PersistenceMode mode) {
         this.mode = mode;
     }
 }

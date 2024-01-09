@@ -211,10 +211,14 @@
         "label": "Max QoS",
         "helper": "Maximum Quality of Service",
         "values": {
-          "0": "At most once",
-          "1": "At least once",
-          "2": "Exactly once"
+          "0": "0 - At most once",
+          "1": "1 - At least once",
+          "2": "2 - Exactly once"
         }
+      },
+      "queueLimit": {
+        "label": "Message Queue Limit",
+        "helper": "The maximum number of messages persisted for QoS-1 and QoS-2."
       },
       "preserveRetain": {
         "label": "Preserve Retain",
@@ -328,6 +332,13 @@
         "legend": "Trust Store"
       }
     },
+    "persistence": {
+      "restartWarning": "Change will only be applied after a persisted restart of HIveMQ Edge.",
+      "persist": {
+        "label": "MQTT Persistence",
+        "helper": "Select to store MQTT Traffic greater than QoS 0 on disk."
+      }
+    },
     "noDataWarning": {
       "title": "No bridges currently installed",
       "description": "Configure Bridges to start sending data to your enterprise MQTT broker."
@@ -340,7 +351,8 @@
       },
       "connection": "Connection details",
       "broker": "Broker Configuration",
-      "security": "Security"
+      "security": "Security",
+      "persistence": "Persistence"
     },
     "stepper": {
       "description": "Create a new bridge to a broker",

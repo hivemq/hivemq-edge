@@ -172,7 +172,7 @@ public class PublishStatusFutureCallbackTest {
     @Test
     public void test_on_failure_no_cancelation() {
 
-        publish = TestMessageUtil.getDefaultPublishBuilder(payloadPersistence).withQoS(QoS.AT_MOST_ONCE).withOnwardQos(QoS.AT_MOST_ONCE).build();
+        publish = TestMessageUtil.getDefaultPublishBuilder(payloadPersistence).withQoS(QoS.AT_LEAST_ONCE).withOnwardQos(QoS.AT_LEAST_ONCE).build();
         publishStatusFutureCallback = new PublishStatusFutureCallback(payloadPersistence, publishPollService, sharedSubscription, queueId, publish, messageIDPool, channel, client);
         publishStatusFutureCallback.onFailure(TestException.INSTANCE);
         verify(payloadPersistence).decrementReferenceCounter(anyLong());

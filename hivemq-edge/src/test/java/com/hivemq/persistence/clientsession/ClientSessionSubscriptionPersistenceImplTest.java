@@ -17,6 +17,9 @@ package com.hivemq.persistence.clientsession;
 
 import com.google.common.collect.ImmutableSet;
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.configuration.service.InternalConfigurationService;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.iteration.Chunker;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
 import com.hivemq.mqtt.message.QoS;
@@ -81,12 +84,14 @@ public class ClientSessionSubscriptionPersistenceImplTest {
     private ClientSessionSubscriptionPersistenceImpl persistence;
 
     private SingleWriterService singleWriterService;
+    private final @NotNull InternalConfigurationService
+            internalConfigurationService = new InternalConfigurationServiceImpl();
 
     @Before
     public void setUp() throws Exception {
         closeableMock = MockitoAnnotations.openMocks(this);
         when(topicTree.addTopic(anyString(), any(Topic.class), anyByte(), anyString())).thenReturn(true);
-        singleWriterService = TestSingleWriterFactory.defaultSingleWriter();
+        singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         persistence = new ClientSessionSubscriptionPersistenceImpl(() -> localPersistence,
                 topicTree,
                 () -> sharedSubscriptionService,
@@ -94,7 +99,7 @@ public class ClientSessionSubscriptionPersistenceImplTest {
                 connectionPersistence,
                 clientSessionLocalPersistence,
                 publishPollService,
-                new Chunker(),
+                new Chunker(internalConfigurationService),
                 mock(MqttServerDisconnector.class));
     }
 

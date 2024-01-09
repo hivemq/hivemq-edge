@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
+import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.pool.MessageIDPool;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.services.PublishPollService;
@@ -127,6 +128,10 @@ public class PublishStatusFutureCallback implements FutureCallback<PublishStatus
             return;
         }
 
-        payloadPersistence.decrementReferenceCounter(publish.getPublishId());
+        // the payloads for QoS-0 messages are not extracted and their reference count is not incremented.
+        // therefor it must not be decremented
+        if (publish.getQoS() != QoS.AT_MOST_ONCE) {
+            payloadPersistence.decrementReferenceCounter(publish.getPublishId());
+        }
     }
 }

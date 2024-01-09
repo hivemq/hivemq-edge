@@ -65,6 +65,14 @@ public interface SystemInformation {
     File getDataFolder();
 
     /**
+     * /**
+     *
+     * @return the config folder of HiveMQ
+     */
+    @NotNull
+    File getLicenseFolder();
+
+    /**
      * @return the extensions folder of HiveMQ
      */
     @NotNull
@@ -89,4 +97,5 @@ public interface SystemInformation {
      * @return is HiveMQ running in embedded mode
      */
     boolean isEmbedded();
+
 }

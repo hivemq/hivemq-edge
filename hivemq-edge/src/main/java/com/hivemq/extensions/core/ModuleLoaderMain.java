@@ -13,24 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.migration.meta;
+package com.hivemq.extensions.core;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-/**
- * @author Florian Limpöck
- */
-public enum PersistenceType {
-    FILE, FILE_NATIVE, IN_MEMORY;
+public interface ModuleLoaderMain {
 
-    private static final @NotNull PersistenceType @NotNull [] VALUES = values();
-
-    public static @NotNull PersistenceType forCode(final int code) {
-        try {
-            return VALUES[code];
-        } catch (final ArrayIndexOutOfBoundsException e) {
-            throw new IllegalArgumentException("No persistence type found for code: " + code, e);
-        }
-    }
+    void start(@NotNull CoreModuleService coreModuleService);
 
 }

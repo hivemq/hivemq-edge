@@ -19,7 +19,9 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.UnmodifiableIterator;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.iteration.BucketChunkResult;
 import com.hivemq.metrics.HiveMQMetrics;
@@ -63,16 +65,17 @@ public class ClientSessionSubscriptionMemoryLocalPersistenceTest {
 
     private final int bucketCount = 4;
     private MetricRegistry metricRegistry;
+    private final @NotNull InternalConfigurationService
+            internalConfigurationService = new InternalConfigurationServiceImpl();
 
     @Before
     public void before() throws Exception {
         MockitoAnnotations.initMocks(this);
-
-        InternalConfigurations.PERSISTENCE_BUCKET_COUNT.set(bucketCount);
+        internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, ""+bucketCount);
         when(localPersistenceFileUtil.getVersionedLocalPersistenceFolder(anyString(), anyString())).thenReturn(temporaryFolder.newFolder());
         metricRegistry = new MetricRegistry();
 
-        persistence = new ClientSessionSubscriptionMemoryLocalPersistence(metricRegistry);
+        persistence = new ClientSessionSubscriptionMemoryLocalPersistence(metricRegistry, internalConfigurationService);
     }
 
     @Test
