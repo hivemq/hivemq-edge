@@ -43,7 +43,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -240,11 +244,6 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                         currentQos0MessagesMemory,
                         qos0MemoryLimit);
             }
-            // the payloads for QoS-0 messages are not extracted and their reference count is not incremented.
-            // therefor it must not be decremented
-            if (publishWithRetained.getQoS() != QoS.AT_MOST_ONCE) {
-                payloadPersistence.decrementReferenceCounter(publishWithRetained.getPublishId());
-            }
             return;
         }
 
@@ -255,7 +254,6 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                         0,
                         messages.qos0Memory,
                         qos0ClientMemoryLimit);
-                payloadPersistence.decrementReferenceCounter(publishWithRetained.getPublishId());
                 return;
             }
         }
@@ -845,11 +843,6 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
                 increaseQos0MessagesMemory(-publishWithRetained.getEstimatedSize());
                 increaseClientQos0MessagesMemory(messages, -publishWithRetained.getEstimatedSize());
                 increaseMessagesMemory(-publishWithRetained.getEstimatedSize());
-                // the payloads for QoS-0 messages are not extracted and their reference count is not incremented.
-                // therefor it must not be decremented
-                if (publishWithRetained.getQoS() != QoS.AT_MOST_ONCE) {
-                    payloadPersistence.decrementReferenceCounter(publishWithRetained.getPublishId());
-                }
                 iterator.remove();
             }
         }
