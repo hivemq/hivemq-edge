@@ -98,15 +98,12 @@ val hivemqEdgeZip by tasks.registering(Zip::class) {
     }
 }
 
-
-
 val edgeProjectsToUpdate = setOf(
     "hivemq-edge",
     "hivemq-edge-module-http",
     "hivemq-edge-module-modbus",
     "hivemq-edge-module-opcua"
 )
-
 
 tasks.register("updateDependantVersions") {
     group = "other"
