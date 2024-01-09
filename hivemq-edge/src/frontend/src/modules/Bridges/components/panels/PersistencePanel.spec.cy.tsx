@@ -6,9 +6,9 @@ import { useForm } from 'react-hook-form'
 import { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_CAPABILITY_PERSISTENCE } from '@/api/hooks/useFrontendServices/__handlers__'
-import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 
 import PersistencePanel from './PersistencePanel.tsx'
+import {Button} from "@chakra-ui/react";
 
 interface TestingComponentProps {
   onSubmit: (data: Bridge) => void
@@ -26,9 +26,9 @@ const TestingComponent: FC<TestingComponentProps> = ({ onSubmit, defaultValues }
       <form id="bridge-form" onSubmit={form.handleSubmit(onSubmit)}>
         <PersistencePanel form={form} hasPersistence={MOCK_CAPABILITY_PERSISTENCE} />
       </form>
-      <ButtonCTA type={'submit'} form="bridge-form" data-testid={'form-submit'} mt={8}>
+      <Button variant={"primary"} type={'submit'} form="bridge-form" data-testid={'form-submit'} mt={8}>
         Submit
-      </ButtonCTA>
+      </Button>
     </div>
   )
 }
