@@ -1,28 +1,39 @@
 import { FC } from 'react'
+import { Theme } from '@nivo/core'
 import { BarDatum, ResponsiveBar } from '@nivo/bar'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { Badge, Box, Card, Text } from '@chakra-ui/react'
+import { Box, useTheme } from '@chakra-ui/react'
 
 import { ChartProps } from '../../types.ts'
-import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
-import { extractMetricInfo } from '@/modules/Metrics/utils/metrics-name.utils.ts'
+import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
+import ChartTooltip from '../parts/ChartTooltip.tsx'
 
 interface Datum extends BarDatum {
   sampleTime: string
 }
 
-const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, ...props }) => {
+const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, chartTheme, ...props }) => {
   const { t } = useTranslation()
+  const { colors } = useTheme()
+  const nivoTheme: Theme = {
+    text: {
+      fill: 'var(--chakra-colors-chakra-body-text)',
+    },
+  }
 
   if (!metricName) return null
 
-  const { suffix, device } = extractMetricInfo(metricName)
-  const seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
+  const { suffix, device, id } = extractMetricInfo(metricName)
+  let seriesName = t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')
+  seriesName = `${seriesName} - ${id}`
 
   const barSeries: Datum[] = [...data]
     .reverse()
     .map((e) => ({ sampleTime: e.sampleTime as string, [seriesName]: e.value as number }))
+
+  const colorScheme = chartTheme?.colourScheme || 'red'
+  const colorElement = colors[colorScheme][500]
 
   return (
     <Box w={'100%'} {...props}>
@@ -30,52 +41,18 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, .
         data={barSeries}
         keys={[seriesName]}
         indexBy="sampleTime"
-        margin={{ top: 10, right: 80, bottom: 40, left: 40 }}
-        padding={0.3}
         valueScale={{ type: 'linear' }}
         indexScale={{ type: 'band', round: true }}
-        colors={{ scheme: 'nivo' }}
-        tooltip={(d) => (
-          <Card p={1} data-testid={'bar-chart-tooltip'}>
-            <Badge backgroundColor={d.color}>{d.id}</Badge>
-            <DateTimeRenderer date={DateTime.fromISO(d.indexValue as string)} isShort />
-            <Text fontWeight={'bold'}>{d.formattedValue}</Text>
-          </Card>
-        )}
-        // defs={[
-        //   {
-        //     id: 'dots',
-        //     type: 'patternDots',
-        //     background: 'inherit',
-        //     color: '#38bcb2',
-        //     size: 4,
-        //     padding: 1,
-        //     stagger: true,
-        //   },
-        //   {
-        //     id: 'lines',
-        //     type: 'patternLines',
-        //     background: 'inherit',
-        //     color: '#eed312',
-        //     rotation: -45,
-        //     lineWidth: 6,
-        //     spacing: 10,
-        //   },
-        // ]}
-        // fill={[
-        //   {
-        //     match: {
-        //       id: 'fries',
-        //     },
-        //     id: 'dots',
-        //   },
-        //   {
-        //     match: {
-        //       id: 'sandwich',
-        //     },
-        //     id: 'lines',
-        //   },
-        // ]}
+        colors={[colorElement]}
+        // tooltip={(d) => (
+        //   <Card p={1} data-testid={'bar-chart-tooltip'}>
+        //     <Badge backgroundColor={d.color} color={'white'}>
+        //       {d.id}
+        //     </Badge>
+        //     <DateTimeRenderer date={DateTime.fromISO(d.indexValue as string)} isShort />
+        //     <Text fontWeight={'bold'}>{d.formattedValue}</Text>
+        //   </Card>
+        // )}
         borderColor={{
           from: 'color',
           modifiers: [['darker', 1.6]],
@@ -91,7 +68,12 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, .
           legendOffset: 32,
           truncateTickAt: 0,
           format: (value) => {
-            return '+' + DateTime.fromISO(value).second
+            const duration = DateTime.fromISO(value).diffNow(['second'])
+            const rescaledDuration = duration
+              .negate()
+              .mapUnits((x) => Math.floor(x))
+              .rescale()
+            return rescaledDuration.as('seconds')
           },
         }}
         axisLeft={{
@@ -107,22 +89,30 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, .
         labelSkipHeight={12}
         labelTextColor={{
           from: 'color',
-          modifiers: [['darker', 1.6]],
+          modifiers: [['darker', 0]],
         }}
+        margin={{ top: 5, right: 0, bottom: 70, left: 40 }}
+        padding={0.3}
+        tooltip={(d) => (
+          <ChartTooltip
+            color={d.color}
+            id={d.id}
+            date={DateTime.fromISO(d.indexValue as string)}
+            formattedValue={d.formattedValue.toString()}
+          />
+        )}
         legends={[
           {
-            dataFrom: 'keys',
+            direction: 'row',
             anchor: 'bottom-right',
-            direction: 'column',
-            justify: false,
-            translateX: 120,
-            translateY: 0,
-            itemsSpacing: 2,
-            itemWidth: 100,
+            dataFrom: 'keys',
+            itemDirection: 'right-to-left',
+            translateY: 70,
+
+            itemWidth: 0,
             itemHeight: 20,
-            itemDirection: 'left-to-right',
-            itemOpacity: 0.85,
-            symbolSize: 20,
+            // itemOpacity: 0.85,
+            // symbolSize: 20,
             effects: [
               {
                 on: 'hover',
@@ -137,6 +127,7 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, .
         ariaLabel={ariaLabel}
         // TODO[NVL]: Cannot have aria-label without a role (a11y)
         // barAriaLabel={(e) => e.id + ': ' + e.formattedValue + ' in country: ' + e.indexValue}
+        theme={nivoTheme}
       />
     </Box>
   )

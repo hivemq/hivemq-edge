@@ -1,10 +1,10 @@
 /// <reference types="cypress" />
 import { useForm } from 'react-hook-form'
 import { FC } from 'react'
+import { Button } from '@chakra-ui/react'
 
 import { Bridge } from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
-import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 
 import SubscriptionsPanel from './SubscriptionsPanel.tsx'
 import { SubscriptionType } from '@/modules/Bridges/types.ts'
@@ -29,9 +29,9 @@ const TestingComponent: FC<TestingComponentProps> = ({ onSubmit, defaultValues, 
       <form id="bridge-form" onSubmit={form.handleSubmit(onSubmit)}>
         <SubscriptionsPanel form={form} type={type} />
       </form>
-      <ButtonCTA type={'submit'} form="bridge-form" data-testid={'form-submit'} mt={8}>
+      <Button variant={'primary'} type={'submit'} form="bridge-form" data-testid={'form-submit'} mt={8}>
         Submit
-      </ButtonCTA>
+      </Button>
     </div>
   )
 }
@@ -57,6 +57,8 @@ describe('SubscriptionsPanel', () => {
       rules: {
         // TODO[#111] Color-contrast fixed but still not passing. Flaky with expandable panel
         'color-contrast': { enabled: false },
+        // TODO[NVL] CTooltip seems to generate false positives
+        region: { enabled: false },
       },
     })
     cy.percySnapshot('Component: SubscriptionsPanel')

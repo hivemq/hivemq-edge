@@ -1,5 +1,5 @@
 import { FC, useMemo, useState } from 'react'
-import { Box, HStack, IconButton, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
+import { Box, HStack, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
 import { ColumnDef, Row } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
@@ -24,11 +24,14 @@ import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
 import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
 import { compareStatus } from '../../utils/pagination-utils.ts'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const DEFAULT_PER_PAGE = 10
 
@@ -63,6 +66,7 @@ const ProtocolAdapters: FC = () => {
   const [deleteAdapter, setDeleteAdapter] = useState<string | undefined>(undefined)
   const deleteProtocolAdapter = useDeleteProtocolAdapter()
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
+  const { onDeleteNode } = useWorkspaceStore()
 
   const safeData: Adapter[] = adapters ? adapters : [mockAdapter, mockAdapter, mockAdapter, mockAdapter]
 
@@ -175,6 +179,7 @@ const ProtocolAdapters: FC = () => {
     deleteProtocolAdapter
       .mutateAsync(deleteAdapter)
       .then(() => {
+        onDeleteNode(NodeTypes.ADAPTER_NODE, deleteAdapter)
         successToast({
           title: t('protocolAdapter.toast.delete.title'),
           description: t('protocolAdapter.toast.delete.description'),

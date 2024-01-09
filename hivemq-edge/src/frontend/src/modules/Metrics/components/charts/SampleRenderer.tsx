@@ -10,12 +10,14 @@ import {
   StatProps,
   Text,
   Tooltip,
+  useTheme,
 } from '@chakra-ui/react'
 import { NotAllowedIcon } from '@chakra-ui/icons'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError, DataPoint } from '@/api/__generated__'
 import { MetricInfo } from '../../utils/metrics-name.utils.ts'
+import { ChartTheme } from '@/modules/Metrics/types.ts'
 
 interface SampleRendererProps extends StatProps {
   metricInfo: MetricInfo
@@ -23,12 +25,23 @@ interface SampleRendererProps extends StatProps {
   isLoading: boolean
   error?: ApiError | null
   children?: ReactNode
+  chartTheme?: ChartTheme
 }
 
-const SampleRenderer: FC<SampleRendererProps> = ({ metricInfo, series, isLoading, error, children, ...props }) => {
+const SampleRenderer: FC<SampleRendererProps> = ({
+  metricInfo,
+  series,
+  chartTheme,
+  isLoading,
+  error,
+  children,
+  ...props
+}) => {
   const { t } = useTranslation()
   const { device, suffix, id } = metricInfo
   const formatNumber = Intl.NumberFormat(navigator.language)
+  const { colors } = useTheme()
+  const { role, ...rest } = props
 
   const diff = (current: number, previous: number) => current - previous
 
@@ -40,10 +53,24 @@ const SampleRenderer: FC<SampleRendererProps> = ({ metricInfo, series, isLoading
 
   const n = series[0]?.value as number
 
+  const colorScheme = chartTheme?.colourScheme || 'red'
+  const colorElement = colors[colorScheme][500]
+
   return (
-    <HStack alignItems={'flex-start'} gap={0}>
-      <Stat variant="hivemq" {...props} overflowX={'hidden'} h={'100%'}>
-        <StatLabel isTruncated h={'100%'}>
+    <HStack alignItems={'flex-start'} gap={0} role={role} aria-labelledby={`sample-title-${id}-${suffix}`}>
+      <Stat
+        variant="hivemq"
+        {...rest}
+        overflowX={'hidden'}
+        h={'100%'}
+        sx={{
+          borderColor: colorElement,
+          "dd[data-testid='metric-value']": {
+            color: colorElement,
+          },
+        }}
+      >
+        <StatLabel isTruncated h={'100%'} id={`sample-title-${id}-${suffix}`}>
           <Tooltip label={t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')} placement={'top'}>
             <Text textOverflow={'ellipsis'}>{t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')}</Text>
           </Tooltip>

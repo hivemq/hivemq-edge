@@ -13,7 +13,6 @@ import {
   FormControl,
   FormErrorMessage,
   FormLabel,
-  IconButton,
   VStack,
   Flex,
   Card,
@@ -40,6 +39,7 @@ import { MultiTopicsCreatableSelect } from '@/components/MQTT/TopicCreatableSele
 
 import CustomUserProperties from './CustomUserProperties.tsx'
 import { BridgeSubscriptionsProps } from '../../types.ts'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
   const { t } = useTranslation()
@@ -58,12 +58,12 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
 
   return (
     <>
-      <VStack spacing={4} align="stretch" mt={4}>
+      <VStack spacing={4} align="stretch" mt={4} role={'list'}>
         {fields.map((field, index) => {
           const maxQoS = form.watch(`${type}.${index}.maxQoS`)
           const isQoSValidForPersistence = maxQoS.toString() === '1' || maxQoS.toString() == '2'
           return (
-            <Card shadow="xs" flexDirection={'column'} key={field.id}>
+            <Card shadow="xs" flexDirection={'column'} key={field.id} role={'listitem'}>
               <HStack>
                 <CardBody>
                   <Flex gap={4} flexDirection={'column'}>
@@ -262,16 +262,16 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
             </Card>
           )
         })}
-        <Box>
-          <IconButton
-            data-testid={'bridge-subscription-add'}
-            isDisabled={!!errors[type]}
-            aria-label={t('bridge.subscription.add')}
-            icon={<AddIcon />}
-            onClick={() => prepend({ destination: '', filters: [], maxQoS: 0 })}
-          />
-        </Box>
       </VStack>
+      <Box mt={4}>
+        <IconButton
+          data-testid={'bridge-subscription-add'}
+          isDisabled={!!errors[type]}
+          aria-label={t('bridge.subscription.add')}
+          icon={<AddIcon />}
+          onClick={() => prepend({ destination: '', filters: [], maxQoS: 0 })}
+        />
+      </Box>
     </>
   )
 }

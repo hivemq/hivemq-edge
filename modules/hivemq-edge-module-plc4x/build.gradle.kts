@@ -39,9 +39,13 @@ dependencies {
     implementation("org.apache.plc4x:plc4j-api:${property("org.apache.plc4x.version")}")
     implementation("org.apache.plc4x:plc4j-driver-s7:${property("org.apache.plc4x.version")}")
     implementation("org.apache.plc4x:plc4j-driver-ads:${property("org.apache.plc4x.version")}")
+    implementation("org.apache.plc4x:plc4j-driver-ads:${property("org.apache.plc4x.version")}")
+    implementation("org.apache.plc4x:plc4j-driver-eip:${property("org.apache.plc4x.version")}")
+    implementation("org.apache.plc4x:plc4j-driver-ab-eth:${property("org.apache.plc4x.version")}")
+    implementation("org.apache.plc4x:plc4j-transport-raw-socket:${property("org.apache.plc4x.version")}")
+
 //    implementation("org.apache.plc4x:plc4j-driver-bacnet:${property("org.apache.plc4x.version")}")
 //    implementation("org.apache.plc4x:plc4j-driver-profinet:${property("org.apache.plc4x.version")}")
-//    implementation("org.apache.plc4x:plc4j-driver-eip:${property("org.apache.plc4x.version")}")
 
     runtimeOnly("com.google.guava:guava:${property("guava.version")}") {
         exclude("org.checkerframework", "checker-qual")

@@ -35,11 +35,11 @@ import java.util.concurrent.CompletableFuture;
 public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         extends AbstractPollingPerSubscriptionAdapter<T, ProtocolAdapterDataSample<T>> {
 
-    static final String TAG_ADDRESS_TYPE_SEP = ":";
+    protected static final String TAG_ADDRESS_TYPE_SEP = ":";
     private static final Logger log = LoggerFactory.getLogger(Plc4xAdapterConfig.class);
-    private final static @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
+    protected final static @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
     private final @NotNull Object lock = new Object();
-    private volatile @Nullable Plc4xConnection connection;
+    protected volatile @Nullable Plc4xConnection connection;
     private final @NotNull Map<String, ProtocolAdapterDataSample<T>> lastSamples = new HashMap<>(1);
 
     public enum ReadType {
@@ -61,20 +61,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 if (connection == null) {
                     try {
                         log.info("Creating new Instance Of Plc4x Connector with {}", adapterConfig);
-                        connection = new Plc4xConnection<>(driverManager,
-                                adapterConfig,
-                                plc4xAdapterConfig -> Plc4xDataUtils.createQueryString(createQueryStringParams(
-                                        plc4xAdapterConfig), true)) {
-                            @Override
-                            protected String getProtocol() {
-                                return getProtocolHandler();
-                            }
-
-                            @Override
-                            protected String getTagAddressForSubscription(final Plc4xAdapterConfig.Subscription subscription) {
-                                return createTagAddressForSubscription(subscription);
-                            }
-                        };
+                        connection = createConnection();
                         setConnectionStatus(ConnectionStatus.CONNECTED);
                     } catch (Plc4xException e) {
                         throw new RuntimeException(e);
@@ -83,6 +70,28 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
             }
         }
         return connection;
+    }
+
+    protected Plc4xConnection<?> createConnection() throws Plc4xException {
+        return new Plc4xConnection<>(driverManager,
+                adapterConfig,
+                plc4xAdapterConfig -> Plc4xDataUtils.createQueryString(createQueryStringParams(
+                        plc4xAdapterConfig), true)) {
+            @Override
+            protected String getProtocol() {
+                return getProtocolHandler();
+            }
+
+            @Override
+            protected String createConnectionString(final T config) {
+                return super.createConnectionString(config);
+            }
+
+            @Override
+            protected String getTagAddressForSubscription(final Plc4xAdapterConfig.Subscription subscription) {
+                return createTagAddressForSubscription(subscription);
+            }
+        };
     }
 
     @Override

@@ -12,7 +12,9 @@
     "next": "Next",
     "start": "Start",
     "stop": "Stop",
-    "restart": "Restart"
+    "restart": "Restart",
+    "mode_light": "Switch to dark mode",
+    "mode_dark": "Switch to light mode"
   },
   "hivemq": {
     "topic": "Topic",
@@ -56,7 +58,9 @@
   },
   "error": {
     "backHome": "Back to Home",
-    "notfound": { "heading": "Sorry, an unexpected error has occurred" },
+    "notfound": {
+      "heading": "Sorry, an unexpected error has occurred"
+    },
     "wip": {
       "message": "This is a work in progress. Be patient with us"
     }
@@ -85,7 +89,9 @@
         "required": "The password is required"
       }
     },
-    "submit": { "label": "Sign in" },
+    "submit": {
+      "label": "Sign in"
+    },
     "error": {
       "defaultCredentials": "We cannot load your default credentials. Please try again later",
       "verifyCredentials": "We cannot verify your credentials. Please try again later",
@@ -130,6 +136,7 @@
   "bridge": {
     "title": "MQTT bridges",
     "description": "An MQTT bridge lets you connect two MQTT brokers together. They are generally used for sharing messages between systems.",
+    "list": "List of bridges",
     "action": {
       "add": "Add bridge connection",
       "edit": "Edit",
@@ -349,16 +356,30 @@
     },
     "stepper": {
       "description": "Create a new bridge to a broker",
-      "source": { "title": "Source", "description": "MQTT Broker" },
-      "local": { "title": "Local", "description": "Local subscriptions" },
-      "remote": { "title": "Remote", "description": "Remote subscriptions" },
-      "options": { "title": "Options" },
-      "publish": { "title": "Publish" }
+      "source": {
+        "title": "Source",
+        "description": "MQTT Broker"
+      },
+      "local": {
+        "title": "Local",
+        "description": "Local subscriptions"
+      },
+      "remote": {
+        "title": "Remote",
+        "description": "Remote subscriptions"
+      },
+      "options": {
+        "title": "Options"
+      },
+      "publish": {
+        "title": "Publish"
+      }
     }
   },
   "protocolAdapter": {
     "title": "Protocol Adapters",
     "description": "Protocol adapters provide the ability to connect your HiveMQ Edge installation to local and remote devices. Once a connection has been established, you can consolidate data from this connection into your HiveMQ MQTT Broker.",
+    "list": "List of protocol adapters",
     "action": {
       "add": "Add",
       "delete": "Delete",
@@ -404,6 +425,7 @@
       "description_other": "Select one of the following $t(protocolAdapter.protocols.adapterCount, {\"count\": {{count}} }) to start creating your connection"
     },
     "facet": {
+      "description": "Search and filter protocol adapters",
       "search": {
         "label": "Search",
         "placeholder": "Search for a protocol",
@@ -493,6 +515,7 @@
         "publishing": "Publishing",
         "http": "HTTP",
         "ads": "ADS",
+        "eip": "Ethernet IP",
         "s7advanced": "S7 Device",
         "authentication": "Authentication"
       }
@@ -526,7 +549,6 @@
           "A Unified Namespace is a middleware solution that allows you to collect data from various industrial systems, add context to it, and transform it into a format that other systems can understand.",
           "ISA 95 provides a convenient way of structuring data sources in relation to their position within a manufacturing enterprise, hierarchically. "
         ],
-
         "link": "Go to hivemq website to know more"
       },
       "recommend": {
@@ -568,7 +590,9 @@
       "label": "Add prefix to all topics",
       "helper": "MQTT topics will use the namespace defined"
     },
-    "submit": { "label": "Submit" },
+    "submit": {
+      "label": "Submit"
+    },
     "toast": {
       "update": {
         "title": "Updating namespace",
@@ -581,6 +605,14 @@
     }
   },
   "workspace": {
+    "controls": {
+      "aria-label": "Workspace toolbar",
+      "zoomIn": "Zoom in",
+      "zoomIOut": "Zoom out",
+      "fitView": "Fit to the canvas",
+      "toggleInteractivity": "Lock the canvas",
+      "group": "Group the selected entities"
+    },
     "configuration": {
       "header": "Workspace configuration",
       "content": {
@@ -613,6 +645,26 @@
       "CIRCLE_PACKING": "Circle Packing"
     },
     "grouping": {
+      "toolbar": {
+        "aria-label": "Toolbar for the group {{ id }}"
+      },
+      "modal": {
+        "title": "Ungroup the adapters",
+        "description": "Are you sure you want to delete this group? The adapters inside the group will revert to their original state."
+      },
+      "command": {
+        "overview": "Open the overview panel",
+        "expand": "Expand group",
+        "collapse": "Collapse group",
+        "ungroup": "Ungroup"
+      },
+      "editor": {
+        "title": "Configure the group",
+        "input-title": "Title",
+        "input-color": "Group colour",
+        "save": "Save changes"
+      },
+      "untitled": "Untitled group",
       "title": "Grouping",
       "by_type": "By type",
       "by_subscriptionCardinality": "By subscription count",
@@ -621,6 +673,7 @@
     "property": {
       "header_ADAPTER_NODE": "Adapter Overview",
       "header_BRIDGE_NODE": "Bridge Overview",
+      "header_CLUSTER_NODE": "Group Overview",
       "modify_ADAPTER_NODE": "Modify the adapter",
       "modify_BRIDGE_NODE": "Modify the bridge",
       "eventLog": {
@@ -629,9 +682,10 @@
       }
     },
     "observability": {
-      "ariaLabel": "Observability of the connected devices",
+      "aria-label": "Open the Observability panel",
       "header_ADAPTER_NODE": "Adapter Observability",
-      "header_BRIDGE_NODE": "Bridge Observability"
+      "header_BRIDGE_NODE": "Bridge Observability",
+      "header_CLUSTER_NODE": "Group Observability"
     }
   },
   "modals": {
@@ -688,9 +742,10 @@
       }
     },
     "charts": {
+      "list": "List of metrics",
       "LineChart": {
         "ariaLabel": {
-          "legend": "timestamp (s)"
+          "legend": "timestamp (seconds ago)"
         }
       }
     },
