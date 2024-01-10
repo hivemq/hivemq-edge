@@ -39,6 +39,7 @@ public class ProtocolAdapterMetricsHelper {
     private @NotNull String protocolAdapterId;
     private @NotNull MetricRegistry metricRegistry;
     private final @NotNull Set<String> metricNames = new HashSet<>();
+    private final Object mutex = new Object();
     static final String SUCCESS_COUNT = "success.count";
     static final String FAILED_COUNT = "failed.count";
     static final String PERIOD = ".";
@@ -61,10 +62,10 @@ public class ProtocolAdapterMetricsHelper {
     }
 
     protected void initRegistry(){
-        publishSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish", true) + SUCCESS_COUNT);
-        publishFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish", true) + FAILED_COUNT);
-        connectionSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection", true) + SUCCESS_COUNT);
-        connectionFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection", true) + FAILED_COUNT);
+        publishSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish" + SUCCESS_COUNT));
+        publishFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish" + FAILED_COUNT) );
+        connectionSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection" + SUCCESS_COUNT));
+        connectionFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection" + FAILED_COUNT));
     }
 
     /**
@@ -102,14 +103,19 @@ public class ProtocolAdapterMetricsHelper {
      */
     public void increment(final @NotNull String metricName){
         Preconditions.checkNotNull(metricName);
-        metricRegistry.counter(createAdapterMetricsNamespace(metricName, false)).inc();
+        metricRegistry.counter(createAdapterMetricsNamespace(metricName)).inc();
     }
 
+    /**
+     * Will clear down all metrics in the registry created by this metrics helper.
+     * NB: metrics created outside the context of this helper will not be touched.
+     */
     public void clearAll(){
         Preconditions.checkNotNull(metricRegistry);
-        LoggerFactory.getLogger(ProtocolAdapterMetricsHelper.class).info("Clearing all protocol adapter metrics");
-        metricNames.forEach(metricRegistry::remove);
-        metricNames.clear();
+        synchronized (mutex){
+            metricNames.forEach(metricRegistry::remove);
+            metricNames.clear();
+        }
     }
 
     /**
@@ -118,10 +124,9 @@ public class ProtocolAdapterMetricsHelper {
      * Example format of the namespace:
      * com.hivemq.edge.protocol-adapters.[test-type].[test-id].[suffix](.) with optional trailing period
      * @param suffix - the suffix to append to the namespace
-     * @param trailingPeriod - should the namespace by suffixed with a trailing period
      * @return a namespace string for use in the metrics registry
      */
-    protected String createAdapterMetricsNamespace(@NotNull final String suffix, final boolean trailingPeriod){
+    protected String createAdapterMetricsNamespace(@NotNull final String suffix){
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(HiveMQMetrics.PROTOCOL_ADAPTER_PREFIX);
         stringBuilder.append(protocolAdapterType);
@@ -129,11 +134,10 @@ public class ProtocolAdapterMetricsHelper {
         stringBuilder.append(protocolAdapterId);
         stringBuilder.append(PERIOD);
         stringBuilder.append(suffix);
-        if(trailingPeriod){
-            stringBuilder.append(PERIOD);
-        }
         String metricName = stringBuilder.toString();
-        metricNames.add(metricName);
+        synchronized (mutex){
+            metricNames.add(metricName);
+        }
         return metricName;
     }
 }

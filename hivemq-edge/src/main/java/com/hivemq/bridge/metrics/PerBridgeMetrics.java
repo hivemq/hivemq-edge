@@ -40,6 +40,7 @@ public class PerBridgeMetrics {
     private final @NotNull Counter loopPreventionForwardDropCounter;
     private final @NotNull Counter loopPreventionRemoteDropCounter;
     private final @NotNull Set<String> metricNames = new HashSet<>();
+    private final @NotNull Object mutex = new Object();
 
     public PerBridgeMetrics(final @NotNull String bridgeName, final @NotNull MetricRegistry metricRegistry) {
 
@@ -96,7 +97,9 @@ public class PerBridgeMetrics {
 
     private Counter createBridgeCounter(final @NotNull MetricRegistry metricRegistry, @NotNull final String... names){
         final String metricName = MetricRegistry.name(BRIDGE_PREFIX, names);
-        metricNames.add(metricName);
+        synchronized (mutex){
+            metricNames.add(metricName);
+        }
         return metricRegistry.counter(metricName);
     }
 
@@ -142,7 +145,9 @@ public class PerBridgeMetrics {
 
     public void clearAll(final @NotNull MetricRegistry metricRegistry){
         Preconditions.checkNotNull(metricRegistry);
-        metricNames.forEach(metricRegistry::remove);
-        metricNames.clear();
+        synchronized (mutex){
+            metricNames.forEach(metricRegistry::remove);
+            metricNames.clear();
+        }
     }
 }
