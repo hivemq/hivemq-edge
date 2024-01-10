@@ -62,10 +62,10 @@ public class ProtocolAdapterMetricsHelper {
     }
 
     protected void initRegistry(){
-        publishSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish" + SUCCESS_COUNT));
-        publishFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish" + FAILED_COUNT) );
-        connectionSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection" + SUCCESS_COUNT));
-        connectionFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection" + FAILED_COUNT));
+        publishSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish." + SUCCESS_COUNT));
+        publishFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish." + FAILED_COUNT) );
+        connectionSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection." + SUCCESS_COUNT));
+        connectionFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection." + FAILED_COUNT));
     }
 
     /**
