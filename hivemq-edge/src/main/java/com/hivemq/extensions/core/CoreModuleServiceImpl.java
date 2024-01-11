@@ -41,7 +41,8 @@ public class CoreModuleServiceImpl implements CoreModuleService {
             final @NotNull ShutdownHooks shutdownHooks,
             final @NotNull ModuleLoader moduleLoader,
             final @NotNull ConfigurationService configService,
-            final @NotNull HiveMQCapabilityService capabilityService) {
+            final @NotNull HiveMQCapabilityService capabilityService,
+            final @NotNull RestComponentsService restComponentsService) {
         this.persistencesService = persistencesService;
         this.systemInformation = systemInformation;
         this.metricRegistry = metricRegistry;
@@ -85,4 +86,10 @@ public class CoreModuleServiceImpl implements CoreModuleService {
     public @NotNull HiveMQCapabilityService capabilityService(){
         return  capabilityService;
     }
+
+    @Override
+    public @NotNull RestComponentsService restComponentsService() {
+        return restComponentsService();
+    }
+
 }

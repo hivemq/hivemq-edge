@@ -22,7 +22,6 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 
 public interface CoreModuleService {
     @NotNull PersistencesService persistenceService();
@@ -38,4 +37,6 @@ public interface CoreModuleService {
     @NotNull ConfigurationService getConfigService();
 
     @NotNull HiveMQCapabilityService capabilityService();
+
+    @NotNull RestComponentsService restComponentsService();
 }

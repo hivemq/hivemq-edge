@@ -35,7 +35,7 @@ import java.util.Locale;
 
 public class TimestampToDateConverter {
 
-    private static final DateTimeFormatter DATE_FORMAT_OUTBOUND =
+    public static final DateTimeFormatter DATE_FORMAT_OUTBOUND =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.US);
 
     public static class Serializer extends JsonSerializer<Long> {

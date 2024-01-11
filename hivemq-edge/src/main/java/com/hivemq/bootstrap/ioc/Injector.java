@@ -18,6 +18,7 @@ package com.hivemq.bootstrap.ioc;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.HiveMQEdgeGateway;
 import com.hivemq.api.ioc.ApiModule;
+import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.bootstrap.netty.ioc.NettyModule;
 import com.hivemq.bridge.ioc.BridgeModule;
 import com.hivemq.common.executors.ioc.ExecutorsModule;
@@ -32,10 +33,9 @@ import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.ioc.ModulesModule;
 import com.hivemq.edge.modules.ioc.RemoteServiceModule;
 import com.hivemq.extensions.core.PersistencesService;
+import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.extensions.ioc.ExtensionModule;
 import com.hivemq.http.JaxrsHttpServer;
-import com.hivemq.logging.EventLog;
-import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.metrics.ioc.MetricsModule;
 import com.hivemq.mqtt.ioc.MQTTHandlerModule;
 import com.hivemq.mqtt.ioc.MQTTServiceModule;
@@ -123,6 +123,12 @@ public interface Injector {
 
         @BindsInstance
         Builder capabilityService(HiveMQCapabilityService capabilityService);
+
+        @BindsInstance
+        Builder restComponentService(RestComponentsService restComponentsService);
+
+        @BindsInstance
+        Builder restComponentsHolder(GenericAPIHolder genericAPIHolder);
 
         Injector build();
 
