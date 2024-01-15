@@ -15,6 +15,7 @@ describe('createBrowserRouter', () => {
             expect.objectContaining({ path: 'edge-flow/' }),
             expect.objectContaining({ path: 'event-logs/' }),
             expect.objectContaining({ path: 'namespace/' }),
+            expect.objectContaining({ path: 'datahub/' }),
           ]),
         }),
         expect.objectContaining({ path: '/login' }),
