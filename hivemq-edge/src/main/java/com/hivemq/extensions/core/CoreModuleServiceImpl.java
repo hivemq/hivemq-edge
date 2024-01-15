@@ -32,6 +32,7 @@ public class CoreModuleServiceImpl implements CoreModuleService {
     private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull ConfigurationService configService;
     private final @NotNull HiveMQCapabilityService capabilityService;
+    private final @NotNull RestComponentsService restComponentsService;
 
 
     public CoreModuleServiceImpl(
@@ -50,6 +51,7 @@ public class CoreModuleServiceImpl implements CoreModuleService {
         this.moduleLoader = moduleLoader;
         this.configService = configService;
         this.capabilityService = capabilityService;
+        this.restComponentsService = restComponentsService;
     }
 
     @Override
@@ -89,7 +91,7 @@ public class CoreModuleServiceImpl implements CoreModuleService {
 
     @Override
     public @NotNull RestComponentsService restComponentsService() {
-        return restComponentsService();
+        return restComponentsService;
     }
 
 }
