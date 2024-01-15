@@ -9,6 +9,10 @@ import { AxiosHttpRequest } from './core/AxiosHttpRequest';
 import { AuthenticationService } from './services/AuthenticationService';
 import { AuthenticationEndpointService } from './services/AuthenticationEndpointService';
 import { BridgesService } from './services/BridgesService';
+import { DataHubBehaviorPoliciesService } from './services/DataHubBehaviorPoliciesService';
+import { DataHubDataPoliciesService } from './services/DataHubDataPoliciesService';
+import { DataHubSchemasService } from './services/DataHubSchemasService';
+import { DataHubScriptsService } from './services/DataHubScriptsService';
 import { DefaultService } from './services/DefaultService';
 import { EventsService } from './services/EventsService';
 import { FrontendService } from './services/FrontendService';
@@ -25,6 +29,10 @@ export class HiveMqClient {
     public readonly authentication: AuthenticationService;
     public readonly authenticationEndpoint: AuthenticationEndpointService;
     public readonly bridges: BridgesService;
+    public readonly dataHubBehaviorPolicies: DataHubBehaviorPoliciesService;
+    public readonly dataHubDataPolicies: DataHubDataPoliciesService;
+    public readonly dataHubSchemas: DataHubSchemasService;
+    public readonly dataHubScripts: DataHubScriptsService;
     public readonly default: DefaultService;
     public readonly events: EventsService;
     public readonly frontend: FrontendService;
@@ -39,7 +47,7 @@ export class HiveMqClient {
     constructor(config?: Partial<OpenAPIConfig>, HttpRequest: HttpRequestConstructor = AxiosHttpRequest) {
         this.request = new HttpRequest({
             BASE: config?.BASE ?? '',
-            VERSION: config?.VERSION ?? '2023.8',
+            VERSION: config?.VERSION ?? '2023.9',
             WITH_CREDENTIALS: config?.WITH_CREDENTIALS ?? false,
             CREDENTIALS: config?.CREDENTIALS ?? 'include',
             TOKEN: config?.TOKEN,
@@ -52,6 +60,10 @@ export class HiveMqClient {
         this.authentication = new AuthenticationService(this.request);
         this.authenticationEndpoint = new AuthenticationEndpointService(this.request);
         this.bridges = new BridgesService(this.request);
+        this.dataHubBehaviorPolicies = new DataHubBehaviorPoliciesService(this.request);
+        this.dataHubDataPolicies = new DataHubDataPoliciesService(this.request);
+        this.dataHubSchemas = new DataHubSchemasService(this.request);
+        this.dataHubScripts = new DataHubScriptsService(this.request);
         this.default = new DefaultService(this.request);
         this.events = new EventsService(this.request);
         this.frontend = new FrontendService(this.request);
