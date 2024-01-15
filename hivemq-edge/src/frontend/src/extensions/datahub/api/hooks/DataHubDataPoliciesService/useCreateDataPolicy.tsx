@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import type { DataPolicy } from '../../__generated__'
+import type { DataPolicy } from '@/api/__generated__'
 import { useHttpClient } from '../useHttpClient/useHttpClient.ts'
 
 export const useCreateDataPolicy = () => {
