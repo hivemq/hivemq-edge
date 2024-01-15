@@ -1,0 +1,34 @@
+{
+  "brand": {
+    "extension": "DataHub"
+  },
+  "navigation": {
+    "mainPage": "Datahub"
+  },
+  "page": {
+    "title": "Edge-Datahub Integration",
+    "description": "Welcome to HiveMQ Edge - DataHub integration"
+  },
+  "policy": {
+    "type_DATA": "Data Policy",
+    "type_BEHAVIOR": "Behavior Policy"
+  },
+  "policyTable": {
+    "title": "List of policies",
+    "header": {
+      "created": "Created",
+      "type": "Type",
+      "matching": "Matching",
+      "actions": "Actions"
+    },
+    "action": {
+      "edit": "Edit"
+    }
+  },
+  "error": {
+    "notDefined": {
+      "title": "Not identified",
+      "description": "The policy is not a valid document"
+    }
+  }
+}
