@@ -4,14 +4,11 @@ import Pseudo from 'i18next-pseudo'
 
 import main_en from '../locales/en/translation.json'
 import component_en from '../locales/en/components.json'
-import datahub_en from '@/extensions/datahub/locales/en/datahub.json'
 
 const resources = {
   en: {
     translation: { ...main_en },
     components: { ...component_en },
-    // TODO[NVL] Might be worth implementing some dynamic extension loading
-    datahub: { ...datahub_en },
   },
 }
 
