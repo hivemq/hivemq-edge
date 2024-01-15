@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import type { Schema } from '../../__generated__'
+import type { Schema } from '@/api/__generated__'
 import { useHttpClient } from '../useHttpClient/useHttpClient.ts'
 
 export const useCreateSchema = () => {
