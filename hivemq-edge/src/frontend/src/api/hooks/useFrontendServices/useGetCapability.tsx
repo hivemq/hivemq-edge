@@ -3,6 +3,11 @@ import { Capability } from '@/api/__generated__'
 
 import { useGetCapabilities } from './useGetCapabilities.tsx'
 
+export enum CAPABILITY {
+  PERSISTENCE = 'mqtt-persistence',
+  DATAHUB = 'mqtt-datahub',
+}
+
 export const useGetCapability = (id: string) => {
   const { data, isSuccess } = useGetCapabilities()
 
