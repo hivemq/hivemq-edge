@@ -13,7 +13,7 @@ val buildFrontend by tasks.registering(PnpmTask::class) {
   inputs.dir(project.fileTree("src"))
   inputs.dir(project.fileTree("public"))
   inputs.dir("node_modules")
-  inputs.files("index.html", ".env", "vite.config.ts", ".browserslistrc", "tsconfig.json", "tsconfig.node.json")
+  inputs.files("index.html", ".env", "vite.config.ts", "tsconfig.json", "tsconfig.node.json")
   outputs.dir("${project.projectDir}/dist")
 }
 
