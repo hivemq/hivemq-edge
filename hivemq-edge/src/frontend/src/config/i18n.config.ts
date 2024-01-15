@@ -2,13 +2,15 @@ import { initReactI18next } from 'react-i18next'
 import i18n from 'i18next'
 import Pseudo from 'i18next-pseudo'
 
-import main_en from '../locales/en/translation.json'
-import component_en from '../locales/en/components.json'
+import main_en from '@/locales/en/translation.json'
+import component_en from '@/locales/en/components.json'
+import datahub_en from '@/extensions/datahub/locales/en/datahub.json'
 
 const resources = {
   en: {
     translation: { ...main_en },
     components: { ...component_en },
+    datahub: { ...datahub_en },
   },
 }
 
