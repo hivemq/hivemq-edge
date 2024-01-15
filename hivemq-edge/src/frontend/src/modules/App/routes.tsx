@@ -15,6 +15,11 @@ const EdgeFlowPage = lazy(() => import('@/modules/Workspace/EdgeFlowPage.tsx'))
 const NodePanelController = lazy(() => import('@/modules/Workspace/components/controls/NodePanelController.tsx'))
 const EvenLogPage = lazy(() => import('@/modules/EventLog/EvenLogPage.tsx'))
 
+// const DataHubPage = lazy(() => import('@/extensions/datahub/components/DataHubPage.tsx'))
+// const PolicyTable = lazy(() => import('@/extensions/datahub/components/PolicyTable.tsx'))
+
+import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
+
 import Dashboard from '../Dashboard/Dashboard.tsx'
 import ErrorPage from './components/ErrorPage.tsx'
 
@@ -83,6 +88,18 @@ export const routes = createBrowserRouter(
             },
           ],
         },
+        { ...dataHubRoutes },
+        // {
+        //   path: 'datahub/',
+        //   element: <DataHubPage />,
+        //   children: [
+        //     {
+        //       path: '',
+        //       index: true,
+        //       element: <PolicyTable />,
+        //     },
+        //   ],
+        // },
       ],
     },
     {
