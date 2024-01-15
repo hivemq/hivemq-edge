@@ -65,7 +65,7 @@ export const $Bridge = {
         },
         persist: {
             type: 'boolean',
-            description: `Shall the publishes for the bridge be persisted.`,
+            description: `If this flag is set to true, any outgoing mqtt messages with QoS-1 or QoS-2 will be persisted on disc in case disc persistence is active.If this flag is set to false, the QoS of any outgoing mqtt messages will be set to QoS-0 and no traffic will be persisted on disc.`,
             isNullable: true,
         },
         port: {
