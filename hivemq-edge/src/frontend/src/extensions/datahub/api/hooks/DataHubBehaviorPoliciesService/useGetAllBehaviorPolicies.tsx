@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { DATAHUB_QUERY_KEYS } from '../../utils.ts'
-import { useHttpClient } from '../useHttpClient/useHttpClient.ts'
+import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 
 interface GetAllBehaviorPoliciesProps {
   fields?: string
