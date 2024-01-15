@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import type { BehaviorPolicy } from '@/api/__generated__'
-import { useHttpClient } from '../useHttpClient/useHttpClient.ts'
+import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 
 interface UpdateDataPolicyProps {
   policyId: string

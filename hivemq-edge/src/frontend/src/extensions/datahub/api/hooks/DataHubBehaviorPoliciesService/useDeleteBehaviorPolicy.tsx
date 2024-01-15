@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query'
-import { useHttpClient } from '../useHttpClient/useHttpClient.ts'
+import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 
 export const useDeleteBehaviorPolicy = () => {
   const appClient = useHttpClient()
