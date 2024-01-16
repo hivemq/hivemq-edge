@@ -48,20 +48,24 @@ const PropertyPanelController = () => {
       // finalFocusRef={btnRef}
     >
       <DrawerOverlay />
-      <DrawerContent>
+      <DrawerContent data-testid={'node-editor-content'}>
         <DrawerCloseButton />
         <DrawerHeader>
           <Flex>
-            <Avatar icon={<NodeIcon type={'type'} />} bg="gray.200" />
+            <Avatar icon={<NodeIcon type={type} />} bg="gray.200" data-testid={'node-editor-icon'} />
             <Box ml="3">
-              <Text fontWeight="bold">{t('workspace.nodes.type', { context: type })}</Text>
-              <Text fontSize="sm">id: {nodeId}</Text>
+              <Text fontWeight="bold" data-testid={'node-editor-name'}>
+                {t('workspace.nodes.type', { context: type })}
+              </Text>
+              <Text fontSize="sm" data-testid={'node-editor-id'}>
+                id: {nodeId}
+              </Text>
             </Box>
           </Flex>
         </DrawerHeader>
 
         <DrawerBody>
-          <AbsoluteCenter axis="both">
+          <AbsoluteCenter axis="both" data-testid={'node-editor-under-construction'}>
             <Icon as={LuConstruction} boxSize={100} />
           </AbsoluteCenter>
         </DrawerBody>
