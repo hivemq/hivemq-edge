@@ -97,10 +97,6 @@ public class ClassServiceLoader {
                             log.warn("Error while trying to load class {}.", name, e);
                         }
                     }
-                    if (services.build().size() > 1) {
-                        System.out.println("here");
-                    }
-
                 }
             }
         }
