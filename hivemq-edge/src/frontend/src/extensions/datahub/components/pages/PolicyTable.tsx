@@ -1,0 +1,137 @@
+import { FC, useMemo } from 'react'
+import { ColumnDef } from '@tanstack/react-table'
+import { DateTime } from 'luxon'
+import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
+
+import { Skeleton, Text } from '@chakra-ui/react'
+import { FaEdit } from 'react-icons/fa'
+
+import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
+import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
+import IconButton from '@/components/Chakra/IconButton.tsx'
+
+import { BehaviorPolicy, BehaviorPolicyMatching, DataPolicy, DataPolicyMatching } from '@/api/__generated__'
+import { mockDataPolicy } from '../../api/hooks/DataHubDataPoliciesService/__handlers__'
+import { mockBehaviorPolicy } from '../../api/hooks/DataHubBehaviorPoliciesService/__handlers__'
+import { useGetAllDataPolicies } from '../../api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
+import { useGetAllBehaviorPolicies } from '../../api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.tsx'
+import { PolicyType } from '../../types.ts'
+
+type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { type: PolicyType })
+
+const PolicyTable: FC = () => {
+  const { t } = useTranslation('datahub')
+  const { isLoading: isDataLoading, data: dataPolicies } = useGetAllDataPolicies()
+  const { isLoading: isBehaviorLoading, data: behaviorPolicies } = useGetAllBehaviorPolicies({})
+  const navigate = useNavigate()
+
+  const isLoading = useMemo(() => {
+    return isDataLoading || isBehaviorLoading
+  }, [isDataLoading, isBehaviorLoading])
+
+  const safeData = useMemo<CombinedPolicy[]>(() => {
+    if (!dataPolicies || !dataPolicies?.items || !behaviorPolicies || !behaviorPolicies?.items)
+      return [
+        { ...mockDataPolicy, type: PolicyType.DATA },
+        { ...mockBehaviorPolicy, type: PolicyType.BEHAVIOR },
+      ]
+
+    return [
+      ...dataPolicies.items.map((e) => ({ ...e, type: PolicyType.DATA } as CombinedPolicy)),
+      ...behaviorPolicies.items.map((e) => ({ ...e, type: PolicyType.BEHAVIOR } as CombinedPolicy)),
+    ]
+  }, [dataPolicies, behaviorPolicies])
+
+  const columns = useMemo<ColumnDef<CombinedPolicy>[]>(() => {
+    return [
+      {
+        accessorKey: 'id',
+        cell: (info) => (
+          <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
+            <Text>{info.getValue<string>()}</Text>
+          </Skeleton>
+        ),
+      },
+      {
+        accessorKey: 'type',
+        cell: (info) => {
+          return (
+            <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
+              <Text>{t('policy.type', { context: info.getValue<string>() })}</Text>
+            </Skeleton>
+          )
+        },
+        header: t('policyTable.header.type') as string,
+      },
+      {
+        accessorKey: 'matching',
+        cell: (info) => {
+          const matching = info.getValue<DataPolicyMatching | BehaviorPolicyMatching>()
+          return (
+            <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
+              <Text>
+                {(matching as DataPolicyMatching).topicFilter || (matching as BehaviorPolicyMatching).clientIdRegex}
+              </Text>
+            </Skeleton>
+          )
+        },
+        header: t('policyTable.header.matching') as string,
+      },
+      {
+        accessorKey: 'createdAt',
+        sortType: 'datetime',
+        accessorFn: (row) => (row.createdAt ? DateTime.fromISO(row.createdAt).toMillis() : undefined),
+        cell: (info) => (
+          <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
+            <DateTimeRenderer date={DateTime.fromMillis(info.getValue() as number)} isApprox />
+          </Skeleton>
+        ),
+        header: t('policyTable.header.created') as string,
+      },
+      {
+        id: 'actions',
+        header: t('policyTable.header.actions') as string,
+        sortingFn: undefined,
+        cell: (info) => {
+          return (
+            <Skeleton isLoaded={!isLoading}>
+              <IconButton
+                size={'sm'}
+                onClick={() => navigate(`/datahub/${info.row.original.type}/id`)}
+                aria-label={t('policyTable.action.edit')}
+                icon={<FaEdit />}
+              />
+            </Skeleton>
+          )
+        },
+      },
+    ]
+  }, [isLoading, navigate, t])
+
+  // if (error) {
+  //   return (
+  //     <Box mt={'20%'} mx={'20%'} alignItems={'center'}>
+  //       <ErrorMessage
+  //         type={error?.message}
+  //         message={(error?.body as ProblemDetails)?.title || (t('eventLog.error.loading') as string)}
+  //       />
+  //     </Box>
+  //   )
+  // }
+
+  return (
+    <PaginatedTable<CombinedPolicy>
+      aria-label={t('policyTable.title')}
+      data={safeData}
+      columns={columns}
+      // enablePagination={variant === 'full'}
+      // enableColumnFilters={variant === 'full'}
+      // getRowStyles={(row) => {
+      //   return { backgroundColor: theme.colors.blue[50] }
+      // }}
+    />
+  )
+}
+
+export default PolicyTable
