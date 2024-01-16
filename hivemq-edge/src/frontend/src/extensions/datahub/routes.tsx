@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import { RouteObject } from 'react-router-dom'
 
 import DataHubPage from './components/DataHubPage.tsx'
