@@ -15,9 +15,9 @@ import { Box } from '@chakra-ui/react'
 const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
   const reactFlowWrapper = useRef(null)
-  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
+  const [, /*reactFlowInstance */ setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect } = useDataHubDraftStore()
-  const { policyType, policyId } = useParams()
+  const { policyType /*, policyId */ } = useParams()
 
   const nodeTypes = useMemo(
     () => ({
