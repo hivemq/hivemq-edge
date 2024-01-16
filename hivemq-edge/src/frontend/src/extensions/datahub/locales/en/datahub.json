@@ -25,7 +25,27 @@
       "edit": "Edit"
     }
   },
+  "workspace": {
+    "controls": {
+      "aria-label": "Workspace toolbar",
+      "zoomIn": "Zoom in",
+      "zoomIOut": "Zoom out",
+      "fitView": "Fit to the canvas",
+      "toggleInteractivity": "Lock the canvas",
+      "group": "Group the selected entities"
+    },
+    "nodes": {
+      "type": "Unknown type",
+      "type_DATA_POLICY": "Data Policy",
+      "type_TOPIC_FILTER": "Topic Filter",
+      "type_CLIENT_FILTER": "Client Filter"
+    }
+  },
   "error": {
+    "notActivated": {
+      "title": "Datahub is now available to commercial licenses",
+      "description": "Please contact our sales team to gain access"
+    },
     "notDefined": {
       "title": "Not identified",
       "description": "The policy is not a valid document"
