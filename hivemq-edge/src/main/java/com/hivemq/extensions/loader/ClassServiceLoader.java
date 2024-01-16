@@ -89,14 +89,18 @@ public class ClassServiceLoader {
                     }
                     line = stripComments(line);
                     final String name = line.trim();
-                    if (!(name.isEmpty())) {
+                    if (!name.isEmpty()) {
                         try {
                             final Class<?> clazz = Class.forName(name, true, classLoader);
                             services.add(clazz.asSubclass(classToLoad));
                         } catch (Exception e) {
-                            log.warn("Error while trying to load class {}.", classToLoad, e);
+                            log.warn("Error while trying to load class {}.", name, e);
                         }
                     }
+                    if (services.build().size() > 1) {
+                        System.out.println("here");
+                    }
+
                 }
             }
         }
