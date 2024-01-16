@@ -5,7 +5,7 @@ import { Listener } from '@/api/__generated__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
 import { Group, NodeTypes } from '@/modules/Workspace/types.ts'
 
-const DEFAULT_NODE = {
+export const MOCK_DEFAULT_NODE = {
   selected: false,
   zIndex: 1000,
   isConnectable: true,
@@ -19,7 +19,7 @@ export const MOCK_NODE_ADAPTER: NodeProps = {
   type: NodeTypes.ADAPTER_NODE,
   sourcePosition: Position.Bottom,
   data: mockAdapter,
-  ...DEFAULT_NODE,
+  ...MOCK_DEFAULT_NODE,
 }
 
 export const MOCK_NODE_BRIDGE: NodeProps = {
@@ -27,7 +27,7 @@ export const MOCK_NODE_BRIDGE: NodeProps = {
   type: NodeTypes.BRIDGE_NODE,
   sourcePosition: Position.Bottom,
   data: mockBridge,
-  ...DEFAULT_NODE,
+  ...MOCK_DEFAULT_NODE,
 }
 
 export const MOCK_NODE_EDGE: NodeProps = {
@@ -35,7 +35,7 @@ export const MOCK_NODE_EDGE: NodeProps = {
   type: NodeTypes.EDGE_NODE,
   sourcePosition: Position.Bottom,
   data: { label: 'HiveMQ Edge' },
-  ...DEFAULT_NODE,
+  ...MOCK_DEFAULT_NODE,
 }
 
 export const MOCK_NODE_LISTENER: NodeProps<Listener> = {
@@ -43,7 +43,7 @@ export const MOCK_NODE_LISTENER: NodeProps<Listener> = {
   type: NodeTypes.LISTENER_NODE,
   sourcePosition: Position.Bottom,
   data: mockMqttListener,
-  ...DEFAULT_NODE,
+  ...MOCK_DEFAULT_NODE,
 }
 
 export const MOCK_NODE_GROUP: NodeProps<Group> = {
@@ -51,5 +51,5 @@ export const MOCK_NODE_GROUP: NodeProps<Group> = {
   type: NodeTypes.CLUSTER_NODE,
   sourcePosition: Position.Bottom,
   data: { childrenNodeIds: ['idAdapter', 'idBridge'], title: 'The group title', isOpen: true },
-  ...DEFAULT_NODE,
+  ...MOCK_DEFAULT_NODE,
 }
