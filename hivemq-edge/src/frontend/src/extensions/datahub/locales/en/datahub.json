@@ -31,14 +31,21 @@
       "zoomIn": "Zoom in",
       "zoomIOut": "Zoom out",
       "fitView": "Fit to the canvas",
-      "toggleInteractivity": "Lock the canvas",
-      "group": "Group the selected entities"
+      "toggleInteractivity": "Lock the canvas"
     },
     "nodes": {
       "type": "Unknown type",
-      "type_DATA_POLICY": "Data Policy",
       "type_TOPIC_FILTER": "Topic Filter",
-      "type_CLIENT_FILTER": "Client Filter"
+      "type_CLIENT_FILTER": "Client Filter",
+      "type_ADAPTOR": "Adaptor Filter",
+      "type_BRIDGE": "Broker Filter",
+      "type_DATA_POLICY": "Data Policy",
+      "type_BEHAVIOR_POLICY": "Behavior Policy",
+      "type_VALIDATOR": "Policy Validator",
+      "type_SCHEMA": "Schema",
+      "type_ACTION": "Action",
+      "type_TRANSITION": "Transition",
+      "type_EVENT": "Event"
     }
   },
   "error": {
