@@ -117,6 +117,13 @@ export const MOCK_CAPABILITY_PERSISTENCE: Capability = {
   description: 'Mqtt Traffic with QoS greater than 0 is stored persistently on disc and loaded on restart of Edge. ',
 }
 
+export const MOCK_CAPABILITY_DATAHUB: Capability = {
+  id: 'mqtt-datahub',
+  displayName: 'HiveMQ Data Hub',
+  description:
+    'The HiveMQ Data Hub provides mechanisms to define how MQTT data and MQTT client behavior are handled in the HiveMQ broker.',
+}
+
 export const MOCK_CAPABILITIES: CapabilityList = { items: [MOCK_CAPABILITY_PERSISTENCE] }
 
 export const handlers = [
