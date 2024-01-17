@@ -1,7 +1,8 @@
 import { FC, useMemo, useRef, useState } from 'react'
-import ReactFlow, { Background, ReactFlowInstance, ReactFlowProvider } from 'reactflow'
+import ReactFlow, { ReactFlowInstance, ReactFlowProvider } from 'reactflow'
 import { Outlet, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Box } from '@chakra-ui/react'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
@@ -10,7 +11,16 @@ import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 import CanvasControls from '../controls/CanvasControls.tsx'
 import Minimap from '../controls/Minimap.tsx'
 import { BaseNode } from '../nodes/BaseNode.tsx'
-import { Box } from '@chakra-ui/react'
+import {
+  TopicFilterNode,
+  ClientFilterNode,
+  DataPolicyNode,
+  ValidatorNode,
+  SchemaNode,
+  OperationNode,
+  BehaviorPolicyNode,
+  TransitionNode,
+} from '../../components/nodes/'
 
 const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
@@ -65,7 +75,6 @@ const PolicyEditor: FC = () => {
           // onDragOver={onDragOver}
           // isValidConnection={isValidConnection}
         >
-          <Background />
           <Box
             role={'toolbar'}
             aria-label={t('workspace.controls.aria-label') as string}
