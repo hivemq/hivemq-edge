@@ -24,11 +24,11 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
           </VStack>
         </HStack>
       </NodeWrapper>
-      <Handle type="target" position={Position.Left} id={'target'} />
+      <Handle type="target" position={Position.Left} id={OperationData.Handle.INPUT} />
       {!action?.isTerminal && (
-        <Handle type="source" position={Position.Right} id={'source'} style={styleSourceHandle} />
+        <Handle type="source" position={Position.Right} id={OperationData.Handle.OUTPUT} style={styleSourceHandle} />
       )}
-      {action?.hasArguments && <Handle type="target" position={Position.Top} id={'schema'} />}
+      {action?.hasArguments && <Handle type="target" position={Position.Top} id={OperationData.Handle.SCHEMA} />}
     </>
   )
 }
