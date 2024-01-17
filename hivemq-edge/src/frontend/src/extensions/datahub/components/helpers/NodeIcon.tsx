@@ -23,7 +23,7 @@ const iconMapping: Record<string, (label: string) => JSX.Element> = {
   ),
   [DataHubNodeType.VALIDATOR]: (label) => <Icon as={GrValidate} color={'black'} boxSize={'24px'} aria-label={label} />,
   [DataHubNodeType.SCHEMA]: (label) => <Icon as={MdSchema} color={'black'} boxSize={'24px'} aria-label={label} />,
-  [DataHubNodeType.ACTION]: (label) => (
+  [DataHubNodeType.OPERATION]: (label) => (
     <Icon as={LuFunctionSquare} color={'black'} boxSize={'24px'} aria-label={label} />
   ),
   [DataHubNodeType.TRANSITION]: (label) => (
