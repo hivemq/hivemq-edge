@@ -18,6 +18,7 @@ package com.hivemq.api.ioc;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.ApiResourceRegistry;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
+import com.hivemq.api.auth.handler.impl.BasicAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.auth.provider.ITokenGenerator;
