@@ -25,11 +25,11 @@ export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => 
           </VStack>
         </HStack>
       </NodeWrapper>
-      <Handle type="target" position={Position.Left} id="clientFilter" />
+      <Handle type="target" position={Position.Left} id={BehaviorPolicyData.Handle.CLIENT_FILTER} />
       <Handle
         type="target"
         position={Position.Top}
-        id="serial.will"
+        id={BehaviorPolicyData.Handle.SERIAL_PUBLISH}
         style={{
           left: '33%',
           background: 'green',
@@ -39,7 +39,7 @@ export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => 
       <Handle
         type="target"
         position={Position.Top}
-        id="serial.publish"
+        id={BehaviorPolicyData.Handle.SERIAL_WILL}
         style={{
           left: '66%',
           background: 'red',
