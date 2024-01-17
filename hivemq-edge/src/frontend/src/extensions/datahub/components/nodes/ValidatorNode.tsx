@@ -24,8 +24,8 @@ export const ValidatorNode: FC<NodeProps<ValidatorData>> = (props) => {
         </HStack>
       </NodeWrapper>
 
-      <Handle type="target" position={Position.Top} id="schema" />
-      <Handle type="source" position={Position.Bottom} id="policy" style={styleSourceHandle} />
+      <Handle type="target" position={Position.Top} />
+      <Handle type="source" position={Position.Bottom} style={styleSourceHandle} />
     </>
   )
 }
