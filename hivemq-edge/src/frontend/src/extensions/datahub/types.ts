@@ -56,6 +56,16 @@ export interface DataPolicyData {
   core?: DataPolicy
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace DataPolicyData {
+  export enum Handle {
+    TOPIC_FILTER = 'topicFilter',
+    VALIDATION = 'validation',
+    ON_SUCCESS = 'onSuccess',
+    ON_ERROR = 'onError',
+  }
+}
+
 // TODO[18740] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18740/details/
 export enum ValidatorType {
   SCHEMA = 'schema',
@@ -100,6 +110,15 @@ export interface OperationData {
   core?: PolicyOperation
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace OperationData {
+  export enum Handle {
+    INPUT = 'input',
+    OUTPUT = 'output',
+    SCHEMA = 'schema',
+  }
+}
+
 // TODO[18757] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18757/details/
 export enum BehaviorPolicyType {
   MQTT_EVENT = 'Mqtt.events',
@@ -111,6 +130,15 @@ export interface BehaviorPolicyData {
   model: BehaviorPolicyType
   arguments?: Record<string, string | number>
   core?: BehaviorPolicy
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace BehaviorPolicyData {
+  export enum Handle {
+    SERIAL_WILL = 'serial.will',
+    SERIAL_PUBLISH = 'serial.publish',
+    CLIENT_FILTER = 'clientFilter',
+  }
 }
 
 // TODO[18761] Add to the OpenAPI specs, see https://hivemq.kanbanize.com/ctrl_board/4/cards/18761/details/
