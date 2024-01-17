@@ -43,7 +43,7 @@
       "type_BEHAVIOR_POLICY": "Behavior Policy",
       "type_VALIDATOR": "Policy Validator",
       "type_SCHEMA": "Schema",
-      "type_ACTION": "Action",
+      "type_OPERATION": "Operation",
       "type_TRANSITION": "Transition",
       "type_EVENT": "Event"
     }
