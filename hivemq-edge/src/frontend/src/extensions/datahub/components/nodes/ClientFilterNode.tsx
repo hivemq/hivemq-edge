@@ -40,7 +40,6 @@ export const ClientFilterNode: FC<NodeProps<ClientFilterData>> = (props) => {
           }}
         />
       ))}
-      <Handle type="source" position={Position.Bottom} style={styleSourceHandle} />
     </>
   )
 }
