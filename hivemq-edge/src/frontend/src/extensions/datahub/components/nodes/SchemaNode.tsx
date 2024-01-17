@@ -22,7 +22,7 @@ export const SchemaNode: FC<NodeProps<SchemaData>> = (props) => {
           </VStack>
         </HStack>
       </NodeWrapper>
-      <Handle type="source" position={Position.Bottom} id={'source'} style={styleSourceHandle} />
+      <Handle type="source" position={Position.Bottom} style={styleSourceHandle} />
     </>
   )
 }
