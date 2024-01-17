@@ -23,8 +23,8 @@ export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
           </VStack>
         </HStack>
       </NodeWrapper>
-      <Handle type="target" position={Position.Left} id={'target'} />
-      <Handle type="source" position={Position.Right} id={'source'} style={styleSourceHandle} />
+      <Handle type="target" position={Position.Left} />
+      <Handle type="source" position={Position.Right} style={styleSourceHandle} />
     </>
   )
 }
