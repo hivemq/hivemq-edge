@@ -20,12 +20,12 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
           <Text> {t('workspace.nodes.type', { context: type })}</Text>
         </HStack>
       </NodeWrapper>
-      <Handle type="target" position={Position.Left} id="dataPoint" />
-      <Handle type="target" position={Position.Top} id="validation" />
+      <Handle type="target" position={Position.Left} id={DataPolicyData.Handle.TOPIC_FILTER} />
+      <Handle type="target" position={Position.Top} id={DataPolicyData.Handle.VALIDATION} />
       <Handle
         type="source"
         position={Position.Right}
-        id="onSuccess"
+        id={DataPolicyData.Handle.ON_SUCCESS}
         style={{
           top: 10,
           background: 'green',
@@ -35,7 +35,7 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
       <Handle
         type="source"
         position={Position.Right}
-        id="onError"
+        id={DataPolicyData.Handle.ON_ERROR}
         style={{
           top: 'calc(100% - 10px)',
           background: 'red',
