@@ -10,8 +10,10 @@ import {
 } from 'reactflow'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
+
 import { WorkspaceAction, WorkspaceState } from '../types.ts'
 import { initialFlow } from '../utils/node.utils.ts'
+import { styleDefaultEdge } from '../utils/edge.utils.ts'
 
 const useDataHubDraftStore = create<WorkspaceState & WorkspaceAction>()(
   persist(
@@ -32,7 +34,13 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceAction>()(
       },
       onConnect: (connection: Connection) => {
         set({
-          edges: addEdge(connection, get().edges),
+          edges: addEdge(
+            {
+              ...connection,
+              ...styleDefaultEdge,
+            },
+            get().edges
+          ),
         })
       },
       onAddNodes: (changes: NodeAddChange[]) => {
