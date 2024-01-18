@@ -53,7 +53,7 @@ export const MOCK_INITIAL_POLICY = () => {
 
   const schemaNode: Node<SchemaData> = {
     id: '5',
-    data: { type: SchemaType.JSON, schemaSource: { title: '< untitled >' } },
+    data: { type: SchemaType.JSON, schemaSource: { title: '< untitled >' }, version: '1' },
     type: DataHubNodeType.SCHEMA,
     position: { x: 400, y: -200 },
   }
