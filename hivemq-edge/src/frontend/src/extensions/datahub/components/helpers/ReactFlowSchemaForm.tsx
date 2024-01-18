@@ -104,12 +104,13 @@ export function FieldTemplate<
   )
 }
 
-export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates'>> = (props) => {
+export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' | 'liveValidate'>> = (props) => {
   return (
     <Form
       showErrorList="bottom"
       templates={{ DescriptionFieldTemplate, FieldTemplate }}
       validator={validator}
+      liveValidate
       {...props}
     />
   )
