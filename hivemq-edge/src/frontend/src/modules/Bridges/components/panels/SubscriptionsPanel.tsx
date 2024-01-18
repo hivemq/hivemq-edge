@@ -34,7 +34,7 @@ import { AddIcon, DeleteIcon } from '@chakra-ui/icons'
 
 import { $BridgeSubscription, $LocalBridgeSubscription } from '@/api/__generated__'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
-import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
+import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
 import { MultiTopicsCreatableSelect } from '@/components/MQTT/TopicCreatableSelect.tsx'
 
 import CustomUserProperties from './CustomUserProperties.tsx'
@@ -48,7 +48,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
     name: type, // unique name for your Field Array
   })
   const getRulesForProperty = useValidationRules()
-  const hasPersistence = useGetCapability('mqtt-persistence')
+  const hasPersistence = useGetCapability(CAPABILITY.PERSISTENCE)
   const isPersistEnabled = form.watch('persist')
 
   const {
