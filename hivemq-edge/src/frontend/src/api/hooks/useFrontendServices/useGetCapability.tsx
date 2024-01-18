@@ -5,7 +5,7 @@ import { useGetCapabilities } from './useGetCapabilities.tsx'
 
 export enum CAPABILITY {
   PERSISTENCE = 'mqtt-persistence',
-  DATAHUB = 'mqtt-datahub',
+  DATAHUB = 'data-hub',
 }
 
 export const useGetCapability = (id: string) => {
