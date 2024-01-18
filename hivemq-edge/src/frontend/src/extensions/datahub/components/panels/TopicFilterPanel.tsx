@@ -51,7 +51,6 @@ export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onClose }) => {
           schema={MOCK_TOPIC_FILTER_SCHEMA.schema}
           uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
           formData={{ topics: topics }}
-          liveValidate
           customValidate={customValidate}
           onChange={() => console.log('changed')}
           onSubmit={onFormSubmit}
