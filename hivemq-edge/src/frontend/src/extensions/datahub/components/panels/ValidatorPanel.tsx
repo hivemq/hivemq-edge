@@ -32,7 +32,6 @@ export const ValidatorPanel: FC<PanelProps> = ({ selectedNode, onClose }) => {
           schema={MOCK_VALIDATOR_SCHEMA.schema}
           // uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
           formData={data}
-          liveValidate
           onChange={() => console.log('changed')}
           onSubmit={onFormSubmit}
           onError={() => console.log('errors')}
