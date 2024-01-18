@@ -39,4 +39,7 @@ public interface CoreModuleService {
     @NotNull HiveMQCapabilityService capabilityService();
 
     @NotNull RestComponentsService restComponentsService();
+
+
+    @NotNull HandlerService handlerService();
 }

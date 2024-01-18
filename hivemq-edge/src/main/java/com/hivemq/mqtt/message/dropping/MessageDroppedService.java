@@ -15,6 +15,8 @@
  */
 package com.hivemq.mqtt.message.dropping;
 
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+
 /**
  * The MessageDroppedService is used to centralize the update of dropped message metrics. The corresponding method
  * should be called, whenever a message is dropped.
@@ -47,6 +49,8 @@ public interface MessageDroppedService {
      * Update the metrics if a PUBLISH was dropped because an extension prevented onward delivery.
      */
     void extensionPrevented(final String clientId, final String topic, final int qos);
+
+    void withReason(@NotNull String clientId, @NotNull String topic, @NotNull String reason, int qos);
 
     /**
      * Update the metrics if a message was dropped because of an internal error
