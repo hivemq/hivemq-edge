@@ -118,10 +118,10 @@ export const MOCK_CAPABILITY_PERSISTENCE: Capability = {
 }
 
 export const MOCK_CAPABILITY_DATAHUB: Capability = {
-  id: 'mqtt-datahub',
-  displayName: 'HiveMQ Data Hub',
+  id: 'data-hub',
+  displayName: 'Data Hub for HiveMQ Edge',
   description:
-    'The HiveMQ Data Hub provides mechanisms to define how MQTT data and MQTT client behavior are handled in the HiveMQ broker.',
+    'This enables HiveMQ Edge to make use of the HiveMQ Data Hub. This includes validation and transformation of data.',
 }
 
 export const MOCK_CAPABILITIES: CapabilityList = { items: [MOCK_CAPABILITY_PERSISTENCE] }
