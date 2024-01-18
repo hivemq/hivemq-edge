@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 
 import { ApiError, Bridge } from '@/api/__generated__'
-import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
+import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
 
 import ConnectionPanel from '../panels/ConnectionPanel.tsx'
 import NamePanel from '../panels/NamePanel.tsx'
@@ -50,7 +50,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
 }) => {
   const { t } = useTranslation()
   const { bridge } = useBridgeSetup()
-  const hasPersistence = useGetCapability('mqtt-persistence')
+  const hasPersistence = useGetCapability(CAPABILITY.PERSISTENCE)
   const form = useForm<Bridge>({
     mode: 'all',
     criteriaMode: 'all',
