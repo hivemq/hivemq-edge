@@ -32,6 +32,7 @@ import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.ioc.ModulesModule;
 import com.hivemq.edge.modules.ioc.RemoteServiceModule;
+import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.extensions.ioc.ExtensionModule;
@@ -123,6 +124,9 @@ public interface Injector {
 
         @BindsInstance
         Builder capabilityService(HiveMQCapabilityService capabilityService);
+
+        @BindsInstance
+        Builder handlerService(HandlerService capabilityService);
 
         @BindsInstance
         Builder restComponentService(RestComponentsService restComponentsService);
