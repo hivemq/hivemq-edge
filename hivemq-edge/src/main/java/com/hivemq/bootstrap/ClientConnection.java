@@ -42,6 +42,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -104,11 +105,13 @@ public class ClientConnection {
     private @Nullable ClientAuthorizers extensionClientAuthorizers;
     private @Nullable ClientInformation extensionClientInformation;
     private @Nullable ConnectionInformation extensionConnectionInformation;
+    private @NotNull HashMap<String, Object> additionalInformation;
 
     public ClientConnection(final @NotNull Channel channel, final @NotNull PublishFlushHandler publishFlushHandler) {
         this.channel = channel;
         this.publishFlushHandler = publishFlushHandler;
         messageIDPool = new SequentialMessageIDPoolImpl();
+        this.additionalInformation = new HashMap<>();
     }
 
     public @NotNull Channel getChannel() {
@@ -577,5 +580,13 @@ public class ClientConnection {
         }
 
         return Optional.empty();
+    }
+
+    public @NotNull HashMap<String, Object> getAdditionalInformation() {
+        return additionalInformation;
+    }
+
+    public static @NotNull ClientConnection fromChannel(Channel channel){
+        return channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
     }
 }
