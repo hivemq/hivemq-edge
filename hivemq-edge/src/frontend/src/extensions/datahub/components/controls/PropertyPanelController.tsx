@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { FC, useCallback, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import {
@@ -19,7 +19,16 @@ import {
 import { useTranslation } from 'react-i18next'
 import { LuConstruction } from 'react-icons/lu'
 
+import { ClientFilterPanel, SchemaPanel, TopicFilterPanel, ValidatorPanel } from '../panels'
 import NodeIcon from '../helpers/NodeIcon.tsx'
+import { DataHubNodeType, PanelProps } from '../../types.ts'
+
+const DefaultEditor: Record<string, FC<PanelProps>> = {
+  [DataHubNodeType.TOPIC_FILTER]: TopicFilterPanel,
+  [DataHubNodeType.CLIENT_FILTER]: ClientFilterPanel,
+  [DataHubNodeType.VALIDATOR]: ValidatorPanel,
+  [DataHubNodeType.SCHEMA]: SchemaPanel,
+}
 
 const PropertyPanelController = () => {
   const { t } = useTranslation('datahub')
@@ -38,6 +47,9 @@ const PropertyPanelController = () => {
     onClose()
     navigate(state?.origin || '/datahub')
   }, [onClose, navigate, state?.origin])
+
+  const Editor = type ? DefaultEditor[type] : null
+  const isEditorValid = Editor && nodeId
 
   return (
     <Drawer
@@ -65,9 +77,13 @@ const PropertyPanelController = () => {
         </DrawerHeader>
 
         <DrawerBody>
-          <AbsoluteCenter axis="both" data-testid={'node-editor-under-construction'}>
-            <Icon as={LuConstruction} boxSize={100} />
-          </AbsoluteCenter>
+          {isEditorValid ? (
+            <Editor selectedNode={nodeId} onClose={onDrawerClose} />
+          ) : (
+            <AbsoluteCenter axis="both" data-testid={'node-editor-under-construction'}>
+              <Icon as={LuConstruction} boxSize={100} />
+            </AbsoluteCenter>
+          )}
         </DrawerBody>
       </DrawerContent>
     </Drawer>
