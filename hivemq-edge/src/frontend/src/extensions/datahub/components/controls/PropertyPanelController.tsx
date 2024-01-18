@@ -1,5 +1,6 @@
 import { FC, useCallback, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 import {
   AbsoluteCenter,
@@ -16,10 +17,17 @@ import {
   Text,
   useDisclosure,
 } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
 import { LuConstruction } from 'react-icons/lu'
 
-import { ClientFilterPanel, SchemaPanel, TopicFilterPanel, ValidatorPanel } from '../panels'
+import {
+  BehaviorPolicyPanel,
+  ClientFilterPanel,
+  OperationPanel,
+  SchemaPanel,
+  TopicFilterPanel,
+  TransitionPanel,
+  ValidatorPanel,
+} from '../panels'
 import NodeIcon from '../helpers/NodeIcon.tsx'
 import { DataHubNodeType, PanelProps } from '../../types.ts'
 
@@ -28,6 +36,9 @@ const DefaultEditor: Record<string, FC<PanelProps>> = {
   [DataHubNodeType.CLIENT_FILTER]: ClientFilterPanel,
   [DataHubNodeType.VALIDATOR]: ValidatorPanel,
   [DataHubNodeType.SCHEMA]: SchemaPanel,
+  [DataHubNodeType.BEHAVIOR_POLICY]: BehaviorPolicyPanel,
+  [DataHubNodeType.TRANSITION]: TransitionPanel,
+  [DataHubNodeType.OPERATION]: OperationPanel,
 }
 
 const PropertyPanelController = () => {
