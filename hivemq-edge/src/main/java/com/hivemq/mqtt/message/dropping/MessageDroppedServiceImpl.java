@@ -86,6 +86,15 @@ public class MessageDroppedServiceImpl implements MessageDroppedService {
     }
 
     /**
+     * @inheritDoc
+     */
+    @Override
+    public void withReason(final @NotNull String clientId, final @NotNull String topic, final @NotNull String reason, final int qos) {
+        metricsHolder.getDroppedMessageCounter().inc();
+        eventLog.messageDropped(clientId, topic, qos, reason);
+    }
+
+    /**
      * Update the metrics if a message was dropped because of an internal error
      */
     @Override
