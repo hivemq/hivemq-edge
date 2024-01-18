@@ -24,5 +24,8 @@ export const MOCK_SCHEMA_SCHEMA: PanelSpecs = {
     schemaSource: {
       'ui:widget': 'application/schema+json',
     },
+    type: {
+      'ui:widget': 'radio',
+    },
   },
 }
