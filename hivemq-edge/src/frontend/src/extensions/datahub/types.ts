@@ -134,7 +134,7 @@ export namespace OperationData {
 export enum BehaviorPolicyType {
   MQTT_EVENT = 'Mqtt.events',
   PUBLISH_DUPLICATE = 'Publish.duplicate',
-  PUBLISH_QUOTE = 'Publish.quota',
+  PUBLISH_QUOTA = 'Publish.quota',
 }
 
 export interface BehaviorPolicyData {
