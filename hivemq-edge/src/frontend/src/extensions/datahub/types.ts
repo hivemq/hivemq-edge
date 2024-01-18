@@ -106,17 +106,20 @@ export interface SchemaData {
 }
 
 // TODO[18763] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18763/details/
-export interface FunctionSpecs {
+export interface FunctionDefinition {
   functionId: string
   isTerminal?: boolean
   isDataOnly?: boolean
   hasArguments?: boolean
+}
+
+export interface FunctionSpecs extends FunctionDefinition {
   schema?: RJSFSchema
   uiSchema?: UiSchema
 }
 
 export interface OperationData {
-  action?: FunctionSpecs
+  action?: FunctionDefinition
   formData?: Record<string, string | number>
   core?: PolicyOperation
 }
