@@ -9,6 +9,16 @@ import {
 } from '@/api/__generated__'
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
 
+export interface PanelSpecs {
+  schema: RJSFSchema
+  uiSchema?: UiSchema
+}
+
+export interface PanelProps {
+  selectedNode: string
+  onClose?: () => void
+}
+
 export interface WorkspaceState {
   nodes: Node[]
   edges: Edge[]
@@ -90,6 +100,7 @@ export enum SchemaType {
 
 export interface SchemaData {
   type: SchemaType
+  version: string
   schemaSource?: RJSFSchema
   core?: Schema
 }
