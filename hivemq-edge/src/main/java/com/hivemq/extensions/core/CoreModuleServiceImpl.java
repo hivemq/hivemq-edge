@@ -33,6 +33,7 @@ public class CoreModuleServiceImpl implements CoreModuleService {
     private final @NotNull ConfigurationService configService;
     private final @NotNull HiveMQCapabilityService capabilityService;
     private final @NotNull RestComponentsService restComponentsService;
+    private final @NotNull HandlerService handlerService;
 
 
     public CoreModuleServiceImpl(
@@ -43,7 +44,8 @@ public class CoreModuleServiceImpl implements CoreModuleService {
             final @NotNull ModuleLoader moduleLoader,
             final @NotNull ConfigurationService configService,
             final @NotNull HiveMQCapabilityService capabilityService,
-            final @NotNull RestComponentsService restComponentsService) {
+            final @NotNull RestComponentsService restComponentsService,
+            final @NotNull HandlerService handlerService) {
         this.persistencesService = persistencesService;
         this.systemInformation = systemInformation;
         this.metricRegistry = metricRegistry;
@@ -52,6 +54,7 @@ public class CoreModuleServiceImpl implements CoreModuleService {
         this.configService = configService;
         this.capabilityService = capabilityService;
         this.restComponentsService = restComponentsService;
+        this.handlerService = handlerService;
     }
 
     @Override
@@ -94,4 +97,8 @@ public class CoreModuleServiceImpl implements CoreModuleService {
         return restComponentsService;
     }
 
+    @Override
+    public @NotNull HandlerService handlerService() {
+        return handlerService;
+    }
 }

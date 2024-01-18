@@ -36,6 +36,7 @@ import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
+import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.http.JaxrsHttpServer;
@@ -109,6 +110,7 @@ public class HiveMQEdgeMain {
 
         log.info("Integrating Core Modules");
         final PersistencesService persistencesService = new PersistencesService();
+        final HandlerService handlerService = new HandlerService();
         final GenericAPIHolder genericAPIHolder = new GenericAPIHolder();
         final RestComponentsService restComponentsService = new RestComponentsService(genericAPIHolder);
         final ShutdownHooks shutdownHooks = new ShutdownHooks();
@@ -119,7 +121,11 @@ public class HiveMQEdgeMain {
                     systemInformation,
                     metricRegistry,
                     shutdownHooks,
-                    moduleLoader, configService, capabilityService, restComponentsService);
+                    moduleLoader,
+                    configService,
+                    capabilityService,
+                    restComponentsService,
+                    handlerService);
             commercialModuleLoaderDiscovery.loadAllCoreModules();
         } catch (Exception e) {
             log.warn("Error on loading the commercial module loader.", e);
@@ -133,6 +139,7 @@ public class HiveMQEdgeMain {
                 .systemInformation(systemInformation)
                 .metricRegistry(metricRegistry)
                 .persistenceService(persistencesService)
+                .handlerService(handlerService)
                 .persistenceStartUp(persistenceStartup)
                 .moduleLoader(moduleLoader)
                 .shutdownHooks(shutdownHooks)
