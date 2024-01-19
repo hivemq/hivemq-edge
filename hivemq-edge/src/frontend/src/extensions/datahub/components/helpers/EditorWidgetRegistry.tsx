@@ -18,8 +18,11 @@ const MyCustomWidget = (lng: string, props: WidgetProps) => {
 const JavascriptEditor = (props: WidgetProps) => MyCustomWidget('javascript', props)
 // eslint-disable-next-line react-refresh/only-export-components
 const JSONSchemaEditor = (props: WidgetProps) => MyCustomWidget('json', props)
+// eslint-disable-next-line react-refresh/only-export-components
+const ProtoSchemaEditor = (props: WidgetProps) => MyCustomWidget('proto', props)
 
 export const datahubRJSFWidgets: RegistryWidgetsType = {
   'application/schema+json': JSONSchemaEditor,
   'text/javascript': JavascriptEditor,
+  'application/octet-stream': ProtoSchemaEditor,
 }
