@@ -26,12 +26,24 @@
     }
   },
   "workspace": {
+    "aria-label": "Workspace toolbar",
     "controls": {
-      "aria-label": "Workspace toolbar",
+      "aria-label": "Canvas controls",
       "zoomIn": "Zoom in",
       "zoomIOut": "Zoom out",
       "fitView": "Fit to the canvas",
       "toggleInteractivity": "Lock the canvas"
+    },
+    "toolbox": {
+      "aria-label": "Policy controls",
+      "trigger_open": "Open the toolbox",
+      "trigger_close": "Close the toolbox",
+      "group": {
+        "pipeline": "Pipeline",
+        "dataPolicy": "Data Policy",
+        "action": "Action",
+        "behaviorPolicy": "Behavior Policy"
+      }
     },
     "nodes": {
       "type": "Unknown type",
