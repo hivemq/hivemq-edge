@@ -1,6 +1,7 @@
 import { FC, useCallback, useMemo } from 'react'
 import { Node } from 'reactflow'
 import { IChangeEvent } from '@rjsf/core'
+import { Card, CardBody } from '@chakra-ui/react'
 
 import { OperationData, PanelProps } from '../../types.ts'
 import { MOCK_OPERATION_SCHEMA } from '../../api/specs/OperationData.ts'
@@ -24,20 +25,20 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onClose }) => {
     [selectedNode, onUpdateNodes, onClose]
   )
 
-  console.log('XXXXXXX ff', formData)
-
   return (
-    <>
-      <ReactFlowSchemaForm
-        schema={MOCK_OPERATION_SCHEMA.schema}
-        uiSchema={MOCK_OPERATION_SCHEMA.uiSchema}
-        formData={formData}
-        widgets={datahubRJSFWidgets}
-        noHtml5Validate={true}
-        onSubmit={onFormSubmit}
-        onChange={(e) => console.log('changed', e.formData)}
-        onError={() => console.log('errors')}
-      />
-    </>
+    <Card>
+      <CardBody>
+        <ReactFlowSchemaForm
+          schema={MOCK_OPERATION_SCHEMA.schema}
+          uiSchema={MOCK_OPERATION_SCHEMA.uiSchema}
+          formData={formData}
+          widgets={datahubRJSFWidgets}
+          noHtml5Validate={true}
+          onSubmit={onFormSubmit}
+          onChange={(e) => console.log('changed', e.formData)}
+          onError={() => console.log('errors')}
+        />
+      </CardBody>
+    </Card>
   )
 }
