@@ -1,6 +1,5 @@
 import { Edge, Node } from 'reactflow'
 import { CSSProperties } from 'react'
-import { MOCK_INITIAL_POLICY } from '../__test-utils__/react-flow.mocks.tsx'
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema-mocks.ts'
 
 import {
