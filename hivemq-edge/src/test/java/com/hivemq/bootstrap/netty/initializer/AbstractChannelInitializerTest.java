@@ -37,11 +37,10 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.traffic.GlobalTrafficShapingHandler;
-import io.netty.util.Attribute;
-import org.junit.Before;
-import org.junit.Test;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
 import util.TestChannelAttribute;
 
@@ -79,13 +78,13 @@ public class AbstractChannelInitializerTest {
 
     private @NotNull AbstractChannelInitializer abstractChannelInitializer;
 
-    @Before
+    @BeforeEach
     public void before() {
         when(socketChannel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(new TestChannelAttribute<>(new ClientConnection(
                 socketChannel,
                 null)));
-        when(handlerProvider.get()).thenReturn(null);
         when(channelDependencies.getHandlerProvider()).thenReturn(handlerProvider);
+        when(handlerProvider.get()).thenReturn(null);
 
         when(socketChannel.pipeline()).thenReturn(pipeline);
         when(socketChannel.isActive()).thenReturn(true);

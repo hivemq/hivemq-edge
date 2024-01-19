@@ -33,7 +33,7 @@ public class HandlerProvider {
     }
 
 
-    public final @Nullable HandlerPackage get() {
+    public @Nullable HandlerPackage get() {
         final HandlerFactory handlerFactory = handlerService.getHandlerFactory();
         if (handlerFactory == null) {
             return null;
