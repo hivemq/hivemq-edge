@@ -124,6 +124,12 @@ export const MOCK_CAPABILITY_DATAHUB: Capability = {
     'This enables HiveMQ Edge to make use of the HiveMQ Data Hub. This includes validation and transformation of data.',
 }
 
+export const MOCK_CAPABILITY_DUMMY: Capability = {
+  id: 'edge',
+  displayName: 'This is a test capability',
+  description: 'Use for testing',
+}
+
 export const MOCK_CAPABILITIES: CapabilityList = { items: [MOCK_CAPABILITY_PERSISTENCE] }
 
 export const handlers = [
