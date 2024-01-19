@@ -15,6 +15,7 @@
  */
 package com.hivemq.bootstrap.netty;
 
+import com.hivemq.bootstrap.factories.HandlerProvider;
 import com.hivemq.codec.decoder.mqtt.MqttConnectDecoder;
 import com.hivemq.codec.decoder.mqtt.MqttDecoders;
 import com.hivemq.codec.encoder.EncoderFactory;
@@ -212,7 +213,8 @@ public class ChannelDependenciesTest {
                 awakeHandler,
                 sleepHandler,
                 mqttConnacker,
-                () -> mock(IGatewayBroadcastService.class));
+                () -> mock(IGatewayBroadcastService.class),
+                mock(HandlerProvider.class));
     }
 
     @Test
@@ -253,5 +255,6 @@ public class ChannelDependenciesTest {
         assertNotNull(channelDependencies.getAwakeHandler());
         assertNotNull(channelDependencies.getSleepHandler());
         assertNotNull(channelDependencies.getMqttConnacker());
+
     }
 }
