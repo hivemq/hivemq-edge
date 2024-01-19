@@ -8,24 +8,49 @@ export const MOCK_SCHEMA_SCHEMA: PanelSpecs = {
     properties: {
       type: {
         title: 'Schema',
-        enum: [SchemaType.JSON],
-        default: SchemaType.JSON,
+        enum: [SchemaType.JSON, SchemaType.PROTO],
+        default: SchemaType.PROTO,
       },
       version: {
         type: 'string',
       },
-      schemaSource: {
-        type: 'string',
-        format: 'application/schema+json',
+      // schemaSource: {
+      //   type: 'string',
+      //   format: 'application/schema+json',
+      // },
+    },
+    dependencies: {
+      type: {
+        oneOf: [
+          {
+            properties: {
+              type: {
+                enum: [SchemaType.JSON],
+              },
+              schemaSource: {
+                type: 'string',
+                format: 'application/schema+json',
+              },
+            },
+          },
+          {
+            properties: {
+              type: {
+                enum: [SchemaType.PROTO],
+              },
+              schemaSource: {
+                type: 'string',
+                format: 'application/octet-stream',
+              },
+            },
+          },
+        ],
       },
     },
   },
   uiSchema: {
-    schemaSource: {
-      'ui:widget': 'application/schema+json',
-    },
     type: {
-      'ui:widget': 'radio',
+      // 'ui:widget': 'radio',
     },
   },
 }
