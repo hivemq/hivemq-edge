@@ -77,7 +77,7 @@ const PolicyEditor: FC = () => {
         >
           <Box
             role={'toolbar'}
-            aria-label={t('workspace.controls.aria-label') as string}
+            aria-label={t('workspace.aria-label') as string}
             aria-controls={'edge-workspace-canvas'}
           >
             <CanvasControls />
