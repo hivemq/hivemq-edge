@@ -96,12 +96,13 @@ export interface ValidatorData {
 // TODO[18755] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18755/details/
 export enum SchemaType {
   JSON = 'JSON',
+  PROTO = 'PROTOBUF',
 }
 
 export interface SchemaData {
   type: SchemaType
   version: string
-  schemaSource?: RJSFSchema
+  schemaSource?: string
   core?: Schema
 }
 
