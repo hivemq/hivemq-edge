@@ -9,6 +9,7 @@ import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { DataHubNodeType, PolicyType } from '../../types.ts'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 import CanvasControls from '../controls/CanvasControls.tsx'
+import { Toolbox } from '../controls/Toolbox.tsx'
 import Minimap from '../controls/Minimap.tsx'
 import { BaseNode } from '../nodes/BaseNode.tsx'
 import {
@@ -80,6 +81,7 @@ const PolicyEditor: FC = () => {
             aria-label={t('workspace.aria-label') as string}
             aria-controls={'edge-workspace-canvas'}
           >
+            <Toolbox />
             <CanvasControls />
             <Minimap />
           </Box>
