@@ -18,7 +18,7 @@ export const SchemaNode: FC<NodeProps<SchemaData>> = (props) => {
           <Text>Schema</Text>
           <VStack>
             <Text>{data?.type}</Text>
-            <Text>{data?.schemaSource?.title || '< not defined>'}</Text>
+            {/*<Text>{data?.schemaSource?.title || '< not defined>'}</Text>*/}
           </VStack>
         </HStack>
       </NodeWrapper>
