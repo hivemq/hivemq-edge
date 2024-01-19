@@ -1,6 +1,7 @@
 import { FC, useCallback, useMemo } from 'react'
 import { Node } from 'reactflow'
 import { IChangeEvent } from '@rjsf/core'
+import { Card, CardBody } from '@chakra-ui/react'
 
 import { MOCK_CLIENT_FILTER_SCHEMA } from '../../api/specs/ClientFilterData.ts'
 import { ClientFilterData, PanelProps } from '../../types.ts'
@@ -25,15 +26,17 @@ export const ClientFilterPanel: FC<PanelProps> = ({ selectedNode, onClose }) => 
   )
 
   return (
-    <>
-      <ReactFlowSchemaForm
-        schema={MOCK_CLIENT_FILTER_SCHEMA.schema}
-        uiSchema={MOCK_CLIENT_FILTER_SCHEMA.uiSchema}
-        formData={{ clients: clients }}
-        onChange={() => console.log('changed')}
-        onSubmit={onFormSubmit}
-        onError={() => console.log('errors')}
-      />
-    </>
+    <Card>
+      <CardBody>
+        <ReactFlowSchemaForm
+          schema={MOCK_CLIENT_FILTER_SCHEMA.schema}
+          uiSchema={MOCK_CLIENT_FILTER_SCHEMA.uiSchema}
+          formData={{ clients: clients }}
+          onChange={() => console.log('changed')}
+          onSubmit={onFormSubmit}
+          onError={() => console.log('errors')}
+        />
+      </CardBody>
+    </Card>
   )
 }
