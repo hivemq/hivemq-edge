@@ -9,10 +9,33 @@ import {
   StrictRJSFSchema,
   getTemplate,
   getUiOptions,
+  ErrorListProps,
+  TranslatableString,
 } from '@rjsf/utils'
 import { GenericObjectType } from '@rjsf/utils/src/types.ts'
 import validator from '@rjsf/validator-ajv8'
-import { Box, FormControl, Text } from '@chakra-ui/react'
+import { Alert, AlertTitle, Box, FormControl, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
+import { WarningIcon } from '@chakra-ui/icons'
+
+function ErrorListTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>({
+  errors,
+  registry,
+}: ErrorListProps<T, S>) {
+  const { translateString } = registry
+  return (
+    <Alert flexDirection="column" alignItems="flex-start" gap={3} status="error" mt={4}>
+      <AlertTitle>{translateString(TranslatableString.ErrorsLabel)}</AlertTitle>
+      <List>
+        {errors.map((error, i) => (
+          <ListItem key={i}>
+            <ListIcon as={WarningIcon} color="red.500" />
+            {error.stack}
+          </ListItem>
+        ))}
+      </List>
+    </Alert>
+  )
+}
 
 // Override to fix bug with nested p
 export function DescriptionFieldTemplate<
@@ -109,8 +132,8 @@ export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' |
 ) => {
   return (
     <Form
-      showErrorList="top"
-      templates={{ DescriptionFieldTemplate, FieldTemplate }}
+      showErrorList="bottom"
+      templates={{ DescriptionFieldTemplate, FieldTemplate, ErrorListTemplate }}
       validator={validator}
       liveValidate
       omitExtraData
