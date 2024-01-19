@@ -1,5 +1,5 @@
-import { FC, useMemo, useRef, useState } from 'react'
-import ReactFlow, { ReactFlowInstance, ReactFlowProvider } from 'reactflow'
+import React, { FC, useCallback, useMemo, useRef, useState } from 'react'
+import ReactFlow, { Node, ReactFlowInstance, ReactFlowProvider, XYPosition } from 'reactflow'
 import { Outlet, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
@@ -22,12 +22,13 @@ import {
   BehaviorPolicyNode,
   TransitionNode,
 } from '../../components/nodes/'
+import { getNodeId, getNodePayload } from '@/extensions/datahub/utils/node.utils.ts'
 
 const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
   const reactFlowWrapper = useRef(null)
-  const [, /*reactFlowInstance */ setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect } = useDataHubDraftStore()
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onAddNodes } = useDataHubDraftStore()
   const { policyType /*, policyId */ } = useParams()
 
   const nodeTypes = useMemo(
@@ -43,6 +44,41 @@ const PolicyEditor: FC = () => {
       [DataHubNodeType.TRANSITION]: TransitionNode,
     }),
     []
+  )
+
+  const onDragOver = useCallback((event: React.DragEvent<HTMLElement> | undefined) => {
+    if (event) {
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'move'
+    }
+  }, [])
+
+  const onDrop = useCallback(
+    (event: React.DragEvent<HTMLElement> | undefined) => {
+      if (event && reactFlowInstance) {
+        event.preventDefault()
+
+        // check if the dropped element is valid
+        const type = event.dataTransfer.getData('application/reactflow')
+        if (typeof type === 'undefined' || !type) {
+          return
+        }
+
+        const position: XYPosition = reactFlowInstance.screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        })
+
+        const newNode: Node = {
+          id: getNodeId(),
+          type,
+          position,
+          data: getNodePayload(type),
+        }
+        onAddNodes([{ item: newNode, type: 'add' }])
+      }
+    },
+    [reactFlowInstance]
   )
 
   if (!policyType || !(policyType in PolicyType))
@@ -72,8 +108,8 @@ const PolicyEditor: FC = () => {
           fitView
           snapToGrid
           // nodesConnectable
-          // onDrop={onDrop}
-          // onDragOver={onDragOver}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
           // isValidConnection={isValidConnection}
         >
           <Box
