@@ -7,7 +7,7 @@ message GpsCoordinates {
 }
 `
 
-const MOCK_JSONSCHEMA_SCHEMA = `
+export const MOCK_JSONSCHEMA_SCHEMA = `
 {
    "$id":"https://example.com/geographical-location.schema.json",
    "$schema":"https://json-schema.org/draft/2020-12/schema",
