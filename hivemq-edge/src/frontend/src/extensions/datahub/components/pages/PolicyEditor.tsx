@@ -78,7 +78,7 @@ const PolicyEditor: FC = () => {
         onAddNodes([{ item: newNode, type: 'add' }])
       }
     },
-    [reactFlowInstance]
+    [onAddNodes, reactFlowInstance]
   )
 
   if (!policyType || !(policyType in PolicyType))
