@@ -157,8 +157,6 @@ export interface BehaviorPolicyData extends DataHubNodeData {
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace BehaviorPolicyData {
   export enum Handle {
-    SERIAL_WILL = 'serial.will',
-    SERIAL_PUBLISH = 'serial.publish',
     CLIENT_FILTER = 'clientFilter',
   }
 }
