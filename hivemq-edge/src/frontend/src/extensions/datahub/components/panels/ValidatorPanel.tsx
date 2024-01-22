@@ -1,29 +1,31 @@
-import { FC, useCallback, useMemo } from 'react'
+import { FC, useMemo } from 'react'
 import { Node } from 'reactflow'
-import { IChangeEvent } from '@rjsf/core'
+import { useTranslation } from 'react-i18next'
 import { Card, CardBody } from '@chakra-ui/react'
+
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 import { MOCK_VALIDATOR_SCHEMA } from '../../api/specs/DataPolicyValidator.ts'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
-import { PanelProps, ValidatorData } from '../../types.ts'
+import { DataHubNodeType, PanelProps, ValidatorData } from '../../types.ts'
 import { ReactFlowSchemaForm } from '../helpers/ReactFlowSchemaForm.tsx'
 
-export const ValidatorPanel: FC<PanelProps> = ({ selectedNode, onClose }) => {
-  const { nodes, onUpdateNodes } = useDataHubDraftStore()
+export const ValidatorPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
+  const { t } = useTranslation('datahub')
+  const { nodes } = useDataHubDraftStore()
 
   const data = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<ValidatorData> | undefined
     return adapterNode ? adapterNode.data : null
   }, [selectedNode, nodes])
 
-  const onFormSubmit = useCallback(
-    (data: IChangeEvent) => {
-      const { formData } = data
-      onUpdateNodes(selectedNode, formData)
-      onClose?.()
-    },
-    [selectedNode, onUpdateNodes, onClose]
-  )
+  if (!data)
+    return (
+      <ErrorMessage
+        type={t('error.elementNotDefined.title') as string}
+        message={t('error.elementNotDefined.description', { nodeType: DataHubNodeType.VALIDATOR }) as string}
+      />
+    )
 
   return (
     <Card>
@@ -32,8 +34,8 @@ export const ValidatorPanel: FC<PanelProps> = ({ selectedNode, onClose }) => {
           schema={MOCK_VALIDATOR_SCHEMA.schema}
           // uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
           formData={data}
-          onChange={() => console.log('changed')}
           onSubmit={onFormSubmit}
+          onChange={() => console.log('changed')}
           onError={() => console.log('errors')}
         />
       </CardBody>
