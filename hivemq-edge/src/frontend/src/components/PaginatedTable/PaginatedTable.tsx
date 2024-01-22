@@ -28,6 +28,7 @@ interface PaginatedTableProps<T> {
   noDataText?: string
   enableColumnFilters?: boolean
   enablePagination?: boolean
+  isError?: boolean
   'aria-label': string
   /**
    * Define row styles
@@ -45,6 +46,7 @@ const PaginatedTable = <T,>({
   getRowStyles,
   enableColumnFilters = false,
   enablePagination = true,
+  isError = false,
   'aria-label': ariaLabel,
 }: PaginatedTableProps<T>) => {
   const { t } = useTranslation()
@@ -128,11 +130,15 @@ const PaginatedTable = <T,>({
             {table.getRowModel().rows.length === 0 && (
               <Tr>
                 <Td colSpan={table.getAllColumns().length}>
-                  <Alert status="info">
-                    {table.getCoreRowModel().rows.length === 0
-                      ? noDataText || t('components:pagination.noDataText')
-                      : t('components:pagination.noDataFiltered')}
-                  </Alert>
+                  {isError ? (
+                    <Alert status="error">There was an error loading the data</Alert>
+                  ) : (
+                    <Alert status="info">
+                      {table.getCoreRowModel().rows.length === 0
+                        ? noDataText || t('components:pagination.noDataText')
+                        : t('components:pagination.noDataFiltered')}
+                    </Alert>
+                  )}
                 </Td>
               </Tr>
             )}
