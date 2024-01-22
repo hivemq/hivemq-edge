@@ -8,7 +8,7 @@ import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 import { DataHubNodeType } from '../../types.ts'
 import { BaseNode } from './BaseNode.tsx'
 
-export const MOCK_NODE_ADAPTER: NodeProps<{ label: string }> = {
+const MOCK_TOPIC_FILTER: NodeProps<{ label: string }> = {
   id: 'idAdapter',
   type: DataHubNodeType.TOPIC_FILTER,
   data: { label: 'Hello1' },
@@ -21,12 +21,12 @@ describe('BaseNode', () => {
   })
 
   it('should render properly', () => {
-    cy.mountWithProviders(mockReactFlow(<BaseNode {...MOCK_NODE_ADAPTER} selected={true} />))
+    cy.mountWithProviders(mockReactFlow(<BaseNode {...MOCK_TOPIC_FILTER} selected={true} />))
   })
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(mockReactFlow(<BaseNode {...MOCK_NODE_ADAPTER} />))
+    cy.mountWithProviders(mockReactFlow(<BaseNode {...MOCK_TOPIC_FILTER} />))
     cy.checkAccessibility()
     cy.percySnapshot('Component: DataHub - BaseNode')
   })
