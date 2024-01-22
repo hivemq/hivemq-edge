@@ -8,6 +8,7 @@ import {
   Schema,
 } from '@/api/__generated__'
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
+import { IChangeEvent } from '@rjsf/core'
 
 export interface PanelSpecs {
   schema: RJSFSchema
@@ -16,7 +17,7 @@ export interface PanelSpecs {
 
 export interface PanelProps {
   selectedNode: string
-  onClose?: () => void
+  onFormSubmit?: (data: IChangeEvent) => void
 }
 
 export interface WorkspaceState {
