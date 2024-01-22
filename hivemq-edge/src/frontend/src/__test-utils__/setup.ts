@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom'
 import { beforeAll, afterEach, afterAll } from 'vitest'
+import { randomUUID } from 'node:crypto'
 import { server } from './msw/mockServer.ts'
+
+// Crypto missing from jsdom
+window.crypto.randomUUID = randomUUID
 
 // Establish API mocking before all tests.
 beforeAll(() => {
