@@ -27,7 +27,7 @@ export const MOCK_INITIAL_POLICY = () => {
   const clientNode: Node<ClientFilterData> = {
     id: '1',
     data: { clients: ['client1', 'client2'] },
-    position: { x: 0, y: 210 },
+    position: { x: 15, y: 210 },
     type: DataHubNodeType.CLIENT_FILTER,
   }
 
@@ -35,14 +35,14 @@ export const MOCK_INITIAL_POLICY = () => {
     id: '2',
     data: { topics: ['#'] },
     type: DataHubNodeType.TOPIC_FILTER,
-    position: { x: 0, y: 100 },
+    position: { x: 45, y: 120 },
   }
 
   const dataPolicyNode: Node<DataPolicyData> = {
     id: '3',
     data: {},
     type: DataHubNodeType.DATA_POLICY,
-    position: { x: 400, y: 100 },
+    position: { x: 345, y: 105 },
   }
   const validatorNode: Node<ValidatorData> = {
     id: '4',
@@ -52,42 +52,42 @@ export const MOCK_INITIAL_POLICY = () => {
       schemas: [{ version: '1', schemaId: 'first mock schema' }],
     },
     type: DataHubNodeType.VALIDATOR,
-    position: { x: 250, y: -50 },
+    position: { x: 345, y: -30 },
   }
 
   const schemaNode: Node<SchemaData> = {
     id: '5',
     data: { type: SchemaType.JSON, schemaSource: '', version: '1' },
     type: DataHubNodeType.SCHEMA,
-    position: { x: 400, y: -200 },
+    position: { x: 645, y: -195 },
   }
 
   const operationNode1: Node<OperationData> = {
     id: '6',
     data: { action: { functionId: '< not set >', hasArguments: true } },
     type: DataHubNodeType.OPERATION,
-    position: { x: 1250, y: 90 },
+    position: { x: 945, y: 105 },
   }
 
   const operationNode2: Node<OperationData> = {
     id: '6b',
     data: { action: { functionId: '< not set >', isTerminal: true } },
     type: DataHubNodeType.OPERATION,
-    position: { x: 1500, y: 90 },
+    position: { x: 1215, y: 105 },
   }
 
   const behaviorPolicyNode: Node<BehaviorPolicyData> = {
     id: '7',
     data: { model: BehaviorPolicyType.MQTT_EVENT },
     type: DataHubNodeType.BEHAVIOR_POLICY,
-    position: { x: 600, y: 195 },
+    position: { x: 345, y: 195 },
   }
 
   const transitionNode: Node<TransitionData> = {
     id: '8',
     data: { type: TransitionType.ON_ANY },
     type: DataHubNodeType.TRANSITION,
-    position: { x: 960, y: 210 },
+    position: { x: 645, y: 210 },
   }
 
   const nodes: Node[] = [
@@ -142,18 +142,6 @@ export const MOCK_INITIAL_POLICY = () => {
       source: '1',
       target: '7',
       targetHandle: BehaviorPolicyData.Handle.CLIENT_FILTER,
-    },
-    {
-      id: '57w',
-      source: '5',
-      target: '7',
-      targetHandle: BehaviorPolicyData.Handle.SERIAL_WILL,
-    },
-    {
-      id: '57p',
-      source: '5',
-      target: '7',
-      targetHandle: BehaviorPolicyData.Handle.SERIAL_PUBLISH,
     },
     {
       id: '78',
