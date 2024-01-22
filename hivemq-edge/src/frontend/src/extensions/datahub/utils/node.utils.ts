@@ -4,6 +4,7 @@ import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema-mocks.ts'
 
 import {
   ClientFilterData,
+  DataHubNodeData,
   DataHubNodeType,
   OperationData,
   SchemaData,
@@ -30,7 +31,7 @@ export const initialFlow = () => {
 
 export const getNodeId = () => `node_${self.crypto.randomUUID()}`
 
-export const getNodePayload = (type: string) => {
+export const getNodePayload = (type: string): DataHubNodeData => {
   if (type === DataHubNodeType.TOPIC_FILTER) {
     const payload: TopicFilterData = {
       topics: ['root/test1', 'root/test2'],
