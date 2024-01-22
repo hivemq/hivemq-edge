@@ -6,8 +6,8 @@
     "mainPage": "Datahub"
   },
   "page": {
-    "title": "Edge-Datahub Integration",
-    "description": "Welcome to HiveMQ Edge - DataHub integration"
+    "title": "Data Hub",
+    "description": "The Edge Data Hub provides mechanisms to define how MQTT data and MQTT client behavior are handled from the adaptors to the HiveMQ broker"
   },
   "policy": {
     "type_DATA": "Data Policy",
@@ -58,6 +58,12 @@
       "type_OPERATION": "Operation",
       "type_TRANSITION": "Transition",
       "type_EVENT": "Event"
+    },
+    "handles": {
+      "validation_onSuccess": "onSuccess",
+      "validation_onError": "onError",
+      "behavior_serial.will": "onWill",
+      "behavior_serial.publish": "onPublish"
     }
   },
   "error": {
@@ -68,6 +74,10 @@
     "notDefined": {
       "title": "Not identified",
       "description": "The policy is not a valid document"
+    },
+    "elementNotDefined": {
+      "title": "Error loading the node",
+      "description": "The $t(workspace.nodes.type, { 'context': '{{nodeType}}' }) is not a valid element"
     }
   }
 }
