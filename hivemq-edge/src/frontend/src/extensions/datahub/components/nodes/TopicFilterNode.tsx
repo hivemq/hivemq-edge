@@ -19,7 +19,7 @@ export const TopicFilterNode: FC<NodeProps<TopicFilterData>> = (props) => {
         <HStack>
           {/*<NodeIcon type={DataHubNodeType.TOPIC_FILTER} />*/}
           <VStack>
-            <Text> {t('workspace.nodes.type', { context: type })}</Text>
+            <Text data-testid={`node-topicFilter-${id}`}> {t('workspace.nodes.type', { context: type })}</Text>
           </VStack>
         </HStack>
         <VStack ml={6} alignItems={'flex-end'}>
