@@ -16,14 +16,24 @@ export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => 
 
   return (
     <>
-      <NodeWrapper route={`node/${DataHubNodeType.BEHAVIOR_POLICY}/${id}`} {...props}>
-        <HStack>
-          <NodeIcon type={DataHubNodeType.BEHAVIOR_POLICY} />
-          <Text w={'45%'}> {t('workspace.nodes.type', { context: type })}</Text>
-          <VStack>
-            <Text>{data.model || '< none >'}</Text>
-          </VStack>
-        </HStack>
+      <NodeWrapper route={`node/${DataHubNodeType.BEHAVIOR_POLICY}/${id}`} {...props} wrapperProps={{ pt: 2 }}>
+        <VStack>
+          <HStack w={'100%'} justifyContent={'space-around'} pb={2}>
+            <Text fontSize={'xs'}>
+              {t('workspace.handles.behavior', { context: BehaviorPolicyData.Handle.SERIAL_PUBLISH })}
+            </Text>
+            <Text fontSize={'xs'}>
+              {t('workspace.handles.behavior', { context: BehaviorPolicyData.Handle.SERIAL_WILL })}
+            </Text>
+          </HStack>
+          <HStack>
+            <NodeIcon type={DataHubNodeType.BEHAVIOR_POLICY} />
+            <Text w={'45%'}> {t('workspace.nodes.type', { context: type })}</Text>
+            <VStack>
+              <Text>{data.model || '< none >'}</Text>
+            </VStack>
+          </HStack>
+        </VStack>
       </NodeWrapper>
       <Handle type="target" position={Position.Left} id={BehaviorPolicyData.Handle.CLIENT_FILTER} />
       <Handle
@@ -31,7 +41,7 @@ export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => 
         position={Position.Top}
         id={BehaviorPolicyData.Handle.SERIAL_PUBLISH}
         style={{
-          left: '33%',
+          left: '30%',
           background: 'green',
           ...styleDeserializationHandle,
         }}
@@ -41,7 +51,7 @@ export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => 
         position={Position.Top}
         id={BehaviorPolicyData.Handle.SERIAL_WILL}
         style={{
-          left: '66%',
+          left: '76%',
           background: 'red',
           ...styleDeserializationHandle,
         }}

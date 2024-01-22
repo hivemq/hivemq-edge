@@ -1,14 +1,15 @@
 import { FC, ReactNode, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NodeProps } from 'reactflow'
-import { BoxProps, Card, CardBody, HStack } from '@chakra-ui/react'
+import { BoxProps, Card, CardBody, CardBodyProps, HStack } from '@chakra-ui/react'
 
 interface NodeWrapperProps extends NodeProps {
   children: ReactNode
   route: string
+  wrapperProps?: CardBodyProps
 }
 
-export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, route }) => {
+export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, route, wrapperProps }) => {
   const [internalSelection, setInternalSelection] = useState(false)
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -35,7 +36,9 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, route })
         setInternalSelection(true)
       }}
     >
-      <CardBody as={HStack}>{children}</CardBody>
+      <CardBody as={HStack} {...wrapperProps}>
+        {children}
+      </CardBody>
     </Card>
   )
 }
