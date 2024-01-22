@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { MockStoreWrapper } from '../../__test-utils__/react-flow.mocks.tsx'
+import { MockStoreWrapper } from '../../__test-utils__/MockStoreWrapper.tsx'
 import { DataHubNodeType } from '../../types.ts'
 import { getNodePayload } from '../../utils/node.utils.ts'
 import { TransitionPanel } from '../panels/TransitionPanel.tsx'
