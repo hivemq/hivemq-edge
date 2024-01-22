@@ -43,6 +43,12 @@ describe('getNodePayload', () => {
     {
       type: DataHubNodeType.VALIDATOR,
       expected: {
+        schemas: [
+          {
+            schemaId: 'first mock schema',
+            version: '1',
+          },
+        ],
         type: ValidatorType.SCHEMA,
         strategy: StrategyType.ALL_OF,
       },
