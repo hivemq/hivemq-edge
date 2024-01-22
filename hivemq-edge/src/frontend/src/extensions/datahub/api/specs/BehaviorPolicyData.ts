@@ -39,7 +39,7 @@ export const MOCK_VBEHAVIOR_POLICY_SCHEMA: PanelSpecs = {
                   minimum: 0,
                 },
                 maxPublishes: {
-                  title: 'Minimum number of messages',
+                  title: 'Maximum number of messages',
                   description: 'Defines the maximum number of published messages that must be reached',
                   type: 'number',
                   default: 10000,
