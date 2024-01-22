@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { Handle, NodeProps, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
-import { HStack, Text } from '@chakra-ui/react'
+import { HStack, Text, VStack } from '@chakra-ui/react'
 
 import { DataHubNodeType, DataPolicyData } from '../../types.ts'
 import { styleSourceHandle } from '../../utils/node.utils.ts'
@@ -19,6 +19,12 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
           <NodeIcon type={DataHubNodeType.DATA_POLICY} />
           <Text> {t('workspace.nodes.type', { context: type })}</Text>
         </HStack>
+        <VStack ml={6} alignItems={'flex-end'}>
+          <Text fontSize={'xs'}>
+            {t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_SUCCESS })}
+          </Text>
+          <Text fontSize={'xs'}>{t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_ERROR })}</Text>
+        </VStack>
       </NodeWrapper>
       <Handle type="target" position={Position.Left} id={DataPolicyData.Handle.TOPIC_FILTER} />
       <Handle type="target" position={Position.Top} id={DataPolicyData.Handle.VALIDATION} />
@@ -27,7 +33,7 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
         position={Position.Right}
         id={DataPolicyData.Handle.ON_SUCCESS}
         style={{
-          top: 10,
+          top: `calc(var(--chakra-space-3) + 10px)`,
           background: 'green',
           ...styleSourceHandle,
         }}
@@ -37,7 +43,7 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
         position={Position.Right}
         id={DataPolicyData.Handle.ON_ERROR}
         style={{
-          top: 'calc(100% - 10px)',
+          top: `calc(var(--chakra-space-3) + 10px + 16px + 0.5rem)`,
           background: 'red',
           ...styleSourceHandle,
         }}
