@@ -6,6 +6,7 @@ import {
   DataPolicyValidator,
   PolicyOperation,
   Schema,
+  SchemaReference,
 } from '@/api/__generated__'
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import { IChangeEvent } from '@rjsf/core'
@@ -95,6 +96,7 @@ export enum StrategyType {
 export interface ValidatorData extends DataHubNodeData {
   type: ValidatorType
   strategy: StrategyType
+  schemas: SchemaReference[]
   core?: DataPolicyValidator
 }
 
