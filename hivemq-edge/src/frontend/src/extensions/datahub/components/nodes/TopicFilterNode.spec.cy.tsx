@@ -8,10 +8,10 @@ import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 import { DataHubNodeType, TopicFilterData } from '../../types.ts'
 import { TopicFilterNode } from './TopicFilterNode.tsx'
 
-export const MOCK_NODE_ADAPTER: NodeProps<TopicFilterData> = {
-  id: 'idAdapter',
+export const MOCK_NODE_TOPIC_FILTER: NodeProps<TopicFilterData> = {
+  id: 'topic-filter-id',
   type: DataHubNodeType.TOPIC_FILTER,
-  data: { topics: ['topic 1', 'Topic 2', 'topic 3'] },
+  data: { topics: ['topic 1', 'topic 2', 'topic 3'] },
   ...MOCK_DEFAULT_NODE,
 }
 
@@ -21,13 +21,26 @@ describe('TopicFilterNode', () => {
   })
 
   it('should render properly', () => {
-    cy.mountWithProviders(mockReactFlow(<TopicFilterNode {...MOCK_NODE_ADAPTER} selected={true} />))
+    cy.mountWithProviders(mockReactFlow(<TopicFilterNode {...MOCK_NODE_TOPIC_FILTER} selected={true} />))
+    cy.getByTestId(`node-topicFilter-topic-filter-id`).should('contain.text', 'Topic Filter')
+    cy.getByTestId('topic-wrapper').should('have.length', 3)
+    cy.getByTestId('topic-wrapper').eq(0).should('contain.text', 'topic 1')
+    cy.getByTestId('topic-wrapper').eq(1).should('contain.text', 'topic 2')
+    cy.getByTestId('topic-wrapper').eq(2).should('contain.text', 'topic 3')
+
+    cy.get('div[data-handleid]').should('have.length', 3)
+    cy.get('div[data-handleid]')
+      .eq(0)
+      .should('have.attr', 'data-id')
+      .then((attr) => {
+        expect((attr as unknown as string).endsWith('source')).to.be.true
+      })
   })
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(mockReactFlow(<TopicFilterNode {...MOCK_NODE_ADAPTER} />))
+    cy.mountWithProviders(mockReactFlow(<TopicFilterNode {...MOCK_NODE_TOPIC_FILTER} />))
     cy.checkAccessibility()
-    cy.percySnapshot('Component: DataHub - BaseNode')
+    cy.percySnapshot('Component: DataHub - TopicFilterNode')
   })
 })
