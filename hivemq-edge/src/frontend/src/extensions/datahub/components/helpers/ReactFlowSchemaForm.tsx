@@ -38,7 +38,7 @@ function ErrorListTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>
 }
 
 // Override to fix bug with nested p
-export function DescriptionFieldTemplate<
+function DescriptionFieldTemplate<
   T = unknown,
   S extends StrictRJSFSchema = RJSFSchema,
   F extends FormContextType = GenericObjectType
@@ -60,7 +60,7 @@ export function DescriptionFieldTemplate<
 
 // Override to fix bug with nested p
 // Override to fix conditional rendering of either error or description
-export function FieldTemplate<
+function FieldTemplate<
   T = unknown,
   S extends StrictRJSFSchema = RJSFSchema,
   F extends FormContextType = GenericObjectType
