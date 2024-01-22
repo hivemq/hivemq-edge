@@ -44,7 +44,9 @@ declare global {
 
       mountWithProviders(
         component: React.ReactNode,
-        options?: MountOptions & { routerProps?: MemoryRouterProps }
+        options?: MountOptions & { routerProps?: MemoryRouterProps } & {
+          wrapper?: React.JSXElementConstructor<{ children: React.ReactNode }>
+        }
       ): Cypress.Chainable<MountReturn>
     }
   }
@@ -52,7 +54,7 @@ declare global {
 
 Cypress.Commands.add('mount', mount)
 Cypress.Commands.add('mountWithProviders', (component, options = {}) => {
-  const { routerProps = { initialEntries: ['/'] }, ...mountOptions } = options
+  const { routerProps = { initialEntries: ['/'] }, wrapper: Test, ...mountOptions } = options
 
   const wrapped = (
     <QueryClientProvider client={new QueryClient()}>
@@ -63,7 +65,7 @@ Cypress.Commands.add('mountWithProviders', (component, options = {}) => {
               <VisuallyHidden>
                 <h1>Component Testing</h1>
               </VisuallyHidden>
-              {component}
+              {Test ? <Test>{component}</Test> : component}
             </main>
           </MemoryRouter>
         </AuthProvider>
