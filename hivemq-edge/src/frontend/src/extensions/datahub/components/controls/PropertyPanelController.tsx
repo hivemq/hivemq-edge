@@ -70,9 +70,9 @@ const PropertyPanelController = () => {
     (data: IChangeEvent) => {
       const { formData } = data
       if (nodeId) onUpdateNodes(nodeId, formData)
-      onClose?.()
+      onDrawerClose()
     },
-    [nodeId, onUpdateNodes, onClose]
+    [nodeId, onUpdateNodes, onDrawerClose]
   )
 
   return (
