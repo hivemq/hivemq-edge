@@ -32,8 +32,8 @@ export const ClientFilterNode: FC<NodeProps<ClientFilterData>> = (props) => {
           type="source"
           position={Position.Right}
           id={`${id}-${index}`}
-          key={`${id}-${index}`}
-          aria-label={t}
+          key={`${id}-${t}-${index}`}
+          // aria-label={t}
           style={{
             top: `calc(var(--chakra-space-3) + 12px + ${index * 24}px + ${0.5 * index}rem)`,
             ...styleSourceHandle,
