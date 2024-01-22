@@ -9,7 +9,7 @@ export const MOCK_TOPIC_FILTER_SCHEMA: PanelSpecs = {
     properties: {
       topics: {
         type: 'array',
-        title: 'Client Filters',
+        title: 'Topic Filters',
         description: 'Create handles on the workflow for specific topics or topic filters you want to add a policy to.',
         items: {
           type: 'string',
