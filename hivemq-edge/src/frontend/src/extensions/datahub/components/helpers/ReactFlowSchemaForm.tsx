@@ -113,7 +113,7 @@ export function FieldTemplate<
       uiSchema={uiSchema}
       registry={registry}
     >
-      <FormControl isRequired={required} isInvalid={rawErrors && rawErrors.length > 0} mb={4}>
+      <FormControl variant={'hivemq'} isRequired={required} isInvalid={rawErrors && rawErrors.length > 0} mb={4}>
         {children}
         {displayLabel && rawDescription && !rawErrors.length ? (
           <Box mt={2} mb={4}>
