@@ -55,15 +55,19 @@ export enum DataHubNodeType {
   EVENT = 'EVENT',
 }
 
-export interface TopicFilterData {
+// TODO[NVL] Not sure of the pertinence of an empty interface
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface DataHubNodeData {}
+
+export interface TopicFilterData extends DataHubNodeData {
   topics: string[]
 }
 
-export interface ClientFilterData {
+export interface ClientFilterData extends DataHubNodeData {
   clients: string[]
 }
 
-export interface DataPolicyData {
+export interface DataPolicyData extends DataHubNodeData {
   core?: DataPolicy
 }
 
@@ -88,7 +92,7 @@ export enum StrategyType {
   ANY_OF = 'ANY_OF',
 }
 
-export interface ValidatorData {
+export interface ValidatorData extends DataHubNodeData {
   type: ValidatorType
   strategy: StrategyType
   core?: DataPolicyValidator
@@ -120,7 +124,7 @@ export interface FunctionSpecs extends FunctionDefinition {
   uiSchema?: UiSchema
 }
 
-export interface OperationData {
+export interface OperationData extends DataHubNodeData {
   action?: FunctionDefinition
   formData?: Record<string, string | number>
   core?: PolicyOperation
@@ -142,7 +146,7 @@ export enum BehaviorPolicyType {
   PUBLISH_QUOTA = 'Publish.quota',
 }
 
-export interface BehaviorPolicyData {
+export interface BehaviorPolicyData extends DataHubNodeData {
   model: BehaviorPolicyType
   arguments?: Record<string, string | number>
   core?: BehaviorPolicy
@@ -179,7 +183,7 @@ export enum TransitionType {
   ON_INBOUND_SUBSCRIBE = 'Mqtt.OnInboundSubscribe',
 }
 
-export interface TransitionData {
+export interface TransitionData extends DataHubNodeData {
   type?: TransitionType
   from?: StateType
   to?: StateType
