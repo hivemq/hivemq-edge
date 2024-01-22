@@ -130,14 +130,22 @@ export function FieldTemplate<
 export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' | 'liveValidate' | 'omitExtraData'>> = (
   props
 ) => {
+  const { uiSchema, ...rest } = props
   return (
     <Form
+      id="datahub-node-form"
       showErrorList="bottom"
       templates={{ DescriptionFieldTemplate, FieldTemplate, ErrorListTemplate }}
       validator={validator}
+      uiSchema={{
+        ...uiSchema,
+        'ui:submitButtonOptions': {
+          norender: true,
+        },
+      }}
       liveValidate
       omitExtraData
-      {...props}
+      {...rest}
     />
   )
 }
