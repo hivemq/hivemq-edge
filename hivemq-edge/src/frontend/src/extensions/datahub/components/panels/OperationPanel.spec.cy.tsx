@@ -33,26 +33,21 @@ describe('OperationPanel', () => {
     cy.mountWithProviders(<OperationPanel selectedNode={'3'} />, { wrapper })
 
     // first select
-    cy.get('label#root_type-label').should('contain.text', 'Schema')
-    cy.get('label#root_type-label + div').should('contain.text', 'JSON')
-    cy.get('label#root_type-label + div').click()
-    cy.get('label#root_type-label + div')
+    cy.get('label#root_action-label').should('contain.text', 'Function')
+    cy.get('label#root_action-label + div').should('contain.text', '')
+    cy.get('label#root_action-label + div').click()
+    cy.get('label#root_action-label + div')
       .find("[role='listbox']")
       .find("[role='option']")
       .eq(0)
-      .should('contain.text', 'JSON')
-    cy.get('label#root_type-label + div')
+      .should('contain.text', 'System.Log')
+    cy.get('label#root_action-label + div')
       .find("[role='listbox']")
       .find("[role='option']")
       .eq(1)
-      .should('contain.text', 'PROTOBUF')
-    cy.get('label#root_type-label + div').find("[role='listbox']").find("[role='option']").should('have.length', 2)
-    cy.get('label#root_type-label + div').click()
+      .should('contain.text', 'Delivery.redirectTo')
 
-    cy.get('label#root_version-label').should('contain.text', 'version')
-    cy.get('label#root_version-label + input').should('have.value', '1')
-
-    cy.get('section div').should('have.attr', 'data-mode-id', 'json')
+    // TODO[18841] Editors for the functions need to be tested
   })
 
   it('should be accessible', () => {
