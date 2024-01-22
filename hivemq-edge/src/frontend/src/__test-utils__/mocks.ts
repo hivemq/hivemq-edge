@@ -1,4 +1,7 @@
 import { ISA95ApiBean } from '@/api/__generated__'
+import { DateTime } from 'luxon'
+
+export const MOCK_CREATED_AT = DateTime.fromISO('2023-10-13T11:51:24.234').toString()
 
 export const MOCK_JWT =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.' +

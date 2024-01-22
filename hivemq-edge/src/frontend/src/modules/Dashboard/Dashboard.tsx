@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, Outlet } from 'react-router-dom'
 import { AbsoluteCenter, Box, Flex } from '@chakra-ui/react'
@@ -33,7 +33,15 @@ const Dashboard: FC = () => {
         <SidePanel />
         <Flex as={'main'} flexGrow={1} overflow={'auto'}>
           <SkipNavContent />
-          <Outlet />
+          <Suspense
+            fallback={
+              <AbsoluteCenter axis="both">
+                <LoaderSpinner />
+              </AbsoluteCenter>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </Flex>
       </Flex>
     </>
