@@ -130,7 +130,9 @@ export const MOCK_CAPABILITY_DUMMY: Capability = {
   description: 'Use for testing',
 }
 
-export const MOCK_CAPABILITIES: CapabilityList = { items: [MOCK_CAPABILITY_PERSISTENCE] }
+export const MOCK_CAPABILITIES: CapabilityList = {
+  items: [MOCK_CAPABILITY_PERSISTENCE, MOCK_CAPABILITY_DATAHUB, MOCK_CAPABILITY_DUMMY],
+}
 
 export const handlers = [
   rest.get('**/frontend/configuration', (_, res, ctx) => {
