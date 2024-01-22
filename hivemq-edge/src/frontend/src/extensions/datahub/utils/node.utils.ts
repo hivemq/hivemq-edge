@@ -48,6 +48,7 @@ export const getNodePayload = (type: string) => {
     const payload: ValidatorData = {
       type: ValidatorType.SCHEMA,
       strategy: StrategyType.ALL_OF,
+      schemas: [{ version: '1', schemaId: 'first mock schema' }],
     }
     return payload
   }
