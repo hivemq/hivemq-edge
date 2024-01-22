@@ -1,0 +1,61 @@
+{
+  "brand": {
+    "extension": "DataHub"
+  },
+  "navigation": {
+    "mainPage": "Datahub"
+  },
+  "page": {
+    "title": "Edge-Datahub Integration",
+    "description": "Welcome to HiveMQ Edge - DataHub integration"
+  },
+  "policy": {
+    "type_DATA": "Data Policy",
+    "type_BEHAVIOR": "Behavior Policy"
+  },
+  "policyTable": {
+    "title": "List of policies",
+    "header": {
+      "created": "Created",
+      "type": "Type",
+      "matching": "Matching",
+      "actions": "Actions"
+    },
+    "action": {
+      "edit": "Edit"
+    }
+  },
+  "workspace": {
+    "controls": {
+      "aria-label": "Workspace toolbar",
+      "zoomIn": "Zoom in",
+      "zoomIOut": "Zoom out",
+      "fitView": "Fit to the canvas",
+      "toggleInteractivity": "Lock the canvas"
+    },
+    "nodes": {
+      "type": "Unknown type",
+      "type_TOPIC_FILTER": "Topic Filter",
+      "type_CLIENT_FILTER": "Client Filter",
+      "type_ADAPTOR": "Adaptor Filter",
+      "type_BRIDGE": "Broker Filter",
+      "type_DATA_POLICY": "Data Policy",
+      "type_BEHAVIOR_POLICY": "Behavior Policy",
+      "type_VALIDATOR": "Policy Validator",
+      "type_SCHEMA": "Schema",
+      "type_ACTION": "Action",
+      "type_TRANSITION": "Transition",
+      "type_EVENT": "Event"
+    }
+  },
+  "error": {
+    "notActivated": {
+      "title": "Datahub is now available to commercial licenses",
+      "description": "Please contact our sales team to gain access"
+    },
+    "notDefined": {
+      "title": "Not identified",
+      "description": "The policy is not a valid document"
+    }
+  }
+}

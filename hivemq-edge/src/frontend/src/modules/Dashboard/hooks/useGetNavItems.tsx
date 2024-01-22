@@ -6,7 +6,7 @@ import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
 import { BsIntersect } from 'react-icons/bs'
 import { HiOutlinePuzzle } from 'react-icons/hi'
 import { GoLinkExternal } from 'react-icons/go'
-import { MdOutlineEventNote } from 'react-icons/md'
+import { MdOutlineEventNote, MdPolicy } from 'react-icons/md'
 
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
@@ -69,6 +69,11 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
           icon: <BsIntersect />,
           href: '/namespace',
           label: t('translation:navigation.extensions.routes.namespace') as string,
+        },
+        {
+          icon: <Icon as={MdPolicy} fontSize={'16px'} />,
+          href: '/datahub',
+          label: t('datahub:navigation.mainPage') as string,
         },
       ],
     },
