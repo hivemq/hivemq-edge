@@ -22,7 +22,7 @@ export const TopicFilterNode: FC<NodeProps<TopicFilterData>> = (props) => {
             <Text> {t('workspace.nodes.type', { context: type })}</Text>
           </VStack>
         </HStack>
-        <VStack ml={6}>
+        <VStack ml={6} alignItems={'flex-end'}>
           {data.topics?.map((t) => (
             <Topic topic={t} key={t} />
           ))}
@@ -32,9 +32,9 @@ export const TopicFilterNode: FC<NodeProps<TopicFilterData>> = (props) => {
         <Handle
           type="source"
           position={Position.Right}
-          id={`${id}-${index}`}
-          key={`${id}-${index}`}
-          aria-label={t}
+          id={`${t}-${index}`}
+          key={`${id}-${t}-${index}`}
+          // aria-label={t}
           style={{
             top: `calc(var(--chakra-space-3) + 12px + ${index * 24}px + ${0.5 * index}rem)`,
             ...styleSourceHandle,
