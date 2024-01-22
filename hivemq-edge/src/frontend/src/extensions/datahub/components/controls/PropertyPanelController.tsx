@@ -1,6 +1,7 @@
 import { FC, useCallback, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { IChangeEvent } from '@rjsf/core'
 
 import {
   AbsoluteCenter,
@@ -30,6 +31,7 @@ import {
 } from '../panels'
 import NodeIcon from '../helpers/NodeIcon.tsx'
 import { DataHubNodeType, PanelProps } from '../../types.ts'
+import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 
 const DefaultEditor: Record<string, FC<PanelProps>> = {
   [DataHubNodeType.TOPIC_FILTER]: TopicFilterPanel,
@@ -43,6 +45,8 @@ const DefaultEditor: Record<string, FC<PanelProps>> = {
 
 const PropertyPanelController = () => {
   const { t } = useTranslation('datahub')
+  const { onUpdateNodes } = useDataHubDraftStore()
+
   const { type, nodeId } = useParams()
   const { state } = useLocation()
   const navigate = useNavigate()
@@ -61,6 +65,15 @@ const PropertyPanelController = () => {
 
   const Editor = type ? DefaultEditor[type] : null
   const isEditorValid = Editor && nodeId
+
+  const onFormSubmit = useCallback(
+    (data: IChangeEvent) => {
+      const { formData } = data
+      if (nodeId) onUpdateNodes(nodeId, formData)
+      onClose?.()
+    },
+    [nodeId, onUpdateNodes, onClose]
+  )
 
   return (
     <Drawer
@@ -89,7 +102,7 @@ const PropertyPanelController = () => {
 
         <DrawerBody>
           {isEditorValid ? (
-            <Editor selectedNode={nodeId} onClose={onDrawerClose} />
+            <Editor selectedNode={nodeId} onFormSubmit={onFormSubmit} />
           ) : (
             <AbsoluteCenter axis="both" data-testid={'node-editor-under-construction'}>
               <Icon as={LuConstruction} boxSize={100} />
