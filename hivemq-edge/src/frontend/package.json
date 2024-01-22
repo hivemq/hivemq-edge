@@ -83,7 +83,7 @@
     "@vitest/coverage-c8": "^0.31.1",
     "@vitest/coverage-istanbul": "^0.32.4",
     "@vitest/ui": "^0.31.1",
-    "axe-core": "^4.7.1",
+    "axe-core": "^4.8.3",
     "cypress": "^12.13.0",
     "cypress-axe": "^1.4.0",
     "cypress-each": "^1.13.3",
