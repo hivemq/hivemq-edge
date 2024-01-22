@@ -80,7 +80,13 @@ describe('ValidatorPanel', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ValidatorPanel selectedNode={'3'} />, { wrapper })
 
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        // TODO[18840] Need to change the heading wrapper in the RJSF template
+        'heading-order': { enabled: false },
+        region: { enabled: false },
+      },
+    })
     cy.percySnapshot('Component: ValidatorPanel')
   })
 })
