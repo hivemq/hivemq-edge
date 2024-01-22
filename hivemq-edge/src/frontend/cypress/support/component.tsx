@@ -57,7 +57,15 @@ Cypress.Commands.add('mountWithProviders', (component, options = {}) => {
   const { routerProps = { initialEntries: ['/'] }, wrapper: Test, ...mountOptions } = options
 
   const wrapped = (
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider
+      client={
+        new QueryClient({
+          defaultOptions: {
+            queries: { retry: 1 },
+          },
+        })
+      }
+    >
       <ChakraProvider theme={themeHiveMQ}>
         <AuthProvider>
           <MemoryRouter {...routerProps}>
