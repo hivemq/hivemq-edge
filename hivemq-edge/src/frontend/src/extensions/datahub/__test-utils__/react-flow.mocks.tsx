@@ -46,7 +46,11 @@ export const MOCK_INITIAL_POLICY = () => {
   }
   const validatorNode: Node<ValidatorData> = {
     id: '4',
-    data: { strategy: StrategyType.ANY_OF, type: ValidatorType.SCHEMA },
+    data: {
+      strategy: StrategyType.ANY_OF,
+      type: ValidatorType.SCHEMA,
+      schemas: [{ version: '1', schemaId: 'first mock schema' }],
+    },
     type: DataHubNodeType.VALIDATOR,
     position: { x: 250, y: -50 },
   }
