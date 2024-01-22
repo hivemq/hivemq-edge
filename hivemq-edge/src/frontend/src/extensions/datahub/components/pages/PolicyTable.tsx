@@ -22,26 +22,38 @@ type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { 
 
 const PolicyTable: FC = () => {
   const { t } = useTranslation('datahub')
-  const { isLoading: isDataLoading, data: dataPolicies } = useGetAllDataPolicies()
-  const { isLoading: isBehaviorLoading, data: behaviorPolicies } = useGetAllBehaviorPolicies({})
+  const { isLoading: isDataLoading, data: dataPolicies, isError: isDataError } = useGetAllDataPolicies()
+  const {
+    isLoading: isBehaviorLoading,
+    data: behaviorPolicies,
+    isError: isBehaviorError,
+  } = useGetAllBehaviorPolicies({})
   const navigate = useNavigate()
+
+  const isError = useMemo(() => {
+    return isDataError || isBehaviorError
+  }, [isDataError, isBehaviorError])
 
   const isLoading = useMemo(() => {
     return isDataLoading || isBehaviorLoading
   }, [isDataLoading, isBehaviorLoading])
 
   const safeData = useMemo<CombinedPolicy[]>(() => {
-    if (!dataPolicies || !dataPolicies?.items || !behaviorPolicies || !behaviorPolicies?.items)
+    if (isLoading)
       return [
         { ...mockDataPolicy, type: PolicyType.DATA },
         { ...mockBehaviorPolicy, type: PolicyType.BEHAVIOR },
       ]
 
     return [
-      ...dataPolicies.items.map((e) => ({ ...e, type: PolicyType.DATA } as CombinedPolicy)),
-      ...behaviorPolicies.items.map((e) => ({ ...e, type: PolicyType.BEHAVIOR } as CombinedPolicy)),
+      ...(dataPolicies?.items
+        ? dataPolicies.items.map((e) => ({ ...e, type: PolicyType.DATA } as CombinedPolicy))
+        : []),
+      ...(behaviorPolicies?.items
+        ? behaviorPolicies.items.map((e) => ({ ...e, type: PolicyType.BEHAVIOR } as CombinedPolicy))
+        : []),
     ]
-  }, [dataPolicies, behaviorPolicies])
+  }, [isLoading, dataPolicies, behaviorPolicies])
 
   const columns = useMemo<ColumnDef<CombinedPolicy>[]>(() => {
     return [
@@ -109,22 +121,12 @@ const PolicyTable: FC = () => {
     ]
   }, [isLoading, navigate, t])
 
-  // if (error) {
-  //   return (
-  //     <Box mt={'20%'} mx={'20%'} alignItems={'center'}>
-  //       <ErrorMessage
-  //         type={error?.message}
-  //         message={(error?.body as ProblemDetails)?.title || (t('eventLog.error.loading') as string)}
-  //       />
-  //     </Box>
-  //   )
-  // }
-
   return (
     <PaginatedTable<CombinedPolicy>
       aria-label={t('policyTable.title')}
       data={safeData}
       columns={columns}
+      isError={isError}
       // enablePagination={variant === 'full'}
       // enableColumnFilters={variant === 'full'}
       // getRowStyles={(row) => {
