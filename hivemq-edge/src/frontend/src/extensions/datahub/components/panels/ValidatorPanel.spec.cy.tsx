@@ -4,6 +4,7 @@ import { MockStoreWrapper } from '../../__test-utils__/MockStoreWrapper.tsx'
 import { DataHubNodeType } from '../../types.ts'
 import { getNodePayload } from '../../utils/node.utils.ts'
 import { ValidatorPanel } from '../panels/ValidatorPanel.tsx'
+import { Button } from '@chakra-ui/react'
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
   <MockStoreWrapper
@@ -21,6 +22,9 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
     }}
   >
     {children}
+    <Button variant={'primary'} type="submit" form="datahub-node-form">
+      SUBMIT{' '}
+    </Button>
   </MockStoreWrapper>
 )
 
