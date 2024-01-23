@@ -4,6 +4,7 @@ import { MockStoreWrapper } from '../../__test-utils__/MockStoreWrapper.tsx'
 import { DataHubNodeType } from '../../types.ts'
 import { getNodePayload } from '../../utils/node.utils.ts'
 import { BehaviorPolicyPanel } from '../panels/BehaviorPolicyPanel.tsx'
+import { Button } from '@chakra-ui/react'
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
   <MockStoreWrapper
@@ -21,6 +22,9 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
     }}
   >
     {children}
+    <Button variant={'primary'} type="submit" form="datahub-node-form">
+      SUBMIT{' '}
+    </Button>
   </MockStoreWrapper>
 )
 
@@ -50,7 +54,7 @@ describe('BehaviorPolicyPanel', () => {
       .should('contain.text', 'Publish.quota')
     cy.get('label#root_type-label + div').find("[role='listbox']").find("[role='option']").eq(2).click()
 
-    cy.get('h5').eq(0).should('contain.text', 'Publish')
+    cy.get('h2').eq(0).should('contain.text', 'Publish')
     // first item
     cy.get('label#root_arguments_minPublishes-label').should('contain.text', 'Minimum number of messages')
     cy.get('label#root_arguments_minPublishes-label + input').should('have.value', '0')
