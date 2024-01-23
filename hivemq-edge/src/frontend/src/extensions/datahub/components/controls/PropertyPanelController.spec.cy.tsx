@@ -9,7 +9,7 @@ describe('PropertyPanelController', () => {
     cy.viewport(800, 600)
   })
 
-  it('should indicate an incorrect panel', () => {
+  it('should display an error panel without an action', () => {
     cy.mountWithProviders(
       <ReactFlowProvider>
         <Routes>
