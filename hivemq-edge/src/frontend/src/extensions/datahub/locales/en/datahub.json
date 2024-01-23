@@ -64,6 +64,9 @@
       "validation_onError": "onError",
       "behavior_serial.will": "onWill",
       "behavior_serial.publish": "onPublish"
+    },
+    "panel": {
+      "submit": "Submit"
     }
   },
   "error": {

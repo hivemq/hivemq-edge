@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, PropsWithChildren } from 'react'
 import Form from '@rjsf/chakra-ui'
 import { FormProps } from '@rjsf/core'
 import {
@@ -11,11 +11,27 @@ import {
   getUiOptions,
   ErrorListProps,
   TranslatableString,
+  TitleFieldProps,
 } from '@rjsf/utils'
 import { GenericObjectType } from '@rjsf/utils/src/types.ts'
 import validator from '@rjsf/validator-ajv8'
-import { Alert, AlertTitle, Box, FormControl, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
+import { Alert, AlertTitle, Box, Divider, FormControl, Heading, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
 import { WarningIcon } from '@chakra-ui/icons'
+
+// overriding the heading definition
+function TitleFieldTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>({
+  id,
+  title,
+}: TitleFieldProps<T, S>) {
+  return (
+    <Box id={id} mt={1} mb={4}>
+      <Heading as={'h2'} size={'lg'}>
+        {title}
+      </Heading>
+      <Divider />
+    </Box>
+  )
+}
 
 function ErrorListTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>({
   errors,
@@ -38,7 +54,7 @@ function ErrorListTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>
 }
 
 // Override to fix bug with nested p
-export function DescriptionFieldTemplate<
+function DescriptionFieldTemplate<
   T = unknown,
   S extends StrictRJSFSchema = RJSFSchema,
   F extends FormContextType = GenericObjectType
@@ -60,7 +76,7 @@ export function DescriptionFieldTemplate<
 
 // Override to fix bug with nested p
 // Override to fix conditional rendering of either error or description
-export function FieldTemplate<
+function FieldTemplate<
   T = unknown,
   S extends StrictRJSFSchema = RJSFSchema,
   F extends FormContextType = GenericObjectType
@@ -98,22 +114,36 @@ export function FieldTemplate<
     return <div style={{ display: 'none' }}>{children}</div>
   }
 
+  // Change the type of wrapper based on existence of a label (indicating a field)
+  const Wrapper: FC<PropsWithChildren> = ({ children }) => {
+    if (props.displayLabel)
+      return (
+        <WrapIfAdditionalTemplate
+          classNames={classNames}
+          style={style}
+          disabled={disabled}
+          id={id}
+          label={label}
+          onDropPropertyClick={onDropPropertyClick}
+          onKeyChange={onKeyChange}
+          readonly={readonly}
+          required={required}
+          schema={schema}
+          uiSchema={uiSchema}
+          registry={registry}
+        >
+          <FormControl variant={'hivemq'} isRequired={required} isInvalid={rawErrors && rawErrors.length > 0} mb={4}>
+            {children}
+          </FormControl>
+        </WrapIfAdditionalTemplate>
+      )
+
+    return <Box>{children}</Box>
+  }
+
   return (
-    <WrapIfAdditionalTemplate
-      classNames={classNames}
-      style={style}
-      disabled={disabled}
-      id={id}
-      label={label}
-      onDropPropertyClick={onDropPropertyClick}
-      onKeyChange={onKeyChange}
-      readonly={readonly}
-      required={required}
-      schema={schema}
-      uiSchema={uiSchema}
-      registry={registry}
-    >
-      <FormControl variant={'hivemq'} isRequired={required} isInvalid={rawErrors && rawErrors.length > 0} mb={4}>
+    <Wrapper>
+      <>
         {children}
         {displayLabel && rawDescription && !rawErrors.length ? (
           <Box mt={2} mb={4}>
@@ -122,22 +152,35 @@ export function FieldTemplate<
         ) : null}
         {!!rawErrors.length && errors}
         {help}
-      </FormControl>
-    </WrapIfAdditionalTemplate>
+      </>
+    </Wrapper>
   )
 }
 
 export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' | 'liveValidate' | 'omitExtraData'>> = (
   props
 ) => {
+  const { uiSchema, ...rest } = props
   return (
     <Form
+      id="datahub-node-form"
       showErrorList="bottom"
-      templates={{ DescriptionFieldTemplate, FieldTemplate, ErrorListTemplate }}
+      templates={{
+        DescriptionFieldTemplate,
+        FieldTemplate,
+        ErrorListTemplate,
+        TitleFieldTemplate,
+      }}
       validator={validator}
+      uiSchema={{
+        ...uiSchema,
+        'ui:submitButtonOptions': {
+          norender: true,
+        },
+      }}
       liveValidate
       omitExtraData
-      {...props}
+      {...rest}
     />
   )
 }

@@ -7,10 +7,12 @@ import {
   AbsoluteCenter,
   Avatar,
   Box,
+  Button,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
   DrawerContent,
+  DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
   Flex,
@@ -109,6 +111,15 @@ const PropertyPanelController = () => {
             </AbsoluteCenter>
           )}
         </DrawerBody>
+        <DrawerFooter borderTopWidth="1px">
+          {isEditorValid && (
+            <Flex flexGrow={1} justifyContent={'flex-end'}>
+              <Button variant={'primary'} type="submit" form="datahub-node-form">
+                {t('workspace.panel.submit')}
+              </Button>
+            </Flex>
+          )}
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   )
