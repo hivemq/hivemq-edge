@@ -1,5 +1,5 @@
 import React, { FC, useCallback, useMemo, useRef, useState } from 'react'
-import ReactFlow, { Node, ReactFlowInstance, ReactFlowProvider, XYPosition } from 'reactflow'
+import ReactFlow, { Connection, Node, ReactFlowInstance, ReactFlowProvider, XYPosition } from 'reactflow'
 import { Outlet, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
@@ -22,7 +22,7 @@ import {
   BehaviorPolicyNode,
   TransitionNode,
 } from '../../components/nodes/'
-import { getNodeId, getNodePayload } from '@/extensions/datahub/utils/node.utils.ts'
+import { getNodeId, getNodePayload, isValidPolicyConnection } from '../../utils/node.utils.ts'
 
 const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
@@ -45,6 +45,8 @@ const PolicyEditor: FC = () => {
     }),
     []
   )
+
+  const checkValidity = useCallback((connection: Connection) => isValidPolicyConnection(connection, nodes), [nodes])
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLElement> | undefined) => {
     if (event) {
@@ -110,7 +112,7 @@ const PolicyEditor: FC = () => {
           // nodesConnectable
           onDragOver={onDragOver}
           onDrop={onDrop}
-          // isValidConnection={isValidConnection}
+          isValidConnection={checkValidity}
         >
           <Box
             role={'toolbar'}
