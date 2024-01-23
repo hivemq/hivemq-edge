@@ -38,7 +38,7 @@ describe('ClientFilterPanel', () => {
 
     cy.mountWithProviders(<ClientFilterPanel selectedNode={'3'} onFormSubmit={onSubmit} />, { wrapper })
 
-    cy.get('h5').eq(0).should('contain.text', 'Client Filters')
+    cy.get('h2').eq(0).should('contain.text', 'Client Filters')
     // first item
     cy.get('label#root_clients_0-label').should('contain.text', 'clients-0')
     cy.get('label#root_clients_0-label + input').should('have.value', 'client10')
@@ -63,13 +63,7 @@ describe('ClientFilterPanel', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ClientFilterPanel selectedNode={'3'} />, { wrapper })
 
-    cy.checkAccessibility(undefined, {
-      rules: {
-        // TODO[18840] Need to change the heading wrapper in the RJSF template
-        'heading-order': { enabled: false },
-        region: { enabled: false },
-      },
-    })
+    cy.checkAccessibility()
     cy.percySnapshot('Component: ClientFilterPanel')
   })
 })
