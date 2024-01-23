@@ -22,6 +22,7 @@ import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 
 
