@@ -11,11 +11,27 @@ import {
   getUiOptions,
   ErrorListProps,
   TranslatableString,
+  TitleFieldProps,
 } from '@rjsf/utils'
 import { GenericObjectType } from '@rjsf/utils/src/types.ts'
 import validator from '@rjsf/validator-ajv8'
-import { Alert, AlertTitle, Box, FormControl, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
+import { Alert, AlertTitle, Box, Divider, FormControl, Heading, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
 import { WarningIcon } from '@chakra-ui/icons'
+
+// overriding the heading definition
+function TitleFieldTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>({
+  id,
+  title,
+}: TitleFieldProps<T, S>) {
+  return (
+    <Box id={id} mt={1} mb={4}>
+      <Heading as={'h2'} size={'lg'}>
+        {title}
+      </Heading>
+      <Divider />
+    </Box>
+  )
+}
 
 function ErrorListTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>({
   errors,
@@ -148,7 +164,12 @@ export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' |
     <Form
       id="datahub-node-form"
       showErrorList="bottom"
-      templates={{ DescriptionFieldTemplate, FieldTemplate, ErrorListTemplate }}
+      templates={{
+        DescriptionFieldTemplate,
+        FieldTemplate,
+        ErrorListTemplate,
+        TitleFieldTemplate,
+      }}
       validator={validator}
       uiSchema={{
         ...uiSchema,
