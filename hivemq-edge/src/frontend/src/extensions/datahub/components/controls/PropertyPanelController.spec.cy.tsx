@@ -28,7 +28,7 @@ describe('PropertyPanelController', () => {
     cy.get('button[type="submit"]').should('not.exist')
   })
 
-  it('should render a proper panel with a submit button', () => {
+  it('should render a panel with a submit button', () => {
     cy.mountWithProviders(
       <ReactFlowProvider>
         <Routes>
