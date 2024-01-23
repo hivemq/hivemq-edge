@@ -114,6 +114,8 @@ public class PublishServiceImpl implements PublishService {
         DataGovernanceContext governanceContext = new DataGovernanceContextImpl(data);
         governanceContext.setExecutorService(globalManagedExtensionExecutorService);
         final ListenableFuture<PublishReturnCode> publishFuture = dataGovernanceService.applyAndPublish(governanceContext);
+
+
         return ListenableFutureConverter.toVoidCompletable(publishFuture, globalManagedExtensionExecutorService);
     }
 
