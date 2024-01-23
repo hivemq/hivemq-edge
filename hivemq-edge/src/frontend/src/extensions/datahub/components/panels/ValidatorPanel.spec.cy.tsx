@@ -58,9 +58,9 @@ describe('ValidatorPanel', () => {
       .should('contain.text', 'ANY_OF')
     cy.get('label#root_strategy-label + div').click()
 
-    cy.get('h5').eq(0).should('contain.text', 'schemas')
+    cy.get('h2').eq(0).should('contain.text', 'schemas')
     // first item
-    cy.get('h5').eq(1).should('contain.text', 'schemas-0')
+    cy.get('h2').eq(1).should('contain.text', 'schemas-0')
     // first item property
     cy.get('label#root_schemas_0_schemaId-label').should('contain.text', 'ID of the schema')
     cy.get('label#root_schemas_0_schemaId-label + input').should('have.value', 'first mock schema')
@@ -84,13 +84,7 @@ describe('ValidatorPanel', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ValidatorPanel selectedNode={'3'} />, { wrapper })
 
-    cy.checkAccessibility(undefined, {
-      rules: {
-        // TODO[18840] Need to change the heading wrapper in the RJSF template
-        'heading-order': { enabled: false },
-        region: { enabled: false },
-      },
-    })
+    cy.checkAccessibility()
     cy.percySnapshot('Component: ValidatorPanel')
   })
 })

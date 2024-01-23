@@ -36,7 +36,7 @@ describe('TopicFilterPanel', () => {
   it('should render the fields for a Validator', () => {
     cy.mountWithProviders(<TopicFilterPanel selectedNode={'3'} />, { wrapper })
 
-    cy.get('h5').eq(0).should('contain.text', 'Topic Filters')
+    cy.get('h2').eq(0).should('contain.text', 'Topic Filters')
     // first item
     cy.get('label#root_topics_0-label').should('contain.text', 'topics-0')
     cy.get('label#root_topics_0-label + input').should('have.value', 'root/test1')
@@ -49,13 +49,7 @@ describe('TopicFilterPanel', () => {
     cy.injectAxe()
     cy.mountWithProviders(<TopicFilterPanel selectedNode={'3'} />, { wrapper })
 
-    cy.checkAccessibility(undefined, {
-      rules: {
-        // TODO[18840] Need to change the heading wrapper in the RJSF template
-        'heading-order': { enabled: false },
-        region: { enabled: false },
-      },
-    })
+    cy.checkAccessibility()
     cy.percySnapshot('Component: TopicFilterPanel')
   })
 })
