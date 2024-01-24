@@ -11,7 +11,9 @@ import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 import CanvasControls from '../controls/CanvasControls.tsx'
 import { Toolbox } from '../controls/Toolbox.tsx'
 import Minimap from '../controls/Minimap.tsx'
-import { BaseNode } from '../nodes/BaseNode.tsx'
+
+import styles from './PolicyEditor.module.scss'
+
 import {
   TopicFilterNode,
   ClientFilterNode,
@@ -109,6 +111,7 @@ const PolicyEditor: FC = () => {
           onInit={setReactFlowInstance}
           fitView
           snapToGrid
+          className={styles.dataHubFlow}
           // nodesConnectable
           onDragOver={onDragOver}
           onDrop={onDrop}
