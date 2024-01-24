@@ -133,8 +133,10 @@ public class ModuleLoader {
         final ArrayList<Class<? extends T>> classes = new ArrayList<>();
         for (EdgeModule module : modules) {
             try {
+                log.trace("Trying to load class '{}' from file '{}'.", serviceClazz, module.root.getAbsoluteFile());
                 final Iterable<Class<? extends T>> loaded = classServiceLoader.load(serviceClazz, module.classloader);
                 for (Class<? extends T> foundClass : loaded) {
+                    log.trace("Adding class '{}' from file '{}'.", foundClass, module.root.getAbsoluteFile());
                     classes.add(foundClass);
                 }
             } catch (IOException | ClassNotFoundException e) {

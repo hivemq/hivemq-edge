@@ -27,6 +27,7 @@ import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.resources.EventApi;
 import com.hivemq.api.resources.FrontendApi;
 import com.hivemq.api.resources.GatewayApi;
+import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.api.resources.HealthCheckApi;
 import com.hivemq.api.resources.MetricsApi;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
@@ -74,6 +75,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     private final @NotNull Lazy<Set<IAuthenticationHandler>> authenticationHandlers;
     private final @NotNull Lazy<ITokenGenerator> tokenGenerator;
     private final @NotNull Lazy<ITokenVerifier> tokenVerifier;
+    private final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy;
 
     @Inject
     public ApiResourceRegistry(
@@ -90,7 +92,8 @@ public class ApiResourceRegistry extends ResourceConfig {
             final @NotNull Lazy<RootResource> rootResource,
             final @NotNull Lazy<Set<IAuthenticationHandler>> authenticationHandlers,
             final @NotNull Lazy<ITokenGenerator> tokenGenerator,
-            final @NotNull Lazy<ITokenVerifier> tokenVerifier) {
+            final @NotNull Lazy<ITokenVerifier> tokenVerifier,
+            final @NotNull Lazy<GenericAPIHolder> genericAPIHolderLazy) {
         this.authenticationApi = authenticationApi;
         this.metricsApi = metricsApi;
         this.healthCheckApi = healthCheckApi;
@@ -105,7 +108,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         this.authenticationHandlers = authenticationHandlers;
         this.tokenGenerator = tokenGenerator;
         this.tokenVerifier = tokenVerifier;
-
+        this.genericAPIHolderLazy = genericAPIHolderLazy;
     }
 
     @Inject //method injection, this gets called once after instantiation
@@ -115,6 +118,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         registerJaxrsResources();
         registerMappers();
         registerFeatures();
+        registerGenericComponents();
         logger.trace("Initialized API resources in {}ms", (System.currentTimeMillis() - start));
     }
 
@@ -148,7 +152,7 @@ public class ApiResourceRegistry extends ResourceConfig {
         if (Boolean.getBoolean("api.wire.logging.enabled")) {
             register(new LoggingFeature(new Logger(getClass().getName(), null) {
                 @Override
-                public void log(final LogRecord record) {
+                public void log(final @NotNull LogRecord record) {
                     logger.info(record.getMessage());
                 }
             }, Level.INFO, LoggingFeature.Verbosity.PAYLOAD_ANY, 10000));
@@ -158,5 +162,11 @@ public class ApiResourceRegistry extends ResourceConfig {
     protected void registerFeatures() {
         register(new ApiAuthenticationFeature(authenticationHandlers.get()));
         register(new JWTReissuanceFilterImpl(tokenGenerator.get(), tokenVerifier.get()));
+    }
+
+    protected void registerGenericComponents() {
+        for (final Object component : genericAPIHolderLazy.get().getComponents()) {
+            register(component);
+        }
     }
 }

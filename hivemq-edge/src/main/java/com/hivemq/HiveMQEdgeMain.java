@@ -17,6 +17,7 @@ package com.hivemq;
 
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
+import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.bootstrap.HiveMQExceptionHandlerBootstrap;
 import com.hivemq.bootstrap.LoggingBootstrap;
 import com.hivemq.bootstrap.ioc.DaggerInjector;
@@ -36,6 +37,8 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
 import com.hivemq.extensions.core.PersistencesService;
+import com.hivemq.extensions.core.RestComponentsService;
+import com.hivemq.extensions.core.RestComponentsServiceImpl;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.metrics.MetricRegistryLogger;
 import com.hivemq.persistence.PersistenceStartup;
@@ -107,6 +110,8 @@ public class HiveMQEdgeMain {
 
         log.info("Integrating Core Modules");
         final PersistencesService persistencesService = new PersistencesService();
+        final GenericAPIHolder genericAPIHolder = new GenericAPIHolder();
+        final RestComponentsService restComponentsService = new RestComponentsServiceImpl(genericAPIHolder);
         final ShutdownHooks shutdownHooks = new ShutdownHooks();
         final HiveMQCapabilityService capabilityService = new CapabilityServiceImpl();
         try {
@@ -115,9 +120,7 @@ public class HiveMQEdgeMain {
                     systemInformation,
                     metricRegistry,
                     shutdownHooks,
-                    moduleLoader,
-                    configService,
-                    capabilityService);
+                    moduleLoader, configService, capabilityService, restComponentsService);
             commercialModuleLoaderDiscovery.loadAllCoreModules();
         } catch (Exception e) {
             log.warn("Error on loading the commercial module loader.", e);
@@ -135,6 +138,8 @@ public class HiveMQEdgeMain {
                 .moduleLoader(moduleLoader)
                 .shutdownHooks(shutdownHooks)
                 .capabilityService(capabilityService)
+                .restComponentService(restComponentsService)
+                .restComponentsHolder(genericAPIHolder)
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
         injector.persistences();

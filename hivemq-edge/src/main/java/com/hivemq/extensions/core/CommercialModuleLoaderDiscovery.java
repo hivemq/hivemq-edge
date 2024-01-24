@@ -39,6 +39,7 @@ public class CommercialModuleLoaderDiscovery {
     private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull ConfigurationService configService;
     private final @NotNull HiveMQCapabilityService hiveMQCapabilityService;
+    private final @NotNull RestComponentsService restComponentsService;
 
     public CommercialModuleLoaderDiscovery(
             final @NotNull PersistencesService persistencesService,
@@ -47,7 +48,8 @@ public class CommercialModuleLoaderDiscovery {
             final @NotNull ShutdownHooks shutdownHooks,
             final @NotNull ModuleLoader moduleLoader,
             final @NotNull ConfigurationService configService,
-            final @NotNull HiveMQCapabilityService hiveMQCapabilityService) {
+            final @NotNull HiveMQCapabilityService hiveMQCapabilityService,
+            final @NotNull RestComponentsService restComponentsService) {
         this.persistencesService = persistencesService;
         this.systemInformation = systemInformation;
         this.metricRegistry = metricRegistry;
@@ -55,6 +57,7 @@ public class CommercialModuleLoaderDiscovery {
         this.moduleLoader = moduleLoader;
         this.configService = configService;
         this.hiveMQCapabilityService = hiveMQCapabilityService;
+        this.restComponentsService = restComponentsService;
     }
 
     public void loadAllCoreModules()
@@ -74,9 +77,7 @@ public class CommercialModuleLoaderDiscovery {
                 systemInformation,
                 metricRegistry,
                 shutdownHooks,
-                moduleLoader,
-                configService,
-                hiveMQCapabilityService);
+                moduleLoader, configService, hiveMQCapabilityService, restComponentsService);
         instance.start(coreModuleService);
     }
 }
