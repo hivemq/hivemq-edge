@@ -17,9 +17,9 @@ export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
       <NodeWrapper route={`node/${DataHubNodeType.TRANSITION}/${id}`} {...props}>
         <HStack>
           <NodeIcon type={DataHubNodeType.TRANSITION} />
-          <Text> {t('workspace.nodes.type', { context: type })}</Text>
+          <Text data-testid={'node-title'}> {t('workspace.nodes.type', { context: type })}</Text>
           <VStack>
-            <Text>{data.type || '< none >'}</Text>
+            <Text data-testid={'node-model'}>{data.type || t('error.noSet.select')}</Text>
           </VStack>
         </HStack>
       </NodeWrapper>

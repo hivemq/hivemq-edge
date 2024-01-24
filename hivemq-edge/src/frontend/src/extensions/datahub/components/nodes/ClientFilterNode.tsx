@@ -18,10 +18,10 @@ export const ClientFilterNode: FC<NodeProps<ClientFilterData>> = (props) => {
       <NodeWrapper route={`node/${type}/${id}`} {...props}>
         <HStack>
           <VStack>
-            <Text> {t('workspace.nodes.type', { context: type })}</Text>
+            <Text data-testid={'node-title'}> {t('workspace.nodes.type', { context: type })}</Text>
           </VStack>
         </HStack>
-        <VStack ml={6}>
+        <VStack ml={6} data-testid={'node-model'}>
           {data.clients?.map((t) => (
             <Client client={t} key={t} />
           ))}
