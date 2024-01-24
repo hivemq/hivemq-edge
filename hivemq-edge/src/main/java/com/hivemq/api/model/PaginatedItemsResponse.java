@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -25,6 +26,7 @@ import java.util.List;
 public abstract class PaginatedItemsResponse<T> {
 
     @JsonProperty("_links")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(description = "Links for pagination", nullable = true)
     private final @Nullable PaginationCursor paginationCursor;
 
