@@ -35,7 +35,6 @@ const PolicyEditor: FC = () => {
 
   const nodeTypes = useMemo(
     () => ({
-      baseNode: BaseNode,
       [DataHubNodeType.TOPIC_FILTER]: TopicFilterNode,
       [DataHubNodeType.CLIENT_FILTER]: ClientFilterNode,
       [DataHubNodeType.DATA_POLICY]: DataPolicyNode,
