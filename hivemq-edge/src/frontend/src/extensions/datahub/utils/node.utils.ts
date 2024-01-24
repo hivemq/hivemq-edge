@@ -1,5 +1,4 @@
 import { Connection, Edge, Node } from 'reactflow'
-import { CSSProperties } from 'react'
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema-mocks.ts'
 
 import {
@@ -16,13 +15,6 @@ import {
   ValidatorData,
   ValidatorType,
 } from '../types.ts'
-
-export const styleSourceHandle: CSSProperties = {
-  width: '12px',
-  right: '-6px',
-  borderRadius: 0,
-  height: '12px',
-}
 
 export const initialFlow = () => {
   const nodes: Node[] = []
