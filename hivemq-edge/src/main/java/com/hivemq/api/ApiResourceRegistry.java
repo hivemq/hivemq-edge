@@ -147,6 +147,7 @@ public class ApiResourceRegistry extends ResourceConfig {
     }
 
     protected void registerMappers() {
+        register(MarshallingFeature.class);
         register(new UncaughtExceptionMapper());
         register(new ApiExceptionMapper());
         if (Boolean.getBoolean("api.wire.logging.enabled")) {
