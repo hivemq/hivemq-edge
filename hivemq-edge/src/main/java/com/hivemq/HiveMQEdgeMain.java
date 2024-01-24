@@ -38,6 +38,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
+import com.hivemq.extensions.core.RestComponentsServiceImpl;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.metrics.MetricRegistryLogger;
 import com.hivemq.persistence.PersistenceStartup;
@@ -110,7 +111,7 @@ public class HiveMQEdgeMain {
         log.info("Integrating Core Modules");
         final PersistencesService persistencesService = new PersistencesService();
         final GenericAPIHolder genericAPIHolder = new GenericAPIHolder();
-        final RestComponentsService restComponentsService = new RestComponentsService(genericAPIHolder);
+        final RestComponentsService restComponentsService = new RestComponentsServiceImpl(genericAPIHolder);
         final ShutdownHooks shutdownHooks = new ShutdownHooks();
         final HiveMQCapabilityService capabilityService = new CapabilityServiceImpl();
         try {

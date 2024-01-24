@@ -1,17 +1,12 @@
 package com.hivemq.extensions.core;
 
-import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-public class RestComponentsService {
+public interface RestComponentsService {
 
-    private final @NotNull GenericAPIHolder genericAPIHolder;
-
-    public RestComponentsService(final @NotNull GenericAPIHolder genericAPIHolder) {
-        this.genericAPIHolder = genericAPIHolder;
-    }
-
-    public void add(final @NotNull Object component) {
-        genericAPIHolder.addComponent(component);
-    }
+    /**
+     * Must be called before the REST Api gets bootstrapped
+     * @param component the component that will be registered when the REST Api gets bootstrapped.
+     */
+    void add(final @NotNull Object component);
 }
