@@ -21,12 +21,10 @@
     &:not(.react-flow__handle-valid) {
       cursor: no-drop;
       box-shadow: 0 0 10px 2px rgba(226, 85, 85, 0.75), 0 1px 1px rgb(0 0 0 / 15%);
-
     }
     &:not(.connectable) {
       cursor: no-drop;
       box-shadow: 0 0 10px 2px rgba(226, 85, 85, 0.75), 0 1px 1px rgb(0 0 0 / 15%);
-
     }
   }
 }
