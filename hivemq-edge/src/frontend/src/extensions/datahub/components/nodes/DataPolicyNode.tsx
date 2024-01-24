@@ -37,6 +37,7 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
           top: `calc(var(--chakra-space-3) + 10px)`,
           // background: 'green',
         }}
+        isConnectable={1}
       />
       <CustomHandle
         type="source"
@@ -46,6 +47,7 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
         style={{
           top: `calc(var(--chakra-space-3) + 10px + 16px + 0.5rem)`,
         }}
+        isConnectable={1}
       />
     </>
   )
