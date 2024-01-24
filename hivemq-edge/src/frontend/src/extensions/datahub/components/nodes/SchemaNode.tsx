@@ -1,11 +1,11 @@
 import { HStack, Text, VStack } from '@chakra-ui/react'
 import { FC } from 'react'
-import { Handle, NodeProps, Position } from 'reactflow'
+import { NodeProps, Position } from 'reactflow'
 
 import { DataHubNodeType, SchemaData } from '../../types.ts'
-import { styleSourceHandle } from '../../utils/node.utils.ts'
 import NodeIcon from '../helpers/NodeIcon.tsx'
 import { NodeWrapper } from './NodeWrapper.tsx'
+import { CustomHandle } from './CustomHandle.tsx'
 
 export const SchemaNode: FC<NodeProps<SchemaData>> = (props) => {
   const { id, data } = props
@@ -22,7 +22,7 @@ export const SchemaNode: FC<NodeProps<SchemaData>> = (props) => {
           </VStack>
         </HStack>
       </NodeWrapper>
-      <Handle type="source" position={Position.Bottom} style={styleSourceHandle} />
+      <CustomHandle type="source" position={Position.Bottom} />
     </>
   )
 }

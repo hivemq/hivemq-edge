@@ -1,12 +1,12 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Handle, NodeProps, Position } from 'reactflow'
+import { NodeProps, Position } from 'reactflow'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 
 import { DataHubNodeType, OperationData } from '../../types.ts'
-import { styleSourceHandle } from '../../utils/node.utils.ts'
 import NodeIcon from '../helpers/NodeIcon.tsx'
 import { NodeWrapper } from './NodeWrapper.tsx'
+import { CustomHandle } from '@/extensions/datahub/components/nodes/CustomHandle.tsx'
 
 export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -24,11 +24,11 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
           </VStack>
         </HStack>
       </NodeWrapper>
-      <Handle type="target" position={Position.Left} id={OperationData.Handle.INPUT} />
+      <CustomHandle type="target" position={Position.Left} id={OperationData.Handle.INPUT} />
       {!action?.isTerminal && (
-        <Handle type="source" position={Position.Right} id={OperationData.Handle.OUTPUT} style={styleSourceHandle} />
+        <CustomHandle type="source" position={Position.Right} id={OperationData.Handle.OUTPUT} isConnectable={1} />
       )}
-      {action?.hasArguments && <Handle type="target" position={Position.Top} id={OperationData.Handle.SCHEMA} />}
+      {action?.hasArguments && <CustomHandle type="target" position={Position.Top} id={OperationData.Handle.SCHEMA} />}
     </>
   )
 }

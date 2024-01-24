@@ -1,12 +1,12 @@
 import { FC } from 'react'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { Handle, NodeProps, Position } from 'reactflow'
+import { NodeProps, Position } from 'reactflow'
 
 import { DataHubNodeType, TransitionData } from '../../types.ts'
-import { styleSourceHandle } from '../../utils/node.utils.ts'
 import NodeIcon from '../helpers/NodeIcon.tsx'
 import { NodeWrapper } from './NodeWrapper.tsx'
+import { CustomHandle } from './CustomHandle.tsx'
 
 export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -23,8 +23,8 @@ export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
           </VStack>
         </HStack>
       </NodeWrapper>
-      <Handle type="target" position={Position.Left} />
-      <Handle type="source" position={Position.Right} style={styleSourceHandle} />
+      <CustomHandle type="target" position={Position.Left} id="target" />
+      <CustomHandle type="source" id="source" position={Position.Right} isConnectable={1} />
     </>
   )
 }

@@ -1,13 +1,13 @@
 import { FC } from 'react'
-import { Handle, NodeProps, Position } from 'reactflow'
+import { NodeProps, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 
 import Client from '@/components/MQTT/Client.tsx'
 
 import { ClientFilterData } from '../../types.ts'
-import { styleSourceHandle } from '../../utils/node.utils.ts'
 import { NodeWrapper } from './NodeWrapper.tsx'
+import { CustomHandle } from './CustomHandle.tsx'
 
 export const ClientFilterNode: FC<NodeProps<ClientFilterData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -28,15 +28,13 @@ export const ClientFilterNode: FC<NodeProps<ClientFilterData>> = (props) => {
         </VStack>
       </NodeWrapper>
       {data.clients?.map((t, index) => (
-        <Handle
+        <CustomHandle
           type="source"
           position={Position.Right}
           id={`${id}-${index}`}
           key={`${id}-${t}-${index}`}
-          // aria-label={t}
           style={{
             top: `calc(var(--chakra-space-3) + 12px + ${index * 24}px + ${0.5 * index}rem)`,
-            ...styleSourceHandle,
           }}
         />
       ))}

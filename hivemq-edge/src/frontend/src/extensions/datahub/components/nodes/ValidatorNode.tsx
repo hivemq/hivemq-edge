@@ -1,12 +1,12 @@
 import { FC } from 'react'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { Handle, NodeProps, Position } from 'reactflow'
+import { NodeProps, Position } from 'reactflow'
 
 import { DataHubNodeType, ValidatorData } from '../../types.ts'
-import { styleSourceHandle } from '../../utils/node.utils.ts'
 import NodeIcon from '../helpers/NodeIcon.tsx'
 import { NodeWrapper } from './NodeWrapper.tsx'
+import { CustomHandle } from './CustomHandle.tsx'
 
 export const ValidatorNode: FC<NodeProps<ValidatorData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -23,9 +23,8 @@ export const ValidatorNode: FC<NodeProps<ValidatorData>> = (props) => {
           </VStack>
         </HStack>
       </NodeWrapper>
-
-      <Handle type="target" position={Position.Top} />
-      <Handle type="source" position={Position.Bottom} style={styleSourceHandle} />
+      <CustomHandle type="target" position={Position.Top} />
+      <CustomHandle type="source" position={Position.Bottom} />
     </>
   )
 }
