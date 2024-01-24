@@ -44,11 +44,16 @@ public class ApiPrincipal implements Principal {
         return name;
     }
 
-    public boolean hasRole(String role){
-        return roles.contains(role);
+    public boolean hasRole(String wantedRole) {
+        for (final String role : roles) {
+            if (role.equalsIgnoreCase(wantedRole)) {
+                return true;
+            }
+        }
+        return false;
     }
 
-    public @NotNull Set<String> getRoles(){
+    public @NotNull Set<String> getRoles() {
         return roles;
     }
 
