@@ -127,7 +127,8 @@ export interface FunctionSpecs extends FunctionDefinition {
 }
 
 export interface OperationData extends DataHubNodeData {
-  action?: FunctionDefinition
+  // TODO[18841] Temporary definition until functions' JSONSchema are properly defined
+  action?: FunctionDefinition | string
   formData?: Record<string, string | number>
   core?: PolicyOperation
 }

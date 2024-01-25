@@ -1,9 +1,9 @@
 import { FC } from 'react'
-import { Handle, NodeProps, Position } from 'reactflow'
+import { NodeProps, Position } from 'reactflow'
 import { Text } from '@chakra-ui/react'
 
-import { styleSourceHandle } from '../../utils/node.utils.ts'
 import { NodeWrapper } from './NodeWrapper.tsx'
+import { CustomHandle } from './CustomHandle.tsx'
 
 export const BaseNode: FC<NodeProps> = (props) => {
   const { id, data, type } = props
@@ -13,8 +13,8 @@ export const BaseNode: FC<NodeProps> = (props) => {
       <NodeWrapper route={`node/${type}/${id}`} {...props}>
         <Text>{data.label}</Text>
       </NodeWrapper>
-      <Handle type="target" position={Position.Left} />
-      <Handle type="source" position={Position.Right} style={styleSourceHandle} />
+      <CustomHandle type="target" position={Position.Left} />
+      <CustomHandle type="source" position={Position.Right} />
     </>
   )
 }
