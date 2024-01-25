@@ -116,11 +116,7 @@ const PolicyEditor: FC = () => {
           onDrop={onDrop}
           isValidConnection={checkValidity}
         >
-          <Box
-            role="toolbar"
-            aria-label={t('workspace.aria-label') as string}
-            aria-controls="edge-workspace-canvas"
-          >
+          <Box role="toolbar" aria-label={t('workspace.aria-label') as string} aria-controls="edge-workspace-canvas">
             <Toolbox />
             <CanvasControls />
             <Minimap />

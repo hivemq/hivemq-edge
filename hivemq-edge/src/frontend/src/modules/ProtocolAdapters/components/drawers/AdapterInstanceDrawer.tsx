@@ -74,14 +74,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   }
 
   return (
-    <Drawer
-      variant="hivemq"
-      closeOnOverlayClick={false}
-      size="lg"
-      isOpen={isOpen}
-      placement="right"
-      onClose={onClose}
-    >
+    <Drawer variant="hivemq" closeOnOverlayClick={false} size="lg" isOpen={isOpen} placement="right" onClose={onClose}>
       <DrawerOverlay />
       <DrawerContent aria-label={t('protocolAdapter.drawer.label') as string}>
         {!schema && <LoaderSpinner />}

@@ -57,12 +57,7 @@ export const ColorPicker = forwardRef<ColorPickerProps, 'div'>(
               },
             }}
           >
-            <PopoverContent
-              w="auto"
-              boxShadow="md"
-              data-testid="colorPicker-popover"
-              aria-label="ColorPicker.popover"
-            >
+            <PopoverContent w="auto" boxShadow="md" data-testid="colorPicker-popover" aria-label="ColorPicker.popover">
               <PopoverArrow backgroundColor={`${selectedColorScheme}.500`} />
               <SimpleGrid columns={1}>
                 <Flex

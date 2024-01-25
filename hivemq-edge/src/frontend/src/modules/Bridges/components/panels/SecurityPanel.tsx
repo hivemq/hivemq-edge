@@ -93,9 +93,7 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
 
             <HStack>
               <FormControl isInvalid={!!errors.tlsConfiguration?.keystorePath}>
-                <FormLabel htmlFor="tlsConfiguration.keystorePath">
-                  {t('bridge.security.keystorePath.label')}
-                </FormLabel>
+                <FormLabel htmlFor="tlsConfiguration.keystorePath">{t('bridge.security.keystorePath.label')}</FormLabel>
                 <Controller
                   name="tlsConfiguration.keystorePath"
                   control={form.control}

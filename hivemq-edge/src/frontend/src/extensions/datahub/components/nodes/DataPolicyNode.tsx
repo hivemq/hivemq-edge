@@ -20,9 +20,7 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
           <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
         </HStack>
         <VStack ml={6} alignItems="flex-end" data-testid="node-model">
-          <Text fontSize="xs">
-            {t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_SUCCESS })}
-          </Text>
+          <Text fontSize="xs">{t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_SUCCESS })}</Text>
           <Text fontSize="xs">{t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_ERROR })}</Text>
         </VStack>
       </NodeWrapper>

@@ -29,12 +29,7 @@ const NodeNameCard: FC<NodeNameCardProps> = ({ selectedNode }) => {
   const EntityIcon = useMemo(() => {
     if (type === NodeTypes.BRIDGE_NODE)
       return (
-        <Icon
-          data-testid="node-type-icon"
-          data-nodeicon={NodeTypes.BRIDGE_NODE}
-          as={PiBridgeThin}
-          fontSize="40px"
-        />
+        <Icon data-testid="node-type-icon" data-nodeicon={NodeTypes.BRIDGE_NODE} as={PiBridgeThin} fontSize="40px" />
       )
     return <Icon data-testid="node-type-icon" data-nodeicon={NodeTypes.ADAPTER_NODE} as={PiPlugsConnectedFill} />
   }, [type])

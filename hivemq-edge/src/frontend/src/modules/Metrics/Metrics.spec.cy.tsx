@@ -15,12 +15,7 @@ describe('Metrics', () => {
 
   it('should render the collapsible component', () => {
     cy.mountWithProviders(
-      <Metrics
-        nodeId="bridge@bridge-id-01"
-        initMetrics={[]}
-        adapterIDs={[mockBridgeId]}
-        type={NodeTypes.BRIDGE_NODE}
-      />
+      <Metrics nodeId="bridge@bridge-id-01" initMetrics={[]} adapterIDs={[mockBridgeId]} type={NodeTypes.BRIDGE_NODE} />
     )
 
     cy.getByTestId('metrics-toggle').should('have.attr', 'aria-expanded', 'false')

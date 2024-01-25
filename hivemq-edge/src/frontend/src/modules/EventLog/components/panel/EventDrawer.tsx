@@ -44,14 +44,7 @@ const EventDrawer: FC<BridgeMainDrawerProps> = ({ event, isOpen, onClose }) => {
 
   return (
     <>
-      <Drawer
-        variant="hivemq"
-        closeOnOverlayClick={true}
-        size="lg"
-        isOpen={isOpen}
-        placement="right"
-        onClose={onClose}
-      >
+      <Drawer variant="hivemq" closeOnOverlayClick={true} size="lg" isOpen={isOpen} placement="right" onClose={onClose}>
         <DrawerContent aria-label={t('bridge.drawer.label') as string}>
           <DrawerCloseButton />
           <DrawerHeader id="bridge-form-header">{t('eventLog.panel.title')}</DrawerHeader>
@@ -99,14 +92,7 @@ const EventDrawer: FC<BridgeMainDrawerProps> = ({ event, isOpen, onClose }) => {
                     </Badge>
                   </CardHeader>
                   <CardBody pt={0}>
-                    <Code
-                      w="100%"
-                      p={2}
-                      whiteSpace="pre-wrap"
-                      overflow="auto"
-                      sx={{ textWrap: 'nowrap' }}
-                      maxH={400}
-                    >
+                    <Code w="100%" p={2} whiteSpace="pre-wrap" overflow="auto" sx={{ textWrap: 'nowrap' }} maxH={400}>
                       {JSONFormat && JSONFormat}
                       {XMLFormat && XMLFormat}
                       {!isJSON && !isXML && event.payload?.content}

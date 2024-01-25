@@ -50,12 +50,7 @@ describe('PaginatedTable', () => {
 
   it('should sort the columns', () => {
     cy.mountWithProviders(
-      <PaginatedTable<MOCK_TYPE>
-        data={MOCK_DATA(4)}
-        columns={MOCK_COLUMN}
-        pageSizes={[5, 10, 20]}
-        aria-label="table"
-      />
+      <PaginatedTable<MOCK_TYPE> data={MOCK_DATA(4)} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} aria-label="table" />
     )
 
     const checkRowOrder = (direction?: SortDirection) => {
