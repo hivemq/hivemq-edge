@@ -17,8 +17,8 @@ export const CustomHandle: FC<CustomHandleProps> = (props) => {
       if (node) {
         const connectedEdges = getConnectedEdges([node], edges)
 
-        const toHandle = connectedEdges.filter((e) => {
-          const otherEnd = props.type === 'source' ? e.sourceHandle : e.targetHandle
+        const toHandle = connectedEdges.filter((edge) => {
+          const otherEnd = props.type === 'source' ? edge.sourceHandle : edge.targetHandle
           return otherEnd === props.id
         })
 
