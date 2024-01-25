@@ -39,7 +39,7 @@ describe('CustomFieldTemplate', () => {
     cy.injectAxe()
 
     // @ts-ignore
-    cy.mountWithProviders(<RenderFieldTemplate {...rest} children={children} />)
+    cy.mountWithProviders(<RenderFieldTemplate {...rest}>{children}</RenderFieldTemplate>)
     cy.get('[role="group"]').should('not.contain.text', MOCK_TEXT)
     cy.get('[role="group"]').should('contain.text', MOCK_ERROR)
     cy.checkAccessibility()
@@ -50,7 +50,7 @@ describe('CustomFieldTemplate', () => {
     cy.injectAxe()
 
     // @ts-ignore
-    cy.mountWithProviders(<RenderFieldTemplate {...rest} children={children} />)
+    cy.mountWithProviders(<RenderFieldTemplate {...rest}>{children}</RenderFieldTemplate>)
     cy.get('[role="group"]').should('contain.text', MOCK_TEXT)
     cy.get('[role="group"]').should('not.contain.text', MOCK_ERROR)
     cy.checkAccessibility()
