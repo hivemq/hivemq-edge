@@ -31,14 +31,14 @@ const Option = (props: OptionProps<FunctionSpecs>) => {
 
   return (
     <chakraComponents.Option {...rest} isSelected={dd && dd.functionId === props.data.functionId}>
-      <VStack w={'100%'} alignItems={'stretch'} gap={0}>
+      <VStack w="100%" alignItems="stretch" gap={0}>
         <HStack>
           <Text as="b" flex={1}>
             {props.data.functionId}
           </Text>
-          <Text fontSize={'sm'}>{props.data.isTerminal ? '[Terminal]' : ''}</Text>
+          <Text fontSize="sm">{props.data.isTerminal ? '[Terminal]' : ''}</Text>
         </HStack>
-        <Text fontSize={'sm'}>{props.data.schema?.description}</Text>
+        <Text fontSize="sm">{props.data.schema?.description}</Text>
       </VStack>
     </chakraComponents.Option>
   )
