@@ -2,8 +2,8 @@ import { FC, useMemo } from 'react'
 import { Node } from 'reactflow'
 import { Card, CardBody } from '@chakra-ui/react'
 
+import { MOCK_OPERATION_SCHEMA } from '../../api/specs/'
 import { OperationData, PanelProps } from '../../types.ts'
-import { MOCK_OPERATION_SCHEMA } from '../../api/specs/OperationData.ts'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm, datahubRJSFWidgets } from '../helpers'
 
@@ -25,8 +25,6 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
           widgets={datahubRJSFWidgets}
           noHtml5Validate={true}
           onSubmit={onFormSubmit}
-          onChange={(e) => console.log('changed', e.formData)}
-          onError={() => console.log('errors')}
         />
       </CardBody>
     </Card>
