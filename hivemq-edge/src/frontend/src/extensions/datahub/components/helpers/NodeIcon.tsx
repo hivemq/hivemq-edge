@@ -1,18 +1,20 @@
 import { Icon } from '@chakra-ui/react'
 import { FC } from 'react'
+import { useTranslation } from 'react-i18next'
 
-import { GrConnect, GrStatusUnknown, GrValidate } from 'react-icons/gr'
+import { GrStatusUnknown, GrValidate } from 'react-icons/gr'
 import { LuFunctionSquare } from 'react-icons/lu'
 import { MdPolicy, MdSchema } from 'react-icons/md'
 import { TbTransitionRight } from 'react-icons/tb'
 import { AiOutlineCloudServer } from 'react-icons/ai'
 import { SiMqtt } from 'react-icons/si'
+import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
 
 import { DataHubNodeType } from '../../types.ts'
-import { useTranslation } from 'react-i18next'
 
 const iconMapping: Record<string, (label: string) => JSX.Element> = {
-  [DataHubNodeType.ADAPTOR]: (label) => <Icon as={GrConnect} boxSize="24px" aria-label={label} />,
+  [DataHubNodeType.ADAPTOR]: (label) => <Icon as={PiPlugsConnectedFill} boxSize="24px" aria-label={label} />,
+  [DataHubNodeType.BRIDGE]: (label) => <Icon as={PiBridgeThin} boxSize="24px" aria-label={label} />,
   [DataHubNodeType.TOPIC_FILTER]: (label) => <Icon as={SiMqtt} boxSize="16px" aria-label={label} />,
   [DataHubNodeType.CLIENT_FILTER]: (label) => <Icon as={AiOutlineCloudServer} boxSize="24px" aria-label={label} />,
   [DataHubNodeType.DATA_POLICY]: (label) => <Icon as={MdPolicy} boxSize="24px" aria-label={label} />,
