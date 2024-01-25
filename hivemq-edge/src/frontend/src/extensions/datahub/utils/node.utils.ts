@@ -1,11 +1,12 @@
-import { Edge, Node } from 'reactflow'
-import { CSSProperties } from 'react'
+import { Connection, Edge, Node } from 'reactflow'
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema-mocks.ts'
 
 import {
+  BehaviorPolicyData,
   ClientFilterData,
   DataHubNodeData,
   DataHubNodeType,
+  DataPolicyData,
   OperationData,
   SchemaData,
   SchemaType,
@@ -14,13 +15,6 @@ import {
   ValidatorData,
   ValidatorType,
 } from '../types.ts'
-
-export const styleSourceHandle: CSSProperties = {
-  width: '12px',
-  right: '-6px',
-  borderRadius: 0,
-  height: '12px',
-}
 
 export const initialFlow = () => {
   const nodes: Node[] = []
@@ -68,4 +62,42 @@ export const getNodePayload = (type: string): DataHubNodeData => {
     return payload
   }
   return { label: `${type} node` }
+}
+
+type ConnectionValidity = Record<string, (DataHubNodeType | [DataHubNodeType, string])[]>
+
+// TODO[NVL} worth moving as property to individual node?
+export const validConnections: ConnectionValidity = {
+  [DataHubNodeType.TOPIC_FILTER]: [[DataHubNodeType.DATA_POLICY, DataPolicyData.Handle.TOPIC_FILTER]],
+  [DataHubNodeType.VALIDATOR]: [[DataHubNodeType.DATA_POLICY, DataPolicyData.Handle.VALIDATION]],
+  [DataHubNodeType.DATA_POLICY]: [DataHubNodeType.OPERATION],
+  [DataHubNodeType.OPERATION]: [DataHubNodeType.OPERATION],
+  [DataHubNodeType.SCHEMA]: [DataHubNodeType.VALIDATOR, [DataHubNodeType.OPERATION, OperationData.Handle.SCHEMA]],
+  [DataHubNodeType.CLIENT_FILTER]: [[DataHubNodeType.BEHAVIOR_POLICY, BehaviorPolicyData.Handle.CLIENT_FILTER]],
+  [DataHubNodeType.BEHAVIOR_POLICY]: [DataHubNodeType.TRANSITION],
+  [DataHubNodeType.TRANSITION]: [DataHubNodeType.OPERATION],
+}
+
+export const isValidPolicyConnection = (connection: Connection, nodes: Node[]) => {
+  const source = nodes.find((e) => e.id === connection.source)
+  const destination = nodes.find((e) => e.id === connection.target)
+
+  if (!source) {
+    return false
+  }
+  const { type } = source
+  if (!type) {
+    return false
+  }
+  const connectionValidators = validConnections[type]
+  if (!connectionValidators) {
+    return false
+  }
+  return connectionValidators.some((elt) => {
+    if (Array.isArray(elt)) {
+      return destination?.type === elt[0] && connection.targetHandle === elt[1]
+    }
+
+    return destination?.type === elt
+  })
 }
