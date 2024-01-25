@@ -1,5 +1,5 @@
 import React, { FC, useCallback, useMemo, useRef, useState } from 'react'
-import ReactFlow, { Node, ReactFlowInstance, ReactFlowProvider, XYPosition } from 'reactflow'
+import ReactFlow, { Connection, Node, ReactFlowInstance, ReactFlowProvider, XYPosition } from 'reactflow'
 import { Outlet, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
@@ -11,7 +11,9 @@ import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 import CanvasControls from '../controls/CanvasControls.tsx'
 import { Toolbox } from '../controls/Toolbox.tsx'
 import Minimap from '../controls/Minimap.tsx'
-import { BaseNode } from '../nodes/BaseNode.tsx'
+
+import styles from './PolicyEditor.module.scss'
+
 import {
   TopicFilterNode,
   ClientFilterNode,
@@ -22,7 +24,7 @@ import {
   BehaviorPolicyNode,
   TransitionNode,
 } from '../../components/nodes/'
-import { getNodeId, getNodePayload } from '@/extensions/datahub/utils/node.utils.ts'
+import { getNodeId, getNodePayload, isValidPolicyConnection } from '../../utils/node.utils.ts'
 
 const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
@@ -33,7 +35,6 @@ const PolicyEditor: FC = () => {
 
   const nodeTypes = useMemo(
     () => ({
-      baseNode: BaseNode,
       [DataHubNodeType.TOPIC_FILTER]: TopicFilterNode,
       [DataHubNodeType.CLIENT_FILTER]: ClientFilterNode,
       [DataHubNodeType.DATA_POLICY]: DataPolicyNode,
@@ -45,6 +46,8 @@ const PolicyEditor: FC = () => {
     }),
     []
   )
+
+  const checkValidity = useCallback((connection: Connection) => isValidPolicyConnection(connection, nodes), [nodes])
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLElement> | undefined) => {
     if (event) {
@@ -107,10 +110,11 @@ const PolicyEditor: FC = () => {
           onInit={setReactFlowInstance}
           fitView
           snapToGrid
+          className={styles.dataHubFlow}
           // nodesConnectable
           onDragOver={onDragOver}
           onDrop={onDrop}
-          // isValidConnection={isValidConnection}
+          isValidConnection={checkValidity}
         >
           <Box
             role={'toolbar'}

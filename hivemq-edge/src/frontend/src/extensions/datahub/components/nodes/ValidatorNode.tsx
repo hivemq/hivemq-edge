@@ -1,12 +1,12 @@
 import { FC } from 'react'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { Handle, NodeProps, Position } from 'reactflow'
+import { NodeProps, Position } from 'reactflow'
 
 import { DataHubNodeType, ValidatorData } from '../../types.ts'
-import { styleSourceHandle } from '../../utils/node.utils.ts'
 import NodeIcon from '../helpers/NodeIcon.tsx'
 import { NodeWrapper } from './NodeWrapper.tsx'
+import { CustomHandle } from './CustomHandle.tsx'
 
 export const ValidatorNode: FC<NodeProps<ValidatorData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -16,16 +16,17 @@ export const ValidatorNode: FC<NodeProps<ValidatorData>> = (props) => {
       <NodeWrapper route={`node/${DataHubNodeType.VALIDATOR}/${id}`} {...props}>
         <HStack>
           <NodeIcon type={DataHubNodeType.VALIDATOR} />
-          <Text w={'50%'}> {t('workspace.nodes.type', { context: type })}</Text>
-          <VStack>
-            <Text>{data.strategy}</Text>
+          <Text data-testid={'node-title'} w={'50%'}>
+            {t('workspace.nodes.type', { context: type })}
+          </Text>
+          <VStack data-testid={'node-model'}>
             <Text>{data.type}</Text>
+            <Text>{data.strategy}</Text>
           </VStack>
         </HStack>
       </NodeWrapper>
-
-      <Handle type="target" position={Position.Top} />
-      <Handle type="source" position={Position.Bottom} style={styleSourceHandle} />
+      <CustomHandle type="target" position={Position.Top} id="target" />
+      <CustomHandle type="source" position={Position.Bottom} id="source" />
     </>
   )
 }

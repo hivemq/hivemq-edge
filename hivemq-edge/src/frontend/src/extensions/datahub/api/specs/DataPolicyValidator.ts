@@ -29,6 +29,7 @@ export const MOCK_VALIDATOR_SCHEMA: PanelSpecs = {
       strategy: {
         title: 'Validation Strategy',
         enum: [StrategyType.ANY_OF, StrategyType.ALL_OF],
+        default: StrategyType.ALL_OF,
       },
       schemas: {
         type: 'array',
