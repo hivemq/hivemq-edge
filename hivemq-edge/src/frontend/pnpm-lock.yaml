@@ -210,6 +210,9 @@ devDependencies:
   prettier:
     specifier: 2.8.8
     version: 2.8.8
+  sass:
+    specifier: ^1.70.0
+    version: 1.70.0
   stylelint:
     specifier: ^15.6.2
     version: 15.6.2
@@ -224,10 +227,10 @@ devDependencies:
     version: 5.0.4
   vite:
     specifier: ^4.3.9
-    version: 4.3.9(@types/node@20.4.2)
+    version: 4.3.9(@types/node@20.4.2)(sass@1.70.0)
   vitest:
     specifier: ^0.33.0
-    version: 0.33.0(@vitest/ui@0.31.1)(jsdom@22.0.0)
+    version: 0.33.0(@vitest/ui@0.31.1)(jsdom@22.0.0)(sass@1.70.0)
 
 packages:
 
@@ -3492,7 +3495,7 @@ packages:
       '@babel/plugin-transform-react-jsx-self': 7.22.5(@babel/core@7.22.9)
       '@babel/plugin-transform-react-jsx-source': 7.22.5(@babel/core@7.22.9)
       react-refresh: 0.14.0
-      vite: 4.3.9(@types/node@20.4.2)
+      vite: 4.3.9(@types/node@20.4.2)(sass@1.70.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -3507,7 +3510,7 @@ packages:
       magic-string: 0.30.1
       picocolors: 1.0.0
       std-env: 3.3.3
-      vitest: 0.33.0(@vitest/ui@0.31.1)(jsdom@22.0.0)
+      vitest: 0.33.0(@vitest/ui@0.31.1)(jsdom@22.0.0)(sass@1.70.0)
     dev: true
 
   /@vitest/coverage-istanbul@0.32.4(vitest@0.33.0):
@@ -3521,7 +3524,7 @@ packages:
       istanbul-lib-source-maps: 4.0.1
       istanbul-reports: 3.1.5
       test-exclude: 6.0.0
-      vitest: 0.33.0(@vitest/ui@0.31.1)(jsdom@22.0.0)
+      vitest: 0.33.0(@vitest/ui@0.31.1)(jsdom@22.0.0)(sass@1.70.0)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -3568,7 +3571,7 @@ packages:
       pathe: 1.1.1
       picocolors: 1.0.0
       sirv: 2.0.3
-      vitest: 0.33.0(@vitest/ui@0.31.1)(jsdom@22.0.0)
+      vitest: 0.33.0(@vitest/ui@0.31.1)(jsdom@22.0.0)(sass@1.70.0)
     dev: true
 
   /@vitest/utils@0.31.1:
@@ -5648,6 +5651,10 @@ packages:
       queue: 6.0.2
     dev: true
 
+  /immutable@4.3.4:
+    resolution: {integrity: sha512-fsXeu4J4i6WNWSikpI88v/PcVflZz+6kMhUfIwc5SY+poQRPnaf5V7qds6SUyUN3cVxEzuCab7QIoLOQ+DQ1wA==}
+    dev: true
+
   /import-fresh@3.3.0:
     resolution: {integrity: sha512-veYYhQa+D1QBKznvhUHxb8faxlrwUnxseDAbAp457E0wLNio2bOSKnjYDhMj+YiAq61xrMGhQk9iXVk5FzgQMw==}
     engines: {node: '>=6'}
@@ -7370,6 +7377,16 @@ packages:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
     dev: true
 
+  /sass@1.70.0:
+    resolution: {integrity: sha512-uUxNQ3zAHeAx5nRFskBnrWzDUJrrvpCPD5FNAoRvTi0WwremlheES3tg+56PaVtCs5QDRX5CBLxxKMDJMEa1WQ==}
+    engines: {node: '>=14.0.0'}
+    hasBin: true
+    dependencies:
+      chokidar: 3.5.3
+      immutable: 4.3.4
+      source-map-js: 1.0.2
+    dev: true
+
   /saxes@6.0.0:
     resolution: {integrity: sha512-xAg7SOnEhrm5zI3puOOKyy1OMcMlIJZYNJY7xLBwSze0UjhPLnWfj2GF2EpT0jmzaJKIWKHLsaSSajf35bcYnA==}
     engines: {node: '>=v12.22.7'}
@@ -8151,7 +8168,7 @@ packages:
       extsprintf: 1.3.0
     dev: true
 
-  /vite-node@0.33.0(@types/node@20.4.2):
+  /vite-node@0.33.0(@types/node@20.4.2)(sass@1.70.0):
     resolution: {integrity: sha512-19FpHYbwWWxDr73ruNahC+vtEdza52kA90Qb3La98yZ0xULqV8A5JLNPUff0f5zID4984tW7l3DH2przTJUZSw==}
     engines: {node: '>=v14.18.0'}
     hasBin: true
@@ -8161,7 +8178,7 @@ packages:
       mlly: 1.4.0
       pathe: 1.1.1
       picocolors: 1.0.0
-      vite: 4.3.9(@types/node@20.4.2)
+      vite: 4.3.9(@types/node@20.4.2)(sass@1.70.0)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -8172,7 +8189,7 @@ packages:
       - terser
     dev: true
 
-  /vite@4.3.9(@types/node@20.4.2):
+  /vite@4.3.9(@types/node@20.4.2)(sass@1.70.0):
     resolution: {integrity: sha512-qsTNZjO9NoJNW7KnOrgYwczm0WctJ8m/yqYAMAK9Lxt4SoySUfS5S8ia9K7JHpa3KEeMfyF8LoJ3c5NeBJy6pg==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
@@ -8201,11 +8218,12 @@ packages:
       esbuild: 0.17.19
       postcss: 8.4.26
       rollup: 3.26.2
+      sass: 1.70.0
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
 
-  /vitest@0.33.0(@vitest/ui@0.31.1)(jsdom@22.0.0):
+  /vitest@0.33.0(@vitest/ui@0.31.1)(jsdom@22.0.0)(sass@1.70.0):
     resolution: {integrity: sha512-1CxaugJ50xskkQ0e969R/hW47za4YXDUfWJDxip1hwbnhUjYolpfUn2AMOulqG/Dtd9WYAtkHmM/m3yKVrEejQ==}
     engines: {node: '>=v14.18.0'}
     hasBin: true
@@ -8259,8 +8277,8 @@ packages:
       strip-literal: 1.0.1
       tinybench: 2.5.0
       tinypool: 0.6.0
-      vite: 4.3.9(@types/node@20.4.2)
-      vite-node: 0.33.0(@types/node@20.4.2)
+      vite: 4.3.9(@types/node@20.4.2)(sass@1.70.0)
+      vite-node: 0.33.0(@types/node@20.4.2)(sass@1.70.0)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
       - less
