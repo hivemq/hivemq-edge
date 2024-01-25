@@ -97,7 +97,7 @@ const PolicyEditor: FC = () => {
       <ReactFlowProvider>
         <ReactFlow
           ref={reactFlowWrapper}
-          id={'edge-workspace-canvas'}
+          id="edge-workspace-canvas"
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
@@ -117,9 +117,9 @@ const PolicyEditor: FC = () => {
           isValidConnection={checkValidity}
         >
           <Box
-            role={'toolbar'}
+            role="toolbar"
             aria-label={t('workspace.aria-label') as string}
-            aria-controls={'edge-workspace-canvas'}
+            aria-controls="edge-workspace-canvas"
           >
             <Toolbox />
             <CanvasControls />

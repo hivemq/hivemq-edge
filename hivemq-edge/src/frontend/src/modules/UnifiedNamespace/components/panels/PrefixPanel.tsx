@@ -64,10 +64,10 @@ const PrefixPanel: FC<PrefixPanelProps> = ({ data, isLoading }) => {
       <CardFooter>
         <Skeleton isLoaded={!isLoading}>
           <FormControl>
-            <FormLabel htmlFor={'unifiedNamespace-enabled'}>{t('unifiedNamespace.enabled.label')}</FormLabel>
+            <FormLabel htmlFor="unifiedNamespace-enabled">{t('unifiedNamespace.enabled.label')}</FormLabel>
             <Switch
-              id={'unifiedNamespace-enabled'}
-              colorScheme={'brand'}
+              id="unifiedNamespace-enabled"
+              colorScheme="brand"
               isChecked={data.enabled}
               onChange={handleOnChange}
             />

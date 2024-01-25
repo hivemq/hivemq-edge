@@ -16,7 +16,7 @@ describe('Metrics', () => {
   it('should render the collapsible component', () => {
     cy.mountWithProviders(
       <Metrics
-        nodeId={'bridge@bridge-id-01'}
+        nodeId="bridge@bridge-id-01"
         initMetrics={[]}
         adapterIDs={[mockBridgeId]}
         type={NodeTypes.BRIDGE_NODE}

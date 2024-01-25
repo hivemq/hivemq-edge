@@ -44,14 +44,14 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
   const { t } = useTranslation()
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={onClose} variant={'hivemq'}>
+    <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} variant="hivemq">
       <DrawerOverlay />
       <DrawerContent aria-label={t('workspace.property.header', { context: selectedNode.type }) as string}>
         <DrawerCloseButton />
         <DrawerHeader>
           <Text> {t('workspace.property.header', { context: selectedNode.type })}</Text>
         </DrawerHeader>
-        <DrawerBody display={'flex'} flexDirection={'column'} gap={6}>
+        <DrawerBody display="flex" flexDirection="column" gap={6}>
           <NodeNameCard selectedNode={selectedNode} />
           <Metrics
             nodeId={nodeId}
@@ -60,18 +60,18 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
             initMetrics={getDefaultMetricsFor(selectedNode)}
             defaultChartType={ChartType.SAMPLE}
           />
-          <Card size={'sm'}>
+          <Card size="sm">
             <CardHeader>
               <Text>
                 {t('workspace.property.eventLog.header', { type: selectedNode.type, id: selectedNode.data.id })}
               </Text>
             </CardHeader>
             <CardBody>
-              <EventLogTable globalSourceFilter={(selectedNode?.data as Adapter).id} variant={'summary'} />
+              <EventLogTable globalSourceFilter={(selectedNode?.data as Adapter).id} variant="summary" />
             </CardBody>
-            <CardFooter justifyContent={'flex-end'} pt={0}>
+            <CardFooter justifyContent="flex-end" pt={0}>
               <Button
-                data-testid={'navigate-eventLog-filtered'}
+                data-testid="navigate-eventLog-filtered"
                 variant="link"
                 as={RouterLink}
                 // URL options not yet supported
@@ -85,11 +85,11 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
           </Card>
         </DrawerBody>
         <DrawerFooter borderTopWidth="1px">
-          <Flex flexGrow={1} justifyContent={'flex-start'} gap={5}>
+          <Flex flexGrow={1} justifyContent="flex-start" gap={5}>
             <Button
-              data-testid={'protocol-create-adapter'}
-              variant={'outline'}
-              size={'sm'}
+              data-testid="protocol-create-adapter"
+              variant="outline"
+              size="sm"
               rightIcon={<EditIcon />}
               onClick={onEditEntity}
             >

@@ -12,14 +12,14 @@ interface TooltipProps {
 
 const ChartTooltip: FC<TooltipProps> = ({ formattedValue, color, date, id }) => {
   return (
-    <Card p={1} data-testid={'chart-tooltip'}>
-      <HStack data-testid={'chart-tooltip-id'}>
+    <Card p={1} data-testid="chart-tooltip">
+      <HStack data-testid="chart-tooltip-id">
         <Square size={4} bg={color} />
         <Text>{id}</Text>
       </HStack>
 
       <DateTimeRenderer date={date} isShort />
-      <Text fontWeight={'bold'} data-testid={'chart-tooltip-value'}>
+      <Text fontWeight="bold" data-testid="chart-tooltip-value">
         {formattedValue}
       </Text>
     </Card>

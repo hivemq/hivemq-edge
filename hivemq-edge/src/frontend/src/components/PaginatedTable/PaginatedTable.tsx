@@ -74,8 +74,8 @@ const PaginatedTable = <T,>({
 
   return (
     <>
-      <TableContainer overflowY={'auto'} overflowX={'auto'} whiteSpace={'normal'}>
-        <Table variant="simple" size={'sm'} aria-label={ariaLabel}>
+      <TableContainer overflowY="auto" overflowX="auto" whiteSpace="normal">
+        <Table variant="simple" size="sm" aria-label={ariaLabel}>
           <Thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <Tr key={headerGroup.id}>
@@ -83,26 +83,26 @@ const PaginatedTable = <T,>({
                   <Th
                     key={header.id}
                     colSpan={header.colSpan}
-                    verticalAlign={'top'}
+                    verticalAlign="top"
                     aria-sort={getAriaSort(header.column.getCanSort(), header.column.getIsSorted())}
                   >
-                    <VStack alignItems={'flex-start'}>
+                    <VStack alignItems="flex-start">
                       {header.isPlaceholder && null}
                       {!header.isPlaceholder && header.column.getCanSort() && (
                         <Button
                           px={1}
                           onClick={header.column.getToggleSortingHandler()}
-                          size={'sm'}
+                          size="sm"
                           variant="ghost"
-                          textTransform={'inherit'}
-                          fontWeight={'inherit'}
-                          fontSize={'inherit'}
-                          height={'24px'}
-                          userSelect={'none'}
+                          textTransform="inherit"
+                          fontWeight="inherit"
+                          fontSize="inherit"
+                          height="24px"
+                          userSelect="none"
                           rightIcon={
                             {
-                              asc: <Icon as={BiSortUp} fontSize={'24px'} />,
-                              desc: <Icon as={BiSortDown} fontSize={'24px'} />,
+                              asc: <Icon as={BiSortUp} fontSize="24px" />,
+                              desc: <Icon as={BiSortDown} fontSize="24px" />,
                             }[header.column.getIsSorted() as string] ?? undefined
                           }
                         >
@@ -110,7 +110,7 @@ const PaginatedTable = <T,>({
                         </Button>
                       )}
                       {!header.isPlaceholder && !header.column.getCanSort() && (
-                        <Text userSelect={'none'} pt={1}>
+                        <Text userSelect="none" pt={1}>
                           {flexRender(header.column.columnDef.header, header.getContext())}
                         </Text>
                       )}

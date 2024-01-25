@@ -12,7 +12,7 @@ const makeMockProps = (props: Partial<FieldTemplateProps>): Partial<FieldTemplat
     children: (
       <>
         <FormLabel>{props.label}</FormLabel>
-        <Input value={'a dumb value'} />
+        <Input value="a dumb value" />
       </>
     ),
     errors: <FormErrorMessage>{props.rawErrors?.join(', ')}</FormErrorMessage>,

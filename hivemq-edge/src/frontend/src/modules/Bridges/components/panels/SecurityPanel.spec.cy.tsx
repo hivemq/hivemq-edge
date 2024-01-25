@@ -23,7 +23,7 @@ const TestingComponent: FC<TestingComponentProps> = ({ onSubmit, defaultValues }
       <form id="bridge-form" onSubmit={form.handleSubmit(onSubmit)}>
         <SecurityPanel form={form} />
       </form>
-      <Button variant={'primary'} type={'submit'} form="bridge-form" data-testid={'form-submit'} mt={8}>
+      <Button variant="primary" type="submit" form="bridge-form" data-testid="form-submit" mt={8}>
         Submit
       </Button>
     </div>

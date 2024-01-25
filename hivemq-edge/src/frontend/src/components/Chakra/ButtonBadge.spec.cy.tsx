@@ -12,7 +12,7 @@ describe('ButtonBadge', () => {
     const onClick = cy.stub().as('onClick')
     cy.mountWithProviders(
       <ButtonBadge
-        aria-label={'You have no notification'}
+        aria-label="You have no notification"
         badgeCount={1}
         icon={<FiMail />}
         isDisabled
@@ -27,7 +27,7 @@ describe('ButtonBadge', () => {
   it('should render properly', () => {
     const onClick = cy.stub().as('onClick')
     cy.mountWithProviders(
-      <ButtonBadge aria-label={'You have one notification'} badgeCount={1} icon={<FiMail />} onClick={onClick} />
+      <ButtonBadge aria-label="You have one notification" badgeCount={1} icon={<FiMail />} onClick={onClick} />
     )
 
     cy.getByAriaLabel('You have one notification').click()
@@ -36,7 +36,7 @@ describe('ButtonBadge', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<ButtonBadge aria-label={'You have one notification'} badgeCount={1} icon={<FiMail />} />)
+    cy.mountWithProviders(<ButtonBadge aria-label="You have one notification" badgeCount={1} icon={<FiMail />} />)
     cy.checkAccessibility()
     cy.percySnapshot('Component: ButtonBadge')
   })

@@ -12,7 +12,7 @@ describe('ChartTooltip', () => {
     const mockTime = DateTime.fromMillis(1000)
     cy.injectAxe()
     cy.mountWithProviders(
-      <ChartTooltip formattedValue={'the value'} color={'red.300'} date={mockTime} id={'the task'} />
+      <ChartTooltip formattedValue="the value" color="red.300" date={mockTime} id="the task" />
     )
 
     const formatShortDate = new Intl.DateTimeFormat(navigator.language, {

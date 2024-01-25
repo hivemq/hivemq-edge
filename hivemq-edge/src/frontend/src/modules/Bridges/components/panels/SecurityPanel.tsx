@@ -21,11 +21,11 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
   const isTlsEnabled = useWatch({ name: 'tlsConfiguration.enabled', control: form.control })
 
   return (
-    <FormControl variant={'hivemq'} flexGrow={1} display={'flex'} flexDirection={'column'} gap={4} as={'fieldset'}>
+    <FormControl variant="hivemq" flexGrow={1} display="flex" flexDirection="column" gap={4} as="fieldset">
       <FormControl>
-        <FormLabel htmlFor={'tlsConfiguration.enabled'}>{t('bridge.security.enabled.label')}</FormLabel>
+        <FormLabel htmlFor="tlsConfiguration.enabled">{t('bridge.security.enabled.label')}</FormLabel>
         <Switch
-          id={'tlsConfiguration.enabled'}
+          id="tlsConfiguration.enabled"
           {...register('tlsConfiguration.enabled', {
             ...getRulesForProperty($TlsConfiguration.properties.enabled),
           })}
@@ -36,22 +36,22 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
       {isTlsEnabled && (
         <>
           <FormControl isInvalid={!!errors.tlsConfiguration?.cipherSuites}>
-            <FormLabel htmlFor={'tlsConfiguration.cipherSuites'}>{t('bridge.security.cipherSuites.label')}</FormLabel>
+            <FormLabel htmlFor="tlsConfiguration.cipherSuites">{t('bridge.security.cipherSuites.label')}</FormLabel>
             <Controller
-              name={'tlsConfiguration.cipherSuites'}
+              name="tlsConfiguration.cipherSuites"
               control={form.control}
               render={({ field }) => (
                 <Select
-                  size={'sm'}
+                  size="sm"
                   {...field}
-                  inputId={'tlsConfiguration.cipherSuites'}
+                  inputId="tlsConfiguration.cipherSuites"
                   // @ts-ignore TODO[NVL] Need to fix the Typescript definition
                   // defaultValue={}
                   // @ts-ignore
                   options={CYPHER_SUITES.map((e) => ({ label: e, value: e }))}
                   // menuIsOpen={false}
                   isClearable={true}
-                  placeholder={'add topic'}
+                  placeholder="add topic"
                   isMulti={true}
                   components={{
                     DropdownIndicator: null,
@@ -63,15 +63,15 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
           </FormControl>
 
           <FormControl isInvalid={!!errors.tlsConfiguration?.protocols}>
-            <FormLabel htmlFor={'tlsConfiguration.protocols'}>{t('bridge.security.protocols.label')}</FormLabel>
+            <FormLabel htmlFor="tlsConfiguration.protocols">{t('bridge.security.protocols.label')}</FormLabel>
             <Controller
-              name={'tlsConfiguration.protocols'}
+              name="tlsConfiguration.protocols"
               control={form.control}
               render={({ field }) => (
                 <Select
-                  size={'sm'}
+                  size="sm"
                   {...field}
-                  inputId={'tlsConfiguration.protocols'}
+                  inputId="tlsConfiguration.protocols"
                   // @ts-ignore TODO[NVL] Need to fix the Typescript definition
                   // @ts-ignore
                   options={TLS_PROTOCOLS.map((e) => ({ label: e, value: e }))}
@@ -93,32 +93,32 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
 
             <HStack>
               <FormControl isInvalid={!!errors.tlsConfiguration?.keystorePath}>
-                <FormLabel htmlFor={'tlsConfiguration.keystorePath'}>
+                <FormLabel htmlFor="tlsConfiguration.keystorePath">
                   {t('bridge.security.keystorePath.label')}
                 </FormLabel>
                 <Controller
-                  name={'tlsConfiguration.keystorePath'}
+                  name="tlsConfiguration.keystorePath"
                   control={form.control}
                   render={({ field }) => {
                     const { value, ...rest } = field
-                    return <Input id={'tlsConfiguration.keystorePath'} {...rest} value={value as string} />
+                    return <Input id="tlsConfiguration.keystorePath" {...rest} value={value as string} />
                   }}
                 />
                 <FormHelperText>{t('bridge.security.keystorePath.helper')}</FormHelperText>
               </FormControl>
 
               <FormControl isInvalid={!!errors.tlsConfiguration?.keystorePassword}>
-                <FormLabel htmlFor={'tlsConfiguration.keystorePassword'}>
+                <FormLabel htmlFor="tlsConfiguration.keystorePassword">
                   {t('bridge.security.keystorePassword.label')}
                 </FormLabel>
                 <Controller
-                  name={'tlsConfiguration.keystorePassword'}
+                  name="tlsConfiguration.keystorePassword"
                   control={form.control}
                   render={({ field }) => (
                     <Input
-                      autoComplete={'current-password'}
-                      type={'text'}
-                      id={'tlsConfiguration.keystorePassword'}
+                      autoComplete="current-password"
+                      type="text"
+                      id="tlsConfiguration.keystorePassword"
                       {...field}
                     />
                   )}
@@ -133,32 +133,32 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
 
             <HStack>
               <FormControl isInvalid={!!errors.tlsConfiguration?.truststorePath}>
-                <FormLabel htmlFor={'tlsConfiguration.truststorePath'}>
+                <FormLabel htmlFor="tlsConfiguration.truststorePath">
                   {t('bridge.security.truststorePath.label')}
                 </FormLabel>
                 <Controller
-                  name={'tlsConfiguration.truststorePath'}
+                  name="tlsConfiguration.truststorePath"
                   control={form.control}
                   render={({ field }) => {
                     const { value, ...rest } = field
-                    return <Input id={'tlsConfiguration.truststorePath'} {...rest} value={value as string} />
+                    return <Input id="tlsConfiguration.truststorePath" {...rest} value={value as string} />
                   }}
                 />
                 <FormHelperText>{t('bridge.security.truststorePath.helper')}</FormHelperText>
               </FormControl>
 
               <FormControl isInvalid={!!errors.tlsConfiguration?.truststorePassword}>
-                <FormLabel htmlFor={'tlsConfiguration.truststorePassword'}>
+                <FormLabel htmlFor="tlsConfiguration.truststorePassword">
                   {t('bridge.security.truststorePassword.label')}
                 </FormLabel>
                 <Controller
-                  name={'tlsConfiguration.truststorePassword'}
+                  name="tlsConfiguration.truststorePassword"
                   control={form.control}
                   render={({ field }) => (
                     <Input
-                      autoComplete={'current-password'}
-                      type={'text'}
-                      id={'tlsConfiguration.truststorePassword'}
+                      autoComplete="current-password"
+                      type="text"
+                      id="tlsConfiguration.truststorePassword"
                       {...field}
                     />
                   )}
@@ -169,17 +169,17 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
           </FormControl>
 
           <FormControl isInvalid={!!errors.tlsConfiguration?.privateKeyPassword}>
-            <FormLabel htmlFor={'tlsConfiguration.privateKeyPassword'}>
+            <FormLabel htmlFor="tlsConfiguration.privateKeyPassword">
               {t('bridge.security.privateKeyPassword.label')}
             </FormLabel>
             <Controller
-              name={'tlsConfiguration.privateKeyPassword'}
+              name="tlsConfiguration.privateKeyPassword"
               control={form.control}
               render={({ field }) => (
                 <Input
-                  type={'text'}
-                  autoComplete={'current-password'}
-                  id={'tlsConfiguration.privateKeyPassword'}
+                  type="text"
+                  autoComplete="current-password"
+                  id="tlsConfiguration.privateKeyPassword"
                   {...field}
                 />
               )}

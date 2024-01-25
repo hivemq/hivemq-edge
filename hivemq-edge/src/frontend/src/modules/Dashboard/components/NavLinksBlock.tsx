@@ -6,8 +6,8 @@ import { NavLinksBlockType } from '../types.ts'
 
 const NavLinksBlock: FC<NavLinksBlockType> = ({ title, items }) => {
   return (
-    <Flex flexDirection={'column'} m={0}>
-      <Text m={4} my={0} fontWeight={'bold'}>
+    <Flex flexDirection="column" m={0}>
+      <Text m={4} my={0} fontWeight="bold">
         {title}
       </Text>
       <Box pb={2} pt={2}>

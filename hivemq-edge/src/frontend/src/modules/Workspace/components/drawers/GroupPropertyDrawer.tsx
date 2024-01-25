@@ -49,14 +49,14 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
     : (t('workspace.observability.header', { context: selectedNode.type }) as string)
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size={'lg'} onClose={onClose} variant={'hivemq'}>
+    <Drawer isOpen={isOpen} placement="right" size="lg" onClose={onClose} variant="hivemq">
       <DrawerOverlay />
       <DrawerContent aria-label={panelTitle}>
         <DrawerCloseButton />
 
         <DrawerHeader>
-          <Text data-testid={'group-panel-title'}>{panelTitle}</Text>
-          <Box data-testid={'group-panel-keys'}>
+          <Text data-testid="group-panel-title">{panelTitle}</Text>
+          <Box data-testid="group-panel-keys">
             {selectedNode.data.childrenNodeIds.map((e) => (
               <Text key={e}>
                 {t('workspace.device.type', { context: NodeTypes.ADAPTER_NODE })}:{' '}
@@ -65,7 +65,7 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
             ))}
           </Box>
         </DrawerHeader>
-        <DrawerBody display={'flex'} flexDirection={'column'} gap={6}>
+        <DrawerBody display="flex" flexDirection="column" gap={6}>
           {showConfig && (
             <GroupMetadataEditor
               group={selectedNode}

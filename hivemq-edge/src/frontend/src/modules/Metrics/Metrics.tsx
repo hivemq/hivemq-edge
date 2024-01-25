@@ -76,7 +76,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
   return (
     <>
       {showEditor && (
-        <Card size={'sm'}>
+        <Card size="sm">
           <Accordion
             allowToggle
             onChange={(expandedIndex) => {
@@ -108,7 +108,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
       <SimpleGrid
         spacing={4}
         templateColumns="repeat(auto-fill, minmax(200px, 1fr))"
-        role={'list'}
+        role="list"
         aria-label={t('metrics.charts.list') as string}
       >
         {metrics.map((e) => {
@@ -123,7 +123,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
                 chartTheme={{ colourScheme: chartTheme[colorSchemeIndex] }}
                 onClose={() => handleRemoveMetrics(e.metrics)}
                 canEdit={isOpen}
-                role={'listitem'}
+                role="listitem"
               />
             )
           else
@@ -135,7 +135,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
                 chartTheme={{ colourScheme: chartTheme[colorSchemeIndex] }}
                 onClose={() => handleRemoveMetrics(e.metrics)}
                 canEdit={isOpen}
-                role={'listitem'}
+                role="listitem"
               />
             )
         })}

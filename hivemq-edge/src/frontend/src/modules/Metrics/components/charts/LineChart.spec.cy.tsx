@@ -8,7 +8,7 @@ import LineChart from './LineChart.tsx'
 
 const mockAriaLabel = 'aria-label'
 const Wrapper: FC<PropsWithChildren> = ({ children }) => (
-  <Box w={'100%'} h={400}>
+  <Box w="100%" h={400}>
     {children}
   </Box>
 )
@@ -24,7 +24,7 @@ describe('LineChart', () => {
     cy.mountWithProviders(
       <Wrapper>
         <LineChart
-          h={'100%'}
+          h="100%"
           data={MOCK_METRIC_SAMPLE_ARRAY}
           metricName={MOCK_METRICS[0].name as string}
           aria-label={mockAriaLabel}

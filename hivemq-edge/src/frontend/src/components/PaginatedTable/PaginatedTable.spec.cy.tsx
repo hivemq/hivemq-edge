@@ -36,7 +36,7 @@ describe('PaginatedTable', () => {
         data={MOCK_DATA(100)}
         columns={MOCK_COLUMN}
         pageSizes={[5, 10, 20]}
-        aria-label={'table'}
+        aria-label="table"
       />
     )
 
@@ -54,7 +54,7 @@ describe('PaginatedTable', () => {
         data={MOCK_DATA(4)}
         columns={MOCK_COLUMN}
         pageSizes={[5, 10, 20]}
-        aria-label={'table'}
+        aria-label="table"
       />
     )
 
@@ -96,7 +96,7 @@ describe('PaginatedTable', () => {
 
   it('should indicate when there is no data to render', () => {
     cy.mountWithProviders(
-      <PaginatedTable<MOCK_TYPE> data={[]} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} aria-label={'table'} />
+      <PaginatedTable<MOCK_TYPE> data={[]} columns={MOCK_COLUMN} pageSizes={[5, 10, 20]} aria-label="table" />
     )
 
     cy.get('[role="alert"]').should('contain.text', 'No data received yet.')
@@ -109,8 +109,8 @@ describe('PaginatedTable', () => {
         data={[]}
         columns={MOCK_COLUMN}
         pageSizes={[5, 10, 20]}
-        noDataText={'This is a message'}
-        aria-label={'table'}
+        noDataText="This is a message"
+        aria-label="table"
       />
     )
 
@@ -125,7 +125,7 @@ describe('PaginatedTable', () => {
         columns={MOCK_COLUMN}
         pageSizes={[5, 10, 20]}
         enableColumnFilters
-        aria-label={'table'}
+        aria-label="table"
       />
     )
 
@@ -153,7 +153,7 @@ describe('PaginatedTable', () => {
         data={MOCK_DATA(100)}
         columns={MOCK_COLUMN}
         pageSizes={[5, 10, 20]}
-        aria-label={'table'}
+        aria-label="table"
       />
     )
     cy.checkAccessibility()

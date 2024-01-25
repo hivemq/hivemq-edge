@@ -12,8 +12,8 @@ const SwitchModeButton: FC<Omit<IconButtonProps, 'aria-label'>> = ({ ...props })
     <IconButton
       aria-label={t('action.mode', { context: colorMode })}
       onClick={() => toggleColorMode()}
-      data-testid={'chakra-ui-switch-mode'}
-      icon={<Icon as={colorMode !== 'light' ? MdLightMode : MdDarkMode} boxSize={'24px'} />}
+      data-testid="chakra-ui-switch-mode"
+      icon={<Icon as={colorMode !== 'light' ? MdLightMode : MdDarkMode} boxSize="24px" />}
       {...props}
     />
   )

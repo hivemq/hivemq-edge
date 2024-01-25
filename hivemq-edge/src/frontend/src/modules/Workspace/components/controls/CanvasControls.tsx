@@ -33,8 +33,8 @@ const CanvasControls: FC<ControlProps> = ({ onInteractiveChange }) => {
 
   // + - f l
   return (
-    <Panel position={'bottom-left'}>
-      <ButtonGroup variant="outline" isAttached size={'sm'}>
+    <Panel position="bottom-left">
+      <ButtonGroup variant="outline" isAttached size="sm">
         <IconButton icon={<FaPlus />} onClick={() => zoomIn()} aria-label={t('workspace.controls.zoomIn') as string} />
         <IconButton
           icon={<FaMinus />}

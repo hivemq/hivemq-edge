@@ -79,23 +79,23 @@ const PropertyPanelController = () => {
 
   return (
     <Drawer
-      size={'lg'}
+      size="lg"
       isOpen={isOpen}
       placement="right"
       onClose={onDrawerClose}
       // finalFocusRef={btnRef}
     >
       <DrawerOverlay />
-      <DrawerContent data-testid={'node-editor-content'}>
+      <DrawerContent data-testid="node-editor-content">
         <DrawerCloseButton />
         <DrawerHeader>
           <Flex>
-            <Avatar icon={<NodeIcon type={type} />} bg="gray.200" data-testid={'node-editor-icon'} />
+            <Avatar icon={<NodeIcon type={type} />} bg="gray.200" data-testid="node-editor-icon" />
             <Box ml="3">
-              <Text fontWeight="bold" data-testid={'node-editor-name'}>
+              <Text fontWeight="bold" data-testid="node-editor-name">
                 {t('workspace.nodes.type', { context: type })}
               </Text>
-              <Text fontSize="sm" data-testid={'node-editor-id'}>
+              <Text fontSize="sm" data-testid="node-editor-id">
                 id: {nodeId}
               </Text>
             </Box>
@@ -106,15 +106,15 @@ const PropertyPanelController = () => {
           {isEditorValid ? (
             <Editor selectedNode={nodeId} onFormSubmit={onFormSubmit} />
           ) : (
-            <AbsoluteCenter axis="both" data-testid={'node-editor-under-construction'}>
+            <AbsoluteCenter axis="both" data-testid="node-editor-under-construction">
               <Icon as={LuConstruction} boxSize={100} />
             </AbsoluteCenter>
           )}
         </DrawerBody>
         <DrawerFooter borderTopWidth="1px">
           {isEditorValid && (
-            <Flex flexGrow={1} justifyContent={'flex-end'}>
-              <Button variant={'primary'} type="submit" form="datahub-node-form">
+            <Flex flexGrow={1} justifyContent="flex-end">
+              <Button variant="primary" type="submit" form="datahub-node-form">
                 {t('workspace.panel.submit')}
               </Button>
             </Flex>

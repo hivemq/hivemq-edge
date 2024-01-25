@@ -28,9 +28,9 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
       <NodeWrapper route={`node/${DataHubNodeType.OPERATION}/${id}`} {...props}>
         <HStack>
           <NodeIcon type={DataHubNodeType.OPERATION} />
-          <Text data-testid={'node-title'}> {t('workspace.nodes.type', { context: type })}</Text>
+          <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
           <VStack>
-            <Text data-testid={'node-model'}>{model?.functionId || t('error.noSet.select')}</Text>
+            <Text data-testid="node-model">{model?.functionId || t('error.noSet.select')}</Text>
           </VStack>
         </HStack>
       </NodeWrapper>

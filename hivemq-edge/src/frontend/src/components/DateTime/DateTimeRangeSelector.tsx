@@ -47,7 +47,7 @@ const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max, setFi
   return (
     <CreatableSelect<RangeOption>
       chakraStyles={{ menuList: (provided) => ({ ...provided, width: '200px' }) }}
-      size={'sm'}
+      size="sm"
       menuPortalTarget={document.body}
       // value={{ value: columnFilterValue, label: columnFilterValue }}
       onChange={onHandleChange}

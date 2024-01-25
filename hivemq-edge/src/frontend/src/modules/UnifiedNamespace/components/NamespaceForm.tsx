@@ -25,7 +25,7 @@ interface NamespaceFormProps {
 }
 
 const FormControlSeparator = () => (
-  <Text pt={'2.33rem'} textAlign={'center'}>
+  <Text pt="2.33rem" textAlign="center">
     {NAMESPACE_SEPARATOR}
   </Text>
 )
@@ -46,18 +46,18 @@ const NamespaceForm: FC<NamespaceFormProps> = ({ defaultValues, onSubmit }) => {
 
   return (
     <form id="namespace-form" onSubmit={handleSubmit(onSubmit)}>
-      <Flex flexDirection={'column'} gap={6}>
+      <Flex flexDirection="column" gap={6}>
         <FormControl>
-          <FormLabel htmlFor={'unifiedNamespace-preview'}>{t('unifiedNamespace.preview.label')}</FormLabel>
-          <NamespaceDisplay namespace={preview} fontSize={'sm'} />
+          <FormLabel htmlFor="unifiedNamespace-preview">{t('unifiedNamespace.preview.label')}</FormLabel>
+          <NamespaceDisplay namespace={preview} fontSize="sm" />
         </FormControl>
 
-        <Flex flexDirection={'column'} gap={4}>
+        <Flex flexDirection="column" gap={4}>
           <Grid templateColumns="repeat(2, 1fr 20px)" gap={6}>
             <FormControl isInvalid={!!errors.enterprise}>
-              <FormLabel htmlFor={'unifiedNamespace-enterprise'}>{t('unifiedNamespace.enterprise.label')}</FormLabel>
+              <FormLabel htmlFor="unifiedNamespace-enterprise">{t('unifiedNamespace.enterprise.label')}</FormLabel>
               <Input
-                id={'unifiedNamespace-enterprise'}
+                id="unifiedNamespace-enterprise"
                 {...register('enterprise', {
                   ...getRulesForProperty($ISA95ApiBean.properties.enterprise),
                 })}
@@ -69,9 +69,9 @@ const NamespaceForm: FC<NamespaceFormProps> = ({ defaultValues, onSubmit }) => {
             <FormControlSeparator />
 
             <FormControl>
-              <FormLabel htmlFor={'unifiedNamespace-site'}>{t('unifiedNamespace.site.label')}</FormLabel>
+              <FormLabel htmlFor="unifiedNamespace-site">{t('unifiedNamespace.site.label')}</FormLabel>
               <Input
-                id={'unifiedNamespace-site'}
+                id="unifiedNamespace-site"
                 {...register('site', {
                   ...getRulesForProperty($ISA95ApiBean.properties.site),
                 })}
@@ -82,9 +82,9 @@ const NamespaceForm: FC<NamespaceFormProps> = ({ defaultValues, onSubmit }) => {
             <FormControlSeparator />
 
             <FormControl>
-              <FormLabel htmlFor={'unifiedNamespace-area'}>{t('unifiedNamespace.area.label')}</FormLabel>
+              <FormLabel htmlFor="unifiedNamespace-area">{t('unifiedNamespace.area.label')}</FormLabel>
               <Input
-                id={'unifiedNamespace-area'}
+                id="unifiedNamespace-area"
                 {...register('area', {
                   ...getRulesForProperty($ISA95ApiBean.properties.area),
                 })}
@@ -95,11 +95,11 @@ const NamespaceForm: FC<NamespaceFormProps> = ({ defaultValues, onSubmit }) => {
             <FormControlSeparator />
 
             <FormControl>
-              <FormLabel htmlFor={'unifiedNamespace-productionLine'}>
+              <FormLabel htmlFor="unifiedNamespace-productionLine">
                 {t('unifiedNamespace.productionLine.label')}
               </FormLabel>
               <Input
-                id={'unifiedNamespace-productionLine'}
+                id="unifiedNamespace-productionLine"
                 {...register('productionLine', {
                   ...getRulesForProperty($ISA95ApiBean.properties.productionLine),
                 })}
@@ -110,9 +110,9 @@ const NamespaceForm: FC<NamespaceFormProps> = ({ defaultValues, onSubmit }) => {
             <FormControlSeparator />
 
             <FormControl>
-              <FormLabel htmlFor={'unifiedNamespace-workCell'}>{t('unifiedNamespace.workCell.label')}</FormLabel>
+              <FormLabel htmlFor="unifiedNamespace-workCell">{t('unifiedNamespace.workCell.label')}</FormLabel>
               <Input
-                id={'unifiedNamespace-workCell'}
+                id="unifiedNamespace-workCell"
                 {...register('workCell', {
                   ...getRulesForProperty($ISA95ApiBean.properties.workCell),
                 })}
@@ -126,7 +126,7 @@ const NamespaceForm: FC<NamespaceFormProps> = ({ defaultValues, onSubmit }) => {
           <FormLabel as="legend">{t('unifiedNamespace.options.legend')}</FormLabel>
           <Checkbox
             data-testid="unifiedNamespace-prefixAllTopics"
-            id={'unifiedNamespace-prefixAllTopics'}
+            id="unifiedNamespace-prefixAllTopics"
             {...register('prefixAllTopics', {
               ...getRulesForProperty($ISA95ApiBean.properties.prefixAllTopics),
             })}

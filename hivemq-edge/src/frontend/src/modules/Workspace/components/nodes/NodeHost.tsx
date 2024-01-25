@@ -8,7 +8,7 @@ const NodeHost: FC<NodeProps> = ({ selected, data }) => {
   const { label } = data
   return (
     <>
-      <NodeWrapper isSelected={selected} wordBreak={'break-word'} maxW={200} textAlign={'center'} p={3}>
+      <NodeWrapper isSelected={selected} wordBreak="break-word" maxW={200} textAlign="center" p={3}>
         <Text>{label}</Text>
       </NodeWrapper>
       <Handle type="target" position={Position.Top} isConnectable={false} />

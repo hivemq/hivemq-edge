@@ -26,10 +26,10 @@ const InfoPanel: FC = () => {
           variant="link"
           as={RouterLink}
           to={config.documentation.namespace}
-          target={'hivemq:docs'}
+          target="hivemq:docs"
           aria-label={t('unifiedNamespace.container.info.link') as string}
           leftIcon={<GoLinkExternal />}
-          data-testid={'namespace-info-documentation'}
+          data-testid="namespace-info-documentation"
           size="lg"
         >
           {t('unifiedNamespace.container.info.link') as string}
