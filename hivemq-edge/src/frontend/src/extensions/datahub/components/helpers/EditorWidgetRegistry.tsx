@@ -1,6 +1,8 @@
 import { RegistryWidgetsType, WidgetProps } from '@rjsf/utils'
 import { Editor } from '@monaco-editor/react'
 
+import FunctionCreatableSelect from './FunctionCreatableSelect.tsx'
+
 // eslint-disable-next-line react-refresh/only-export-components
 const MyCustomWidget = (lng: string, props: WidgetProps) => {
   return (
@@ -25,4 +27,5 @@ export const datahubRJSFWidgets: RegistryWidgetsType = {
   'application/schema+json': JSONSchemaEditor,
   'text/javascript': JavascriptEditor,
   'application/octet-stream': ProtoSchemaEditor,
+  'datahub:function-selector': FunctionCreatableSelect,
 }
