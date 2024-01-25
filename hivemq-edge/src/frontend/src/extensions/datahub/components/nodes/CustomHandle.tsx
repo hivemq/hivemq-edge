@@ -13,7 +13,7 @@ export const CustomHandle: FC<CustomHandleProps> = (props) => {
 
   const isHandleConnectable = useMemo(() => {
     if (typeof props.isConnectable === 'number') {
-      const node = nodes.find((e) => e.id === nodeId)
+      const node = nodes.find((node) => node.id === nodeId)
       if (node) {
         const connectedEdges = getConnectedEdges([node], edges)
 
