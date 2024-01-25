@@ -1,26 +1,14 @@
 import { PanelSpecs } from '@/extensions/datahub/types.ts'
+import { RJSFSchema } from '@rjsf/utils'
+
+import schema from '../__generated__/schemas/TopicFilterData.json'
 
 export const MOCK_TOPIC_FILTER_SCHEMA: PanelSpecs = {
-  schema: {
-    type: 'object',
-    description: `To start a policy, you have to indicate a topic (or a topic filter) to apply it on. This
-         is a simple way to handle this operation, until we can use the Topic Tree Selector.
-          `,
-    properties: {
-      topics: {
-        type: 'array',
-        title: 'Topic Filters',
-        description: 'Create handles on the workflow for specific topics or topic filters you want to add a policy to.',
-        items: {
-          type: 'string',
-          description: 'The full topic to use as a starting point',
-        },
-      },
-    },
-  },
+  schema: schema as RJSFSchema,
   uiSchema: {
     topics: {
       'ui:options': {
+        // TODO[NVL] Reordering the topic reorders the handles and edges are gone
         orderable: false,
       },
     },

@@ -1,6 +1,9 @@
 import { PanelSpecs } from '@/extensions/datahub/types.ts'
 import { datahubInternalFunctions } from '@/extensions/datahub/api/specs/function.ts'
 import { RJSFSchema } from '@rjsf/utils'
+import { StrictRJSFSchema } from '@rjsf/utils/src/types.ts'
+
+import schema from '../__generated__/schemas/OperationData.json'
 
 const enums = datahubInternalFunctions.map((e) => {
   const { schema, uiSchema, hasArguments, ...rest } = e
@@ -18,9 +21,27 @@ const dependencies = datahubInternalFunctions.map<RJSFSchema>((e) => {
   }
 })
 
-const definitions = datahubInternalFunctions.reduce((a, v) => ({ ...a, [v.functionId]: v.schema }), {})
+const definitions = datahubInternalFunctions.reduce((a, v) => {
+  if (!v.schema) return {}
 
-export const MOCK_OPERATION_SCHEMA: PanelSpecs = {
+  const { title, ...rest } = v.schema
+  return {
+    ...a,
+    [v.functionId]: {
+      title,
+      metadata: {
+        isTerminal: v.isTerminal,
+        hasArguments: v.hasArguments,
+        isDataOnly: v.isDataOnly,
+      },
+      ...rest,
+    },
+  }
+}, {})
+
+// @ts-ignore
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const generator: PanelSpecs = {
   schema: {
     $ref: '#/definitions/action',
     definitions: {
@@ -43,11 +64,14 @@ export const MOCK_OPERATION_SCHEMA: PanelSpecs = {
         },
       },
     },
-    // type: 'object',
-    // properties: {
-    //   action: {
-    //     $ref: '#/definitions/action',
-    //   },
-    // },
+  },
+}
+
+export const MOCK_OPERATION_SCHEMA: PanelSpecs = {
+  schema: schema as StrictRJSFSchema,
+  uiSchema: {
+    action: {
+      'ui:widget': 'datahub:function-selector',
+    },
   },
 }
