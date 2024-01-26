@@ -25,7 +25,7 @@ describe('PolicyEditor', () => {
           <Route
             path="/:policyType/:policyId"
             element={
-              <Box w={'100%'} h={'95vh'}>
+              <Box w="100%" h="95vh">
                 <PolicyEditor />
               </Box>
             }
@@ -49,7 +49,7 @@ describe('PolicyEditor', () => {
           <Route
             path="/:policyType/:policyId"
             element={
-              <Box w={'100%'} h={'95vh'}>
+              <Box w="100%" h="95vh">
                 <PolicyEditor />
               </Box>
             }

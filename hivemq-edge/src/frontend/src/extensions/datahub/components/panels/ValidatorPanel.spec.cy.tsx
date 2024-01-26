@@ -22,7 +22,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
     }}
   >
     {children}
-    <Button variant={'primary'} type="submit" form="datahub-node-form">
+    <Button variant="primary" type="submit" form="datahub-node-form">
       SUBMIT{' '}
     </Button>
   </MockStoreWrapper>
@@ -34,7 +34,7 @@ describe('ValidatorPanel', () => {
   })
 
   it('should render the fields for a Validator', () => {
-    cy.mountWithProviders(<ValidatorPanel selectedNode={'3'} />, { wrapper })
+    cy.mountWithProviders(<ValidatorPanel selectedNode="3" />, { wrapper })
 
     // first select
     cy.get('label#root_type-label').should('contain.text', 'Validator Type')
@@ -70,7 +70,7 @@ describe('ValidatorPanel', () => {
   })
 
   it('should render the error message with data not found', () => {
-    cy.mountWithProviders(<ValidatorPanel selectedNode={'not valid'} />, { wrapper })
+    cy.mountWithProviders(<ValidatorPanel selectedNode="not valid" />, { wrapper })
 
     cy.get("[role='alert']").find('div[data-status]').should('have.length', 2)
     cy.get("[role='alert']").find('div[data-status]').eq(0).should('contain.text', 'Error loading the node')
@@ -82,7 +82,7 @@ describe('ValidatorPanel', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<ValidatorPanel selectedNode={'3'} />, { wrapper })
+    cy.mountWithProviders(<ValidatorPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
     cy.percySnapshot('Component: ValidatorPanel')

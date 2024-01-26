@@ -60,7 +60,7 @@ const PolicyTable: FC = () => {
       {
         accessorKey: 'id',
         cell: (info) => (
-          <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
+          <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
             <Text>{info.getValue<string>()}</Text>
           </Skeleton>
         ),
@@ -69,7 +69,7 @@ const PolicyTable: FC = () => {
         accessorKey: 'type',
         cell: (info) => {
           return (
-            <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
+            <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
               <Text>{t('policy.type', { context: info.getValue<string>() })}</Text>
             </Skeleton>
           )
@@ -81,7 +81,7 @@ const PolicyTable: FC = () => {
         cell: (info) => {
           const matching = info.getValue<DataPolicyMatching | BehaviorPolicyMatching>()
           return (
-            <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
+            <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
               <Text>
                 {(matching as DataPolicyMatching).topicFilter || (matching as BehaviorPolicyMatching).clientIdRegex}
               </Text>
@@ -95,7 +95,7 @@ const PolicyTable: FC = () => {
         sortType: 'datetime',
         accessorFn: (row) => (row.createdAt ? DateTime.fromISO(row.createdAt).toMillis() : undefined),
         cell: (info) => (
-          <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
+          <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
             <DateTimeRenderer date={DateTime.fromMillis(info.getValue() as number)} isApprox />
           </Skeleton>
         ),
@@ -109,7 +109,7 @@ const PolicyTable: FC = () => {
           return (
             <Skeleton isLoaded={!isLoading}>
               <IconButton
-                size={'sm'}
+                size="sm"
                 onClick={() => navigate(`/datahub/${info.row.original.type}/id`)}
                 aria-label={t('policyTable.action.edit')}
                 icon={<FaEdit />}

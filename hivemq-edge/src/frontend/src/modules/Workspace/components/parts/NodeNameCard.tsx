@@ -29,30 +29,25 @@ const NodeNameCard: FC<NodeNameCardProps> = ({ selectedNode }) => {
   const EntityIcon = useMemo(() => {
     if (type === NodeTypes.BRIDGE_NODE)
       return (
-        <Icon
-          data-testid={'node-type-icon'}
-          data-nodeicon={NodeTypes.BRIDGE_NODE}
-          as={PiBridgeThin}
-          fontSize={'40px'}
-        />
+        <Icon data-testid="node-type-icon" data-nodeicon={NodeTypes.BRIDGE_NODE} as={PiBridgeThin} fontSize="40px" />
       )
-    return <Icon data-testid={'node-type-icon'} data-nodeicon={NodeTypes.ADAPTER_NODE} as={PiPlugsConnectedFill} />
+    return <Icon data-testid="node-type-icon" data-nodeicon={NodeTypes.ADAPTER_NODE} as={PiPlugsConnectedFill} />
   }, [type])
 
   return (
-    <Card size={'sm'} direction={'row'}>
+    <Card size="sm" direction="row">
       <CardBody>
         <HStack divider={<StackDivider />}>
           <VStack>
             {EntityIcon}
-            <Tag data-testid={'node-type-text'} textTransform={'uppercase'}>
+            <Tag data-testid="node-type-text" textTransform="uppercase">
               {t('workspace.device.type', { context: type })}{' '}
             </Tag>
           </VStack>
 
-          <VStack alignItems={'flex-start'}>
-            {adapterType && <Text data-testid={'node-adapter-type'}>{adapterType.name}</Text>}
-            <Text data-testid={'node-name'} noOfLines={1}>
+          <VStack alignItems="flex-start">
+            {adapterType && <Text data-testid="node-adapter-type">{adapterType.name}</Text>}
+            <Text data-testid="node-name" noOfLines={1}>
               {selectedNode.data.id}
             </Text>
           </VStack>

@@ -50,7 +50,7 @@ const ProtocolIntegrationStore: FC = () => {
 
   if (isError) {
     return (
-      <Box mt={'20%'} mx={'20%'} alignItems={'center'}>
+      <Box mt="20%" mx="20%" alignItems="center">
         <ErrorMessage
           type={error?.message}
           message={(error?.body as ProblemDetails)?.title || (t('protocolAdapter.error.loading') as string)}
@@ -71,13 +71,13 @@ const ProtocolIntegrationStore: FC = () => {
     )
 
   return (
-    <Flex flexDirection={'column'} gap={4}>
+    <Flex flexDirection="column" gap={4}>
       <Text>
         {isLoading
           ? t('protocolAdapter.loading.protocolAdapters')
           : t('protocolAdapter.protocols.description', { count: safeData.length })}{' '}
       </Text>
-      <Flex flexDirection={'row'} alignItems={'flex-start'} gap={6}>
+      <Flex flexDirection="row" alignItems="flex-start" gap={6}>
         {config.features.PROTOCOL_ADAPTER_FACET && (
           <FacetSearch items={safeData} facet={facet} onChange={handleOnSearch} isLoading={isLoading} />
         )}

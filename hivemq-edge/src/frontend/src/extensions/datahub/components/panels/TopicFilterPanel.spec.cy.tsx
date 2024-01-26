@@ -22,7 +22,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
     }}
   >
     {children}
-    <Button variant={'primary'} type="submit" form="datahub-node-form">
+    <Button variant="primary" type="submit" form="datahub-node-form">
       SUBMIT{' '}
     </Button>
   </MockStoreWrapper>
@@ -34,7 +34,7 @@ describe('TopicFilterPanel', () => {
   })
 
   it('should render the fields for a Validator', () => {
-    cy.mountWithProviders(<TopicFilterPanel selectedNode={'3'} />, { wrapper })
+    cy.mountWithProviders(<TopicFilterPanel selectedNode="3" />, { wrapper })
 
     cy.get('h2').eq(0).should('contain.text', 'Topic Filters')
     // first item
@@ -47,7 +47,7 @@ describe('TopicFilterPanel', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<TopicFilterPanel selectedNode={'3'} />, { wrapper })
+    cy.mountWithProviders(<TopicFilterPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
     cy.percySnapshot('Component: TopicFilterPanel')

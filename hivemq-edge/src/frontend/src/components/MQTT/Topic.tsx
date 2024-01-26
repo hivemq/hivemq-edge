@@ -12,7 +12,7 @@ interface TopicProps extends TagProps {
 const Topic: FC<TopicProps> = ({ topic, ...rest }) => {
   const expandedTopic = typeof topic === 'string' ? formatTopicString(topic) : topic
   return (
-    <Tag data-testid={'topic-wrapper'} {...rest} letterSpacing={'-0.05rem'}>
+    <Tag data-testid="topic-wrapper" {...rest} letterSpacing="-0.05rem">
       <TopicIcon boxSize="12px" mr={2} />
       {typeof topic === 'string' ? <TagLabel>{expandedTopic}</TagLabel> : topic}
     </Tag>

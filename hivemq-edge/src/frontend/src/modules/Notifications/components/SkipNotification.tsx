@@ -19,12 +19,12 @@ export const SkipNotification: FC<SkipNotificationProps> = ({ id }) => {
     }
   }
   return (
-    <HStack justifyContent={'flex-end'}>
+    <HStack justifyContent="flex-end">
       <Checkbox
         onChange={handleOnChange}
         colorScheme="blackAlpha"
-        borderColor={'blackAlpha.500'}
-        data-testid={'notification-skip'}
+        borderColor="blackAlpha.500"
+        data-testid="notification-skip"
       >
         {t('notifications.toast.skipNotification')}
       </Checkbox>

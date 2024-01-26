@@ -19,12 +19,12 @@ const BridgePage: FC = () => {
       title={t('bridge.title') as string}
       subtitle={t('bridge.description') as string}
       cta={
-        <Flex height={'100%'} justifyContent={'flex-end'} alignItems={'flex-end'} pb={6}>
+        <Flex height="100%" justifyContent="flex-end" alignItems="flex-end" pb={6}>
           <Button
             leftIcon={<BiAddToQueue />}
             onClick={() => navigate('/mqtt-bridges/new')}
             isDisabled={isLoading || isError}
-            variant={'primary'}
+            variant="primary"
           >
             {t('bridge.action.add')}
           </Button>

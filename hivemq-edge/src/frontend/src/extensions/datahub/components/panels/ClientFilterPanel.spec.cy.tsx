@@ -22,7 +22,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
     }}
   >
     {children}
-    <Button variant={'primary'} type="submit" form="datahub-node-form">
+    <Button variant="primary" type="submit" form="datahub-node-form">
       SUBMIT{' '}
     </Button>
   </MockStoreWrapper>
@@ -36,7 +36,7 @@ describe('ClientFilterPanel', () => {
   it('should render the fields for a Validator', () => {
     const onSubmit = cy.stub().as('onSubmit')
 
-    cy.mountWithProviders(<ClientFilterPanel selectedNode={'3'} onFormSubmit={onSubmit} />, { wrapper })
+    cy.mountWithProviders(<ClientFilterPanel selectedNode="3" onFormSubmit={onSubmit} />, { wrapper })
 
     cy.get('h2').eq(0).should('contain.text', 'Client Filters')
     // first item
@@ -61,7 +61,7 @@ describe('ClientFilterPanel', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<ClientFilterPanel selectedNode={'3'} />, { wrapper })
+    cy.mountWithProviders(<ClientFilterPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
     cy.percySnapshot('Component: ClientFilterPanel')

@@ -17,9 +17,9 @@ export const SchemaNode: FC<NodeProps<SchemaData>> = (props) => {
       <NodeWrapper route={`node/${DataHubNodeType.SCHEMA}/${id}`} {...props}>
         <HStack>
           <NodeIcon type={DataHubNodeType.SCHEMA} />
-          <Text data-testid={'node-title'}> {t('workspace.nodes.type', { context: type })}</Text>
+          <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
           <VStack>
-            <Text data-testid={'node-model'}>{data?.type || t('error.noSet.select')}</Text>
+            <Text data-testid="node-model">{data?.type || t('error.noSet.select')}</Text>
           </VStack>
         </HStack>
       </NodeWrapper>

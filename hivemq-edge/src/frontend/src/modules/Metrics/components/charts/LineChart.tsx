@@ -27,11 +27,11 @@ const LineChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, 
   const colorElement = colors[colorScheme][500]
 
   return (
-    <Box w={'100%'} {...props} role={'application'} aria-label={ariaLabel}>
+    <Box w="100%" {...props} role="application" aria-label={ariaLabel}>
       <ResponsiveLine
         useMesh
         // TODO[NVL] ResponsiveLine doesn't support aria-label; adding it to the wrapper element
-        role={'none'}
+        role="none"
         data={[
           {
             id: seriesName,

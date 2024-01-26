@@ -35,13 +35,13 @@ const SidePanel: FC = () => {
         }}
         flexDirection="column"
         w={256}
-        h={'100%'}
-        overflow={'auto'}
+        h="100%"
+        overflow="auto"
       >
         <VStack p={4} mb={4}>
           <Image src={colorMode === 'light' ? logo1 : logo2} alt={t('branding.company') as string} boxSize="100px" />
           {configuration && (
-            <Text data-testid="edge-release" fontSize="xs" textAlign={'center'}>
+            <Text data-testid="edge-release" fontSize="xs" textAlign="center">
               [ {configuration.environment?.properties?.version} ]
             </Text>
           )}
@@ -58,11 +58,11 @@ const SidePanel: FC = () => {
         </Flex>
 
         <Flex flexDirection="column" flex={1}></Flex>
-        <Flex p={4} flexDirection={'row'} alignItems={'center'} justifyContent={'space-between'} ml={2}>
+        <Flex p={4} flexDirection="row" alignItems="center" justifyContent="space-between" ml={2}>
           <Button leftIcon={<FiLogOut />} variant="link" onClick={() => auth.logout(() => navigate('/login'))}>
             {t('translation:action.logout')}
           </Button>
-          <SwitchModeButton size={'sm'} />
+          <SwitchModeButton size="sm" />
         </Flex>
       </Flex>
     </nav>

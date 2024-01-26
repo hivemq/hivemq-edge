@@ -25,7 +25,7 @@ function TitleFieldTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema
 }: TitleFieldProps<T, S>) {
   return (
     <Box id={id} mt={1} mb={4}>
-      <Heading as={'h2'} size={'lg'}>
+      <Heading as="h2" size="lg">
         {title}
       </Heading>
       <Divider />
@@ -132,7 +132,7 @@ function FieldTemplate<
           uiSchema={uiSchema}
           registry={registry}
         >
-          <FormControl variant={'hivemq'} isRequired={required} isInvalid={rawErrors && rawErrors.length > 0} mb={4}>
+          <FormControl variant="hivemq" isRequired={required} isInvalid={rawErrors && rawErrors.length > 0} mb={4}>
             {children}
           </FormControl>
         </WrapIfAdditionalTemplate>

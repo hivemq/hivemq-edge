@@ -31,10 +31,10 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
 
   return (
     <HStack
-      alignItems={'flex-end'}
+      alignItems="flex-end"
       py={1}
       // TODO[NVL] This is NOT a good approach to add a "role"; submit a PR!
-      role={'listitem'}
+      role="listitem"
     >
       <Box w="100%">{children}</Box>
       {hasToolbar && (
@@ -42,9 +42,9 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
           <ButtonGroup
             isAttached
             mb={1}
-            role={'toolbar'}
+            role="toolbar"
             // TODO[NVL] This is NOT a good approach to add a "role"; submit a PR!
-            orientation={'vertical'}
+            orientation="vertical"
           >
             {(hasMoveUp || hasMoveDown) && (
               <MoveUpButton

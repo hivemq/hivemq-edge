@@ -74,27 +74,20 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   }
 
   return (
-    <Drawer
-      variant={'hivemq'}
-      closeOnOverlayClick={false}
-      size={'lg'}
-      isOpen={isOpen}
-      placement="right"
-      onClose={onClose}
-    >
+    <Drawer variant="hivemq" closeOnOverlayClick={false} size="lg" isOpen={isOpen} placement="right" onClose={onClose}>
       <DrawerOverlay />
       <DrawerContent aria-label={t('protocolAdapter.drawer.label') as string}>
         {!schema && <LoaderSpinner />}
         {schema && (
           <>
             <DrawerCloseButton />
-            <DrawerHeader id={'adapter-instance-header'} borderBottomWidth="1px">
+            <DrawerHeader id="adapter-instance-header" borderBottomWidth="1px">
               <Text>
                 {isNewAdapter ? t('protocolAdapter.drawer.title.create') : t('protocolAdapter.drawer.title.update')}
               </Text>
               <HStack>
                 <Image boxSize="30px" objectFit="scale-down" src={logo} aria-label={name} />
-                <Text fontSize={'md'} fontWeight={'500'}>
+                <Text fontSize="md" fontWeight="500">
                   {name}
                 </Text>
               </HStack>
@@ -116,7 +109,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                     liveValidate
                     onSubmit={onValidate}
                     validator={customFormatsValidator}
-                    showErrorList={'bottom'}
+                    showErrorList="bottom"
                     onError={(errors) => console.log('XXXXXXX', errors)}
                     formData={defaultValues}
                     customValidate={customValidate(schema, allAdapters, t)}
@@ -126,8 +119,8 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
             </DrawerBody>
 
             <DrawerFooter borderTopWidth="1px">
-              <Flex flexGrow={1} justifyContent={'flex-end'}>
-                <Button variant={'primary'} type="submit" form="adapter-instance-form">
+              <Flex flexGrow={1} justifyContent="flex-end">
+                <Button variant="primary" type="submit" form="adapter-instance-form">
                   {isNewAdapter ? t('protocolAdapter.action.create') : t('protocolAdapter.action.update')}
                 </Button>
               </Flex>

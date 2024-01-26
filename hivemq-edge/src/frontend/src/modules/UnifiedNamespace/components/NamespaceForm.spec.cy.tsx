@@ -24,7 +24,7 @@ describe('NamespaceForm', () => {
     cy.mountWithProviders(
       <div>
         <NamespaceForm onSubmit={mockOnSubmit} defaultValues={MOCK_NAMESPACE} />
-        <Button variant="primary" type={'submit'} form="namespace-form" data-testid={'form-submit'}>
+        <Button variant="primary" type="submit" form="namespace-form" data-testid="form-submit">
           Submit
         </Button>
       </div>
@@ -44,7 +44,7 @@ describe('NamespaceForm', () => {
     cy.mountWithProviders(
       <div>
         <NamespaceForm onSubmit={mockOnSubmit} defaultValues={MOCK_NAMESPACE} />
-        <Button variant="primary" type={'submit'} form="namespace-form" data-testid={'form-submit'}>
+        <Button variant="primary" type="submit" form="namespace-form" data-testid="form-submit">
           Submit
         </Button>
       </div>
@@ -65,7 +65,7 @@ describe('NamespaceForm', () => {
     cy.mountWithProviders(
       <div>
         <NamespaceForm onSubmit={mockOnSubmit} defaultValues={MOCK_NAMESPACE} />
-        <Button variant="primary" type={'submit'} form="namespace-form" data-testid={'form-submit'}>
+        <Button variant="primary" type="submit" form="namespace-form" data-testid="form-submit">
           Submit
         </Button>
       </div>

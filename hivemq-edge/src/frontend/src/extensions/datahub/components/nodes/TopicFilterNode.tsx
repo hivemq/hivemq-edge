@@ -22,7 +22,7 @@ export const TopicFilterNode: FC<NodeProps<TopicFilterData>> = (props) => {
             <Text data-testid={`node-topicFilter-${id}`}> {t('workspace.nodes.type', { context: type })}</Text>
           </VStack>
         </HStack>
-        <VStack ml={6} alignItems={'flex-end'}>
+        <VStack ml={6} alignItems="flex-end">
           {data.topics?.map((t) => (
             <Topic topic={t} key={t} />
           ))}

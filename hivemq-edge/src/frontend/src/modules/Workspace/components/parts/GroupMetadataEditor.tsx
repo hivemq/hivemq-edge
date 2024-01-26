@@ -39,7 +39,7 @@ const GroupMetadataEditor: FC<GroupMetadataEditorProps> = ({ group, onSubmit }) 
   }
 
   return (
-    <Card size={'sm'}>
+    <Card size="sm">
       <Accordion allowToggle>
         <AccordionItem>
           <AccordionButton data-testid="metrics-toggle">
@@ -50,21 +50,21 @@ const GroupMetadataEditor: FC<GroupMetadataEditorProps> = ({ group, onSubmit }) 
           </AccordionButton>
 
           <AccordionPanel pb={4}>
-            <VStack gap={2} alignItems={'stretch'}>
+            <VStack gap={2} alignItems="stretch">
               <form
                 id="group-form"
                 onSubmit={handleSubmit(handleFormSubmit)}
                 style={{ display: 'flex', flexDirection: 'row', gap: '18px' }}
               >
                 <FormControl>
-                  <FormLabel htmlFor={'group-title'}>{t('workspace.grouping.editor.input-title')}</FormLabel>
-                  <Input id={'group-title'} {...register('title')} />
+                  <FormLabel htmlFor="group-title">{t('workspace.grouping.editor.input-title')}</FormLabel>
+                  <Input id="group-title" {...register('title')} />
                 </FormControl>
 
                 <FormControl as="fieldset">
                   <FormLabel as="legend">{t('workspace.grouping.editor.input-color')}</FormLabel>
                   <Controller
-                    name={`colorScheme`}
+                    name="colorScheme"
                     render={({ field }) => {
                       const { value, onChange, ...rest } = field
                       return <ColorPicker colorScheme={value} onChange={(value) => onChange(value)} {...rest} />
@@ -73,12 +73,12 @@ const GroupMetadataEditor: FC<GroupMetadataEditorProps> = ({ group, onSubmit }) 
                   />
                 </FormControl>
               </form>
-              <VStack alignItems={'end'}>
+              <VStack alignItems="end">
                 <Button
                   isDisabled={!formState.isDirty}
-                  type={'submit'}
+                  type="submit"
                   form="group-form"
-                  data-testid={'form-submit'}
+                  data-testid="form-submit"
                   mt={8}
                 >
                   {t('workspace.grouping.editor.save')}

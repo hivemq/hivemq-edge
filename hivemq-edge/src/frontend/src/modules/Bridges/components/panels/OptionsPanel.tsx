@@ -26,7 +26,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
   const getRulesForProperty = useValidationRules()
 
   return (
-    <FormControl variant={'hivemq'} flexGrow={1} display={'flex'} flexDirection={'column'} gap={4} as={'fieldset'}>
+    <FormControl variant="hivemq" flexGrow={1} display="flex" flexDirection="column" gap={4} as="fieldset">
       <FormControl isInvalid={!!errors.cleanStart}>
         <Checkbox defaultChecked {...register('cleanStart')}>
           {t('bridge.options.cleanStart.label')}
