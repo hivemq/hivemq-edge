@@ -9,5 +9,16 @@ export const MOCK_OPERATION_SCHEMA: PanelSpecs = {
     functionId: {
       'ui:widget': 'datahub:function-selector',
     },
+    formData: {
+      message: {
+        'ui:widget': 'textarea',
+      },
+      incrementBy: {
+        'ui:widget': 'updown',
+      },
+      metricName: {
+        'ui:widget': 'datahub:metric-counter',
+      },
+    },
   },
 }
