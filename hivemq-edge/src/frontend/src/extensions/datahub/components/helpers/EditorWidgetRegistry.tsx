@@ -2,6 +2,7 @@ import { RegistryWidgetsType, WidgetProps } from '@rjsf/utils'
 import { Editor } from '@monaco-editor/react'
 
 import FunctionCreatableSelect from './FunctionCreatableSelect.tsx'
+import { MetricCounterInput } from './MetricCounterInput.tsx'
 
 // eslint-disable-next-line react-refresh/only-export-components
 const MyCustomWidget = (lng: string, props: WidgetProps) => {
@@ -28,4 +29,5 @@ export const datahubRJSFWidgets: RegistryWidgetsType = {
   'text/javascript': JavascriptEditor,
   'application/octet-stream': ProtoSchemaEditor,
   'datahub:function-selector': FunctionCreatableSelect,
+  'datahub:metric-counter': MetricCounterInput,
 }

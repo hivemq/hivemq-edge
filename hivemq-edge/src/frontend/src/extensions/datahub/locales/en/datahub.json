@@ -70,7 +70,10 @@
     },
     "function": {
       "isTerminal": "[Terminal]",
-      "isDataOnly": "[Data]"
+      "isDataOnly": "[Data]",
+      "metricName": {
+        "placeholder": "metricName"
+      }
     }
   },
   "error": {
