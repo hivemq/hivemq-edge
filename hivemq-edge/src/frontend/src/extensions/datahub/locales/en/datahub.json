@@ -22,7 +22,8 @@
       "actions": "Actions"
     },
     "action": {
-      "edit": "Edit"
+      "edit": "Edit",
+      "create": "Create a new policy"
     }
   },
   "workspace": {

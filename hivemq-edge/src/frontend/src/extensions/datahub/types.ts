@@ -40,6 +40,7 @@ export interface WorkspaceAction {
 }
 
 export enum PolicyType {
+  CREATE_POLICY = 'CREATE_POLICY',
   DATA = 'DATA',
   BEHAVIOR = 'BEHAVIOR',
 }

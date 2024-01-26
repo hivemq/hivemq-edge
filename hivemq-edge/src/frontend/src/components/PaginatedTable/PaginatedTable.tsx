@@ -14,7 +14,21 @@ import {
   Row,
   useReactTable,
 } from '@tanstack/react-table'
-import { Table, Thead, Tbody, Tr, Th, Td, TableContainer, Text, Alert, VStack, Button, Icon } from '@chakra-ui/react'
+import {
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
+  Text,
+  Alert,
+  VStack,
+  Button,
+  Icon,
+  Tfoot,
+} from '@chakra-ui/react'
 
 import PaginationBar from './components/PaginationBar.tsx'
 import { Filter } from './components/Filter.tsx'
@@ -153,6 +167,17 @@ const PaginatedTable = <T,>({
                 )
               })}
           </Tbody>
+          <Tfoot>
+            {table.getFooterGroups().map((footerGroup) => (
+              <Tr key={footerGroup.id}>
+                {footerGroup.headers.map((header) => (
+                  <Th key={header.id}>
+                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.footer, header.getContext())}
+                  </Th>
+                ))}
+              </Tr>
+            ))}
+          </Tfoot>
         </Table>
       </TableContainer>
       {enablePagination && <PaginationBar table={table} pageSizes={pageSizes} />}
