@@ -115,20 +115,21 @@ export interface SchemaData {
 
 // TODO[18763] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18763/details/
 export interface FunctionDefinition {
-  functionId: string
   isTerminal?: boolean
   isDataOnly?: boolean
   hasArguments?: boolean
 }
 
-export interface FunctionSpecs extends FunctionDefinition {
+export interface FunctionSpecs {
+  functionId?: string
+  metadata?: FunctionDefinition
   schema?: RJSFSchema
   uiSchema?: UiSchema
 }
 
 export interface OperationData extends DataHubNodeData {
-  // TODO[18841] Temporary definition until functions' JSONSchema are properly defined
-  action?: FunctionDefinition | string
+  functionId?: string
+  metadata?: FunctionDefinition
   formData?: Record<string, string | number>
   core?: PolicyOperation
 }
