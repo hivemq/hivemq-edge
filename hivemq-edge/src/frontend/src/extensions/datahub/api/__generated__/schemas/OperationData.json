@@ -149,6 +149,20 @@
       "description": "Drops the MQTT packet that is currently processed",
       "properties": {}
     },
+    "datahub.transform": {
+      "title": "Transform function",
+      "description": "Javascript Transformation function",
+      "metadata": {
+        "isTerminal": false,
+        "hasArguments": true
+      },
+      "properties": {
+        "transform": {
+          "type": "string",
+          "format": "text/javascriptXXXXX"
+        }
+      }
+    },
     "functionId": {
       "properties": {
         "functionId": {
@@ -162,7 +176,8 @@
             "Serdes.serialize",
             "Metrics.Counter.increment",
             "Mqtt.disconnect",
-            "Mqtt.drop"
+            "Mqtt.drop",
+            "datahub.transform"
           ]
         }
       },
@@ -246,6 +261,16 @@
                 },
                 "formData": {
                   "$ref": "#/definitions/Mqtt.drop"
+                }
+              }
+            },
+            {
+              "properties": {
+                "functionId": {
+                  "enum": ["datahub.transform"]
+                },
+                "formData": {
+                  "$ref": "#/definitions/datahub.transform"
                 }
               }
             }
