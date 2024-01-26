@@ -39,7 +39,7 @@ export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps> = (props) => {
         <Grid
           key={`array-item-list-${idSchema.$id}`}
           // TODO[NVL] This is NOT a good approach to add a "role"; submit a PR!
-          role={'list'}
+          role="list"
         >
           <GridItem>
             {items.length > 0 &&
@@ -49,7 +49,7 @@ export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps> = (props) => {
           </GridItem>
         </Grid>
         {canAdd && (
-          <GridItem justifySelf={'flex-end'}>
+          <GridItem justifySelf="flex-end">
             <Box mt={2}>
               <AddButton
                 className="array-item-add"

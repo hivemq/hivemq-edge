@@ -12,7 +12,7 @@ const ConnectionMenu: FC<ConnectionElementProps> = ({ id, isRunning, isLoading, 
       {!isRunning && (
         <MenuItem
           isDisabled={isLoading}
-          data-testid={'device-action-start'}
+          data-testid="device-action-start"
           onClick={() => onChangeStatus?.(id, StatusTransitionCommand.command.START)}
         >
           {t('action.start')}
@@ -22,7 +22,7 @@ const ConnectionMenu: FC<ConnectionElementProps> = ({ id, isRunning, isLoading, 
       {isRunning && (
         <MenuItem
           isDisabled={isLoading}
-          data-testid={'device-action-stop'}
+          data-testid="device-action-stop"
           onClick={() => onChangeStatus?.(id, StatusTransitionCommand.command.STOP)}
         >
           {t('action.stop')}
@@ -31,7 +31,7 @@ const ConnectionMenu: FC<ConnectionElementProps> = ({ id, isRunning, isLoading, 
 
       <MenuItem
         isDisabled={isLoading || !isRunning}
-        data-testid={'device-action-restart'}
+        data-testid="device-action-restart"
         onClick={() => onChangeStatus?.(id, StatusTransitionCommand.command.RESTART)}
       >
         {t('action.restart')}

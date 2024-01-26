@@ -36,11 +36,11 @@ const ProtocolSelectorDrawer: FC<ProtocolSelectorDrawerProps> = ({ isOpen, onClo
 
   return (
     <>
-      <Drawer closeOnOverlayClick={false} size={'lg'} isOpen={isOpen} placement="right" onClose={onClose}>
+      <Drawer closeOnOverlayClick={false} size="lg" isOpen={isOpen} placement="right" onClose={onClose}>
         <DrawerOverlay />
         <DrawerContent aria-label={t('protocolAdapter.store.label') as string}>
           <DrawerCloseButton />
-          <DrawerHeader id={'adapter-selector-header'} borderBottomWidth="1px">
+          <DrawerHeader id="adapter-selector-header" borderBottomWidth="1px">
             {t('protocolAdapter.store.title.create')}
           </DrawerHeader>
 
@@ -54,7 +54,7 @@ const ProtocolSelectorDrawer: FC<ProtocolSelectorDrawerProps> = ({ isOpen, onClo
             </form>
           </DrawerBody>
           <DrawerFooter>
-            <Flex flexGrow={1} justifyContent={'flex-end'}>
+            <Flex flexGrow={1} justifyContent="flex-end">
               <Button isDisabled={!form.formState.isValid} type="submit" form="adapter-selector-form">
                 {t('protocolAdapter.action.instantiate')}
               </Button>

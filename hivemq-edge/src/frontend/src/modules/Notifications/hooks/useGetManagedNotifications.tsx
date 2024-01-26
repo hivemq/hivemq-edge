@@ -56,15 +56,15 @@ export const useGetManagedNotifications = () => {
           id: name,
           title: (
             <Text>
-              <Text as={'span'}>{t('notifications.releases.title')} </Text>
-              <Badge colorScheme={'yellow'}>{name}</Badge>
+              <Text as="span">{t('notifications.releases.title')} </Text>
+              <Badge colorScheme="yellow">{name}</Badge>
             </Text>
           ),
           description: (
             <Text>
               {t('notifications.releases.description')}{' '}
               <Link href={html_url} isExternal>
-                <ExternalLinkIcon mx="2px" mb={'4px'} /> hivemq/hivemq-edge
+                <ExternalLinkIcon mx="2px" mb="4px" /> hivemq/hivemq-edge
               </Link>
             </Text>
           ),

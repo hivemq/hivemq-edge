@@ -47,8 +47,8 @@ const ButtonBadge: FC<ButtonBadgeProps> = ({
       {...props}
     >
       {((badgeCount && !isDisabled) || !isDisabled) && (
-        <AvatarBadge borderColor="yellow.500" bg="yellow.500" boxSize="1.25em" data-testid={'buttonBadge-counter'}>
-          <Text fontSize={'.95rem'}>{badgeCount}</Text>
+        <AvatarBadge borderColor="yellow.500" bg="yellow.500" boxSize="1.25em" data-testid="buttonBadge-counter">
+          <Text fontSize=".95rem">{badgeCount}</Text>
         </AvatarBadge>
       )}
     </Avatar>

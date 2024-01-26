@@ -12,7 +12,7 @@ describe('ConnectionButton', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<ConnectionButton id={'my-id'} isRunning />)
+    cy.mountWithProviders(<ConnectionButton id="my-id" isRunning />)
     cy.checkAccessibility()
     cy.percySnapshot('Component: ConnectionButton')
   })

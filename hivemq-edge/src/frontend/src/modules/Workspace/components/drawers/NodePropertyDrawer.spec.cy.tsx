@@ -58,7 +58,7 @@ describe('NodePropertyDrawer', () => {
     cy.injectAxe()
     cy.mountWithProviders(
       <NodePropertyDrawer
-        nodeId={'adapter@fgffgf'}
+        nodeId="adapter@fgffgf"
         selectedNode={mockNode}
         isOpen={true}
         onClose={cy.stub()}

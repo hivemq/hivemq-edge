@@ -38,7 +38,7 @@ export const ColorPicker = forwardRef<ColorPickerProps, 'div'>(
           <Button
             ref={ref}
             isDisabled={isDisabled}
-            data-testid={'colorPicker-trigger'}
+            data-testid="colorPicker-trigger"
             data-color-scheme={selectedColorScheme}
             aria-label={t('ColorPicker.trigger', { scheme: selectedColorScheme }) as string}
             bg={`${selectedColorScheme}.500`}
@@ -57,26 +57,21 @@ export const ColorPicker = forwardRef<ColorPickerProps, 'div'>(
               },
             }}
           >
-            <PopoverContent
-              w="auto"
-              boxShadow="md"
-              data-testid={'colorPicker-popover'}
-              aria-label={'ColorPicker.popover'}
-            >
+            <PopoverContent w="auto" boxShadow="md" data-testid="colorPicker-popover" aria-label="ColorPicker.popover">
               <PopoverArrow backgroundColor={`${selectedColorScheme}.500`} />
               <SimpleGrid columns={1}>
                 <Flex
-                  data-testid={'colorPicker-sample'}
-                  alignItems={'center'}
-                  justifyContent={'center'}
+                  data-testid="colorPicker-sample"
+                  alignItems="center"
+                  justifyContent="center"
                   borderWidth={0}
-                  borderTopRadius={'sm'}
+                  borderTopRadius="sm"
                   h={10}
                   w="100%"
                   p={0}
-                  fontSize={'lg'}
+                  fontSize="lg"
                   bg={`${selectedColorScheme}.500`}
-                  color={'black'}
+                  color="black"
                 >
                   {selectedColorScheme}
                 </Flex>

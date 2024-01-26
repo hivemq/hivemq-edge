@@ -68,11 +68,11 @@ const UnifiedNamespaceEditor: FC<UnifiedNamespaceEditorProps> = () => {
   if (!data) return null
 
   return (
-    <Drawer closeOnOverlayClick={false} size={'lg'} isOpen={isOpen} placement="right" onClose={handleEditorOnClose}>
+    <Drawer closeOnOverlayClick={false} size="lg" isOpen={isOpen} placement="right" onClose={handleEditorOnClose}>
       <DrawerOverlay />
       <DrawerContent aria-label={t('bridge.drawer.label') as string}>
         <DrawerCloseButton />
-        <DrawerHeader id={'bridge-form-header'} borderBottomWidth="1px">
+        <DrawerHeader id="bridge-form-header" borderBottomWidth="1px">
           {t('unifiedNamespace.title') as string}
         </DrawerHeader>
 
@@ -80,7 +80,7 @@ const UnifiedNamespaceEditor: FC<UnifiedNamespaceEditorProps> = () => {
           <NamespaceForm defaultValues={data} onSubmit={handleOnSubmit} />
         </DrawerBody>
         <DrawerFooter>
-          <Button variant={'primary'} isLoading={isUploading} type="submit" form="namespace-form">
+          <Button variant="primary" isLoading={isUploading} type="submit" form="namespace-form">
             {t('unifiedNamespace.submit.label')}
           </Button>
         </DrawerFooter>

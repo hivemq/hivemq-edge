@@ -15,7 +15,7 @@ describe('SingleTopicCreatableSelect', () => {
     const mockOnChange = cy.stub().as('onChange')
 
     cy.mountWithProviders(
-      <SingleTopicCreatableSelect options={[]} isLoading={false} id={MOCK_ID} value={''} onChange={mockOnChange} />
+      <SingleTopicCreatableSelect options={[]} isLoading={false} id={MOCK_ID} value="" onChange={mockOnChange} />
     )
 
     cy.get('#my-id').click()

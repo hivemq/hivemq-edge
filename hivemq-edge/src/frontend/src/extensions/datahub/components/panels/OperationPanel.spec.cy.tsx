@@ -22,7 +22,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
     }}
   >
     {children}
-    <Button variant={'primary'} type="submit" form="datahub-node-form">
+    <Button variant="primary" type="submit" form="datahub-node-form">
       SUBMIT{' '}
     </Button>
   </MockStoreWrapper>
@@ -34,7 +34,7 @@ describe('OperationPanel', () => {
   })
 
   it('should render the fields for a Validator', () => {
-    cy.mountWithProviders(<OperationPanel selectedNode={'3'} />, { wrapper })
+    cy.mountWithProviders(<OperationPanel selectedNode="3" />, { wrapper })
 
     // first select
     cy.get('label#root_action-label').should('contain.text', 'Function')
@@ -56,7 +56,7 @@ describe('OperationPanel', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<OperationPanel selectedNode={'3'} />, { wrapper })
+    cy.mountWithProviders(<OperationPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
     cy.percySnapshot('Component: OperationPanel')

@@ -24,9 +24,9 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, route, w
 
   return (
     <Card
-      variant={'elevated'}
+      variant="elevated"
       {...(selected ? { ...selectedStyle } : {})}
-      size={'sm'}
+      size="sm"
       onClick={(event) => {
         if (internalSelection) {
           navigate(route, { state: { origin: pathname } })
