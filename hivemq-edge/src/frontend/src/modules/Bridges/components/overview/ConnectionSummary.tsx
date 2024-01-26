@@ -14,13 +14,13 @@ const ConnectionSummary: FC<BridgeConnection> = ({ host, port, clientId, localSu
   const { t } = useTranslation()
 
   return (
-    <Chakra.dl display={'grid'} gridTemplateColumns={'repeat(2, minmax(0px, 1fr))'} columnGap={4} alignItems={'center'}>
+    <Chakra.dl display="grid" gridTemplateColumns="repeat(2, minmax(0px, 1fr))" columnGap={4} alignItems="center">
       <Chakra.dt>
         <VisuallyHidden>{t('bridge.connection.host')}</VisuallyHidden>
       </Chakra.dt>
-      <Chakra.dd gridColumn={'1/ span 2'}>
+      <Chakra.dd gridColumn="1/ span 2">
         <Tooltip label={host} hasArrow placement="top">
-          <Box overflow={'hidden'} textOverflow={'ellipsis'} fontWeight={'bold'}>
+          <Box overflow="hidden" textOverflow="ellipsis" fontWeight="bold">
             {formatHost(host, 20)}
           </Box>
         </Tooltip>

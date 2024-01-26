@@ -57,8 +57,8 @@ const ChartContainer: FC<ChartContainerProps> = ({
 
   const Chart = chartType === ChartType.BAR_CHART ? BarChart : LineChart
   return (
-    <HStack alignItems={'flex-start'} gap={0} {...props} gridColumn={gridSpan ? '1 / span 2' : 'auto'}>
-      <Card size={'sm'} w={'100%'} data-testid={'chart-container'}>
+    <HStack alignItems="flex-start" gap={0} {...props} gridColumn={gridSpan ? '1 / span 2' : 'auto'}>
+      <Card size="sm" w="100%" data-testid="chart-container">
         <CardBody h={180}>
           <Chart
             h={gridSpan ? 250 : 200}
@@ -69,24 +69,24 @@ const ChartContainer: FC<ChartContainerProps> = ({
           />
         </CardBody>
       </Card>
-      <VStack ml={1} data-testid={'chart-container-toolbar'}>
+      <VStack ml={1} data-testid="chart-container-toolbar">
         {canEdit && (
           <>
             <Box flex={1}>
               <CloseButton
                 data-testid="metrics-remove"
                 aria-label={t('metrics.command.remove.ariaLabel') as string}
-                size={'sm'}
+                size="sm"
                 onClick={onClose}
               />
             </Box>
             <Box>
               <IconButton
-                variant={'ghost'}
+                variant="ghost"
                 colorScheme="gray"
                 aria-label={gridSpan ? t('metrics.command.resize.collapse') : t('metrics.command.resize.expand')}
-                size={'xs'}
-                icon={<Icon as={gridSpan ? BiCollapseHorizontal : BiExpandHorizontal} fontSize={'1rem'} />}
+                size="xs"
+                icon={<Icon as={gridSpan ? BiCollapseHorizontal : BiExpandHorizontal} fontSize="1rem" />}
                 onClick={() => setGridSpan((old) => !old)}
               />
             </Box>

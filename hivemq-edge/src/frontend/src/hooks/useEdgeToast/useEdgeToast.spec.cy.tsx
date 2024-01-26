@@ -33,11 +33,11 @@ const TestingComponent = () => {
   const { successToast, errorToast } = useEdgeToast()
   return (
     <div>
-      <Button data-testid={'trigger-success'} onClick={() => successToast({ title: 'This is a success' })}>
+      <Button data-testid="trigger-success" onClick={() => successToast({ title: 'This is a success' })}>
         successToast
       </Button>
       <Button
-        data-testid={'trigger-error'}
+        data-testid="trigger-error"
         onClick={() =>
           errorToast({ title: 'This is an error', description: 'And the error is this one' }, MOCK_API_ERROR)
         }

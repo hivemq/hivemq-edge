@@ -21,7 +21,7 @@ const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selec
   const { t } = useTranslation()
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size={'md'} onClose={onClose} variant={'hivemq'}>
+    <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} variant="hivemq">
       {/*<DrawerOverlay />*/}
       <DrawerContent>
         <DrawerCloseButton />
@@ -34,7 +34,7 @@ const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selec
             </Text>
           </Box>
         </DrawerHeader>
-        <DrawerBody display={'flex'} flexDirection={'column'} gap={6}>
+        <DrawerBody display="flex" flexDirection="column" gap={6}>
           <Metrics
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}

@@ -45,7 +45,7 @@ describe('NamespaceDisplay', () => {
 
   it('should be accessible for small size', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<NamespaceDisplay namespace={MOCK_NAMESPACE} fontSize={'sm'} />)
+    cy.mountWithProviders(<NamespaceDisplay namespace={MOCK_NAMESPACE} fontSize="sm" />)
     cy.checkAccessibility()
   })
 })

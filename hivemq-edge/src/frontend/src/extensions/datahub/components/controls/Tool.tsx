@@ -26,7 +26,7 @@ const Tool: FC<ToolProps> = ({ nodeType, isDisabled }) => {
 
   return (
     <IconButton
-      size={'lg'}
+      size="lg"
       onDragStart={onButtonDragStart}
       draggable
       isDisabled={isDisabled}

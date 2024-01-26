@@ -22,7 +22,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
     }}
   >
     {children}
-    <Button variant={'primary'} type="submit" form="datahub-node-form">
+    <Button variant="primary" type="submit" form="datahub-node-form">
       SUBMIT{' '}
     </Button>
   </MockStoreWrapper>
@@ -34,7 +34,7 @@ describe('SchemaPanel', () => {
   })
 
   it('should render the fields for a Validator', () => {
-    cy.mountWithProviders(<SchemaPanel selectedNode={'3'} />, { wrapper })
+    cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
 
     // first select
     cy.get('label#root_type-label').should('contain.text', 'Schema')
@@ -61,7 +61,7 @@ describe('SchemaPanel', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<SchemaPanel selectedNode={'3'} />, { wrapper })
+    cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
     cy.percySnapshot('Component: SchemaPanel')

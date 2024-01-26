@@ -17,14 +17,14 @@ const NamePanel: FC<BridgePanelType> = ({ form, isNewBridge = false }) => {
   const getRulesForProperty = useValidationRules()
 
   return (
-    <FormControl as={'fieldset'} variant={'hivemq'} isInvalid={!!validationErrors.id} isRequired={isNewBridge}>
+    <FormControl as="fieldset" variant="hivemq" isInvalid={!!validationErrors.id} isRequired={isNewBridge}>
       <FormLabel htmlFor="name">{t('bridge.options.id.label')}</FormLabel>
       <Input
         isDisabled={!isNewBridge}
         autoFocus
         id="name"
         type="text"
-        autoComplete={'name'}
+        autoComplete="name"
         placeholder={t('bridge.options.id.placeholder') as string}
         {...register('id', {
           ...getRulesForProperty($Bridge.properties.id),

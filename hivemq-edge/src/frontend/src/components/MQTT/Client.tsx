@@ -11,7 +11,7 @@ interface TopicProps extends TagProps {
 const Client: FC<TopicProps> = ({ client, ...rest }) => {
   const expandedTopic = typeof client === 'string' ? formatTopicString(client) : client
   return (
-    <Tag data-testid={'client-wrapper'} {...rest} letterSpacing={'-0.05rem'}>
+    <Tag data-testid="client-wrapper" {...rest} letterSpacing="-0.05rem">
       <Icon as={AiOutlineCloudServer} boxSize="18px" mr={2} />
       {typeof client === 'string' ? <TagLabel>{expandedTopic}</TagLabel> : client}
     </Tag>

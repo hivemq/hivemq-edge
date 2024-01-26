@@ -20,23 +20,23 @@ const LoginPage: FC = () => {
 
   return (
     <main>
-      <Stack minH={'100vh'} direction={{ base: 'column', md: 'row' }}>
+      <Stack minH="100vh" direction={{ base: 'column', md: 'row' }}>
         <Flex
           flex={{ base: '0', md: '3' }}
           bg={bgColour}
-          align={'center'}
-          justify={'center'}
+          align="center"
+          justify="center"
           backgroundImage={`url(${bgImage})`}
         >
           <EdgeAside />
         </Flex>
-        <Flex p={8} flex={2} align={'center'} justify={'center'} flexDirection={'column'}>
-          <Box flex={1} width={'100%'} display={{ base: 'none', md: 'inherit' }}>
+        <Flex p={8} flex={2} align="center" justify="center" flexDirection="column">
+          <Box flex={1} width="100%" display={{ base: 'none', md: 'inherit' }}>
             <Image
               src={colorMode === 'light' ? logoLight : logoDark}
               alt={t('branding.appName') as string}
-              boxSize={'50px'}
-              w={'initial'}
+              boxSize="50px"
+              w="initial"
             />
           </Box>
           <div>

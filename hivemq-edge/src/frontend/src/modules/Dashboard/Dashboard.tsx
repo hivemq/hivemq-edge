@@ -29,9 +29,9 @@ const Dashboard: FC = () => {
   return (
     <>
       <SkipNavLink>{t('translation:action.skipNavLink')}</SkipNavLink>
-      <Flex flexDirection="row" h={'100vh'} overflow={'hidden'}>
+      <Flex flexDirection="row" h="100vh" overflow="hidden">
         <SidePanel />
-        <Flex as={'main'} flexGrow={1} overflow={'auto'}>
+        <Flex as="main" flexGrow={1} overflow="auto">
           <SkipNavContent />
           <Suspense
             fallback={

@@ -102,13 +102,13 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
         )}
       </Box>
 
-      <Box width={'100%'} maxWidth={'450px'} p={3}>
-        <Heading as={'h1'} mb={6}>
+      <Box width="100%" maxWidth="450px" p={3}>
+        <Heading as="h1" mb={6}>
           {t('translation:login.title')}
         </Heading>
       </Box>
 
-      <Box p={4} width={'100%'} maxWidth={'450px'}>
+      <Box p={4} width="100%" maxWidth="450px">
         <form onSubmit={handleSubmit(onSubmit)}>
           <FormControl isInvalid={!!errors.userName} isRequired>
             <FormLabel htmlFor="username">{t('translation:login.username.label')}</FormLabel>
@@ -123,13 +123,13 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
             />
             <FormErrorMessage>{errors.userName && errors.userName.message}</FormErrorMessage>
           </FormControl>
-          <FormControl isInvalid={!!errors.password} mt={'2em'} isRequired>
+          <FormControl isInvalid={!!errors.password} mt="2em" isRequired>
             <FormLabel htmlFor="password">{t('translation:login.password.label')}</FormLabel>
             <PasswordInput
               id="password"
-              name={'password'}
+              name="password"
               placeholder={t('translation:login.password.placeholder') as string}
-              autoComplete={'current-password'}
+              autoComplete="current-password"
               register={register}
               options={{
                 required: t('translation:login.password.error.required') as string,
@@ -139,11 +139,11 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
           </FormControl>
           <Button
             data-testid="loginPage-submit"
-            width={'100%'}
-            mt={'7em'}
+            width="100%"
+            mt="7em"
             type="submit"
             isLoading={isLoading}
-            variant={'primary'}
+            variant="primary"
           >
             {t('translation:login.submit.label')}
           </Button>
@@ -151,7 +151,7 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
       </Box>
 
       {(!first?.firstUseDescription || !first?.firstUseTitle) && (
-        <Text fontFamily={'heading'} textAlign={'center'}>
+        <Text fontFamily="heading" textAlign="center">
           {t('login.password.support')}
         </Text>
       )}

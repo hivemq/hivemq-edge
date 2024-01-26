@@ -47,7 +47,7 @@ const AdapterTypeContainer: FC<ProtocolAdapter> = (adapter) => {
   return (
     <HStack>
       <Image boxSize="30px" objectFit="scale-down" src={adapter.logoUrl} aria-label={adapter.id} />
-      <Text fontSize={'md'} fontWeight={'500'}>
+      <Text fontSize="md" fontWeight="500">
         {adapter.name}
       </Text>
     </HStack>
@@ -154,7 +154,7 @@ const ProtocolAdapters: FC = () => {
               />
               {id === selectedActiveAdapter?.adapterId && (
                 <IconButton
-                  size={'sm'}
+                  size="sm"
                   ml={2}
                   onClick={() => handleViewWorkspace(id, type as string)}
                   aria-label={t('bridge.subscription.delete')}
@@ -198,7 +198,7 @@ const ProtocolAdapters: FC = () => {
 
   if (isError || isErrorAllAdapters) {
     return (
-      <Box mt={'20%'} mx={'20%'} alignItems={'center'}>
+      <Box mt="20%" mx="20%" alignItems="center">
         <ErrorMessage
           type={errorAllAdapters ? errorAllAdapters.message : error?.message}
           message={(error?.body as ProblemDetails)?.title || (t('protocolAdapter.error.loading') as string)}

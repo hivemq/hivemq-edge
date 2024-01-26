@@ -39,7 +39,7 @@ const NotificationBadge: FC = () => {
       aria-label={t('notifications.badge.ariaLabel')}
       badgeCount={notifications.length}
       isDisabled={!notifications.length}
-      icon={<Icon as={IoNotifications} fontSize={'2xl'} />}
+      icon={<Icon as={IoNotifications} fontSize="2xl" />}
       onClick={handleClick}
     />
   )

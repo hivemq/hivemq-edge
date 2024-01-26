@@ -26,22 +26,22 @@ const AdapterTypeSummary: FC<AdapterTypeSummaryProps> = ({ adapter, searchQuery,
         <Image boxSize="100px" objectFit="scale-down" src={adapter.logoUrl} aria-label={adapter.id} />
       </Skeleton>
       <Box ml="3">
-        <Skeleton isLoaded={!isLoading} as={'p'}>
-          <Text fontWeight="bold" data-testid={'protocol-name'} id={`adapter-${adapter.id}`} as={'span'}>
+        <Skeleton isLoaded={!isLoading} as="p">
+          <Text fontWeight="bold" data-testid="protocol-name" id={`adapter-${adapter.id}`} as="span">
             <AdapterHighlight query={searchQuery || ''}>{adapter.name || ''}</AdapterHighlight>
           </Text>
-          <Badge ml="1" colorScheme="brand" variant={'solid'} data-testid={'protocol-version'}>
+          <Badge ml="1" colorScheme="brand" variant="solid" data-testid="protocol-version">
             {adapter.version}
           </Badge>
         </Skeleton>
         <Skeleton isLoaded={!isLoading} mt={1}>
-          <Text fontSize="sm" data-testid={'protocol-type'}>
+          <Text fontSize="sm" data-testid="protocol-type">
             {t('protocolAdapter.overview.type')} {adapter.protocol}
           </Text>
-          <Text fontSize="sm" data-testid={'protocol-author'}>
+          <Text fontSize="sm" data-testid="protocol-author">
             {t('protocolAdapter.overview.author')} {adapter.author}
           </Text>
-          <Text fontSize="sm" data-testid={'protocol-description'}>
+          <Text fontSize="sm" data-testid="protocol-description">
             <AdapterHighlight query={searchQuery || ''}>{adapter.description || ''}</AdapterHighlight>
           </Text>
         </Skeleton>

@@ -8,7 +8,7 @@ interface IconTooltipButtonProps extends Omit<IconButtonProps, 'icon'> {
 
 const IconButton: FC<IconTooltipButtonProps> = ({ 'aria-label': ariaLabel, tooltipProps, ...props }) => {
   return (
-    <Tooltip label={ariaLabel} placement={'top'} {...tooltipProps} hasArrow>
+    <Tooltip label={ariaLabel} placement="top" {...tooltipProps} hasArrow>
       <CuiIconButton aria-label={ariaLabel} {...props} />
     </Tooltip>
   )

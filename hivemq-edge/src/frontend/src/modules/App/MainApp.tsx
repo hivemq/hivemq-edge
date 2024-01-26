@@ -21,7 +21,7 @@ const MainApp: FC = () => {
           <RouterProvider router={routes} />
         </AuthProvider>
       </ChakraProvider>
-      {import.meta.env.MODE === 'development' && <ReactQueryDevtools position={'bottom-right'} initialIsOpen={false} />}
+      {import.meta.env.MODE === 'development' && <ReactQueryDevtools position="bottom-right" initialIsOpen={false} />}
     </QueryClientProvider>
   )
 }

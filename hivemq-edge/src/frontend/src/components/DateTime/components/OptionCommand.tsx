@@ -8,8 +8,8 @@ interface OptionCommandProps {
 
 const OptionCommand: FC<OptionCommandProps> = ({ data }) => {
   return (
-    <Box w={'100%'}>
-      <Button variant={'ghost'} size={'sm'} isDisabled>
+    <Box w="100%">
+      <Button variant="ghost" size="sm" isDisabled>
         {data.label}
       </Button>
     </Box>

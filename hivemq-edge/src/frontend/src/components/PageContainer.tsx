@@ -13,10 +13,10 @@ const PageContainer: FC<PageContainerProps> = ({ title, subtitle, children, cta 
   const { t } = useTranslation()
 
   return (
-    <Flex flexDirection={'column'} p={4} pt={6} flexGrow={1}>
-      <Flex gap={'50px'}>
+    <Flex flexDirection="column" p={4} pt={6} flexGrow={1}>
+      <Flex gap="50px">
         <Box maxW="50vw" pb={6}>
-          <Heading as={'h1'}>
+          <Heading as="h1">
             {title ? (
               title
             ) : (
@@ -27,7 +27,7 @@ const PageContainer: FC<PageContainerProps> = ({ title, subtitle, children, cta 
           </Heading>
           {subtitle && <Text fontSize="md">{subtitle}</Text>}
         </Box>
-        <Box flexGrow={1} alignItems={'flex-end'}>
+        <Box flexGrow={1} alignItems="flex-end">
           {cta}
         </Box>
       </Flex>

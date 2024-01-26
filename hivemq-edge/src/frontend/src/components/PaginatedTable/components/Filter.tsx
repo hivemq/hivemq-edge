@@ -42,7 +42,7 @@ export const Filter = <T,>({
     const max = Number(b)
 
     return (
-      <Box w={'100%'} textTransform={'none'} fontWeight={'initial'}>
+      <Box w="100%" textTransform="none" fontWeight="initial">
         <DateTimeRangeSelector
           min={DateTime.fromMillis(min)}
           max={DateTime.fromMillis(max)}
@@ -59,9 +59,9 @@ export const Filter = <T,>({
   if (typeof firstValue === 'number') return null
 
   return (
-    <Box w={'100%'} textTransform={'none'} fontWeight={'initial'}>
+    <Box w="100%" textTransform="none" fontWeight="initial">
       <CreatableSelect
-        size={'sm'}
+        size="sm"
         inputId={id}
         menuPortalTarget={document.body}
         // value={{ value: columnFilterValue, label: columnFilterValue }}
