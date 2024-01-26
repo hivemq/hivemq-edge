@@ -24,6 +24,7 @@ export interface PanelProps {
 export interface WorkspaceState {
   nodes: Node[]
   edges: Edge[]
+  functions: FunctionSpecs[]
 }
 
 export interface WorkspaceAction {
@@ -34,6 +35,8 @@ export interface WorkspaceAction {
   onAddNodes: (changes: NodeAddChange[]) => void
   onAddEdges: (changes: EdgeAddChange[]) => void
   onUpdateNodes: <T>(item: string, data: T) => void
+
+  onAddFunctions: (changes: FunctionSpecs[]) => void
 }
 
 export enum PolicyType {

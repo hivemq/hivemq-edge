@@ -16,13 +16,6 @@ import {
   ValidatorType,
 } from '../types.ts'
 
-export const initialFlow = () => {
-  const nodes: Node[] = []
-  const edges: Edge[] = []
-
-  return { nodes, edges }
-}
-
 export const getNodeId = () => `node_${self.crypto.randomUUID()}`
 
 export const getNodePayload = (type: string): DataHubNodeData => {
@@ -49,7 +42,7 @@ export const getNodePayload = (type: string): DataHubNodeData => {
   }
   if (type === DataHubNodeType.OPERATION) {
     const payload: OperationData = {
-      action: undefined,
+      functionId: undefined,
     }
     return payload
   }
