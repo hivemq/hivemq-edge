@@ -1,4 +1,4 @@
-import { FC, useCallback, useState } from 'react'
+import { FC, useCallback } from 'react'
 import {
   CreatableSelect,
   OptionProps,
@@ -7,9 +7,12 @@ import {
   ActionMeta,
   OnChangeValue,
 } from 'chakra-react-select'
-import { FunctionSpecs } from '@/extensions/datahub/types.ts'
 import { WidgetProps } from '@rjsf/utils'
 import { HStack, VStack, Text } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
+
+import { FunctionSpecs } from '../../types.ts'
+import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 
 const SingleValue = (props: SingleValueProps<FunctionSpecs>) => {
   return (
@@ -20,6 +23,7 @@ const SingleValue = (props: SingleValueProps<FunctionSpecs>) => {
 }
 
 const Option = (props: OptionProps<FunctionSpecs>) => {
+  const { t } = useTranslation('datahub')
   const { isSelected, ...rest } = props
   const [dd] = props.getValue()
 
@@ -29,6 +33,8 @@ const Option = (props: OptionProps<FunctionSpecs>) => {
     return <chakraComponents.Option {...props}>{props.children}</chakraComponents.Option>
   }
 
+  const { isTerminal, isDataOnly } = props.data.metadata || {}
+
   return (
     <chakraComponents.Option {...rest} isSelected={dd && dd.functionId === props.data.functionId}>
       <VStack w="100%" alignItems="stretch" gap={0}>
@@ -36,7 +42,10 @@ const Option = (props: OptionProps<FunctionSpecs>) => {
           <Text as="b" flex={1}>
             {props.data.functionId}
           </Text>
-          <Text fontSize="sm">{props.data.isTerminal ? '[Terminal]' : ''}</Text>
+          <HStack>
+            {isTerminal && <Text fontSize="sm">{t('workspace.function.isTerminal')}</Text>}
+            {isDataOnly && <Text fontSize="sm">{t('workspace.function.isDataOnly')}</Text>}
+          </HStack>
         </HStack>
         <Text fontSize="sm">{props.data.schema?.description}</Text>
       </VStack>
@@ -61,50 +70,26 @@ const getValue = (props: WidgetProps) => {
   }
 }
 
-const getFunctions = (props: WidgetProps) => {
-  const options = props.options.enumOptions
-  const defs = props.registry.rootSchema.definitions
-
-  if (!defs || !options) return []
-
-  const ret: FunctionSpecs[] = options.map((e) => {
-    const deg = defs[e.value]
-    // const {} = deg
-    if (!deg)
-      return {
-        functionId: 'unknown',
-      }
-
-    return {
-      schema: deg,
-      functionId: e.label,
-      // @ts-ignore
-      ...deg.metadata,
-    }
-  })
-
-  return ret || []
-}
-
 const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
-  const [options] = useState<FunctionSpecs[]>(getFunctions(props))
+  const { functions } = useDataHubDraftStore()
 
   const onCreatableSelectChange = useCallback<
     (newValue: OnChangeValue<FunctionSpecs, false>, actionMeta: ActionMeta<FunctionSpecs>) => void
   >(
     (newValue) => {
-      console.log('changed', newValue)
       if (newValue) props.onChange(newValue.functionId)
     },
     [props]
   )
 
+  const value = getValue(props)
+
   return (
     <>
       <CreatableSelect<FunctionSpecs, false>
         size="md"
-        options={options}
-        value={getValue(props)}
+        options={functions}
+        value={value}
         onChange={onCreatableSelectChange}
         // onCreateOption={handleCreate}
         // formatCreateLabel={(inputValue) => {
