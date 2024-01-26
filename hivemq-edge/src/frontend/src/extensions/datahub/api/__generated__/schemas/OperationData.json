@@ -1,5 +1,5 @@
 {
-  "$ref": "#/definitions/action",
+  "$ref": "#/definitions/functionId",
   "definitions": {
     "System.Log": {
       "title": "System.Log",
@@ -149,9 +149,9 @@
       "description": "Drops the MQTT packet that is currently processed",
       "properties": {}
     },
-    "action": {
+    "functionId": {
       "properties": {
-        "action": {
+        "functionId": {
           "title": "Function",
           "description": "You can use two categories of functions in your policies. Non-terminal functions allow further operations in the pipeline to be executed,\n                          while terminal functions end further operations in the pipeline",
           "enum": [
@@ -167,11 +167,11 @@
         }
       },
       "dependencies": {
-        "action": {
+        "functionId": {
           "oneOf": [
             {
               "properties": {
-                "action": {
+                "functionId": {
                   "enum": ["System.Log"]
                 },
                 "formData": {
@@ -181,7 +181,7 @@
             },
             {
               "properties": {
-                "action": {
+                "functionId": {
                   "enum": ["Delivery.redirectTo"]
                 },
                 "formData": {
@@ -191,7 +191,7 @@
             },
             {
               "properties": {
-                "action": {
+                "functionId": {
                   "enum": ["Mqtt.UserProperties.add"]
                 },
                 "formData": {
@@ -201,7 +201,7 @@
             },
             {
               "properties": {
-                "action": {
+                "functionId": {
                   "enum": ["Serdes.deserialize"]
                 },
                 "formData": {
@@ -211,7 +211,7 @@
             },
             {
               "properties": {
-                "action": {
+                "functionId": {
                   "enum": ["Serdes.serialize"]
                 },
                 "formData": {
@@ -221,7 +221,7 @@
             },
             {
               "properties": {
-                "action": {
+                "functionId": {
                   "enum": ["Metrics.Counter.increment"]
                 },
                 "formData": {
@@ -231,7 +231,7 @@
             },
             {
               "properties": {
-                "action": {
+                "functionId": {
                   "enum": ["Mqtt.disconnect"]
                 },
                 "formData": {
@@ -241,7 +241,7 @@
             },
             {
               "properties": {
-                "action": {
+                "functionId": {
                   "enum": ["Mqtt.drop"]
                 },
                 "formData": {
