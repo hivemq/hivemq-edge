@@ -16,11 +16,11 @@ const NodeWrapper: FC<NodeWrapperProps> = ({ children, isSelected = false, ...re
 
   return (
     <Card
-      variant={'elevated'}
+      variant="elevated"
       // colorScheme={'green'}
       p={6}
-      rounded={'md'}
-      border={`1px`}
+      rounded="md"
+      border="1px"
       // borderColor={'#bec3c9'}
       // backgroundColor={colors.white}
       // _hover={{ bg: '#ebedf0' }}

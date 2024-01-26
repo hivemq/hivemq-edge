@@ -58,15 +58,15 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
 
   return (
     <>
-      <VStack spacing={4} align="stretch" mt={4} role={'list'}>
+      <VStack spacing={4} align="stretch" mt={4} role="list">
         {fields.map((field, index) => {
           const maxQoS = form.watch(`${type}.${index}.maxQoS`)
           const isQoSValidForPersistence = maxQoS.toString() === '1' || maxQoS.toString() == '2'
           return (
-            <Card shadow="xs" flexDirection={'column'} key={field.id} role={'listitem'}>
+            <Card shadow="xs" flexDirection="column" key={field.id} role="listitem">
               <HStack>
                 <CardBody>
-                  <Flex gap={4} flexDirection={'column'}>
+                  <Flex gap={4} flexDirection="column">
                     <FormControl
                       data-testid={`${type}.${index}.filters`}
                       isInvalid={!!errors[type]?.[index]?.filters}
@@ -140,7 +140,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                     </FormControl>
                   </Flex>
                 </CardBody>
-                <CardHeader alignSelf={'flex-start'}>
+                <CardHeader alignSelf="flex-start">
                   <ButtonGroup size="sm" isAttached variant="outline">
                     <IconButton
                       onClick={() => remove(index)}
@@ -229,7 +229,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
                                   // options={[{ value: 'ddfd', label: 'fgg' }]}
                                   // menuIsOpen={false}
                                   isClearable={true}
-                                  placeholder={'add topic'}
+                                  placeholder="add topic"
                                   isMulti={true}
                                   components={{
                                     DropdownIndicator: null,
@@ -265,7 +265,7 @@ const SubscriptionsPanel: FC<BridgeSubscriptionsProps> = ({ form, type }) => {
       </VStack>
       <Box mt={4}>
         <IconButton
-          data-testid={'bridge-subscription-add'}
+          data-testid="bridge-subscription-add"
           isDisabled={!!errors[type]}
           aria-label={t('bridge.subscription.add')}
           icon={<AddIcon />}

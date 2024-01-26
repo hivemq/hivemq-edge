@@ -26,7 +26,7 @@ const NodeListener: FC<NodeProps<Listener>> = ({ selected, data }) => {
         p={2}
         borderRadius={60}
         backgroundColor={selected ? '#dddfe2' : 'white'}
-        alignContent={'center'}
+        alignContent="center"
         sx={{
           _dark: {
             backgroundColor: selected ? '#dddfe2' : 'lightslategrey',

@@ -9,7 +9,7 @@ const MOCK_ID = 'my-id'
 
 const Wrapper: FC<PropsWithChildren> = ({ children }) => (
   <Menu>
-    <MenuButton data-testid={'mock-trigger'}>my custom menu</MenuButton>
+    <MenuButton data-testid="mock-trigger">my custom menu</MenuButton>
     <MenuList>{children}</MenuList>
   </Menu>
 )
@@ -23,7 +23,7 @@ describe('ConnectionMenu', () => {
     cy.injectAxe()
     cy.mountWithProviders(
       <Wrapper>
-        <ConnectionMenu id={'my-id'} isRunning />
+        <ConnectionMenu id="my-id" isRunning />
       </Wrapper>
     )
     cy.checkAccessibility()
@@ -36,7 +36,7 @@ describe('ConnectionMenu', () => {
 
     cy.mountWithProviders(
       <Wrapper>
-        <ConnectionMenu id={'my-id'} isRunning onChangeStatus={onChangeStatus} />
+        <ConnectionMenu id="my-id" isRunning onChangeStatus={onChangeStatus} />
       </Wrapper>
     )
 
@@ -53,7 +53,7 @@ describe('ConnectionMenu', () => {
 
     cy.mountWithProviders(
       <Wrapper>
-        <ConnectionMenu id={'my-id'} isRunning={false} onChangeStatus={onChangeStatus} />
+        <ConnectionMenu id="my-id" isRunning={false} onChangeStatus={onChangeStatus} />
       </Wrapper>
     )
 
@@ -70,7 +70,7 @@ describe('ConnectionMenu', () => {
 
     cy.mountWithProviders(
       <Wrapper>
-        <ConnectionMenu id={'my-id'} isRunning={false} onChangeStatus={onChangeStatus} />
+        <ConnectionMenu id="my-id" isRunning={false} onChangeStatus={onChangeStatus} />
       </Wrapper>
     )
 
@@ -85,7 +85,7 @@ describe('ConnectionMenu', () => {
 
     cy.mountWithProviders(
       <Wrapper>
-        <ConnectionMenu id={'my-id'} isRunning={true} onChangeStatus={onChangeStatus} />
+        <ConnectionMenu id="my-id" isRunning={true} onChangeStatus={onChangeStatus} />
       </Wrapper>
     )
 
@@ -99,7 +99,7 @@ describe('ConnectionMenu', () => {
   it('should render disable states when isLoading (running)', () => {
     cy.mountWithProviders(
       <Wrapper>
-        <ConnectionMenu id={'my-id'} isRunning isLoading />
+        <ConnectionMenu id="my-id" isRunning isLoading />
       </Wrapper>
     )
 
@@ -110,7 +110,7 @@ describe('ConnectionMenu', () => {
   it('should render disable states when isLoading (not running)', () => {
     cy.mountWithProviders(
       <Wrapper>
-        <ConnectionMenu id={'my-id'} isRunning={false} isLoading />
+        <ConnectionMenu id="my-id" isRunning={false} isLoading />
       </Wrapper>
     )
 

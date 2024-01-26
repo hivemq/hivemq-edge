@@ -65,17 +65,17 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
       <NodeToolbar
         isVisible={selected}
         position={Position.Top}
-        role={'toolbar'}
+        role="toolbar"
         aria-controls={`node-group-${id}`}
         aria-label={t('workspace.grouping.toolbar.aria-label', { id }) as string}
         style={{ display: 'flex', gap: '12px' }}
       >
-        <ButtonGroup size="sm" isAttached variant="outline" colorScheme={'gray'}>
-          <Button data-testid={'node-group-toolbar-expand'} onClick={handleToggle}>
+        <ButtonGroup size="sm" isAttached variant="outline" colorScheme="gray">
+          <Button data-testid="node-group-toolbar-expand" onClick={handleToggle}>
             {!data.isOpen ? t('workspace.grouping.command.expand') : t('workspace.grouping.command.collapse')}
           </Button>
           <IconButton
-            data-testid={'node-group-toolbar-ungroup'}
+            data-testid="node-group-toolbar-ungroup"
             icon={<Icon as={ImUngroup} boxSize={5} />}
             aria-label={t('workspace.grouping.command.ungroup')}
             onClick={onConfirmUngroup}
@@ -84,8 +84,8 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
         <IconButton
           size="sm"
           variant="solid"
-          colorScheme={'gray'}
-          data-testid={'node-group-toolbar-panel'}
+          colorScheme="gray"
+          data-testid="node-group-toolbar-panel"
           icon={<Icon as={LuPanelRightOpen} boxSize={5} />}
           aria-label={t('workspace.grouping.command.overview')}
           onClick={onContextMenu}
@@ -103,18 +103,18 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
 
       <Box
         id={`node-group-${id}`}
-        w={'100%'}
-        h={'100%'}
+        w="100%"
+        h="100%"
         backgroundColor={
           data.isOpen ? undefined : data.colorScheme ? colors[data.colorScheme][isLight ? 50 : 900] : colors.red[50]
         }
         borderColor={data.colorScheme ? colors[data.colorScheme][500] : colors.red[50]}
         borderWidth={1}
-        borderStyle={'solid'}
+        borderStyle="solid"
         onDoubleClick={onContextMenu}
         onContextMenu={onContextMenu}
       >
-        <Text m={2} colorScheme={'black'}>
+        <Text m={2} colorScheme="black">
           {data.title}
         </Text>
       </Box>

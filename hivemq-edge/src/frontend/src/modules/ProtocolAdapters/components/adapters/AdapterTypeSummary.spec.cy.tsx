@@ -27,20 +27,20 @@ describe('AdapterTypeSummary', () => {
   })
 
   it('should render the in-text search highlight', () => {
-    cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} searchQuery={'traffic from an edge'} />)
+    cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} searchQuery="traffic from an edge" />)
 
     cy.getByTestId('protocol-description').find('mark').should('contain.text', 'traffic from an edge')
   })
 
   it('should render the in-text search highlight', () => {
-    cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} searchQuery={'Simulated Edge'} />)
+    cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} searchQuery="Simulated Edge" />)
 
     cy.getByTestId('protocol-name').find('mark').should('contain.text', 'Simulated Edge')
   })
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} searchQuery={'traffic from an edge'} />)
+    cy.mountWithProviders(<AdapterTypeSummary adapter={mockProtocolAdapter} searchQuery="traffic from an edge" />)
     cy.checkAccessibility()
     cy.percySnapshot('Component: AdapterTypeSummary')
   })

@@ -45,10 +45,10 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, role, ...props
   )
 
   return (
-    <Card overflow="hidden" aria-labelledby={'bridge-name'} role={role}>
+    <Card overflow="hidden" aria-labelledby="bridge-name" role={role}>
       <CardHeader>
-        <Skeleton isLoaded={!isLoading} display={'flex'}>
-          <Heading size="md" flex={1} m={'auto'} data-testid={'bridge-name'} id={'bridge-name'}>
+        <Skeleton isLoaded={!isLoading} display="flex">
+          <Heading size="md" flex={1} m="auto" data-testid="bridge-name" id="bridge-name">
             {props.id}
           </Heading>
           <Box>
@@ -71,7 +71,7 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, role, ...props
         </HStack>
       </CardBody>
       <CardFooter>
-        <Skeleton isLoaded={!isLoading} as={Flex} w={'100%'}>
+        <Skeleton isLoaded={!isLoading} as={Flex} w="100%">
           <Box flex={1}>
             <span
               style={{
@@ -85,12 +85,12 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, role, ...props
                 borderRadius: '100%',
               }}
             />
-            <Text as={'span'} mr={2}>
+            <Text as="span" mr={2}>
               {t('bridge.status.label')}
             </Text>
             <ConnectionStatusBadge status={status} />
           </Box>
-          <Flex justifyContent={'flex-end'} role={'toolbar'}>
+          <Flex justifyContent="flex-end" role="toolbar">
             <ConnectionController type={DeviceTypes.BRIDGE} id={props.id} status={props.status} />
           </Flex>
         </Skeleton>

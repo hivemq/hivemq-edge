@@ -69,7 +69,7 @@ export const ObjectFieldTemplate = <
             const filteredProps = properties.filter((p) => e.properties.includes(p.name))
             if (!filteredProps.length) return null
             return (
-              <TabPanel key={e.id} p={0} pt={'1px'} mb={6}>
+              <TabPanel key={e.id} p={0} pt="1px" mb={6}>
                 <>
                   {filteredProps.map((prop) => (
                     <Box _first={{ marginTop: '24px' }} _notLast={{ marginBottom: '24px' }} key={prop.content.key}>

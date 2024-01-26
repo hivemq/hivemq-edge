@@ -61,21 +61,21 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
 
   return (
     <Flex
-      flexDirection={'column'}
+      flexDirection="column"
       gap={4}
-      maxW={'250px'}
-      minW={'fit-content'}
+      maxW="250px"
+      minW="fit-content"
       role="region"
       aria-label={t('protocolAdapter.facet.description') as string}
     >
-      <FormControl role={'search'}>
+      <FormControl role="search">
         <FormLabel>{t('protocolAdapter.facet.search.label')}</FormLabel>
         <InputGroup>
           <InputLeftElement pointerEvents="none">
             <SearchIcon />
           </InputLeftElement>
           <Input
-            id={'facet-search-input'}
+            id="facet-search-input"
             placeholder={t('protocolAdapter.facet.search.placeholder') as string}
             onChange={handleChangeSearch}
             value={facet?.search || ''}
@@ -83,7 +83,7 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
           />
           <InputRightElement>
             <CloseButton
-              id={'facet-search-clear'}
+              id="facet-search-clear"
               onClick={handleClearSearch}
               aria-label={t('protocolAdapter.facet.search.clear') as string}
             />
@@ -91,19 +91,19 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
         </InputGroup>
       </FormControl>
 
-      <Flex flexDirection={'column'}>
+      <Flex flexDirection="column">
         <Box pb={4} pt={4}>
-          <List spacing={3} aria-labelledby={'facet-filter-clear'}>
+          <List spacing={3} aria-labelledby="facet-filter-clear">
             <ListItem>
               <Skeleton isLoaded={!isLoading}>
                 <Button
-                  id={`facet-filter-clear`}
-                  data-testid={`facet-filter-clear`}
-                  justifyContent={'flex-start'}
+                  id="facet-filter-clear"
+                  data-testid="facet-filter-clear"
+                  justifyContent="flex-start"
                   variant={!facet?.filter ? 'outline' : 'ghost'}
                   aria-pressed={!facet?.filter}
                   size="sm"
-                  w={'100%'}
+                  w="100%"
                   onClick={() => handleFilter(null)}
                 >
                   {t('protocolAdapter.facet.filter.allFilters')}
@@ -112,21 +112,21 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
             </ListItem>
           </List>
         </Box>
-        <Box aria-hidden={true} id={`facet-filter-category`}>
+        <Box aria-hidden={true} id="facet-filter-category">
           {t('protocolAdapter.facet.filter.category')}
         </Box>
         <Box pb={4} pt={4}>
-          <List spacing={3} aria-labelledby={'facet-filter-category'}>
+          <List spacing={3} aria-labelledby="facet-filter-category">
             {categories.map((item) => (
               <ListItem key={item.name}>
                 <Skeleton isLoaded={!isLoading}>
                   <Button
                     data-testid={`facet-filter-category-${item.name}`}
-                    justifyContent={'flex-start'}
+                    justifyContent="flex-start"
                     variant={facet?.filter?.value === item.name ? 'outline' : 'ghost'}
                     aria-pressed={facet?.filter?.value === item.name}
                     size="sm"
-                    w={'100%'}
+                    w="100%"
                     onClick={() => handleFilter({ value: item.name, key: 'category' })}
                   >
                     {item.displayName}
@@ -136,20 +136,20 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
             ))}
           </List>
         </Box>
-        <Box aria-hidden={true} id={`facet-filter-tags`}>
+        <Box aria-hidden={true} id="facet-filter-tags">
           {t('protocolAdapter.facet.filter.tags')}
         </Box>
         <Box pb={4} pt={4}>
-          <List spacing={3} aria-labelledby={'facet-filter-tags'}>
+          <List spacing={3} aria-labelledby="facet-filter-tags">
             {tags.map((item) => (
               <ListItem key={item}>
                 <Skeleton isLoaded={!isLoading}>
                   <Button
                     data-testid={`facet-filter-tag-${item}`}
-                    justifyContent={'flex-start'}
+                    justifyContent="flex-start"
                     variant={facet?.filter?.value === item ? 'outline' : 'ghost'}
                     size="sm"
-                    w={'100%'}
+                    w="100%"
                     onClick={() => handleFilter({ value: item, key: 'tags' })}
                     aria-pressed={facet?.filter?.value === item}
                   >

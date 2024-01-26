@@ -36,7 +36,7 @@ const BarChart: FC<ChartProps> = ({ data, metricName, 'aria-label': ariaLabel, c
   const colorElement = colors[colorScheme][500]
 
   return (
-    <Box w={'100%'} {...props}>
+    <Box w="100%" {...props}>
       <ResponsiveBar
         data={barSeries}
         keys={[seriesName]}

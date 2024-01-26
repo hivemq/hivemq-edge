@@ -38,13 +38,13 @@ const DateTimeRenderer: FC<DateTimeRendererProps> = ({ date, isApprox = false, i
     const relative = toHuman(date)
     return (
       <Tooltip
-        data-testid={'date-time-tooltip'}
+        data-testid="date-time-tooltip"
         hasArrow
         label={formatter.format(date.toJSDate())}
         placement="top"
-        maxW={'200px'}
+        maxW="200px"
       >
-        <Text data-testid={'date-time-approx'} width={'fit-content'} {...props}>
+        <Text data-testid="date-time-approx" width="fit-content" {...props}>
           {relative || t('DateTimeRenderer.seconds', { context: 'minus' })}
         </Text>
       </Tooltip>
@@ -52,7 +52,7 @@ const DateTimeRenderer: FC<DateTimeRendererProps> = ({ date, isApprox = false, i
   }
 
   return (
-    <Text data-testid={'date-time-full'} {...props}>
+    <Text data-testid="date-time-full" {...props}>
       {formatter.format(date.toJSDate())}
     </Text>
   )

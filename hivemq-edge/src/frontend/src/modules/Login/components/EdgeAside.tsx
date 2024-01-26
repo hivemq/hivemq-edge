@@ -17,7 +17,7 @@ const EdgeAside: FC = () => {
           <Heading
             textAlign={{ base: 'center', md: 'left' }}
             pt={{ base: '0', md: '20' }}
-            color={'white'}
+            color="white"
             lineHeight={1.1}
             display={{ base: 'none', md: 'inherit' }}
             fontSize={{ md: '6xl', lg: '7xl' }}
@@ -36,7 +36,7 @@ const EdgeAside: FC = () => {
             <Heading
               textAlign={{ base: 'center', md: 'left' }}
               pt={{ base: '0', md: '20' }}
-              color={'white'}
+              color="white"
               lineHeight={1.1}
               fontSize={{ base: 'md', sm: '2xl', md: '4xl', lg: '5xl' }}
             >
@@ -44,7 +44,7 @@ const EdgeAside: FC = () => {
             </Heading>
             <Text
               fontSize={{ base: 'md', sm: '2xl', md: '4xl' }}
-              color={'white'}
+              color="white"
               textAlign={{ base: 'center', md: 'left' }}
             >
               {t('login.aside.subheader')}
@@ -52,7 +52,7 @@ const EdgeAside: FC = () => {
           </Box>
           <Text
             fontSize={{ base: 'sm', md: 'lg' }}
-            color={'white'}
+            color="white"
             textAlign={{ base: 'center', md: 'left' }}
             mt={{ base: 0, md: 10 }}
           >

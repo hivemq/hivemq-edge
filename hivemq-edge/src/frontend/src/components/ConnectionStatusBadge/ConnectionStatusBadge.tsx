@@ -28,7 +28,7 @@ const ConnectionStatusBadge: FC<ConnectionStatusBadgeProps> = ({ status }) => {
     ]
 
   return (
-    <Badge variant="subtle" colorScheme={mapping.color} borderRadius={15} data-testid={'connection-status'}>
+    <Badge variant="subtle" colorScheme={mapping.color} borderRadius={15} data-testid="connection-status">
       {t('hivemq.connection.status', { context: mapping.text })}
     </Badge>
   )

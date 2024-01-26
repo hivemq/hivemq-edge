@@ -40,7 +40,7 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
         },
         ...workspaceLink,
         {
-          icon: <Icon as={PiBridgeThin} fontSize={'20px'} />,
+          icon: <Icon as={PiBridgeThin} fontSize="20px" />,
           href: '/mqtt-bridges',
           label: t('translation:navigation.gateway.routes.bridges') as string,
         },
@@ -71,7 +71,7 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
           label: t('translation:navigation.extensions.routes.namespace') as string,
         },
         {
-          icon: <Icon as={MdPolicy} fontSize={'16px'} />,
+          icon: <Icon as={MdPolicy} fontSize="16px" />,
           href: '/datahub',
           label: t('datahub:navigation.mainPage') as string,
         },
