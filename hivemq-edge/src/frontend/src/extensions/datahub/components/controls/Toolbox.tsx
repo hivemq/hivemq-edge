@@ -14,8 +14,8 @@ export const Toolbox = () => {
   const [hidden, setHidden] = useState(!isOpen)
 
   return (
-    <Panel position={'top-left'} style={{ margin: '5px' }}>
-      <HStack alignItems={'flex-start'}>
+    <Panel position="top-left" style={{ margin: '5px' }}>
+      <HStack alignItems="flex-start">
         <Box>
           <IconButton
             aria-label={t('workspace.toolbox.trigger', { context: !isOpen ? 'open' : 'close' })}
@@ -44,35 +44,35 @@ export const Toolbox = () => {
           <HStack
             pb={2}
             gap={5}
-            role={'group'}
+            role="group"
             aria-label={t('workspace.toolbox.aria-label') as string}
-            backgroundColor={'var(--chakra-colors-chakra-body-bg)'}
+            backgroundColor="var(--chakra-colors-chakra-body-bg)"
           >
-            <VStack pl={2} alignItems={'flex-start'}>
-              <Text id={'group-pipeline'}>{t('workspace.toolbox.group.pipeline')}</Text>
-              <ButtonGroup variant="outline" size={'sm'} aria-labelledby={'group-pipeline'}>
+            <VStack pl={2} alignItems="flex-start">
+              <Text id="group-pipeline">{t('workspace.toolbox.group.pipeline')}</Text>
+              <ButtonGroup variant="outline" size="sm" aria-labelledby="group-pipeline">
                 <Tool nodeType={DataHubNodeType.TOPIC_FILTER} />
                 <Tool nodeType={DataHubNodeType.CLIENT_FILTER} />
               </ButtonGroup>
             </VStack>
-            <VStack alignItems={'flex-start'}>
-              <Text id={'group-dataPolicy'}>{t('workspace.toolbox.group.dataPolicy')}</Text>
-              <ButtonGroup variant="outline" size={'sm'} aria-labelledby={'group-dataPolicy'}>
+            <VStack alignItems="flex-start">
+              <Text id="group-dataPolicy">{t('workspace.toolbox.group.dataPolicy')}</Text>
+              <ButtonGroup variant="outline" size="sm" aria-labelledby="group-dataPolicy">
                 <Tool nodeType={DataHubNodeType.DATA_POLICY} />
                 <Tool nodeType={DataHubNodeType.VALIDATOR} />
                 <Tool nodeType={DataHubNodeType.SCHEMA} />{' '}
               </ButtonGroup>
             </VStack>
-            <VStack alignItems={'flex-start'}>
-              <Text id={'group-behaviorPolicy'}>{t('workspace.toolbox.group.behaviorPolicy')}</Text>
-              <ButtonGroup variant="outline" size={'sm'} aria-labelledby={'group-behaviorPolicy'}>
+            <VStack alignItems="flex-start">
+              <Text id="group-behaviorPolicy">{t('workspace.toolbox.group.behaviorPolicy')}</Text>
+              <ButtonGroup variant="outline" size="sm" aria-labelledby="group-behaviorPolicy">
                 <Tool nodeType={DataHubNodeType.BEHAVIOR_POLICY} />
                 <Tool nodeType={DataHubNodeType.TRANSITION} />
               </ButtonGroup>
             </VStack>
-            <VStack alignItems={'flex-start'} pr={2}>
-              <Text id={'group-action'}>{t('workspace.toolbox.group.action')}</Text>
-              <ButtonGroup variant="outline" size={'sm'} aria-labelledby={'group-action'}>
+            <VStack alignItems="flex-start" pr={2}>
+              <Text id="group-action">{t('workspace.toolbox.group.action')}</Text>
+              <ButtonGroup variant="outline" size="sm" aria-labelledby="group-action">
                 <Tool nodeType={DataHubNodeType.OPERATION} />
               </ButtonGroup>
             </VStack>

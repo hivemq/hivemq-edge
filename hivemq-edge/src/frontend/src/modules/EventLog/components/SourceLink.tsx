@@ -31,7 +31,7 @@ const LinkWrapper: Record<TypeIdentifier.type, LinkWrapperProps> = {
     Icon: <Icon as={PiPlugsConnectedFill} mr={2} />,
   },
   [TypeIdentifier.type.BRIDGE]: {
-    Icon: <Icon as={PiBridgeThin} fontSize={'20px'} mr={2} />,
+    Icon: <Icon as={PiBridgeThin} fontSize="20px" mr={2} />,
     To: (id: string) => `/mqtt-bridges/${id}`,
   },
   [TypeIdentifier.type.EVENT]: {
@@ -47,7 +47,7 @@ const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
 
   if (!SourceType?.To)
     return (
-      <Box whiteSpace={'nowrap'} display={'inline-flex'}>
+      <Box whiteSpace="nowrap" display="inline-flex">
         {source?.identifier}
       </Box>
     )
@@ -57,8 +57,8 @@ const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
       as={ReactRouterLink}
       to={source?.identifier && SourceType.To?.(source.identifier)}
       state={type?.identifier && SourceType.State?.(type?.identifier)}
-      whiteSpace={'nowrap'}
-      display={'inline-flex'}
+      whiteSpace="nowrap"
+      display="inline-flex"
     >
       {source?.type && SourceType.Icon}
       {source?.identifier}

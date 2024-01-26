@@ -48,7 +48,7 @@ const ReactFlowWrapper = () => {
 
   return (
     <ReactFlow
-      id={'edge-workspace-canvas'}
+      id="edge-workspace-canvas"
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
@@ -61,9 +61,9 @@ const ReactFlowWrapper = () => {
       deleteKeyCode={null}
     >
       <Box
-        role={'toolbar'}
+        role="toolbar"
         aria-label={t('workspace.controls.aria-label') as string}
-        aria-controls={'edge-workspace-canvas'}
+        aria-controls="edge-workspace-canvas"
       >
         <GroupNodesControl />
         <SelectionListener />

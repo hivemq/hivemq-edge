@@ -11,7 +11,7 @@ describe('Minimap', () => {
   it('should renders properly', () => {
     cy.mountWithProviders(
       <ReactFlowProvider>
-        <Minimap position={'top-left'} />
+        <Minimap position="top-left" />
       </ReactFlowProvider>
     )
   })

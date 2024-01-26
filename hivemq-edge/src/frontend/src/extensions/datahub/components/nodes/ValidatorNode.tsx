@@ -16,10 +16,10 @@ export const ValidatorNode: FC<NodeProps<ValidatorData>> = (props) => {
       <NodeWrapper route={`node/${DataHubNodeType.VALIDATOR}/${id}`} {...props}>
         <HStack>
           <NodeIcon type={DataHubNodeType.VALIDATOR} />
-          <Text data-testid={'node-title'} w={'50%'}>
+          <Text data-testid="node-title" w="50%">
             {t('workspace.nodes.type', { context: type })}
           </Text>
-          <VStack data-testid={'node-model'}>
+          <VStack data-testid="node-model">
             <Text>{data.type}</Text>
             <Text>{data.strategy}</Text>
           </VStack>

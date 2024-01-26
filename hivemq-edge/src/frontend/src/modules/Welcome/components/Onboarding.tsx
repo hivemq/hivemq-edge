@@ -34,7 +34,7 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
       <SimpleGrid spacing={6} templateColumns="repeat(auto-fill, minmax(33vw, 10fr))">
         {data &&
           data.map((e, i) => (
-            <Card flex={1} key={e.header} as={'aside'} aria-labelledby={`heading-task-${i}`}>
+            <Card flex={1} key={e.header} as="aside" aria-labelledby={`heading-task-${i}`}>
               <CardHeader>
                 <Skeleton isLoaded={!e.isLoading}>
                   <Heading as="h3" size="md" id={`heading-task-${i}`}>

@@ -57,12 +57,12 @@ const SampleRenderer: FC<SampleRendererProps> = ({
   const colorElement = colors[colorScheme][500]
 
   return (
-    <HStack alignItems={'flex-start'} gap={0} role={role} aria-labelledby={`sample-title-${id}-${suffix}`}>
+    <HStack alignItems="flex-start" gap={0} role={role} aria-labelledby={`sample-title-${id}-${suffix}`}>
       <Stat
         variant="hivemq"
         {...rest}
-        overflowX={'hidden'}
-        h={'100%'}
+        overflowX="hidden"
+        h="100%"
         sx={{
           borderColor: colorElement,
           "dd[data-testid='metric-value']": {
@@ -70,21 +70,21 @@ const SampleRenderer: FC<SampleRendererProps> = ({
           },
         }}
       >
-        <StatLabel isTruncated h={'100%'} id={`sample-title-${id}-${suffix}`}>
-          <Tooltip label={t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')} placement={'top'}>
-            <Text textOverflow={'ellipsis'}>{t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')}</Text>
+        <StatLabel isTruncated h="100%" id={`sample-title-${id}-${suffix}`}>
+          <Tooltip label={t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')} placement="top">
+            <Text textOverflow="ellipsis">{t(`metrics.${device}.${suffix}`).replaceAll('.', ' ')}</Text>
           </Tooltip>
           <Text>{id}</Text>
         </StatLabel>
 
-        <StatNumber py={2} data-testid={`metric-value`}>
-          {isLoading && <Spinner data-testid={`metric-loader`} />}
+        <StatNumber py={2} data-testid="metric-value">
+          {isLoading && <Spinner data-testid="metric-loader" />}
           {!!error && <NotAllowedIcon color="red.100" />}
           {isNaN(n) && '-'}
           {!isNaN(n) && formatNumber.format(n)}
         </StatNumber>
         {!!change && (
-          <StatHelpText data-testid={`metric-change`}>
+          <StatHelpText data-testid="metric-change">
             <StatArrow type={change > 0 ? 'increase' : 'decrease'} />
             {formatNumber.format(Math.abs(change))}
           </StatHelpText>

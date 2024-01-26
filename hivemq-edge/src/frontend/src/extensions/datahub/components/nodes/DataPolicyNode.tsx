@@ -17,13 +17,11 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
       <NodeWrapper route={`node/${DataHubNodeType.DATA_POLICY}/${id}`} {...props}>
         <HStack>
           <NodeIcon type={DataHubNodeType.DATA_POLICY} />
-          <Text data-testid={'node-title'}> {t('workspace.nodes.type', { context: type })}</Text>
+          <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
         </HStack>
-        <VStack ml={6} alignItems={'flex-end'} data-testid={'node-model'}>
-          <Text fontSize={'xs'}>
-            {t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_SUCCESS })}
-          </Text>
-          <Text fontSize={'xs'}>{t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_ERROR })}</Text>
+        <VStack ml={6} alignItems="flex-end" data-testid="node-model">
+          <Text fontSize="xs">{t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_SUCCESS })}</Text>
+          <Text fontSize="xs">{t('workspace.handles.validation', { context: DataPolicyData.Handle.ON_ERROR })}</Text>
         </VStack>
       </NodeWrapper>
       <CustomHandle type="target" position={Position.Left} id={DataPolicyData.Handle.TOPIC_FILTER} />

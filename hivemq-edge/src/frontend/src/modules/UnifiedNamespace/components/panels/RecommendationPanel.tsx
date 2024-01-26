@@ -14,10 +14,10 @@ const RecommendationPanel = () => {
         </Heading>
       </CardHeader>
       <CardBody>
-        <Flex flexDirection={'column'}>
+        <Flex flexDirection="column">
           <Box>
-            <Text as={'span'}> {t('unifiedNamespace.container.recommend.by')}</Text>{' '}
-            <Text as={'span'} fontSize="2xl">
+            <Text as="span"> {t('unifiedNamespace.container.recommend.by')}</Text>{' '}
+            <Text as="span" fontSize="2xl">
               {t('unifiedNamespace.standard')}
             </Text>
           </Box>

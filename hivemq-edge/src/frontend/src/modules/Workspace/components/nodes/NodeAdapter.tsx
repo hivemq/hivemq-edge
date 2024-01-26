@@ -35,9 +35,9 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
         p={2}
       >
         <VStack>
-          <HStack w={'100%'}>
+          <HStack w="100%">
             <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
-            <Text flex={1} data-testid={'adapter-node-name'}>
+            <Text flex={1} data-testid="adapter-node-name">
               {adapter.id}
             </Text>
           </HStack>

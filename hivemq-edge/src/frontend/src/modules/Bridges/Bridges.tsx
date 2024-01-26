@@ -26,7 +26,7 @@ const Bridges: FC = () => {
 
   if (isError) {
     return (
-      <Box mt={'20%'} mx={'20%'} alignItems={'center'}>
+      <Box mt="20%" mx="20%" alignItems="center">
         <ErrorMessage
           type={error?.message}
           message={(error?.body as ProblemDetails)?.title || (t('bridge.error.loading') as string)}
@@ -37,7 +37,7 @@ const Bridges: FC = () => {
 
   if (isLoading) {
     return (
-      <Flex mt={8} flexDirection={'row'} flexWrap={'wrap'} gap={'20px'}>
+      <Flex mt={8} flexDirection="row" flexWrap="wrap" gap="20px">
         <BridgeCard {...mockBridge} isLoading />
       </Flex>
     )
@@ -59,11 +59,11 @@ const Bridges: FC = () => {
       spacing={4}
       templateColumns={{ base: 'repeat(1, 1fr)', lg: 'repeat(2, 1fr)', '2xl': 'repeat(3, 1fr)' }}
       gap={6}
-      role={'list'}
+      role="list"
       aria-label={t('bridge.list') as string}
     >
       {data?.map((bridge, i) => (
-        <BridgeCard key={`${bridge.id}-${i}`} {...bridge} onNavigate={handleNavigate} role={'listitem'} />
+        <BridgeCard key={`${bridge.id}-${i}`} {...bridge} onNavigate={handleNavigate} role="listitem" />
       ))}
     </SimpleGrid>
   )

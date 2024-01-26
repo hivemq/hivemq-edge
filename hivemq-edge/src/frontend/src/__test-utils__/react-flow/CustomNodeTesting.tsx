@@ -11,7 +11,7 @@ interface MockReactFlowProps {
 
 export const CustomNodeTesting: FC<MockReactFlowProps> = ({ nodeTypes, nodes }) => {
   return (
-    <Box w={'90vw'} h={'90vh'}>
+    <Box w="90vw" h="90vh">
       <ReactFlow
         nodes={nodes}
         nodeTypes={nodeTypes}

@@ -9,7 +9,7 @@ describe('IconButton', () => {
   })
 
   it('should render properly', () => {
-    cy.mountWithProviders(<IconButton id={'toolTipButton'} aria-label={'This is the button'} icon={<MdLightMode />} />)
+    cy.mountWithProviders(<IconButton id="toolTipButton" aria-label="This is the button" icon={<MdLightMode />} />)
 
     cy.get('#toolTipButton').click()
     cy.get("[role='tooltip']").should('contain.text', 'This is the button')

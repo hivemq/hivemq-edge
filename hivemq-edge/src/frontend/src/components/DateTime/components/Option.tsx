@@ -18,7 +18,7 @@ const Option: ComponentType<OptionProps<RangeOption, false, GroupBase<RangeOptio
 
   return (
     <chakraComponents.Option {...props}>
-      <HStack flexWrap={'nowrap'}>
+      <HStack flexWrap="nowrap">
         {!isOptionCreate && <OptionBadge data={props.data} />}
         <Text>{children}</Text>
       </HStack>

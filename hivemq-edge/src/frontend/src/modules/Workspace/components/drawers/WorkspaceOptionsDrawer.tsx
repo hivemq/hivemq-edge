@@ -35,7 +35,7 @@ const WorkspaceOptionsDrawer: FC = () => {
   })
 
   return (
-    <Drawer isOpen={optionDrawer.isOpen || false} placement="right" size={'md'} onClose={optionDrawer.onClose}>
+    <Drawer isOpen={optionDrawer.isOpen || false} placement="right" size="md" onClose={optionDrawer.onClose}>
       <DrawerOverlay />
       <DrawerContent>
         <DrawerCloseButton />
@@ -55,7 +55,7 @@ const WorkspaceOptionsDrawer: FC = () => {
                   setOptions((old) => ({ ...old, ...oldOptions, ...newOptions }))
                 }}
               >
-                <Stack direction={'column'}>
+                <Stack direction="column">
                   <Checkbox value="showTopics">{t('workspace.configuration.content.showTopics')}</Checkbox>
                   <Checkbox value="showStatus">{t('workspace.configuration.content.showStatus')}</Checkbox>
                   <Checkbox value="showMonitoringOnEdge">
