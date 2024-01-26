@@ -67,6 +67,10 @@
     },
     "panel": {
       "submit": "Submit"
+    },
+    "function": {
+      "isTerminal": "[Terminal]",
+      "isDataOnly": "[Data]"
     }
   },
   "error": {
