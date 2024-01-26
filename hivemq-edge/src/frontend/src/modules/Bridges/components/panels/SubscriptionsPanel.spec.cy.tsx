@@ -29,7 +29,7 @@ const TestingComponent: FC<TestingComponentProps> = ({ onSubmit, defaultValues, 
       <form id="bridge-form" onSubmit={form.handleSubmit(onSubmit)}>
         <SubscriptionsPanel form={form} type={type} />
       </form>
-      <Button variant={'primary'} type={'submit'} form="bridge-form" data-testid={'form-submit'} mt={8}>
+      <Button variant="primary" type="submit" form="bridge-form" data-testid="form-submit" mt={8}>
         Submit
       </Button>
     </div>
@@ -85,7 +85,7 @@ describe('SubscriptionsPanel', () => {
         <TestingComponent
           onSubmit={cy.stub}
           defaultValues={{ ...mockBridge, persist: true }}
-          type={'localSubscriptions'}
+          type="localSubscriptions"
         />
       )
 
@@ -101,7 +101,7 @@ describe('SubscriptionsPanel', () => {
         <TestingComponent
           onSubmit={cy.stub}
           defaultValues={{ ...mockBridge, persist: false }}
-          type={'localSubscriptions'}
+          type="localSubscriptions"
         />
       )
 
@@ -117,7 +117,7 @@ describe('SubscriptionsPanel', () => {
         <TestingComponent
           onSubmit={cy.stub}
           defaultValues={{ ...mockBridge, persist: false }}
-          type={'localSubscriptions'}
+          type="localSubscriptions"
         />
       )
 

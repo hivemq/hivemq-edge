@@ -52,7 +52,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
             <Skeleton isLoaded={!isLoading}>
               {info.row.original.payload ? (
                 <IconButton
-                  size={'sm'}
+                  size="sm"
                   mr={2}
                   onClick={() => onOpen?.(info.row.original)}
                   aria-label={t('eventLog.table.cta.open')}
@@ -68,7 +68,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
         sortType: 'datetime',
         accessorFn: (row) => DateTime.fromISO(row.created).toMillis(),
         cell: (info) => (
-          <Skeleton isLoaded={!isLoading} whiteSpace={'nowrap'}>
+          <Skeleton isLoaded={!isLoading} whiteSpace="nowrap">
             <DateTimeRenderer date={DateTime.fromMillis(info.getValue() as number)} isApprox />
           </Skeleton>
         ),
@@ -100,7 +100,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
         enableColumnFilter: false,
         cell: (info) => {
           return (
-            <Skeleton isLoaded={!isLoading} overflow={'hidden'}>
+            <Skeleton isLoaded={!isLoading} overflow="hidden">
               <Text>{info.getValue() as string}</Text>
             </Skeleton>
           )
@@ -111,7 +111,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
 
   if (error) {
     return (
-      <Box mt={'20%'} mx={'20%'} alignItems={'center'}>
+      <Box mt="20%" mx="20%" alignItems="center">
         <ErrorMessage
           type={error?.message}
           message={(error?.body as ProblemDetails)?.title || (t('eventLog.error.loading') as string)}
@@ -126,12 +126,12 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
   return (
     <>
       {variant === 'full' && (
-        <Flex justifyContent={'flex-end'}>
+        <Flex justifyContent="flex-end">
           <Button
             isLoading={isFetching}
             loadingText={t('eventLog.table.cta.refetch')}
-            variant={'outline'}
-            size={'sm'}
+            variant="outline"
+            size="sm"
             leftIcon={<Icon as={BiRefresh} fontSize={20} />}
             onClick={() => refetch()}
           >

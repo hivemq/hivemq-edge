@@ -13,14 +13,14 @@ export const NavLink: FC<{ link: MainNavLinkType }> = ({ link }) => {
   // TODO[NVL] Styling should be done in a proper theme's variant
   return (
     <Button
-      justifyContent={'flex-start'}
+      justifyContent="flex-start"
       variant={active ? 'solid' : 'ghost'}
       size="sm"
-      w={'100%'}
+      w="100%"
       as={isDisabled ? undefined : RouterLink}
       to={href}
       target={isExternal ? '_blank' : undefined}
-      h={'40px'}
+      h="40px"
       borderLeftColor={active ? '#FFC000' : '#f5f5f5'}
       borderLeftWidth={active ? 8 : 0}
       borderRadius={0}
@@ -29,7 +29,7 @@ export const NavLink: FC<{ link: MainNavLinkType }> = ({ link }) => {
         <Center w="6" h="6">
           {icon}
         </Center>
-        <Text as={'span'}>{label}</Text>
+        <Text as="span">{label}</Text>
       </HStack>
     </Button>
   )

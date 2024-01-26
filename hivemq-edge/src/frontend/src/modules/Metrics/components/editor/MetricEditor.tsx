@@ -75,12 +75,12 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
       onSubmit={handleSubmit(onSubmit)}
       style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}
     >
-      <VStack gap={2} alignItems={'flex-end'}>
+      <VStack gap={2} alignItems="flex-end">
         <FormControl>
-          <FormLabel htmlFor={'metrics-select'}>{t('metrics.editor.select-metric')}</FormLabel>
+          <FormLabel htmlFor="metrics-select">{t('metrics.editor.select-metric')}</FormLabel>
 
           <Controller
-            name={'selectedTopic'}
+            name="selectedTopic"
             control={control}
             rules={{
               required: true,
@@ -97,8 +97,8 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
                   styles={{
                     menuPortal: (provided) => ({ ...provided, zIndex: 1401 }),
                   }}
-                  id={'metrics-select-container'}
-                  inputId={'metrics-select'}
+                  id="metrics-select-container"
+                  inputId="metrics-select"
                   value={value || null}
                   onChange={(values) => onChange(values)}
                   options={sortedItems}
@@ -115,10 +115,10 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
         </FormControl>
         {!selectedChart && (
           <FormControl>
-            <FormLabel htmlFor={'chart-select'}>{t('metrics.editor.select-chart')}</FormLabel>
+            <FormLabel htmlFor="chart-select">{t('metrics.editor.select-chart')}</FormLabel>
 
             <Controller
-              name={'selectedChart'}
+              name="selectedChart"
               control={control}
               rules={{
                 required: true,
@@ -132,8 +132,8 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
                     styles={{
                       menuPortal: (provided) => ({ ...provided, zIndex: 1401 }),
                     }}
-                    id={'chart-select-container'}
-                    inputId={'chart-select'}
+                    id="chart-select-container"
+                    inputId="chart-select"
                     value={value || null}
                     onChange={(values) => onChange(values)}
                     options={chartTypeOptions}

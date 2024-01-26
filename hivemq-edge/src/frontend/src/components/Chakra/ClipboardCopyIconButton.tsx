@@ -54,15 +54,15 @@ const ClipboardCopyIconButton: FC<ClipboardCopyIconButtonProps> = ({ content, pl
         data-state={state}
         spinner={
           state === CopyStatus.ERROR ? (
-            <Icon as={VscError} fontSize={'1rem'} color="red.500" />
+            <Icon as={VscError} fontSize="1rem" color="red.500" />
           ) : (
-            <Icon as={VscCheck} fontSize={'1rem'} color="green.500" />
+            <Icon as={VscCheck} fontSize="1rem" color="green.500" />
           )
         }
         data-testid="metrics-copy"
-        size={'xs'}
-        variant={'ghost'}
-        icon={<Icon as={LuClipboardCopy} fontSize={'1rem'} />}
+        size="xs"
+        variant="ghost"
+        icon={<Icon as={LuClipboardCopy} fontSize="1rem" />}
         onClick={handleClick}
         aria-label={t('ClipboardCopyIconButton.ariaLabel')}
         {...props}

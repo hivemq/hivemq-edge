@@ -41,9 +41,9 @@ const UnifiedNamespacePage: FC = () => {
       title={t('unifiedNamespace.title') as string}
       subtitle={t('unifiedNamespace.description') as string}
       cta={
-        <Flex height={'100%'} justifyContent={'flex-end'} alignItems={'flex-end'} pb={6}>
+        <Flex height="100%" justifyContent="flex-end" alignItems="flex-end" pb={6}>
           <Button
-            variant={'primary'}
+            variant="primary"
             leftIcon={<BiPlus />}
             onClick={() => navigate('/namespace/edit')}
             isDisabled={isLoading || isError}
@@ -54,7 +54,7 @@ const UnifiedNamespacePage: FC = () => {
       }
     >
       {isError && (
-        <Box mt={'20%'} mx={'20%'} alignItems={'center'}>
+        <Box mt="20%" mx="20%" alignItems="center">
           <ErrorMessage
             type={error?.message}
             message={(error?.body as ProblemDetails)?.title || (t('unifiedNamespace.error.loading') as string)}

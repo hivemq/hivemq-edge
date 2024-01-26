@@ -24,27 +24,27 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEd
     <Menu>
       <MenuButton
         variant="outline"
-        size={'sm'}
+        size="sm"
         // Cannot have tooltip because of the popup menu
         as={IconButton}
         icon={<ChevronDownIcon />}
         aria-label={t('protocolAdapter.table.actions.label') as string}
       />
       <MenuList>
-        <ConnectionController type={DeviceTypes.ADAPTER} id={id} status={status} variant={'menuItem'} />
+        <ConnectionController type={DeviceTypes.ADAPTER} id={id} status={status} variant="menuItem" />
 
-        <MenuItem data-testid={'adapter-action-workspace'} onClick={() => onViewWorkspace?.(id, type as string)}>
+        <MenuItem data-testid="adapter-action-workspace" onClick={() => onViewWorkspace?.(id, type as string)}>
           {t('protocolAdapter.table.actions.workspace')}
         </MenuItem>
         <MenuDivider />
-        <MenuItem data-testid={'adapter-action-create'} onClick={() => onCreate?.(type as string)}>
+        <MenuItem data-testid="adapter-action-create" onClick={() => onCreate?.(type as string)}>
           {t('protocolAdapter.table.actions.create')}
         </MenuItem>
-        <MenuItem data-testid={'adapter-action-edit'} onClick={() => onEdit?.(id, type as string)}>
+        <MenuItem data-testid="adapter-action-edit" onClick={() => onEdit?.(id, type as string)}>
           {t('protocolAdapter.table.actions.edit')}
         </MenuItem>
         <MenuItem
-          data-testid={'adapter-action-delete'}
+          data-testid="adapter-action-delete"
           onClick={() => onDelete?.(id)}
           sx={{
             color: 'red.500',

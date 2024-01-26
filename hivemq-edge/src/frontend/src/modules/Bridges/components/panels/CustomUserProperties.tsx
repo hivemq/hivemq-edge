@@ -28,8 +28,8 @@ const CustomUserProperties: FC<CustomUserPropertiesProps> = ({ form, subscriptio
           {/*<TableCaption placement={'top'}>{t('bridge.subscription.type', { context: type })}</TableCaption>*/}
           <Thead>
             <Tr>
-              <Th w={'50%'}>{t('bridge.subscription.customUserProperties.headers.key')}</Th>
-              <Th w={'50%'}>{t('bridge.subscription.customUserProperties.headers.value')}</Th>
+              <Th w="50%">{t('bridge.subscription.customUserProperties.headers.key')}</Th>
+              <Th w="50%">{t('bridge.subscription.customUserProperties.headers.value')}</Th>
               <Th>{t('bridge.subscription.customUserProperties.headers.action')}</Th>
             </Tr>
           </Thead>
@@ -50,7 +50,7 @@ const CustomUserProperties: FC<CustomUserPropertiesProps> = ({ form, subscriptio
                           {...field}
                           id={`${type}.${subscriptionIndex}.customUserProperties.${index}.key`}
                           type="text"
-                          size={'sm'}
+                          size="sm"
                           placeholder={t('bridge.options.id.placeholder') as string}
                         />
                       )}
@@ -70,7 +70,7 @@ const CustomUserProperties: FC<CustomUserPropertiesProps> = ({ form, subscriptio
                           {...field}
                           id={`${type}.${subscriptionIndex}.customUserProperties.${index}.value`}
                           type="text"
-                          size={'sm'}
+                          size="sm"
                           placeholder={t('bridge.options.id.placeholder') as string}
                         />
                       )}
@@ -81,7 +81,7 @@ const CustomUserProperties: FC<CustomUserPropertiesProps> = ({ form, subscriptio
                     <ButtonGroup size="sm" isAttached variant="outline">
                       <IconButton
                         variant="outline"
-                        size={'xs'}
+                        size="xs"
                         aria-label={t('bridge.subscription.customUserProperties.actions.delete')}
                         icon={<MdRemove />}
                         onClick={() => remove(index)}
@@ -96,7 +96,7 @@ const CustomUserProperties: FC<CustomUserPropertiesProps> = ({ form, subscriptio
                 <ButtonGroup size="sm" isAttached variant="outline">
                   <IconButton
                     variant="outline"
-                    size={'xs'}
+                    size="xs"
                     aria-label={t('bridge.subscription.customUserProperties.actions.add')}
                     icon={<AddIcon />}
                     onClick={() => append({ key: '', value: '' })}

@@ -64,9 +64,9 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
   return (
     <>
       <Drawer
-        variant={'hivemq'}
+        variant="hivemq"
         closeOnOverlayClick={false}
-        size={'lg'}
+        size="lg"
         isOpen={isOpen}
         placement="right"
         onClose={onClose}
@@ -74,7 +74,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
         <DrawerOverlay />
         <DrawerContent aria-label={t('bridge.drawer.label') as string}>
           <DrawerCloseButton />
-          <DrawerHeader id={'bridge-form-header'} borderBottomWidth="1px">
+          <DrawerHeader id="bridge-form-header" borderBottomWidth="1px">
             {isNewBridge ? t('bridge.drawer.title.create') : t('bridge.drawer.title.update')}
           </DrawerHeader>
 
@@ -105,11 +105,11 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
                       <TabPanels>
                         <TabPanel px={0}>
                           <Text fontSize={{ md: 'sm' }}>{t('bridge.subscription.local.info')}</Text>
-                          <SubscriptionsPanel form={form} type={'localSubscriptions'} />
+                          <SubscriptionsPanel form={form} type="localSubscriptions" />
                         </TabPanel>
                         <TabPanel px={0}>
                           <Text fontSize={{ md: 'sm' }}>{t('bridge.subscription.remote.info')}</Text>
-                          <SubscriptionsPanel form={form} type={'remoteSubscriptions'} />
+                          <SubscriptionsPanel form={form} type="remoteSubscriptions" />
                         </TabPanel>
                       </TabPanels>
                     </Tabs>
@@ -138,11 +138,11 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
                 {t('bridge.action.delete')}
               </Button>
             )}
-            <Flex flexGrow={1} justifyContent={'flex-end'}>
+            <Flex flexGrow={1} justifyContent="flex-end">
               <Button
                 isDisabled={!form.formState.isValid}
                 isLoading={isSubmitting}
-                variant={'primary'}
+                variant="primary"
                 type="submit"
                 form="bridge-form"
               >

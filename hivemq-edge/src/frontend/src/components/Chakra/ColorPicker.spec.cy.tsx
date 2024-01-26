@@ -28,7 +28,7 @@ describe('ColorPicker', () => {
         colorScheme={mockColorScheme}
         onChange={onChange}
         colorSchemes={mockDdefaultColorSchemes}
-        ml={'75px'}
+        ml="75px"
       />
     )
 

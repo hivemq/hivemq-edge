@@ -17,7 +17,7 @@ const DataHubPage: FC = () => {
     <PageContainer title={t('page.title') as string} subtitle={t('page.description') as string}>
       {hasDataHub && <Outlet />}
       {!hasDataHub && (
-        <Box width={'100%'}>
+        <Box width="100%">
           <WarningMessage
             image={AdapterEmptyLogo}
             title={t('error.notActivated.title') as string}

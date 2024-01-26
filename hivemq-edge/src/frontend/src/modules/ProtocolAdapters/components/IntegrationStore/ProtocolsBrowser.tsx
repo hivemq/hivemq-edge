@@ -27,7 +27,7 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, i
 
   if (!filteredAdapters.length)
     return (
-      <Box width={'100%'}>
+      <Box width="100%">
         <WarningMessage
           image={AdapterEmptyLogo}
           prompt={t('protocolAdapter.noFilterWarning.description')}
@@ -42,11 +42,11 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, i
       templateColumns={{ base: 'repeat(1, 1fr)', xl: 'repeat(2, 1fr)' }}
       spacing={4}
       gap={6}
-      role={'list'}
+      role="list"
       aria-label={t('protocolAdapter.list') as string}
     >
       {filteredAdapters?.map((e) => (
-        <Card key={e.id} minW={'300px'} role={'listitem'} aria-labelledby={`adapter-${e.id}`}>
+        <Card key={e.id} minW="300px" role="listitem" aria-labelledby={`adapter-${e.id}`}>
           <CardBody p={2}>
             <AdapterTypeSummary key={e.id} adapter={e} searchQuery={facet?.search} isLoading={isLoading} />
           </CardBody>
@@ -54,8 +54,8 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, i
             <Skeleton isLoaded={!isLoading}>
               {!!e.installed && (
                 <Button
-                  data-testid={'protocol-create-adapter'}
-                  size={'sm'}
+                  data-testid="protocol-create-adapter"
+                  size="sm"
                   rightIcon={<ArrowForwardIcon />}
                   onClick={() => onCreate?.(e.id)}
                 >

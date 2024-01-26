@@ -14,7 +14,7 @@ const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeS
       {!isRunning && (
         <IconButton
           isDisabled={isLoading}
-          data-testid={'device-action-start'}
+          data-testid="device-action-start"
           aria-label={t('action.start')}
           icon={<MdPlayArrow />}
           onClick={() => onChangeStatus?.(id, StatusTransitionCommand.command.START)}
@@ -23,7 +23,7 @@ const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeS
       {isRunning && (
         <IconButton
           isDisabled={isLoading}
-          data-testid={'device-action-stop'}
+          data-testid="device-action-stop"
           aria-label={t('action.stop')}
           icon={<MdStop />}
           onClick={() => onChangeStatus?.(id, StatusTransitionCommand.command.STOP)}
@@ -31,7 +31,7 @@ const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeS
       )}
       <IconButton
         isDisabled={isLoading || !isRunning}
-        data-testid={'device-action-restart'}
+        data-testid="device-action-restart"
         aria-label={t('action.restart')}
         icon={<MdRestartAlt />}
         onClick={() => onChangeStatus?.(id, StatusTransitionCommand.command.RESTART)}

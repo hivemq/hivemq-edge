@@ -22,7 +22,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
     }}
   >
     {children}
-    <Button variant={'primary'} type="submit" form="datahub-node-form">
+    <Button variant="primary" type="submit" form="datahub-node-form">
       SUBMIT{' '}
     </Button>
   </MockStoreWrapper>
@@ -36,7 +36,7 @@ describe('BehaviorPolicyPanel', () => {
   it('should render the fields for a Validator', () => {
     const onSubmit = cy.stub().as('onSubmit')
 
-    cy.mountWithProviders(<BehaviorPolicyPanel selectedNode={'3'} onFormSubmit={onSubmit} />, { wrapper })
+    cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={onSubmit} />, { wrapper })
 
     // first select
     cy.get('label#root_type-label').should('contain.text', 'Behavior Model')
@@ -80,7 +80,7 @@ describe('BehaviorPolicyPanel', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<BehaviorPolicyPanel selectedNode={'3'} />, { wrapper })
+    cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility()
     cy.percySnapshot('Component: BehaviorPolicyPanel')

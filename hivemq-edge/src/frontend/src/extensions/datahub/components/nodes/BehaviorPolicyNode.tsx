@@ -18,11 +18,11 @@ export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => 
         <VStack>
           <HStack>
             <NodeIcon type={DataHubNodeType.BEHAVIOR_POLICY} />
-            <Text data-testid={'node-title'} w={'45%'}>
+            <Text data-testid="node-title" w="45%">
               {t('workspace.nodes.type', { context: type })}
             </Text>
             <VStack>
-              <Text data-testid={`node-model`}>{data.model || t('error.noSet.select')}</Text>
+              <Text data-testid="node-model">{data.model || t('error.noSet.select')}</Text>
             </VStack>
           </HStack>
         </VStack>

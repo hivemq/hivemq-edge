@@ -27,14 +27,14 @@ interface PaginationProps<T> {
 }
 
 const PaginationButton: FC<IconButtonProps> = (props) => (
-  <IconButton {...props} size={'sm'} fontSize={'24px'} icon={<BiSkipNext />} />
+  <IconButton {...props} size="sm" fontSize="24px" icon={<BiSkipNext />} />
 )
 
 const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
   const { t } = useTranslation()
   return (
-    <HStack as={'nav'} aria-label={t('components:pagination.ariaLabel') as string} gap={8} mt={4}>
-      <ButtonGroup isAttached variant={'ghost'}>
+    <HStack as="nav" aria-label={t('components:pagination.ariaLabel') as string} gap={8} mt={4}>
+      <ButtonGroup isAttached variant="ghost">
         <PaginationButton
           icon={<BiSkipPrevious />}
           onClick={() => table.setPageIndex(0)}
@@ -61,8 +61,8 @@ const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
         />
       </ButtonGroup>
 
-      <Box role={'group'}>
-        <Text fontSize={'md'} whiteSpace={'nowrap'}>
+      <Box role="group">
+        <Text fontSize="md" whiteSpace="nowrap">
           {t('components:pagination.pageOf', {
             page: table.getState().pagination.pageIndex + 1,
             max: table.getPageCount(),
@@ -70,11 +70,11 @@ const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
         </Text>
       </Box>
 
-      <FormControl display={'flex'} alignItems={'center'} w={'inherit'}>
+      <FormControl display="flex" alignItems="center" w="inherit">
         <FormLabel mb={0}>{t('components:pagination.goPage')}</FormLabel>
         <NumberInput
           size="sm"
-          maxWidth={'80px'}
+          maxWidth="80px"
           defaultValue={table.getState().pagination.pageIndex + 1}
           min={1}
           max={table.getPageCount()}
@@ -89,11 +89,11 @@ const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
       </FormControl>
 
       <Flex flex={1}>
-        <FormControl display={'flex'} alignItems={'baseline'} justifyContent={'flex-end'}>
+        <FormControl display="flex" alignItems="baseline" justifyContent="flex-end">
           <FormLabel> {t('components:pagination.perPage')}</FormLabel>
           <Select
-            maxWidth={'80px'}
-            size={'sm'}
+            maxWidth="80px"
+            size="sm"
             value={table.getState().pagination.pageSize}
             onChange={(e) => {
               table.setPageSize(Number(e.target.value))
