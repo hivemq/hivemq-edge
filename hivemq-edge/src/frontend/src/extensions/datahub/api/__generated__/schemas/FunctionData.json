@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "required": ["type", "name", "version"],
+  "properties": {
+    "type": {
+      "title": "Format",
+      "type": "string",
+      "enum": ["Javascript"],
+      "default": "Javascript",
+      "readOnly": true
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "format": "datahub:version"
+    },
+    "sourceCode": {
+      "title": "Source",
+      "type": "string",
+      "format": "text/javascript"
+    }
+  }
+}
