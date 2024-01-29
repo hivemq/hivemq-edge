@@ -5,6 +5,7 @@ import { NodeProps, Position } from 'reactflow'
 
 import { DataHubNodeType, ValidatorData } from '../../types.ts'
 import NodeIcon from '../helpers/NodeIcon.tsx'
+import NodeParams from '../helpers/NodeParams.tsx'
 import { NodeWrapper } from './NodeWrapper.tsx'
 import { CustomHandle } from './CustomHandle.tsx'
 
@@ -20,8 +21,8 @@ export const ValidatorNode: FC<NodeProps<ValidatorData>> = (props) => {
             {t('workspace.nodes.type', { context: type })}
           </Text>
           <VStack data-testid="node-model">
-            <Text>{data.type}</Text>
-            <Text>{data.strategy}</Text>
+            <NodeParams value={data.type} />
+            <NodeParams value={data.strategy} />
           </VStack>
         </HStack>
       </NodeWrapper>

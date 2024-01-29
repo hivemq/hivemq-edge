@@ -5,6 +5,7 @@ import { HStack, Text, VStack } from '@chakra-ui/react'
 
 import { DataHubNodeType, OperationData } from '../../types.ts'
 import NodeIcon from '../helpers/NodeIcon.tsx'
+import NodeParams from '../helpers/NodeParams.tsx'
 import { NodeWrapper } from './NodeWrapper.tsx'
 import { CustomHandle } from './CustomHandle.tsx'
 
@@ -19,8 +20,8 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
         <HStack>
           <NodeIcon type={DataHubNodeType.OPERATION} />
           <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
-          <VStack>
-            <Text data-testid="node-model">{functionId || t('error.noSet.select')}</Text>
+          <VStack data-testid="node-model">
+            <NodeParams value={functionId || t('error.noSet.select')} />
           </VStack>
         </HStack>
       </NodeWrapper>
