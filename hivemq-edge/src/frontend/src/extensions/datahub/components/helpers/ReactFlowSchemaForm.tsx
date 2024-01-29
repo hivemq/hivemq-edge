@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren } from 'react'
+import { FC } from 'react'
 import Form from '@rjsf/chakra-ui'
 import { FormProps } from '@rjsf/core'
 import {
@@ -115,35 +115,27 @@ function FieldTemplate<
   }
 
   // Change the type of wrapper based on existence of a label (indicating a field)
-  const Wrapper: FC<PropsWithChildren> = ({ children }) => {
-    if (props.displayLabel)
-      return (
-        <WrapIfAdditionalTemplate
-          classNames={classNames}
-          style={style}
-          disabled={disabled}
-          id={id}
-          label={label}
-          onDropPropertyClick={onDropPropertyClick}
-          onKeyChange={onKeyChange}
-          readonly={readonly}
-          required={required}
-          schema={schema}
-          uiSchema={uiSchema}
-          registry={registry}
-        >
-          <FormControl variant="hivemq" isRequired={required} isInvalid={rawErrors && rawErrors.length > 0} mb={4}>
-            {children}
-          </FormControl>
-        </WrapIfAdditionalTemplate>
-      )
-
-    return <Box>{children}</Box>
-  }
-
   return (
-    <Wrapper>
-      <>
+    <WrapIfAdditionalTemplate
+      classNames={classNames}
+      style={style}
+      disabled={disabled}
+      id={id}
+      label={label}
+      onDropPropertyClick={onDropPropertyClick}
+      onKeyChange={onKeyChange}
+      readonly={readonly}
+      required={required}
+      schema={schema}
+      uiSchema={uiSchema}
+      registry={registry}
+    >
+      <FormControl
+        variant={props.displayLabel ? 'hivemq' : undefined}
+        isRequired={required}
+        isInvalid={rawErrors && rawErrors.length > 0}
+        mb={4}
+      >
         {children}
         {displayLabel && rawDescription && !rawErrors.length ? (
           <Box mt={2} mb={4}>
@@ -152,8 +144,8 @@ function FieldTemplate<
         ) : null}
         {!!rawErrors.length && errors}
         {help}
-      </>
-    </Wrapper>
+      </FormControl>
+    </WrapIfAdditionalTemplate>
   )
 }
 

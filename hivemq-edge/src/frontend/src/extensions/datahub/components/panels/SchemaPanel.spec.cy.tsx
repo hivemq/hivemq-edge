@@ -54,7 +54,7 @@ describe('SchemaPanel', () => {
     cy.get('label#root_type-label + div').click()
 
     cy.get('label#root_version-label').should('contain.text', 'version')
-    cy.get('label#root_version-label + input').should('have.value', '1')
+    cy.get('label#root_version-label + div').should('contain.text', '1')
 
     cy.get('section div').should('have.attr', 'data-mode-id', 'json')
   })
