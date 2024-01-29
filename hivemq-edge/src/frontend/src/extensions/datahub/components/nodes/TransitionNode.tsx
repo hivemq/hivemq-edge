@@ -5,6 +5,7 @@ import { NodeProps, Position } from 'reactflow'
 
 import { DataHubNodeType, TransitionData } from '../../types.ts'
 import NodeIcon from '../helpers/NodeIcon.tsx'
+import NodeParams from '../helpers/NodeParams.tsx'
 import { NodeWrapper } from './NodeWrapper.tsx'
 import { CustomHandle } from './CustomHandle.tsx'
 
@@ -18,8 +19,8 @@ export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
         <HStack>
           <NodeIcon type={DataHubNodeType.TRANSITION} />
           <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
-          <VStack>
-            <Text data-testid="node-model">{data.type || t('error.noSet.select')}</Text>
+          <VStack data-testid="node-model">
+            <NodeParams value={data.type || t('error.noSet.select')} />
           </VStack>
         </HStack>
       </NodeWrapper>

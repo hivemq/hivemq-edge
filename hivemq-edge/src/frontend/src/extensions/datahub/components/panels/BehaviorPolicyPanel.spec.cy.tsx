@@ -39,20 +39,20 @@ describe('BehaviorPolicyPanel', () => {
     cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={onSubmit} />, { wrapper })
 
     // first select
-    cy.get('label#root_type-label').should('contain.text', 'Behavior Model')
-    cy.get('label#root_type-label + div').should('contain.text', 'Mqtt.events')
-    cy.get('label#root_type-label + div').click()
-    cy.get('label#root_type-label + div')
+    cy.get('label#root_model-label').should('contain.text', 'Behavior Model')
+    cy.get('label#root_model-label + div').should('contain.text', 'Mqtt.events')
+    cy.get('label#root_model-label + div').click()
+    cy.get('label#root_model-label + div')
       .find("[role='listbox']")
       .find("[role='option']")
       .eq(0)
       .should('contain.text', 'Mqtt.events')
-    cy.get('label#root_type-label + div')
+    cy.get('label#root_model-label + div')
       .find("[role='listbox']")
       .find("[role='option']")
       .eq(2)
       .should('contain.text', 'Publish.quota')
-    cy.get('label#root_type-label + div').find("[role='listbox']").find("[role='option']").eq(2).click()
+    cy.get('label#root_model-label + div').find("[role='listbox']").find("[role='option']").eq(2).click()
 
     cy.get('h2').eq(0).should('contain.text', 'Publish')
     // first item
@@ -69,7 +69,7 @@ describe('BehaviorPolicyPanel', () => {
       .should('deep.include', {
         status: 'submitted',
         formData: {
-          type: 'Publish.quota',
+          model: 'Publish.quota',
           arguments: {
             minPublishes: 0,
             maxPublishes: 10000,

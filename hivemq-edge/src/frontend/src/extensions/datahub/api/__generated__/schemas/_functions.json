@@ -1,0 +1,154 @@
+[
+  {
+    "title": "System.Log",
+    "metadata": {
+      "isTerminal": false,
+      "isDataOnly": false,
+      "hasArguments": false
+    },
+    "description": "Logs a message on the given level",
+    "required": ["level", "message"],
+    "type": "object",
+    "properties": {
+      "level": {
+        "type": "string",
+        "title": "Log Level",
+        "description": "Specifies the log level of the function in the hivemq.log file",
+        "enum": ["DEBUG", "ERROR", "WARN", "INFO", "TRACE"]
+      },
+      "message": {
+        "type": "string",
+        "title": "Message",
+        "description": "Adds a user-defined string that prints to the log file. For more information, see Example log message"
+      }
+    }
+  },
+  {
+    "title": "Delivery.redirectTo",
+    "metadata": {
+      "isTerminal": true,
+      "isDataOnly": true
+    },
+    "description": "Redirects an MQTT PUBLISH message to a specified topic",
+    "required": ["topic"],
+    "type": "object",
+    "properties": {
+      "topic": {
+        "type": "string",
+        "title": "Topic",
+        "description": "The destination MQTT topic according to MQTT specification"
+      },
+      "applyPolicies": {
+        "type": "boolean",
+        "title": "Apply Policies",
+        "description": "Defines whether policies are executed after publishing to a different topic."
+      }
+    }
+  },
+  {
+    "title": "Mqtt.UserProperties.add",
+    "metadata": {
+      "isTerminal": false
+    },
+    "description": "Adds a user property to the MQTT message",
+    "required": ["name", "value"],
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "title": "Property Name",
+        "description": "Specifies the name of the user property. Multiple user properties with the same name are allowed."
+      },
+      "value": {
+        "type": "string",
+        "title": "Property Value",
+        "description": "Specifies the value of the user property."
+      }
+    }
+  },
+  {
+    "title": "Serdes.deserialize",
+    "metadata": {
+      "isTerminal": false,
+      "isDataOnly": true,
+      "hasArguments": true
+    },
+    "description": "Deserializes a binary MQTT message payload into a data object based on the configured JSON Schema or Protobuf schema.",
+    "required": ["schemaId", "schemaVersion"],
+    "type": "object",
+    "properties": {
+      "schemaId": {
+        "type": "string",
+        "title": "Schema ID",
+        "description": "The identifier of the JSON Schema or Protobuf schema to be used for deserialization."
+      },
+      "schemaVersion": {
+        "type": "string",
+        "title": "Schema Version",
+        "description": "The version of the schema to be used for deserialization."
+      }
+    }
+  },
+
+  {
+    "title": "Serdes.serialize",
+    "metadata": {
+      "isTerminal": false,
+      "isDataOnly": true,
+      "hasArguments": true
+    },
+    "description": "Serializes a data object into a binary MQTT message payload based on the configured JSON Schema or Protobuf schema.",
+    "required": ["schemaId", "schemaVersion"],
+    "type": "object",
+    "properties": {
+      "schemaId": {
+        "type": "string",
+        "title": "Schema ID",
+        "description": "The identifier of the JSON Shcema to be used for serialization"
+      },
+      "schemaVersion": {
+        "type": "string",
+        "title": "Schema Version",
+        "description": "The version of the schema to be used for serialization."
+      }
+    }
+  },
+
+  {
+    "title": "Metrics.Counter.increment",
+    "metadata": {
+      "isTerminal": false
+    },
+    "description": "Increments a metric of type counter, which can be accessed with monitoring",
+    "required": ["metricName", "incrementBy"],
+    "type": "object",
+    "properties": {
+      "metricName": {
+        "type": "string",
+        "title": "Metric Name",
+        "description": "Specifies the name of the metric to be incremented"
+      },
+      "incrementBy": {
+        "type": "number",
+        "title": "IncrementBy",
+        "description": "Specifies the amount by which the counter should be incremented. Negative values are supported"
+      }
+    }
+  },
+  {
+    "title": "Mqtt.disconnect",
+    "metadata": {
+      "isTerminal": true
+    },
+    "description": "Redirects an MQTT PUBLISH message to a specified topic",
+    "properties": {}
+  },
+  {
+    "title": "Mqtt.drop",
+    "metadata": {
+      "isTerminal": true
+    },
+    "description": "Drops the MQTT packet that is currently processed",
+    "properties": {}
+  }
+]

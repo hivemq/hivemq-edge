@@ -5,7 +5,7 @@ import { Card, CardBody } from '@chakra-ui/react'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
-import { MOCK_VALIDATOR_SCHEMA } from '../../api/specs/DataPolicyValidator.ts'
+import { MOCK_VALIDATOR_SCHEMA } from '../../api/specs/'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 import { DataHubNodeType, PanelProps, ValidatorData } from '../../types.ts'
 import { ReactFlowSchemaForm } from '../helpers/ReactFlowSchemaForm.tsx'
@@ -35,8 +35,6 @@ export const ValidatorPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
           // uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
           formData={data}
           onSubmit={onFormSubmit}
-          onChange={() => console.log('changed')}
-          onError={() => console.log('errors')}
         />
       </CardBody>
     </Card>
