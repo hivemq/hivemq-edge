@@ -7,12 +7,13 @@ import {
   ActionMeta,
   OnChangeValue,
 } from 'chakra-react-select'
-import { WidgetProps } from '@rjsf/utils'
-import { HStack, VStack, Text } from '@chakra-ui/react'
+import { labelValue, WidgetProps } from '@rjsf/utils'
+import { HStack, VStack, Text, FormLabel, FormControl } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import { FunctionSpecs } from '../../types.ts'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
+import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 
 const SingleValue = (props: SingleValueProps<FunctionSpecs>) => {
   return (
@@ -72,6 +73,7 @@ const getValue = (props: WidgetProps) => {
 
 const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
   const { functions } = useDataHubDraftStore()
+  const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
   const onCreatableSelectChange = useCallback<
     (newValue: OnChangeValue<FunctionSpecs, false>, actionMeta: ActionMeta<FunctionSpecs>) => void
@@ -100,8 +102,22 @@ const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
 
   const value = getValue(props)
   return (
-    <>
+    <FormControl
+      {...chakraProps}
+      isDisabled={props.disabled || props.readonly}
+      isRequired={props.required}
+      isReadOnly={props.readonly}
+      isInvalid={props.rawErrors && props.rawErrors.length > 0}
+    >
+      {labelValue(
+        <FormLabel htmlFor={props.id} id={`${props.id}-label`}>
+          {props.label}
+        </FormLabel>,
+        props.hideLabel || !props.label
+      )}
+
       <CreatableSelect<FunctionSpecs, false>
+        inputId={props.id}
         size="md"
         options={functions}
         value={value}
@@ -118,7 +134,7 @@ const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
           SingleValue,
         }}
       />
-    </>
+    </FormControl>
   )
 }
 
