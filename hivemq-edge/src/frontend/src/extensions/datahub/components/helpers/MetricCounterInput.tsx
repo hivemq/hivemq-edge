@@ -4,7 +4,7 @@ import { labelValue, WidgetProps } from '@rjsf/utils'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { FormControl, FormLabel, Input, InputGroup, InputLeftAddon } from '@chakra-ui/react'
 
-export const MetricCounterInput = (props: WidgetProps) => {
+const PrefixInput = (prefix: string, props: WidgetProps) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
@@ -22,10 +22,15 @@ export const MetricCounterInput = (props: WidgetProps) => {
       isReadOnly={props.readonly}
       isInvalid={props.rawErrors && props.rawErrors.length > 0}
     >
-      {labelValue(<FormLabel htmlFor={props.id}>{props.label}</FormLabel>, props.hideLabel || !props.label)}
+      {labelValue(
+        <FormLabel htmlFor={props.id} id={`${props.id}-label`}>
+          {props.label}
+        </FormLabel>,
+        props.hideLabel || !props.label
+      )}
 
       <InputGroup>
-        <InputLeftAddon>com.hivemq.data-hub.custom.counters.</InputLeftAddon>
+        <InputLeftAddon>{prefix}</InputLeftAddon>
         <Input
           id={props.id}
           isRequired={props.required}
@@ -39,3 +44,7 @@ export const MetricCounterInput = (props: WidgetProps) => {
     </FormControl>
   )
 }
+
+export const MetricCounterInput = (props: WidgetProps) => PrefixInput('com.hivemq.data-hub.custom.counters.', props)
+
+export const JsFunctionInput = (props: WidgetProps) => PrefixInput('fn:', props)
