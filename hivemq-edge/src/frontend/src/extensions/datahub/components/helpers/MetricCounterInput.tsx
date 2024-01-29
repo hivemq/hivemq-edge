@@ -8,10 +8,10 @@ const PrefixInput = (prefix: string, props: WidgetProps) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
-  const _onChange = ({ target: { value } }: ChangeEvent<HTMLInputElement>) =>
+  const onChange = ({ target: { value } }: ChangeEvent<HTMLInputElement>) =>
     props.onChange(value === '' ? props.options.emptyValue : value)
-  const _onBlur = ({ target: { value } }: FocusEvent<HTMLInputElement>) => props.onBlur(props.id, value)
-  const _onFocus = ({ target: { value } }: FocusEvent<HTMLInputElement>) => props.onFocus(props.id, value)
+  const onBlur = ({ target: { value } }: FocusEvent<HTMLInputElement>) => props.onBlur(props.id, value)
+  const onFocus = ({ target: { value } }: FocusEvent<HTMLInputElement>) => props.onFocus(props.id, value)
 
   return (
     <FormControl
@@ -36,9 +36,9 @@ const PrefixInput = (prefix: string, props: WidgetProps) => {
           isRequired={props.required}
           placeholder={t('workspace.function.metricName.placeholder') as string}
           value={props.value}
-          onBlur={_onBlur}
-          onFocus={_onFocus}
-          onChange={_onChange}
+          onBlur={onBlur}
+          onFocus={onFocus}
+          onChange={onChange}
         />
       </InputGroup>
     </FormControl>

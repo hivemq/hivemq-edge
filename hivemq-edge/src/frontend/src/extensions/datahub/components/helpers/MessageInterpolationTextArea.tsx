@@ -8,28 +8,28 @@ export const MessageInterpolationTextArea = (props: WidgetProps) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
-  const [cur, setCur] = useState<[number, number] | undefined>(undefined)
+  const [currentSelection, setCurrentSelection] = useState<[number, number] | undefined>(undefined)
 
-  const _onChange = ({ target: { value, selectionStart, selectionEnd } }: ChangeEvent<HTMLTextAreaElement>) => {
+  const onChange = ({ target: { value, selectionStart, selectionEnd } }: ChangeEvent<HTMLTextAreaElement>) => {
     props.onChange(value === '' ? props.options.emptyValue : value)
-    setCur([selectionStart, selectionEnd])
+    setCurrentSelection([selectionStart, selectionEnd])
   }
-  const _onBlur = ({ target: { value, selectionStart, selectionEnd } }: FocusEvent<HTMLTextAreaElement>) => {
+  const onBlur = ({ target: { value, selectionStart, selectionEnd } }: FocusEvent<HTMLTextAreaElement>) => {
     // TODO[NVL] the state change impacts on the blur
-    setCur([selectionStart, selectionEnd])
+    setCurrentSelection([selectionStart, selectionEnd])
     props.onBlur(props.id, value)
   }
-  const _onFocus = ({ target: { value } }: FocusEvent<HTMLTextAreaElement>) => {
+  const onFocus = ({ target: { value } }: FocusEvent<HTMLTextAreaElement>) => {
     props.onFocus(props.id, value)
   }
 
   const Interpolation: FC<{ text: string; icon: string }> = ({ text, icon }) => (
     <Button
       onClick={() => {
-        if (cur) {
+        if (currentSelection) {
           const state = props.value
 
-          props.onChange(state.slice(0, cur[0]) + ` ${icon} ` + state.slice(cur[0]))
+          props.onChange(state.slice(0, currentSelection[0]) + ` ${icon} ` + state.slice(currentSelection[0]))
         }
       }}
     >
@@ -69,9 +69,9 @@ export const MessageInterpolationTextArea = (props: WidgetProps) => {
           isRequired={props.required}
           placeholder={t('workspace.function.metricName.placeholder') as string}
           value={props.value}
-          onBlur={_onBlur}
-          onFocus={_onFocus}
-          onChange={_onChange}
+          onBlur={onBlur}
+          onFocus={onFocus}
+          onChange={onChange}
         />
       </VStack>
     </FormControl>

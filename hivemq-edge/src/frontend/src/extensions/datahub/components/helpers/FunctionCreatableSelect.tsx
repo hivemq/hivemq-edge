@@ -1,19 +1,12 @@
 import { FC, useCallback } from 'react'
-import {
-  CreatableSelect,
-  OptionProps,
-  SingleValueProps,
-  chakraComponents,
-  ActionMeta,
-  OnChangeValue,
-} from 'chakra-react-select'
+import { OptionProps, SingleValueProps, chakraComponents, ActionMeta, OnChangeValue, Select } from 'chakra-react-select'
+import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { labelValue, WidgetProps } from '@rjsf/utils'
 import { HStack, VStack, Text, FormLabel, FormControl } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import { FunctionSpecs } from '../../types.ts'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
-import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 
 const SingleValue = (props: SingleValueProps<FunctionSpecs>) => {
   return (
@@ -84,22 +77,6 @@ const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
     [props]
   )
 
-  // const handleCreate = (inputValue: string) => {
-  //   const functionName = inputValue.startsWith('fn:') ? `${inputValue}` : `fn:${inputValue}`
-  //   const template = functions.find((f) => f.functionId === 'DataHub.transform')
-  //   if (template) {
-  //     const newOption: FunctionSpecs = {
-  //       ...template,
-  //       functionId: functionName,
-  //       schema: {
-  //         ...template.schema,
-  //         title: functionName,
-  //       },
-  //     }
-  //     onAddFunctions([newOption])
-  //   }
-  // }
-
   const value = getValue(props)
   return (
     <FormControl
@@ -116,19 +93,12 @@ const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
         props.hideLabel || !props.label
       )}
 
-      <CreatableSelect<FunctionSpecs, false>
+      <Select<FunctionSpecs, false>
         inputId={props.id}
         size="md"
         options={functions}
         value={value}
         onChange={onCreatableSelectChange}
-        // onCreateOption={handleCreate}
-        // formatCreateLabel={(inputValue) => {
-        //   if (inputValue.startsWith('fn:')) {
-        //     return `Create a new JS function: ${inputValue}`
-        //   }
-        //   return `Create a new JS function fn:${inputValue}`
-        // }}
         components={{
           Option,
           SingleValue,

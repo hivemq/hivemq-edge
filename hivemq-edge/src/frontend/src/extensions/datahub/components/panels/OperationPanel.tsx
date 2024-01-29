@@ -23,9 +23,9 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
       const { formData } = initData
       if (formData) {
         const { functionId } = formData
-        const fct = functions.find((e) => e.functionId === functionId)
-        if (fct) {
-          const { metadata } = fct
+        const functionSpecs = functions.find((e) => e.functionId === functionId)
+        if (functionSpecs) {
+          const { metadata } = functionSpecs
           initData.formData = { ...initData.formData, metadata }
         }
       }

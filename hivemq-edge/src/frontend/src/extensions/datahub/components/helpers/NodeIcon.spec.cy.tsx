@@ -1,7 +1,7 @@
 /// <reference types="cypress" />
 
-import NodeIcon from '@/extensions/datahub/components/helpers/NodeIcon.tsx'
-import { DataHubNodeType } from '@/extensions/datahub/types.ts'
+import NodeIcon from './NodeIcon'
+import { DataHubNodeType } from '../../types.ts'
 
 describe('NodeIcon', () => {
   beforeEach(() => {

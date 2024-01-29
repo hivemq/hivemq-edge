@@ -5,24 +5,29 @@ import { FormControl, FormLabel } from '@chakra-ui/react'
 import { CreatableSelect, OnChangeValue } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 
+interface VersionType {
+  label: string
+  value: string
+}
+
 export const VersionManagerSelect = (props: WidgetProps) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
-  const options = [
+  const options: VersionType[] = [
     { label: 'v0.0', value: 'v0.0' },
     { label: props.value, value: props.value },
   ]
 
-  const _onChange = useCallback<(newValue: OnChangeValue<{ label: string; value: string }, false>) => void>(
+  const onChange = useCallback<(newValue: OnChangeValue<{ label: string; value: string }, false>) => void>(
     (newValue) => {
       if (newValue) props.onChange(newValue.value)
     },
     [props]
   )
 
-  const _onBlur = ({ target: { value } }: FocusEvent<HTMLInputElement>) => props.onBlur(props.id, value)
-  const _onFocus = ({ target: { value } }: FocusEvent<HTMLInputElement>) => props.onFocus(props.id, value)
+  const onBlur = ({ target: { value } }: FocusEvent<HTMLInputElement>) => props.onBlur(props.id, value)
+  const onFocus = ({ target: { value } }: FocusEvent<HTMLInputElement>) => props.onFocus(props.id, value)
 
   return (
     <FormControl
@@ -46,9 +51,9 @@ export const VersionManagerSelect = (props: WidgetProps) => {
         options={options}
         formatCreateLabel={(value) => t('workspace.version.create', { newVersion: value, oldVersion: props.value })}
         value={{ label: props.value, value: props.value }}
-        onBlur={_onBlur}
-        onFocus={_onFocus}
-        onChange={_onChange}
+        onBlur={onBlur}
+        onFocus={onFocus}
+        onChange={onChange}
       />
     </FormControl>
   )

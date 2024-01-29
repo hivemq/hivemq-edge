@@ -3,10 +3,6 @@ import { Node } from 'reactflow'
 import { Card, CardBody } from '@chakra-ui/react'
 import { CustomValidator } from '@rjsf/utils'
 
-// import { Parser } from 'acorn'
-// import { customizeValidator } from '@rjsf/validator-ajv8'
-// import { parse } from 'protobufjs'
-
 import { MOCK_SCHEMA_SCHEMA } from '../../api/specs/'
 import { PanelProps, SchemaData } from '../../types.ts'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
