@@ -50,7 +50,7 @@ describe('getNodePayload', () => {
     {
       type: DataHubNodeType.OPERATION,
       expected: {
-        action: undefined,
+        functionId: undefined,
       },
     },
     {
