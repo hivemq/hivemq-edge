@@ -23,16 +23,25 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 public class ADSAdapterConfig extends Plc4xAdapterConfig {
 
-    @ModuleConfigField(title = "Target AMS Port",
-                       description = "The port number on the device you wish to connect to",
+    @JsonProperty("port")
+    @ModuleConfigField(title = "Port",
+                       description = "The port number on the device to connect to",
                        required = true,
                        numberMin = PORT_MIN,
                        numberMax = PORT_MAX,
                        defaultValue = "48898")
-    private int targetAmsPort = 48898;
+    private int port = 48898;
+
+    @ModuleConfigField(title = "Target AMS Port",
+                       description = "The AMS port number on the device to connect to",
+                       required = true,
+                       numberMin = PORT_MIN,
+                       numberMax = PORT_MAX,
+                       defaultValue = "851")
+    private int targetAmsPort = 851;
 
     @ModuleConfigField(title = "Source AMS Port",
-                       description = "The port number on the device you wish to connect to",
+                       description = "The local AMS port number used by HiveMQ Edge",
                        required = true,
                        numberMin = PORT_MIN,
                        numberMax = PORT_MAX,
@@ -43,14 +52,14 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig {
     @ModuleConfigField(title = "Source Ams Net Id",
                        required = true,
                        stringPattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
-                       description = "Source Ams Net Id")
+                       description = "The AMS Net ID used by HiveMQ Edge")
     private @NotNull String sourceAmsNetId = "";
 
     @JsonProperty("targetAmsNetId")
     @ModuleConfigField(title = "Target Ams Net Id",
                        required = true,
                        stringPattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
-                       description = "Target Ams Net Id")
+                       description = "The AMS Net ID of the device to connect to")
     private @NotNull String targetAmsNetId = "";
 
     public int getSourceAmsPort() {
