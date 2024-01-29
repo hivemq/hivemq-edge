@@ -82,8 +82,23 @@ const FunctionCreatableSelect: FC<WidgetProps> = (props) => {
     [props]
   )
 
-  const value = getValue(props)
+  // const handleCreate = (inputValue: string) => {
+  //   const functionName = inputValue.startsWith('fn:') ? `${inputValue}` : `fn:${inputValue}`
+  //   const template = functions.find((f) => f.functionId === 'DataHub.transform')
+  //   if (template) {
+  //     const newOption: FunctionSpecs = {
+  //       ...template,
+  //       functionId: functionName,
+  //       schema: {
+  //         ...template.schema,
+  //         title: functionName,
+  //       },
+  //     }
+  //     onAddFunctions([newOption])
+  //   }
+  // }
 
+  const value = getValue(props)
   return (
     <>
       <CreatableSelect<FunctionSpecs, false>
