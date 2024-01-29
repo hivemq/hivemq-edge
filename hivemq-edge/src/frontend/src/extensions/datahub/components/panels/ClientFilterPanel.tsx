@@ -2,7 +2,7 @@ import { FC, useMemo } from 'react'
 import { Node } from 'reactflow'
 import { Card, CardBody } from '@chakra-ui/react'
 
-import { MOCK_CLIENT_FILTER_SCHEMA } from '../../api/specs/ClientFilterData.ts'
+import { MOCK_CLIENT_FILTER_SCHEMA } from '../../api/specs/'
 import { ClientFilterData, PanelProps } from '../../types.ts'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '../helpers/ReactFlowSchemaForm.tsx'
@@ -23,8 +23,6 @@ export const ClientFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }
           uiSchema={MOCK_CLIENT_FILTER_SCHEMA.uiSchema}
           formData={{ clients: clients }}
           onSubmit={onFormSubmit}
-          onChange={() => console.log('changed')}
-          onError={() => console.log('errors')}
         />
       </CardBody>
     </Card>

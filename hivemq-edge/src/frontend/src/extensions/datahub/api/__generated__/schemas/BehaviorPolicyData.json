@@ -1,0 +1,48 @@
+{
+  "type": "object",
+  "required": ["model"],
+  "properties": {
+    "model": {
+      "title": "Behavior Model",
+      "enum": ["Mqtt.events", "Publish.duplicate", "Publish.quota"],
+      "default": "Mqtt.events"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "model": {
+            "const": "Publish.quota"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "arguments": {
+            "type": "object",
+            "title": "Publish.quota options",
+            "description": "When you configure a publish-quota model, at least one of the available arguments must be present. Data Hub uses the default value for the missing parameter.\nThe default value for minimum is 0. The default value for maxPublishes is UNLIMITED.",
+            "required": ["minPublishes"],
+            "properties": {
+              "minPublishes": {
+                "title": "Minimum number of messages",
+                "description": "Defines the minimal number of published messages that must be reached",
+                "type": "number",
+                "default": 0,
+                "minimum": 0
+              },
+              "maxPublishes": {
+                "title": "Maximum number of messages",
+                "description": "Defines the maximum number of published messages that must be reached",
+                "type": "number",
+                "default": 10000,
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

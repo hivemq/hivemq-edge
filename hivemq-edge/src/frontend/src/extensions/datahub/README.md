@@ -16,6 +16,17 @@ Dependencies with the rest of the code (`Edge` in this case) is limited to as fe
 - The `React Query` hooks however are in the extension (`src/extensions/datahub/api/hooks`) and rely on the shared code
   (in particular the `useHttpClient`)
 
+## Schemas
+
+TODO
+
+- JSONSchemas used for the UI forms are in `src/extensions/datahub/api/__generated__/schemas`.
+  They are not generated but created by hand from the API and the documentation. #
+  The following schemas have been added (using the name of their matching models):
+  - `BehaviorPolicyData.jon`
+  - `ClientFilterData.jon`
+  - `OperationData.json`
+
 ## MSW
 
 If running the frontend with `Mock Service Worker`, the `datahub` handlers need to be added to the main worker:
