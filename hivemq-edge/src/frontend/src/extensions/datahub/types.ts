@@ -57,6 +57,7 @@ export enum DataHubNodeType {
   SCHEMA = 'SCHEMA',
   OPERATION = 'OPERATION',
   TRANSITION = 'TRANSITION',
+  FUNCTION = 'FUNCTION',
   EVENT = 'EVENT',
 }
 
@@ -115,6 +116,21 @@ export interface SchemaData {
   version: string
   schemaSource?: string
   core?: Schema
+}
+
+export interface FunctionData {
+  type: 'Javascript'
+  name: string
+  version: string
+  sourceCode?: string
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace FunctionData {
+  export enum Handle {
+    SERIALISER = 'serialiser',
+    DESERIALISER = 'deserialiser',
+  }
 }
 
 // TODO[18763] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18763/details/

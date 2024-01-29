@@ -58,6 +58,7 @@
       "type_SCHEMA": "Schema",
       "type_OPERATION": "Operation",
       "type_TRANSITION": "Transition",
+      "type_FUNCTION": "JS Function",
       "type_EVENT": "Event"
     },
     "handles": {
