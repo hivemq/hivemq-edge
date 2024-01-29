@@ -4,8 +4,9 @@ import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
-import { Skeleton, Text } from '@chakra-ui/react'
+import { Button, Skeleton, Text } from '@chakra-ui/react'
 import { FaEdit } from 'react-icons/fa'
+import { BiAddToQueue } from 'react-icons/bi'
 
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
@@ -117,6 +118,16 @@ const PolicyTable: FC = () => {
             </Skeleton>
           )
         },
+        footer: () => (
+          <Button
+            leftIcon={<BiAddToQueue />}
+            onClick={() => navigate(`/datahub/${PolicyType.CREATE_POLICY}`)}
+            isDisabled={isLoading}
+            variant="primary"
+          >
+            {t('policyTable.action.create')}
+          </Button>
+        ),
       },
     ]
   }, [isLoading, navigate, t])

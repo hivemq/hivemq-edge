@@ -5,7 +5,7 @@ import { WorkspaceState } from '../types.ts'
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>
 interface MockStoreWrapperConfig {
-  initialState?: Optional<WorkspaceState, 'nodes' | 'edges'>
+  initialState?: Optional<WorkspaceState, 'nodes' | 'edges' | 'functions'>
 }
 
 interface MockStoreWrapperProps {

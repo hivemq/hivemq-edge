@@ -75,7 +75,7 @@ const CustomUserProperties: FC<CustomUserPropertiesProps> = ({ form, subscriptio
                         />
                       )}
                       control={form.control}
-                    />{' '}
+                    />
                   </Td>
                   <Td py={0}>
                     <ButtonGroup size="sm" isAttached variant="outline">

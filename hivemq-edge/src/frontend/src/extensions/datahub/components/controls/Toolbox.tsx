@@ -18,6 +18,7 @@ export const Toolbox = () => {
       <HStack alignItems="flex-start">
         <Box>
           <IconButton
+            data-testid="toolbox-trigger"
             aria-label={t('workspace.toolbox.trigger', { context: !isOpen ? 'open' : 'close' })}
             icon={
               <>
@@ -31,6 +32,7 @@ export const Toolbox = () => {
         </Box>
         <motion.div
           {...getDisclosureProps()}
+          data-testid="toolbox-container"
           hidden={hidden}
           initial={false}
           onAnimationStart={() => setHidden(false)}
@@ -48,34 +50,43 @@ export const Toolbox = () => {
             aria-label={t('workspace.toolbox.aria-label') as string}
             backgroundColor="var(--chakra-colors-chakra-body-bg)"
           >
-            <VStack pl={2} alignItems="flex-start">
-              <Text id="group-pipeline">{t('workspace.toolbox.group.pipeline')}</Text>
-              <ButtonGroup variant="outline" size="sm" aria-labelledby="group-pipeline">
-                <Tool nodeType={DataHubNodeType.TOPIC_FILTER} />
-                <Tool nodeType={DataHubNodeType.CLIENT_FILTER} />
-              </ButtonGroup>
-            </VStack>
-            <VStack alignItems="flex-start">
-              <Text id="group-dataPolicy">{t('workspace.toolbox.group.dataPolicy')}</Text>
-              <ButtonGroup variant="outline" size="sm" aria-labelledby="group-dataPolicy">
-                <Tool nodeType={DataHubNodeType.DATA_POLICY} />
-                <Tool nodeType={DataHubNodeType.VALIDATOR} />
-                <Tool nodeType={DataHubNodeType.SCHEMA} />{' '}
-              </ButtonGroup>
-            </VStack>
-            <VStack alignItems="flex-start">
-              <Text id="group-behaviorPolicy">{t('workspace.toolbox.group.behaviorPolicy')}</Text>
-              <ButtonGroup variant="outline" size="sm" aria-labelledby="group-behaviorPolicy">
-                <Tool nodeType={DataHubNodeType.BEHAVIOR_POLICY} />
-                <Tool nodeType={DataHubNodeType.TRANSITION} />
-              </ButtonGroup>
-            </VStack>
-            <VStack alignItems="flex-start" pr={2}>
-              <Text id="group-action">{t('workspace.toolbox.group.action')}</Text>
-              <ButtonGroup variant="outline" size="sm" aria-labelledby="group-action">
-                <Tool nodeType={DataHubNodeType.OPERATION} />
-              </ButtonGroup>
-            </VStack>
+            <ButtonGroup variant="outline" size="sm" aria-labelledby="group-pipeline">
+              <VStack pl={2} alignItems="flex-start">
+                <Text id="group-pipeline">{t('workspace.toolbox.group.pipeline')}</Text>
+                <HStack>
+                  <Tool nodeType={DataHubNodeType.TOPIC_FILTER} />
+                  <Tool nodeType={DataHubNodeType.CLIENT_FILTER} />
+                </HStack>
+              </VStack>
+            </ButtonGroup>
+            <ButtonGroup variant="outline" size="sm" aria-labelledby="group-dataPolicy">
+              <VStack alignItems="flex-start">
+                <Text id="group-dataPolicy">{t('workspace.toolbox.group.dataPolicy')}</Text>
+                <HStack>
+                  <Tool nodeType={DataHubNodeType.DATA_POLICY} />
+                  <Tool nodeType={DataHubNodeType.VALIDATOR} />
+                  <Tool nodeType={DataHubNodeType.SCHEMA} />{' '}
+                </HStack>
+              </VStack>
+            </ButtonGroup>
+            <ButtonGroup variant="outline" size="sm" aria-labelledby="group-behaviorPolicy">
+              <VStack alignItems="flex-start">
+                <Text id="group-behaviorPolicy">{t('workspace.toolbox.group.behaviorPolicy')}</Text>
+                <HStack>
+                  <Tool nodeType={DataHubNodeType.BEHAVIOR_POLICY} />
+                  <Tool nodeType={DataHubNodeType.TRANSITION} />
+                </HStack>
+              </VStack>
+            </ButtonGroup>
+            <ButtonGroup variant="outline" size="sm" aria-labelledby="group-operation">
+              <VStack alignItems="flex-start" pr={2}>
+                <Text id="group-operation">{t('workspace.toolbox.group.operation')}</Text>
+                <HStack>
+                  <Tool nodeType={DataHubNodeType.OPERATION} />
+                  <Tool nodeType={DataHubNodeType.FUNCTION} />
+                </HStack>
+              </VStack>
+            </ButtonGroup>
           </HStack>
         </motion.div>
       </HStack>

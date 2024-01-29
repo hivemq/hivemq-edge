@@ -5,6 +5,7 @@ import { HStack, Text, VStack } from '@chakra-ui/react'
 
 import { BehaviorPolicyData, DataHubNodeType } from '../../types.ts'
 import NodeIcon from '../helpers/NodeIcon.tsx'
+import NodeParams from '../helpers/NodeParams.tsx'
 import { NodeWrapper } from './NodeWrapper.tsx'
 import { CustomHandle } from './CustomHandle.tsx'
 
@@ -21,8 +22,8 @@ export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => 
             <Text data-testid="node-title" w="45%">
               {t('workspace.nodes.type', { context: type })}
             </Text>
-            <VStack>
-              <Text data-testid="node-model">{data.model || t('error.noSet.select')}</Text>
+            <VStack data-testid="node-model">
+              <NodeParams value={data.model || t('error.noSet.select')} />
             </VStack>
           </HStack>
         </VStack>
