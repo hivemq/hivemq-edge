@@ -149,7 +149,7 @@
       "description": "Drops the MQTT packet that is currently processed",
       "properties": {}
     },
-    "datahub.transform": {
+    "DataHub.transform": {
       "title": "Transform function",
       "description": "Javascript Transformation function",
       "metadata": {
@@ -178,7 +178,7 @@
             "Metrics.Counter.increment",
             "Mqtt.disconnect",
             "Mqtt.drop",
-            "datahub.transform"
+            "DataHub.transform"
           ]
         }
       },
@@ -268,10 +268,10 @@
             {
               "properties": {
                 "functionId": {
-                  "enum": ["datahub.transform"]
+                  "enum": ["DataHub.transform"]
                 },
                 "formData": {
-                  "$ref": "#/definitions/datahub.transform"
+                  "$ref": "#/definitions/DataHub.transform"
                 }
               }
             }
