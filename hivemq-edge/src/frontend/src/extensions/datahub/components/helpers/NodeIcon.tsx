@@ -6,7 +6,7 @@ import { GrStatusUnknown, GrValidate } from 'react-icons/gr'
 import { LuFunctionSquare } from 'react-icons/lu'
 import { MdPolicy, MdSchema } from 'react-icons/md'
 import { TbTransitionRight } from 'react-icons/tb'
-import { AiOutlineCloudServer } from 'react-icons/ai'
+import { AiOutlineCloudServer, AiOutlineInteraction } from 'react-icons/ai'
 import { SiMqtt } from 'react-icons/si'
 import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
 
@@ -21,7 +21,8 @@ const iconMapping: Record<string, (label: string) => JSX.Element> = {
   [DataHubNodeType.BEHAVIOR_POLICY]: (label) => <Icon as={MdPolicy} boxSize="24px" aria-label={label} />,
   [DataHubNodeType.VALIDATOR]: (label) => <Icon as={GrValidate} boxSize="24px" aria-label={label} />,
   [DataHubNodeType.SCHEMA]: (label) => <Icon as={MdSchema} boxSize="24px" aria-label={label} />,
-  [DataHubNodeType.OPERATION]: (label) => <Icon as={LuFunctionSquare} boxSize="24px" aria-label={label} />,
+  [DataHubNodeType.OPERATION]: (label) => <Icon as={AiOutlineInteraction} boxSize="24px" aria-label={label} />,
+  [DataHubNodeType.FUNCTION]: (label) => <Icon as={LuFunctionSquare} boxSize="24px" aria-label={label} />,
   [DataHubNodeType.TRANSITION]: (label) => <Icon as={TbTransitionRight} boxSize="24px" aria-label={label} />,
 }
 
