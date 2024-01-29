@@ -1,7 +1,9 @@
-import { FunctionDefinition, FunctionSpecs, WorkspaceState } from '@/extensions/datahub/types.ts'
 import { Edge, Node } from 'reactflow'
-import { MOCK_OPERATION_SCHEMA } from '@/extensions/datahub/api/specs'
 import { RJSFSchema } from '@rjsf/utils'
+
+import { FunctionDefinition, FunctionSpecs, WorkspaceState } from '../types.ts'
+import { MOCK_OPERATION_SCHEMA } from '../api/specs'
+// import { MOCK_TRANSFORM_EXT } from '../__test-utils__/transform-ext.mocks.ts'
 
 const getFunctions = (schema: RJSFSchema) => {
   if (!schema) return []
@@ -15,7 +17,7 @@ const getFunctions = (schema: RJSFSchema) => {
   if (!definitions || !functionNames) return []
 
   const functions: FunctionSpecs[] = functionNames.map((functionName) => {
-    const definition = definitions['functionName']
+    const definition = definitions[functionName]
     if (!definition) return {} as FunctionSpecs
 
     // @ts-ignore
