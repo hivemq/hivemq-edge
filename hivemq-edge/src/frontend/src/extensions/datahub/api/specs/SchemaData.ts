@@ -7,7 +7,7 @@ export const MOCK_SCHEMA_SCHEMA: PanelSpecs = {
   schema: schema as RJSFSchema,
   uiSchema: {
     type: {
-      'ui:widget': 'radio',
+      // 'ui:widget': 'radio',
     },
   },
 }

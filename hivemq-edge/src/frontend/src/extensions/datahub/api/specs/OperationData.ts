@@ -11,7 +11,7 @@ export const MOCK_OPERATION_SCHEMA: PanelSpecs = {
     },
     formData: {
       message: {
-        'ui:widget': 'textarea',
+        'ui:widget': 'datahub:message-interpolation',
       },
       incrementBy: {
         'ui:widget': 'updown',

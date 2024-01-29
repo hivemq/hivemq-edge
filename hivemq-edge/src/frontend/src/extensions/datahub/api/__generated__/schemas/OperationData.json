@@ -159,7 +159,8 @@
       "properties": {
         "transform": {
           "type": "string",
-          "format": "text/javascriptXXXXX"
+          "title": "Function name",
+          "format": "datahub:function-name"
         }
       }
     },

@@ -9,7 +9,8 @@
       "default": "PROTOBUF"
     },
     "version": {
-      "type": "string"
+      "type": "string",
+      "format": "datahub:version"
     }
   },
   "dependencies": {
