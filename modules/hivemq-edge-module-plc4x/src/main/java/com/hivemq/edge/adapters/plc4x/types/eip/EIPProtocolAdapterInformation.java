@@ -36,12 +36,12 @@ public class EIPProtocolAdapterInformation
 
     @Override
     public @NotNull String getProtocolName() {
-        return "Ethernet/IP";
+        return "Ethernet/IP CIP";
     }
 
     @Override
     public @NotNull String getProtocolId() {
-        return "eip";
+        return "ethernet-ip";
     }
 
     @Override
@@ -51,12 +51,12 @@ public class EIPProtocolAdapterInformation
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to devices supporting Ethernet IP, reading data from the PLC into MQTT.";
+        return "Connects HiveMQ Edge to Rockwell / Allen-Bradley ControlLogix and CompactLogix devices supporting Ethernet IP, reading data from the PLC into MQTT.";
     }
 
     @Override
     public String getVersion() {
-        return super.getVersion() + " (ALPHA)";
+        return super.getVersion() + " (BETA)";
     }
 
     @Override
