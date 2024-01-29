@@ -22,7 +22,8 @@
       "actions": "Actions"
     },
     "action": {
-      "edit": "Edit"
+      "edit": "Edit",
+      "create": "Create a new policy"
     }
   },
   "workspace": {
@@ -41,8 +42,8 @@
       "group": {
         "pipeline": "Pipeline",
         "dataPolicy": "Data Policy",
-        "action": "Action",
-        "behaviorPolicy": "Behavior Policy"
+        "behaviorPolicy": "Behavior Policy",
+        "operation": "Operation"
       }
     },
     "nodes": {
@@ -57,6 +58,7 @@
       "type_SCHEMA": "Schema",
       "type_OPERATION": "Operation",
       "type_TRANSITION": "Transition",
+      "type_FUNCTION": "JS Function",
       "type_EVENT": "Event"
     },
     "handles": {
@@ -67,6 +69,20 @@
     },
     "panel": {
       "submit": "Submit"
+    },
+    "function": {
+      "isTerminal": "[Terminal]",
+      "isDataOnly": "[Data]",
+      "metricName": {
+        "placeholder": "metricName"
+      }
+    },
+    "codeEditor": {
+      "delete": "Delete this version",
+      "test": "Test code"
+    },
+    "version": {
+      "create": "Create a new version '{{ newVersion }}' from '{{ oldVersion }}'"
     }
   },
   "error": {

@@ -3,13 +3,9 @@ import { Node } from 'reactflow'
 import { Card, CardBody } from '@chakra-ui/react'
 import { CustomValidator } from '@rjsf/utils'
 
-// import { Parser } from 'acorn'
-// import { customizeValidator } from '@rjsf/validator-ajv8'
-// import { parse } from 'protobufjs'
-
+import { MOCK_SCHEMA_SCHEMA } from '../../api/specs/'
 import { PanelProps, SchemaData } from '../../types.ts'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
-import { MOCK_SCHEMA_SCHEMA } from '../../api/specs/SchemaData.ts'
 import { ReactFlowSchemaForm, datahubRJSFWidgets } from '../helpers'
 
 export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
@@ -64,8 +60,6 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
           widgets={datahubRJSFWidgets}
           customValidate={customValidate}
           onSubmit={onFormSubmit}
-          onChange={() => console.log('changed')}
-          onError={() => console.log('errors')}
         />
       </CardBody>
     </Card>

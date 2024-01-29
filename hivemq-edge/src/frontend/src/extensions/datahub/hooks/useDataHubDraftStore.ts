@@ -11,16 +11,16 @@ import {
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-import { WorkspaceAction, WorkspaceState } from '../types.ts'
-import { initialFlow } from '../utils/node.utils.ts'
+import { FunctionSpecs, WorkspaceAction, WorkspaceState } from '../types.ts'
+import { initialStore } from '../utils/store.utils.ts'
 import { styleDefaultEdge } from '../utils/edge.utils.ts'
 
 const useDataHubDraftStore = create<WorkspaceState & WorkspaceAction>()(
   persist(
     (set, get) => ({
-      ...initialFlow(),
+      ...initialStore(),
       reset: () => {
-        set(initialFlow())
+        set(initialStore())
       },
       onNodesChange: (changes: NodeChange[]) => {
         set({
@@ -72,6 +72,10 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceAction>()(
             return node
           }),
         })
+      },
+
+      onAddFunctions: (changes: FunctionSpecs[]) => {
+        set({ functions: [...get().functions, ...changes] })
       },
     }),
     {

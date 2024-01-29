@@ -124,7 +124,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
 
                   {hasPersistence && (
                     <TabPanel>
-                      <PersistencePanel form={form} hasPersistence={hasPersistence} />
+                      <PersistencePanel form={form} />
                     </TabPanel>
                   )}
                 </TabPanels>
