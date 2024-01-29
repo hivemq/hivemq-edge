@@ -1,5 +1,5 @@
-import { Connection, Edge, Node } from 'reactflow'
-import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema-mocks.ts'
+import { Connection, Node } from 'reactflow'
+import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
 
 import {
   BehaviorPolicyData,
@@ -7,6 +7,7 @@ import {
   DataHubNodeData,
   DataHubNodeType,
   DataPolicyData,
+  FunctionData,
   OperationData,
   SchemaData,
   SchemaType,
@@ -65,10 +66,16 @@ export const validConnections: ConnectionValidity = {
   [DataHubNodeType.VALIDATOR]: [[DataHubNodeType.DATA_POLICY, DataPolicyData.Handle.VALIDATION]],
   [DataHubNodeType.DATA_POLICY]: [DataHubNodeType.OPERATION],
   [DataHubNodeType.OPERATION]: [DataHubNodeType.OPERATION],
-  [DataHubNodeType.SCHEMA]: [DataHubNodeType.VALIDATOR, [DataHubNodeType.OPERATION, OperationData.Handle.SCHEMA]],
+  [DataHubNodeType.SCHEMA]: [
+    DataHubNodeType.VALIDATOR,
+    [DataHubNodeType.OPERATION, OperationData.Handle.SCHEMA],
+    [DataHubNodeType.FUNCTION, FunctionData.Handle.SERIALISER],
+    [DataHubNodeType.FUNCTION, FunctionData.Handle.DESERIALISER],
+  ],
   [DataHubNodeType.CLIENT_FILTER]: [[DataHubNodeType.BEHAVIOR_POLICY, BehaviorPolicyData.Handle.CLIENT_FILTER]],
   [DataHubNodeType.BEHAVIOR_POLICY]: [DataHubNodeType.TRANSITION],
   [DataHubNodeType.TRANSITION]: [DataHubNodeType.OPERATION],
+  [DataHubNodeType.FUNCTION]: [[DataHubNodeType.OPERATION, OperationData.Handle.SCHEMA]],
 }
 
 export const isValidPolicyConnection = (connection: Connection, nodes: Node[]) => {
