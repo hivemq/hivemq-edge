@@ -171,9 +171,9 @@ const PaginatedTable = <T,>({
             {table.getFooterGroups().map((footerGroup) => (
               <Tr key={footerGroup.id}>
                 {footerGroup.headers.map((header) => (
-                  <Th key={header.id}>
+                  <Td key={header.id}>
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.footer, header.getContext())}
-                  </Th>
+                  </Td>
                 ))}
               </Tr>
             ))}
