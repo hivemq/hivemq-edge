@@ -42,8 +42,8 @@
       "group": {
         "pipeline": "Pipeline",
         "dataPolicy": "Data Policy",
-        "action": "Action",
-        "behaviorPolicy": "Behavior Policy"
+        "behaviorPolicy": "Behavior Policy",
+        "operation": "Operation"
       }
     },
     "nodes": {
@@ -76,6 +76,13 @@
       "metricName": {
         "placeholder": "metricName"
       }
+    },
+    "codeEditor": {
+      "delete": "Delete this version",
+      "test": "Test code"
+    },
+    "version": {
+      "create": "Create a new version '{{ newVersion }}' from '{{ oldVersion }}'"
     }
   },
   "error": {
