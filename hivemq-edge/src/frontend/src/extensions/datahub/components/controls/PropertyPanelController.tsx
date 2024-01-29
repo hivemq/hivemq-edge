@@ -30,6 +30,7 @@ import {
   TopicFilterPanel,
   TransitionPanel,
   ValidatorPanel,
+  FunctionPanel,
 } from '../panels'
 import NodeIcon from '../helpers/NodeIcon.tsx'
 import { DataHubNodeType, PanelProps } from '../../types.ts'
@@ -43,6 +44,7 @@ const DefaultEditor: Record<string, FC<PanelProps>> = {
   [DataHubNodeType.BEHAVIOR_POLICY]: BehaviorPolicyPanel,
   [DataHubNodeType.TRANSITION]: TransitionPanel,
   [DataHubNodeType.OPERATION]: OperationPanel,
+  [DataHubNodeType.FUNCTION]: FunctionPanel,
 }
 
 const PropertyPanelController = () => {

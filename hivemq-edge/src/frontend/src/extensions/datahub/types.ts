@@ -24,6 +24,7 @@ export interface PanelProps {
 export interface WorkspaceState {
   nodes: Node[]
   edges: Edge[]
+  functions: FunctionSpecs[]
 }
 
 export interface WorkspaceAction {
@@ -34,9 +35,12 @@ export interface WorkspaceAction {
   onAddNodes: (changes: NodeAddChange[]) => void
   onAddEdges: (changes: EdgeAddChange[]) => void
   onUpdateNodes: <T>(item: string, data: T) => void
+
+  onAddFunctions: (changes: FunctionSpecs[]) => void
 }
 
 export enum PolicyType {
+  CREATE_POLICY = 'CREATE_POLICY',
   DATA = 'DATA',
   BEHAVIOR = 'BEHAVIOR',
 }
@@ -53,6 +57,7 @@ export enum DataHubNodeType {
   SCHEMA = 'SCHEMA',
   OPERATION = 'OPERATION',
   TRANSITION = 'TRANSITION',
+  FUNCTION = 'FUNCTION',
   EVENT = 'EVENT',
 }
 
@@ -113,22 +118,38 @@ export interface SchemaData {
   core?: Schema
 }
 
+export interface FunctionData {
+  type: 'Javascript'
+  name: string
+  version: string
+  sourceCode?: string
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace FunctionData {
+  export enum Handle {
+    SERIALISER = 'serialiser',
+    DESERIALISER = 'deserialiser',
+  }
+}
+
 // TODO[18763] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18763/details/
 export interface FunctionDefinition {
-  functionId: string
   isTerminal?: boolean
   isDataOnly?: boolean
   hasArguments?: boolean
 }
 
-export interface FunctionSpecs extends FunctionDefinition {
+export interface FunctionSpecs {
+  functionId?: string
+  metadata?: FunctionDefinition
   schema?: RJSFSchema
   uiSchema?: UiSchema
 }
 
 export interface OperationData extends DataHubNodeData {
-  // TODO[18841] Temporary definition until functions' JSONSchema are properly defined
-  action?: FunctionDefinition | string
+  functionId?: string
+  metadata?: FunctionDefinition
   formData?: Record<string, string | number>
   core?: PolicyOperation
 }

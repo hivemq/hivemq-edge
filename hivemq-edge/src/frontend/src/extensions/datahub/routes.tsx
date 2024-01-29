@@ -15,7 +15,7 @@ export const dataHubRoutes: RouteObject = {
       element: <PolicyTable />,
     },
     {
-      path: ':policyType/:policyId',
+      path: ':policyType/:policyId?',
       element: <PolicyEditor />,
       children: [
         {

@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "definitions": {
+    "SchemaReference": {
+      "type": "object",
+      "required": ["schemaId", "version"],
+      "properties": {
+        "schemaId": {
+          "title": "ID of the schema",
+          "type": "string"
+        },
+        "version": {
+          "title": "version of the schema",
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": ["type", "strategy"],
+  "properties": {
+    "type": {
+      "title": "Validator Type",
+      "enum": ["schema"],
+      "default": "schema"
+    },
+    "strategy": {
+      "title": "Validation Strategy",
+      "enum": ["ANY_OF", "ALL_OF"],
+      "default": "ALL_OF"
+    },
+    "schemas": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/SchemaReference"
+      }
+    }
+  }
+}

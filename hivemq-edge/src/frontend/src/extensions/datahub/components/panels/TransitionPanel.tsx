@@ -2,10 +2,10 @@ import { FC, useMemo } from 'react'
 import { Node } from 'reactflow'
 import { Card, CardBody } from '@chakra-ui/react'
 
+import { MOCK_TRANSITION_SCHEMA } from '../../api/specs/'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 import { PanelProps, TransitionData } from '../../types.ts'
 import { ReactFlowSchemaForm } from '../helpers/ReactFlowSchemaForm.tsx'
-import { MOCK_TRANSITION_SCHEMA } from '@/extensions/datahub/api/specs/TransitionData.ts'
 
 export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { nodes } = useDataHubDraftStore()
@@ -23,8 +23,6 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
           // uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
           formData={data}
           onSubmit={onFormSubmit}
-          onChange={() => console.log('changed')}
-          onError={() => console.log('errors')}
         />
       </CardBody>
     </Card>

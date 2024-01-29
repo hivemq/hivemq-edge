@@ -1,0 +1,45 @@
+{
+  "type": "object",
+  "required": ["type"],
+  "description": "The HiveMQ Data Hub uses state machines to model the behavior of an MQTT client as it moves through your HiveMQ broker.",
+  "properties": {
+    "type": {
+      "title": "Transition",
+      "description": "The movement of the MQTT client from one state to another. Each transition consists of a from state, a to state and a specific event.",
+      "enum": [
+        "Event.OnAny",
+        "Connection.OnDisconnect",
+        "Mqtt.OnInboundConnect",
+        "Mqtt.OnInboundDisconnect",
+        "Mqtt.OnInboundPublish",
+        "Mqtt.OnInboundSubscribe"
+      ],
+      "default": "Event.OnAny"
+    },
+    "from": {
+      "$ref": "#/$defs/state",
+      "title": "From State"
+    },
+    "to": {
+      "$ref": "#/$defs/state",
+      "title": "To State"
+    }
+  },
+  "$defs": {
+    "state": {
+      "title": "State",
+      "description": "Shows the current state of the MQTT client in the state machine",
+      "enum": [
+        "Any.*",
+        "Initial",
+        "Connected",
+        "Disconnected",
+        "Duplicated",
+        "NotDuplicated",
+        "Violated",
+        "Publishing"
+      ],
+      "default": "Any.*"
+    }
+  }
+}

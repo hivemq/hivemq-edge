@@ -48,7 +48,7 @@ describe('OperationNode', () => {
   it('should render properly with arguments', () => {
     const data: NodeProps<OperationData> = {
       ...MOCK_NODE_OPERATION,
-      data: { action: { functionId: 'test', hasArguments: true } },
+      data: { functionId: 'test', metadata: { hasArguments: true } },
     }
     cy.mountWithProviders(mockReactFlow(<OperationNode {...data} selected={true} />))
     cy.getByTestId(`node-title`).should('contain.text', 'Operation')
@@ -69,7 +69,7 @@ describe('OperationNode', () => {
   it('should render properly with terminal', () => {
     const data: NodeProps<OperationData> = {
       ...MOCK_NODE_OPERATION,
-      data: { action: { functionId: 'test', isTerminal: true } },
+      data: { functionId: 'test', metadata: { isTerminal: true } },
     }
     cy.mountWithProviders(mockReactFlow(<OperationNode {...data} selected={true} />))
     cy.getByTestId(`node-title`).should('contain.text', 'Operation')

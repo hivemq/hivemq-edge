@@ -1,13 +1,7 @@
 import { describe, expect } from 'vitest'
 import { DataHubNodeType, SchemaType, StrategyType, ValidatorType } from '../types.ts'
-import { getNodeId, getNodePayload, initialFlow } from './node.utils.ts'
-import { MOCK_JSONSCHEMA_SCHEMA } from '@/extensions/datahub/__test-utils__/schema-mocks.ts'
-
-describe('initialFlow', () => {
-  it('should return the initial state of the store', async () => {
-    expect(initialFlow()).toStrictEqual({ nodes: [], edges: [] })
-  })
-})
+import { getNodeId, getNodePayload } from './node.utils.ts'
+import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
 
 describe('getNodeId', () => {
   it('should return the initial state of the store', async () => {
@@ -56,7 +50,7 @@ describe('getNodePayload', () => {
     {
       type: DataHubNodeType.OPERATION,
       expected: {
-        action: undefined,
+        functionId: undefined,
       },
     },
     {

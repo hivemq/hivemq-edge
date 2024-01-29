@@ -4,11 +4,11 @@ import { CustomValidator } from '@rjsf/utils'
 import { Card, CardBody } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { MOCK_TOPIC_FILTER_SCHEMA } from '../../api/specs/TopicFilterData.ts'
+import { MOCK_TOPIC_FILTER_SCHEMA } from '../../api/specs/'
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
 import { PanelProps, TopicFilterData } from '../../types.ts'
+import { validateDuplicates } from '../../utils/rjsf.utils.ts'
 import { ReactFlowSchemaForm } from '../helpers/ReactFlowSchemaForm.tsx'
-import { validateDuplicates } from '@/extensions/datahub/utils/rjsf.utils.ts'
 
 export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
@@ -43,8 +43,6 @@ export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit })
           formData={{ topics: topics }}
           customValidate={customValidate}
           onSubmit={onFormSubmit}
-          onChange={() => console.log('changed')}
-          onError={() => console.log('errors')}
         />
       </CardBody>
     </Card>
