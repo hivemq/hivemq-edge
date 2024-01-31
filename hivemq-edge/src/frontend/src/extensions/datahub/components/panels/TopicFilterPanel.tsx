@@ -4,19 +4,19 @@ import { CustomValidator } from '@rjsf/utils'
 import { Card, CardBody } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { MOCK_TOPIC_FILTER_SCHEMA } from '../../api/specs/'
-import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
-import { PanelProps, TopicFilterData } from '../../types.ts'
-import { validateDuplicates } from '../../utils/rjsf.utils.ts'
-import { ReactFlowSchemaForm } from '../helpers/ReactFlowSchemaForm.tsx'
+import { PanelProps, TopicFilterData } from '@datahub/types.ts'
+import { MOCK_TOPIC_FILTER_SCHEMA } from '@datahub/api/specs/'
+import { ReactFlowSchemaForm } from '@datahub/components/helpers'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { validateDuplicates } from '@datahub/utils/rjsf.utils.ts'
 
 export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
   const { nodes } = useDataHubDraftStore()
 
-  const topics = useMemo(() => {
+  const formData = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<TopicFilterData> | undefined
-    return adapterNode ? adapterNode.data.topics : null
+    return adapterNode ? adapterNode.data : null
   }, [selectedNode, nodes])
 
   const customValidate: CustomValidator<TopicFilterData> = (formData, errors) => {
@@ -40,7 +40,7 @@ export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit })
         <ReactFlowSchemaForm
           schema={MOCK_TOPIC_FILTER_SCHEMA.schema}
           uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
-          formData={{ topics: topics }}
+          formData={formData}
           customValidate={customValidate}
           onSubmit={onFormSubmit}
         />
