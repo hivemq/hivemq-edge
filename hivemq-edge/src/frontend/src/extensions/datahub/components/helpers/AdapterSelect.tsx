@@ -1,14 +1,45 @@
 import { FocusEvent, useCallback, useMemo } from 'react'
 import { labelValue, WidgetProps } from '@rjsf/utils'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
-import { FormControl, FormLabel } from '@chakra-ui/react'
-import { Select, OnChangeValue } from 'chakra-react-select'
+import { FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
+import { Select, OnChangeValue, SingleValueProps, chakraComponents, OptionProps } from 'chakra-react-select'
 
+import { Adapter } from '@/api/__generated__'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 
-interface AdapterType {
-  label: string
-  value: string
+const SingleValue = (props: SingleValueProps<Adapter>) => {
+  return (
+    <chakraComponents.SingleValue {...props}>
+      <Text>{props.data.id}</Text>
+    </chakraComponents.SingleValue>
+  )
+}
+
+const Option = (props: OptionProps<Adapter>) => {
+  const { isSelected, ...rest } = props
+  const [selectedAdapter] = props.getValue()
+
+  // @ts-ignore
+  const { __isNew__ } = props.data
+  if (__isNew__) {
+    return <chakraComponents.Option {...props}>{props.children}</chakraComponents.Option>
+  }
+
+  return (
+    <chakraComponents.Option {...rest} isSelected={selectedAdapter && selectedAdapter.id === props.data.id}>
+      <VStack w="100%" alignItems="stretch" gap={0}>
+        <HStack>
+          <Text as="b" flex={1}>
+            {props.data.id}
+          </Text>
+          <HStack>
+            <Text fontSize="sm">{props.data.type}</Text>
+          </HStack>
+        </HStack>
+        <Text fontSize="sm">{props.data.type}</Text>
+      </VStack>
+    </chakraComponents.Option>
+  )
 }
 
 export const AdapterSelect = (props: WidgetProps) => {
@@ -17,9 +48,9 @@ export const AdapterSelect = (props: WidgetProps) => {
 
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
-  const onChange = useCallback<(newValue: OnChangeValue<{ label: string; value: string }, false>) => void>(
+  const onChange = useCallback<(newValue: OnChangeValue<Adapter, false>) => void>(
     (newValue) => {
-      props.onChange(newValue?.value || undefined)
+      props.onChange(newValue?.id || undefined)
     },
     [props]
   )
@@ -28,7 +59,7 @@ export const AdapterSelect = (props: WidgetProps) => {
 
   const options = useMemo(() => {
     if (!adapters) return []
-    return adapters.map<AdapterType>((e) => ({ label: e.id, value: e.id }))
+    return adapters
   }, [adapters])
 
   return (
@@ -47,17 +78,21 @@ export const AdapterSelect = (props: WidgetProps) => {
         props.hideLabel || !props.label
       )}
 
-      <Select
+      <Select<Adapter>
         isClearable
         isLoading={isLoading}
         isInvalid={isError}
         inputId={props.id}
         isRequired={props.required}
         options={options}
-        value={{ label: props.value, value: props.value }}
+        value={options.find((e) => e.id === props.value)}
+        components={{
+          Option,
+          SingleValue,
+        }}
+        onChange={onChange}
         onBlur={onBlur}
         onFocus={onFocus}
-        onChange={onChange}
       />
     </FormControl>
   )
