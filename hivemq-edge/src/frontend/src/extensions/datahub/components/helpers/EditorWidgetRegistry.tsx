@@ -5,6 +5,7 @@ import FunctionCreatableSelect from './FunctionCreatableSelect.tsx'
 import { JsFunctionInput, MetricCounterInput } from './MetricCounterInput.tsx'
 import { JavascriptEditor, JSONSchemaEditor, ProtoSchemaEditor } from './CodeEditor.tsx'
 import { MessageInterpolationTextArea } from './MessageInterpolationTextArea.tsx'
+import { AdapterSelect } from './AdapterSelect.tsx'
 
 export const datahubRJSFWidgets: RegistryWidgetsType = {
   'application/schema+json': JSONSchemaEditor,
@@ -15,4 +16,5 @@ export const datahubRJSFWidgets: RegistryWidgetsType = {
   'datahub:function-name': JsFunctionInput,
   'datahub:version': VersionManagerSelect,
   'datahub:message-interpolation': MessageInterpolationTextArea,
+  'edge:adapter-selector': AdapterSelect,
 }

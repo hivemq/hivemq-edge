@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 
 import { PanelProps, TopicFilterData } from '@datahub/types.ts'
 import { MOCK_TOPIC_FILTER_SCHEMA } from '@datahub/api/specs/'
-import { ReactFlowSchemaForm } from '@datahub/components/helpers'
+import { datahubRJSFWidgets, ReactFlowSchemaForm } from '@datahub/components/helpers'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { validateDuplicates } from '@datahub/utils/rjsf.utils.ts'
 
@@ -42,6 +42,7 @@ export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit })
           uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
           formData={formData}
           customValidate={customValidate}
+          widgets={datahubRJSFWidgets}
           onSubmit={onFormSubmit}
         />
       </CardBody>
