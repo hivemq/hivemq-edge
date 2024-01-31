@@ -75,8 +75,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     protected Plc4xConnection<?> createConnection() throws Plc4xException {
         return new Plc4xConnection<>(driverManager,
                 adapterConfig,
-                plc4xAdapterConfig -> Plc4xDataUtils.createQueryString(createQueryStringParams(
-                        plc4xAdapterConfig), true)) {
+                plc4xAdapterConfig -> Plc4xDataUtils.createQueryString(createQueryStringParams(plc4xAdapterConfig),
+                        true)) {
             @Override
             protected String getProtocol() {
                 return getProtocolHandler();
@@ -237,16 +237,18 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
 
     protected ProtocolAdapterDataSample processReadResponse(
             final @NotNull T.Subscription subscription, final @NotNull PlcReadResponse readEvent) {
-        PlcResponseCode responseCode = readEvent.getResponseCode(subscription.getTagName());
-        if (responseCode == PlcResponseCode.OK) {
-            if (getConnectionStatus() == ConnectionStatus.ERROR) {
-                //Error was transient
-                setConnectionStatus(ConnectionStatus.CONNECTED);
+        //it is possible that the read response does not contain any values at all, leading to unexpected error states, especially with EIP adapter
+        if (readEvent.getNumberOfValues(subscription.getTagName()) > 0) {
+            PlcResponseCode responseCode = readEvent.getResponseCode(subscription.getTagName());
+            if (responseCode == PlcResponseCode.OK) {
+                if (getConnectionStatus() == ConnectionStatus.ERROR) {
+                    //Error was transient
+                    setConnectionStatus(ConnectionStatus.CONNECTED);
+                }
+                return processPlcFieldData(subscription, Plc4xDataUtils.readDataFromReadResponse(readEvent));
             }
-            return processPlcFieldData(subscription, Plc4xDataUtils.readDataFromReadResponse(readEvent));
-        } else {
-            return null;
         }
+        return null;
     }
 
     protected ProtocolAdapterDataSample processPlcFieldData(

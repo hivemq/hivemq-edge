@@ -29,9 +29,7 @@ import java.util.Map;
  */
 public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
 
-    static final String
-            SLOT = "slot",
-            BACKPLANE = "backplane";
+    static final String SLOT = "slot", BACKPLANE = "backplane";
 
     public EIPProtocolAdapter(
             final ProtocolAdapterInformation adapterInformation,
@@ -42,7 +40,7 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
 
     @Override
     protected String getProtocolHandler() {
-        return "eip";
+        return "eip:tcp";
     }
 
     @Override
@@ -52,7 +50,7 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
 
     @Override
     protected String createTagAddressForSubscription(final Plc4xAdapterConfig.Subscription subscription) {
-        return subscription.getTagAddress();
+        return "%" + subscription.getTagAddress();
     }
 
     @Override
@@ -60,6 +58,7 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
         Map<String, String> map = new HashMap<>();
         map.put(BACKPLANE, nullSafe(config.getBackplane()));
         map.put(SLOT, nullSafe(config.getSlot()));
+        map.put("bigEndian", "false");
         return map;
     }
 }
