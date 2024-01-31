@@ -15,6 +15,7 @@ import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.messages.PlcReadResponse;
 import org.apache.plc4x.java.api.types.PlcResponseCode;
 import org.apache.plc4x.java.api.value.PlcValue;
+import org.apache.plc4x.java.spi.messages.DefaultPlcReadResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,7 +168,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 return CompletableFuture.failedFuture(e);
             }
         }
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture( new ProtocolAdapterDataSample(subscription));
     }
 
 
@@ -238,7 +239,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     protected ProtocolAdapterDataSample processReadResponse(
             final @NotNull T.Subscription subscription, final @NotNull PlcReadResponse readEvent) {
         //it is possible that the read response does not contain any values at all, leading to unexpected error states, especially with EIP adapter
-        if (readEvent.getNumberOfValues(subscription.getTagName()) > 0) {
+        if (!(readEvent instanceof DefaultPlcReadResponse) || ((DefaultPlcReadResponse) readEvent).getValues().containsKey(subscription.getTagName())) {
             PlcResponseCode responseCode = readEvent.getResponseCode(subscription.getTagName());
             if (responseCode == PlcResponseCode.OK) {
                 if (getConnectionStatus() == ConnectionStatus.ERROR) {
@@ -248,7 +249,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 return processPlcFieldData(subscription, Plc4xDataUtils.readDataFromReadResponse(readEvent));
             }
         }
-        return null;
+        return new ProtocolAdapterDataSample(subscription);
     }
 
     protected ProtocolAdapterDataSample processPlcFieldData(
