@@ -22,13 +22,13 @@ const mockNodes: Node<NodeTypes.BRIDGE_NODE | NodeTypes.ADAPTER_NODE>[] = [
 describe('GroupPropertyDrawer', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/metrics', [{ items: MOCK_METRICS } as MetricList]).as('getMetrics')
+    cy.intercept('/api/v1/metrics', [{ items: MOCK_METRICS } as MetricList])
     cy.intercept('/api/v1/metrics/**', []).as('getMetricForX')
   })
 
   it('should render properly', () => {
     const onClose = cy.stub().as('onClose')
-    const onEditEntity = cy.stub().as('onEditEntity')
+    const onEditEntity = cy.stub()
     cy.mountWithProviders(
       <GroupPropertyDrawer
         nodeId="adapter@fgffgf"
