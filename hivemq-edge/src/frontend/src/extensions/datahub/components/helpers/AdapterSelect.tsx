@@ -43,7 +43,7 @@ const Option = (props: OptionProps<Adapter>) => {
 }
 
 export const AdapterSelect = (props: WidgetProps) => {
-  // TODO[NVL] This is one of the components that break boundary with the DataHub "extension". Need a better way
+  // TODO[19017] This is one of the components that break boundary with the DataHub "extension". Need a better way
   const { data: adapters, isLoading, isError } = useListProtocolAdapters()
 
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
