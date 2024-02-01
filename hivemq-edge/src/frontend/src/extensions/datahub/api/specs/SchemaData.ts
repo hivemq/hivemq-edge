@@ -6,8 +6,6 @@ import schema from '../__generated__/schemas/SchemaData.json'
 export const MOCK_SCHEMA_SCHEMA: PanelSpecs = {
   schema: schema as RJSFSchema,
   uiSchema: {
-    type: {
-      // 'ui:widget': 'radio',
-    },
+    type: {},
   },
 }

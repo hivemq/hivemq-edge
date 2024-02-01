@@ -39,13 +39,10 @@ describe('ClientFilterPanel', () => {
     cy.mountWithProviders(<ClientFilterPanel selectedNode="3" onFormSubmit={onSubmit} />, { wrapper })
 
     cy.get('h2').eq(0).should('contain.text', 'Client Filters')
-    // first item
     cy.get('label#root_clients_0-label').should('contain.text', 'clients-0')
     cy.get('label#root_clients_0-label + input').should('have.value', 'client10')
-    // first item
     cy.get('label#root_clients_1-label').should('contain.text', 'clients-1')
     cy.get('label#root_clients_1-label + input').should('have.value', 'client20')
-    // first item
     cy.get('label#root_clients_2-label').should('contain.text', 'clients-2')
     cy.get('label#root_clients_2-label + input').should('have.value', 'client30')
 
