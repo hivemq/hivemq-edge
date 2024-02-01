@@ -1,12 +1,18 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from 'reactflow'
+import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath, Node } from 'reactflow'
 import { Icon, useColorMode } from '@chakra-ui/react'
 import { BiBarChartSquare } from 'react-icons/bi'
+import { MdPolicy } from 'react-icons/md'
 
 import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.tsx'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
+
+import { DataHubNodeType, PolicyType, TopicFilterData } from '@datahub/types.ts'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 const MonitoringEdge: FC<EdgeProps> = ({
   source,
@@ -32,6 +38,24 @@ const MonitoringEdge: FC<EdgeProps> = ({
     targetY,
     targetPosition,
   })
+  const hasDataHub = useGetCapability(CAPABILITY.DATAHUB)
+  const { nodes: datahubNodes } = useDataHubDraftStore()
+  const { nodes: workspaceNodes } = useWorkspaceStore()
+
+  // TODO[NVL] Might be worth exporting as a custom hook if more usage
+  const policyRoute = useMemo(() => {
+    if (!hasDataHub) return undefined
+
+    const sourceNode = workspaceNodes.find((node) => node.id === source)
+    if (!sourceNode) return undefined
+
+    const sourceFilters = datahubNodes.find((node: Node<TopicFilterData>) => {
+      return node.type === DataHubNodeType.TOPIC_FILTER && node.data.adapter === sourceNode.data.id
+    })
+    if (!sourceFilters) return undefined
+
+    return `${PolicyType.DATA}/${sourceFilters.id}`
+  }, [workspaceNodes, datahubNodes, source, hasDataHub])
 
   return (
     <>
@@ -58,6 +82,17 @@ const MonitoringEdge: FC<EdgeProps> = ({
               onClick={() => navigate(`/edge-flow/link/${id}`)}
               borderRadius={25}
             />
+            {policyRoute && (
+              <IconButton
+                aria-label="Datahub Policy"
+                variant={colorMode === 'light' ? 'outline' : 'solid'}
+                icon={<Icon as={MdPolicy} boxSize={6} />}
+                backgroundColor={colorMode === 'light' ? 'white' : 'gray.700'}
+                color={style?.stroke}
+                onClick={() => navigate(`/datahub/${policyRoute}`)}
+                borderRadius={25}
+              />
+            )}
           </div>
         </EdgeLabelRenderer>
       )}
