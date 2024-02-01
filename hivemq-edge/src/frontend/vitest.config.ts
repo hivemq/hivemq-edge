@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@datahub': path.resolve(__dirname, './src/extensions/datahub'),
     },
   },
   test: {

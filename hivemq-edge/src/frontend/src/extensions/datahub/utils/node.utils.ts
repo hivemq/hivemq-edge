@@ -7,7 +7,6 @@ import {
   DataHubNodeData,
   DataHubNodeType,
   DataPolicyData,
-  FunctionData,
   OperationData,
   SchemaData,
   SchemaType,
@@ -69,13 +68,13 @@ export const validConnections: ConnectionValidity = {
   [DataHubNodeType.SCHEMA]: [
     DataHubNodeType.VALIDATOR,
     [DataHubNodeType.OPERATION, OperationData.Handle.SCHEMA],
-    [DataHubNodeType.FUNCTION, FunctionData.Handle.SERIALISER],
-    [DataHubNodeType.FUNCTION, FunctionData.Handle.DESERIALISER],
+    [DataHubNodeType.OPERATION, OperationData.Handle.SERIALISER],
+    [DataHubNodeType.OPERATION, OperationData.Handle.DESERIALISER],
   ],
   [DataHubNodeType.CLIENT_FILTER]: [[DataHubNodeType.BEHAVIOR_POLICY, BehaviorPolicyData.Handle.CLIENT_FILTER]],
   [DataHubNodeType.BEHAVIOR_POLICY]: [DataHubNodeType.TRANSITION],
   [DataHubNodeType.TRANSITION]: [DataHubNodeType.OPERATION],
-  [DataHubNodeType.FUNCTION]: [[DataHubNodeType.OPERATION, OperationData.Handle.SCHEMA]],
+  [DataHubNodeType.FUNCTION]: [[DataHubNodeType.OPERATION, OperationData.Handle.FUNCTION]],
 }
 
 export const isValidPolicyConnection = (connection: Connection, nodes: Node[]) => {
