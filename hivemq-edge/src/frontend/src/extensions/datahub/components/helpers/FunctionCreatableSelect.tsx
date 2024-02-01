@@ -19,7 +19,7 @@ const SingleValue = (props: SingleValueProps<FunctionSpecs>) => {
 const Option = (props: OptionProps<FunctionSpecs>) => {
   const { t } = useTranslation('datahub')
   const { isSelected, ...rest } = props
-  const [dd] = props.getValue()
+  const [selectedOption] = props.getValue()
 
   // @ts-ignore
   const { __isNew__ } = props.data
@@ -30,7 +30,10 @@ const Option = (props: OptionProps<FunctionSpecs>) => {
   const { isTerminal, isDataOnly } = props.data.metadata || {}
 
   return (
-    <chakraComponents.Option {...rest} isSelected={dd && dd.functionId === props.data.functionId}>
+    <chakraComponents.Option
+      {...rest}
+      isSelected={selectedOption && selectedOption.functionId === props.data.functionId}
+    >
       <VStack w="100%" alignItems="stretch" gap={0}>
         <HStack>
           <Text as="b" flex={1}>
@@ -49,18 +52,18 @@ const Option = (props: OptionProps<FunctionSpecs>) => {
 
 const getValue = (props: WidgetProps) => {
   const options = props.options.enumOptions
-  const defs = props.registry.rootSchema.definitions
+  const rootSchemaDefinitions = props.registry.rootSchema.definitions
 
-  if (!defs || !options) return undefined
+  if (!rootSchemaDefinitions || !options) return undefined
 
-  const deg = defs[props.value]
-  if (!deg) return undefined
+  const schemaDefinition = rootSchemaDefinitions[props.value]
+  if (!schemaDefinition) return undefined
 
   return {
-    schema: deg,
+    schema: schemaDefinition,
     functionId: props.value,
     // @ts-ignore
-    ...deg.metadata,
+    ...schemaDefinition.metadata,
   }
 }
 
