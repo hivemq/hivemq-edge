@@ -73,6 +73,7 @@ export enum NodeCategory {
 export interface DataHubNodeData {}
 
 export interface TopicFilterData extends DataHubNodeData {
+  adapter?: string
   topics: string[]
 }
 
