@@ -9,7 +9,13 @@ export const MOCK_OPERATION_SCHEMA: PanelSpecs = {
     functionId: {
       'ui:widget': 'datahub:function-selector',
     },
+
     formData: {
+      transform: {
+        'ui:options': {
+          removable: false,
+        },
+      },
       message: {
         'ui:widget': 'datahub:message-interpolation',
       },
