@@ -2,6 +2,11 @@
   "type": "object",
   "description": "To start a policy, you have to indicate a topic (or a topic filter) to apply it on. This\n         is a simple way to handle this operation, until we can use the Topic Tree Selector.\n          ",
   "properties": {
+    "adapter": {
+      "type": "string",
+      "title": "Adapter source",
+      "description": "If an adapter is selected, the filters created below will be validated from the subscriptions"
+    },
     "topics": {
       "type": "array",
       "title": "Topic Filters",

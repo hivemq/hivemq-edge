@@ -36,6 +36,8 @@ describe('TopicFilterPanel', () => {
   it('should render the fields for a Validator', () => {
     cy.mountWithProviders(<TopicFilterPanel selectedNode="3" />, { wrapper })
 
+    cy.get('label#root_adapter-label').should('contain.text', 'Adapter source')
+
     cy.get('h2').eq(0).should('contain.text', 'Topic Filters')
     cy.get('label#root_topics_0-label').should('contain.text', 'topics-0')
     cy.get('label#root_topics_0-label + input').should('have.value', 'root/test1')
