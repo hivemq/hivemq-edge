@@ -122,7 +122,6 @@ const PolicyTable: FC = () => {
           <Button
             leftIcon={<BiAddToQueue />}
             onClick={() => navigate(`/datahub/${PolicyType.CREATE_POLICY}`)}
-            isDisabled={isLoading}
             variant="primary"
           >
             {t('policyTable.action.create')}

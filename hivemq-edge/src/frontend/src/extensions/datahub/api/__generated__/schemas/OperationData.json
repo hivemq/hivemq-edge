@@ -150,17 +150,22 @@
       "properties": {}
     },
     "DataHub.transform": {
-      "title": "Transform function",
-      "description": "Javascript Transformation function",
+      "title": "Transformation",
+      "description": "The list of Javascript functions used in this transformation operation. Add them directly on the graph",
       "metadata": {
         "isTerminal": false,
         "hasArguments": true
       },
       "properties": {
         "transform": {
-          "type": "string",
-          "title": "Function name",
-          "format": "datahub:function-name"
+          "type": "array",
+          "title": "Execution order",
+          "description": "Change the order in which the transform functions will be executed",
+          "items": {
+            "type": "string",
+            "title": "Function name",
+            "format": "datahub:function-name"
+          }
         }
       }
     },

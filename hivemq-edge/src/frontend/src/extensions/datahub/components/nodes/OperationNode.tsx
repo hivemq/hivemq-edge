@@ -3,27 +3,44 @@ import { useTranslation } from 'react-i18next'
 import { NodeProps, Position } from 'reactflow'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 
-import { DataHubNodeType, OperationData } from '../../types.ts'
-import NodeIcon from '../helpers/NodeIcon.tsx'
-import NodeParams from '../helpers/NodeParams.tsx'
-import { NodeWrapper } from './NodeWrapper.tsx'
-import { CustomHandle } from './CustomHandle.tsx'
+import { DataHubNodeType, OperationData } from '@datahub/types.ts'
+import { NodeIcon } from '@datahub/components/helpers'
+import { NodeWrapper } from '@datahub/components/nodes/NodeWrapper.tsx'
+import NodeParams from '@datahub/components/helpers/NodeParams.tsx'
+import { CustomHandle } from '@datahub/components/nodes/CustomHandle.tsx'
 
 export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
   const { t } = useTranslation('datahub')
   const { data, id, type } = props
   const { functionId, metadata } = data
 
+  const isTransform = metadata?.hasArguments && data.functionId === 'DataHub.transform'
+  const isSerialiser =
+    metadata?.hasArguments && (data.functionId === 'Serdes.serialize' || data.functionId === 'Serdes.deserialize')
+
   return (
     <>
       <NodeWrapper route={`node/${DataHubNodeType.OPERATION}/${id}`} {...props}>
-        <HStack>
-          <NodeIcon type={DataHubNodeType.OPERATION} />
-          <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
-          <VStack data-testid="node-model">
-            <NodeParams value={functionId || t('error.noSet.select')} />
-          </VStack>
-        </HStack>
+        <VStack>
+          <HStack w="100%" justifyContent="space-around">
+            {isSerialiser && <Text fontSize="xs">{OperationData.Handle.SCHEMA}</Text>}
+            {isTransform && (
+              <>
+                <Text fontSize="xs">{OperationData.Handle.DESERIALISER}</Text>
+                <Text fontSize="xs">{OperationData.Handle.FUNCTION}</Text>
+                <Text fontSize="xs">{OperationData.Handle.SERIALISER}</Text>
+              </>
+            )}
+          </HStack>
+
+          <HStack>
+            <NodeIcon type={DataHubNodeType.OPERATION} />
+            <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
+            <VStack data-testid="node-model">
+              <NodeParams value={functionId || t('error.noSet.select')} />
+            </VStack>
+          </HStack>
+        </VStack>
       </NodeWrapper>
       <CustomHandle type="target" position={Position.Left} id={OperationData.Handle.INPUT} />
       {!metadata?.isTerminal && (
@@ -35,8 +52,23 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
           // isConnectable={1}
         />
       )}
-      {metadata?.hasArguments && (
-        <CustomHandle type="target" position={Position.Top} id={OperationData.Handle.SCHEMA} />
+      {isSerialiser && <CustomHandle type="target" position={Position.Top} id={OperationData.Handle.SCHEMA} />}
+      {isTransform && (
+        <>
+          <CustomHandle
+            type="target"
+            position={Position.Top}
+            id={OperationData.Handle.SERIALISER}
+            style={{ left: '20%' }}
+          />
+          <CustomHandle type="target" position={Position.Top} id={OperationData.Handle.FUNCTION} />
+          <CustomHandle
+            type="target"
+            position={Position.Top}
+            id={OperationData.Handle.DESERIALISER}
+            style={{ left: '80%' }}
+          />
+        </>
       )}
     </>
   )

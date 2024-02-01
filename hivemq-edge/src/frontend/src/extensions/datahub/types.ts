@@ -61,6 +61,13 @@ export enum DataHubNodeType {
   EVENT = 'EVENT',
 }
 
+export enum NodeCategory {
+  DEFAULT = 'DEFAULT',
+  INITIAL = 'INITIAL',
+  POLICY = 'POLICY',
+  RESOURCE = 'RESOURCE',
+}
+
 // TODO[NVL] Not sure of the pertinence of an empty interface
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface DataHubNodeData {}
@@ -128,8 +135,7 @@ export interface FunctionData {
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace FunctionData {
   export enum Handle {
-    SERIALISER = 'serialiser',
-    DESERIALISER = 'deserialiser',
+    SCHEMA = 'schema',
   }
 }
 
@@ -160,6 +166,9 @@ export namespace OperationData {
     INPUT = 'input',
     OUTPUT = 'output',
     SCHEMA = 'schema',
+    FUNCTION = 'function',
+    SERIALISER = 'serialiser',
+    DESERIALISER = 'deserialiser',
   }
 }
 
