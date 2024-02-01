@@ -37,10 +37,8 @@ describe('TopicFilterPanel', () => {
     cy.mountWithProviders(<TopicFilterPanel selectedNode="3" />, { wrapper })
 
     cy.get('h2').eq(0).should('contain.text', 'Topic Filters')
-    // first item
     cy.get('label#root_topics_0-label').should('contain.text', 'topics-0')
     cy.get('label#root_topics_0-label + input').should('have.value', 'root/test1')
-    // first item
     cy.get('label#root_topics_1-label').should('contain.text', 'topics-1')
     cy.get('label#root_topics_1-label + input').should('have.value', 'root/test2')
   })

@@ -24,7 +24,6 @@ describe('GroupPropertyDrawer', () => {
     cy.viewport(800, 800)
     cy.intercept('/api/v1/metrics', [{ items: MOCK_METRICS } as MetricList]).as('getMetrics')
     cy.intercept('/api/v1/metrics/**', []).as('getMetricForX')
-    // cy.intercept('/api/v1/management/events?*', []).as('getEvents')
   })
 
   it('should render properly', () => {

@@ -38,7 +38,6 @@ describe('BehaviorPolicyPanel', () => {
 
     cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={onSubmit} />, { wrapper })
 
-    // first select
     cy.get('label#root_model-label').should('contain.text', 'Behavior Model')
     cy.get('label#root_model-label + div').should('contain.text', 'Mqtt.events')
     cy.get('label#root_model-label + div').click()
@@ -55,10 +54,8 @@ describe('BehaviorPolicyPanel', () => {
     cy.get('label#root_model-label + div').find("[role='listbox']").find("[role='option']").eq(2).click()
 
     cy.get('h2').eq(0).should('contain.text', 'Publish')
-    // first item
     cy.get('label#root_arguments_minPublishes-label').should('contain.text', 'Minimum number of messages')
     cy.get('label#root_arguments_minPublishes-label + input').should('have.value', '0')
-    // first item
     cy.get('label#root_arguments_maxPublishes-label').should('contain.text', 'Maximum number of messages')
     cy.get('label#root_arguments_maxPublishes-label + input').should('have.value', '10000')
 
