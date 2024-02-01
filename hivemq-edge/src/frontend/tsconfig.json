@@ -24,7 +24,8 @@
     // alias
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@datahub/*": ["src/extensions/datahub/*"]
     }
   },
   "include": ["src", "**/*.*"],
