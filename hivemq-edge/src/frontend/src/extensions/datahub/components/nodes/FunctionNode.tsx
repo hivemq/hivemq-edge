@@ -16,12 +16,6 @@ export const FunctionNode: FC<NodeProps<FunctionData>> = (props) => {
     <>
       <NodeWrapper route={`node/${DataHubNodeType.FUNCTION}/${id}`} {...props}>
         <VStack>
-          {import.meta.env.VITE_FLAG_DATAHUB_TRANSFORM_EXTENDED === 'true' && (
-            <HStack w="100%" justifyContent="space-around">
-              <Text fontSize="xs">{FunctionData.Handle.SERIALISER}</Text>
-              <Text fontSize="xs">{FunctionData.Handle.DESERIALISER}</Text>
-            </HStack>
-          )}
           <HStack>
             <NodeIcon type={DataHubNodeType.FUNCTION} />
             <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
@@ -32,22 +26,6 @@ export const FunctionNode: FC<NodeProps<FunctionData>> = (props) => {
         </VStack>
       </NodeWrapper>
       <CustomHandle type="source" position={Position.Bottom} id="source" />
-      {import.meta.env.VITE_FLAG_DATAHUB_TRANSFORM_EXTENDED === 'true' && (
-        <>
-          <CustomHandle
-            type="target"
-            position={Position.Top}
-            id={FunctionData.Handle.SERIALISER}
-            style={{ left: '25%' }}
-          />
-          <CustomHandle
-            type="target"
-            position={Position.Top}
-            id={FunctionData.Handle.DESERIALISER}
-            style={{ left: '75%' }}
-          />
-        </>
-      )}
     </>
   )
 }
