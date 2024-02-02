@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import DataHubPage from '@/extensions/datahub/components/DataHubPage.tsx'
+import DataHubPage from './DataHubPage.tsx'
 
 describe('DataHubPage', () => {
   beforeEach(() => {
