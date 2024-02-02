@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 
 import { ReactFlowProvider } from 'reactflow'
-import PropertyPanelController from '@/extensions/datahub/components/controls/PropertyPanelController.tsx'
 import { Route, Routes } from 'react-router-dom'
+import PropertyPanelController from './PropertyPanelController.tsx'
 
 describe('PropertyPanelController', () => {
   beforeEach(() => {

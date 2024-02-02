@@ -1,5 +1,4 @@
-import { datahubRJSFWidgets } from './EditorWidgetRegistry.tsx'
 import NodeIcon from './NodeIcon.tsx'
-import { ReactFlowSchemaForm } from './ReactFlowSchemaForm.tsx'
+import NodeParams from './NodeParams.tsx'
 
-export { datahubRJSFWidgets, ReactFlowSchemaForm, NodeIcon }
+export { NodeIcon, NodeParams }
