@@ -4,9 +4,8 @@ import { Panel } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { HStack, useDisclosure, Text, VStack, Box, IconButton, Icon, ButtonGroup } from '@chakra-ui/react'
 import { FaAngleLeft, FaAngleRight, FaTools } from 'react-icons/fa'
-
-import { DataHubNodeType } from '../../types.ts'
-import Tool from './Tool.tsx'
+import { DataHubNodeType } from '@datahub/types.ts'
+import Tool from '@datahub/components/controls/Tool.tsx'
 
 export const Toolbox = () => {
   const { t } = useTranslation('datahub')

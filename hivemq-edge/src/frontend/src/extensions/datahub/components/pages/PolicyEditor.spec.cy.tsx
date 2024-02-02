@@ -1,9 +1,10 @@
 /// <reference types="cypress" />
 
-import PolicyEditor from './PolicyEditor.tsx'
 import { ReactFlowProvider } from 'reactflow'
 import { Route, Routes } from 'react-router-dom'
 import { Box } from '@chakra-ui/react'
+
+import PolicyEditor from './PolicyEditor.tsx'
 
 describe('PolicyEditor', () => {
   beforeEach(() => {
