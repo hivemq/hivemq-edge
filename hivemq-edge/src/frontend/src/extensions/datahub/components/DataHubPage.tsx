@@ -1,11 +1,11 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Outlet } from 'react-router-dom'
+import { Box } from '@chakra-ui/react'
 
 import PageContainer from '@/components/PageContainer.tsx'
-import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
-import { Box } from '@chakra-ui/react'
 import WarningMessage from '@/components/WarningMessage.tsx'
+import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 
 const DataHubPage: FC = () => {

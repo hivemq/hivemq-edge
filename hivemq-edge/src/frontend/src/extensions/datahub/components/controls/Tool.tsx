@@ -1,9 +1,11 @@
-import { ButtonProps } from '@chakra-ui/react'
 import { FC, useCallback } from 'react'
-import { DataHubNodeType } from '@/extensions/datahub/types.ts'
-import { NodeIcon } from '@/extensions/datahub/components/helpers'
-import IconButton from '@/components/Chakra/IconButton.tsx'
 import { useTranslation } from 'react-i18next'
+import { ButtonProps } from '@chakra-ui/react'
+
+import IconButton from '@/components/Chakra/IconButton.tsx'
+
+import { DataHubNodeType } from '@datahub/types.ts'
+import { NodeIcon } from '@datahub/components/helpers'
 
 interface ToolProps extends ButtonProps {
   nodeType: DataHubNodeType

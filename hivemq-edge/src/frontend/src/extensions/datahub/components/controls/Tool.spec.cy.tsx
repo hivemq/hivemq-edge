@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-import { DataHubNodeType } from '../../types.ts'
+import { DataHubNodeType } from '@datahub/types.ts'
 import Tool from './Tool.tsx'
 
 describe('Tool', () => {

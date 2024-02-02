@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { IChangeEvent } from '@rjsf/core'
@@ -22,30 +22,9 @@ import {
 } from '@chakra-ui/react'
 import { LuConstruction } from 'react-icons/lu'
 
-import {
-  BehaviorPolicyPanel,
-  ClientFilterPanel,
-  OperationPanel,
-  SchemaPanel,
-  TopicFilterPanel,
-  TransitionPanel,
-  ValidatorPanel,
-  FunctionPanel,
-} from '../panels'
-import NodeIcon from '../helpers/NodeIcon.tsx'
-import { DataHubNodeType, PanelProps } from '../../types.ts'
-import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
-
-const DefaultEditor: Record<string, FC<PanelProps>> = {
-  [DataHubNodeType.TOPIC_FILTER]: TopicFilterPanel,
-  [DataHubNodeType.CLIENT_FILTER]: ClientFilterPanel,
-  [DataHubNodeType.VALIDATOR]: ValidatorPanel,
-  [DataHubNodeType.SCHEMA]: SchemaPanel,
-  [DataHubNodeType.BEHAVIOR_POLICY]: BehaviorPolicyPanel,
-  [DataHubNodeType.TRANSITION]: TransitionPanel,
-  [DataHubNodeType.OPERATION]: OperationPanel,
-  [DataHubNodeType.FUNCTION]: FunctionPanel,
-}
+import { DefaultEditor } from '@datahub/flow/mappings.tsx'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { NodeIcon } from '@datahub/components/helpers'
 
 const PropertyPanelController = () => {
   const { t } = useTranslation('datahub')

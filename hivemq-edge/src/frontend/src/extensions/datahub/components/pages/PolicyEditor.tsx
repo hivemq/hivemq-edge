@@ -12,29 +12,17 @@ import { Outlet, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
 
-import ErrorMessage from '@/components/ErrorMessage.tsx'
-
-import { DataHubNodeType, PolicyType } from '../../types.ts'
-import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
-import CanvasControls from '../controls/CanvasControls.tsx'
-import { Toolbox } from '../controls/Toolbox.tsx'
-import Minimap from '../controls/Minimap.tsx'
-
 import styles from './PolicyEditor.module.scss'
 
-import {
-  TopicFilterNode,
-  ClientFilterNode,
-  DataPolicyNode,
-  FunctionNode,
-  ValidatorNode,
-  SchemaNode,
-  OperationNode,
-  BehaviorPolicyNode,
-  TransitionNode,
-} from '../../components/nodes/'
-import { getNodeId, getNodePayload, isValidPolicyConnection } from '../../utils/node.utils.ts'
-import { BaseNode } from '@/extensions/datahub/components/nodes/BaseNode.tsx'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
+
+import { PolicyType } from '@datahub/types.ts'
+import { CustomNodeTypes } from '@datahub/flow/mappings.tsx'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
+import { Toolbox } from '@datahub/components/controls/Toolbox.tsx'
+import CanvasControls from '@datahub/components/controls/CanvasControls.tsx'
+import Minimap from '@datahub/components/controls/Minimap.tsx'
 
 const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
@@ -43,22 +31,7 @@ const PolicyEditor: FC = () => {
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onAddNodes } = useDataHubDraftStore()
   const { policyType /*, policyId */ } = useParams()
 
-  const nodeTypes = useMemo(
-    () => ({
-      [DataHubNodeType.ADAPTOR]: BaseNode,
-      [DataHubNodeType.BRIDGE]: BaseNode,
-      [DataHubNodeType.TOPIC_FILTER]: TopicFilterNode,
-      [DataHubNodeType.CLIENT_FILTER]: ClientFilterNode,
-      [DataHubNodeType.DATA_POLICY]: DataPolicyNode,
-      [DataHubNodeType.VALIDATOR]: ValidatorNode,
-      [DataHubNodeType.SCHEMA]: SchemaNode,
-      [DataHubNodeType.OPERATION]: OperationNode,
-      [DataHubNodeType.FUNCTION]: FunctionNode,
-      [DataHubNodeType.BEHAVIOR_POLICY]: BehaviorPolicyNode,
-      [DataHubNodeType.TRANSITION]: TransitionNode,
-    }),
-    []
-  )
+  const nodeTypes = useMemo(() => CustomNodeTypes, [])
 
   const checkValidity = useCallback((connection: Connection) => isValidPolicyConnection(connection, nodes), [nodes])
 
