@@ -18,11 +18,15 @@ package com.hivemq.edge.adapters.plc4x.types.eip;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.apache.plc4x.java.api.messages.PlcReadResponse;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -60,5 +64,31 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
         map.put(SLOT, nullSafe(config.getSlot()));
         map.put("bigEndian", "false");
         return map;
+    }
+
+    @Override
+    protected CompletableFuture<ProtocolAdapterDataSample<EIPAdapterConfig>> onSamplerInvoked(
+            final EIPAdapterConfig config, final AbstractProtocolAdapterConfig.Subscription subscription) {
+        if (!(subscription instanceof EIPAdapterConfig.Subscription)) {
+            throw new IllegalStateException("Subscription configuration is not of correct type Ethernet/IP");
+        }
+        if (connection.isConnected()) {
+            try {
+                CompletableFuture<? extends PlcReadResponse> request =
+                        connection.read((Plc4xAdapterConfig.Subscription) subscription);
+                return request.thenApply(response -> (ProtocolAdapterDataSample<EIPAdapterConfig>) processReadResponse((EIPAdapterConfig.Subscription) subscription,
+                        response)).exceptionally(throwable -> {
+                    if (throwable instanceof InterruptedException ||
+                            throwable.getCause() instanceof InterruptedException) {
+                        return new ProtocolAdapterDataSample<EIPAdapterConfig>(subscription);
+                    }
+                    throw new RuntimeException(throwable);
+                });
+
+            } catch (Exception e) {
+                return CompletableFuture.failedFuture(e);
+            }
+        }
+        return CompletableFuture.completedFuture(new ProtocolAdapterDataSample<EIPAdapterConfig>(subscription));
     }
 }
