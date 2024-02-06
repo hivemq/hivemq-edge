@@ -221,3 +221,23 @@ export interface TransitionData extends DataHubNodeData {
   to?: StateType
   core?: BehaviorPolicyOnTransition
 }
+
+export interface FsmState {
+  name: string
+  description: string
+  type: string
+}
+export interface FsmTransition {
+  fromState: string
+  toState: string
+  description: string
+  event: string
+}
+
+export interface FiniteStateMachine {
+  states: Array<FsmState>
+  transitions: Array<FsmTransition>
+}
+export interface FiniteStateMachineSchema {
+  metadata: FiniteStateMachine
+}
