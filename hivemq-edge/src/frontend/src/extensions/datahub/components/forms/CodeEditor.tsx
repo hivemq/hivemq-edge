@@ -1,6 +1,6 @@
 import { labelValue, WidgetProps } from '@rjsf/utils'
 import { Editor } from '@monaco-editor/react'
-import { Box, Button, FormControl, FormLabel, HStack, VStack } from '@chakra-ui/react'
+import { Button, FormControl, FormLabel, HStack, VStack } from '@chakra-ui/react'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { useTranslation } from 'react-i18next'
 
@@ -23,15 +23,14 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
         props.hideLabel || !props.label
       )}
 
-      <VStack gap={3} alignItems="flex-start">
-        <Box id={props.id}>
-          <Editor
-            height="40vh"
-            defaultLanguage={lng}
-            defaultValue={props.value}
-            onChange={(event) => props.onChange(event)}
-          />
-        </Box>
+      <VStack gap={3} alignItems="flex-start" id={props.id}>
+        <Editor
+          height="40vh"
+          defaultLanguage={lng}
+          defaultValue={props.value}
+          onChange={(event) => props.onChange(event)}
+        />
+
         <HStack>
           <Button variant="danger" isDisabled size="sm">
             {t('workspace.codeEditor.delete')}
