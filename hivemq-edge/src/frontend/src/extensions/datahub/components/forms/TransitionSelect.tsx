@@ -2,12 +2,23 @@ import { FocusEvent, useCallback, useMemo } from 'react'
 import { labelValue, WidgetProps } from '@rjsf/utils'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
-import { Select, OnChangeValue, SingleValueProps, chakraComponents, OptionProps } from 'chakra-react-select'
+import {
+  Select,
+  OnChangeValue,
+  SingleValueProps,
+  chakraComponents,
+  OptionProps,
+  createFilter,
+} from 'chakra-react-select'
 
 import { FiniteStateMachine, FsmTransition } from '@datahub/types.ts'
 import { useTranslation } from 'react-i18next'
 
-const SingleValue = (props: SingleValueProps<FsmTransition>) => {
+interface FsmTransitionExt extends FsmTransition {
+  id: string
+}
+
+const SingleValue = (props: SingleValueProps<FsmTransitionExt>) => {
   return (
     <chakraComponents.SingleValue {...props}>
       <Text>{props.data.event}</Text>
@@ -15,7 +26,7 @@ const SingleValue = (props: SingleValueProps<FsmTransition>) => {
   )
 }
 
-const Option = (props: OptionProps<FsmTransition>) => {
+const Option = (props: OptionProps<FsmTransitionExt>) => {
   const { t } = useTranslation('datahub')
   const { isSelected, ...rest } = props
   const [selectedTransition] = props.getValue()
@@ -27,7 +38,7 @@ const Option = (props: OptionProps<FsmTransition>) => {
   }
 
   return (
-    <chakraComponents.Option {...rest} isSelected={selectedTransition && selectedTransition.event === props.data.event}>
+    <chakraComponents.Option {...rest} isSelected={selectedTransition && selectedTransition.id === props.data.id}>
       <HStack w="100%" justifyContent="space-between" gap={3}>
         <VStack alignItems="flex-start">
           <Text as="b" flex={1}>
@@ -53,9 +64,9 @@ const Option = (props: OptionProps<FsmTransition>) => {
 export const TransitionSelect = (props: WidgetProps) => {
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
-  const onChange = useCallback<(newValue: OnChangeValue<FsmTransition, false>) => void>(
+  const onChange = useCallback<(newValue: OnChangeValue<FsmTransitionExt, false>) => void>(
     (newValue) => {
-      props.onChange(newValue?.event || undefined)
+      props.onChange(newValue?.id || undefined)
     },
     [props]
   )
@@ -65,7 +76,19 @@ export const TransitionSelect = (props: WidgetProps) => {
   const options = useMemo(() => {
     const metadata = props.options.metadata as FiniteStateMachine | null
     if (!metadata) return []
-    return metadata.transitions
+
+    const opts = metadata.transitions.map<FsmTransitionExt>((e) => ({
+      ...e,
+      id: `${e.event}-${e.fromState}-${e.toState}`,
+    }))
+    opts.push({
+      id: 'Event.OnAny-Any.*-Any.*',
+      event: 'Event.OnAny',
+      toState: 'Any.*',
+      fromState: 'Any.*',
+      description: 'Matches every available event',
+    })
+    return opts
   }, [props.options])
 
   return (
@@ -84,14 +107,14 @@ export const TransitionSelect = (props: WidgetProps) => {
         props.hideLabel || !props.label
       )}
 
-      <Select<FsmTransition>
+      <Select<FsmTransitionExt>
         isClearable
         // isLoading={isLoading}
         // isInvalid={isError}
         inputId={props.id}
         isRequired={props.required}
         options={options}
-        value={options.find((e) => e.event === props.value)}
+        value={options.find((e) => e.id === props.value)}
         components={{
           Option,
           SingleValue,
