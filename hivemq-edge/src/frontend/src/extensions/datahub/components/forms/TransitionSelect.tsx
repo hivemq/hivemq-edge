@@ -21,7 +21,9 @@ interface FsmTransitionExt extends FsmTransition {
 const SingleValue = (props: SingleValueProps<FsmTransitionExt>) => {
   return (
     <chakraComponents.SingleValue {...props}>
-      <Text>{props.data.event}</Text>
+      <Text>
+        {props.data.event} (<Text as="span">{props.data.fromState}</Text> - <Text as="span">{props.data.toState}</Text>)
+      </Text>
     </chakraComponents.SingleValue>
   )
 }
