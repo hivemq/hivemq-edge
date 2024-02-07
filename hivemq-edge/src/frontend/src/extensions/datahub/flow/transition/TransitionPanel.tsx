@@ -1,13 +1,16 @@
-import { FC, useMemo } from 'react'
+import { FC, useCallback, useMemo } from 'react'
 import { getIncomers, Node } from 'reactflow'
 import { Box, Card, CardBody } from '@chakra-ui/react'
+import { IChangeEvent } from '@rjsf/core'
 
 import {
   BehaviorPolicyData,
   DataHubNodeType,
   FiniteStateMachineSchema,
   PanelProps,
+  StateType,
   TransitionData,
+  TransitionType,
 } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
@@ -18,8 +21,8 @@ import { FiniteStateMachineFlow } from '@datahub/components/fsm/FiniteStateMachi
 
 export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { nodes, edges } = useDataHubDraftStore()
-  // const store = useStoreApi()
 
+  // TODO[NVL] Error messages?
   const parentPolicy = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<TransitionData> | undefined
     if (!adapterNode) return undefined
@@ -29,14 +32,21 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
     const [behavior] = incomers
     if (behavior.type !== DataHubNodeType.BEHAVIOR_POLICY) return undefined
 
-    // store.getState().onError?.('datahub-123', 'You need to define a parent first')
     return behavior as Node<BehaviorPolicyData>
   }, [edges, nodes, selectedNode])
 
   const data = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<TransitionData> | undefined
     if (!adapterNode) return null
-    return { ...adapterNode.data, model: parentPolicy ? parentPolicy.data.model : undefined }
+
+    const { event, from, to } = adapterNode.data
+    const tempData: TransitionData = {
+      ...adapterNode.data,
+      model: parentPolicy ? parentPolicy.data.model : undefined,
+      // @ts-ignore
+      event: `${event || ''}-${from || ''}-${to || ''}`,
+    }
+    return tempData
   }, [nodes, parentPolicy, selectedNode])
 
   const options = useMemo(() => {
@@ -53,6 +63,27 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
     return metadata
   }, [parentPolicy])
 
+  const onSafeFormSubmit = useCallback(
+    (data: IChangeEvent<TransitionData>) => {
+      const initData = data
+      const { formData } = initData
+      if (formData) {
+        const { event } = formData
+        if (event) {
+          const [e, from, to] = event.split('-')
+          initData.formData = {
+            ...initData.formData,
+            event: e as unknown as TransitionType,
+            from: from as unknown as StateType,
+            to: to as unknown as StateType,
+          }
+        }
+      }
+      onFormSubmit?.(initData)
+    },
+    [onFormSubmit]
+  )
+
   return (
     <Card>
       <CardBody>
@@ -60,8 +91,8 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
           schema={MOCK_TRANSITION_SCHEMA.schema}
           uiSchema={{
             ...MOCK_TRANSITION_SCHEMA.uiSchema,
-            transition: {
-              ...MOCK_TRANSITION_SCHEMA.uiSchema?.transition,
+            event: {
+              ...MOCK_TRANSITION_SCHEMA.uiSchema?.event,
               'ui:options': {
                 metadata: options,
               },
@@ -69,7 +100,7 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
           }}
           formData={data}
           widgets={datahubRJSFWidgets}
-          onSubmit={onFormSubmit}
+          onSubmit={onSafeFormSubmit}
         />
         {options && (
           <Box w="100%" height="400px">
