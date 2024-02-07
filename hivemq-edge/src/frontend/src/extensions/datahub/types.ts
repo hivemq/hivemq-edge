@@ -216,7 +216,8 @@ export enum TransitionType {
 }
 
 export interface TransitionData extends DataHubNodeData {
-  type?: TransitionType
+  model?: BehaviorPolicyType
+  event?: TransitionType
   from?: StateType
   to?: StateType
   core?: BehaviorPolicyOnTransition

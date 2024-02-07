@@ -3,10 +3,10 @@ import { RJSFSchema } from '@rjsf/utils'
 
 const schema: RJSFSchema = {
   type: 'object',
-  required: ['model', 'transition'],
+  required: ['model', 'event'],
   properties: {
     model: { type: 'string' },
-    transition: { type: 'string' },
+    event: { type: 'string' },
     from: { type: 'string' },
     to: { type: 'string' },
   },
@@ -26,7 +26,7 @@ export const MOCK_TRANSITION_SCHEMA: PanelSpecs = {
       'ui:readonly': true,
       'ui:widget': 'hidden',
     },
-    transition: {
+    event: {
       'ui:widget': 'datahub:transition-selector',
     },
   },
