@@ -1,8 +1,15 @@
 import { FC } from 'react'
 import { Handle, NodeProps, Position } from 'reactflow'
-import { Card, CardBody, Text } from '@chakra-ui/react'
+import { Card, CardBody, CardBodyProps, Text } from '@chakra-ui/react'
 
 import { FsmState } from '@datahub/types.ts'
+
+const stateStyle: Record<string, CardBodyProps> = {
+  INITIAL: { borderStyle: 'dashed', borderWidth: 2 },
+  SUCCESS: { borderStyle: 'solid', borderWidth: 4 },
+  INTERMEDIATE: {},
+  FAILED: { borderStyle: 'dashed', borderWidth: 4 },
+}
 
 export const StateNode: FC<NodeProps<FsmState>> = (props) => {
   return (
@@ -11,7 +18,7 @@ export const StateNode: FC<NodeProps<FsmState>> = (props) => {
         <Handle type="target" position={Position.Top} isConnectable={props.isConnectable} />
       )}
       <Card size="sm">
-        <CardBody>
+        <CardBody {...stateStyle[props.data.type]}>
           <Text>{props.data.name}</Text>
         </CardBody>
       </Card>
