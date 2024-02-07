@@ -99,6 +99,11 @@ export const TransitionSelect = (props: WidgetProps) => {
         onChange={onChange}
         onBlur={onBlur}
         onFocus={onFocus}
+        filterOption={createFilter({
+          stringify: (option) => {
+            return `${option.data.event}${option.data.fromState}${option.data.toState}`
+          },
+        })}
       />
     </FormControl>
   )
