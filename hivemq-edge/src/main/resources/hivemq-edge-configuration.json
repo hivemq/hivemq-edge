@@ -38,7 +38,7 @@
   "modules" : [
     {
       "id" : "modbus",
-      "version" : "2023.9",
+      "version" : "2024.1",
       "name" : "Modbus to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing Modbus devices, bringing data from coils & registers into MQTT.",
       "author" : "HiveMQ",
@@ -57,7 +57,7 @@
     },
     {
       "id" : "opc-ua-client",
-      "version" : "2023.9",
+      "version" : "2024.1",
       "name" : "OPC-UA to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing OPC-UA services as a client and enables a seamless exchange of data between MQTT and OPC-UA.",
       "author" : "HiveMQ",
@@ -76,7 +76,7 @@
     },
     {
       "id" : "http",
-      "version" : "2023.9 (BETA)",
+      "version" : "2024.1 (BETA)",
       "name" : "HTTP(s) to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to arbitrary web endpoint URLs via HTTP(s), consuming structured JSON or plain data.",
       "author" : "HiveMQ",
@@ -95,7 +95,7 @@
     },
     {
       "id" : "s7",
-      "version" : "2023.9",
+      "version" : "2024.1",
       "name" : "S7 to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to S7-300, S7-400, S7-1200 & S7-1500 devices, reading data from the PLC into MQTT.",
       "author" : "HiveMQ",
@@ -114,7 +114,7 @@
     },
     {
       "id" : "ads",
-      "version" : "2023.9",
+      "version" : "2024.1",
       "name" : "ADS to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to devices supporting ADS, reading data from the PLC into MQTT.",
       "author" : "HiveMQ",
@@ -128,6 +128,25 @@
       },
       "logoUrl" : {
         "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/beckhoff-icon.png",
+        "external" : true
+      }
+    },
+    {
+      "id" : "eip",
+      "version" : "2024.1 (ALPHA)",
+      "name" : "Ethernet IP to MQTT Protocol Adapter",
+      "description" : "Connects HiveMQ Edge to devices supporting Ethernet IP, reading data from the PLC into MQTT.",
+      "author" : "HiveMQ",
+      "documentationLink" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#ethernetip-adapter",
+        "external" : true
+      },
+      "provisioningLink" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/releases",
+        "external" : true
+      },
+      "logoUrl" : {
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/eip-icon.png",
         "external" : true
       }
     }
