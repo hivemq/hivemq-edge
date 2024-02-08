@@ -113,6 +113,8 @@ export const TransitionSelect = (props: WidgetProps) => {
         isClearable
         // isLoading={isLoading}
         // isInvalid={isError}
+        instanceId={props.id}
+        id={`${props.id}-container`}
         inputId={props.id}
         isRequired={props.required}
         options={options}
