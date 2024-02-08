@@ -5,7 +5,6 @@ import ReactFlow, {
   Edge,
   MarkerType,
   Node,
-  ReactFlowProvider,
   useEdgesState,
   useNodesState,
   useReactFlow,
@@ -159,17 +158,15 @@ export const ReactFlowRenderer: FC<FiniteStateMachine> = (props) => {
   )
 
   return (
-    <ReactFlowProvider>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        // edgeTypes={edgeTypes}
-        onConnect={onConnect}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        fitView
-      ></ReactFlow>
-    </ReactFlowProvider>
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={nodeTypes}
+      // edgeTypes={edgeTypes}
+      onConnect={onConnect}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      fitView
+    ></ReactFlow>
   )
 }
