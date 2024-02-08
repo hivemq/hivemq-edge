@@ -52,7 +52,7 @@ describe('TransitionPanel', () => {
     cy.get('label#root_event-label + div').should('contain.text', 'Select...')
     cy.get('label#root_event-label + div').click()
 
-    cy.get('div#react-select-2-listbox').find('[role="option"]').as('optionList')
+    cy.get('div#react-select-root_event-listbox').find('[role="option"]').as('optionList')
     cy.get('@optionList').should('have.length', 7)
     cy.get('@optionList').eq(0).should('contain.text', 'onInboundConnect')
   })
