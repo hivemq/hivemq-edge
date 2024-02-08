@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.hivemq.bridge.MqttForwarder;
 import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
@@ -125,16 +126,20 @@ class RemoteMqttForwarderTest {
     }
 
     @Test
-    public void whenForwarderStopped_ThenNotPublishButCallbackIsCalled() {
+    public void whenForwarderStopped_ThenNotPublishAndCallbackIsNotCalled() {
         final AtomicBoolean called = new AtomicBoolean(false);
         final RemoteMqttForwarder forwarder = createForwarder(called, false, "{#}", List.of(), List.of(), 2);
+        final AtomicBoolean resetInFlightCallbackCalled = new AtomicBoolean(false);
+        forwarder.setResetInflightMarkerCallback((sharedSubscription, uniqueId) -> {
+            resetInFlightCallbackCalled.set(true);
+        });
         forwarder.start();
         forwarder.stop();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         forwarder.onMessage(localPublish, "testqueue");
 
         verify(mqtt5AsyncClient, never()).publish(any());
-        assertTrue(called.get());
+        assertTrue(resetInFlightCallbackCalled.get());
     }
 
     @Test
