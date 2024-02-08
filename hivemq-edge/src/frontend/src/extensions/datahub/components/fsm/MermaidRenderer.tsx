@@ -13,24 +13,32 @@ export const MermaidRenderer: FC<FiniteStateMachine> = (props) => {
       {}
     )
 
-    const initTransitions = props.transitions.filter((e) => allStates[e.fromState].type === 'INITIAL')
-    const terminalNodes = props.transitions.filter(
-      (e) => allStates[e.toState].type === 'FAILED' || allStates[e.toState].type === 'SUCCESS'
-    )
+    const initTransitions = props.transitions.filter((transition) => allStates[transition.fromState].type === 'INITIAL')
+    const terminalNodes = props.transitions.reduce<string[]>((accum, transition) => {
+      if (allStates[transition.toState].type === 'FAILED' || allStates[transition.toState].type === 'SUCCESS') {
+        if (!accum.includes(transition.toState)) accum.push(transition.toState)
+      }
+      return accum
+    }, [])
 
-    return `stateDiagram-v2
-    ${initTransitions.map((e) => `[*] --> ${e.fromState}`).join('\n')}
-    ${props.transitions
-      .map(
-        (e) =>
-          `${e.fromState} --> ${e.toState} : ${e.event}
+    return ''.concat(
+      'stateDiagram-v2\n',
+      initTransitions.map((transition) => `[*] --> ${transition.fromState}`).join('\n'),
+      '\n',
+      props.transitions
+        .map(
+          (e) =>
+            `${e.fromState} --> ${e.toState} : ${e.event}
             `
-      )
-      .join('\n')}
-    ${terminalNodes.map((e) => `${e.toState} --> [*]`).join('\n')}
-    Disconnected --> [*]`
+        )
+        .join('\n'),
+      '\n',
+      terminalNodes.map((e) => `${e} --> [*]`).join('\n'),
+      '\nDisconnected --> [*]'
+    )
   }, [props.states, props.transitions])
 
+  //
   if (!script) return null
 
   return <Mermaid text={script} />
