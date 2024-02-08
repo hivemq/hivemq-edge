@@ -104,8 +104,7 @@ public class MessageForwarderImpl implements MessageForwarder {
         mqttForwarder.setAfterForwardCallback((qos, uniqueId, queueId, cancelled) -> messageProcessed(qos,
                 uniqueId,
                 forwarderId,
-                queueId,
-                cancelled));
+                queueId));
         mqttForwarder.setResetInflightMarkerCallback((sharedSubscriptionId, uniqueId)->{
             try {
                 queuePersistence.get().removeInFlightMarker(sharedSubscriptionId, uniqueId).get();
@@ -143,9 +142,9 @@ public class MessageForwarderImpl implements MessageForwarder {
             final @NotNull QoS qos,
             final @NotNull String uniqueId,
             final @NotNull String forwarderId,
-            final @NotNull String queueId,
-            boolean cancelled) {
+            final @NotNull String queueId) {
         singleWriterService.callbackExecutor(queueId).execute(() -> {
+
             //QoS 0 has no inflight marker
             if (qos != QoS.AT_MOST_ONCE) {
                 //-- 15665 - > QoS 0 causes republishing
