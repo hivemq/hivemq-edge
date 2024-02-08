@@ -1,6 +1,6 @@
 import { FC, useCallback, useMemo } from 'react'
 import { getIncomers, Node } from 'reactflow'
-import { Box, Card, CardBody } from '@chakra-ui/react'
+import { Card, CardBody } from '@chakra-ui/react'
 import { IChangeEvent } from '@rjsf/core'
 
 import {
@@ -102,12 +102,7 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
           widgets={datahubRJSFWidgets}
           onSubmit={onSafeFormSubmit}
         />
-        {options && (
-          <Box w="100%" height="400px">
-            {/*<Mermaid text={template} />*/}
-            <FiniteStateMachineFlow transitions={options.transitions} states={options.states} />
-          </Box>
-        )}
+        {options && <FiniteStateMachineFlow transitions={options.transitions} states={options.states} />}
       </CardBody>
     </Card>
   )
