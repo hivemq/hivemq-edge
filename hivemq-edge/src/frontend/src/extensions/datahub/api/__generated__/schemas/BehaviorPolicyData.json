@@ -1,62 +1,7 @@
 {
   "definitions": {
-    "Mqtt.events": {
-      "metadata": {
-        "states": [
-          {
-            "name": "Connected",
-            "description": "State while the client is connected.",
-            "type": "INTERMEDIATE"
-          },
-          {
-            "name": "Disconnected",
-            "description": "Final state before client disconnected.",
-            "type": "SUCCESS"
-          },
-          {
-            "name": "Initial",
-            "description": "Initial state before client connected.",
-            "type": "INITIAL"
-          }
-        ],
-        "transitions": [
-          {
-            "fromState": "Initial",
-            "toState": "Connected",
-            "description": "Transition that gets triggered then the client connects.",
-            "event": "onInboundConnect"
-          },
-          {
-            "fromState": "Connected",
-            "toState": "Connected",
-            "description": "Transition that gets triggered then the connected client subscribes.",
-            "event": "onInboundSubscribe"
-          },
-          {
-            "fromState": "Connected",
-            "toState": "Connected",
-            "description": "Transition that gets triggered then the connected client publishes.",
-            "event": "onInboundPublish"
-          },
-          {
-            "fromState": "Connected",
-            "toState": "Connected",
-            "description": "Transition that gets triggered then the connected client disconnects.",
-            "event": "onInboundDisconnect"
-          }
-        ]
-      },
-      "properties": {
-        "arguments": {
-          "title": "Mqtt.events",
-          "description": "This FSM does not require any arguments.",
-          "type": "object",
-          "required": [],
-          "properties": {}
-        }
-      }
-    },
     "Publish.quota": {
+      "type": "object",
       "metadata": {
         "states": [
           {
@@ -129,23 +74,80 @@
           "title": "Publish.quota options",
           "description": "When you configure a publish-quota model, at least one of the available arguments must be present. Data Hub uses the default value for the missing parameter.\\nThe default value for minimum is 0. The default value for maxPublishes is -1 (UNLIMITED).",
           "type": "object",
-          "required": ["minPublishes"],
+          "required": ["minPublishes", "maxPublishes"],
           "properties": {
             "minPublishes": {
               "title": "minPublishes",
               "description": "Defines the minimal number of published messages that must be reached",
-              "type": "number",
-              "default": 0.0,
-              "minimum": 0.0
+              "type": "integer",
+              "minimum": 0.0,
+              "default": 0.0
             },
             "maxPublishes": {
               "title": "maxPublishes",
               "description": "Defines the maximum number of published messages that must be reached",
-              "type": "number",
-              "default": -1.0,
-              "minimum": -1.0
+              "type": "integer",
+              "minimum": -1.0,
+              "default": -1.0
             }
           }
+        }
+      }
+    },
+    "Mqtt.events": {
+      "type": "object",
+      "metadata": {
+        "states": [
+          {
+            "name": "Connected",
+            "description": "State while the client is connected.",
+            "type": "INTERMEDIATE"
+          },
+          {
+            "name": "Disconnected",
+            "description": "Final state before client disconnected.",
+            "type": "SUCCESS"
+          },
+          {
+            "name": "Initial",
+            "description": "Initial state before client connected.",
+            "type": "INITIAL"
+          }
+        ],
+        "transitions": [
+          {
+            "fromState": "Initial",
+            "toState": "Connected",
+            "description": "Transition that gets triggered then the client connects.",
+            "event": "onInboundConnect"
+          },
+          {
+            "fromState": "Connected",
+            "toState": "Connected",
+            "description": "Transition that gets triggered then the connected client subscribes.",
+            "event": "onInboundSubscribe"
+          },
+          {
+            "fromState": "Connected",
+            "toState": "Connected",
+            "description": "Transition that gets triggered then the connected client publishes.",
+            "event": "onInboundPublish"
+          },
+          {
+            "fromState": "Connected",
+            "toState": "Connected",
+            "description": "Transition that gets triggered then the connected client disconnects.",
+            "event": "onInboundDisconnect"
+          }
+        ]
+      },
+      "properties": {
+        "arguments": {
+          "title": "Mqtt.events",
+          "description": "This FSM does not require any arguments.",
+          "type": "object",
+          "required": [],
+          "properties": {}
         }
       }
     },
