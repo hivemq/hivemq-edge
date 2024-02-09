@@ -14,11 +14,11 @@ import {
 import { FiniteStateMachine, FsmTransition } from '@datahub/types.ts'
 import { useTranslation } from 'react-i18next'
 
-interface FsmTransitionExt extends FsmTransition {
+interface FsmTransitionWithId extends FsmTransition {
   id: string
 }
 
-const SingleValue = (props: SingleValueProps<FsmTransitionExt>) => {
+const SingleValue = (props: SingleValueProps<FsmTransitionWithId>) => {
   return (
     <chakraComponents.SingleValue {...props}>
       <Text>
@@ -28,7 +28,7 @@ const SingleValue = (props: SingleValueProps<FsmTransitionExt>) => {
   )
 }
 
-const Option = (props: OptionProps<FsmTransitionExt>) => {
+const Option = (props: OptionProps<FsmTransitionWithId>) => {
   const { t } = useTranslation('datahub')
   const { isSelected, ...rest } = props
   const [selectedTransition] = props.getValue()
@@ -66,7 +66,7 @@ const Option = (props: OptionProps<FsmTransitionExt>) => {
 export const TransitionSelect = (props: WidgetProps) => {
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
-  const onChange = useCallback<(newValue: OnChangeValue<FsmTransitionExt, false>) => void>(
+  const onChange = useCallback<(newValue: OnChangeValue<FsmTransitionWithId, false>) => void>(
     (newValue) => {
       props.onChange(newValue?.id || undefined)
     },
@@ -79,9 +79,9 @@ export const TransitionSelect = (props: WidgetProps) => {
     const metadata = props.options.metadata as FiniteStateMachine | null
     if (!metadata) return []
 
-    const opts = metadata.transitions.map<FsmTransitionExt>((e) => ({
-      ...e,
-      id: `${e.event}-${e.fromState}-${e.toState}`,
+    const opts = metadata.transitions.map<FsmTransitionWithId>((transition) => ({
+      ...transition,
+      id: `${transition.event}-${transition.fromState}-${transition.toState}`,
     }))
     opts.push({
       id: 'Event.OnAny-Any.*-Any.*',
@@ -109,7 +109,7 @@ export const TransitionSelect = (props: WidgetProps) => {
         props.hideLabel || !props.label
       )}
 
-      <Select<FsmTransitionExt>
+      <Select<FsmTransitionWithId>
         isClearable
         // isLoading={isLoading}
         // isInvalid={isError}
