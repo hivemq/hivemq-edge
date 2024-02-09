@@ -25,19 +25,33 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
   // TODO[NVL] Error messages?
   const parentPolicy = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<TransitionData> | undefined
-    if (!adapterNode) return undefined
+    if (!adapterNode) {
+      return undefined
+    }
+
     const incomers = getIncomers(adapterNode, nodes, edges)
-    if (!incomers) return undefined
-    if (incomers.length !== 1) return undefined
+    if (!incomers) {
+      return undefined
+    }
+
+    // TODO[18935] The case of multiple sources need to be sorted out
+    if (incomers.length !== 1) {
+      return undefined
+    }
+
     const [behavior] = incomers
-    if (behavior.type !== DataHubNodeType.BEHAVIOR_POLICY) return undefined
+    if (behavior.type !== DataHubNodeType.BEHAVIOR_POLICY) {
+      return undefined
+    }
 
     return behavior as Node<BehaviorPolicyData>
   }, [edges, nodes, selectedNode])
 
   const data = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<TransitionData> | undefined
-    if (!adapterNode) return null
+    if (!adapterNode) {
+      return null
+    }
 
     const { event, from, to } = adapterNode.data
     const tempData: TransitionData = {
@@ -50,15 +64,21 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
   }, [nodes, parentPolicy, selectedNode])
 
   const options = useMemo(() => {
-    if (!parentPolicy) return null
-    const { model } = parentPolicy.data
+    if (!parentPolicy) {
+      return null
+    }
 
+    const { model } = parentPolicy.data
     const definition = MOCK_BEHAVIOR_POLICY_SCHEMA.schema.definitions?.[model]
-    if (!definition) return null
+    if (!definition) {
+      return null
+    }
 
     const { metadata } = definition as FiniteStateMachineSchema
     const { states, transitions } = metadata
-    if (!states || !transitions) return null
+    if (!states || !transitions) {
+      return null
+    }
 
     return metadata
   }, [parentPolicy])
@@ -68,14 +88,14 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
       const initData = data
       const { formData } = initData
       if (formData) {
-        const { event } = formData
-        if (event) {
-          const [e, from, to] = event.split('-')
+        const { event: originalEvent } = formData
+        if (originalEvent) {
+          const [event, from, to] = originalEvent.split('-') as [TransitionType, StateType, StateType]
           initData.formData = {
             ...initData.formData,
-            event: e as unknown as TransitionType,
-            from: from as unknown as StateType,
-            to: to as unknown as StateType,
+            event,
+            from,
+            to,
           }
         }
       }
