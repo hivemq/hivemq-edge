@@ -45,7 +45,6 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,13 +53,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -82,6 +78,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator;
     private final @NotNull UsageTrackingConfigurator usageTrackingConfigurator;
     private final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator;
+    private final @NotNull CommercialModuleConfigurator commercialModuleConfigurator;
     private final @NotNull InternalConfigurator internalConfigurator;
     protected @NotNull HiveMQConfigEntity configEntity;
     private final Object lock = new Object();
@@ -101,6 +98,7 @@ public class ConfigFileReaderWriter {
             final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator,
             final @NotNull UsageTrackingConfigurator usageTrackingConfigurator,
             final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator,
+            final @NotNull CommercialModuleConfigurator commercialModuleConfigurator,
             final @NotNull InternalConfigurator internalConfigurator) {
 
         this.configurationFile = configurationFile;
@@ -116,6 +114,7 @@ public class ConfigFileReaderWriter {
         this.dynamicConfigConfigurator = dynamicConfigConfigurator;
         this.usageTrackingConfigurator = usageTrackingConfigurator;
         this.protocolAdapterConfigurator = protocolAdapterConfigurator;
+        this.commercialModuleConfigurator = commercialModuleConfigurator;
         this.internalConfigurator = internalConfigurator;
     }
 
@@ -335,6 +334,7 @@ public class ConfigFileReaderWriter {
         unsConfigurator.setUnsConfig(config.getUns());
         dynamicConfigConfigurator.setConfig(config.getGatewayConfig());
         usageTrackingConfigurator.setConfig(config.getUsageTracking());
+        commercialModuleConfigurator.setConfigs(config.getCommercialConfigs());
         internalConfigurator.setConfig(config.getInternal());
     }
 
