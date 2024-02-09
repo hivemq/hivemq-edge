@@ -20,7 +20,6 @@ describe('ReactFlowRenderer', () => {
   })
 
   it('should render the Mermaid diagram of the FSM', () => {
-    // eslint-disable-next-line react/jsx-no-undef
     cy.mountWithProviders(<ReactFlowRenderer {...MOCK_FSM.metadata} />, { wrapper })
 
     cy.get('.react-flow__nodes').find('[role="button"]').as('node+Edges')
