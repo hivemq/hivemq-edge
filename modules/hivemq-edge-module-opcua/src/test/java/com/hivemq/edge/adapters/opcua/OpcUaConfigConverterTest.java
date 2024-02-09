@@ -18,7 +18,22 @@ package com.hivemq.edge.adapters.opcua;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Files;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
-import com.hivemq.configuration.reader.*;
+import com.hivemq.configuration.reader.ApiConfigurator;
+import com.hivemq.configuration.reader.BridgeConfigurator;
+import com.hivemq.configuration.reader.CommercialModuleConfigurator;
+import com.hivemq.configuration.reader.ConfigFileReaderWriter;
+import com.hivemq.configuration.reader.ConfigurationFile;
+import com.hivemq.configuration.reader.DynamicConfigConfigurator;
+import com.hivemq.configuration.reader.InternalConfigurator;
+import com.hivemq.configuration.reader.ListenerConfigurator;
+import com.hivemq.configuration.reader.MqttConfigurator;
+import com.hivemq.configuration.reader.MqttsnConfigurator;
+import com.hivemq.configuration.reader.PersistenceConfigurator;
+import com.hivemq.configuration.reader.ProtocolAdapterConfigurator;
+import com.hivemq.configuration.reader.RestrictionConfigurator;
+import com.hivemq.configuration.reader.SecurityConfigurator;
+import com.hivemq.configuration.reader.UnsConfigurator;
+import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -93,7 +108,7 @@ class OpcUaConfigConverterTest {
                 mock(UnsConfigurator.class),
                 mock(DynamicConfigConfigurator.class),
                 mock(UsageTrackingConfigurator.class),
-                mock(ProtocolAdapterConfigurator.class),
+                mock(ProtocolAdapterConfigurator.class), mock(CommercialModuleConfigurator.class),
                 mock(InternalConfigurator.class));
         final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
 

@@ -17,6 +17,7 @@ package com.hivemq.configuration.writer;
 
 import com.hivemq.configuration.reader.ApiConfigurator;
 import com.hivemq.configuration.reader.BridgeConfigurator;
+import com.hivemq.configuration.reader.CommercialModuleConfigurator;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.configuration.reader.DynamicConfigConfigurator;
@@ -33,13 +34,11 @@ import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.io.TempDir;
 import util.TestConfigurationBootstrap;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 
 import static org.mockito.Mockito.mock;
 
@@ -67,6 +66,7 @@ public abstract class AbstractConfigWriterTest {
                 new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                 new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
                 new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()),
+                new CommercialModuleConfigurator(configurationService.commercialModuleConfigurationService()),
                 new InternalConfigurator(configurationService.internalConfigurationService()));
         configFileReader.setDefaultBackupConfig(false);
         return configFileReader;
