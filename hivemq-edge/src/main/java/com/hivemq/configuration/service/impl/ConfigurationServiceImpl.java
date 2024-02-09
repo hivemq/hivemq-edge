@@ -17,8 +17,20 @@ package com.hivemq.configuration.service.impl;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
-import com.hivemq.configuration.service.*;
+import com.hivemq.configuration.service.ApiConfigurationService;
+import com.hivemq.configuration.service.BridgeConfigurationService;
+import com.hivemq.configuration.service.CommercialModuleConfigurationService;
+import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
+import com.hivemq.configuration.service.InternalConfigurationService;
+import com.hivemq.configuration.service.MqttConfigurationService;
+import com.hivemq.configuration.service.MqttsnConfigurationService;
+import com.hivemq.configuration.service.PersistenceConfigurationService;
+import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
+import com.hivemq.configuration.service.RestrictionsConfigurationService;
+import com.hivemq.configuration.service.SecurityConfigurationService;
+import com.hivemq.configuration.service.UnsConfigurationService;
+import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.listener.ListenerConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -57,6 +69,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
     private final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
+    private final @NotNull CommercialModuleConfigurationService commercialModuleConfigurationService;
     private final @NotNull InternalConfigurationService internalConfigurationService;
     private @Nullable ConfigFileReaderWriter configFileReaderWriter;
     private final @NotNull ReadWriteLock lock = new ReentrantReadWriteLock();
@@ -76,6 +89,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             final @NotNull DynamicConfigurationService dynamicConfigurationService,
             final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService,
             final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService,
+            final @NotNull CommercialModuleConfigurationService commercialModuleConfigurationService,
             final @NotNull InternalConfigurationService internalConfigurationService) {
         this.listenerConfigurationService = listenerConfigurationService;
         this.mqttConfigurationService = mqttConfigurationService;
@@ -89,6 +103,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.dynamicConfigurationService = dynamicConfigurationService;
         this.usageTrackingConfigurationService = usageTrackingConfigurationService;
         this.protocolAdapterConfigurationService = protocolAdapterConfigurationService;
+        this.commercialModuleConfigurationService = commercialModuleConfigurationService;
         this.internalConfigurationService = internalConfigurationService;
     }
 
@@ -139,6 +154,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     public @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService() {
         return proxy(ProtocolAdapterConfigurationService.class, protocolAdapterConfigurationService);
+    }
+
+    public @NotNull CommercialModuleConfigurationService commercialModuleConfigurationService() {
+        return proxy(CommercialModuleConfigurationService.class, commercialModuleConfigurationService);
     }
 
     @Override

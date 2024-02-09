@@ -21,7 +21,6 @@ import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.reader.ArbitraryValuesMapAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -87,6 +86,10 @@ public class HiveMQConfigEntity {
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
     private @NotNull Map<String, Object> protocolAdapterConfig = new HashMap<>();
 
+    @XmlElement(name = "commercial-modules")
+    @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
+    private @NotNull Map<String, Object> commercialConfigs = new HashMap<>();
+
     @XmlElementRef(required = false)
     private final @NotNull InternalConfigEntity internal = new InternalConfigEntity();
 
@@ -128,6 +131,10 @@ public class HiveMQConfigEntity {
 
     public @NotNull Map<String, Object> getProtocolAdapterConfig() {
         return protocolAdapterConfig;
+    }
+
+    public @NotNull Map<String, Object> getCommercialConfigs() {
+        return commercialConfigs;
     }
 
     public @NotNull UnsConfigEntity getUns() { return uns; }
