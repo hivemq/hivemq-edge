@@ -85,6 +85,8 @@ public interface ConfigurationService {
 
     @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService();
 
+    @NotNull CommercialModuleConfigurationService commercialModuleConfigurationService();
+
     @NotNull InternalConfigurationService internalConfigurationService();
 
     void setConfigFileReaderWriter(@NotNull ConfigFileReaderWriter configFileReaderWriter);

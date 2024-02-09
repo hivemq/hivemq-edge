@@ -15,7 +15,7 @@
  */
 package com.hivemq.configuration.reader;
 
-import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
+import com.hivemq.configuration.service.CommercialModuleConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -23,30 +23,35 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ProtocolAdapterConfigurator {
+public class CommercialModuleConfigurator {
 
-    private final @NotNull ProtocolAdapterConfigurationService configurationService;
+    private final @NotNull CommercialModuleConfigurationService configurationService;
 
-    public ProtocolAdapterConfigurator(final @NotNull ProtocolAdapterConfigurationService configurationService) {
+    public CommercialModuleConfigurator(final @NotNull CommercialModuleConfigurationService configurationService) {
         this.configurationService = configurationService;
     }
 
-    public void setConfigs(final @NotNull Map<String, Object> protocolAdapterConfig) {
+    public void setConfigs(final @NotNull Map<String, Object> config) {
         //Follow the pattern of other configurations, and hand off a clone of the map to the config layer
         Map<String, Object> configMap = new HashMap<>();
-        for (final String key : protocolAdapterConfig.keySet()) {
-            Object value = protocolAdapterConfig.get(key);
+        for (final String key : config.keySet()) {
+            Object value = config.get(key);
             if (value instanceof List) {
                 //if its a <structural element> ie. a list, create a shallow copy to additions and removals are distinct
                 value = new ArrayList((List) value);
+            } else if (value instanceof Map) {
+                value = new HashMap<>((Map) value);
             }
             configMap.put(key, value);
         }
         configurationService.setAllConfigs(configMap);
     }
 
-    public void syncConfigs(final @NotNull Map<String, Object> config) {
-        config.clear();
-        config.putAll(configurationService.getAllConfigs());
+    public void syncConfigs(final @NotNull Map<String, Object> protocolAdapterConfig) {
+        if (protocolAdapterConfig == null) {
+            return;
+        }
+        protocolAdapterConfig.clear();
+        protocolAdapterConfig.putAll(configurationService.getAllConfigs());
     }
 }
