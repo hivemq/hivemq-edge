@@ -20,7 +20,7 @@ export const BehaviorPolicyPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit
       <CardBody>
         <ReactFlowSchemaForm
           schema={MOCK_BEHAVIOR_POLICY_SCHEMA.schema}
-          // uiSchema={MOCK_TOPIC_FILTER_SCHEMA.uiSchema}
+          uiSchema={MOCK_BEHAVIOR_POLICY_SCHEMA.uiSchema}
           formData={data}
           onSubmit={onFormSubmit}
         />

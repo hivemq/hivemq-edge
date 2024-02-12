@@ -14,12 +14,19 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
       initialState: {
         nodes: [
           {
+            id: '1',
+            type: DataHubNodeType.BEHAVIOR_POLICY,
+            position: { x: 0, y: 0 },
+            data: { model: 'Publish.quota' },
+          },
+          {
             id: '3',
             type: DataHubNodeType.TRANSITION,
             position: { x: 0, y: 0 },
             data: getNodePayload(DataHubNodeType.TRANSITION),
           },
         ],
+        edges: [{ id: '1-3', source: '1', target: '3' }],
       },
     }}
   >
@@ -38,41 +45,16 @@ describe('TransitionPanel', () => {
   it('should render the fields for a Validator', () => {
     cy.mountWithProviders(<TransitionPanel selectedNode="3" />, { wrapper })
 
-    // first select
-    cy.get('label#root_type-label').should('contain.text', 'Transition')
-    cy.get('label#root_type-label + div').should('contain.text', 'Event.OnAny')
-    cy.get('label#root_type-label + div').click()
-    cy.get('label#root_type-label + div')
-      .find("[role='listbox']")
-      .find("[role='option']")
-      .eq(0)
-      .should('contain.text', 'Event.OnAny')
-    cy.get('label#root_type-label + div').find("[role='listbox']").find("[role='option']").should('have.length', 6)
-    cy.get('label#root_type-label + div').click()
+    cy.get('label#root_model-label').should('contain.text', 'model')
+    cy.get('label#root_model-label + input').should('have.value', 'Publish.quota')
 
-    // first select
-    cy.get('label#root_from-label').should('contain.text', 'From State')
-    cy.get('label#root_from-label + div').should('contain.text', 'Any.*')
-    cy.get('label#root_from-label + div').click()
-    cy.get('label#root_from-label + div')
-      .find("[role='listbox']")
-      .find("[role='option']")
-      .eq(0)
-      .should('contain.text', 'Any.*')
-    cy.get('label#root_from-label + div').find("[role='listbox']").find("[role='option']").should('have.length', 8)
-    cy.get('label#root_from-label + div').click()
+    cy.get('label#root_event-label').should('contain.text', 'event')
+    cy.get('label#root_event-label + div').should('contain.text', 'Select...')
+    cy.get('label#root_event-label + div').click()
 
-    // first select
-    cy.get('label#root_to-label').should('contain.text', 'To State')
-    cy.get('label#root_to-label + div').should('contain.text', 'Any.*')
-    cy.get('label#root_to-label + div').click()
-    cy.get('label#root_to-label + div')
-      .find("[role='listbox']")
-      .find("[role='option']")
-      .eq(0)
-      .should('contain.text', 'Any.*')
-    cy.get('label#root_to-label + div').find("[role='listbox']").find("[role='option']").should('have.length', 8)
-    cy.get('label#root_to-label + div').click()
+    cy.get('div#react-select-root_event-listbox').find('[role="option"]').as('optionList')
+    cy.get('@optionList').should('have.length', 7)
+    cy.get('@optionList').eq(0).should('contain.text', 'onInboundConnect')
   })
 
   it('should be accessible', () => {
