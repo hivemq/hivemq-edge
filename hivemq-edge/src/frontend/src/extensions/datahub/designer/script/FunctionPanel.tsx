@@ -5,8 +5,8 @@ import { Card, CardBody } from '@chakra-ui/react'
 import { FunctionData, PanelProps } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
-import { datahubRJSFWidgets } from '@datahub/flow/datahubRJSFWidgets.tsx'
-import { MOCK_FUNCTION_SCHEMA } from '@datahub/flow/script/FunctionData.ts'
+import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
+import { MOCK_FUNCTION_SCHEMA } from '@datahub/designer/script/FunctionData.ts'
 
 export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { nodes } = useDataHubDraftStore()

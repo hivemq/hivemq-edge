@@ -2,7 +2,7 @@
 
 import { WidgetProps } from '@rjsf/utils'
 import { TransitionSelect } from '@datahub/components/forms/TransitionSelect.tsx'
-import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/flow/behavior_policy/BehaviorPolicySchema.ts'
+import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
 import { FiniteStateMachineSchema } from '@datahub/types.ts'
 
 // @ts-ignore

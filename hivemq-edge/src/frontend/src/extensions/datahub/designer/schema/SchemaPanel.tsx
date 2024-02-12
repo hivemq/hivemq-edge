@@ -6,8 +6,8 @@ import { CustomValidator } from '@rjsf/utils'
 import { PanelProps, SchemaData } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
-import { datahubRJSFWidgets } from '@datahub/flow/datahubRJSFWidgets.tsx'
-import { MOCK_SCHEMA_SCHEMA } from '@datahub/flow/schema/SchemaData.ts'
+import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
+import { MOCK_SCHEMA_SCHEMA } from '@datahub/designer/schema/SchemaData.ts'
 
 export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { nodes } = useDataHubDraftStore()

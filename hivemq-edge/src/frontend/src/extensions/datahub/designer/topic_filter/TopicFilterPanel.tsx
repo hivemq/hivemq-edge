@@ -5,11 +5,11 @@ import { Card, CardBody } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
 import { PanelProps, TopicFilterData } from '@datahub/types.ts'
-import { MOCK_TOPIC_FILTER_SCHEMA } from '@datahub/flow/topic_filter/TopicFilterData.ts'
+import { MOCK_TOPIC_FILTER_SCHEMA } from '@datahub/designer/topic_filter/TopicFilterData.ts'
+import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { validateDuplicates } from '@datahub/utils/rjsf.utils.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/'
-import { datahubRJSFWidgets } from '@datahub/flow/datahubRJSFWidgets.tsx'
 
 export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')

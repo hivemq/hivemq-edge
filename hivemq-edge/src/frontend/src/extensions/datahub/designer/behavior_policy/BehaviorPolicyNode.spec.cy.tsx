@@ -6,7 +6,7 @@ import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 import { BehaviorPolicyData, BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
-import { BehaviorPolicyNode } from '@datahub/flow/behavior_policy/BehaviorPolicyNode.tsx'
+import { BehaviorPolicyNode } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.tsx'
 
 const MOCK_NODE_BEHAVIOR_POLICY: NodeProps<BehaviorPolicyData> = {
   id: 'node-id',

@@ -14,9 +14,9 @@ import {
 } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
-import { MOCK_TRANSITION_SCHEMA } from '@datahub/flow/transition/TransitionData.ts'
-import { datahubRJSFWidgets } from '@datahub/flow/datahubRJSFWidgets.tsx'
-import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/flow/behavior_policy/BehaviorPolicySchema.ts'
+import { MOCK_TRANSITION_SCHEMA } from '@datahub/designer/transition/TransitionData.ts'
+import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
+import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
 import { FiniteStateMachineFlow } from '@datahub/components/fsm/FiniteStateMachineFlow.tsx'
 
 export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {

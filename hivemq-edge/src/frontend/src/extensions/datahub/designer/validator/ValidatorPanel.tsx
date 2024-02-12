@@ -8,7 +8,7 @@ import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { DataHubNodeType, PanelProps, ValidatorData } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
-import { MOCK_VALIDATOR_SCHEMA } from '@datahub/flow/validator/DataPolicyValidator.ts'
+import { MOCK_VALIDATOR_SCHEMA } from '@datahub/designer/validator/DataPolicyValidator.ts'
 
 export const ValidatorPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')

@@ -5,7 +5,7 @@ import { Button } from '@chakra-ui/react'
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { getNodePayload } from '@datahub/utils/node.utils.ts'
-import { ValidatorPanel } from '@datahub/flow/validator/ValidatorPanel.tsx'
+import { ValidatorPanel } from '@datahub/designer/validator/ValidatorPanel.tsx'
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
   <MockStoreWrapper
