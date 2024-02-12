@@ -121,14 +121,14 @@ export enum SchemaType {
   PROTO = 'PROTOBUF',
 }
 
-export interface SchemaData {
+export interface SchemaData extends DataHubNodeData {
   type: SchemaType
   version: string
   schemaSource?: string
   core?: Schema
 }
 
-export interface FunctionData {
+export interface FunctionData extends DataHubNodeData {
   type: 'Javascript'
   name: string
   version: string
