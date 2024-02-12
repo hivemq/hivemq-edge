@@ -83,6 +83,12 @@
     },
     "version": {
       "create": "Create a new version '{{ newVersion }}' from '{{ oldVersion }}'"
+    },
+    "transition": {
+      "select": {
+        "toState": "to: {{ state }}",
+        "fromState": "from: {{ state }}"
+      }
     }
   },
   "error": {

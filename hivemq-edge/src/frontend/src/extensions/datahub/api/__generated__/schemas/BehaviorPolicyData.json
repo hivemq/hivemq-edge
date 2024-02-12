@@ -1,16 +1,266 @@
 {
+  "definitions": {
+    "Publish.quota": {
+      "type": "object",
+      "metadata": {
+        "states": [
+          {
+            "name": "Connected",
+            "description": "State after client connected, but did not send any publishes yet.",
+            "type": "INTERMEDIATE"
+          },
+          {
+            "name": "Disconnected",
+            "description": "State, when the client disconnected and sent at least the minimum amount of publishes and not more than maximum publishes",
+            "type": "SUCCESS"
+          },
+          {
+            "name": "Initial",
+            "description": "Initial state before client connected.",
+            "type": "INITIAL"
+          },
+          {
+            "name": "Publishing",
+            "description": "State, when the client has published at least one publish, but not more than the configured maximum.",
+            "type": "INTERMEDIATE"
+          },
+          {
+            "name": "Violated",
+            "description": "State, when the client sent more than the configured maximum amount of publishes or disconnected before sending enough publishes.",
+            "type": "FAILED"
+          }
+        ],
+        "transitions": [
+          {
+            "fromState": "Initial",
+            "toState": "Connected",
+            "description": "Transition that gets triggered then the client connects.",
+            "event": "onInboundConnect"
+          },
+          {
+            "fromState": "Connected",
+            "toState": "Publishing",
+            "description": "Transition that gets triggered then the client publishes the first time after connecting.",
+            "event": "onInboundPublish"
+          },
+          {
+            "fromState": "Publishing",
+            "toState": "Violated",
+            "description": "Transition that gets triggered then the client sends more publishes than the maximum of publishes.",
+            "event": "onInboundPublish"
+          },
+          {
+            "fromState": "Publishing",
+            "toState": "Publishing",
+            "description": "Transition that gets triggered then the client sends a publish, which does not exceed the maximum amount of publishes.",
+            "event": "onInboundPublish"
+          },
+          {
+            "fromState": "Connected",
+            "toState": "Violated",
+            "description": "Transition that gets triggered then the client disconnects before sending any publish and there is a minimum pf publishes required.",
+            "event": "onDisconnect"
+          },
+          {
+            "fromState": "Publishing",
+            "toState": "Violated",
+            "description": "Transition that gets triggered then the client sends a publish, which does not exceed the maximum amount of publishes.",
+            "event": "onDisconnect"
+          }
+        ]
+      },
+      "properties": {
+        "arguments": {
+          "title": "Publish.quota options",
+          "description": "When you configure a publish-quota model, at least one of the available arguments must be present. Data Hub uses the default value for the missing parameter.\\nThe default value for minimum is 0. The default value for maxPublishes is -1 (UNLIMITED).",
+          "type": "object",
+          "required": ["minPublishes", "maxPublishes"],
+          "properties": {
+            "minPublishes": {
+              "title": "minPublishes",
+              "description": "Defines the minimal number of published messages that must be reached",
+              "type": "integer",
+              "minimum": 0.0,
+              "default": 0.0
+            },
+            "maxPublishes": {
+              "title": "maxPublishes",
+              "description": "Defines the maximum number of published messages that must be reached",
+              "type": "integer",
+              "minimum": -1.0,
+              "default": -1.0
+            }
+          }
+        }
+      }
+    },
+    "Mqtt.events": {
+      "type": "object",
+      "metadata": {
+        "states": [
+          {
+            "name": "Connected",
+            "description": "State while the client is connected.",
+            "type": "INTERMEDIATE"
+          },
+          {
+            "name": "Disconnected",
+            "description": "Final state before client disconnected.",
+            "type": "SUCCESS"
+          },
+          {
+            "name": "Initial",
+            "description": "Initial state before client connected.",
+            "type": "INITIAL"
+          }
+        ],
+        "transitions": [
+          {
+            "fromState": "Initial",
+            "toState": "Connected",
+            "description": "Transition that gets triggered then the client connects.",
+            "event": "onInboundConnect"
+          },
+          {
+            "fromState": "Connected",
+            "toState": "Connected",
+            "description": "Transition that gets triggered then the connected client subscribes.",
+            "event": "onInboundSubscribe"
+          },
+          {
+            "fromState": "Connected",
+            "toState": "Connected",
+            "description": "Transition that gets triggered then the connected client publishes.",
+            "event": "onInboundPublish"
+          },
+          {
+            "fromState": "Connected",
+            "toState": "Connected",
+            "description": "Transition that gets triggered then the connected client disconnects.",
+            "event": "onInboundDisconnect"
+          }
+        ]
+      },
+      "properties": {
+        "arguments": {
+          "title": "Mqtt.events",
+          "description": "This FSM does not require any arguments.",
+          "type": "object",
+          "required": [],
+          "properties": {}
+        }
+      }
+    },
+    "Publish.duplicate": {
+      "type": "object",
+      "metadata": {
+        "states": [
+          {
+            "name": "Connected",
+            "description": "State after client connected, but did not send any publishes yet.",
+            "type": "INTERMEDIATE"
+          },
+          {
+            "name": "Disconnected",
+            "description": "State, when the client disconnected and the last publish was not a duplicate.",
+            "type": "SUCCESS"
+          },
+          {
+            "name": "Duplicated",
+            "description": "State, when the client sent a publish with the same payload as the previous publish.",
+            "type": "INTERMEDIATE"
+          },
+          {
+            "name": "Initial",
+            "description": "Initial state before client connected.",
+            "type": "INITIAL"
+          },
+          {
+            "name": "NotDuplicated",
+            "description": "State, when the client sent an publish that was not a duplicate of the previous publish.",
+            "type": "INTERMEDIATE"
+          },
+          {
+            "name": "Violated",
+            "description": "State, when the client disconnected and the last publish was a duplicate.",
+            "type": "FAILED"
+          }
+        ],
+        "transitions": [
+          {
+            "fromState": "Initial",
+            "toState": "Connected",
+            "description": "Transition that gets triggered then the client connects.",
+            "event": "onInboundConnect"
+          },
+          {
+            "fromState": "Connected",
+            "toState": "NotDuplicated",
+            "description": "Transition that gets triggered then the client sends the first publish.",
+            "event": "onInboundPublish"
+          },
+          {
+            "fromState": "NotDuplicated",
+            "toState": "NotDuplicated",
+            "description": "Transition that gets triggered then the client sends a publish and the payload is different from the previous one.",
+            "event": "onInboundPublish"
+          },
+          {
+            "fromState": "NotDuplicated",
+            "toState": "Duplicated",
+            "description": "Transition that gets triggered then the client sends a publish with the same payload as the previous publish.",
+            "event": "onInboundPublish"
+          },
+          {
+            "fromState": "Duplicated",
+            "toState": "NotDuplicated",
+            "description": "Transition that gets triggered then the client sends a publish and the payload is different from the previous one while being in the DUPLICATE state.",
+            "event": "onInboundPublish"
+          },
+          {
+            "fromState": "Duplicated",
+            "toState": "Duplicated",
+            "description": "Transition that gets triggered then the client sends a publish with the same payload as the previous publish while already being in the DUPLICATE state",
+            "event": "onInboundPublish"
+          },
+          {
+            "fromState": "Duplicated",
+            "toState": "Violated",
+            "description": "Transition that gets triggered then the client disconnects while being in the DUPLICATE state.",
+            "event": "onDisconnect"
+          },
+          {
+            "fromState": "NotDuplicated",
+            "toState": "Violated",
+            "description": "Transition that gets triggered then the client disconnects and the DUPLICATE state has every been reached during this connection.",
+            "event": "onDisconnect"
+          }
+        ]
+      },
+      "properties": {
+        "arguments": {
+          "title": "Publish.duplicate options",
+          "description": "This FSM does not require any arguments.",
+          "type": "object",
+          "required": [],
+          "properties": {}
+        }
+      }
+    }
+  },
   "type": "object",
   "required": ["model"],
   "properties": {
     "model": {
       "title": "Behavior Model",
-      "enum": ["Mqtt.events", "Publish.duplicate", "Publish.quota"],
-      "default": "Mqtt.events"
+      "default": "Mqtt.events",
+      "enum": ["Publish.quota", "Mqtt.events", "Publish.duplicate"]
     }
   },
   "allOf": [
     {
       "if": {
+        "type": "object",
         "properties": {
           "model": {
             "const": "Publish.quota"
@@ -18,30 +268,36 @@
         }
       },
       "then": {
+        "type": "object",
+        "$ref": "#/definitions/Publish.quota"
+      }
+    },
+    {
+      "if": {
+        "type": "object",
         "properties": {
-          "arguments": {
-            "type": "object",
-            "title": "Publish.quota options",
-            "description": "When you configure a publish-quota model, at least one of the available arguments must be present. Data Hub uses the default value for the missing parameter.\nThe default value for minimum is 0. The default value for maxPublishes is UNLIMITED.",
-            "required": ["minPublishes"],
-            "properties": {
-              "minPublishes": {
-                "title": "Minimum number of messages",
-                "description": "Defines the minimal number of published messages that must be reached",
-                "type": "number",
-                "default": 0,
-                "minimum": 0
-              },
-              "maxPublishes": {
-                "title": "Maximum number of messages",
-                "description": "Defines the maximum number of published messages that must be reached",
-                "type": "number",
-                "default": 10000,
-                "minimum": 0
-              }
-            }
+          "model": {
+            "const": "Mqtt.events"
           }
         }
+      },
+      "then": {
+        "type": "object",
+        "$ref": "#/definitions/Mqtt.events"
+      }
+    },
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "const": "Publish.duplicate"
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "$ref": "#/definitions/Publish.duplicate"
       }
     }
   ]
