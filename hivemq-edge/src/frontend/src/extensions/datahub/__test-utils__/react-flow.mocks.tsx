@@ -85,7 +85,7 @@ export const MOCK_INITIAL_POLICY = () => {
 
   const transitionNode: Node<TransitionData> = {
     id: '8',
-    data: { type: TransitionType.ON_ANY },
+    data: { event: TransitionType.ON_ANY },
     type: DataHubNodeType.TRANSITION,
     position: { x: 645, y: 210 },
   }

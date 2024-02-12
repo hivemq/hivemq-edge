@@ -45,20 +45,20 @@ describe('BehaviorPolicyPanel', () => {
     cy.get('label#root_model-label + div')
       .find("[role='listbox']")
       .find("[role='option']")
-      .eq(0)
+      .eq(1)
       .should('contain.text', 'Mqtt.events')
     cy.get('label#root_model-label + div')
       .find("[role='listbox']")
       .find("[role='option']")
-      .eq(2)
+      .eq(0)
       .should('contain.text', 'Publish.quota')
-    cy.get('label#root_model-label + div').find("[role='listbox']").find("[role='option']").eq(2).click()
+    cy.get('label#root_model-label + div').find("[role='listbox']").find("[role='option']").eq(0).click()
 
     cy.get('h2').eq(0).should('contain.text', 'Publish')
-    cy.get('label#root_arguments_minPublishes-label').should('contain.text', 'Minimum number of messages')
-    cy.get('label#root_arguments_minPublishes-label + input').should('have.value', '0')
-    cy.get('label#root_arguments_maxPublishes-label').should('contain.text', 'Maximum number of messages')
-    cy.get('label#root_arguments_maxPublishes-label + input').should('have.value', '10000')
+    cy.get('label#field-\\:r7\\:-label').should('contain.text', 'minPublishes')
+    cy.get('label#field-\\:r7\\:-label + div > input').should('have.value', '0')
+    cy.get('label#field-\\:r9\\:-label').should('contain.text', 'maxPublishes')
+    cy.get('label#field-\\:r9\\:-label + div > input').should('have.value', '-1')
 
     cy.get("button[type='submit']").click()
     cy.get('@onSubmit')
@@ -70,7 +70,7 @@ describe('BehaviorPolicyPanel', () => {
           model: 'Publish.quota',
           arguments: {
             minPublishes: 0,
-            maxPublishes: 10000,
+            maxPublishes: -1,
           },
         },
       })
