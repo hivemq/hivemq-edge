@@ -122,8 +122,8 @@ const PolicyEditor: FC = () => {
             <Minimap />
           </Box>
         </ReactFlow>
+        <Outlet />
       </ReactFlowProvider>
-      <Outlet />
     </>
   )
 }

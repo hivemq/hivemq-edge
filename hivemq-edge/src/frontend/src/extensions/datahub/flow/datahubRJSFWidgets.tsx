@@ -5,12 +5,14 @@ import FunctionCreatableSelect from '@datahub/components/forms/FunctionCreatable
 import { JsFunctionInput, MetricCounterInput } from '@datahub/components/forms/MetricCounterInput.tsx'
 import { VersionManagerSelect } from '@datahub/components/forms/VersionManagerSelect.tsx'
 import { MessageInterpolationTextArea } from '@datahub/components/forms/MessageInterpolationTextArea.tsx'
+import { TransitionSelect } from '@datahub/components/forms/TransitionSelect.tsx'
 
 export const datahubRJSFWidgets: RegistryWidgetsType = {
   'application/schema+json': JSONSchemaEditor,
   'text/javascript': JavascriptEditor,
   'application/octet-stream': ProtoSchemaEditor,
   'datahub:function-selector': FunctionCreatableSelect,
+  'datahub:transition-selector': TransitionSelect,
   'datahub:metric-counter': MetricCounterInput,
   'datahub:function-name': JsFunctionInput,
   'datahub:version': VersionManagerSelect,

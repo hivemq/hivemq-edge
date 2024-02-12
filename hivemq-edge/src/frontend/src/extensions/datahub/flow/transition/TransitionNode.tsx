@@ -18,7 +18,7 @@ export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
           <NodeIcon type={DataHubNodeType.TRANSITION} />
           <Text data-testid="node-title"> {t('workspace.nodes.type', { context: type })}</Text>
           <VStack data-testid="node-model">
-            <NodeParams value={data.type || t('error.noSet.select')} />
+            <NodeParams value={data.event || t('error.noSet.select')} />
           </VStack>
         </HStack>
       </NodeWrapper>
