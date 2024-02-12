@@ -10,6 +10,7 @@ import {
 } from '@/api/__generated__'
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import { IChangeEvent } from '@rjsf/core'
+import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 export interface PanelSpecs {
   schema: RJSFSchema
@@ -37,6 +38,7 @@ export interface WorkspaceAction {
   onUpdateNodes: <T>(item: string, data: T) => void
 
   onAddFunctions: (changes: FunctionSpecs[]) => void
+  onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => string | undefined
 }
 
 export enum PolicyType {
@@ -241,4 +243,10 @@ export interface FiniteStateMachine {
 }
 export interface FiniteStateMachineSchema {
   metadata: FiniteStateMachine
+}
+
+export interface DryRunResults<T> {
+  data?: T
+  error?: ProblemDetails[]
+  resources?: DataHubNodeData[]
 }
