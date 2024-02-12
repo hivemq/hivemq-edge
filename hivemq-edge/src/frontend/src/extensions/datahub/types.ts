@@ -266,3 +266,10 @@ export enum PolicyDryRunStatus {
   SUCCESS = 'SUCCESS',
   FAILURE = 'FAILURE',
 }
+
+export enum PolicyDryRunStatus {
+  IDLE = 'IDLE',
+  RUNNING = 'RUNNING',
+  SUCCESS = 'SUCCESS',
+  FAILURE = 'FAILURE',
+}
