@@ -1,7 +1,9 @@
 import { FC, ReactNode, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NodeProps } from 'reactflow'
+
 import { Avatar, BoxProps, Card, CardBody, CardBodyProps, HStack } from '@chakra-ui/react'
+import { DataHubNodeData, PolicyDryRunStatus } from '@datahub/types.ts'
 
 import { DataHubNodeData, PolicyDryRunStatus } from '@datahub/types.ts'
 import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
