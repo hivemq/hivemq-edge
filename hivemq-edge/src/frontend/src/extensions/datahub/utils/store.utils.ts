@@ -2,7 +2,7 @@ import { Edge, Node } from 'reactflow'
 import { RJSFSchema } from '@rjsf/utils'
 
 import { FunctionSpecs, WorkspaceState } from '@datahub/types.ts'
-import { MOCK_OPERATION_SCHEMA } from '@datahub/flow/operation/OperationData.ts'
+import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData.ts'
 
 const getFunctions = (schema: RJSFSchema) => {
   if (!schema) return []
