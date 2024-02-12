@@ -70,9 +70,9 @@ export enum NodeCategory {
   RESOURCE = 'RESOURCE',
 }
 
-// TODO[NVL] Not sure of the pertinence of an empty interface
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface DataHubNodeData {}
+export interface DataHubNodeData {
+  dryRunStatus?: PolicyDryRunStatus
+}
 
 export interface TopicFilterData extends DataHubNodeData {
   adapter?: string
@@ -249,4 +249,11 @@ export interface DryRunResults<T> {
   data?: T
   error?: ProblemDetails[]
   resources?: DataHubNodeData[]
+}
+
+export enum PolicyDryRunStatus {
+  IDLE = 'IDLE',
+  RUNNING = 'RUNNING',
+  SUCCESS = 'SUCCESS',
+  FAILURE = 'FAILURE',
 }
