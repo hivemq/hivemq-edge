@@ -7,11 +7,19 @@ import {
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
+  Node,
 } from 'reactflow'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
-import { FunctionSpecs, WorkspaceAction, WorkspaceState } from '../types.ts'
+import {
+  BehaviorPolicyData,
+  DataHubNodeType,
+  DataPolicyData,
+  FunctionSpecs,
+  WorkspaceAction,
+  WorkspaceState,
+} from '../types.ts'
 import { initialStore } from '../utils/store.utils.ts'
 import { styleDefaultEdge } from '../utils/edge.utils.ts'
 
@@ -76,6 +84,10 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceAction>()(
 
       onAddFunctions: (changes: FunctionSpecs[]) => {
         set({ functions: [...get().functions, ...changes] })
+      },
+      onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => {
+        if (node.type !== DataHubNodeType.BEHAVIOR_POLICY && node.type !== DataHubNodeType.DATA_POLICY) return undefined
+        return undefined
       },
     }),
     {
