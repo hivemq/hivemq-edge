@@ -101,8 +101,10 @@
         "checking": "Checking ..."
       },
       "report": {
-        "title": "The policy is not completely valid and will not successfully run on your topology.",
-        "subtitle": "The following parts of the policy needs correction:",
+        "title_warning": "The policy is not completely valid and will not successfully run on your topology.",
+        "subtitle_warning": "The following parts of the policy needs correction:",
+        "title_success": "The policy is fully valid to run on your topology.",
+        "subtitle_success": "Go for it!",
         "cta": {
           "highlight": "Show in designer",
           "config": "Open configuration"

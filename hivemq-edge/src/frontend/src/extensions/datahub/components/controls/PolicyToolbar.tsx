@@ -42,11 +42,10 @@ export const PolicyToolbar: FC<ActionPolicyCheckProps> = (props) => {
       const errors = failedResults.map((result) => result.error as ProblemDetailsExtended)
 
       createToast({
+        status: errors.length ? 'warning' : 'success',
         id: POLICY_CHECK_ID,
-        status: 'warning',
         isClosable: true,
         position: 'bottom-left',
-
         duration: null,
         variant: 'left-accent',
         onCloseComplete: () => {

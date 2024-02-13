@@ -22,14 +22,15 @@ interface CheckPolicyReportToastProps {
 
 const CheckPolicyReportToast: FC<CheckPolicyReportToastProps> = ({ errors, onFitView, openConfig }) => {
   const { t } = useTranslation('datahub')
+  const status = errors.length ? 'warning' : 'success'
 
   return (
     <>
       <Box as="p" mb={2}>
         <Text as="span" fontWeight="bold">
-          {t('workspace.dryRun.report.title')}
+          {t('workspace.dryRun.report.title', { context: status })}
         </Text>{' '}
-        <Text as="span">{t('workspace.dryRun.report.subtitle')}</Text>
+        <Text as="span">{t('workspace.dryRun.report.subtitle', { context: status })}</Text>
       </Box>
 
       <Accordion allowToggle overflow="auto" maxHeight="180px">
