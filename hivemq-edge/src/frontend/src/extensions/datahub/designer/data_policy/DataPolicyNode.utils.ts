@@ -1,7 +1,45 @@
-import { getIncomers, Node } from 'reactflow'
-import { DataHubNodeType, DataPolicyData, DryRunResults, TopicFilterData, WorkspaceState } from '@datahub/types.ts'
+import { getIncomers, getOutgoers, Node } from 'reactflow'
 import { PolicyOperation } from '@/api/__generated__'
+
+import { DataHubNodeType, DataPolicyData, DryRunResults, TopicFilterData, WorkspaceState } from '@datahub/types.ts'
 import { checkValidityTransformFunction } from '@datahub/designer/operation/OperationNode.utils.ts'
+
+export function getSubFlow(source: Node, acc: Node[], store: WorkspaceState, only = false) {
+  const allIds = Array.from(new Set(acc.map((e) => e.id)))
+  const { nodes, edges } = store
+
+  // This is wrong: should check it's from the right handles
+  const incomers = getIncomers(source, nodes, edges).filter(
+    (node) =>
+      !allIds.includes(node.id) &&
+      node.type !== DataHubNodeType.DATA_POLICY &&
+      node.type !== DataHubNodeType.BEHAVIOR_POLICY
+  )
+  const outgoers = getOutgoers(source, nodes, edges).filter(
+    (node) =>
+      !allIds.includes(node.id) &&
+      node.type !== DataHubNodeType.DATA_POLICY &&
+      node.type !== DataHubNodeType.BEHAVIOR_POLICY
+  )
+
+  acc.push(...incomers, ...outgoers)
+
+  if (outgoers.length) {
+    outgoers.forEach((node) => {
+      const subFlow = getSubFlow(node, acc, store)
+      acc = Array.from(new Set([...acc, ...subFlow]))
+    })
+  }
+
+  if (incomers.length && !only) {
+    incomers.forEach((node) => {
+      const subFlow = getSubFlow(node, acc, store)
+      acc = Array.from(new Set([...acc, ...subFlow]))
+    })
+  }
+
+  return acc
+}
 
 export function checkValidityFilter(
   dataPolicyNode: Node<DataPolicyData>,
