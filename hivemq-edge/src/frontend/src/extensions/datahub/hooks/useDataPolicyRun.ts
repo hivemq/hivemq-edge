@@ -1,6 +1,6 @@
 import { getIncomers, Node } from 'reactflow'
 
-import { Script } from '@/api/__generated__'
+import { Schema, Script } from '@/api/__generated__'
 
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { DataHubNodeData, DataHubNodeType, DataPolicyData, DryRunResults, PolicyDryRunStatus } from '@datahub/types.ts'
@@ -9,6 +9,7 @@ import {
   checkValidityPipeline,
   getSubFlow,
 } from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
+import { checkValidityPolicyValidators } from '@datahub/designer/validator/ValidatorNode.utils.ts'
 
 const mockDelay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -32,27 +33,33 @@ export const useDataPolicyRun = () => {
       const allNodes = getSubFlow(dataPolicyNode, [dataPolicyNode, ...incomers], store) as Node<DataHubNodeData>[]
       const reducedStore = { ...store, nodes: allNodes }
 
-      const filter = checkValidityFilter(dataPolicyNode, {
-        ...store,
-        nodes: allNodes,
-      })
+      const filter = checkValidityFilter(dataPolicyNode, reducedStore)
 
-      const onSuccess = checkValidityPipeline(dataPolicyNode, DataPolicyData.Handle.ON_SUCCESS, reducedStore)
-      const onError = checkValidityPipeline(dataPolicyNode, DataPolicyData.Handle.ON_ERROR, reducedStore)
+      const validators = checkValidityPolicyValidators(dataPolicyNode, reducedStore)
 
-      const successResources = onSuccess.reduce((acc, oper) => {
+      const onSuccessPipeline = checkValidityPipeline(dataPolicyNode, DataPolicyData.Handle.ON_SUCCESS, reducedStore)
+      const onErrorPipeline = checkValidityPipeline(dataPolicyNode, DataPolicyData.Handle.ON_ERROR, reducedStore)
+
+      const successResources = onSuccessPipeline.reduce((acc, oper) => {
         if (oper.resources) {
           acc.push(...oper.resources)
         }
         return acc
       }, [] as DryRunResults<Script>[])
-      const errorResources = onError.reduce((acc, oper) => {
+      const errorResources = onErrorPipeline.reduce((acc, oper) => {
         if (oper.resources) {
           acc.push(...oper.resources)
         }
         return acc
       }, [] as DryRunResults<Script>[])
-      const allResources = [...successResources, ...errorResources]
+      const valid = validators.reduce((acc, vv) => {
+        if (vv.resources) {
+          acc.push(...vv.resources)
+        }
+        return acc
+      }, [] as DryRunResults<Schema>[])
+
+      const allResources = [...successResources, ...errorResources, ...valid]
 
       const runPolicyChecks = async () => {
         for (const node of allNodes) {
@@ -62,8 +69,9 @@ export const useDataPolicyRun = () => {
           })
           await mockDelay()
         }
+        await mockDelay(1000)
 
-        const processedNodes = [filter, ...onSuccess, ...onError, ...allResources]
+        const processedNodes = [filter, ...validators, ...onSuccessPipeline, ...onErrorPipeline, ...allResources]
         for (const result of processedNodes) {
           await updateNodeStatus(result)
         }
@@ -74,36 +82,3 @@ export const useDataPolicyRun = () => {
     },
   }
 }
-
-// const useDataPolicyRunXXXX = (dataPolicyNode: NodeProps<DataPolicyData>) => {
-//   const store = useDataHubDraftStore()
-//   const { nodes } = store
-//
-//   const selectedNode = nodes.find((node) => node.id === dataPolicyNode.id)
-//   if (!selectedNode)
-//     return [
-//       {
-//         status: 404,
-//         title: 'The data policy could not be identified',
-//         type: 'datahub.notFound',
-//       } as ProblemDetails,
-//     ]
-//
-//   const filter = checkValidityFilter(selectedNode, store)
-//   if (!filter.data) return filter.error
-//
-//   const onSuccess = checkValidityPipeline(selectedNode, DataPolicyData.Handle.ON_SUCCESS, store)
-//   const successOperations = onSuccess.filter((e) => e.data && e.data?.functionId).map((e) => e.data as PolicyOperation)
-//   const onError = checkValidityPipeline(selectedNode, DataPolicyData.Handle.ON_ERROR, store)
-//   const errorOperations = onError.filter((e) => e.data && e.data?.functionId).map((e) => e.data as PolicyOperation)
-//
-//   const ff: DataPolicy = {
-//     id: dataPolicyNode.id,
-//     createdAt: DateTime.now().toISO() || undefined,
-//     matching: { topicFilter: filter.data },
-//     onSuccess: successOperations.length ? { pipeline: successOperations } : undefined,
-//     onFailure: errorOperations.length ? { pipeline: errorOperations } : undefined,
-//   }
-//
-//   return ff
-// }
