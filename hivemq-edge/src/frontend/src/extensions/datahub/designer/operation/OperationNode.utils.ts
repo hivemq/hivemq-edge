@@ -4,16 +4,17 @@ import {
   DryRunResults,
   FunctionData,
   OperationData,
-  TopicFilterData,
+  SchemaData,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { PolicyOperation, Script } from '@/api/__generated__'
+import { PolicyOperation, Schema, Script } from '@/api/__generated__'
 import { checkValidityJSScript } from '@datahub/designer/script/FunctionNode.utils.ts'
+import { checkValiditySchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 
 export function checkValidityTransformFunction(
   operationNode: Node<OperationData>,
   store: WorkspaceState
-): DryRunResults<PolicyOperation, Script> {
+): DryRunResults<PolicyOperation, Script | Schema> {
   const { nodes, edges } = store
 
   if (!operationNode.data.functionId || !operationNode.data.formData) {
@@ -50,13 +51,13 @@ export function checkValidityTransformFunction(
   ///////// Check the serializers
   const serialisers = getIncomers(operationNode, nodes, edges).filter(
     (node) => node.type === DataHubNodeType.SCHEMA
-  ) as Node<TopicFilterData>[]
+  ) as Node<SchemaData>[]
 
-  const hh = getConnectedEdges([...serialisers], edges).filter(
+  const connectedEdges = getConnectedEdges([...serialisers], edges).filter(
     (e) => e.targetHandle === OperationData.Handle.SERIALISER || e.targetHandle === OperationData.Handle.DESERIALISER
   )
-  const serial = hh.filter((e) => e.targetHandle === OperationData.Handle.SERIALISER)
-  const deSerial = hh.filter((e) => e.targetHandle === OperationData.Handle.DESERIALISER)
+  const serial = connectedEdges.filter((edge) => edge.targetHandle === OperationData.Handle.SERIALISER)
+  const deSerial = connectedEdges.filter((edge) => edge.targetHandle === OperationData.Handle.DESERIALISER)
 
   if (serial.length !== 1) {
     return {
@@ -85,14 +86,14 @@ export function checkValidityTransformFunction(
   }
 
   ///////// Check the resources
-  const scriptNodes = functions.map((e) => {
-    return checkValidityJSScript(e)
-  })
+  const scriptNodes = functions.map((e) => checkValidityJSScript(e))
+  const schemaNodes = serialisers.map((e) => checkValiditySchema(e))
 
+  // TODO[NVL] if valid, needs to be broken down into three pipeline operation. with reference to the appropriate resource
   const operation: PolicyOperation = {
     functionId: operationNode.data.functionId,
     arguments: operationNode.data.formData,
     id: operationNode.id,
   }
-  return { data: operation, node: operationNode, resources: scriptNodes }
+  return { data: operation, node: operationNode, resources: [...scriptNodes, ...schemaNodes] }
 }
