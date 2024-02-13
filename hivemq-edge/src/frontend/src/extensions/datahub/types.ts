@@ -10,7 +10,7 @@ import {
 } from '@/api/__generated__'
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import { IChangeEvent } from '@rjsf/core'
-import { ProblemDetails } from '@/api/types/http-problem-details.ts'
+import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 
 export interface PanelSpecs {
   schema: RJSFSchema
@@ -245,10 +245,11 @@ export interface FiniteStateMachineSchema {
   metadata: FiniteStateMachine
 }
 
-export interface DryRunResults<T> {
+export interface DryRunResults<T, R = never> {
+  node: Node<DataHubNodeData>
   data?: T
-  error?: ProblemDetails[]
-  resources?: DataHubNodeData[]
+  error?: ProblemDetailsExtended
+  resources?: DryRunResults<R>[]
 }
 
 export enum PolicyDryRunStatus {
