@@ -89,6 +89,25 @@
         "toState": "to: {{ state }}",
         "fromState": "from: {{ state }}"
       }
+    },
+    "toolbar": {
+      "policy": {
+        "check": "Check",
+        "delete": "Delete Policy"
+      }
+    },
+    "dryRun": {
+      "toolbar": {
+        "checking": "Checking ..."
+      },
+      "report": {
+        "title": "The policy is not completely valid and will not successfully run on your topology.",
+        "subtitle": "The following parts of the policy needs correction:",
+        "cta": {
+          "highlight": "Show in designer",
+          "config": "Open configuration"
+        }
+      }
     }
   },
   "error": {
