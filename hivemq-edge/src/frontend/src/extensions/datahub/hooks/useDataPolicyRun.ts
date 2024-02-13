@@ -4,8 +4,11 @@ import { Script } from '@/api/__generated__'
 
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { DataHubNodeData, DataHubNodeType, DataPolicyData, DryRunResults, PolicyDryRunStatus } from '@datahub/types.ts'
-import { getSubFlow } from '@datahub/utils/flow.utils.ts'
-import { checkValidityFilter, checkValidityPipeline } from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
+import {
+  checkValidityFilter,
+  checkValidityPipeline,
+  getSubFlow,
+} from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
 
 const mockDelay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -71,3 +74,36 @@ export const useDataPolicyRun = () => {
     },
   }
 }
+
+// const useDataPolicyRunXXXX = (dataPolicyNode: NodeProps<DataPolicyData>) => {
+//   const store = useDataHubDraftStore()
+//   const { nodes } = store
+//
+//   const selectedNode = nodes.find((node) => node.id === dataPolicyNode.id)
+//   if (!selectedNode)
+//     return [
+//       {
+//         status: 404,
+//         title: 'The data policy could not be identified',
+//         type: 'datahub.notFound',
+//       } as ProblemDetails,
+//     ]
+//
+//   const filter = checkValidityFilter(selectedNode, store)
+//   if (!filter.data) return filter.error
+//
+//   const onSuccess = checkValidityPipeline(selectedNode, DataPolicyData.Handle.ON_SUCCESS, store)
+//   const successOperations = onSuccess.filter((e) => e.data && e.data?.functionId).map((e) => e.data as PolicyOperation)
+//   const onError = checkValidityPipeline(selectedNode, DataPolicyData.Handle.ON_ERROR, store)
+//   const errorOperations = onError.filter((e) => e.data && e.data?.functionId).map((e) => e.data as PolicyOperation)
+//
+//   const ff: DataPolicy = {
+//     id: dataPolicyNode.id,
+//     createdAt: DateTime.now().toISO() || undefined,
+//     matching: { topicFilter: filter.data },
+//     onSuccess: successOperations.length ? { pipeline: successOperations } : undefined,
+//     onFailure: errorOperations.length ? { pipeline: errorOperations } : undefined,
+//   }
+//
+//   return ff
+// }
