@@ -1,11 +1,12 @@
 import { FC } from 'react'
-import { NodeProps, Position } from 'reactflow'
+import { NodeProps, NodeToolbar, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 
 import { DataHubNodeType, DataPolicyData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { NodeIcon } from '@datahub/components/helpers'
+import { PolicyToolbar } from '@datahub/components/controls/PolicyToolbar.tsx'
 
 export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
   const { t } = useTranslation('datahub')
@@ -13,6 +14,9 @@ export const DataPolicyNode: FC<NodeProps<DataPolicyData>> = (props) => {
 
   return (
     <>
+      <NodeToolbar isVisible={props.selected && !props.dragging} position={Position.Top}>
+        <PolicyToolbar node={props} />
+      </NodeToolbar>
       <NodeWrapper route={`node/${DataHubNodeType.DATA_POLICY}/${id}`} {...props}>
         <HStack>
           <NodeIcon type={DataHubNodeType.DATA_POLICY} />
