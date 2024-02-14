@@ -93,6 +93,7 @@
     "toolbar": {
       "policy": {
         "check": "Check",
+        "save": "Save",
         "delete": "Delete Policy"
       }
     },
@@ -101,10 +102,20 @@
         "checking": "Checking ..."
       },
       "report": {
-        "title_warning": "The policy is not completely valid and will not successfully run on your topology.",
-        "subtitle_warning": "The following parts of the policy needs correction:",
-        "title_success": "The policy is fully valid to run on your topology.",
-        "subtitle_success": "Go for it!",
+        "loading": {
+          "title": "Checking the policy correctness",
+          "description": "Please wait ..."
+        },
+        "error": {
+          "title": "Problem encountered",
+          "description": "Please wait ..."
+        },
+        "success": {
+          "title_warning": "The policy is not completely valid and will not successfully run on your topology.",
+          "description_warning": "The following parts of the policy needs correction:",
+          "title_success": "The policy is fully valid to run on your topology.",
+          "description_success": "Go for it!"
+        },
         "cta": {
           "highlight": "Show in designer",
           "config": "Open configuration"

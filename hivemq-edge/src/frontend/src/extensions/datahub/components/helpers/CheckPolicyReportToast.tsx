@@ -26,18 +26,12 @@ const CheckPolicyReportToast: FC<CheckPolicyReportToastProps> = ({ errors, onFit
 
   return (
     <>
-      <Box as="p" mb={2}>
-        <Text as="span" fontWeight="bold">
-          {t('workspace.dryRun.report.title', { context: status })}
-        </Text>{' '}
-        <Text as="span">{t('workspace.dryRun.report.subtitle', { context: status })}</Text>
-      </Box>
-
+      <Text as="span">{t('workspace.dryRun.report.success.description', { context: status })}</Text>
       <Accordion allowToggle overflow="auto" maxHeight="180px">
-        {errors.map((problem) => {
+        {errors.map((problem, i) => {
           const { id, title, detail } = problem
           return (
-            <AccordionItem key={id as string} borderColor="blackAlpha.500">
+            <AccordionItem key={`${id as string}-item${i}`} borderColor="blackAlpha.500">
               <h2>
                 <AccordionButton>
                   <Box as="span" flex="1" textAlign="left">
