@@ -19,12 +19,12 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.ioc.ConfigurationFileProvider;
 import com.hivemq.configuration.reader.ApiConfigurator;
 import com.hivemq.configuration.reader.BridgeConfigurator;
-import com.hivemq.configuration.reader.CommercialModuleConfigurator;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.configuration.reader.DynamicConfigConfigurator;
 import com.hivemq.configuration.reader.InternalConfigurator;
 import com.hivemq.configuration.reader.ListenerConfigurator;
+import com.hivemq.configuration.reader.ModuleConfigurator;
 import com.hivemq.configuration.reader.MqttConfigurator;
 import com.hivemq.configuration.reader.MqttsnConfigurator;
 import com.hivemq.configuration.reader.PersistenceConfigurator;
@@ -36,10 +36,10 @@ import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.CommercialModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
+import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
@@ -70,7 +70,8 @@ public class ConfigurationBootstrap {
                         new UnsConfigurationServiceImpl(),
                         new GatewayConfigurationServiceImpl(),
                         new UsageTrackingConfigurationServiceImpl(),
-                        new ProtocolAdapterConfigurationServiceImpl(), new CommercialModuleConfigurationServiceImpl(),
+                        new ProtocolAdapterConfigurationServiceImpl(),
+                        new ModuleConfigurationServiceImpl(),
                         new InternalConfigurationServiceImpl());
 
         final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
@@ -88,7 +89,7 @@ public class ConfigurationBootstrap {
                 new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                 new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
                 new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()),
-                new CommercialModuleConfigurator(configurationService.commercialModuleConfigurationService()),
+                new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
                 new InternalConfigurator(configurationService.internalConfigurationService()));
 
         configFileReader.applyConfig();

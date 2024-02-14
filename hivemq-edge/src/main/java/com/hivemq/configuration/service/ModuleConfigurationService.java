@@ -4,7 +4,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Map;
 
-public interface CommercialModuleConfigurationService {
+public interface ModuleConfigurationService {
 
     @NotNull Map<String, Object> getAllConfigs();
 

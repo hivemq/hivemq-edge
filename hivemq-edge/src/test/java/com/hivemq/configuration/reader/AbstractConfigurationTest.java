@@ -19,9 +19,9 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.BridgeConfigurationService;
-import com.hivemq.configuration.service.CommercialModuleConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
+import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.MqttsnConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
@@ -32,9 +32,9 @@ import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.CommercialModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
+import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
@@ -72,7 +72,7 @@ public class AbstractConfigurationTest {
     DynamicConfigurationService dynamicConfigurationService;
     UsageTrackingConfigurationService usageTrackingConfigurationService;
     ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
-    CommercialModuleConfigurationService commercialModuleConfigurationService;
+    ModuleConfigurationService moduleConfigurationService;
     InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
 
     @Before
@@ -92,7 +92,7 @@ public class AbstractConfigurationTest {
         unsConfigurationService = new UnsConfigurationServiceImpl();
         dynamicConfigurationService = new GatewayConfigurationServiceImpl();
         usageTrackingConfigurationService = new UsageTrackingConfigurationServiceImpl();
-        commercialModuleConfigurationService = new CommercialModuleConfigurationServiceImpl();
+        moduleConfigurationService = new ModuleConfigurationServiceImpl();
         protocolAdapterConfigurationService = new ProtocolAdapterConfigurationServiceImpl();
 
         final ConfigurationFile configurationFile = new ConfigurationFile(xmlFile);
@@ -110,7 +110,7 @@ public class AbstractConfigurationTest {
                 new DynamicConfigConfigurator(dynamicConfigurationService),
                 new UsageTrackingConfigurator(usageTrackingConfigurationService),
                 new ProtocolAdapterConfigurator(protocolAdapterConfigurationService),
-                new CommercialModuleConfigurator(commercialModuleConfigurationService),
+                new ModuleConfigurator(moduleConfigurationService),
                 new InternalConfigurator(internalConfigurationService));
     }
 
