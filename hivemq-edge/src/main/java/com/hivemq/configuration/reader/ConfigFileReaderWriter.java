@@ -78,7 +78,7 @@ public class ConfigFileReaderWriter {
     private final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator;
     private final @NotNull UsageTrackingConfigurator usageTrackingConfigurator;
     private final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator;
-    private final @NotNull CommercialModuleConfigurator commercialModuleConfigurator;
+    private final @NotNull ModuleConfigurator moduleConfigurator;
     private final @NotNull InternalConfigurator internalConfigurator;
     protected @NotNull HiveMQConfigEntity configEntity;
     private final Object lock = new Object();
@@ -98,7 +98,7 @@ public class ConfigFileReaderWriter {
             final @NotNull DynamicConfigConfigurator dynamicConfigConfigurator,
             final @NotNull UsageTrackingConfigurator usageTrackingConfigurator,
             final @NotNull ProtocolAdapterConfigurator protocolAdapterConfigurator,
-            final @NotNull CommercialModuleConfigurator commercialModuleConfigurator,
+            final @NotNull ModuleConfigurator moduleConfigurator,
             final @NotNull InternalConfigurator internalConfigurator) {
 
         this.configurationFile = configurationFile;
@@ -114,7 +114,7 @@ public class ConfigFileReaderWriter {
         this.dynamicConfigConfigurator = dynamicConfigConfigurator;
         this.usageTrackingConfigurator = usageTrackingConfigurator;
         this.protocolAdapterConfigurator = protocolAdapterConfigurator;
-        this.commercialModuleConfigurator = commercialModuleConfigurator;
+        this.moduleConfigurator = moduleConfigurator;
         this.internalConfigurator = internalConfigurator;
     }
 
@@ -334,7 +334,7 @@ public class ConfigFileReaderWriter {
         unsConfigurator.setUnsConfig(config.getUns());
         dynamicConfigConfigurator.setConfig(config.getGatewayConfig());
         usageTrackingConfigurator.setConfig(config.getUsageTracking());
-        commercialModuleConfigurator.setConfigs(config.getCommercialConfigs());
+        moduleConfigurator.setConfigs(config.getModuleConfigs());
         internalConfigurator.setConfig(config.getInternal());
     }
 

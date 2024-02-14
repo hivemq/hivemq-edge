@@ -86,9 +86,9 @@ public class HiveMQConfigEntity {
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
     private @NotNull Map<String, Object> protocolAdapterConfig = new HashMap<>();
 
-    @XmlElement(name = "commercial-modules")
+    @XmlElement(name = "modules")
     @XmlJavaTypeAdapter(ArbitraryValuesMapAdapter.class)
-    private @NotNull Map<String, Object> commercialConfigs = new HashMap<>();
+    private @NotNull Map<String, Object> moduleConfigs = new HashMap<>();
 
     @XmlElementRef(required = false)
     private final @NotNull InternalConfigEntity internal = new InternalConfigEntity();
@@ -133,8 +133,8 @@ public class HiveMQConfigEntity {
         return protocolAdapterConfig;
     }
 
-    public @NotNull Map<String, Object> getCommercialConfigs() {
-        return commercialConfigs;
+    public @NotNull Map<String, Object> getModuleConfigs() {
+        return moduleConfigs;
     }
 
     public @NotNull UnsConfigEntity getUns() { return uns; }

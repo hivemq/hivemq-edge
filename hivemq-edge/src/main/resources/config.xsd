@@ -58,7 +58,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="commercial-modules" minOccurs="0">
+            <xs:element name="modules" minOccurs="0">
                 <xs:complexType>
                     <xs:sequence>
                         <xs:choice minOccurs="0" maxOccurs="unbounded">
