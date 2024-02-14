@@ -17,12 +17,12 @@ package com.hivemq.configuration.writer;
 
 import com.hivemq.configuration.reader.ApiConfigurator;
 import com.hivemq.configuration.reader.BridgeConfigurator;
-import com.hivemq.configuration.reader.CommercialModuleConfigurator;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.configuration.reader.DynamicConfigConfigurator;
 import com.hivemq.configuration.reader.InternalConfigurator;
 import com.hivemq.configuration.reader.ListenerConfigurator;
+import com.hivemq.configuration.reader.ModuleConfigurator;
 import com.hivemq.configuration.reader.MqttConfigurator;
 import com.hivemq.configuration.reader.MqttsnConfigurator;
 import com.hivemq.configuration.reader.PersistenceConfigurator;
@@ -66,7 +66,7 @@ public abstract class AbstractConfigWriterTest {
                 new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                 new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
                 new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()),
-                new CommercialModuleConfigurator(configurationService.commercialModuleConfigurationService()),
+                new ModuleConfigurator(configurationService.commercialModuleConfigurationService()),
                 new InternalConfigurator(configurationService.internalConfigurationService()));
         configFileReader.setDefaultBackupConfig(false);
         return configFileReader;

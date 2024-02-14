@@ -15,7 +15,7 @@
  */
 package com.hivemq.configuration.reader;
 
-import com.hivemq.configuration.service.CommercialModuleConfigurationService;
+import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -23,11 +23,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CommercialModuleConfigurator {
+public class ModuleConfigurator {
 
-    private final @NotNull CommercialModuleConfigurationService configurationService;
+    private final @NotNull ModuleConfigurationService configurationService;
 
-    public CommercialModuleConfigurator(final @NotNull CommercialModuleConfigurationService configurationService) {
+    public ModuleConfigurator(final @NotNull ModuleConfigurationService configurationService) {
         this.configurationService = configurationService;
     }
 

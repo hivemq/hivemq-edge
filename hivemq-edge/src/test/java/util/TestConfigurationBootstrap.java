@@ -17,10 +17,10 @@ package util;
 
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.BridgeConfigurationService;
-import com.hivemq.configuration.service.CommercialModuleConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.DynamicConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurationService;
+import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.configuration.service.PersistenceConfigurationService;
 import com.hivemq.configuration.service.ProtocolAdapterConfigurationService;
 import com.hivemq.configuration.service.SecurityConfigurationService;
@@ -28,10 +28,10 @@ import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.configuration.service.UsageTrackingConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
-import com.hivemq.configuration.service.impl.CommercialModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
+import com.hivemq.configuration.service.impl.ModuleConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
@@ -61,7 +61,7 @@ public class TestConfigurationBootstrap {
     private final @NotNull DynamicConfigurationService dynamicConfigurationService;
     private final @NotNull UsageTrackingConfigurationService usageTrackingConfigurationService;
     private final @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService;
-    private final @NotNull CommercialModuleConfigurationService commercialModuleConfigurationService;
+    private final @NotNull ModuleConfigurationService moduleConfigurationService;
     private final @NotNull InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
 
     public TestConfigurationBootstrap() {
@@ -75,7 +75,7 @@ public class TestConfigurationBootstrap {
         apiConfigurationService = new ApiConfigurationServiceImpl();
         unsConfigurationService = new UnsConfigurationServiceImpl();
         dynamicConfigurationService = new GatewayConfigurationServiceImpl();
-        commercialModuleConfigurationService = new CommercialModuleConfigurationServiceImpl();
+        moduleConfigurationService = new ModuleConfigurationServiceImpl();
 
         //-- Ensure usage reporting is disabled during tests
         usageTrackingConfigurationService = new UsageTrackingConfigurationServiceImpl() {
@@ -96,8 +96,7 @@ public class TestConfigurationBootstrap {
                 apiConfigurationService,
                 unsConfigurationService,
                 dynamicConfigurationService,
-                usageTrackingConfigurationService,
-                protocolAdapterConfigurationService, commercialModuleConfigurationService,
+                usageTrackingConfigurationService, protocolAdapterConfigurationService, moduleConfigurationService,
                 internalConfigurationService);
     }
 
