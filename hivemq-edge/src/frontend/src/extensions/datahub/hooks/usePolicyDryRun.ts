@@ -87,7 +87,9 @@ export const usePolicyDryRun = () => {
   return {
     checkPolicyAsync: (policy: Node<BehaviorPolicy> | Node<DataPolicyData>) => {
       if (policy.type === DataHubNodeType.DATA_POLICY) return checkDataPolicyAsync(policy as Node<DataPolicyData>)
-      return checkBehaviorPolicyAsync(policy as Node<BehaviorPolicy>)
+      if (policy.type === DataHubNodeType.BEHAVIOR_POLICY)
+        return checkBehaviorPolicyAsync(policy as Node<BehaviorPolicy>)
+      return Promise.reject(new Error(`Policy Type not supported : ${policy.type}`))
     },
   }
 }
