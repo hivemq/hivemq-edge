@@ -17,6 +17,7 @@ package com.hivemq.api.resources;
 
 import com.hivemq.api.model.ApiBodyExamples;
 import com.hivemq.api.model.uns.ISA95ApiBean;
+import com.hivemq.api.model.uns.NamespaceProfileBean;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -80,4 +81,36 @@ public interface UnsApi {
                                           in = ParameterIn.DEFAULT)
                                    final @NotNull ISA95ApiBean isa95);
 
+
+
+    @GET
+    @Path("/profiles")
+    @Operation(summary = "Obtain UNS profiles",
+               operationId = "get-profiles",
+               description = "Obtain available profiles of UNS.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = NamespaceProfileBean.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example UNS profiles config.",
+                                                                              name = "default-profiles",
+                                                                              summary = "Example configuration",
+                                                                              value = ApiBodyExamples.EXAMPLE_UNS_PROFILES_JSON)
+                                                       }))})
+    @Produces(MediaType.APPLICATION_JSON)
+    @NotNull Response getProfiles();
+
+
+    @POST
+    @Path("/profile")
+    @Operation(summary = "Set UNS profile",
+               operationId = "set-profile",
+               description = "Set UNS profile.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success")})
+    @Produces(MediaType.APPLICATION_JSON)
+    @NotNull Response setProfile(final NamespaceProfileBean bean) ;
 }

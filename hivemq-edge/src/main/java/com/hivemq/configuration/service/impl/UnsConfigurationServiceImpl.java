@@ -17,8 +17,10 @@ package com.hivemq.configuration.service.impl;
 
 import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.uns.config.ISA88;
 import com.hivemq.uns.config.ISA95;
+import com.hivemq.uns.config.NamespaceProfile;
+
+import java.util.List;
 
 /**
  * @author Simon L Johnson
@@ -26,23 +28,22 @@ import com.hivemq.uns.config.ISA95;
 public class UnsConfigurationServiceImpl implements UnsConfigurationService {
 
     private @Nullable ISA95 isa95;
-    private @Nullable ISA88 isa88;
-
+    private @Nullable List<NamespaceProfile> profiles;
     @Override
     public ISA95 getISA95() {
         return isa95;
-    }
-
-    @Override
-    public ISA88 getISA88() {
-        return isa88;
     }
 
     public void setISA95(final ISA95 isa95) {
         this.isa95 = isa95;
     }
 
-    public void setISA88(final ISA88 isa88) {
-        this.isa88 = isa88;
+    public List<NamespaceProfile> getProfiles() {
+        return profiles;
+    }
+
+    @Override
+    public void setProfiles(final List<NamespaceProfile> profiles) {
+        this.profiles = profiles;
     }
 }

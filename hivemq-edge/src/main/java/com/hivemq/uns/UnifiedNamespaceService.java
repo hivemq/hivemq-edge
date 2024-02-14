@@ -18,8 +18,11 @@ package com.hivemq.uns;
 import com.hivemq.client.mqtt.datatypes.MqttTopic;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.uns.config.ISA95;
+import com.hivemq.uns.config.NamespaceProfile;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Simon L Johnson
@@ -33,5 +36,9 @@ public interface UnifiedNamespaceService {
     Map<String, String> getTopicReplacements(@NotNull ISA95 isa95);
 
     MqttTopic prefixISA95(MqttTopic topic);
+
+    List<NamespaceProfile> getProfiles();
+
+    Optional<NamespaceProfile> getProfileByType(String type) ;
 
 }

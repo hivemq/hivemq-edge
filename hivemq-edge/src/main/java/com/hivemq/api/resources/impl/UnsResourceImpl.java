@@ -18,6 +18,8 @@ package com.hivemq.api.resources.impl;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.model.uns.ISA95ApiBean;
+import com.hivemq.api.model.uns.NamespaceProfileBean;
+import com.hivemq.api.model.uns.NamespaceProfilesList;
 import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.api.utils.ApiValidation;
@@ -25,23 +27,23 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
+import com.hivemq.uns.config.NamespaceProfile;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Simon L Johnson
  */
 public class UnsResourceImpl extends AbstractApi implements UnsApi {
 
-    private final @NotNull ConfigurationService configurationService;
     private final @NotNull UnifiedNamespaceService unifiedNamespaceService;
 
     @Inject
     public UnsResourceImpl(
-            final @NotNull ConfigurationService configurationService,
             final @NotNull UnifiedNamespaceService unifiedNamespaceService) {
-        this.configurationService = configurationService;
         this.unifiedNamespaceService = unifiedNamespaceService;
     }
 
@@ -81,5 +83,19 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
             unifiedNamespaceService.setISA95(ISA95ApiBean.unconvert(isa95));
             return Response.status(200).build();
         }
+    }
+
+    @Override
+    public Response getProfiles() {
+        List<NamespaceProfile> profiles = unifiedNamespaceService.getProfiles();
+        NamespaceProfilesList list = new NamespaceProfilesList(profiles.stream().
+                map(NamespaceProfileBean::convert).collect(Collectors.toList()));
+        return Response.status(200).entity(list).build();
+    }
+
+    @Override
+    public Response setProfile(final NamespaceProfileBean bean) {
+        List<NamespaceProfile> profiles = unifiedNamespaceService.getProfiles();
+        return Response.status(200).build();
     }
 }

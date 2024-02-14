@@ -30,7 +30,6 @@ public class ISA95 {
     public static final String PRODUCTION_LINE = "production-line";
     public static final String WORK_CELL = "work-cell";
 
-
     boolean enabled = false;
     boolean prefixAllTopics = false;
 

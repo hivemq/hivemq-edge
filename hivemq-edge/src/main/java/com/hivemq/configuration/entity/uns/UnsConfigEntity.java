@@ -15,12 +15,16 @@
  */
 package com.hivemq.configuration.entity.uns;
 
+import com.hivemq.configuration.entity.listener.ListenerEntity;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElementRef;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Simon L Johnson
@@ -33,6 +37,17 @@ public class UnsConfigEntity {
     @XmlElementRef(required = false)
     private @NotNull ISA95Entity isa95 = new ISA95Entity();
 
-    public @NotNull ISA95Entity getIsa95() { return isa95; }
+    @XmlElementWrapper(name = "profiles")
+    @XmlElementRef(required = false)
+    private @NotNull List<NamespaceEntity> profiles = new ArrayList<>();
 
+    public @NotNull List<NamespaceEntity> getProfiles() {
+        return profiles;
+    }
+
+    public void setProfiles(List<NamespaceEntity> profiles){
+        this.profiles = profiles;
+    }
+
+    public @NotNull ISA95Entity getIsa95() { return isa95; }
 }

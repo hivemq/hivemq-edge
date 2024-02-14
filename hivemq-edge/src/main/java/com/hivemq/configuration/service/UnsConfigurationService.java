@@ -16,8 +16,11 @@
 package com.hivemq.configuration.service;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.uns.config.ISA88;
 import com.hivemq.uns.config.ISA95;
+import com.hivemq.uns.config.NamespaceProfile;
+import com.hivemq.uns.config.NamespaceSegment;
+
+import java.util.List;
 
 /**
  * A Configuration service which allows access to API Configuration properties
@@ -26,10 +29,10 @@ public interface UnsConfigurationService {
 
     @NotNull ISA95 getISA95();
 
-    @NotNull ISA88 getISA88();
-
     void setISA95(@NotNull ISA95 isa95);
 
-    void setISA88(@NotNull ISA88 isa88);
+    void setProfiles(List<NamespaceProfile> profiles);
+
+    List<NamespaceProfile> getProfiles();
 
 }
