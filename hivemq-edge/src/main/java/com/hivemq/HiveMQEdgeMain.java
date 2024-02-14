@@ -36,6 +36,7 @@ import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
+import com.hivemq.extensions.core.CoreModuleServiceImpl;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
@@ -116,17 +117,21 @@ public class HiveMQEdgeMain {
         final RestComponentsService restComponentsService = new RestComponentsServiceImpl(genericAPIHolder);
         final ShutdownHooks shutdownHooks = new ShutdownHooks();
         final HiveMQCapabilityService capabilityService = new CapabilityServiceImpl();
+
+        CoreModuleServiceImpl coreModuleService = new CoreModuleServiceImpl(persistencesService,
+                systemInformation,
+                metricRegistry,
+                shutdownHooks,
+                moduleLoader,
+                configService,
+                capabilityService,
+                restComponentsService,
+                handlerService);
+
         try {
             final CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(
-                    persistencesService,
-                    systemInformation,
-                    metricRegistry,
-                    shutdownHooks,
                     moduleLoader,
-                    configService,
-                    capabilityService,
-                    restComponentsService,
-                    handlerService);
+                    coreModuleService);
             commercialModuleLoaderDiscovery.loadAllCoreModules();
         } catch (Exception e) {
             log.warn("Error on loading the commercial module loader.", e);
@@ -146,7 +151,7 @@ public class HiveMQEdgeMain {
                 .shutdownHooks(shutdownHooks)
                 .capabilityService(capabilityService)
                 .restComponentService(restComponentsService)
-                .restComponentsHolder(genericAPIHolder)
+                .restComponentsHolder(genericAPIHolder).coreModuleService(coreModuleService)
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
         injector.persistences();
