@@ -9,6 +9,7 @@ import {
 } from '@datahub/types.ts'
 import { DataPolicyValidator, Schema } from '@/api/__generated__'
 import { checkValiditySchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
 export function checkValidityPolicyValidator(
   validator: Node<ValidatorData>,
@@ -24,13 +25,7 @@ export function checkValidityPolicyValidator(
   if (!schemas.length) {
     return {
       node: validator,
-      error: {
-        title: validator.type as string,
-        status: 404,
-        detail: 'No schema connected to the operation node',
-        type: 'datahub.notConnected',
-        id: validator.id,
-      },
+      error: PolicyCheckErrors.notConnected(DataHubNodeType.SCHEMA, validator),
     }
   }
 
@@ -57,13 +52,7 @@ export function checkValidityPolicyValidators(
     return [
       {
         node: dataPolicyNode,
-        error: {
-          title: dataPolicyNode.type as string,
-          status: 404,
-          detail: 'No validator to the data policy',
-          type: 'datahub.notConnected',
-          id: dataPolicyNode.id,
-        },
+        error: PolicyCheckErrors.notConnected(DataHubNodeType.VALIDATOR, dataPolicyNode),
       },
     ]
   }

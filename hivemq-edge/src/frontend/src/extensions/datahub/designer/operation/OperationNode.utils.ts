@@ -10,6 +10,7 @@ import {
 import { PolicyOperation, Schema, Script } from '@/api/__generated__'
 import { checkValidityJSScript } from '@datahub/designer/script/FunctionNode.utils.ts'
 import { checkValiditySchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
 export function checkValidityTransformFunction(
   operationNode: Node<OperationData>,
@@ -20,13 +21,7 @@ export function checkValidityTransformFunction(
   if (!operationNode.data.functionId || !operationNode.data.formData) {
     return {
       node: operationNode,
-      error: {
-        status: 404,
-        title: operationNode.type as string,
-        detail: 'The event has not been defined',
-        type: 'datahub.notDefined',
-        id: operationNode.id,
-      },
+      error: PolicyCheckErrors.notConfigured(operationNode, 'functionId, formData'),
     }
   }
 
@@ -38,13 +33,7 @@ export function checkValidityTransformFunction(
   if (!functions.length) {
     return {
       node: operationNode,
-      error: {
-        title: operationNode.type as string,
-        status: 404,
-        detail: 'No function connected to the operation node',
-        type: 'datahub.notConnected',
-        id: operationNode.id,
-      },
+      error: PolicyCheckErrors.notConnected(DataHubNodeType.FUNCTION, operationNode),
     }
   }
 
@@ -62,26 +51,14 @@ export function checkValidityTransformFunction(
   if (serial.length !== 1) {
     return {
       node: operationNode,
-      error: {
-        title: operationNode.type as string,
-        status: 404,
-        detail: 'No schema connected to the serialiser handle',
-        type: 'datahub.notConnected',
-        id: operationNode.id,
-      },
+      error: PolicyCheckErrors.notConnected(DataHubNodeType.SCHEMA, operationNode, OperationData.Handle.SERIALISER),
     }
   }
 
   if (deSerial.length !== 1) {
     return {
       node: operationNode,
-      error: {
-        title: operationNode.type as string,
-        status: 404,
-        detail: 'No schema connected to the deserialiser handle',
-        type: 'datahub.notConnected',
-        id: operationNode.id,
-      },
+      error: PolicyCheckErrors.notConnected(DataHubNodeType.SCHEMA, operationNode, OperationData.Handle.SERIALISER),
     }
   }
 

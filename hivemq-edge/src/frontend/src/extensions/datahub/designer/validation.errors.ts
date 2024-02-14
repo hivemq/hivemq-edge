@@ -6,18 +6,27 @@ import i18n from '@/config/i18n.config.ts'
 const commonProperties: Pick<ProblemDetailsExtended, 'status'> = { status: 404 }
 
 export const PolicyCheckErrors = {
-  notConnected: <T>(from: DataHubNodeType, to: Node<T>) => ({
-    title: to.type as string,
-    detail: i18n.t('datahub:error.dryRun.notConnected', { source: from, target: to.type }),
+  notConnected: <T>(source: DataHubNodeType, target: Node<T>, handle?: string) => ({
+    title: target.type as string,
+    detail: handle
+      ? i18n.t('datahub:error.dryRun.noHandleConnected', { source, target: target.type })
+      : i18n.t('datahub:error.dryRun.notConnected', { source, target: target.type, handle }),
     type: 'datahub.notConnected',
     ...commonProperties,
-    id: to.id,
+    id: target.id,
   }),
-  cardinality: <T>(from: DataHubNodeType, to: Node<T>) => ({
-    title: to.type as string,
-    detail: i18n.t('datahub:error.dryRun.cardinality', { source: from, target: to.type }),
+  cardinality: <T>(source: DataHubNodeType, target: Node<T>) => ({
+    title: target.type as string,
+    detail: i18n.t('datahub:error.dryRun.cardinality', { source, target: target.type }),
     type: 'datahub.cardinality',
     ...commonProperties,
-    id: to.id,
+    id: target.id,
+  }),
+  notConfigured: <T>(source: Node<T>, properties: string) => ({
+    title: source.type as string,
+    detail: i18n.t('datahub:error.dryRun.notConfigured', { source: source.type, properties: properties }),
+    type: 'datahub.cardinality',
+    ...commonProperties,
+    id: source.id,
   }),
 }

@@ -3,6 +3,7 @@ import { PolicyOperation } from '@/api/__generated__'
 
 import { DataHubNodeType, DataPolicyData, DryRunResults, TopicFilterData, WorkspaceState } from '@datahub/types.ts'
 import { checkValidityTransformFunction } from '@datahub/designer/operation/OperationNode.utils.ts'
+import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
 export function getSubFlow(source: Node, acc: Node[], store: WorkspaceState, only = false) {
   const allIds = Array.from(new Set(acc.map((e) => e.id)))
@@ -54,13 +55,7 @@ export function checkValidityFilter(
   if (!incomers.length) {
     return {
       node: dataPolicyNode,
-      error: {
-        title: dataPolicyNode.type as string,
-        status: 404,
-        detail: 'No topic filter connected to the data policy',
-        type: 'datahub.notConnected',
-        id: dataPolicyNode.id,
-      },
+      error: PolicyCheckErrors.notConnected(DataHubNodeType.TOPIC_FILTER, dataPolicyNode),
     }
   }
 
@@ -68,13 +63,7 @@ export function checkValidityFilter(
   if (incomers.length > 1) {
     return {
       node: incomers[0],
-      error: {
-        status: 404,
-        title: incomers[0].type as string,
-        detail: 'Too many topic filters connected to the data policy',
-        type: 'datahub.cardinality',
-        id: incomers[0].id,
-      },
+      error: PolicyCheckErrors.cardinality(DataHubNodeType.TOPIC_FILTER, dataPolicyNode),
     }
   }
 
@@ -119,13 +108,7 @@ export function checkValidityPipeline(
     if (!node.data.functionId) {
       return {
         node: node,
-        error: {
-          status: 404,
-          title: node.type as string,
-          detail: 'The event has not been defined',
-          type: 'datahub.notDefined',
-          id: node.id,
-        },
+        error: PolicyCheckErrors.notConfigured(node, 'functionId'),
       }
     }
 

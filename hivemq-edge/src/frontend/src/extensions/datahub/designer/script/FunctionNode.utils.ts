@@ -1,18 +1,13 @@
 import { Node } from 'reactflow'
 import { DryRunResults, FunctionData } from '@datahub/types.ts'
 import { Script } from '@/api/__generated__'
+import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
 export function checkValidityJSScript(scriptNode: Node<FunctionData>): DryRunResults<Script> {
   if (!scriptNode.data.name || !scriptNode.data.version) {
     return {
       node: scriptNode,
-      error: {
-        title: scriptNode.type as string,
-        status: 404,
-        detail: 'The Javascript function is not properly described. NAme and version are missing',
-        type: 'datahub.notDefined',
-        id: scriptNode.id,
-      },
+      error: PolicyCheckErrors.notConfigured(scriptNode, 'name, version'),
     }
   }
 
