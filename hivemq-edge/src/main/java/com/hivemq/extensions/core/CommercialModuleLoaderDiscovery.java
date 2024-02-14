@@ -15,11 +15,6 @@
  */
 package com.hivemq.extensions.core;
 
-import com.codahale.metrics.MetricRegistry;
-import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
@@ -31,36 +26,13 @@ import java.util.List;
 public class CommercialModuleLoaderDiscovery {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(CommercialModuleLoaderDiscovery.class);
-
-    private final @NotNull PersistencesService persistencesService;
-    private final @NotNull SystemInformation systemInformation;
-    private final @NotNull MetricRegistry metricRegistry;
-    private final @NotNull ShutdownHooks shutdownHooks;
     private final @NotNull ModuleLoader moduleLoader;
-    private final @NotNull ConfigurationService configService;
-    private final @NotNull HiveMQCapabilityService hiveMQCapabilityService;
-    private final @NotNull RestComponentsService restComponentsService;
-    private final @NotNull HandlerService handlerService;
+    private final @NotNull CoreModuleServiceImpl coreModuleService;
 
     public CommercialModuleLoaderDiscovery(
-            final @NotNull PersistencesService persistencesService,
-            final @NotNull SystemInformation systemInformation,
-            final @NotNull MetricRegistry metricRegistry,
-            final @NotNull ShutdownHooks shutdownHooks,
-            final @NotNull ModuleLoader moduleLoader,
-            final @NotNull ConfigurationService configService,
-            final @NotNull HiveMQCapabilityService hiveMQCapabilityService,
-            final @NotNull RestComponentsService restComponentsService,
-            final @NotNull HandlerService handlerService) {
-        this.persistencesService = persistencesService;
-        this.systemInformation = systemInformation;
-        this.metricRegistry = metricRegistry;
-        this.shutdownHooks = shutdownHooks;
+            final @NotNull ModuleLoader moduleLoader, final @NotNull CoreModuleServiceImpl coreModuleService) {
         this.moduleLoader = moduleLoader;
-        this.configService = configService;
-        this.hiveMQCapabilityService = hiveMQCapabilityService;
-        this.restComponentsService = restComponentsService;
-        this.handlerService = handlerService;
+        this.coreModuleService = coreModuleService;
     }
 
     public void loadAllCoreModules()
@@ -76,15 +48,6 @@ public class CommercialModuleLoaderDiscovery {
     private void loadAndStartMainClass(Class<? extends ModuleLoaderMain> extensionMainClass)
             throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         final ModuleLoaderMain instance = extensionMainClass.getDeclaredConstructor().newInstance();
-        CoreModuleServiceImpl coreModuleService = new CoreModuleServiceImpl(persistencesService,
-                systemInformation,
-                metricRegistry,
-                shutdownHooks,
-                moduleLoader,
-                configService,
-                hiveMQCapabilityService,
-                restComponentsService,
-                handlerService);
         instance.start(coreModuleService);
     }
 }

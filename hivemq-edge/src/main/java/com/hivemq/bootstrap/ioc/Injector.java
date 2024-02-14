@@ -32,6 +32,7 @@ import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.ioc.ModulesModule;
 import com.hivemq.edge.modules.ioc.RemoteServiceModule;
+import com.hivemq.extensions.core.CoreModuleService;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
@@ -134,8 +135,10 @@ public interface Injector {
         @BindsInstance
         Builder restComponentsHolder(GenericAPIHolder genericAPIHolder);
 
-        Injector build();
+        @BindsInstance
+        Builder coreModuleService(CoreModuleService coreModuleService);
 
+        Injector build();
     }
 
 }
