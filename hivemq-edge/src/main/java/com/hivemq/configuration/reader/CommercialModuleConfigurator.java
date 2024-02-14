@@ -47,11 +47,11 @@ public class CommercialModuleConfigurator {
         configurationService.setAllConfigs(configMap);
     }
 
-    public void syncConfigs(final @NotNull Map<String, Object> protocolAdapterConfig) {
-        if (protocolAdapterConfig == null) {
+    public void syncConfigs(final @NotNull Map<String, Object> commercialProtocolConfig) {
+        if (commercialProtocolConfig == null) {
             return;
         }
-        protocolAdapterConfig.clear();
-        protocolAdapterConfig.putAll(configurationService.getAllConfigs());
+        commercialProtocolConfig.clear();
+        commercialProtocolConfig.putAll(configurationService.getAllConfigs());
     }
 }
