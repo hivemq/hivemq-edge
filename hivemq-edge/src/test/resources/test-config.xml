@@ -290,5 +290,5 @@
         </modbus-adapter>
     </protocol-adapters>
     <internal></internal>
-    <commercial-modules></commercial-modules>
+    <modules></modules>
 </hivemq>
