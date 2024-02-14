@@ -1,9 +1,9 @@
 import { FC, useMemo, useState } from 'react'
-import { Button, ButtonGroup, Card, CardFooter, Icon, useToast } from '@chakra-ui/react'
+import { Button, ButtonGroup, Card, CardFooter, Icon, useToast, UseToastOptions } from '@chakra-ui/react'
 import { NodeProps, useReactFlow } from 'reactflow'
 
 import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
-import { MdOutlineDeleteForever } from 'react-icons/md'
+import { MdOutlineDeleteForever, MdOutlineSave } from 'react-icons/md'
 
 import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 
@@ -29,44 +29,63 @@ export const PolicyToolbar: FC<ActionPolicyCheckProps> = (props) => {
   // only allow a single check at any given time
   const POLICY_CHECK_ID = 'POLICY_CHECK_ID'
 
+  const TOAST_DEFAULTS: UseToastOptions = {
+    id: POLICY_CHECK_ID,
+    isClosable: true,
+    position: 'bottom-left',
+    variant: 'left-accent',
+    duration: null,
+  }
+
   const handleCheckPolicy = () => {
     const selectedNode = nodes.find((node) => node.id === props.node.id)
     if (!selectedNode) return
 
     setState(PolicyDryRunStatus.RUNNING)
 
-    checkPolicyAsync(selectedNode).then((results) => {
-      const failedResults = results.filter((result) => !!result.error)
-      setState(failedResults.length ? PolicyDryRunStatus.FAILURE : PolicyDryRunStatus.SUCCESS)
+    if (!createToast.isActive(POLICY_CHECK_ID)) {
+      createToast.promise(checkPolicyAsync(selectedNode), {
+        success: (results) => {
+          setState(PolicyDryRunStatus.SUCCESS)
+          const failedResults = results.filter((result) => !!result.error)
+          const errors = failedResults.map((result) => result.error as ProblemDetailsExtended)
+          const status = errors.length ? 'warning' : 'success'
 
-      const errors = failedResults.map((result) => result.error as ProblemDetailsExtended)
-
-      createToast({
-        status: errors.length ? 'warning' : 'success',
-        id: POLICY_CHECK_ID,
-        isClosable: true,
-        position: 'bottom-left',
-        duration: null,
-        variant: 'left-accent',
-        onCloseComplete: () => {
-          nodes.forEach((node) => {
-            onUpdateNodes<DataHubNodeData>(node.id, {
-              ...node.data,
-              dryRunStatus: PolicyDryRunStatus.IDLE,
-            })
-          })
+          return {
+            title: t('workspace.dryRun.report.success.title', { context: status }),
+            status: status,
+            description: (
+              <CheckPolicyReportToast
+                errors={errors}
+                onFitView={(id) => {
+                  const errorNode = nodes.find((e) => e.id === id)
+                  if (errorNode) fitView({ nodes: [errorNode], padding: 3, duration: 800 })
+                }}
+              />
+            ),
+            ...TOAST_DEFAULTS,
+            onCloseComplete: () => {
+              nodes.forEach((node) => {
+                onUpdateNodes<DataHubNodeData>(node.id, {
+                  ...node.data,
+                  dryRunStatus: PolicyDryRunStatus.IDLE,
+                })
+              })
+            },
+          }
         },
-        description: (
-          <CheckPolicyReportToast
-            errors={errors}
-            onFitView={(id) => {
-              const errorNode = nodes.find((e) => e.id === id)
-              if (errorNode) fitView({ nodes: [errorNode], padding: 3, duration: 800 })
-            }}
-          />
-        ),
+        error: (e) => {
+          setState(PolicyDryRunStatus.FAILURE)
+          return { title: t('workspace.dryRun.report.error.title'), description: e.toString(), ...TOAST_DEFAULTS }
+        },
+        loading: {
+          title: t('workspace.dryRun.report.loading.title'),
+          description: t('workspace.dryRun.report.loading.description'),
+          ...TOAST_DEFAULTS,
+          isClosable: false,
+        },
       })
-    })
+    }
   }
 
   const CheckIcon = useMemo(() => {
