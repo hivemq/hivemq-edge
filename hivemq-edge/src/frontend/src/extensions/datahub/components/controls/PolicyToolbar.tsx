@@ -91,6 +91,9 @@ export const PolicyToolbar: FC<ActionPolicyCheckProps> = (props) => {
           </Button>
         </ButtonGroup>
         <ButtonGroup size="md">
+          <Button leftIcon={<MdOutlineSave />} isDisabled>
+            {t('workspace.toolbar.policy.save')}
+          </Button>
           <Button leftIcon={<MdOutlineDeleteForever />} variant="danger" isDisabled>
             {t('workspace.toolbar.policy.delete')}
           </Button>
