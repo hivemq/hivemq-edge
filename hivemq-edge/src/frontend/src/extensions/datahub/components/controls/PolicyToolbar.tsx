@@ -10,7 +10,7 @@ import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import CheckPolicyReportToast from '@datahub/components/helpers/CheckPolicyReportToast.tsx'
 import { BehaviorPolicyData, DataHubNodeData, DataPolicyData, PolicyDryRunStatus } from '@datahub/types.ts'
-import { useDataPolicyRun } from '@datahub/hooks/useDataPolicyRun.ts'
+import { usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
 import { useTranslation } from 'react-i18next'
 
 interface ActionPolicyCheckProps {
@@ -24,7 +24,7 @@ export const PolicyToolbar: FC<ActionPolicyCheckProps> = (props) => {
   const { nodes, onUpdateNodes } = store
   const createToast = useToast()
   const { fitView } = useReactFlow()
-  const { checkPolicyAsync } = useDataPolicyRun()
+  const { checkPolicyAsync } = usePolicyDryRun()
 
   // only allow a single check at any given time
   const POLICY_CHECK_ID = 'POLICY_CHECK_ID'
