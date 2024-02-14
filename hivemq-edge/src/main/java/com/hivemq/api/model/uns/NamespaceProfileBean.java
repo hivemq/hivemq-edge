@@ -24,6 +24,7 @@ import com.hivemq.uns.NamespaceUtils;
 import com.hivemq.uns.config.ISA95;
 import com.hivemq.uns.config.NamespaceProfile;
 import com.hivemq.uns.config.NamespaceSegment;
+import com.hivemq.uns.config.impl.NamespaceProfileImpl;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -85,14 +86,31 @@ public class NamespaceProfileBean {
                 NamespaceUtils.getNamespaceProfileType(namespaceProfile),
                 namespaceProfile.getName(),
                 namespaceProfile.getDescription(),
-                namespaceProfile.getSegments().stream().map(NamespaceProfileBean::convert).collect(Collectors.toList()));
+                namespaceProfile.getSegments().stream().map(NamespaceProfileBean::convert).
+                        collect(Collectors.toList()));
+    }
+
+    public static NamespaceProfile unconvert(NamespaceProfileBean namespaceProfileBean, boolean enabled) {
+        NamespaceProfileImpl impl = new NamespaceProfileImpl(
+                namespaceProfileBean.getName(), namespaceProfileBean.getDescription(),
+                namespaceProfileBean.getSegments().stream().map(NamespaceProfileBean::unconvert).
+                        collect(Collectors.toList())
+        );
+        impl.setEnabled(enabled);
+        return impl;
     }
 
     static NamespaceSegmentBean convert(NamespaceSegment segment) {
-        //TODO add the value here if we're transporting profile and definition at the same time, else its a callback
         return new NamespaceSegmentBean(
                 segment.getName(),
-                null,
+                segment.getValue(),
+                segment.getDescription());
+    }
+
+    static NamespaceSegment unconvert(NamespaceSegmentBean segment) {
+        return new NamespaceSegment(
+                segment.getName(),
+                segment.getValue(),
                 segment.getDescription());
     }
 

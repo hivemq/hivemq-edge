@@ -27,8 +27,10 @@ import com.hivemq.uns.NamespaceUtils;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
 import com.hivemq.uns.config.NamespaceProfile;
+import com.hivemq.uns.config.impl.NamespaceProfileImpl;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -97,12 +99,28 @@ public class UnifiedNamespaceServiceImpl implements UnifiedNamespaceService {
     }
 
     @Override
-    public List<NamespaceProfile> getProfiles() {
+    public List<NamespaceProfile> getAvailableProfiles() {
         return List.of(NamespaceProfile.PROFILE_ISA_95);
     }
 
     @Override
-    public Optional<NamespaceProfile> getProfileByType(String type) {
-        return getProfiles().stream().filter(p -> NamespaceUtils.getNamespaceProfileType(p).equals(type)).findFirst();
+    public synchronized List<NamespaceProfile> getConfiguredProfiles() {
+        return new ArrayList<>(configurationService.getProfiles());
+    }
+
+    @Override
+    public Optional<NamespaceProfile> getActiveProfile() {
+        return configurationService.getActiveProfile();
+    }
+
+    @Override
+    public Optional<NamespaceProfile> getConfiguredProfileByType(String type) {
+        return getConfiguredProfiles().stream().filter(p ->
+                NamespaceUtils.getNamespaceProfileType(p).equals(type)).findFirst();
+    }
+
+    @Override
+    public synchronized void setConfiguredProfiles(final List<NamespaceProfile> profiles) {
+        configurationService.setProfiles(profiles);
     }
 }

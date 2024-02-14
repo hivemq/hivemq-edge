@@ -18,6 +18,7 @@ package com.hivemq.api.resources;
 import com.hivemq.api.model.ApiBodyExamples;
 import com.hivemq.api.model.uns.ISA95ApiBean;
 import com.hivemq.api.model.uns.NamespaceProfileBean;
+import com.hivemq.api.model.uns.NamespaceProfilesList;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -92,7 +93,7 @@ public interface UnsApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = NamespaceProfileBean.class),
+                                                       schema = @Schema(implementation = NamespaceProfilesList.class),
                                                        examples = {
                                                                @ExampleObject(description = "An example UNS profiles config.",
                                                                               name = "default-profiles",

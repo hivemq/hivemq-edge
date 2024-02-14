@@ -21,6 +21,7 @@ import com.hivemq.uns.config.NamespaceProfile;
 import com.hivemq.uns.config.NamespaceSegment;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A Configuration service which allows access to API Configuration properties
@@ -34,5 +35,7 @@ public interface UnsConfigurationService {
     void setProfiles(List<NamespaceProfile> profiles);
 
     List<NamespaceProfile> getProfiles();
+
+    Optional<NamespaceProfile> getActiveProfile();
 
 }

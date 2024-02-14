@@ -1019,6 +1019,7 @@
     <xs:complexType name="unsEntity">
         <xs:all>
             <xs:element name="isa95" type="isa95Entity" minOccurs="0"/>
+            <xs:element name="profiles" type="profilesEntity" minOccurs="0"/>
             <xs:element name="isa88" type="isa88Entity" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
@@ -1032,6 +1033,31 @@
             <xs:element name="production-line" type="xs:string" minOccurs="0"/>
             <xs:element name="work-cell" type="xs:string" minOccurs="0"/>
         </xs:all>
+    </xs:complexType>
+    <xs:complexType name="profilesEntity">
+        <xs:sequence>
+            <xs:element name="profile" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="name" type="xs:string"/>
+                        <xs:element name="description" type="xs:string"/>
+                        <xs:element name="segments" type="unsSegment" minOccurs="0"/>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="unsSegment">
+        <xs:sequence>
+            <xs:element name="segment" minOccurs="0" maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="name" type="xs:string"/>
+                        <xs:element name="value" type="xs:string"/>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
     </xs:complexType>
     <xs:complexType name="isa88Entity">
         <xs:all>

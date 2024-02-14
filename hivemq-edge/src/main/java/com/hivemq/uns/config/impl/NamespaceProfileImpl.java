@@ -7,9 +7,11 @@ import com.hivemq.uns.config.NamespaceProfile;
 import com.hivemq.uns.config.NamespaceSegment;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class NamespaceProfileImpl implements NamespaceProfile {
 
+    private @NotNull boolean enabled;
     private @NotNull String name;
     private @Nullable String description;
     private final List<NamespaceSegment> segments;
@@ -19,6 +21,22 @@ public class NamespaceProfileImpl implements NamespaceProfile {
         this.name = name;
         this.description = description;
         this.segments = segments;
+    }
+
+    public NamespaceProfileImpl(NamespaceProfile impl) {
+        setName(impl.getName());
+        setDescription(impl.getDescription());
+        setEnabled(impl.getEnabled());
+        segments = impl.getSegments().stream().map(NamespaceSegment::of).
+                collect(Collectors.toList());
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(final boolean enabled) {
+        this.enabled = enabled;
     }
 
     @Override

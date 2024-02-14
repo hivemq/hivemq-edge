@@ -21,6 +21,7 @@ import com.hivemq.uns.config.ISA95;
 import com.hivemq.uns.config.NamespaceProfile;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Simon L Johnson
@@ -45,5 +46,10 @@ public class UnsConfigurationServiceImpl implements UnsConfigurationService {
     @Override
     public void setProfiles(final List<NamespaceProfile> profiles) {
         this.profiles = profiles;
+    }
+
+    @Override
+    public Optional<NamespaceProfile> getActiveProfile() {
+        return getProfiles().stream().filter(NamespaceProfile::getEnabled).findFirst();
     }
 }

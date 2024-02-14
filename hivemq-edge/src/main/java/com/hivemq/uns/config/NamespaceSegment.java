@@ -4,8 +4,13 @@ import com.google.common.base.Preconditions;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
+@XmlRootElement(name = "segment")
+@XmlAccessorType(XmlAccessType.NONE)
 public class NamespaceSegment {
 
     @XmlElement(name = "name")
@@ -13,6 +18,9 @@ public class NamespaceSegment {
     @XmlElement(name = "value")
     private @NotNull String value;
     private @Nullable String description;
+
+    public NamespaceSegment() {
+    }
 
     public NamespaceSegment(final @NotNull String name, final @Nullable String value, @Nullable String description) {
         Preconditions.checkNotNull(name);
@@ -51,5 +59,9 @@ public class NamespaceSegment {
 
     public static NamespaceSegment of(final String name, final String description){
         return new NamespaceSegment(name, null, description);
+    }
+
+    public static NamespaceSegment of(final NamespaceSegment segment){
+        return new NamespaceSegment(segment.getName(), segment.getValue(), segment.getDescription());
     }
 }

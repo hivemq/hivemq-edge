@@ -25,12 +25,14 @@ import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.api.utils.ApiValidation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.uns.NamespaceUtils;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
 import com.hivemq.uns.config.NamespaceProfile;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,6 +45,7 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
 
     @Inject
     public UnsResourceImpl(
+            final @NotNull ConfigurationService configurationService,
             final @NotNull UnifiedNamespaceService unifiedNamespaceService) {
         this.unifiedNamespaceService = unifiedNamespaceService;
     }
@@ -87,7 +90,7 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
 
     @Override
     public Response getProfiles() {
-        List<NamespaceProfile> profiles = unifiedNamespaceService.getProfiles();
+        List<NamespaceProfile> profiles = unifiedNamespaceService.getAvailableProfiles();
         NamespaceProfilesList list = new NamespaceProfilesList(profiles.stream().
                 map(NamespaceProfileBean::convert).collect(Collectors.toList()));
         return Response.status(200).entity(list).build();
@@ -95,7 +98,10 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
 
     @Override
     public Response setProfile(final NamespaceProfileBean bean) {
-        List<NamespaceProfile> profiles = unifiedNamespaceService.getProfiles();
+        NamespaceProfile profile = NamespaceProfileBean.unconvert(bean, true);
+        List<NamespaceProfile> all = unifiedNamespaceService.getConfiguredProfiles();
+        NamespaceUtils.replaceNamespaceProfile(all, profile);
+        unifiedNamespaceService.setConfiguredProfiles(all);
         return Response.status(200).build();
     }
 }

@@ -72,10 +72,13 @@ public class NamespaceEntity extends DisabledEntity {
         entity.setName(profile.getName());
         entity.setType(NamespaceUtils.getNamespaceProfileType(profile));
         entity.setSegments(profile.getSegments());
+        entity.setEnabled(profile.getEnabled());
         return entity;
     }
 
     public static NamespaceProfile unconvert(NamespaceEntity entity){
-        return new NamespaceProfileImpl(entity.getName(), null, entity.getSegments());
+        NamespaceProfileImpl impl = new NamespaceProfileImpl(entity.getName(), null, entity.getSegments());
+        impl.setEnabled(entity.isEnabled());
+        return impl;
     }
 }

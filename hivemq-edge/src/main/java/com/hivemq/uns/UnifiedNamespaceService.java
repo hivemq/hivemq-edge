@@ -37,8 +37,14 @@ public interface UnifiedNamespaceService {
 
     MqttTopic prefixISA95(MqttTopic topic);
 
-    List<NamespaceProfile> getProfiles();
+    List<NamespaceProfile> getAvailableProfiles();
 
-    Optional<NamespaceProfile> getProfileByType(String type) ;
+    List<NamespaceProfile> getConfiguredProfiles();
+
+    void setConfiguredProfiles(List<NamespaceProfile> profiles);
+
+    Optional<NamespaceProfile> getConfiguredProfileByType(String type) ;
+
+    Optional<NamespaceProfile> getActiveProfile();
 
 }
