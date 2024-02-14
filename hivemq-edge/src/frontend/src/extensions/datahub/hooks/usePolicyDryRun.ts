@@ -10,6 +10,7 @@ import {
   getSubFlow,
 } from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
 import { checkValidityPolicyValidators } from '@datahub/designer/validator/ValidatorNode.utils.ts'
+import { checkValidityClients } from '@datahub/designer/client_filter/ClientFilterNode.utils.ts'
 
 const mockDelay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -81,7 +82,36 @@ export const usePolicyDryRun = () => {
   }
 
   const checkBehaviorPolicyAsync = (behaviourPolicyNode: Node<BehaviorPolicy>) => {
-    return Promise.reject(new Error(`XXXXX NOT YET IMPLEMENTED - ${behaviourPolicyNode.type}`))
+    const incomers = getIncomers(behaviourPolicyNode, nodes, edges).filter(
+      (node) => node.type === DataHubNodeType.CLIENT_FILTER
+    )
+    const allNodes = getSubFlow(
+      behaviourPolicyNode,
+      [behaviourPolicyNode, ...incomers],
+      store
+    ) as Node<DataHubNodeData>[]
+    const reducedStore = { ...store, nodes: allNodes }
+
+    const clients = checkValidityClients(behaviourPolicyNode, reducedStore)
+
+    const runPolicyChecks = async () => {
+      for (const node of allNodes) {
+        onUpdateNodes<DataHubNodeData>(node.id, {
+          ...node.data,
+          dryRunStatus: PolicyDryRunStatus.RUNNING,
+        })
+        await mockDelay()
+      }
+      await mockDelay(1000)
+
+      const processedNodes = [clients]
+      for (const result of processedNodes) {
+        await updateNodeStatus(result)
+      }
+      return processedNodes
+    }
+
+    return runPolicyChecks()
   }
 
   return {
