@@ -1,12 +1,12 @@
 package com.hivemq.configuration.service.impl;
 
-import com.hivemq.configuration.service.CommercialModuleConfigurationService;
+import com.hivemq.configuration.service.ModuleConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class CommercialModuleConfigurationServiceImpl implements CommercialModuleConfigurationService {
+public class ModuleConfigurationServiceImpl implements ModuleConfigurationService {
 
     private @NotNull Map<String, Object> configs = new HashMap<>();
 
