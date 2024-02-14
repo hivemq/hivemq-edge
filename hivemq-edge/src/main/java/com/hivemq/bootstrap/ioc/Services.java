@@ -18,6 +18,7 @@ package com.hivemq.bootstrap.ioc;
 import com.hivemq.bridge.BridgeService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extensions.core.CoreModuleService;
 import com.hivemq.persistence.SingleWriterService;
 
 import javax.inject.Inject;
@@ -28,13 +29,17 @@ public class Services {
     private final @NotNull HiveMQCapabilityService capabilityService;
     private final @NotNull BridgeService bridgeService;
     private final @NotNull SingleWriterService singleWriterService;
+    private final @NotNull CoreModuleService coreModuleService;
 
     @Inject
     public Services(final @NotNull HiveMQCapabilityService capabilityService,
-                    final @NotNull BridgeService bridgeService, final @NotNull SingleWriterService singleWriterService) {
+                    final @NotNull BridgeService bridgeService,
+                    final @NotNull SingleWriterService singleWriterService,
+                    final @NotNull CoreModuleService coreModuleService) {
         this.capabilityService = capabilityService;
         this.bridgeService = bridgeService;
         this.singleWriterService = singleWriterService;
+        this.coreModuleService = coreModuleService;
     }
 
     public @NotNull HiveMQCapabilityService capabilityService() {
@@ -48,4 +53,9 @@ public class Services {
     public @NotNull SingleWriterService singleWriterService() {
         return singleWriterService;
     }
+
+    public @NotNull CoreModuleService coreModuleService() {
+        return coreModuleService;
+    }
+
 }
