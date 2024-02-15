@@ -1,11 +1,10 @@
 import { getIncomers, Node } from 'reactflow'
 
-import { BehaviorPolicy } from '@/api/__generated__'
-import { ClientFilterData, DataHubNodeType, DryRunResults, WorkspaceState } from '@datahub/types.ts'
+import { BehaviorPolicyData, ClientFilterData, DataHubNodeType, DryRunResults, WorkspaceState } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
 export function checkValidityClients(
-  dataPolicyNode: Node<BehaviorPolicy>,
+  dataPolicyNode: Node<BehaviorPolicyData>,
   store: WorkspaceState
 ): DryRunResults<string> {
   const { nodes, edges } = store

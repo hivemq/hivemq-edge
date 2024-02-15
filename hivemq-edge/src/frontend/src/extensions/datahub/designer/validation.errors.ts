@@ -22,6 +22,7 @@ export const PolicyCheckErrors = {
     ...commonProperties,
     id: target.id,
   }),
+  // TODO[NVL] For properties, can we use Pick<T> and link to the exact widget in the form?
   notConfigured: <T>(source: Node<T>, properties: string) => ({
     title: source.type as string,
     detail: i18n.t('datahub:error.dryRun.notConfigured', { source: source.type, properties: properties }),
