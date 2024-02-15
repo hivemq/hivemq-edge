@@ -47,42 +47,6 @@ public interface UnsApi {
 
     String PATH = "/api/v1/management/uns";
 
-    @GET
-    @Path("/isa95")
-    @Operation(summary = "Obtain isa95 config",
-               operationId = "get-isa95",
-               description = "Obtain isa95 config.",
-               responses = {
-                       @ApiResponse(responseCode = "200",
-                                    description = "Success",
-                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = ISA95ApiBean.class),
-                                                       examples = {
-                                                               @ExampleObject(description = "An example ISA 95 config.",
-                                                                              name = "default-configuration",
-                                                                              summary = "Example configuration",
-                                                                              value = ApiBodyExamples.EXAMPLE_ISA_95_JSON)
-                                                       }))})
-    @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response getIsa95();
-
-
-    @POST
-    @Path("/isa95")
-    @Operation(summary = "Set isa95 config",
-               operationId = "set-isa95",
-               description = "Set isa95 config.",
-               responses = {
-                       @ApiResponse(responseCode = "200",
-                                    description = "Success")})
-    @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response setIsa95(@Parameter(name = "isa95",
-                                          description = "The updated isa95 configuration.",
-                                          required = true,
-                                          in = ParameterIn.DEFAULT)
-                                   final @NotNull ISA95ApiBean isa95);
-
-
 
     @GET
     @Path("/profiles")

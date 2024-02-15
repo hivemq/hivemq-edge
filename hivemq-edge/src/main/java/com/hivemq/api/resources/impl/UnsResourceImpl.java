@@ -50,44 +50,6 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
     }
 
     @Override
-    public Response getIsa95() {
-        ISA95 isa95 = unifiedNamespaceService.getISA95();
-        ISA95ApiBean isa95ApiBean = ISA95ApiBean.convert(isa95);
-        return Response.status(200).entity(isa95ApiBean).build();
-    }
-
-    @Override
-    public Response setIsa95(final ISA95ApiBean isa95) {
-
-        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
-
-        //-- Ensure we apply all validation
-        ApiErrorUtils.validateRequiredEntity(errorMessages, "isa95", isa95);
-        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getEnterprise(), true)){
-            ApiErrorUtils.addValidationError(errorMessages, "enterprise", "Must be a valid alpha-numeric string with spaces");
-        }
-        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getArea(), true)){
-            ApiErrorUtils.addValidationError(errorMessages, "area", "Must be a valid alpha-numeric string with spaces");
-        }
-        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getSite(), true)){
-            ApiErrorUtils.addValidationError(errorMessages, "site", "Must be a valid alpha-numeric string with spaces");
-        }
-        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getProductionLine(), true)){
-            ApiErrorUtils.addValidationError(errorMessages, "productionLine", "Must be a valid alpha-numeric string with spaces");
-        }
-        if(!ApiValidation.validAlphaNumericSpacesAndDashes(isa95.getWorkCell(), true)){
-            ApiErrorUtils.addValidationError(errorMessages, "workCell", "Must be a valid alpha-numeric string with spaces");
-        }
-
-        if(ApiErrorUtils.hasRequestErrors(errorMessages)){
-            return ApiErrorUtils.badRequest(errorMessages);
-        } else {
-            unifiedNamespaceService.setISA95(ISA95ApiBean.unconvert(isa95));
-            return Response.status(200).build();
-        }
-    }
-
-    @Override
     public Response getProfiles() {
         List<NamespaceProfile> profiles = unifiedNamespaceService.getConfiguredProfiles(true);
         NamespaceProfilesList list = new NamespaceProfilesList(profiles.stream().
