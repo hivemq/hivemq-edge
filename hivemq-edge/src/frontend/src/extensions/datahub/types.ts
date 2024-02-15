@@ -254,7 +254,7 @@ export interface FiniteStateMachineSchema {
 }
 
 export interface DryRunResults<T, R = never> {
-  node: Node<DataHubNodeData> | Node<BehaviorPolicy>
+  node: Node<DataHubNodeData>
   data?: T
   error?: ProblemDetailsExtended
   resources?: DryRunResults<R>[]
