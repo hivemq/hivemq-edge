@@ -18,9 +18,7 @@ describe('getNodePayload', () => {
   test.each<NodePayloadSuite>([
     {
       type: 'undefined',
-      expected: {
-        label: `undefined node`,
-      },
+      expected: {},
     },
     {
       type: DataHubNodeType.TOPIC_FILTER,
