@@ -29,18 +29,6 @@ import java.util.Optional;
  */
 public interface UnifiedNamespaceService {
 
-    @Deprecated
-    ISA95 getISA95();
-
-    @Deprecated
-    void setISA95(ISA95 isa95);
-
-//    @Deprecated
-//    Map<String, String> getTopicReplacements(@NotNull ISA95 isa95);
-//
-//    @Deprecated
-//    MqttTopic prefixISA95(MqttTopic topic);
-
     Map<String, String> getTopicReplacements(@NotNull NamespaceProfile profile);
 
     MqttTopic prefixWithActiveProfile(@NotNull NamespaceProfile profile, @NotNull MqttTopic topic);
