@@ -22,8 +22,8 @@ export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
           </VStack>
         </HStack>
       </NodeWrapper>
-      <CustomHandle type="target" position={Position.Left} id="target" />
-      <CustomHandle type="source" id="source" position={Position.Right} isConnectable={1} />
+      <CustomHandle type="target" position={Position.Left} id={TransitionData.Handle.BEHAVIOR_POLICY} />
+      <CustomHandle type="source" id={TransitionData.Handle.OPERATION} position={Position.Right} isConnectable={1} />
     </>
   )
 }

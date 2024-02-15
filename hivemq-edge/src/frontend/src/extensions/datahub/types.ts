@@ -225,6 +225,14 @@ export interface TransitionData extends DataHubNodeData {
   core?: BehaviorPolicyOnTransition
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace TransitionData {
+  export enum Handle {
+    BEHAVIOR_POLICY = 'target',
+    OPERATION = 'source',
+  }
+}
+
 export interface FsmState {
   name: string
   description: string
@@ -246,7 +254,7 @@ export interface FiniteStateMachineSchema {
 }
 
 export interface DryRunResults<T, R = never> {
-  node: Node<DataHubNodeData> | Node<BehaviorPolicy>
+  node: Node<DataHubNodeData>
   data?: T
   error?: ProblemDetailsExtended
   resources?: DryRunResults<R>[]
