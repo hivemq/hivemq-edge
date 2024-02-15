@@ -64,48 +64,58 @@ public class UnifiedNamespaceServiceImpl implements UnifiedNamespaceService {
         configurationService.setISA95(isa95);
     }
 
-    public Map<String, String> getTopicReplacements(final @NotNull ISA95 isa95){
-        return ImmutableMap.<String, String>builder()
-                .put(ISA95.ENTERPRISE,  Strings.isNullOrEmpty(isa95.getEnterprise()) ? "" : isa95.getEnterprise())
-                .put(ISA95.SITE,        Strings.isNullOrEmpty(isa95.getSite()) ? "" : isa95.getSite())
-                .put(ISA95.AREA,        Strings.isNullOrEmpty(isa95.getArea()) ? "" : isa95.getArea())
-                .put(ISA95.WORK_CELL,   Strings.isNullOrEmpty(isa95.getWorkCell()) ? "" : isa95.getWorkCell())
-                .put(ISA95.PRODUCTION_LINE, Strings.isNullOrEmpty(isa95.getProductionLine()) ? "" : isa95.getProductionLine())
-                .build();
-    }
-
-    @Override
-    public MqttTopic prefixISA95(final @NotNull MqttTopic topic) {
-        Preconditions.checkNotNull(topic);
-        ImmutableList.Builder<String> builder = ImmutableList.builder();
-        ISA95 isa95 = getISA95();
-        if(!Strings.isNullOrEmpty(isa95.getEnterprise())){
-            builder.add(isa95.getEnterprise());
-        }
-        if(!Strings.isNullOrEmpty(isa95.getSite())){
-            builder.add(isa95.getSite());
-        }
-        if(!Strings.isNullOrEmpty(isa95.getArea())){
-            builder.add(isa95.getArea());
-        }
-        if(!Strings.isNullOrEmpty(isa95.getProductionLine())){
-            builder.add(isa95.getProductionLine());
-        }
-        if(!Strings.isNullOrEmpty(isa95.getWorkCell())){
-            builder.add(isa95.getWorkCell());
-        }
-        List<String> parts = builder.addAll(topic.getLevels()).build();
-        return MqttTopic.of(String.join("/", parts));
-    }
+//    public Map<String, String> getTopicReplacements(final @NotNull ISA95 isa95){
+//        return ImmutableMap.<String, String>builder()
+//                .put(ISA95.ENTERPRISE,  Strings.isNullOrEmpty(isa95.getEnterprise()) ? "" : isa95.getEnterprise())
+//                .put(ISA95.SITE,        Strings.isNullOrEmpty(isa95.getSite()) ? "" : isa95.getSite())
+//                .put(ISA95.AREA,        Strings.isNullOrEmpty(isa95.getArea()) ? "" : isa95.getArea())
+//                .put(ISA95.WORK_CELL,   Strings.isNullOrEmpty(isa95.getWorkCell()) ? "" : isa95.getWorkCell())
+//                .put(ISA95.PRODUCTION_LINE, Strings.isNullOrEmpty(isa95.getProductionLine()) ? "" : isa95.getProductionLine())
+//                .build();
+//    }
+//
+//    @Override
+//    public MqttTopic prefixISA95(final @NotNull MqttTopic topic) {
+//        Preconditions.checkNotNull(topic);
+//        ImmutableList.Builder<String> builder = ImmutableList.builder();
+//        ISA95 isa95 = getISA95();
+//        if(!Strings.isNullOrEmpty(isa95.getEnterprise())){
+//            builder.add(isa95.getEnterprise());
+//        }
+//        if(!Strings.isNullOrEmpty(isa95.getSite())){
+//            builder.add(isa95.getSite());
+//        }
+//        if(!Strings.isNullOrEmpty(isa95.getArea())){
+//            builder.add(isa95.getArea());
+//        }
+//        if(!Strings.isNullOrEmpty(isa95.getProductionLine())){
+//            builder.add(isa95.getProductionLine());
+//        }
+//        if(!Strings.isNullOrEmpty(isa95.getWorkCell())){
+//            builder.add(isa95.getWorkCell());
+//        }
+//        List<String> parts = builder.addAll(topic.getLevels()).build();
+//        return MqttTopic.of(String.join("/", parts));
+//    }
 
     @Override
     public Map<String, String> getTopicReplacements(final NamespaceProfile profile) {
-        return null;
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+        profile.getSegments().forEach(c ->
+                builder.put(c.getName(), Strings.isNullOrEmpty(c.getValue()) ? "" : c.getValue()));
+        return builder.build();
     }
 
     @Override
-    public MqttTopic prefixWithActiveProfile(final MqttTopic topic) {
-        return null;
+    public MqttTopic prefixWithActiveProfile(final @NotNull NamespaceProfile profile, final @NotNull  MqttTopic topic) {
+        Preconditions.checkNotNull(topic);
+        Preconditions.checkNotNull(profile);
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        profile.getSegments().stream().
+                filter(s -> !Strings.isNullOrEmpty(s.getValue())).forEach(c ->
+                    builder.add(c.getValue()));
+        List<String> parts = builder.addAll(topic.getLevels()).build();
+        return MqttTopic.of(String.join("/", parts));
     }
 
     @Override

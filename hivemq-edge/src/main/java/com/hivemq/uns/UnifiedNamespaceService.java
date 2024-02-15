@@ -35,19 +35,19 @@ public interface UnifiedNamespaceService {
     @Deprecated
     void setISA95(ISA95 isa95);
 
-    @Deprecated
-    Map<String, String> getTopicReplacements(@NotNull ISA95 isa95);
-
-    @Deprecated
-    MqttTopic prefixISA95(MqttTopic topic);
+//    @Deprecated
+//    Map<String, String> getTopicReplacements(@NotNull ISA95 isa95);
+//
+//    @Deprecated
+//    MqttTopic prefixISA95(MqttTopic topic);
 
     Map<String, String> getTopicReplacements(@NotNull NamespaceProfile profile);
 
-    MqttTopic prefixWithActiveProfile(MqttTopic topic);
+    MqttTopic prefixWithActiveProfile(@NotNull NamespaceProfile profile, @NotNull MqttTopic topic);
 
     List<NamespaceProfile> getConfiguredProfiles(boolean includeLegacy);
 
-    void setConfiguredProfiles(List<NamespaceProfile> profiles);
+    void setConfiguredProfiles(@NotNull List<NamespaceProfile> profiles);
 
     Optional<NamespaceProfile> getActiveProfile();
 
