@@ -22,6 +22,7 @@ import com.hivemq.bootstrap.factories.PublishPayloadPersistenceFactory;
 import com.hivemq.bootstrap.factories.RetainedMessageLocalPersistenceFactory;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.persistence.PersistenceStartup;
 
 @SuppressWarnings("unused")
 public class PersistencesService {
@@ -33,6 +34,16 @@ public class PersistencesService {
     private @Nullable ClientQueueLocalPersistenceFactory clientQueueLocalPersistenceFactory;
     private @Nullable PublishPayloadPersistenceFactory publishPayloadPersistenceFactory;
     private @Nullable ClientSessionSubscriptionLocalPersistenceFactory clientSessionSubscriptionLocalPersistenceFactory;
+
+    private final @NotNull PersistenceStartup persistenceStartup;
+
+    public PersistencesService(final @NotNull PersistenceStartup persistenceStartup) {
+        this.persistenceStartup = persistenceStartup;
+    }
+
+    public @NotNull PersistenceStartup getPersistenceStartup() {
+        return persistenceStartup;
+    }
 
     public void supplyClientSessionLocalPersistenceFactory(final @NotNull ClientSessionLocalPersistenceFactory clientSessionLocalPersistenceFactory) {
         this.clientSessionLocalPersistenceFactory = clientSessionLocalPersistenceFactory;
