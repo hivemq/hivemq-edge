@@ -54,7 +54,7 @@ export const getNodePayload = (type: string): DataHubNodeData => {
     }
     return payload
   }
-  return { label: `${type} node` }
+  return {}
 }
 
 type ConnectionValidity = Record<string, (DataHubNodeType | [DataHubNodeType, string])[]>
