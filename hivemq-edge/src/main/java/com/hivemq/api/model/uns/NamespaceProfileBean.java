@@ -127,7 +127,7 @@ public class NamespaceProfileBean {
         @Schema(description = "Description of the segment")
         private final @Nullable String description;
 
-        public NamespaceSegmentBean(final String name, final String value, final String description) {
+        public NamespaceSegmentBean(@JsonProperty("name") final String name, @JsonProperty("value") final String value, @JsonProperty("description") final String description) {
             this.name = name;
             this.value = value;
             this.description = description;

@@ -1036,11 +1036,12 @@
     </xs:complexType>
     <xs:complexType name="profilesEntity">
         <xs:sequence>
-            <xs:element name="profile" minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="namespace" minOccurs="0" maxOccurs="unbounded">
                 <xs:complexType>
                     <xs:all>
+                        <xs:element name="enabled" type="xs:boolean" minOccurs="0"/>
                         <xs:element name="name" type="xs:string"/>
-                        <xs:element name="description" type="xs:string"/>
+                        <xs:element name="type" type="xs:string"/>
                         <xs:element name="segments" type="unsSegment" minOccurs="0"/>
                     </xs:all>
                 </xs:complexType>

@@ -100,7 +100,25 @@ public class UnifiedNamespaceServiceImpl implements UnifiedNamespaceService {
 
     @Override
     public List<NamespaceProfile> getAvailableProfiles() {
-        return List.of(NamespaceProfile.PROFILE_ISA_95);
+        //we need to ensure that configuration created before the new uns concepts are still supported
+        //so we need to check the old config items and seed to new stuff from the old (UNLESS) it has bee
+        //updated since
+        //check to see if it has subsequently been stored in the configured profiles
+        Optional<NamespaceProfile> configured = getConfiguredProfileByType(NamespaceUtils.getNamespaceProfileType(
+                NamespaceProfile.PROFILE_ISA_95));
+        NamespaceProfile isa95;
+        if(configured.isPresent()){
+            isa95 = configured.get();
+        } else {
+            ISA95 legacy = getISA95();
+            isa95 = new NamespaceProfileImpl(NamespaceProfile.PROFILE_ISA_95);
+            NamespaceUtils.setValueAtSegment(isa95, ISA95.ENTERPRISE, legacy.getEnterprise());
+            NamespaceUtils.setValueAtSegment(isa95, ISA95.SITE, legacy.getSite());
+            NamespaceUtils.setValueAtSegment(isa95, ISA95.AREA, legacy.getArea());
+            NamespaceUtils.setValueAtSegment(isa95, ISA95.PRODUCTION_LINE, legacy.getProductionLine());
+            NamespaceUtils.setValueAtSegment(isa95, ISA95.WORK_CELL, legacy.getWorkCell());
+        }
+        return List.of(isa95);
     }
 
     @Override

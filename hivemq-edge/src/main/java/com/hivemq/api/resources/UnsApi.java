@@ -113,5 +113,9 @@ public interface UnsApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success")})
     @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response setProfile(final NamespaceProfileBean bean) ;
+    @NotNull Response setProfile(@Parameter(name = "namespace",
+                                            description = "The updated namespace configuration.",
+                                            required = true,
+                                            in = ParameterIn.DEFAULT)
+                                     final @NotNull NamespaceProfileBean bean) ;
 }

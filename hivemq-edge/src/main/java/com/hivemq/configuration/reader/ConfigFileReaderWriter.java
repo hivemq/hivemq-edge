@@ -236,6 +236,7 @@ public class ConfigFileReaderWriter {
                 }
                 marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
                 marshaller.marshal(configEntity, writer);
+//                marshaller.marshal(configEntity, System.err);
             } catch (JAXBException | IOException | SAXException e) {
                 log.error("Original error message:", e);
                 throw new UnrecoverableException(false);

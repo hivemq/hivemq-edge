@@ -29,8 +29,10 @@ import java.util.Optional;
  */
 public interface UnifiedNamespaceService {
 
+    @Deprecated
     ISA95 getISA95();
 
+    @Deprecated
     void setISA95(ISA95 isa95);
 
     Map<String, String> getTopicReplacements(@NotNull ISA95 isa95);

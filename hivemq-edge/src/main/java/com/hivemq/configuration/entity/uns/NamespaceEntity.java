@@ -25,6 +25,8 @@ import com.hivemq.uns.config.impl.NamespaceProfileImpl;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementRef;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.List;
 
@@ -40,7 +42,8 @@ public class NamespaceEntity extends DisabledEntity {
     @XmlElement(name = "name")
     private @Nullable String name;
 
-    @XmlElement(name = "segments")
+    @XmlElementWrapper(name = "segments", required = true)
+    @XmlElementRef(required = false)
     private @Nullable List<NamespaceSegment> segments;
 
     public String getType() {
