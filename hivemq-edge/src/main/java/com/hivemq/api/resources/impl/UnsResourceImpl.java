@@ -32,7 +32,6 @@ import com.hivemq.uns.config.NamespaceProfile;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -90,18 +89,32 @@ public class UnsResourceImpl extends AbstractApi implements UnsApi {
 
     @Override
     public Response getProfiles() {
-        List<NamespaceProfile> profiles = unifiedNamespaceService.getAvailableProfiles();
+        List<NamespaceProfile> profiles = unifiedNamespaceService.getConfiguredProfiles(true);
         NamespaceProfilesList list = new NamespaceProfilesList(profiles.stream().
                 map(NamespaceProfileBean::convert).collect(Collectors.toList()));
         return Response.status(200).entity(list).build();
     }
 
     @Override
-    public Response setProfile(final NamespaceProfileBean bean) {
-        NamespaceProfile profile = NamespaceProfileBean.unconvert(bean, true);
-        List<NamespaceProfile> all = unifiedNamespaceService.getConfiguredProfiles();
-        NamespaceUtils.replaceNamespaceProfile(all, profile);
-        unifiedNamespaceService.setConfiguredProfiles(all);
-        return Response.status(200).build();
+    public Response setActiveProfile(final NamespaceProfileBean bean) {
+        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        ApiErrorUtils.validateRequiredEntity(errorMessages, "bean", bean);
+        if(!ApiValidation.validAlphaNumericSpacesAndDashes(bean.getName(), false)){
+            ApiErrorUtils.addValidationError(errorMessages, "name", "Name must be a non-null valid alpha-numeric string with spaces");
+        }
+
+        if(bean.getSegments() == null || bean.getSegments().isEmpty()){
+            ApiErrorUtils.addValidationError(errorMessages, "segments", "UNS Profile must contain at least 1 segment");
+        }
+
+        if(ApiErrorUtils.hasRequestErrors(errorMessages)){
+            return ApiErrorUtils.badRequest(errorMessages);
+        } else {
+            NamespaceProfile profile = NamespaceProfileBean.unconvert(bean, true);
+            List<NamespaceProfile> all = unifiedNamespaceService.getConfiguredProfiles(true);
+            NamespaceUtils.replaceNamespaceProfile(all, profile, true);
+            unifiedNamespaceService.setConfiguredProfiles(all);
+            return Response.status(200).build();
+        }
     }
 }

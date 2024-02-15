@@ -36,37 +36,39 @@ import java.util.stream.Collectors;
  */
 public class NamespaceProfileBean {
 
-    @JsonProperty("type")
-    @Schema(description = "Namespace type")
-    private final @NotNull String type;
+    @JsonProperty("enabled")
+    @Schema(description = "Namespace enabled", requiredMode = Schema.RequiredMode.REQUIRED)
+    private final @NotNull boolean enabled;
+
+    @JsonProperty("prefixAllTopics")
+    @Schema(description = "Prefix all topic with the UNS", requiredMode = Schema.RequiredMode.REQUIRED)
+    private final @NotNull boolean prefixAllTopics;
 
     @JsonProperty("name")
-    @Schema(description = "Name of the namespace")
+    @Schema(description = "Name of the namespace", requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull String name;
 
     @JsonProperty("description")
-    @Schema(description = "Description of the namespace")
+    @Schema(description = "Description of the namespace", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private final @NotNull String description;
 
     @JsonProperty("segments")
-    @Schema(description = "The segments that are contained in this profile")
+    @Schema(description = "The segments that are contained in this profile", requiredMode = Schema.RequiredMode.REQUIRED)
     private final @NotNull List<NamespaceSegmentBean> segments;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public NamespaceProfileBean(
-            @NotNull @JsonProperty("type") final String type,
+            @NotNull @JsonProperty("enabled") final boolean enabled,
+            @NotNull @JsonProperty("prefixAllTopics") final boolean prefixAllTopics,
             @NotNull @JsonProperty("name") final String name,
             @Nullable @JsonProperty("description") final String description,
             @Nullable @JsonProperty("segments") final List<NamespaceSegmentBean> segments) {
 
-        this.type = type;
+        this.enabled = enabled;
+        this.prefixAllTopics = prefixAllTopics;
         this.name = name;
         this.description = description;
         this.segments = segments;
-    }
-
-    public String getType() {
-        return type;
     }
 
     public String getName() {
@@ -81,9 +83,18 @@ public class NamespaceProfileBean {
         return segments;
     }
 
+    public boolean getEnabled() {
+        return enabled;
+    }
+
+    public boolean getPrefixAllTopics() {
+        return prefixAllTopics;
+    }
+
     public static NamespaceProfileBean convert(NamespaceProfile namespaceProfile) {
         return new NamespaceProfileBean(
-                NamespaceUtils.getNamespaceProfileType(namespaceProfile),
+                namespaceProfile.getEnabled(),
+                namespaceProfile.getPrefixAllTopics(),
                 namespaceProfile.getName(),
                 namespaceProfile.getDescription(),
                 namespaceProfile.getSegments().stream().map(NamespaceProfileBean::convert).
@@ -92,11 +103,13 @@ public class NamespaceProfileBean {
 
     public static NamespaceProfile unconvert(NamespaceProfileBean namespaceProfileBean, boolean enabled) {
         NamespaceProfileImpl impl = new NamespaceProfileImpl(
-                namespaceProfileBean.getName(), namespaceProfileBean.getDescription(),
+                namespaceProfileBean.getName(),
+                namespaceProfileBean.getDescription(),
                 namespaceProfileBean.getSegments().stream().map(NamespaceProfileBean::unconvert).
                         collect(Collectors.toList())
         );
         impl.setEnabled(enabled);
+        impl.setPrefixAllTopics(namespaceProfileBean.getPrefixAllTopics());
         return impl;
     }
 

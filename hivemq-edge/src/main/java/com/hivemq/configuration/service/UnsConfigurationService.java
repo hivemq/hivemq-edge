@@ -36,6 +36,4 @@ public interface UnsConfigurationService {
 
     List<NamespaceProfile> getProfiles();
 
-    Optional<NamespaceProfile> getActiveProfile();
-
 }

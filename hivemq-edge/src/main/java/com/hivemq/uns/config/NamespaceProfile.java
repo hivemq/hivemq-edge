@@ -15,8 +15,11 @@ public interface NamespaceProfile {
                     NamespaceSegment.of(ISA95.WORK_CELL, "Your Work Cell")));
 
     String getName();
-    Boolean getEnabled();
+    boolean getEnabled();
     String getDescription();
     List<NamespaceSegment> getSegments();
+    boolean getPrefixAllTopics();
+    void setEnabled(boolean enabled);
+    void setPrefixAllTopics(boolean setPrefixAllTopics);
 
 }

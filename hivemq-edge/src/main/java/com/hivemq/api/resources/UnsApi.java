@@ -106,14 +106,14 @@ public interface UnsApi {
 
     @POST
     @Path("/profile")
-    @Operation(summary = "Set UNS profile",
-               operationId = "set-profile",
-               description = "Set UNS profile.",
+    @Operation(summary = "Set active UNS profile",
+               operationId = "set-active-profile",
+               description = "Set active UNS profile.",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success")})
     @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response setProfile(@Parameter(name = "namespace",
+    @NotNull Response setActiveProfile(@Parameter(name = "namespace",
                                             description = "The updated namespace configuration.",
                                             required = true,
                                             in = ParameterIn.DEFAULT)

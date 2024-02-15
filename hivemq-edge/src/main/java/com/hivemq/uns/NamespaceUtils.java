@@ -9,18 +9,22 @@ import java.util.List;
 
 public class NamespaceUtils {
 
-    public static String getNamespaceProfileType(NamespaceProfile profile){
-        return profile.getName().toLowerCase().replaceAll("//s", "");
-    }
-
-    public static void replaceNamespaceProfile(List<NamespaceProfile> profiles, NamespaceProfile profile){
+    public static void replaceNamespaceProfile(List<NamespaceProfile> profiles, NamespaceProfile profile, boolean markEnabled){
         Iterator<NamespaceProfile> profileIterator = profiles.iterator();
+        if(markEnabled){
+            profile.setEnabled(true);
+        }
         while(profileIterator.hasNext()){
             NamespaceProfile np = profileIterator.next();
-            if(getNamespaceProfileType(np).equals(getNamespaceProfileType(profile)) &&
-                    np.getName().equals(profile.getName())){
+            if(np.getName().equals(profile.getName())){
                 profileIterator.remove();
-                break;
+                if(!markEnabled){
+                    break;
+                }
+            } else {
+                if(markEnabled){
+                    np.setEnabled(false);
+                }
             }
         }
         profiles.add(profile);

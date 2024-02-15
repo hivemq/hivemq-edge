@@ -99,42 +99,47 @@ public class UnifiedNamespaceServiceImpl implements UnifiedNamespaceService {
     }
 
     @Override
-    public List<NamespaceProfile> getAvailableProfiles() {
+    public Map<String, String> getTopicReplacements(final NamespaceProfile profile) {
+        return null;
+    }
+
+    @Override
+    public MqttTopic prefixWithActiveProfile(final MqttTopic topic) {
+        return null;
+    }
+
+    @Override
+    public synchronized List<NamespaceProfile> getConfiguredProfiles(boolean includeLegacy) {
+
         //we need to ensure that configuration created before the new uns concepts are still supported
         //so we need to check the old config items and seed to new stuff from the old (UNLESS) it has bee
         //updated since
         //check to see if it has subsequently been stored in the configured profiles
-        Optional<NamespaceProfile> configured = getConfiguredProfileByType(NamespaceUtils.getNamespaceProfileType(
-                NamespaceProfile.PROFILE_ISA_95));
-        NamespaceProfile isa95;
-        if(configured.isPresent()){
-            isa95 = configured.get();
-        } else {
-            ISA95 legacy = getISA95();
-            isa95 = new NamespaceProfileImpl(NamespaceProfile.PROFILE_ISA_95);
-            NamespaceUtils.setValueAtSegment(isa95, ISA95.ENTERPRISE, legacy.getEnterprise());
-            NamespaceUtils.setValueAtSegment(isa95, ISA95.SITE, legacy.getSite());
-            NamespaceUtils.setValueAtSegment(isa95, ISA95.AREA, legacy.getArea());
-            NamespaceUtils.setValueAtSegment(isa95, ISA95.PRODUCTION_LINE, legacy.getProductionLine());
-            NamespaceUtils.setValueAtSegment(isa95, ISA95.WORK_CELL, legacy.getWorkCell());
+        List<NamespaceProfile> configured = configurationService.getProfiles();
+        if(includeLegacy){
+            if(!configured.contains(NamespaceProfile.PROFILE_ISA_95)){
+                ISA95 legacy = getISA95();
+                NamespaceProfile isa95 = new NamespaceProfileImpl(NamespaceProfile.PROFILE_ISA_95);
+                NamespaceUtils.setValueAtSegment(isa95, ISA95.ENTERPRISE, legacy.getEnterprise());
+                NamespaceUtils.setValueAtSegment(isa95, ISA95.SITE, legacy.getSite());
+                NamespaceUtils.setValueAtSegment(isa95, ISA95.AREA, legacy.getArea());
+                NamespaceUtils.setValueAtSegment(isa95, ISA95.PRODUCTION_LINE, legacy.getProductionLine());
+                NamespaceUtils.setValueAtSegment(isa95, ISA95.WORK_CELL, legacy.getWorkCell());
+                //-- If there is only 1 its from the old config and therefore it should be enabled
+                if(configured.isEmpty()){
+                    isa95.setEnabled(legacy.isEnabled());
+                }
+                isa95.setPrefixAllTopics(legacy.isPrefixAllTopics());
+                configured.add(isa95);
+            }
         }
-        return List.of(isa95);
-    }
-
-    @Override
-    public synchronized List<NamespaceProfile> getConfiguredProfiles() {
-        return new ArrayList<>(configurationService.getProfiles());
+        return new ArrayList<>(configured);
     }
 
     @Override
     public Optional<NamespaceProfile> getActiveProfile() {
-        return configurationService.getActiveProfile();
-    }
-
-    @Override
-    public Optional<NamespaceProfile> getConfiguredProfileByType(String type) {
-        return getConfiguredProfiles().stream().filter(p ->
-                NamespaceUtils.getNamespaceProfileType(p).equals(type)).findFirst();
+        return getConfiguredProfiles(true).stream().filter(
+                NamespaceProfile::getEnabled).findFirst();
     }
 
     @Override

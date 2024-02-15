@@ -48,8 +48,4 @@ public class UnsConfigurationServiceImpl implements UnsConfigurationService {
         this.profiles = profiles;
     }
 
-    @Override
-    public Optional<NamespaceProfile> getActiveProfile() {
-        return getProfiles().stream().filter(NamespaceProfile::getEnabled).findFirst();
-    }
 }

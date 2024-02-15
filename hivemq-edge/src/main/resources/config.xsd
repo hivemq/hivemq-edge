@@ -1040,8 +1040,9 @@
                 <xs:complexType>
                     <xs:all>
                         <xs:element name="enabled" type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="prefixAllTopics" type="xs:boolean" minOccurs="0"/>
+                        <xs:element name="description" type="xs:string"/>
                         <xs:element name="name" type="xs:string"/>
-                        <xs:element name="type" type="xs:string"/>
                         <xs:element name="segments" type="unsSegment" minOccurs="0"/>
                     </xs:all>
                 </xs:complexType>

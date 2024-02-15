@@ -36,23 +36,19 @@ import java.util.List;
 @XmlRootElement(name = "namespace")
 @XmlAccessorType(XmlAccessType.NONE)
 public class NamespaceEntity extends DisabledEntity {
-    @XmlElement(name = "type")
-    private @Nullable String type;
+
+    @XmlElement(name = "description")
+    private @Nullable String description;
 
     @XmlElement(name = "name")
     private @Nullable String name;
 
+    @XmlElement(name = "prefixAllTopics")
+    private @Nullable Boolean prefixAllTopics;
+
     @XmlElementWrapper(name = "segments", required = true)
     @XmlElementRef(required = false)
     private @Nullable List<NamespaceSegment> segments;
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(final String type) {
-        this.type = type;
-    }
 
     public String getName() {
         return name;
@@ -70,18 +66,37 @@ public class NamespaceEntity extends DisabledEntity {
         this.segments = segments;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(final String description) {
+        this.description = description;
+    }
+
+    public Boolean getPrefixAllTopics() {
+        return prefixAllTopics;
+    }
+
+    public void setPrefixAllTopics(final Boolean prefixAllTopics) {
+        this.prefixAllTopics = prefixAllTopics;
+    }
+
     public static NamespaceEntity convert(NamespaceProfile profile){
         NamespaceEntity entity = new NamespaceEntity();
         entity.setName(profile.getName());
-        entity.setType(NamespaceUtils.getNamespaceProfileType(profile));
+        entity.setPrefixAllTopics(profile.getPrefixAllTopics());
+        entity.setDescription(profile.getDescription());
+//        entity.setType(NamespaceUtils.getNamespaceProfileType(profile));
         entity.setSegments(profile.getSegments());
         entity.setEnabled(profile.getEnabled());
         return entity;
     }
 
     public static NamespaceProfile unconvert(NamespaceEntity entity){
-        NamespaceProfileImpl impl = new NamespaceProfileImpl(entity.getName(), null, entity.getSegments());
+        NamespaceProfileImpl impl = new NamespaceProfileImpl(entity.getName(), entity.getDescription(), entity.getSegments());
         impl.setEnabled(entity.isEnabled());
+        impl.setPrefixAllTopics(entity.getPrefixAllTopics());
         return impl;
     }
 }
