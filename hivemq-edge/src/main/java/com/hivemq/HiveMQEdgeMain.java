@@ -111,7 +111,7 @@ public class HiveMQEdgeMain {
         deleteTmpFolder(systemInformation.getDataFolder());
 
         log.info("Integrating Core Modules");
-        final PersistencesService persistencesService = new PersistencesService();
+        final PersistencesService persistencesService = new PersistencesService(persistenceStartup);
         final HandlerService handlerService = new HandlerService();
         final GenericAPIHolder genericAPIHolder = new GenericAPIHolder();
         final RestComponentsService restComponentsService = new RestComponentsServiceImpl(genericAPIHolder);
