@@ -1,13 +1,16 @@
 import { getConnectedEdges, getIncomers, Node } from 'reactflow'
+
+import { PolicyOperation, Schema, Script } from '@/api/__generated__'
 import {
   DataHubNodeType,
+  DataPolicyData,
   DryRunResults,
   FunctionData,
   OperationData,
   SchemaData,
+  TransitionData,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { PolicyOperation, Schema, Script } from '@/api/__generated__'
 import { checkValidityJSScript } from '@datahub/designer/script/FunctionNode.utils.ts'
 import { checkValiditySchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
@@ -73,4 +76,57 @@ export function checkValidityTransformFunction(
     id: operationNode.id,
   }
   return { data: operation, node: operationNode, resources: [...scriptNodes, ...schemaNodes] }
+}
+
+export function checkValidityPipeline(
+  source: Node<DataPolicyData> | Node<TransitionData>,
+  handle: DataPolicyData.Handle | TransitionData.Handle,
+  store: WorkspaceState
+): DryRunResults<PolicyOperation>[] {
+  const { nodes, edges } = store
+
+  const getNextNode = (node: Node | undefined): Node | undefined => {
+    if (node) {
+      const outEdge = edges.find((edge) => edge.source === node.id)
+      if (outEdge) {
+        const nextNode = nodes.find((node) => node.id === outEdge.target)
+        if (nextNode) return nextNode
+      }
+    }
+    return undefined
+  }
+
+  const [outboundEdge] = edges.filter((edge) => edge.source === source.id && edge.sourceHandle === handle)
+  if (!outboundEdge) {
+    return []
+  }
+
+  const pipeline: Node[] = []
+  let nextNode = nodes.find((node) => node.id === outboundEdge.target)
+  while (nextNode) {
+    pipeline.push(nextNode)
+    nextNode = getNextNode(nextNode)
+  }
+
+  return pipeline.map((node) => {
+    if (!node.data.functionId) {
+      return {
+        node: node,
+        error: PolicyCheckErrors.notConfigured(node, 'functionId'),
+      }
+    }
+
+    if (node.data.functionId === 'DataHub.transform') {
+      return checkValidityTransformFunction(node, store)
+    }
+
+    // TODO[NVL] Serialisers need to be dealt with
+
+    const operation: PolicyOperation = {
+      functionId: node.data.functionId,
+      arguments: node.data.formData,
+      id: node.id,
+    }
+    return { node: node, data: operation }
+  })
 }

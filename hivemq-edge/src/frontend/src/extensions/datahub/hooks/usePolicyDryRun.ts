@@ -11,6 +11,9 @@ import {
 } from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
 import { checkValidityPolicyValidators } from '@datahub/designer/validator/ValidatorNode.utils.ts'
 import { checkValidityClients } from '@datahub/designer/client_filter/ClientFilterNode.utils.ts'
+import { checkValidityModel } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
+import { checkValidityTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
+import { checkValidityPipeline } from '@datahub/designer/operation/OperationNode.utils.ts'
 
 const mockDelay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms))
 
