@@ -19,7 +19,10 @@ import {
 } from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
 import { checkValidityPolicyValidators } from '@datahub/designer/validator/ValidatorNode.utils.ts'
 import { checkValidityClients } from '@datahub/designer/client_filter/ClientFilterNode.utils.ts'
-import { checkValidityModel } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
+import {
+  checkValidityBehaviorPolicy,
+  checkValidityModel,
+} from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
 import { checkValidityTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
 import { checkValidityPipeline } from '@datahub/designer/operation/OperationNode.utils.ts'
 
@@ -75,9 +78,10 @@ export const usePolicyDryRun = () => {
 
     const successResources = onSuccessPipeline.reduce(resourceReducer, [] as DryRunResults<Script>[])
     const errorResources = onErrorPipeline.reduce(resourceReducer, [] as DryRunResults<Script>[])
-    const valid = validators.reduce(resourceReducer, [] as DryRunResults<Schema>[])
-    const allResources = [...successResources, ...errorResources, ...valid]
+    const schemaResources = validators.reduce(resourceReducer, [] as DryRunResults<Schema>[])
+    const allResources = [...successResources, ...errorResources, ...schemaResources]
 
+    // TODO[19240] This is wrong. Only if no errors
     const dataPolicy = checkValidityDataPolicy(
       dataPolicyNode,
       filter,
@@ -86,6 +90,11 @@ export const usePolicyDryRun = () => {
       onErrorPipeline,
       allResources
     )
+    // TODO[19240] Remove
+    console.log('[DatHub] Payloads', {
+      dataPolicy: dataPolicy.data,
+      resources: dataPolicy.resources?.map((e) => e.data),
+    })
 
     return runPolicyChecks(allNodes, [
       filter,
@@ -112,6 +121,7 @@ export const usePolicyDryRun = () => {
     const model = checkValidityModel(behaviourPolicyNode)
     const transitionResults = checkValidityTransitions(behaviourPolicyNode, reducedStore)
 
+    // TODO[19240] This is wrong. losing the connection with the right transition
     const pipelines: DryRunResults<PolicyOperation>[] = []
     for (const transitionResult of transitionResults) {
       const onErrorPipeline = checkValidityPipeline(
@@ -122,6 +132,13 @@ export const usePolicyDryRun = () => {
       pipelines.push(...onErrorPipeline)
     }
 
+    // TODO[19240] This is wrong. Only if no errors
+    const behaviorPolicy = checkValidityBehaviorPolicy(behaviourPolicyNode, clients, model, transitionResults)
+    // TODO[19240] Remove
+    console.log('[DatHub] Payloads', {
+      behaviorPolicy: behaviorPolicy.data,
+      resources: behaviorPolicy.resources?.map((e) => e.data),
+    })
     return runPolicyChecks(allNodes, [clients, model, ...transitionResults, ...pipelines])
   }
 

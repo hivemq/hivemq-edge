@@ -32,6 +32,11 @@ export function checkValidityTransitions(
     }
     return {
       node: transition,
+      data: {
+        fromState: transition.data.from,
+        toState: transition.data.to,
+        // TODO[19240] This is wrong. Pipeline is missing
+      },
     }
   })
 }

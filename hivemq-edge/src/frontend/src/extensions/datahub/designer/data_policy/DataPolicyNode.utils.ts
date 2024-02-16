@@ -1,7 +1,6 @@
 import { getIncomers, getOutgoers, Node } from 'reactflow'
 
 import { DataPolicy, DataPolicyValidator, PolicyOperation } from '@/api/__generated__'
-
 import { DataHubNodeType, DataPolicyData, DryRunResults, TopicFilterData, WorkspaceState } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
@@ -59,7 +58,7 @@ export function checkValidityFilter(
     }
   }
 
-  // TODO[XXXX] Do we create multiple identical policies based on different topics
+  // TODO[19240] Do we create multiple identical policies based on different topics
   if (incomers.length > 1) {
     return {
       node: incomers[0],
@@ -69,7 +68,7 @@ export function checkValidityFilter(
 
   return {
     node: incomers[0],
-    // TODO[XXXX] Multiple topics?
+    // TODO[19240] Multiple topics?
     data: incomers[0].data.topics[0],
   }
 }
