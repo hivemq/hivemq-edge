@@ -51,7 +51,7 @@
         "external" : true
       },
       "logoUrl" : {
-        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/modbus-icon.png",
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-modbus/src/main/resources/httpd/images/modbus-icon.png",
         "external" : true
       }
     },
@@ -70,7 +70,7 @@
         "external" : true
       },
       "logoUrl" : {
-        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/opc-ua-icon.jpg",
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-opcua/src/main/resources/httpd/images/opc-ua-icon.jpg",
         "external" : true
       }
     },
@@ -89,7 +89,7 @@
         "external" : true
       },
       "logoUrl" : {
-        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/http-logo.png",
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-http/src/main/resources/httpd/images/http-icon.png",
         "external" : true
       }
     },
@@ -108,7 +108,7 @@
         "external" : true
       },
       "logoUrl" : {
-        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/s7-icon.png",
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-plc4x/src/main/resources/httpd/images/s7-icon.png",
         "external" : true
       }
     },
@@ -127,15 +127,15 @@
         "external" : true
       },
       "logoUrl" : {
-        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/beckhoff-icon.png",
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-plc4x/src/main/resources/httpd/images/beckhoff-icon.gif",
         "external" : true
       }
     },
     {
-      "id" : "eip",
+      "id" : "ethernet-ip",
       "version" : "2024.1 (ALPHA)",
       "name" : "Ethernet IP to MQTT Protocol Adapter",
-      "description" : "Connects HiveMQ Edge to devices supporting Ethernet IP, reading data from the PLC into MQTT.",
+      "description" : "Connects HiveMQ Edge to Rockwell / Allen-Bradley ControlLogix and CompactLogix devices supporting Ethernet IP, reading data from the PLC into MQTT.",
       "author" : "HiveMQ",
       "documentationLink" : {
         "url" : "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#ethernetip-adapter",
@@ -146,7 +146,7 @@
         "external" : true
       },
       "logoUrl" : {
-        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/hivemq-edge/src/main/resources/httpd/images/eip-icon.png",
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-plc4x/src/main/resources/httpd/images/eip-icon.png",
         "external" : true
       }
     }
