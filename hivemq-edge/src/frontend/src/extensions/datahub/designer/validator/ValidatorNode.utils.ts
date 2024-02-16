@@ -1,4 +1,6 @@
 import { getIncomers, Node } from 'reactflow'
+
+import { DataPolicyValidator, Schema, SchemaReference } from '@/api/__generated__'
 import {
   DataHubNodeType,
   DataPolicyData,
@@ -7,7 +9,6 @@ import {
   ValidatorData,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { DataPolicyValidator, Schema } from '@/api/__generated__'
 import { checkValiditySchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
@@ -17,7 +18,6 @@ export function checkValidityPolicyValidator(
 ): DryRunResults<DataPolicyValidator, Schema> {
   const { nodes, edges } = store
 
-  ///////// Check the serializers
   const schemas = getIncomers(validator, nodes, edges).filter(
     (node) => node.type === DataHubNodeType.SCHEMA
   ) as Node<SchemaData>[]
@@ -30,10 +30,11 @@ export function checkValidityPolicyValidator(
   }
 
   const schemaNodes = schemas.map((e) => checkValiditySchema(e))
-  // TODO[NVL] if valid, needs to be broken down into three pipeline operation. with reference to the appropriate resource
   const operation: DataPolicyValidator = {
     type: validator.data.type,
-    arguments: validator.data.schemas,
+    // extracting the value from the schema data
+    // TODO[19240] Id should be user-facing; Need to fix before merging!
+    arguments: schemas.map<SchemaReference>((e) => ({ schemaId: e.id, version: e.data.version })),
   }
   return { data: operation, node: validator, resources: [...schemaNodes] }
 }

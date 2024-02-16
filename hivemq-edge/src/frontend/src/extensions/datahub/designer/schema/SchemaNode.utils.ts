@@ -12,11 +12,14 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
   }
 
   const schema: Schema = {
-    // @ts-ignore TODO[NVL] Need to fix before merging!
-    id: schemaNode.data.name,
+    // @ts-ignore TODO[19240] Id should be user-facing; Need to fix before merging!
+    id: schemaNode.id,
     type: schemaNode.data.type,
-    // @ts-ignore TODO[NVL] Need to fix before merging!
+    // @ts-ignore TODO[19240] Need to fix before merging!
     version: schemaNode.data.version,
+    schemaDefinition: btoa(JSON.stringify(schemaNode.data.schemaSource)),
+    // TODO[19240] No definition of arguments!
+    arguments: {},
   }
   return { data: schema, node: schemaNode }
 }

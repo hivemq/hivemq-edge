@@ -12,7 +12,11 @@ import {
   PolicyDryRunStatus,
   TransitionData,
 } from '@datahub/types.ts'
-import { checkValidityFilter, getSubFlow } from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
+import {
+  checkValidityDataPolicy,
+  checkValidityFilter,
+  getSubFlow,
+} from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
 import { checkValidityPolicyValidators } from '@datahub/designer/validator/ValidatorNode.utils.ts'
 import { checkValidityClients } from '@datahub/designer/client_filter/ClientFilterNode.utils.ts'
 import { checkValidityModel } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
@@ -74,7 +78,23 @@ export const usePolicyDryRun = () => {
     const valid = validators.reduce(resourceReducer, [] as DryRunResults<Schema>[])
     const allResources = [...successResources, ...errorResources, ...valid]
 
-    return runPolicyChecks(allNodes, [filter, ...validators, ...onSuccessPipeline, ...onErrorPipeline, ...allResources])
+    const dataPolicy = checkValidityDataPolicy(
+      dataPolicyNode,
+      filter,
+      validators,
+      onSuccessPipeline,
+      onErrorPipeline,
+      allResources
+    )
+
+    return runPolicyChecks(allNodes, [
+      filter,
+      ...validators,
+      ...onSuccessPipeline,
+      ...onErrorPipeline,
+      ...allResources,
+      dataPolicy,
+    ])
   }
 
   const checkBehaviorPolicyAsync = (behaviourPolicyNode: Node<BehaviorPolicyData>) => {

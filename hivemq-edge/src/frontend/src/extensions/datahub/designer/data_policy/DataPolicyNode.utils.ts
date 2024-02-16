@@ -1,5 +1,7 @@
 import { getIncomers, getOutgoers, Node } from 'reactflow'
 
+import { DataPolicy, DataPolicyValidator, PolicyOperation } from '@/api/__generated__'
+
 import { DataHubNodeType, DataPolicyData, DryRunResults, TopicFilterData, WorkspaceState } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
@@ -69,5 +71,45 @@ export function checkValidityFilter(
     node: incomers[0],
     // TODO[XXXX] Multiple topics?
     data: incomers[0].data.topics[0],
+  }
+}
+
+export const checkValidityDataPolicy = (
+  dataPolicyNode: Node<DataPolicyData>,
+  filter: DryRunResults<string>,
+  validators: DryRunResults<DataPolicyValidator>[],
+  onSuccessPipeline: DryRunResults<PolicyOperation>[],
+  onErrorPipeline: DryRunResults<PolicyOperation>[],
+  allResources: DryRunResults<unknown>[]
+): DryRunResults<DataPolicy, unknown> => {
+  return {
+    node: dataPolicyNode,
+    data: {
+      // TODO[19240] Id is not handled (like in many nodes); use UUID default?
+      id: dataPolicyNode.id,
+      matching: { topicFilter: filter.data as string },
+      validation: validators.length
+        ? {
+            validators: validators.map((validatorResults) => ({
+              ...(validatorResults.data as DataPolicyValidator),
+            })),
+          }
+        : undefined,
+      onFailure: onErrorPipeline.length
+        ? {
+            pipeline: onErrorPipeline.map((policyOperationResults) => ({
+              ...(policyOperationResults.data as PolicyOperation),
+            })),
+          }
+        : undefined,
+      onSuccess: onSuccessPipeline.length
+        ? {
+            pipeline: onSuccessPipeline.map((policyOperationResults) => ({
+              ...(policyOperationResults.data as PolicyOperation),
+            })),
+          }
+        : undefined,
+    },
+    resources: allResources,
   }
 }

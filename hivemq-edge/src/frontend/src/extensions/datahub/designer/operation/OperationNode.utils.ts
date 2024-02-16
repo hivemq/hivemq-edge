@@ -120,11 +120,12 @@ export function checkValidityPipeline(
       return checkValidityTransformFunction(node, store)
     }
 
-    // TODO[NVL] Serialisers need to be dealt with
+    // TODO[19240] Serialisers need to be dealt with: break into 3 pieces
 
     const operation: PolicyOperation = {
       functionId: node.data.functionId,
       arguments: node.data.formData,
+      // TODO[19240] Id is not handled (like in many nodes); use UUID default?
       id: node.id,
     }
     return { node: node, data: operation }
