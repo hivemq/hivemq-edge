@@ -44,9 +44,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 
 @SuppressWarnings("OptionalGetWithoutIsPresent")
@@ -125,16 +131,20 @@ class RemoteMqttForwarderTest {
     }
 
     @Test
-    public void whenForwarderStopped_ThenNotPublishButCallbackIsCalled() {
+    public void whenForwarderStopped_ThenNotPublishAndCallbackIsNotCalled() {
         final AtomicBoolean called = new AtomicBoolean(false);
         final RemoteMqttForwarder forwarder = createForwarder(called, false, "{#}", List.of(), List.of(), 2);
+        final AtomicBoolean resetInFlightCallbackCalled = new AtomicBoolean(false);
+        forwarder.setResetInflightMarkerCallback((sharedSubscription, uniqueId) -> {
+            resetInFlightCallbackCalled.set(true);
+        });
         forwarder.start();
         forwarder.stop();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         forwarder.onMessage(localPublish, "testqueue");
 
         verify(mqtt5AsyncClient, never()).publish(any());
-        assertTrue(called.get());
+        assertTrue(resetInFlightCallbackCalled.get());
     }
 
     @Test
