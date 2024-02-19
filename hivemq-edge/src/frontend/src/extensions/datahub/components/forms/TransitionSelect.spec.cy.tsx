@@ -39,7 +39,7 @@ describe('TransitionSelect', () => {
 
     cy.get('div#react-select-transition-listbox').find('[role="option"]').as('optionList')
     cy.get('@optionList').should('have.length', 7)
-    cy.get('#react-select-transition-option-0').should('contain.text', 'onInboundConnect')
+    cy.get('#react-select-transition-option-0').should('contain.text', 'Mqtt.OnInboundConnect')
 
     cy.checkAccessibility(undefined, {
       rules: {
@@ -50,6 +50,7 @@ describe('TransitionSelect', () => {
     })
 
     cy.get('#react-select-transition-option-3').click()
-    cy.get('div#transition-container').should('contain.text', 'onInboundPublish (Publishing - Publishing)')
+
+    cy.get('div#transition-container').should('contain.text', 'Mqtt.OnInboundPublish (Publishing - Publishing)')
   })
 })
