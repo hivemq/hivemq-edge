@@ -95,7 +95,7 @@ public class ProtocolAdapterManager {
         findAllAdapters();
 
         if(log.isInfoEnabled()){
-            log.info("Discovered {} protocol adapter-type(s): [{}]",
+            log.info("Discovered {} protocol adapter-type(s): [{}].",
                     factoryMap.size(),
                     factoryMap.values()
                             .stream()
@@ -120,7 +120,7 @@ public class ProtocolAdapterManager {
             final ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
             if (protocolAdapterFactory == null) {
                 if(log.isWarnEnabled()){
-                    log.warn("Protocol Adapter For Config {} Not Found", adapterType);
+                    log.warn("Protocol adapter for config {} not found.", adapterType);
                 }
                 continue;
             }
@@ -133,7 +133,7 @@ public class ProtocolAdapterManager {
             } else {
                 //unknown data structure - continue (bad config)
                 if(log.isWarnEnabled()){
-                    log.warn("Found Invalid Configuration Element For Adapter {}, Skipping", adapterType);
+                    log.warn("Found invalid configuration element for adapter {}, skipping.", adapterType);
                 }
                 continue;
             }
@@ -161,13 +161,13 @@ public class ProtocolAdapterManager {
                 final ProtocolAdapterFactory<?> protocolAdapterFactory =
                         facroryClass.getDeclaredConstructor().newInstance();
                 if(log.isDebugEnabled()){
-                    log.debug("Discovered Protocol Adapter Implementation {}", facroryClass.getName());
+                    log.debug("Discovered protocol adapter implementation {}.", facroryClass.getName());
                 }
                 final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
                 factoryMap.put(information.getProtocolId(), protocolAdapterFactory);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
                      NoSuchMethodException e) {
-                log.error("Not able to load module, reason: {}", e.getMessage());
+                log.error("Not able to load module, reason: {}.", e.getMessage());
             }
         }
     }
@@ -201,7 +201,7 @@ public class ProtocolAdapterManager {
     public CompletableFuture<Void> start(final @NotNull ProtocolAdapter protocolAdapter) {
         Preconditions.checkNotNull(protocolAdapter);
         if(log.isInfoEnabled()){
-            log.info("Starting protocol-adapter \"{}\"", protocolAdapter.getId());
+            log.info("Starting protocol-adapter \"{}\".", protocolAdapter.getId());
         }
         CompletableFuture<ProtocolAdapterStartOutput> startFuture;
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
@@ -215,7 +215,7 @@ public class ProtocolAdapterManager {
                handleStartupError(protocolAdapter, output);
             } else if (output.message != null) {
                 if(log.isTraceEnabled()){
-                    log.trace("Protocol-adapter \"{}\" started: {}",
+                    log.trace("Protocol-adapter \"{}\" started: {}.",
                             protocolAdapter.getId(), output.message);
                 }
                 HiveMQEdgeRemoteEvent adapterCreatedEvent = new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED);
@@ -234,7 +234,7 @@ public class ProtocolAdapterManager {
     public CompletableFuture<Void> stop(final @NotNull ProtocolAdapter protocolAdapter) {
         Preconditions.checkNotNull(protocolAdapter);
         if(log.isInfoEnabled()){
-            log.info("Stopping protocol-adapter \"{}\"", protocolAdapter.getId());
+            log.info("Stopping protocol-adapter \"{}\".", protocolAdapter.getId());
         }
         CompletableFuture<Void> stopFuture;
         if (protocolAdapter.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STOPPED) {
@@ -244,7 +244,7 @@ public class ProtocolAdapterManager {
         }
         stopFuture.thenApply(input -> {
             if(log.isTraceEnabled()){
-                log.trace("Protocol-adapter \"{}\" stopped", protocolAdapter.getId());
+                log.trace("Protocol-adapter \"{}\" stopped.", protocolAdapter.getId());
             }
             return null;
         }).exceptionally(throwable -> {

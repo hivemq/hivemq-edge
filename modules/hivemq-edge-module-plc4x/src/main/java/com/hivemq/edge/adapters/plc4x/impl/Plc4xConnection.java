@@ -66,7 +66,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
                     if(plcConnection == null){
                         String connectionString = createConnectionString(config);
                         if(log.isTraceEnabled()){
-                            log.trace("Connecting via PLC4X to {}", connectionString);
+                            log.trace("Connecting via PLC4X to {}.", connectionString);
                         }
                         plcConnection = plcDriverManager.getConnectionManager().getConnection(connectionString);
                     }
