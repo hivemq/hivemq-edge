@@ -216,8 +216,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             }
             return ApiErrorUtils.badRequest(errorMessages);
         }
-        if(logger.isTraceEnabled()){
-            logger.trace("Added Protocol Adapter Of Type {} With ID {}", adapterType, adapter.getId());
+        if(logger.isDebugEnabled()){
+            logger.debug("Added Protocol Adapter Of Type {} With ID {}", adapterType, adapter.getId());
         }
         return Response.ok().build();
     }
@@ -227,6 +227,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Cannot update an adapter that does not exist");
+        }
+        if(logger.isDebugEnabled()){
+            logger.debug("Updating Adapter \"{}\"", adapterId);
         }
         protocolAdapterManager.updateAdapter(adapterId, adapter.getConfig());
         return Response.ok().build();
@@ -238,8 +241,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
-        if(logger.isTraceEnabled()){
-            logger.trace("Deleting Adapter \"{}\"", adapterId);
+        if(logger.isDebugEnabled()){
+            logger.debug("Deleting Adapter \"{}\"", adapterId);
         }
         protocolAdapterManager.deleteAdapter(adapterId);
         return Response.ok().build();
