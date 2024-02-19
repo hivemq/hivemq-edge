@@ -77,25 +77,6 @@ public class ABProtocolAdapter extends AbstractPlc4xAdapter<ABAdapterConfig> {
             protected String getTagAddressForSubscription(final Plc4xAdapterConfig.Subscription subscription) {
                 return createTagAddressForSubscription(subscription);
             }
-
-//            @Override
-//            protected String createConnectionString(final @NotNull ABAdapterConfig config){
-//                String queryString = connectionQueryStringProvider.getConnectionQueryString(config);
-//                if(queryString != null && !queryString.trim().equals("")){
-//                    return String.format("%s://%s:%s/%s?%s",
-//                            getProtocol().trim(),
-//                            config.getHost().trim(),
-//                            config.getPort(),
-//                            config.getStation().trim(),
-//                            queryString.trim());
-//                } else {
-//                    return String.format("%s://%s:%s/%s",
-//                            getProtocol().trim(),
-//                            config.getHost().trim(),
-//                            config.getPort(),
-//                            config.getStation().trim());
-//                }
-//            }
         };
     }
 

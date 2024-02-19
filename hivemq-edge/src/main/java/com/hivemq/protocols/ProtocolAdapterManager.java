@@ -59,7 +59,6 @@ import java.util.stream.Collectors;
 @Singleton
 public class ProtocolAdapterManager {
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterManager.class);
-
     private final @NotNull Map<String, ProtocolAdapterFactory<?>> factoryMap = new ConcurrentHashMap<>();
     private final @NotNull Map<String, ProtocolAdapterWrapper> protocolAdapters = new ConcurrentHashMap<>();
     private final @NotNull ConfigurationService configurationService;
@@ -95,14 +94,16 @@ public class ProtocolAdapterManager {
 
         findAllAdapters();
 
-        log.info("Discovered {} protocol adapter-type: [{}]",
-                factoryMap.size(),
-                factoryMap.values()
-                        .stream()
-                        .map(protocolAdapterFactory -> "'" +
-                                protocolAdapterFactory.getInformation().getProtocolName() +
-                                "'")
-                        .collect(Collectors.joining(", ")));
+        if(log.isInfoEnabled()){
+            log.info("Discovered {} Protocol Adapter-Type(s): [{}]",
+                    factoryMap.size(),
+                    factoryMap.values()
+                            .stream()
+                            .map(protocolAdapterFactory -> "'" +
+                                    protocolAdapterFactory.getInformation().getProtocolName() +
+                                    "'")
+                            .collect(Collectors.joining(", ")));
+        }
 
         //iterate configs and start each adapter
         final Map<String, Object> allConfigs =
@@ -118,7 +119,9 @@ public class ProtocolAdapterManager {
             final String adapterType = configSection.getKey();
             final ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
             if (protocolAdapterFactory == null) {
-                log.error("Protocol adapter for config {} not found", adapterType);
+                if(log.isWarnEnabled()){
+                    log.warn("Protocol Adapter For Config {} Not Found", adapterType);
+                }
                 continue;
             }
             Object adapterXmlElement = configSection.getValue();
@@ -129,7 +132,9 @@ public class ProtocolAdapterManager {
                 adapterConfigs = List.of((Map<String, Object>) adapterXmlElement);
             } else {
                 //unknown data structure - continue (bad config)
-                log.warn("found invalid configuration element for adapter {}, skipping", adapterType);
+                if(log.isWarnEnabled()){
+                    log.warn("Found Invalid Configuration Element For Adapter {}, Skipping", adapterType);
+                }
                 continue;
             }
 
@@ -155,7 +160,9 @@ public class ProtocolAdapterManager {
             try {
                 final ProtocolAdapterFactory<?> protocolAdapterFactory =
                         facroryClass.getDeclaredConstructor().newInstance();
-                log.debug("Discovered Protocol Adapter Implementation {}", facroryClass.getName());
+                if(log.isDebugEnabled()){
+                    log.debug("Discovered Protocol Adapter Implementation {}", facroryClass.getName());
+                }
                 final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
                 factoryMap.put(information.getProtocolId(), protocolAdapterFactory);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
@@ -194,7 +201,7 @@ public class ProtocolAdapterManager {
     public CompletableFuture<Void> start(final @NotNull ProtocolAdapter protocolAdapter) {
         Preconditions.checkNotNull(protocolAdapter);
         if(log.isInfoEnabled()){
-            log.info("Starting protocol-adapter {}", protocolAdapter.getId());
+            log.info("Starting Protocol-Adapter \"{}\"", protocolAdapter.getId());
         }
         CompletableFuture<ProtocolAdapterStartOutput> startFuture;
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
@@ -207,8 +214,10 @@ public class ProtocolAdapterManager {
             if (!output.startedSuccessfully) {
                handleStartupError(protocolAdapter, output);
             } else if (output.message != null) {
-                log.trace("Protocol-adapter {} started: {}",
-                        protocolAdapter.getId(), output.message);
+                if(log.isTraceEnabled()){
+                    log.trace("Protocol-Adapter \"{}\" Started: {}",
+                            protocolAdapter.getId(), output.message);
+                }
                 HiveMQEdgeRemoteEvent adapterCreatedEvent = new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED);
                 adapterCreatedEvent.addUserData("adapterType",
                         protocolAdapter.getProtocolAdapterInformation().getProtocolId());
@@ -225,7 +234,7 @@ public class ProtocolAdapterManager {
     public CompletableFuture<Void> stop(final @NotNull ProtocolAdapter protocolAdapter) {
         Preconditions.checkNotNull(protocolAdapter);
         if(log.isInfoEnabled()){
-            log.info("Stopping protocol-adapter {}", protocolAdapter.getId());
+            log.info("Stopping Protocol-Adapter \"{}\"", protocolAdapter.getId());
         }
         CompletableFuture<Void> stopFuture;
         if (protocolAdapter.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STOPPED) {
@@ -235,12 +244,12 @@ public class ProtocolAdapterManager {
         }
         stopFuture.thenApply(input -> {
             if(log.isTraceEnabled()){
-                log.trace("Protocol-adapter {} stopped", protocolAdapter.getId());
+                log.trace("Protocol-Adapter \"{}\" Stopped", protocolAdapter.getId());
             }
             return null;
         }).exceptionally(throwable -> {
             if(log.isWarnEnabled()){
-                log.warn("Protocol-adapter {} was unable to stop cleanly",
+                log.warn("Protocol-Adapter \"{}\" Was Unable To Stop Cleanly",
                         protocolAdapter.getId(), throwable);
             }
             return null;
@@ -250,7 +259,7 @@ public class ProtocolAdapterManager {
 
     protected void handleStartupError(final @NotNull ProtocolAdapter protocolAdapter, @NotNull final ProtocolAdapterStartOutputImpl output){
         if(log.isWarnEnabled()){
-            log.warn("Protocol-adapter {} could not be started, reason: {}",
+            log.warn("Protocol-Adapter \"{}\" Could Not Be Started, Reason: {}",
                     protocolAdapter.getId(),
                     output.message, output.getThrowable());
         }
@@ -297,7 +306,7 @@ public class ProtocolAdapterManager {
                 } finally {
                     eventService.fireEvent(
                             eventBuilder(Event.SEVERITY.WARN, adapterInstance.get().getAdapter()).
-                            withMessage(String.format("Adapter '%s' was deleted from the system permanently",
+                            withMessage(String.format("Adapter \"%s\" Was Deleted From The System Permanently",
                                     adapterInstance.get().getAdapter().getId())).build());
                 }
             }

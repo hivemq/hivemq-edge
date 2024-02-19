@@ -63,7 +63,9 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
         if (modbusClient == null) {
             synchronized (lock) {
                 if (modbusClient == null) {
-                    log.info("Creating new Instance Of ModbusClient with {}", adapterConfig);
+                    if(log.isTraceEnabled()){
+                        log.trace("Creating New Instance Of Modbus Client With {}", adapterConfig);
+                    }
                     modbusClient = new ModbusClient(adapterConfig);
                 }
             }
@@ -127,15 +129,15 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     @Override
     protected void onSamplerClosed(final ProtocolAdapterPollingSampler sampler) {
         try {
-            if(log.isInfoEnabled()){
-                log.info("Sampler was closed by framework, disconnect modbus device");
+            if(log.isTraceEnabled()){
+                log.trace("Sampler Was Closed By Framework, Disconnect Modbus Device");
             }
             if(modbusClient != null){
                 modbusClient.disconnect();
             }
         } catch(Exception e){
             if(log.isWarnEnabled()){
-                log.warn("Error encountered closing connection to modbus device", e);
+                log.warn("Error Encountered Closing Connection To Modbus Device", e);
             }
         }
     }

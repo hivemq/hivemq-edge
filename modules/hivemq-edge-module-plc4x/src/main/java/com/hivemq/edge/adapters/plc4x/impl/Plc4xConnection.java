@@ -25,7 +25,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
     private final Object lock = new Object();
     protected final @NotNull PlcDriverManager plcDriverManager;
     protected final @NotNull T config;
-    protected final @NotNull Plc4xConnectionQueryStringProvider connectionQueryStringProvider;
+    protected final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider;
     protected volatile PlcConnection plcConnection;
 
     public Plc4xConnection(final @NotNull PlcDriverManager plcDriverManager,
@@ -35,8 +35,8 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
         this.config = config;
         this.connectionQueryStringProvider = connectionQueryStringProvider;
         if(!validConfiguration(config)){
-            if(log.isDebugEnabled()){
-                log.debug("Configuration provided to Plc4X connection was considered invalid by implementation");
+            if(log.isTraceEnabled()){
+                log.trace("Configuration Provided To PLC4X, Connection Was Considered Invalid By Implementation");
             }
             throw new Plc4xException("invalid connection configuration, unable to initialize");
         }
@@ -45,7 +45,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
 
     protected String createConnectionString(final @NotNull T config){
         String queryString = connectionQueryStringProvider.getConnectionQueryString(config);
-        if(queryString != null && !queryString.trim().equals("")){
+        if(queryString != null && !queryString.trim().isEmpty()){
             return String.format("%s://%s:%s?%s",
                     getProtocol().trim(),
                     config.getHost().trim(),
@@ -65,16 +65,16 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
                 synchronized (lock){
                     if(plcConnection == null){
                         String connectionString = createConnectionString(config);
-                        if(log.isInfoEnabled()){
-                            log.info("Connecting via plx4j to {}", connectionString);
+                        if(log.isTraceEnabled()){
+                            log.trace("Connecting Via PLC4X To {}", connectionString);
                         }
                         plcConnection = plcDriverManager.getConnectionManager().getConnection(connectionString);
                     }
                 }
             }
         } catch(PlcConnectionException e){
-            if(log.isWarnEnabled()){
-                log.warn("Error encountered connecting to external device", e);
+            if(log.isInfoEnabled()){
+                log.info("Error Encountered Connecting To External Device", e);
             }
             throw new Plc4xException("Error connecting", e);
         }
@@ -117,8 +117,8 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
         if (!plcConnection.getMetadata().canRead()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type read-blocking"));
         }
-        if(log.isDebugEnabled()){
-            log.debug("Sending direct-read request to connection for {}", subscription.getTagName());
+        if(log.isTraceEnabled()){
+            log.trace("Sending Direct-Read Request To Connection For {}", subscription.getTagName());
         }
         PlcReadRequest.Builder builder = plcConnection.readRequestBuilder();
         builder.addTagAddress(subscription.getTagName(), getTagAddressForSubscription(subscription));
@@ -136,8 +136,8 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
         if (!plcConnection.getMetadata().canSubscribe()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type cannot subscribe"));
         }
-        if(log.isDebugEnabled()){
-            log.debug("Sending subscribe request to connection for {}", subscription.getTagName());
+        if(log.isTraceEnabled()){
+            log.trace("Sending Subscribe Request To Connection For {}", subscription.getTagName());
         }
         final PlcSubscriptionRequest.Builder builder = plcConnection.subscriptionRequestBuilder();
 
@@ -148,7 +148,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
                 (CompletableFuture<PlcSubscriptionResponse>) subscriptionRequest.execute();
         future.whenComplete((plcSubscriptionResponse, throwable) -> {
             if(throwable != null){
-                log.warn("Connection subscription encountered an error;", throwable);
+                log.warn("Connection Subscription Encountered An Error;", throwable);
             } else {
                 for (String subscriptionName : plcSubscriptionResponse.getTagNames()) {
                     final PlcSubscriptionHandle subscriptionHandle =

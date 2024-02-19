@@ -135,9 +135,12 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
                 final String correctedAddress = new StringBuilder(formattedAddress).replace(blockMatcher.start("dataType"),
                         blockMatcher.end("dataType"),
                         "X").toString();
-                log.trace("Correcting S7 tag address from '{}' to '{}' to improve compatibility",
-                        formattedAddress,
-                        correctedAddress);
+                if(log.isTraceEnabled()){
+                    log.trace("Correcting S7 Tag Address From '{}' To '{}' To Improve Compatibility",
+                            formattedAddress,
+                            correctedAddress);
+                }
+
                 return correctedAddress;
             }
             final Matcher addressMatcher = ADDRESS_PATTERN.matcher(formattedAddress);
@@ -145,9 +148,11 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
                 final String correctedAddress = new StringBuilder(formattedAddress).replace(addressMatcher.start("dataType"),
                         addressMatcher.end("dataType"),
                         "X").toString();
-                log.trace("Correcting S7 tag address from '{}' to '{}' to improve compatibility",
-                        formattedAddress,
-                        correctedAddress);
+                if(log.isTraceEnabled()) {
+                    log.trace("Correcting S7 Tag Address From '{}' To '{}' To Improve Compatibility",
+                            formattedAddress,
+                            correctedAddress);
+                }
                 return correctedAddress;
             }
         }
