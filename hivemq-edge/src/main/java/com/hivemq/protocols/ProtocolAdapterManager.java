@@ -95,7 +95,7 @@ public class ProtocolAdapterManager {
         findAllAdapters();
 
         if(log.isInfoEnabled()){
-            log.info("Discovered {} Protocol Adapter-Type(s): [{}]",
+            log.info("Discovered {} protocol adapter-type(s): [{}]",
                     factoryMap.size(),
                     factoryMap.values()
                             .stream()
@@ -201,7 +201,7 @@ public class ProtocolAdapterManager {
     public CompletableFuture<Void> start(final @NotNull ProtocolAdapter protocolAdapter) {
         Preconditions.checkNotNull(protocolAdapter);
         if(log.isInfoEnabled()){
-            log.info("Starting Protocol-Adapter \"{}\"", protocolAdapter.getId());
+            log.info("Starting protocol-adapter \"{}\"", protocolAdapter.getId());
         }
         CompletableFuture<ProtocolAdapterStartOutput> startFuture;
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
@@ -215,7 +215,7 @@ public class ProtocolAdapterManager {
                handleStartupError(protocolAdapter, output);
             } else if (output.message != null) {
                 if(log.isTraceEnabled()){
-                    log.trace("Protocol-Adapter \"{}\" Started: {}",
+                    log.trace("Protocol-adapter \"{}\" started: {}",
                             protocolAdapter.getId(), output.message);
                 }
                 HiveMQEdgeRemoteEvent adapterCreatedEvent = new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED);
@@ -234,7 +234,7 @@ public class ProtocolAdapterManager {
     public CompletableFuture<Void> stop(final @NotNull ProtocolAdapter protocolAdapter) {
         Preconditions.checkNotNull(protocolAdapter);
         if(log.isInfoEnabled()){
-            log.info("Stopping Protocol-Adapter \"{}\"", protocolAdapter.getId());
+            log.info("Stopping protocol-adapter \"{}\"", protocolAdapter.getId());
         }
         CompletableFuture<Void> stopFuture;
         if (protocolAdapter.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STOPPED) {
@@ -244,12 +244,12 @@ public class ProtocolAdapterManager {
         }
         stopFuture.thenApply(input -> {
             if(log.isTraceEnabled()){
-                log.trace("Protocol-Adapter \"{}\" Stopped", protocolAdapter.getId());
+                log.trace("Protocol-adapter \"{}\" stopped", protocolAdapter.getId());
             }
             return null;
         }).exceptionally(throwable -> {
             if(log.isWarnEnabled()){
-                log.warn("Protocol-Adapter \"{}\" Was Unable To Stop Cleanly",
+                log.warn("Protocol-adapter \"{}\" was unable to stop cleanly",
                         protocolAdapter.getId(), throwable);
             }
             return null;
@@ -259,7 +259,7 @@ public class ProtocolAdapterManager {
 
     protected void handleStartupError(final @NotNull ProtocolAdapter protocolAdapter, @NotNull final ProtocolAdapterStartOutputImpl output){
         if(log.isWarnEnabled()){
-            log.warn("Protocol-Adapter \"{}\" Could Not Be Started, Reason: {}",
+            log.warn("Protocol-adapter \"{}\" could not be started, reason: {}",
                     protocolAdapter.getId(),
                     output.message, output.getThrowable());
         }

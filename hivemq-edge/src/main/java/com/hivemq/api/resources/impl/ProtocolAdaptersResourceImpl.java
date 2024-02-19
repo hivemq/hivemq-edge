@@ -80,7 +80,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                                 configurationService);
                     } catch (Throwable t) {
                         if(logger.isWarnEnabled()){
-                            logger.warn("Not Able To Properly Load Protocol Adapter", t);
+                            logger.warn("Not able to properly load protocol adapter.", t);
                         }
                         return null;
                     }
@@ -217,7 +217,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.badRequest(errorMessages);
         }
         if(logger.isDebugEnabled()){
-            logger.debug("Added Protocol Adapter Of Type {} With ID {}", adapterType, adapter.getId());
+            logger.debug("Added protocol adapter of type {} with ID {}.", adapterType, adapter.getId());
         }
         return Response.ok().build();
     }
@@ -229,7 +229,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.notFound("Cannot update an adapter that does not exist");
         }
         if(logger.isDebugEnabled()){
-            logger.debug("Updating Adapter \"{}\"", adapterId);
+            logger.debug("Updating adapter \"{}\".", adapterId);
         }
         protocolAdapterManager.updateAdapter(adapterId, adapter.getConfig());
         return Response.ok().build();
@@ -242,7 +242,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.notFound("Adapter not found");
         }
         if(logger.isDebugEnabled()){
-            logger.debug("Deleting Adapter \"{}\"", adapterId);
+            logger.debug("Deleting adapter \"{}\".", adapterId);
         }
         protocolAdapterManager.deleteAdapter(adapterId);
         return Response.ok().build();

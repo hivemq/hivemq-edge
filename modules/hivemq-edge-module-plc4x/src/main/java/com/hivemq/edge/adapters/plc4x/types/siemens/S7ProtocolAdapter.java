@@ -136,7 +136,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
                         blockMatcher.end("dataType"),
                         "X").toString();
                 if(log.isTraceEnabled()){
-                    log.trace("Correcting S7 Tag Address From '{}' To '{}' To Improve Compatibility",
+                    log.trace("Correcting S7 tag address from '{}' to '{}' to improve compatibility.",
                             formattedAddress,
                             correctedAddress);
                 }
@@ -149,7 +149,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
                         addressMatcher.end("dataType"),
                         "X").toString();
                 if(log.isTraceEnabled()) {
-                    log.trace("Correcting S7 Tag Address From '{}' To '{}' To Improve Compatibility",
+                    log.trace("Correcting S7 tag address from '{}' to '{}' to improve compatibility",
                             formattedAddress,
                             correctedAddress);
                 }

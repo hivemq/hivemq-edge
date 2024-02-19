@@ -62,7 +62,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 if (connection == null) {
                     try {
                         if(log.isTraceEnabled()){
-                            log.trace("Creating New Instance Of Plc4x Connector with {}", adapterConfig);
+                            log.trace("Creating new instance of Plc4x connector with {}.", adapterConfig);
                         }
                         connection = createConnection();
                         setConnectionStatus(ConnectionStatus.CONNECTED);
@@ -125,7 +125,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 return CompletableFuture.completedFuture(null);
             } catch (Exception e) {
                 if(log.isWarnEnabled()){
-                    log.warn("Error Disconnecting from Plc4x Client", e);
+                    log.warn("Error disconnecting from PLC4X client", e);
                 }
                 setErrorConnectionStatus(e, null);
                 return CompletableFuture.failedFuture(e);
@@ -143,13 +143,13 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
             switch (getReadType()) {
                 case Subscribe:
                     if (log.isTraceEnabled()) {
-                        log.trace("Subscribing to tag [{}] on connection", subscription.getTagName());
+                        log.trace("Subscribing to tag [{}] on connection.", subscription.getTagName());
                     }
                     return connection.subscribe(subscription,
                             plcSubscriptionEvent -> processReadResponse(subscription, plcSubscriptionEvent));
                 case Read:
                     if (log.isTraceEnabled()) {
-                        log.trace("Scheduling read of tag [{}] on connection", subscription.getTagName());
+                        log.trace("Scheduling read of tag [{}] on connection.", subscription.getTagName());
                     }
                     startPolling(new SubscriptionSampler(this.adapterConfig, subscription));
                     break;
