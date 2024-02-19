@@ -125,7 +125,7 @@ export function checkValidityPipeline(
     const operation: PolicyOperation = {
       functionId: node.data.functionId,
       arguments: node.data.formData,
-      // TODO[19240] Id is not handled (like in many nodes); use UUID default?
+      // TODO[19466] Id should be user-facing; Need to fix before merging!
       id: node.id,
     }
     return { node: node, data: operation }

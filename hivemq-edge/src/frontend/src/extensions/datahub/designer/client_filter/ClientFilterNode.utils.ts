@@ -20,7 +20,7 @@ export function checkValidityClients(
     }
   }
 
-  // TODO[XXXX] Do we create multiple identical policies based on different topics
+  // TODO[19240] Do we create multiple identical policies based on different topics
   if (clients.length > 1) {
     return {
       error: PolicyCheckErrors.cardinality(DataHubNodeType.CLIENT_FILTER, dataPolicyNode),
@@ -30,7 +30,7 @@ export function checkValidityClients(
 
   return {
     node: clients[0],
-    // TODO[XXXX] Multiple clients?
+    // TODO[19240] Multiple clients?
     data: clients[0].data.clients[0],
   }
 }

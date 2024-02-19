@@ -12,6 +12,7 @@ export function checkValidityJSScript(scriptNode: Node<FunctionData>): DryRunRes
   }
 
   const script: Script = {
+    // TODO[19466] Id should be user-facing; Need to fix before merging!
     id: scriptNode.data.name,
     functionType: Script.functionType.TRANSFORMATION,
     source: scriptNode.data.sourceCode as string,

@@ -84,7 +84,7 @@ export const checkValidityDataPolicy = (
   return {
     node: dataPolicyNode,
     data: {
-      // TODO[19240] Id is not handled (like in many nodes); use UUID default?
+      // TODO[19466] Id should be user-facing; Need to fix before merging!
       id: dataPolicyNode.id,
       matching: { topicFilter: filter.data as string },
       validation: validators.length

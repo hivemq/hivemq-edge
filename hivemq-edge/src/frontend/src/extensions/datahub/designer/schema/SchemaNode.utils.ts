@@ -12,7 +12,7 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
   }
 
   const schema: Schema = {
-    // @ts-ignore TODO[19240] Id should be user-facing; Need to fix before merging!
+    // @ts-ignore TODO[19466] Id should be user-facing; Need to fix before merging!
     id: schemaNode.id,
     type: schemaNode.data.type,
     // @ts-ignore TODO[19240] Need to fix before merging!

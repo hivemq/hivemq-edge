@@ -30,7 +30,7 @@ export function checkValidityBehaviorPolicy(
     node: node,
     data: {
       behavior: model.data as BehaviorPolicyBehavior,
-      // TODO[19240] Id is not handled (like in many nodes); use UUID default?
+      // TODO[19466] Id should be user-facing; Need to fix before merging!
       id: node.id,
       matching: { clientIdRegex: client.data as string },
       onTransitions: transitions.length

@@ -33,7 +33,7 @@ export function checkValidityPolicyValidator(
   const operation: DataPolicyValidator = {
     type: validator.data.type,
     // extracting the value from the schema data
-    // TODO[19240] Id should be user-facing; Need to fix before merging!
+    // TODO[19466] Id should be user-facing; Need to fix before merging!
     arguments: schemas.map<SchemaReference>((e) => ({ schemaId: e.id, version: e.data.version })),
   }
   return { data: operation, node: validator, resources: [...schemaNodes] }
