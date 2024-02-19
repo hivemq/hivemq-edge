@@ -51,7 +51,7 @@ const SecurityPanel: FC<BridgePanelType> = ({ form }) => {
                   options={CYPHER_SUITES.map((e) => ({ label: e, value: e }))}
                   // menuIsOpen={false}
                   isClearable={true}
-                  placeholder={'add topic'}
+                  placeholder={t('bridge.security.cipherSuites.placeholder')}
                   isMulti={true}
                   components={{
                     DropdownIndicator: null,
