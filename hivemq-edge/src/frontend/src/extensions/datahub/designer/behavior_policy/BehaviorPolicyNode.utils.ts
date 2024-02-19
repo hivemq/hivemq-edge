@@ -35,10 +35,7 @@ export function checkValidityBehaviorPolicy(
       matching: { clientIdRegex: client.data as string },
       onTransitions: transitions.length
         ? transitions.map((transition) => {
-            return {
-              fromState: transition.data?.fromState as string,
-              toState: transition.data?.toState as string,
-            }
+            return transition.data as BehaviorPolicyOnTransition
           })
         : undefined,
     },

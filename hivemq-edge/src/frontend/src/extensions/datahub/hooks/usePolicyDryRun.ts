@@ -1,6 +1,6 @@
 import { getIncomers, Node } from 'reactflow'
 
-import { PolicyOperation, Schema, Script } from '@/api/__generated__'
+import { Schema, Script } from '@/api/__generated__'
 
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import {
@@ -10,7 +10,6 @@ import {
   DataPolicyData,
   DryRunResults,
   PolicyDryRunStatus,
-  TransitionData,
 } from '@datahub/types.ts'
 import {
   checkValidityDataPolicy,
@@ -119,27 +118,24 @@ export const usePolicyDryRun = () => {
 
     const clients = checkValidityClients(behaviourPolicyNode, reducedStore)
     const model = checkValidityModel(behaviourPolicyNode)
-    const transitionResults = checkValidityTransitions(behaviourPolicyNode, reducedStore)
+    const { behaviorPolicyTransitions, pipelines } = checkValidityTransitions(behaviourPolicyNode, reducedStore)
 
-    // TODO[19240] This is wrong. losing the connection with the right transition
-    const pipelines: DryRunResults<PolicyOperation>[] = []
-    for (const transitionResult of transitionResults) {
-      const onErrorPipeline = checkValidityPipeline(
-        transitionResult.node,
-        TransitionData.Handle.OPERATION,
-        reducedStore
-      )
-      pipelines.push(...onErrorPipeline)
-    }
+    const pipelineResources = pipelines?.reduce(resourceReducer, [] as DryRunResults<Schema>[])
 
     // TODO[19240] This is wrong. Only if no errors
-    const behaviorPolicy = checkValidityBehaviorPolicy(behaviourPolicyNode, clients, model, transitionResults)
+    const behaviorPolicy = checkValidityBehaviorPolicy(behaviourPolicyNode, clients, model, behaviorPolicyTransitions)
     // TODO[19240] Remove
     console.log('[DatHub] Payloads', {
       behaviorPolicy: behaviorPolicy.data,
       resources: behaviorPolicy.resources?.map((e) => e.data),
     })
-    return runPolicyChecks(allNodes, [clients, model, ...transitionResults, ...pipelines])
+    return runPolicyChecks(allNodes, [
+      clients,
+      model,
+      ...behaviorPolicyTransitions,
+      ...(pipelines || []),
+      ...(pipelineResources || []),
+    ])
   }
 
   return {
