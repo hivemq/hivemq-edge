@@ -18,14 +18,16 @@ import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 export function checkValidityTransformFunction(
   operationNode: Node<OperationData>,
   store: WorkspaceState
-): DryRunResults<PolicyOperation, Script | Schema> {
+): DryRunResults<PolicyOperation, Script | Schema>[] {
   const { nodes, edges } = store
 
   if (!operationNode.data.functionId || !operationNode.data.formData) {
-    return {
-      node: operationNode,
-      error: PolicyCheckErrors.notConfigured(operationNode, 'functionId, formData'),
-    }
+    return [
+      {
+        node: operationNode,
+        error: PolicyCheckErrors.notConfigured(operationNode, 'functionId, formData'),
+      },
+    ]
   }
 
   ///////// Check the function handle
@@ -34,10 +36,12 @@ export function checkValidityTransformFunction(
   ) as Node<FunctionData>[]
 
   if (!functions.length) {
-    return {
-      node: operationNode,
-      error: PolicyCheckErrors.notConnected(DataHubNodeType.FUNCTION, operationNode),
-    }
+    return [
+      {
+        node: operationNode,
+        error: PolicyCheckErrors.notConnected(DataHubNodeType.FUNCTION, operationNode),
+      },
+    ]
   }
 
   ///////// Check the serializers
@@ -48,34 +52,66 @@ export function checkValidityTransformFunction(
   const connectedEdges = getConnectedEdges([...serialisers], edges).filter(
     (e) => e.targetHandle === OperationData.Handle.SERIALISER || e.targetHandle === OperationData.Handle.DESERIALISER
   )
-  const serial = connectedEdges.filter((edge) => edge.targetHandle === OperationData.Handle.SERIALISER)
-  const deSerial = connectedEdges.filter((edge) => edge.targetHandle === OperationData.Handle.DESERIALISER)
+  const [serial, ...restSerial] = connectedEdges.filter((edge) => edge.targetHandle === OperationData.Handle.SERIALISER)
+  const [deserial, ...restDeserial] = connectedEdges.filter(
+    (edge) => edge.targetHandle === OperationData.Handle.DESERIALISER
+  )
 
-  if (serial.length !== 1) {
-    return {
-      node: operationNode,
-      error: PolicyCheckErrors.notConnected(DataHubNodeType.SCHEMA, operationNode, OperationData.Handle.SERIALISER),
-    }
+  if (serial === undefined || restSerial.length !== 0) {
+    return [
+      {
+        node: operationNode,
+        error: PolicyCheckErrors.notConnected(DataHubNodeType.SCHEMA, operationNode, OperationData.Handle.SERIALISER),
+      },
+    ]
   }
 
-  if (deSerial.length !== 1) {
-    return {
-      node: operationNode,
-      error: PolicyCheckErrors.notConnected(DataHubNodeType.SCHEMA, operationNode, OperationData.Handle.SERIALISER),
-    }
+  if (deserial === undefined || restDeserial.length !== 0) {
+    return [
+      {
+        node: operationNode,
+        error: PolicyCheckErrors.notConnected(DataHubNodeType.SCHEMA, operationNode, OperationData.Handle.SERIALISER),
+      },
+    ]
   }
 
   ///////// Check the resources
   const scriptNodes = functions.map((e) => checkValidityJSScript(e))
   const schemaNodes = serialisers.map((e) => checkValiditySchema(e))
 
-  // TODO[NVL] if valid, needs to be broken down into three pipeline operation. with reference to the appropriate resource
+  // TODO[19240] Should not be hardcoded and should be Typescript-ed
+  const deserializer: PolicyOperation = {
+    functionId: 'Serdes.deserialize',
+    arguments: {
+      // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
+      schemaId: serial.source,
+      // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
+      schemaVersion: 1,
+    },
+    id: `${operationNode.id}-deserializer`,
+  }
   const operation: PolicyOperation = {
     functionId: operationNode.data.functionId,
     arguments: operationNode.data.formData,
+    // TODO[19466] Id should be user-facing; Need to fix before merging!
     id: operationNode.id,
   }
-  return { data: operation, node: operationNode, resources: [...scriptNodes, ...schemaNodes] }
+  const serializer: PolicyOperation = {
+    functionId: 'Serdes.serialize',
+    arguments: {
+      // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
+      schemaId: deserial.source,
+      // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
+      schemaVersion: 1,
+    },
+    id: `${operationNode.id}-serializer`,
+  }
+  return [
+    { data: deserializer, node: operationNode },
+    // TODO[NVL] Technically, resources should be associated with the serialiser/deserialiser
+    { data: operation, node: operationNode, resources: [...scriptNodes, ...schemaNodes] },
+    { data: serializer, node: operationNode },
+  ]
 }
 
 export function checkValidityPipeline(
@@ -108,26 +144,24 @@ export function checkValidityPipeline(
     nextNode = getNextNode(nextNode)
   }
 
-  return pipeline.map((node) => {
+  return pipeline.reduce<DryRunResults<PolicyOperation>[]>((acc, node) => {
     if (!node.data.functionId) {
-      return {
+      acc.push({
         node: node,
         error: PolicyCheckErrors.notConfigured(node, 'functionId'),
+      })
+    } else if (node.data.functionId === 'DataHub.transform') {
+      const transformResults = checkValidityTransformFunction(node, store)
+      acc.push(...transformResults)
+    } else {
+      const operation: PolicyOperation = {
+        functionId: node.data.functionId,
+        arguments: node.data.formData,
+        // TODO[19466] Id should be user-facing; Need to fix before merging!
+        id: node.id,
       }
+      acc.push({ node: node, data: operation })
     }
-
-    if (node.data.functionId === 'DataHub.transform') {
-      return checkValidityTransformFunction(node, store)
-    }
-
-    // TODO[19240] Serialisers need to be dealt with: break into 3 pieces
-
-    const operation: PolicyOperation = {
-      functionId: node.data.functionId,
-      arguments: node.data.formData,
-      // TODO[19466] Id should be user-facing; Need to fix before merging!
-      id: node.id,
-    }
-    return { node: node, data: operation }
-  })
+    return acc
+  }, [])
 }
