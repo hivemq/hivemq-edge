@@ -159,7 +159,7 @@ export interface FunctionSpecs {
 export interface OperationData extends DataHubNodeData {
   functionId?: string
   metadata?: FunctionDefinition
-  formData?: Record<string, string | number>
+  formData?: Record<string, string | number | string[]>
   core?: PolicyOperation
 }
 
