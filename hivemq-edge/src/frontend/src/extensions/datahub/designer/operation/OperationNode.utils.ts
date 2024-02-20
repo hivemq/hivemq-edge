@@ -70,10 +70,12 @@ export function checkValidityTransformFunction(
     return [
       {
         node: operationNode,
-        error: PolicyCheckErrors.notConnected(DataHubNodeType.SCHEMA, operationNode, OperationData.Handle.SERIALISER),
+        error: PolicyCheckErrors.notConnected(DataHubNodeType.SCHEMA, operationNode, OperationData.Handle.DESERIALISER),
       },
     ]
   }
+
+  // TODO[19240] Should serial and deserial be different ?
 
   ///////// Check the resources
   const scriptNodes = functions.map((e) => checkValidityJSScript(e))
