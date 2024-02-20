@@ -59,7 +59,6 @@ export const getNodePayload = (type: string): DataHubNodeData => {
 
 type ConnectionValidity = Record<string, (DataHubNodeType | [DataHubNodeType, string])[]>
 
-// TODO[NVL} worth moving as property to individual node?
 export const validConnections: ConnectionValidity = {
   [DataHubNodeType.TOPIC_FILTER]: [[DataHubNodeType.DATA_POLICY, DataPolicyData.Handle.TOPIC_FILTER]],
   [DataHubNodeType.VALIDATOR]: [[DataHubNodeType.DATA_POLICY, DataPolicyData.Handle.VALIDATION]],
