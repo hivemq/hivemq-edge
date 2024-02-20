@@ -15,7 +15,7 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
     // @ts-ignore TODO[19466] Id should be user-facing; Need to fix before merging!
     id: schemaNode.id,
     type: schemaNode.data.type,
-    // @ts-ignore TODO[19240] Need to fix before merging!
+    // @ts-ignore TODO[19475] Need to fix before merging!
     version: schemaNode.data.version,
     schemaDefinition: btoa(JSON.stringify(schemaNode.data.schemaSource)),
     // TODO[19240] No definition of arguments!
