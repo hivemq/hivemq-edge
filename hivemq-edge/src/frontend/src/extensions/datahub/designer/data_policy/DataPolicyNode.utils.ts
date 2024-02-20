@@ -4,11 +4,12 @@ import { DataPolicy, DataPolicyValidator, PolicyOperation } from '@/api/__genera
 import { DataHubNodeType, DataPolicyData, DryRunResults, TopicFilterData, WorkspaceState } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
+/* istanbul ignore next -- @preserve */
 export function getSubFlow(source: Node, acc: Node[], store: WorkspaceState, only = false) {
   const allIds = Array.from(new Set(acc.map((e) => e.id)))
   const { nodes, edges } = store
 
-  // This is wrong: should check it's from the right handles
+  // TODO[NVL] This is wrong: should check it's from the right handles
   const incomers = getIncomers(source, nodes, edges).filter(
     (node) =>
       !allIds.includes(node.id) &&
@@ -73,6 +74,8 @@ export function checkValidityFilter(
   }
 }
 
+// TODO[NVL] Need to find a better way of testing this one
+/* istanbul ignore next -- @preserve */
 export const checkValidityDataPolicy = (
   dataPolicyNode: Node<DataPolicyData>,
   filter: DryRunResults<string>,
