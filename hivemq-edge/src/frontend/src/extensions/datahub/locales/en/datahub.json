@@ -126,7 +126,7 @@
   "error": {
     "dryRun": {
       "notConnected": "No $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
-      "noHandleConnected": "No $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to the {{ handle }} of $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
+      "noHandleConnected": "No $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to the \"{{ handle }}\" handle of $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
       "cardinality": "Too many $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
       "notConfigured": "The $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) is not properly defined. The following properties are missing: {{ properties }}"
     },

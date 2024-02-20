@@ -9,8 +9,8 @@ export const PolicyCheckErrors = {
   notConnected: <T>(source: DataHubNodeType, target: Node<T>, handle?: string) => ({
     title: target.type as string,
     detail: handle
-      ? i18n.t('datahub:error.dryRun.noHandleConnected', { source, target: target.type })
-      : i18n.t('datahub:error.dryRun.notConnected', { source, target: target.type, handle }),
+      ? i18n.t('datahub:error.dryRun.noHandleConnected', { source, target: target.type, handle })
+      : i18n.t('datahub:error.dryRun.notConnected', { source, target: target.type }),
     type: 'datahub.notConnected',
     ...commonProperties,
     id: target.id,
