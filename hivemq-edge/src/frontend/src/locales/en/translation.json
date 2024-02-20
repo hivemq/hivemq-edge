@@ -295,6 +295,7 @@
     "security": {
       "cipherSuites": {
         "label": "Cipher Suites",
+        "placeholder": "Add cipher suite",
         "helper": "Select the cipher suites. Leave empty to use the default cipher suites."
       },
       "enabled": {
