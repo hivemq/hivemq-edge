@@ -116,6 +116,28 @@ export function checkValidityTransformFunction(
   ]
 }
 
+export const processOperations =
+  (store: WorkspaceState) => (acc: DryRunResults<PolicyOperation, never>[], node: Node) => {
+    if (!node.data.functionId) {
+      acc.push({
+        node: node,
+        error: PolicyCheckErrors.notConfigured(node, 'functionId'),
+      })
+    } else if (node.data.functionId === 'DataHub.transform') {
+      const transformResults = checkValidityTransformFunction(node, store)
+      acc.push(...transformResults)
+    } else {
+      const operation: PolicyOperation = {
+        functionId: node.data.functionId,
+        arguments: node.data.formData,
+        // TODO[19466] Id should be user-facing; Need to fix before merging!
+        id: node.id,
+      }
+      acc.push({ node: node, data: operation })
+    }
+    return acc
+  }
+
 export function checkValidityPipeline(
   source: Node<DataPolicyData> | Node<TransitionData>,
   handle: DataPolicyData.Handle | TransitionData.Handle,
@@ -146,24 +168,5 @@ export function checkValidityPipeline(
     nextNode = getNextNode(nextNode)
   }
 
-  return pipeline.reduce<DryRunResults<PolicyOperation>[]>((acc, node) => {
-    if (!node.data.functionId) {
-      acc.push({
-        node: node,
-        error: PolicyCheckErrors.notConfigured(node, 'functionId'),
-      })
-    } else if (node.data.functionId === 'DataHub.transform') {
-      const transformResults = checkValidityTransformFunction(node, store)
-      acc.push(...transformResults)
-    } else {
-      const operation: PolicyOperation = {
-        functionId: node.data.functionId,
-        arguments: node.data.formData,
-        // TODO[19466] Id should be user-facing; Need to fix before merging!
-        id: node.id,
-      }
-      acc.push({ node: node, data: operation })
-    }
-    return acc
-  }, [])
+  return pipeline.reduce<DryRunResults<PolicyOperation>[]>(processOperations(store), [])
 }
