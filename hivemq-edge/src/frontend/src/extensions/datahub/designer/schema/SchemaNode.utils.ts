@@ -4,10 +4,10 @@ import { Schema } from '@/api/__generated__'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
 export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults<Schema> {
-  if (!schemaNode.data.type || !schemaNode.data.version) {
+  if (!schemaNode.data.type || !schemaNode.data.version || !schemaNode.data.schemaSource) {
     return {
       node: schemaNode,
-      error: PolicyCheckErrors.notConfigured(schemaNode, 'type, version'),
+      error: PolicyCheckErrors.notConfigured(schemaNode, 'type, version, schemaSource'),
     }
   }
 
