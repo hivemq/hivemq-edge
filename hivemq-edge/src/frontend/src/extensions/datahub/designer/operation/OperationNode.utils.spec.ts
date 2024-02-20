@@ -1,0 +1,367 @@
+import { expect } from 'vitest'
+import { Node } from 'reactflow'
+import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
+
+import { DataHubNodeType, FunctionData, OperationData, SchemaData, SchemaType, WorkspaceState } from '@datahub/types.ts'
+import { checkValidityTransformFunction } from '@datahub/designer/operation/OperationNode.utils.ts'
+
+describe('checkValidityTransformFunction', () => {
+  it('should return error if not configured', async () => {
+    const MOCK_NODE_OPERATION: Node<OperationData> = {
+      id: 'node-id',
+      type: DataHubNodeType.OPERATION,
+      data: {
+        functionId: 'Javascript',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const MOCK_STORE: WorkspaceState = {
+      nodes: [],
+      edges: [],
+      functions: [],
+    }
+
+    const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
+    expect(results).toHaveLength(1)
+    const { node, data, error, resources } = results[0]
+    expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+    expect(resources).toBeUndefined()
+    expect(data).toBeUndefined()
+    expect(error).toEqual(
+      expect.objectContaining({
+        detail: 'The Operation is not properly defined. The following properties are missing: functionId, formData',
+        id: 'node-id',
+        title: 'OPERATION',
+        type: 'datahub.notConfigured',
+      })
+    )
+  })
+
+  it('should return error if no function connected', async () => {
+    const MOCK_NODE_OPERATION: Node<OperationData> = {
+      id: 'node-id',
+      type: DataHubNodeType.OPERATION,
+      data: {
+        functionId: 'DataHub.transform',
+        formData: {
+          transform: ['the_function'],
+        },
+        metadata: {
+          isTerminal: false,
+          hasArguments: true,
+        },
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_NODE_FUNCTION: Node<FunctionData> = {
+      id: 'node-function',
+      type: DataHubNodeType.FUNCTION,
+      data: {
+        type: 'Javascript',
+        name: 'the_function',
+        version: 'v0.0',
+        sourceCode: 'const t=1',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_STORE: WorkspaceState = {
+      nodes: [MOCK_NODE_FUNCTION, MOCK_NODE_OPERATION],
+      edges: [
+        {
+          source: MOCK_NODE_FUNCTION.id,
+          sourceHandle: 'source',
+          target: '2',
+          targetHandle: 'function',
+          id: '1',
+        },
+      ],
+      functions: [],
+    }
+
+    const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
+    expect(results).toHaveLength(1)
+    const { node, data, error, resources } = results[0]
+    expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+    expect(resources).toBeUndefined()
+    expect(data).toBeUndefined()
+    expect(error).toEqual(
+      expect.objectContaining({
+        detail: 'No JS Function connected to Operation',
+        id: 'node-id',
+        title: 'OPERATION',
+        type: 'datahub.notConnected',
+      })
+    )
+  })
+
+  it('should return error if no serialiser connected', async () => {
+    const MOCK_NODE_OPERATION: Node<OperationData> = {
+      id: 'node-id',
+      type: DataHubNodeType.OPERATION,
+      data: {
+        functionId: 'DataHub.transform',
+        formData: {
+          transform: ['the_function'],
+        },
+        metadata: {
+          isTerminal: false,
+          hasArguments: true,
+        },
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_NODE_FUNCTION: Node<FunctionData> = {
+      id: 'node-function',
+      type: DataHubNodeType.FUNCTION,
+      data: {
+        type: 'Javascript',
+        name: 'the_function',
+        version: 'v0.0',
+        sourceCode: 'const t=1',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_NODE_SERIAL: Node<SchemaData> = {
+      id: 'node-schema',
+      type: DataHubNodeType.SCHEMA,
+      data: {
+        type: SchemaType.JSON,
+        version: '1',
+        schemaSource: '{ t: 1}',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_STORE: WorkspaceState = {
+      nodes: [MOCK_NODE_SERIAL, MOCK_NODE_FUNCTION, MOCK_NODE_OPERATION],
+      edges: [
+        {
+          source: MOCK_NODE_FUNCTION.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'function',
+          id: '1',
+        },
+      ],
+      functions: [],
+    }
+
+    const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
+    expect(results).toHaveLength(1)
+    const { node, data, error, resources } = results[0]
+    expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+    expect(resources).toBeUndefined()
+    expect(data).toBeUndefined()
+    expect(error).toEqual(
+      expect.objectContaining({
+        detail: 'No Schema connected to the "serialiser" handle of Operation',
+        id: 'node-id',
+        title: 'OPERATION',
+        type: 'datahub.notConnected',
+      })
+    )
+  })
+
+  it('should return error if no deserialiser connected', async () => {
+    const MOCK_NODE_OPERATION: Node<OperationData> = {
+      id: 'node-id',
+      type: DataHubNodeType.OPERATION,
+      data: {
+        functionId: 'DataHub.transform',
+        formData: {
+          transform: ['the_function'],
+        },
+        metadata: {
+          isTerminal: false,
+          hasArguments: true,
+        },
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_NODE_FUNCTION: Node<FunctionData> = {
+      id: 'node-function',
+      type: DataHubNodeType.FUNCTION,
+      data: {
+        type: 'Javascript',
+        name: 'the_function',
+        version: 'v0.0',
+        sourceCode: 'const t=1',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_NODE_SERIAL: Node<SchemaData> = {
+      id: 'node-schema',
+      type: DataHubNodeType.SCHEMA,
+      data: {
+        type: SchemaType.JSON,
+        version: '1',
+        schemaSource: '{ t: 1}',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_STORE: WorkspaceState = {
+      nodes: [MOCK_NODE_SERIAL, MOCK_NODE_FUNCTION, MOCK_NODE_OPERATION],
+      edges: [
+        {
+          source: MOCK_NODE_FUNCTION.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'function',
+          id: '1',
+        },
+        {
+          source: MOCK_NODE_SERIAL.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'serialiser',
+          id: '2',
+        },
+      ],
+      functions: [],
+    }
+
+    const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
+    expect(results).toHaveLength(1)
+    const { node, data, error, resources } = results[0]
+    expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+    expect(resources).toBeUndefined()
+    expect(data).toBeUndefined()
+    expect(error).toEqual(
+      expect.objectContaining({
+        detail: 'No Schema connected to the "deserialiser" handle of Operation',
+        id: 'node-id',
+        title: 'OPERATION',
+        type: 'datahub.notConnected',
+      })
+    )
+  })
+
+  it('should return the payload otherwise', async () => {
+    const MOCK_NODE_OPERATION: Node<OperationData> = {
+      id: 'node-id',
+      type: DataHubNodeType.OPERATION,
+      data: {
+        functionId: 'DataHub.transform',
+        formData: {
+          transform: ['the_function'],
+        },
+        metadata: {
+          isTerminal: false,
+          hasArguments: true,
+        },
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_NODE_FUNCTION: Node<FunctionData> = {
+      id: 'node-function',
+      type: DataHubNodeType.FUNCTION,
+      data: {
+        type: 'Javascript',
+        name: 'the_function',
+        version: 'v0.0',
+        sourceCode: 'const t=1',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_NODE_SERIAL: Node<SchemaData> = {
+      id: 'node-schema',
+      type: DataHubNodeType.SCHEMA,
+      data: {
+        type: SchemaType.JSON,
+        version: '1',
+        schemaSource: '{ t: 1}',
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    const MOCK_STORE: WorkspaceState = {
+      nodes: [MOCK_NODE_SERIAL, MOCK_NODE_FUNCTION, MOCK_NODE_OPERATION],
+      edges: [
+        {
+          source: MOCK_NODE_FUNCTION.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'function',
+          id: '1',
+        },
+        {
+          source: MOCK_NODE_SERIAL.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'serialiser',
+          id: '2',
+        },
+        {
+          source: MOCK_NODE_SERIAL.id,
+          sourceHandle: 'source',
+          target: MOCK_NODE_OPERATION.id,
+          targetHandle: 'deserialiser',
+          id: '3',
+        },
+      ],
+      functions: [],
+    }
+
+    const results = checkValidityTransformFunction(MOCK_NODE_OPERATION, MOCK_STORE)
+    expect(results).toHaveLength(3)
+
+    {
+      const { node, data, error, resources } = results[0]
+      expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+      expect(error).toBeUndefined()
+      expect(resources).toBeUndefined()
+      expect(data).toEqual(
+        expect.objectContaining({
+          arguments: {
+            schemaId: 'node-schema',
+            schemaVersion: 1,
+          },
+          functionId: 'Serdes.deserialize',
+          id: 'node-id-deserializer',
+        })
+      )
+    }
+    {
+      const { node, data, error, resources } = results[2]
+      expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+      expect(error).toBeUndefined()
+      expect(resources).toBeUndefined()
+      expect(data).toEqual(
+        expect.objectContaining({
+          arguments: {
+            schemaId: 'node-schema',
+            schemaVersion: 1,
+          },
+          functionId: 'Serdes.serialize',
+          id: 'node-id-serializer',
+        })
+      )
+    }
+    {
+      const { node, data, error, resources } = results[1]
+      expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+      expect(error).toBeUndefined()
+      expect(resources).toHaveLength(2)
+      expect(data).toEqual(
+        expect.objectContaining({
+          arguments: {
+            transform: ['the_function'],
+          },
+          functionId: 'DataHub.transform',
+          id: 'node-id',
+        })
+      )
+    }
+  })
+})
