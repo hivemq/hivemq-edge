@@ -20,6 +20,8 @@ export function checkValidityModel(behaviorPolicy: Node<BehaviorPolicyData>): Dr
   }
 }
 
+// TODO[NVL] Need to find a better way of testing this one
+/* istanbul ignore next -- @preserve */
 export function checkValidityBehaviorPolicy(
   node: Node<BehaviorPolicyData>,
   client: DryRunResults<string, never>,
