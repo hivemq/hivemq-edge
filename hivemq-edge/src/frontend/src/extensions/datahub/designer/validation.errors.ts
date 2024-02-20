@@ -26,7 +26,7 @@ export const PolicyCheckErrors = {
   notConfigured: <T>(source: Node<T>, properties: string) => ({
     title: source.type as string,
     detail: i18n.t('datahub:error.dryRun.notConfigured', { source: source.type, properties: properties }),
-    type: 'datahub.cardinality',
+    type: 'datahub.notConfigured',
     ...commonProperties,
     id: source.id,
   }),

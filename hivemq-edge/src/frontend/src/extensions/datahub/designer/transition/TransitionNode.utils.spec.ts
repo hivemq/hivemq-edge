@@ -78,7 +78,7 @@ describe('checkValidityTransitions', () => {
         id: 'node-id',
         status: 404,
         title: 'TRANSITION',
-        type: 'datahub.cardinality',
+        type: 'datahub.notConfigured',
       })
     )
   })
