@@ -2,8 +2,20 @@ import { expect } from 'vitest'
 import { Node } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import { DataHubNodeType, FunctionData, OperationData, SchemaData, SchemaType, WorkspaceState } from '@datahub/types.ts'
-import { checkValidityTransformFunction } from '@datahub/designer/operation/OperationNode.utils.ts'
+import {
+  DataHubNodeType,
+  DataPolicyData,
+  FunctionData,
+  OperationData,
+  SchemaData,
+  SchemaType,
+  WorkspaceState,
+} from '@datahub/types.ts'
+import {
+  checkValidityPipeline,
+  checkValidityTransformFunction,
+  processOperations,
+} from '@datahub/designer/operation/OperationNode.utils.ts'
 
 describe('checkValidityTransformFunction', () => {
   it('should return error if not configured', async () => {
@@ -363,5 +375,149 @@ describe('checkValidityTransformFunction', () => {
         })
       )
     }
+  })
+})
+
+describe('checkValidityPipeline', () => {
+  it('should return empty pipeline if no operations connected', async () => {
+    const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
+      id: 'node-id',
+      type: DataHubNodeType.DATA_POLICY,
+      data: {},
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const MOCK_STORE: WorkspaceState = {
+      nodes: [],
+      edges: [],
+      functions: [],
+    }
+
+    const results = checkValidityPipeline(MOCK_NODE_DATA_POLICY, DataPolicyData.Handle.ON_SUCCESS, MOCK_STORE)
+    expect(results).toHaveLength(0)
+  })
+
+  it('should return checked elements otherwise', async () => {
+    const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
+      id: 'node-id',
+      type: DataHubNodeType.DATA_POLICY,
+      data: {},
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const MOCK_STORE: WorkspaceState = {
+      nodes: [],
+      edges: [],
+      functions: [],
+    }
+
+    const results = checkValidityPipeline(MOCK_NODE_DATA_POLICY, DataPolicyData.Handle.ON_SUCCESS, MOCK_STORE)
+    expect(results).toHaveLength(0)
+  })
+})
+
+describe('processOperations', () => {
+  const MOCK_STORE: WorkspaceState = {
+    nodes: [],
+    edges: [],
+    functions: [],
+  }
+
+  it('should return error if not configured', async () => {
+    const MOCK_NODE_OPERATION: Node<OperationData> = {
+      id: 'node-id',
+      type: DataHubNodeType.OPERATION,
+      data: {
+        functionId: undefined,
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const results = processOperations(MOCK_STORE)([], MOCK_NODE_OPERATION)
+    expect(results).toHaveLength(1)
+    const { node, error, data, resources } = results[0]
+    expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+
+    expect(resources).toBeUndefined()
+    expect(data).toBeUndefined()
+    expect(error).toEqual({
+      detail: 'The Operation is not properly defined. The following properties are missing: functionId',
+      id: 'node-id',
+      status: 404,
+      title: 'OPERATION',
+      type: 'datahub.notConfigured',
+    })
+  })
+
+  it('should process transformation function', async () => {
+    const MOCK_NODE_OPERATION: Node<OperationData> = {
+      id: 'node-id',
+      type: DataHubNodeType.OPERATION,
+      data: {
+        functionId: 'DataHub.transform',
+        formData: {
+          transform: ['the_function'],
+        },
+        metadata: {
+          isTerminal: false,
+          hasArguments: true,
+        },
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const results = processOperations(MOCK_STORE)([], MOCK_NODE_OPERATION)
+    expect(results).toHaveLength(1)
+    const { node, error, data, resources } = results[0]
+    expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+
+    expect(resources).toBeUndefined()
+    expect(data).toBeUndefined()
+    expect(error).toStrictEqual({
+      detail: 'No JS Function connected to Operation',
+      id: 'node-id',
+      status: 404,
+      title: 'OPERATION',
+      type: 'datahub.notConnected',
+    })
+  })
+
+  it('should return the operation payload otherwise', async () => {
+    const MOCK_NODE_OPERATION: Node<OperationData> = {
+      id: 'node-id',
+      type: DataHubNodeType.OPERATION,
+      data: {
+        functionId: 'System.Log',
+        formData: {
+          level: 'DEBUG',
+          message: 'test the message',
+        },
+        metadata: {
+          isTerminal: false,
+        },
+      },
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const results = processOperations(MOCK_STORE)([], MOCK_NODE_OPERATION)
+    expect(results).toHaveLength(1)
+    const { node, error, data, resources } = results[0]
+    expect(node).toStrictEqual(MOCK_NODE_OPERATION)
+
+    expect(resources).toBeUndefined()
+    expect(data).toEqual({
+      arguments: {
+        level: 'DEBUG',
+        message: 'test the message',
+      },
+      functionId: 'System.Log',
+      id: 'node-id',
+    })
+    expect(error).toBeUndefined()
   })
 })
