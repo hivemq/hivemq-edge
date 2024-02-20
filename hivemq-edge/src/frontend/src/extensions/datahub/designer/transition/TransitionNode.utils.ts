@@ -35,7 +35,7 @@ export function checkValidityTransitions(
     if (!transition.data.event || !transition.data.from || !transition.data.to) {
       return {
         node: transition,
-        error: PolicyCheckErrors.notConfigured(transition, 'type, version'),
+        error: PolicyCheckErrors.notConfigured(transition, 'event, from, to'),
       }
     }
 
