@@ -8,6 +8,7 @@ import {
   DataHubNodeType,
   DataPolicyData,
   OperationData,
+  PolicyDryRunStatus,
   SchemaData,
   SchemaType,
   StrategyType,
@@ -15,6 +16,7 @@ import {
   ValidatorData,
   ValidatorType,
 } from '../types.ts'
+import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
 
 export const getNodeId = () => `node_${self.crypto.randomUUID()}`
 
@@ -98,4 +100,22 @@ export const isValidPolicyConnection = (connection: Connection, nodes: Node[]) =
 
     return destination?.type === elt
   })
+}
+
+/* istanbul ignore next -- @preserve */
+export const getDryRunStatusIcon = (state?: PolicyDryRunStatus) => {
+  switch (state) {
+    case PolicyDryRunStatus.IDLE: {
+      return RiPassPendingLine
+    }
+    case PolicyDryRunStatus.SUCCESS: {
+      return RiPassValidLine
+    }
+    case PolicyDryRunStatus.FAILURE: {
+      return RiPassExpiredLine
+    }
+    default: {
+      return RiPassPendingLine
+    }
+  }
 }

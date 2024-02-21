@@ -2,9 +2,9 @@ import { FC, ReactNode, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NodeProps } from 'reactflow'
 import { Avatar, BoxProps, Card, CardBody, CardBodyProps, HStack } from '@chakra-ui/react'
-import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
 
 import { DataHubNodeData, PolicyDryRunStatus } from '@datahub/types.ts'
+import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
 
 interface NodeWrapperProps extends NodeProps<DataHubNodeData> {
   children: ReactNode
@@ -17,12 +17,7 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, route, w
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
-  const CheckIcon = useMemo(() => {
-    if (data.dryRunStatus === PolicyDryRunStatus.IDLE) return RiPassPendingLine
-    if (data.dryRunStatus === PolicyDryRunStatus.SUCCESS) return RiPassValidLine
-    if (data.dryRunStatus === PolicyDryRunStatus.FAILURE) return RiPassExpiredLine
-    return RiPassPendingLine
-  }, [data.dryRunStatus])
+  const CheckIcon = useMemo(() => getDryRunStatusIcon(data.dryRunStatus), [data])
 
   useEffect(() => {
     if (!selected) setInternalSelection(false)
