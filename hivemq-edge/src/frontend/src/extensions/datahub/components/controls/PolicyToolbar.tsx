@@ -51,18 +51,18 @@ export const PolicyToolbar: FC<ActionPolicyCheckProps> = (props) => {
           const status = errors.length ? 'warning' : 'success'
 
           return {
+            ...TOAST_DEFAULTS,
             title: t('workspace.dryRun.report.success.title', { context: status }),
             status: status,
             description: (
               <PolicyErrorReport
                 errors={errors}
                 onFitView={(id) => {
-                  const errorNode = nodes.find((e) => e.id === id)
+                  const errorNode = nodes.find((node) => node.id === id)
                   if (errorNode) fitView({ nodes: [errorNode], padding: 3, duration: 800 })
                 }}
               />
             ),
-            ...TOAST_DEFAULTS,
             onCloseComplete: () => {
               nodes.forEach((node) => {
                 onUpdateNodes<DataHubNodeData>(node.id, {
@@ -73,14 +73,14 @@ export const PolicyToolbar: FC<ActionPolicyCheckProps> = (props) => {
             },
           }
         },
-        error: (e) => {
+        error: (error) => {
           setState(PolicyDryRunStatus.FAILURE)
-          return { title: t('workspace.dryRun.report.error.title'), description: e.toString(), ...TOAST_DEFAULTS }
+          return { ...TOAST_DEFAULTS, title: t('workspace.dryRun.report.error.title'), description: error.toString() }
         },
         loading: {
+          ...TOAST_DEFAULTS,
           title: t('workspace.dryRun.report.loading.title'),
           description: t('workspace.dryRun.report.loading.description'),
-          ...TOAST_DEFAULTS,
           isClosable: false,
         },
       })
