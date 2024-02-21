@@ -81,7 +81,6 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceAction>()(
           }),
         })
       },
-
       onAddFunctions: (changes: FunctionSpecs[]) => {
         set({ functions: [...get().functions, ...changes] })
       },

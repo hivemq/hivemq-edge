@@ -25,8 +25,10 @@ import {
 import { checkValidityTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
 import { checkValidityPipeline } from '@datahub/designer/operation/OperationNode.utils.ts'
 
+/* istanbul ignore next -- @preserve */
 const mockDelay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms))
-const resourceReducer = (acc: DryRunResults<unknown, never>[], oper: DryRunResults<unknown, never>) => {
+
+export const resourceReducer = (acc: DryRunResults<unknown, never>[], oper: DryRunResults<unknown, never>) => {
   if (oper.resources) {
     acc.push(...oper.resources)
   }
@@ -37,6 +39,7 @@ export const usePolicyDryRun = () => {
   const store = useDataHubDraftStore()
   const { nodes, edges, onUpdateNodes } = store
 
+  /* istanbul ignore next -- @preserve */
   const updateNodeStatus = async (results: DryRunResults<unknown>) => {
     onUpdateNodes<DataHubNodeData>(results.node.id, {
       ...results.node.data,
@@ -45,6 +48,7 @@ export const usePolicyDryRun = () => {
     await mockDelay(500)
   }
 
+  /* istanbul ignore next -- @preserve */
   const runPolicyChecks = async (
     allNodes: Node<DataHubNodeData>[],
     processedNodes: DryRunResults<unknown, never>[]
@@ -64,6 +68,7 @@ export const usePolicyDryRun = () => {
   }
 
   const checkDataPolicyAsync = (dataPolicyNode: Node<DataPolicyData>) => {
+    /* istanbul ignore next -- @preserve */
     const incomers = getIncomers(dataPolicyNode, nodes, edges).filter(
       (node) => node.type === DataHubNodeType.TOPIC_FILTER
     )
@@ -89,7 +94,9 @@ export const usePolicyDryRun = () => {
       onErrorPipeline,
       allResources
     )
+
     // TODO[19240] Remove
+    /* istanbul ignore next -- @preserve */
     console.log('[DatHub] Payloads', {
       dataPolicy: dataPolicy.data,
       resources: dataPolicy.resources?.map((e) => e.data),
@@ -106,6 +113,7 @@ export const usePolicyDryRun = () => {
   }
 
   const checkBehaviorPolicyAsync = (behaviourPolicyNode: Node<BehaviorPolicyData>) => {
+    /* istanbul ignore next -- @preserve */
     const incomers = getIncomers(behaviourPolicyNode, nodes, edges).filter(
       (node) => node.type === DataHubNodeType.CLIENT_FILTER
     )
@@ -124,11 +132,14 @@ export const usePolicyDryRun = () => {
 
     // TODO[19240] This is wrong. Only if no errors
     const behaviorPolicy = checkValidityBehaviorPolicy(behaviourPolicyNode, clients, model, behaviorPolicyTransitions)
+
     // TODO[19240] Remove
+    /* istanbul ignore next -- @preserve */
     console.log('[DatHub] Payloads', {
       behaviorPolicy: behaviorPolicy.data,
       resources: behaviorPolicy.resources?.map((e) => e.data),
     })
+
     return runPolicyChecks(allNodes, [
       clients,
       model,

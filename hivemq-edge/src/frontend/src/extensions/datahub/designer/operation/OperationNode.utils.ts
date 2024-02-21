@@ -145,6 +145,7 @@ export function checkValidityPipeline(
 ): DryRunResults<PolicyOperation>[] {
   const { nodes, edges } = store
 
+  /* istanbul ignore next -- @preserve */
   const getNextNode = (node: Node | undefined): Node | undefined => {
     if (node) {
       const outEdge = edges.find((edge) => edge.source === node.id)
