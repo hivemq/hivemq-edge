@@ -14,13 +14,13 @@ import {
 import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 import { useTranslation } from 'react-i18next'
 
-interface CheckPolicyReportToastProps {
+interface PolicyErrorReportProps {
   errors: ProblemDetailsExtended[]
   onFitView?: (id: string) => void
   openConfig?: (id: string) => void
 }
 
-const CheckPolicyReportToast: FC<CheckPolicyReportToastProps> = ({ errors, onFitView, openConfig }) => {
+const PolicyErrorReport: FC<PolicyErrorReportProps> = ({ errors, onFitView, openConfig }) => {
   const { t } = useTranslation('datahub')
   const status = errors.length ? 'warning' : 'success'
 
@@ -61,4 +61,4 @@ const CheckPolicyReportToast: FC<CheckPolicyReportToastProps> = ({ errors, onFit
   )
 }
 
-export default CheckPolicyReportToast
+export default PolicyErrorReport
