@@ -1,8 +1,7 @@
 import { FC, useMemo, useState } from 'react'
-import { Button, ButtonGroup, Card, CardFooter, Icon, useToast, UseToastOptions } from '@chakra-ui/react'
 import { NodeProps, useReactFlow } from 'reactflow'
-
-import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
+import { useTranslation } from 'react-i18next'
+import { Button, ButtonGroup, Card, CardFooter, Icon, useToast, UseToastOptions } from '@chakra-ui/react'
 import { MdOutlineDeleteForever, MdOutlineSave } from 'react-icons/md'
 
 import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
@@ -11,7 +10,7 @@ import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import CheckPolicyReportToast from '@datahub/components/helpers/CheckPolicyReportToast.tsx'
 import { BehaviorPolicyData, DataHubNodeData, DataPolicyData, PolicyDryRunStatus } from '@datahub/types.ts'
 import { usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
-import { useTranslation } from 'react-i18next'
+import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
 
 interface ActionPolicyCheckProps {
   node: NodeProps<DataPolicyData | BehaviorPolicyData>
@@ -88,12 +87,7 @@ export const PolicyToolbar: FC<ActionPolicyCheckProps> = (props) => {
     }
   }
 
-  const CheckIcon = useMemo(() => {
-    if (state === PolicyDryRunStatus.IDLE) return RiPassPendingLine
-    if (state === PolicyDryRunStatus.SUCCESS) return RiPassValidLine
-    if (state === PolicyDryRunStatus.FAILURE) return RiPassExpiredLine
-    return RiPassPendingLine
-  }, [state])
+  const CheckIcon = useMemo(() => getDryRunStatusIcon(state), [state])
 
   return (
     <Card boxShadow="dark-lg" rounded="md" bg="white" transform="translate(0,-24px)">
