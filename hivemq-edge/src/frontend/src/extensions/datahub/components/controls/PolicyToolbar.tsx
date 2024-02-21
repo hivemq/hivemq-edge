@@ -7,7 +7,7 @@ import { MdOutlineDeleteForever, MdOutlineSave } from 'react-icons/md'
 import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-import CheckPolicyReportToast from '@datahub/components/helpers/CheckPolicyReportToast.tsx'
+import PolicyErrorReport from '@datahub/components/helpers/PolicyErrorReport.tsx'
 import { BehaviorPolicyData, DataHubNodeData, DataPolicyData, PolicyDryRunStatus } from '@datahub/types.ts'
 import { usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
 import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
@@ -54,7 +54,7 @@ export const PolicyToolbar: FC<ActionPolicyCheckProps> = (props) => {
             title: t('workspace.dryRun.report.success.title', { context: status }),
             status: status,
             description: (
-              <CheckPolicyReportToast
+              <PolicyErrorReport
                 errors={errors}
                 onFitView={(id) => {
                   const errorNode = nodes.find((e) => e.id === id)
