@@ -1,16 +1,10 @@
 import { getIncomers, Node } from 'reactflow'
 
 import { DataPolicyValidator, Schema, SchemaReference } from '@/api/__generated__'
-import {
-  DataHubNodeType,
-  DataPolicyData,
-  DryRunResults,
-  SchemaData,
-  ValidatorData,
-  WorkspaceState,
-} from '@datahub/types.ts'
+import { DataHubNodeType, DataPolicyData, DryRunResults, ValidatorData, WorkspaceState } from '@datahub/types.ts'
 import { checkValiditySchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
+import { isSchemaNodeType, isValidatorNodeType } from '@datahub/utils/node.utils.ts'
 
 export function checkValidityPolicyValidator(
   validator: Node<ValidatorData>,
@@ -18,9 +12,7 @@ export function checkValidityPolicyValidator(
 ): DryRunResults<DataPolicyValidator, Schema> {
   const { nodes, edges } = store
 
-  const schemas = getIncomers(validator, nodes, edges).filter(
-    (node) => node.type === DataHubNodeType.SCHEMA
-  ) as Node<SchemaData>[]
+  const schemas = getIncomers(validator, nodes, edges).filter(isSchemaNodeType)
 
   if (!schemas.length) {
     return {
@@ -45,9 +37,7 @@ export function checkValidityPolicyValidators(
 ): DryRunResults<DataPolicyValidator>[] {
   const { nodes, edges } = store
 
-  const incomers = getIncomers(dataPolicyNode, nodes, edges).filter(
-    (node) => node.type === DataHubNodeType.VALIDATOR
-  ) as Node<ValidatorData>[]
+  const incomers = getIncomers(dataPolicyNode, nodes, edges).filter(isValidatorNodeType)
 
   if (!incomers.length) {
     return [

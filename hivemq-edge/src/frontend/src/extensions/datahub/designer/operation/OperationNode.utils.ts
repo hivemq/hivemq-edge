@@ -5,15 +5,14 @@ import {
   DataHubNodeType,
   DataPolicyData,
   DryRunResults,
-  FunctionData,
   OperationData,
-  SchemaData,
   TransitionData,
   WorkspaceState,
 } from '@datahub/types.ts'
 import { checkValidityJSScript } from '@datahub/designer/script/FunctionNode.utils.ts'
 import { checkValiditySchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
+import { isFunctionNodeType, isSchemaNodeType } from '@datahub/utils/node.utils.ts'
 
 export function checkValidityTransformFunction(
   operationNode: Node<OperationData>,
@@ -31,9 +30,7 @@ export function checkValidityTransformFunction(
   }
 
   ///////// Check the function handle
-  const functions = getIncomers(operationNode, nodes, edges).filter(
-    (node) => node.type === DataHubNodeType.FUNCTION
-  ) as Node<FunctionData>[]
+  const functions = getIncomers(operationNode, nodes, edges).filter(isFunctionNodeType)
 
   if (!functions.length) {
     return [
@@ -45,9 +42,7 @@ export function checkValidityTransformFunction(
   }
 
   ///////// Check the serializers
-  const serialisers = getIncomers(operationNode, nodes, edges).filter(
-    (node) => node.type === DataHubNodeType.SCHEMA
-  ) as Node<SchemaData>[]
+  const serialisers = getIncomers(operationNode, nodes, edges).filter(isSchemaNodeType)
 
   const connectedEdges = getConnectedEdges([...serialisers], edges).filter(
     (e) => e.targetHandle === OperationData.Handle.SERIALISER || e.targetHandle === OperationData.Handle.DESERIALISER

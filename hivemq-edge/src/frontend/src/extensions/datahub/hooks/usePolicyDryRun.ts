@@ -24,6 +24,7 @@ import {
 } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
 import { checkValidityTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
 import { checkValidityPipeline } from '@datahub/designer/operation/OperationNode.utils.ts'
+import { isClientFilterNodeType, isTopicFilterNodeType } from '@datahub/utils/node.utils.ts'
 
 /* istanbul ignore next -- @preserve */
 const mockDelay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -68,10 +69,7 @@ export const usePolicyDryRun = () => {
   }
 
   const checkDataPolicyAsync = (dataPolicyNode: Node<DataPolicyData>) => {
-    /* istanbul ignore next -- @preserve */
-    const incomers = getIncomers(dataPolicyNode, nodes, edges).filter(
-      (node) => node.type === DataHubNodeType.TOPIC_FILTER
-    )
+    const incomers = getIncomers(dataPolicyNode, nodes, edges).filter(isTopicFilterNodeType)
     const allNodes = getSubFlow(dataPolicyNode, [dataPolicyNode, ...incomers], store) as Node<DataHubNodeData>[]
     const reducedStore = { ...store, nodes: allNodes }
 
@@ -114,9 +112,7 @@ export const usePolicyDryRun = () => {
 
   const checkBehaviorPolicyAsync = (behaviourPolicyNode: Node<BehaviorPolicyData>) => {
     /* istanbul ignore next -- @preserve */
-    const incomers = getIncomers(behaviourPolicyNode, nodes, edges).filter(
-      (node) => node.type === DataHubNodeType.CLIENT_FILTER
-    )
+    const incomers = getIncomers(behaviourPolicyNode, nodes, edges).filter(isClientFilterNodeType)
     const allNodes = getSubFlow(
       behaviourPolicyNode,
       [behaviourPolicyNode, ...incomers],

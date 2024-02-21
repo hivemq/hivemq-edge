@@ -1,8 +1,9 @@
 import { getIncomers, getOutgoers, Node } from 'reactflow'
 
 import { DataPolicy, DataPolicyValidator, PolicyOperation } from '@/api/__generated__'
-import { DataHubNodeType, DataPolicyData, DryRunResults, TopicFilterData, WorkspaceState } from '@datahub/types.ts'
+import { DataHubNodeType, DataPolicyData, DryRunResults, WorkspaceState } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
+import { isTopicFilterNodeType } from '@datahub/utils/node.utils.ts'
 
 /* istanbul ignore next -- @preserve */
 export function getSubFlow(source: Node, acc: Node[], store: WorkspaceState, only = false) {
@@ -48,9 +49,7 @@ export function checkValidityFilter(
 ): DryRunResults<string> {
   const { nodes, edges } = store
 
-  const incomers = getIncomers(dataPolicyNode, nodes, edges).filter(
-    (node) => node.type === DataHubNodeType.TOPIC_FILTER
-  ) as Node<TopicFilterData>[]
+  const incomers = getIncomers(dataPolicyNode, nodes, edges).filter(isTopicFilterNodeType)
 
   if (!incomers.length) {
     return {

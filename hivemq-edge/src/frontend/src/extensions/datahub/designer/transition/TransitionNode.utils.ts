@@ -4,6 +4,7 @@ import { BehaviorPolicyData, DataHubNodeType, DryRunResults, TransitionData, Wor
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { BehaviorPolicyOnTransition, PolicyOperation } from '@/api/__generated__'
 import { checkValidityPipeline } from '@datahub/designer/operation/OperationNode.utils.ts'
+import { isTransitionNodeType } from '@datahub/utils/node.utils.ts'
 
 export function checkValidityTransitions(
   behaviorPolicyData: Node<BehaviorPolicyData>,
@@ -14,9 +15,7 @@ export function checkValidityTransitions(
 } {
   const { nodes, edges } = store
 
-  const transitions = getOutgoers(behaviorPolicyData, nodes, edges).filter(
-    (node) => node.type === DataHubNodeType.TRANSITION
-  ) as Node<TransitionData>[]
+  const transitions = getOutgoers(behaviorPolicyData, nodes, edges).filter(isTransitionNodeType)
 
   if (!transitions.length) {
     return {

@@ -1,7 +1,8 @@
 import { getIncomers, Node } from 'reactflow'
 
-import { BehaviorPolicyData, ClientFilterData, DataHubNodeType, DryRunResults, WorkspaceState } from '@datahub/types.ts'
+import { BehaviorPolicyData, DataHubNodeType, DryRunResults, WorkspaceState } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
+import { isClientFilterNodeType } from '@datahub/utils/node.utils.ts'
 
 export function checkValidityClients(
   dataPolicyNode: Node<BehaviorPolicyData>,
@@ -9,9 +10,7 @@ export function checkValidityClients(
 ): DryRunResults<string> {
   const { nodes, edges } = store
 
-  const clients = getIncomers(dataPolicyNode, nodes, edges).filter(
-    (node) => node.type === DataHubNodeType.CLIENT_FILTER
-  ) as Node<ClientFilterData>[]
+  const clients = getIncomers(dataPolicyNode, nodes, edges).filter(isClientFilterNodeType)
 
   if (!clients.length) {
     return {

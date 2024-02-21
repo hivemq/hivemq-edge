@@ -7,12 +7,14 @@ import {
   DataHubNodeData,
   DataHubNodeType,
   DataPolicyData,
+  FunctionData,
   OperationData,
   PolicyDryRunStatus,
   SchemaData,
   SchemaType,
   StrategyType,
   TopicFilterData,
+  TransitionData,
   ValidatorData,
   ValidatorType,
 } from '../types.ts'
@@ -119,3 +121,18 @@ export const getDryRunStatusIcon = (state?: PolicyDryRunStatus) => {
     }
   }
 }
+
+export const isTopicFilterNodeType = (node: Node): node is Node<TopicFilterData> =>
+  node.type === DataHubNodeType.TOPIC_FILTER
+
+export const isClientFilterNodeType = (node: Node): node is Node<ClientFilterData> =>
+  node.type === DataHubNodeType.CLIENT_FILTER
+
+export const isSchemaNodeType = (node: Node): node is Node<SchemaData> => node.type === DataHubNodeType.SCHEMA
+
+export const isFunctionNodeType = (node: Node): node is Node<FunctionData> => node.type === DataHubNodeType.FUNCTION
+
+export const isValidatorNodeType = (node: Node): node is Node<ValidatorData> => node.type === DataHubNodeType.VALIDATOR
+
+export const isTransitionNodeType = (node: Node): node is Node<TransitionData> =>
+  node.type === DataHubNodeType.TRANSITION
