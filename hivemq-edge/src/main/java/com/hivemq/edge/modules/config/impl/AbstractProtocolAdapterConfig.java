@@ -23,6 +23,8 @@ import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * @author Simon L Johnson
  */
@@ -84,11 +86,17 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
                            defaultValue = "true")
         private @Nullable Boolean includeTimestamp = Boolean.TRUE;
 
-        @JsonProperty(value = "includeTagNames", required = false)
+        @JsonProperty(value = "includeTagNames")
         @ModuleConfigField(title = "Include Tag Names In Publish?",
                            description = "Include the names of the tags in the resulting MQTT publish",
                            defaultValue = "false")
         private @Nullable Boolean includeTagNames = Boolean.FALSE;
+
+        @JsonProperty(value = "userProperties")
+        @ModuleConfigField(title = "User Properties",
+                           description = "Arbitrary properties to associate with the subscription",
+                           arrayMaxItems = 10)
+        private @Nullable List<UserProperty> userProperties;
 
         public Subscription() {
         }
@@ -96,9 +104,11 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
         @JsonCreator
         public Subscription(
                 @JsonProperty("destination") @Nullable final String destination,
-                @JsonProperty("qos") final int qos) {
+                @JsonProperty("qos") final int qos,
+                @JsonProperty("userProperties") List<UserProperty> userProperties) {
             this.destination = destination;
             this.qos = qos;
+            this.userProperties = userProperties;
         }
 
         public String getDestination() {
@@ -120,8 +130,44 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
         public Boolean getIncludeTagNames() {
             return includeTagNames;
         }
+
+        public List<UserProperty> getUserProperties() {
+            return userProperties;
+        }
     }
 
+    public static class UserProperty {
+        @JsonProperty("propertyName")
+        @ModuleConfigField(title = "Property Name", description = "Username for basic authentication")
+        private @Nullable String propertyName = null;
 
+        @JsonProperty("propertyValue")
+        @ModuleConfigField(title = "Property Value", description = "Password for basic authentication")
+        private @Nullable String propertyValue = null;
+
+        public UserProperty() {
+        }
+
+        public UserProperty(@Nullable final String propertyName, @Nullable final String propertyValue) {
+            this.propertyName = propertyName;
+            this.propertyValue = propertyValue;
+        }
+
+        public String getPropertyName() {
+            return propertyName;
+        }
+
+        public void setPropertyName(final String propertyName) {
+            this.propertyName = propertyName;
+        }
+
+        public String getPropertyValue() {
+            return propertyValue;
+        }
+
+        public void setPropertyValue(final String propertyValue) {
+            this.propertyValue = propertyValue;
+        }
+    }
 
 }
