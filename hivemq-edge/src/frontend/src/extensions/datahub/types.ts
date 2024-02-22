@@ -28,6 +28,19 @@ export interface WorkspaceState {
   functions: FunctionSpecs[]
 }
 
+export interface WorkspaceAction {
+  reset: () => void
+  onNodesChange: OnNodesChange
+  onEdgesChange: OnEdgesChange
+  onConnect: (connection: Connection) => void
+  onAddNodes: (changes: NodeAddChange[]) => void
+  onAddEdges: (changes: EdgeAddChange[]) => void
+  onUpdateNodes: <T>(item: string, data: T) => void
+
+  onAddFunctions: (changes: FunctionSpecs[]) => void
+  onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => string | undefined
+}
+
 export interface PolicyCheckState {
   node?: Node
   status?: PolicyDryRunStatus
@@ -40,19 +53,6 @@ export interface PolicyCheckAction {
   initReport: () => void
   setReport: (report: DryRunResults<unknown, never>[]) => void
   getErrors: () => ProblemDetailsExtended[] | undefined
-}
-
-export interface WorkspaceAction {
-  reset: () => void
-  onNodesChange: OnNodesChange
-  onEdgesChange: OnEdgesChange
-  onConnect: (connection: Connection) => void
-  onAddNodes: (changes: NodeAddChange[]) => void
-  onAddEdges: (changes: EdgeAddChange[]) => void
-  onUpdateNodes: <T>(item: string, data: T) => void
-
-  onAddFunctions: (changes: FunctionSpecs[]) => void
-  onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => string | undefined
 }
 
 export enum PolicyType {
