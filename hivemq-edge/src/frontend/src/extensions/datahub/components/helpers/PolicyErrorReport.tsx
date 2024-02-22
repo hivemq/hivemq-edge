@@ -22,11 +22,9 @@ interface PolicyErrorReportProps {
 
 const PolicyErrorReport: FC<PolicyErrorReportProps> = ({ errors, onFitView, openConfig }) => {
   const { t } = useTranslation('datahub')
-  const status = errors.length ? 'warning' : 'success'
 
   return (
     <>
-      <Text as="span">{t('workspace.dryRun.report.success.description', { context: status })}</Text>
       <Accordion allowToggle overflow="auto" maxHeight="180px">
         {errors.map((problem, i) => {
           const { id, title, detail } = problem
@@ -42,7 +40,7 @@ const PolicyErrorReport: FC<PolicyErrorReportProps> = ({ errors, onFitView, open
               </h2>
               <AccordionPanel pb={4}>
                 <VStack alignItems="flex-start">
-                  <Text>{detail}</Text>
+                  <Text whiteSpace="normal">{detail}</Text>
                   <ButtonGroup alignItems="flex-start" size="sm">
                     <Button onClick={() => onFitView?.(id as string)}>
                       {t('workspace.dryRun.report.cta.highlight')}
