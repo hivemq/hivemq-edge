@@ -25,11 +25,7 @@ import { ToolboxNodes } from '@datahub/components/controls/ToolboxNodes.tsx'
 import ToolboxDryRun from '@datahub/components/controls/ToolboxDryRun.tsx'
 import { MdSkipNext, MdSkipPrevious } from 'react-icons/md'
 
-const steps = [
-  { title: 'Build', description: 'Add elements on the canvas' },
-  { title: 'Check', description: 'Verify your construction' },
-  { title: 'Publish', description: 'Publish your construction' },
-]
+const stepKeys = ['build', 'check', 'publish']
 
 const DesignerToolbox: FC = () => {
   const { t } = useTranslation('datahub')
@@ -37,8 +33,13 @@ const DesignerToolbox: FC = () => {
   const [hidden, setHidden] = useState(!isOpen)
   const { activeStep, setActiveStep } = useSteps({
     index: 0,
-    count: steps.length,
+    count: stepKeys.length,
   })
+
+  const steps = stepKeys.map((key) => ({
+    title: t(`workspace.toolbox.panel.${key}.title`),
+    description: t(`workspace.toolbox.panel.${key}.description`),
+  }))
 
   return (
     <Panel position="top-left" style={{ margin: '5px' }}>

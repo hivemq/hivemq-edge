@@ -1,9 +1,9 @@
 {
   "brand": {
-    "extension": "DataHub"
+    "extension": "Data Hub"
   },
   "navigation": {
-    "mainPage": "Datahub"
+    "mainPage": "Data Hub"
   },
   "page": {
     "title": "Data Hub",
@@ -39,6 +39,20 @@
       "aria-label": "Policy controls",
       "trigger_open": "Open the toolbox",
       "trigger_close": "Close the toolbox",
+      "panel": {
+        "build": {
+          "title": "Build",
+          "description": "Build your policy on the canvas"
+        },
+        "check": {
+          "title": "Check",
+          "description": "Check the validity of your policy"
+        },
+        "publish": {
+          "title": "Publish",
+          "description": "Publish your policy on your topology"
+        }
+      },
       "group": {
         "pipeline": "Pipeline",
         "dataPolicy": "Data Policy",
@@ -93,7 +107,7 @@
     "toolbar": {
       "policy": {
         "check": "Check",
-        "save": "Save",
+        "publish": "Publish",
         "delete": "Delete Policy"
       }
     },
@@ -134,7 +148,7 @@
       "select": "< not set >"
     },
     "notActivated": {
-      "title": "Datahub is now available to commercial licenses",
+      "title": "Data Hub is now available to commercial licenses",
       "description": "Please contact our sales team to gain access"
     },
     "notDefined": {
