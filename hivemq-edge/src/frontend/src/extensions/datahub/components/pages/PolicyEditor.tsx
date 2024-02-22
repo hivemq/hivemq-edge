@@ -1,13 +1,5 @@
 import React, { FC, useCallback, useMemo, useRef, useState } from 'react'
-import ReactFlow, {
-  Background,
-  BackgroundVariant,
-  Connection,
-  Node,
-  ReactFlowInstance,
-  ReactFlowProvider,
-  XYPosition,
-} from 'reactflow'
+import ReactFlow, { Connection, Node, ReactFlowInstance, ReactFlowProvider, XYPosition } from 'reactflow'
 import { Outlet, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
@@ -104,18 +96,6 @@ const PolicyEditor: FC = () => {
           isValidConnection={checkValidity}
           // onError={(id: string, message: string) => console.log('XXXXXX e', id, message)}
         >
-          <Background
-            id="1"
-            gap={25}
-            //color="var(--chakra-colors-gray-100)"
-            variant={BackgroundVariant.Cross}
-          />
-          <Background
-            id="2"
-            gap={100}
-            // color="var(--chakra-colors-gray-300)"
-            variant={BackgroundVariant.Lines}
-          />
           <Box role="toolbar" aria-label={t('workspace.aria-label') as string} aria-controls="edge-workspace-canvas">
             <DesignerToolbox />
             <CanvasControls />
