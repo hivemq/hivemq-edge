@@ -136,3 +136,9 @@ export const isValidatorNodeType = (node: Node): node is Node<ValidatorData> => 
 
 export const isTransitionNodeType = (node: Node): node is Node<TransitionData> =>
   node.type === DataHubNodeType.TRANSITION
+
+export const isDataPolicyNodeType = (node: Node): node is Node<DataPolicyData> =>
+  node.type === DataHubNodeType.DATA_POLICY
+
+export const isBehaviorPolicyNodeType = (node: Node): node is Node<BehaviorPolicyData> =>
+  node.type === DataHubNodeType.BEHAVIOR_POLICY
