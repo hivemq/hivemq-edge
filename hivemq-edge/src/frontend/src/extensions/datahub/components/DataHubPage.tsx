@@ -11,7 +11,6 @@ import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 const DataHubPage: FC = () => {
   const { t } = useTranslation('datahub')
   const hasDataHub = useGetCapability(CAPABILITY.DATAHUB)
-  // const navigate = useNavigate()
 
   return (
     <PageContainer title={t('page.title') as string} subtitle={t('page.description') as string}>
