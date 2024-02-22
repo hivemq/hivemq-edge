@@ -148,6 +148,11 @@
       "cardinality": "Too many $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
       "notConfigured": "The $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) is not properly defined. The following properties are missing: {{ properties }}"
     },
+    "publish": {
+      "title": "$t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) published",
+      "description": "We've created a new $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) for you.",
+      "error": "Error publishing $t(datahub:workspace.nodes.type, { 'context': '{{source}}' })"
+    },
     "noSet": {
       "select": "< not set >"
     },
