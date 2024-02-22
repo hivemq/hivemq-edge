@@ -39,6 +39,7 @@ const DesignerToolbox: FC = () => {
   })
 
   const steps = stepKeys.map((key) => ({
+    key: key,
     title: t(`workspace.toolbox.panel.${key}.title`),
     description: t(`workspace.toolbox.panel.${key}.description`),
   }))
@@ -86,6 +87,7 @@ const DesignerToolbox: FC = () => {
               {steps.map((step, index) => (
                 <VStack
                   key={index}
+                  data-testid={`toolbox-step-${step.key}`}
                   alignItems="flex-start"
                   p={2}
                   borderWidth={1}
