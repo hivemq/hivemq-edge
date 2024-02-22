@@ -2,7 +2,7 @@
 
 import { ReactFlowProvider } from 'reactflow'
 import { Route, Routes } from 'react-router-dom'
-import { Toolbox } from './Toolbox.tsx'
+import { ToolboxNodes } from './ToolboxNodes.tsx'
 
 describe('Toolbox', () => {
   beforeEach(() => {
@@ -13,7 +13,7 @@ describe('Toolbox', () => {
     cy.mountWithProviders(
       <ReactFlowProvider>
         <Routes>
-          <Route path="/node/:type/:nodeId" element={<Toolbox />}></Route>
+          <Route path="/node/:type/:nodeId" element={<ToolboxNodes />}></Route>
         </Routes>
       </ReactFlowProvider>,
       { routerProps: { initialEntries: ['/node/Unknown/1'] } }
