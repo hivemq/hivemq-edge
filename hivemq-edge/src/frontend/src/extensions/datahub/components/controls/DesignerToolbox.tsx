@@ -121,7 +121,7 @@ const DesignerToolbox: FC = () => {
                       </HStack>
                     )}
                   </Step>
-                  <StepTitle as="h2">{step.title}</StepTitle>
+                  {activeStep !== index && <StepTitle as="h2">{step.title}</StepTitle>}
 
                   {activeStep === index && (
                     <>
