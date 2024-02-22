@@ -20,9 +20,9 @@ import { PolicyType } from '@datahub/types.ts'
 import { CustomNodeTypes } from '@datahub/designer/mappings.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
-import { Toolbox } from '@datahub/components/controls/Toolbox.tsx'
 import CanvasControls from '@datahub/components/controls/CanvasControls.tsx'
 import Minimap from '@datahub/components/controls/Minimap.tsx'
+import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
 
 const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
@@ -117,7 +117,7 @@ const PolicyEditor: FC = () => {
             variant={BackgroundVariant.Lines}
           />
           <Box role="toolbar" aria-label={t('workspace.aria-label') as string} aria-controls="edge-workspace-canvas">
-            <Toolbox />
+            <DesignerToolbox />
             <CanvasControls />
             <Minimap />
           </Box>
