@@ -1,7 +1,5 @@
 /// <reference types="cypress" />
 
-import { ReactFlowProvider } from 'reactflow'
-import { Route, Routes } from 'react-router-dom'
 import { ToolboxNodes } from './ToolboxNodes.tsx'
 
 describe('Toolbox', () => {
@@ -10,21 +8,7 @@ describe('Toolbox', () => {
   })
 
   it('should render the toolbox', () => {
-    cy.mountWithProviders(
-      <ReactFlowProvider>
-        <Routes>
-          <Route path="/node/:type/:nodeId" element={<ToolboxNodes />}></Route>
-        </Routes>
-      </ReactFlowProvider>,
-      { routerProps: { initialEntries: ['/node/Unknown/1'] } }
-    )
-    cy.getByTestId('toolbox-trigger').should('have.attr', 'aria-expanded', 'false')
-    cy.getByTestId('toolbox-container').should('not.be.visible')
-
-    cy.getByTestId('toolbox-trigger').click()
-    cy.getByTestId('toolbox-trigger').should('have.attr', 'aria-expanded', 'true')
-    cy.getByTestId('toolbox-container').should('be.visible')
-    cy.getByTestId('toolbox-container').find('button').should('have.length', 9)
+    cy.mountWithProviders(<ToolboxNodes />)
 
     cy.getByAriaLabel('Policy controls').find('[role="group"]').as('policyControlsGroups')
 
