@@ -51,6 +51,6 @@ describe('ToolboxDryRun', () => {
     cy.mountWithProviders(<ToolboxDryRun />, { wrapper })
     cy.getByTestId('toolbox-policy-check').click()
     cy.checkAccessibility()
-    cy.percySnapshot('Component: LineChart')
+    cy.percySnapshot('Component: ToolboxDryRun')
   })
 })
