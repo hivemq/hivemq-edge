@@ -28,6 +28,20 @@ export interface WorkspaceState {
   functions: FunctionSpecs[]
 }
 
+export interface PolicyCheckState {
+  node?: Node
+  status?: PolicyDryRunStatus
+  report?: DryRunResults<unknown, never>[]
+}
+
+export interface PolicyCheckAction {
+  reset: () => void
+  setNode: (node: Node | undefined) => void
+  initReport: () => void
+  setReport: (report: DryRunResults<unknown, never>[]) => void
+  getErrors: () => ProblemDetailsExtended[] | undefined
+}
+
 export interface WorkspaceAction {
   reset: () => void
   onNodesChange: OnNodesChange
