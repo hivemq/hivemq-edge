@@ -24,39 +24,34 @@ export const getNodeId = () => `node_${self.crypto.randomUUID()}`
 
 export const getNodePayload = (type: string): DataHubNodeData => {
   if (type === DataHubNodeType.TOPIC_FILTER) {
-    const payload: TopicFilterData = {
+    return {
       topics: ['root/test1', 'root/test2'],
-    }
-    return payload
+    } as TopicFilterData
   }
   if (type === DataHubNodeType.CLIENT_FILTER) {
-    const payload: ClientFilterData = {
+    return {
       clients: ['client10', 'client20', 'client30'],
-    }
-    return payload
+    } as ClientFilterData
   }
 
   if (type === DataHubNodeType.VALIDATOR) {
-    const payload: ValidatorData = {
+    return {
       type: ValidatorType.SCHEMA,
       strategy: StrategyType.ALL_OF,
       schemas: [{ version: '1', schemaId: 'first mock schema' }],
-    }
-    return payload
+    } as ValidatorData
   }
   if (type === DataHubNodeType.OPERATION) {
-    const payload: OperationData = {
+    return {
       functionId: undefined,
-    }
-    return payload
+    } as OperationData
   }
   if (type === DataHubNodeType.SCHEMA) {
-    const payload: SchemaData = {
+    return {
       type: SchemaType.JSON,
       version: '1',
       schemaSource: MOCK_JSONSCHEMA_SCHEMA,
-    }
-    return payload
+    } as SchemaData
   }
   return {}
 }
