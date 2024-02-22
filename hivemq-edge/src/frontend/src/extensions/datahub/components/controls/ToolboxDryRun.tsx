@@ -64,6 +64,7 @@ export const ToolboxDryRun: FC = () => {
       <HStack>
         <Box>
           <Button
+            data-testid="toolbox-policy-check"
             leftIcon={<Icon as={CheckIcon} boxSize="24px" />}
             isLoading={status === PolicyDryRunStatus.RUNNING}
             loadingText={t('workspace.dryRun.toolbar.checking')}
@@ -77,7 +78,7 @@ export const ToolboxDryRun: FC = () => {
 
       {report && (
         <>
-          <Alert status={alertStatus}>
+          <Alert status={alertStatus} data-testid="toolbox-policy-check-status">
             <AlertIcon />
             <Box whiteSpace="normal">
               <AlertTitle> {t('workspace.dryRun.report.success.title', { context: alertStatus })}</AlertTitle>
