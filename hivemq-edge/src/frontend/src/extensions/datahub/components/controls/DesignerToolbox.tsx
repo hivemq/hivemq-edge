@@ -104,13 +104,15 @@ const DesignerToolbox: FC = () => {
                         </Box>
                         <ButtonGroup size="sm" isAttached>
                           <IconButton
-                            aria-label="df"
+                            data-testid="toolbox-navigation-prev"
+                            aria-label={t('workspace.toolbox.navigation.previous')}
                             icon={<MdSkipPrevious />}
                             isDisabled={activeStep === 0}
                             onClick={() => setActiveStep((s) => s - 1)}
                           />
                           <IconButton
-                            aria-label="df"
+                            data-testid="toolbox-navigation-next"
+                            aria-label={t('workspace.toolbox.navigation.next')}
                             icon={<MdSkipNext />}
                             isDisabled={activeStep === 2}
                             onClick={() => setActiveStep((s) => s + 1)}

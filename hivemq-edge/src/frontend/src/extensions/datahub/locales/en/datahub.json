@@ -53,6 +53,10 @@
           "description": "Publish your policy on your topology"
         }
       },
+      "navigation": {
+        "previous": "Previous step",
+        "next": "Next step"
+      },
       "group": {
         "pipeline": "Pipeline",
         "dataPolicy": "Data Policy",
