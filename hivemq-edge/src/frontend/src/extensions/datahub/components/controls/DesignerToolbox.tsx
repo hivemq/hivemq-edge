@@ -1,4 +1,7 @@
 import { FC, useState } from 'react'
+import { Panel } from 'reactflow'
+import { useTranslation } from 'react-i18next'
+import { motion } from 'framer-motion'
 import {
   Box,
   ButtonGroup,
@@ -18,12 +21,11 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { FaAngleLeft, FaAngleRight, FaTools } from 'react-icons/fa'
-import { Panel } from 'reactflow'
-import { useTranslation } from 'react-i18next'
-import { motion } from 'framer-motion'
-import { ToolboxNodes } from '@datahub/components/controls/ToolboxNodes.tsx'
-import ToolboxDryRun from '@datahub/components/controls/ToolboxDryRun.tsx'
 import { MdSkipNext, MdSkipPrevious } from 'react-icons/md'
+
+import { ToolboxNodes } from '@datahub/components/controls/ToolboxNodes.tsx'
+import { ToolboxDryRun } from '@datahub/components/controls/ToolboxDryRun.tsx'
+import { ToolboxPublish } from '@datahub/components/controls/ToolboxPublish.tsx'
 
 const stepKeys = ['build', 'check', 'publish']
 
@@ -42,7 +44,7 @@ const DesignerToolbox: FC = () => {
   }))
 
   return (
-    <Panel position="top-left" style={{ margin: '5px' }}>
+    <Panel position="top-left" style={{ margin: '4px' }}>
       <HStack alignItems="flex-start">
         <Box>
           <IconButton
@@ -124,6 +126,7 @@ const DesignerToolbox: FC = () => {
                       <Box pt={5} h="100%">
                         {activeStep === 0 && <ToolboxNodes />}
                         {activeStep === 1 && <ToolboxDryRun />}
+                        {activeStep === 2 && <ToolboxPublish />}
                       </Box>
                     </>
                   )}

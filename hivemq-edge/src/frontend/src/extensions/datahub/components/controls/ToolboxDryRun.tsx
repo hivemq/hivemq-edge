@@ -21,7 +21,7 @@ import PolicyErrorReport from '@datahub/components/helpers/PolicyErrorReport.tsx
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 
-const ToolboxDryRun: FC = () => {
+export const ToolboxDryRun: FC = () => {
   const { t } = useTranslation('datahub')
   const { checkPolicyAsync } = usePolicyDryRun()
   const { fitView } = useReactFlow()
@@ -99,5 +99,3 @@ const ToolboxDryRun: FC = () => {
     </Stack>
   )
 }
-
-export default ToolboxDryRun
