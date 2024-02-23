@@ -15,7 +15,11 @@
  */
 package com.hivemq.edge.modules.adapters.data;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * @author Simon L Johnson
@@ -24,12 +28,24 @@ public abstract class AbstractProtocolAdapterJsonPayload {
 
     private final Long timestamp;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private List<AbstractProtocolAdapterConfig.UserProperty> userProperties;
+
     public AbstractProtocolAdapterJsonPayload(final @Nullable Long timestamp) {
         this.timestamp = timestamp;
     }
 
+    @Nullable
     public Long getTimestamp() {
         return timestamp;
     }
 
+    @Nullable
+    public List<AbstractProtocolAdapterConfig.UserProperty> getUserProperties() {
+        return userProperties;
+    }
+
+    public void setUserProperties(final @Nullable List<AbstractProtocolAdapterConfig.UserProperty> userProperties) {
+        this.userProperties = userProperties;
+    }
 }

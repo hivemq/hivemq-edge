@@ -112,7 +112,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * @param data - The data you wish to wrap into the standard JSONB envelope
      * @return a valid JSON document encoded to UTF-8 with the supplied value wrapped as an attribute on the envelope
      */
-    public List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(final @NotNull ProtocolAdapterDataSample<?> data) {
+    public List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(final @NotNull ProtocolAdapterDataSample<T> data) {
         Preconditions.checkNotNull(data);
         List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
         //-- Only include the timestamp if the settings say so
@@ -124,9 +124,11 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
             list.add(createMultiPublishPayload(timestamp, data.getDataPoints(), data.getSubscription().getIncludeTagNames()));
         } else {
             //-- Put all derived samples into individual publish messages
-            data.getDataPoints().stream().map(dp ->
-                    createPublishPayload(timestamp, dp, data.getSubscription().getIncludeTagNames())).
-                    forEach(list::add);
+            data.getDataPoints().stream().
+                    map(dp ->
+                        createPublishPayload(timestamp, dp, data.getSubscription().getIncludeTagNames())).
+                    map(pp -> decoratePayloadMessage(data, pp)).
+            forEach(list::add);
         }
         return list;
     }
@@ -141,6 +143,13 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
 
     protected static TagSample createTagSample(final @NotNull ProtocolAdapterDataSample.DataPoint dataPoint, boolean includeTagName){
         return new TagSample(includeTagName ? dataPoint.getTagName() : null, dataPoint.getTagValue());
+    }
+
+    protected AbstractProtocolAdapterJsonPayload decoratePayloadMessage(ProtocolAdapterDataSample<T> sample, AbstractProtocolAdapterJsonPayload payload){
+        if(sample.getUserProperties() != null && !sample.getUserProperties().isEmpty()){
+            payload.setUserProperties(sample.getUserProperties());
+        }
+        return payload;
     }
 
     /**
