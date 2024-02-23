@@ -103,9 +103,14 @@ public class KeystoreUtil {
             final PrivateKey privateKey = (PrivateKey) keyStore.getKey(firstAlias, privateKeyPassword.toCharArray());
             final Certificate certificate = keyStore.getCertificate(firstAlias);
             final Certificate[] certificateChain = keyStore.getCertificateChain(firstAlias);
-            return new KeyPairWithChain(privateKey,
-                    (X509Certificate) certificate,
-                    (X509Certificate[]) certificateChain);
+
+            final X509Certificate certificateX509 = (X509Certificate) certificate;
+            final X509Certificate[] certificateChainX509 = new X509Certificate[certificateChain.length];
+            for (int i = 0; i < certificateChain.length; i++) {
+                certificateChainX509[i] = (X509Certificate) certificateChain[i];
+            }
+
+            return new KeyPairWithChain(privateKey, certificateX509, certificateChainX509);
         } catch (final UnrecoverableKeyException e1) {
             throw new SslException(
                     "Not able to recover key from KeyStore, please check your private-key-password and your keyStorePassword",

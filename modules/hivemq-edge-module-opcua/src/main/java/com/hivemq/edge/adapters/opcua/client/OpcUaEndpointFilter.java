@@ -56,7 +56,6 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
                     policyUri,
                     adapterConfig.getId());
             return false;
-
         }).min((o1, o2) -> {
             final OpcUaAdapterConfig.SecPolicy policy1 = OpcUaAdapterConfig.SecPolicy.forUri(o1.getSecurityPolicyUri());
             final OpcUaAdapterConfig.SecPolicy policy2 = OpcUaAdapterConfig.SecPolicy.forUri(o2.getSecurityPolicyUri());
