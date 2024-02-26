@@ -19,10 +19,13 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.google.common.base.Preconditions;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
@@ -37,30 +40,29 @@ import javax.ws.rs.ext.Provider;
 @Produces(MediaType.APPLICATION_JSON)
 public class JaxrsObjectMapperProvider extends JacksonJaxbJsonProvider {
 
-    private static ObjectMapper mapper = new ObjectMapper();
-    private ObjectMapper customMapper = new ObjectMapper();
-
-    static {
-        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-    }
+    private final @NotNull ObjectMapper customMapper;
 
     public JaxrsObjectMapperProvider() {
         super();
-        setMapper(mapper);
+        customMapper = JsonMapper.builder()
+                .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true)
+                .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .serializationInclusion(JsonInclude.Include.NON_NULL)
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .visibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
+                .build();
+        setMapper(customMapper);
     }
 
-    public JaxrsObjectMapperProvider(final ObjectMapper mapper) {
+    public JaxrsObjectMapperProvider(final @NotNull ObjectMapper mapper) {
         super();
         Preconditions.checkNotNull(mapper);
         this.customMapper = mapper;
         setMapper(customMapper);
     }
 
-    public ObjectMapper getMapper(){
-        return customMapper == null ? mapper : customMapper;
+    public @NotNull ObjectMapper getMapper() {
+        return customMapper;
     }
 }
