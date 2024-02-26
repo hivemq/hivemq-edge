@@ -491,7 +491,7 @@ describe('processOperations', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
-        functionId: 'System.Log',
+        functionId: 'System.log',
         formData: {
           level: 'DEBUG',
           message: 'test the message',
@@ -515,7 +515,7 @@ describe('processOperations', () => {
         level: 'DEBUG',
         message: 'test the message',
       },
-      functionId: 'System.Log',
+      functionId: 'System.log',
       id: 'node-id',
     })
     expect(error).toBeUndefined()
