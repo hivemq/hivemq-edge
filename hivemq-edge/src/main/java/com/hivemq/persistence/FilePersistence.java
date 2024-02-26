@@ -21,6 +21,9 @@ package com.hivemq.persistence;
  */
 public interface FilePersistence {
 
+
+    void postConstruct();
+
     /**
      * start a file persistence sequentially without monitoring.
      */
