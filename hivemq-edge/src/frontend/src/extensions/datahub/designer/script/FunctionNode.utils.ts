@@ -16,7 +16,6 @@ export function checkValidityJSScript(scriptNode: Node<FunctionData>): DryRunRes
     id: scriptNode.data.name,
     functionType: Script.functionType.TRANSFORMATION,
     source: scriptNode.data.sourceCode as string,
-    // @ts-ignore TODO[19475] Need to fix before merging!
     version: scriptNode.data.version,
   }
   return { data: script, node: scriptNode }

@@ -142,7 +142,7 @@ export enum SchemaType {
 
 export interface SchemaData extends DataHubNodeData {
   type: SchemaType
-  version: string
+  version: number
   schemaSource?: string
   core?: Schema
 }
@@ -150,7 +150,7 @@ export interface SchemaData extends DataHubNodeData {
 export interface FunctionData extends DataHubNodeData {
   type: 'Javascript'
   name: string
-  version: string
+  version: number
   sourceCode?: string
 }
 

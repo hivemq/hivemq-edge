@@ -82,7 +82,6 @@ export function checkValidityTransformFunction(
     arguments: {
       // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
       schemaId: serial.source,
-      // TODO[19475] Need to fix before merging!
       schemaVersion: 1,
     },
     id: `${operationNode.id}-deserializer`,
@@ -98,7 +97,6 @@ export function checkValidityTransformFunction(
     arguments: {
       // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
       schemaId: deserial.source,
-      // TODO[19475] Need to fix before merging!
       schemaVersion: 1,
     },
     id: `${operationNode.id}-serializer`,
