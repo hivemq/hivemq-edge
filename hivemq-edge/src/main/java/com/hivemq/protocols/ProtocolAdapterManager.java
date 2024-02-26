@@ -306,7 +306,7 @@ public class ProtocolAdapterManager {
                 } finally {
                     eventService.fireEvent(
                             eventBuilder(Event.SEVERITY.WARN, adapterInstance.get().getAdapter()).
-                            withMessage(String.format("Adapter \"%s\" Was Deleted From The System Permanently",
+                            withMessage(String.format("Adapter \"%s\" was deleted from the system permanently.",
                                     adapterInstance.get().getAdapter().getId())).build());
                 }
             }
