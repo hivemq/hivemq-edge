@@ -79,7 +79,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                                 installedAdapter,
                                 configurationService);
                     } catch (Throwable t) {
-                        logger.warn("Not able to properly load protocol adapter", t);
+                        if(logger.isWarnEnabled()){
+                            logger.warn("Not able to properly load protocol adapter.", t);
+                        }
                         return null;
                     }
                 }).filter(Objects::nonNull).collect(Collectors.toSet());
@@ -97,25 +99,21 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAdapters() {
-
         final List<Adapter> adapters = protocolAdapterManager.getProtocolAdapters()
                 .values()
                 .stream()
                 .map(this::convertToAdapter)
                 .collect(Collectors.toUnmodifiableList());
-
         return Response.status(200).entity(new AdaptersList(adapters)).build();
     }
 
     @Override
     public @NotNull Response getAdaptersForType(@NotNull final String adapterType) {
-
         Optional<ProtocolAdapterInformation> protocolAdapterType =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterType.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-
         final List<Adapter> adapters = protocolAdapterManager.getProtocolAdapters()
                 .values()
                 .stream()
@@ -129,7 +127,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response getAdapter(final @NotNull String adapterId) {
         Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
-        if (!instance.isPresent()) {
+        if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
         return Response.status(200).entity(convertToAdapter(instance.get())).build();
@@ -156,7 +154,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             @NotNull final String adapterId, final @Nullable String rootNode, final @Nullable Integer depth) {
 
         Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
-        if (!instance.isPresent()) {
+        if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
 
@@ -198,14 +196,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (protocolAdapterType.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter Type not found by adapterType");
         }
-
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapter.getId());
         if (instance.isPresent()) {
             ApiErrorUtils.addValidationError(errorMessages, "id", "Adapter ID must be unique in system");
             return ApiErrorUtils.badRequest(errorMessages);
         }
-
         validateAdapterSchema(errorMessages, adapter);
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ApiErrorUtils.badRequest(errorMessages);
@@ -218,19 +214,22 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         ((UnrecognizedPropertyException) e.getCause()).getPropertyName(),
                         "Unknown field on adapter configuration");
             }
-
             return ApiErrorUtils.badRequest(errorMessages);
         }
-
-        logger.info("Added protocol adapter of type {} with id {}", adapterType, adapter.getId());
+        if(logger.isDebugEnabled()){
+            logger.debug("Added protocol adapter of type {} with ID {}.", adapterType, adapter.getId());
+        }
         return Response.ok().build();
     }
 
     @Override
     public Response updateAdapter(final String adapterId, final Adapter adapter) {
         Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
-        if (!instance.isPresent()) {
+        if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Cannot update an adapter that does not exist");
+        }
+        if(logger.isDebugEnabled()){
+            logger.debug("Updating adapter \"{}\".", adapterId);
         }
         protocolAdapterManager.updateAdapter(adapterId, adapter.getConfig());
         return Response.ok().build();
@@ -239,10 +238,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public Response deleteAdapter(final String adapterId) {
         Optional<ProtocolAdapterWrapper> instance = protocolAdapterManager.getAdapterById(adapterId);
-        if (!instance.isPresent()) {
+        if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
-        logger.info("deleting adapter {}", adapterId);
+        if(logger.isDebugEnabled()){
+            logger.debug("Deleting adapter \"{}\".", adapterId);
+        }
         protocolAdapterManager.deleteAdapter(adapterId);
         return Response.ok().build();
     }
@@ -253,7 +254,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         ApiErrorUtils.validateRequiredField(errorMessages, "id", adapterId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", adapterId, HiveMQEdgeConstants.ID_REGEX);
         ApiErrorUtils.validateRequiredEntity(errorMessages, "command", command);
-        if (!protocolAdapterManager.getAdapterById(adapterId).isPresent()) {
+        if (protocolAdapterManager.getAdapterById(adapterId).isEmpty()) {
             return ApiErrorUtils.notFound(String.format("Adapter not found by id '%s'", adapterId));
         }
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
@@ -282,7 +283,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", adapterId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", adapterId, HiveMQEdgeConstants.ID_REGEX);
-        if (!protocolAdapterManager.getAdapterById(adapterId).isPresent()) {
+        if (protocolAdapterManager.getAdapterById(adapterId).isEmpty()) {
             return ApiErrorUtils.notFound(String.format("Adapter not found by id '%s'", adapterId));
         }
         if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
@@ -294,11 +295,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     protected Status getStatusInternal(final @NotNull String adapterId) {
         Optional<ProtocolAdapterWrapper> optionalAdapterInstance = protocolAdapterManager.getAdapterById(adapterId);
-        if (optionalAdapterInstance.isPresent()) {
-            return AdapterStatusModelConversionUtils.getAdapterStatus(optionalAdapterInstance.get().getAdapter());
-        } else {
-            return Status.unknown(Status.RUNTIME_STATUS.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId);
-        }
+        return optionalAdapterInstance.map(protocolAdapterWrapper ->
+                AdapterStatusModelConversionUtils.getAdapterStatus(protocolAdapterWrapper.getAdapter())).orElseGet(() -> Status.unknown(Status.RUNTIME_STATUS.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
     }
 
     protected void validateAdapterSchema(
@@ -321,8 +319,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         .getValidator()
                         .validateConfiguration(objectMapper, adapter.getConfig());
 
-        errors.stream()
-                .forEach(e -> ApiErrorUtils.addValidationError(apiErrorMessages, e.getFieldName(), e.getMessage()));
+        errors.forEach(e -> ApiErrorUtils.addValidationError(apiErrorMessages, e.getFieldName(), e.getMessage()));
     }
 
     @Override

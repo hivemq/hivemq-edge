@@ -38,5 +38,5 @@
     <logger name="com.hivemq" level="DEBUG"/>
     <logger name="jetbrains.exodus" level="WARN"/>
     <logger name="com.google.common.util.concurrent.Futures.CombinedFuture" level="OFF"/>
-
+    <logger name="org.apache.plc4x" level="WARN"/>
 </configuration>
