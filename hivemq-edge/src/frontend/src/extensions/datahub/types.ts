@@ -122,6 +122,11 @@ export enum StrategyType {
   ANY_OF = 'ANY_OF',
 }
 
+export interface SchemaArguments {
+  schemas: SchemaReference[]
+  strategy: StrategyType
+}
+
 export interface ValidatorData extends DataHubNodeData {
   type: ValidatorType
   strategy: StrategyType
