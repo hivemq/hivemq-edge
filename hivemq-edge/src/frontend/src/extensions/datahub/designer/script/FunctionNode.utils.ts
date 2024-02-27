@@ -15,7 +15,7 @@ export function checkValidityJSScript(scriptNode: Node<FunctionData>): DryRunRes
     // TODO[19466] Id should be user-facing; Need to fix before merging!
     id: scriptNode.data.name,
     functionType: Script.functionType.TRANSFORMATION,
-    source: scriptNode.data.sourceCode as string,
+    source: btoa(scriptNode.data.sourceCode),
     version: scriptNode.data.version,
   }
   return { data: script, node: scriptNode }
