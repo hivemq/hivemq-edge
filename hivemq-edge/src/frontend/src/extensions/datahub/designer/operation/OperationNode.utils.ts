@@ -82,8 +82,9 @@ export function checkValidityTransformFunction(
     arguments: {
       // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
       schemaId: serial.source,
-      schemaVersion: 1,
-    },
+      // TODO[19497] This is wrong!
+      schemaVersion: '1',
+    } as PolicyOperationArguments,
     id: `${operationNode.id}-deserializer`,
   }
   const operation: PolicyOperation = {
@@ -97,8 +98,9 @@ export function checkValidityTransformFunction(
     arguments: {
       // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
       schemaId: deserial.source,
-      schemaVersion: 1,
-    },
+      // TODO[19497] This is wrong!
+      schemaVersion: '1',
+    } as PolicyOperationArguments,
     id: `${operationNode.id}-serializer`,
   }
   return [
