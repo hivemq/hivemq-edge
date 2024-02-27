@@ -175,6 +175,11 @@ export interface FunctionSpecs {
   uiSchema?: UiSchema
 }
 
+export interface PolicyOperationArguments {
+  schemaId: string
+  schemaVersion: string
+}
+
 export interface OperationData extends DataHubNodeData {
   functionId?: string
   metadata?: FunctionDefinition
