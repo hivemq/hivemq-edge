@@ -58,7 +58,7 @@ describe('checkValidityPolicyValidator', () => {
       type: DataHubNodeType.SCHEMA,
       data: {
         type: SchemaType.JSON,
-        version: '1',
+        version: 1,
         schemaSource: '{}',
       },
       ...MOCK_DEFAULT_NODE,
@@ -140,7 +140,7 @@ describe('checkValidityPolicyValidators', () => {
       type: DataHubNodeType.SCHEMA,
       data: {
         type: SchemaType.JSON,
-        version: '1',
+        version: 1,
         schemaSource: '{}',
       },
       ...MOCK_DEFAULT_NODE,

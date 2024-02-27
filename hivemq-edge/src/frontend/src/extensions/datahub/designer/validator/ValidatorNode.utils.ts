@@ -33,8 +33,9 @@ export function checkValidityPolicyValidator(
     type: validator.data.type,
     // TODO[19466] Id should be user-facing; Need to fix before merging!
     // TODO[NVL] Arguments is not typed on the backend!
+    // TODO[NVL] Forcing the version to string is too awkward
     arguments: {
-      schemas: schemas.map<SchemaReference>((e) => ({ schemaId: e.id, version: e.data.version })),
+      schemas: schemas.map<SchemaReference>((e) => ({ schemaId: e.id, version: e.data.version.toString() })),
       strategy: validator.data.strategy,
     } as SchemaArguments,
   }

@@ -13,7 +13,7 @@ describe('checkValidityJSScript', () => {
       data: {
         type: 'Javascript',
         name: 'my-name',
-        version: '1',
+        version: 1,
       },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
@@ -41,7 +41,7 @@ describe('checkValidityJSScript', () => {
       data: {
         type: 'Javascript',
         name: 'my-name',
-        version: '1',
+        version: 1,
         sourceCode: 'const t=1',
       },
       ...MOCK_DEFAULT_NODE,
