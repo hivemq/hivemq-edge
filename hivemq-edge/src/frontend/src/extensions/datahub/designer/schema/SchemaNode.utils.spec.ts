@@ -52,7 +52,7 @@ describe('checkValiditySchema', () => {
       id: 'node-id',
       schemaDefinition: btoa(JSON.stringify(MOCK_NODE_SCHEMA.data.schemaSource)),
       type: 'JSON',
-      version: '1',
+      version: 1,
     })
     expect(resources).toBeUndefined()
     expect(error).toBeUndefined()

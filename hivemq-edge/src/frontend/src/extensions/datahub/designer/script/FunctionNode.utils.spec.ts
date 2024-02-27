@@ -53,8 +53,8 @@ describe('checkValidityJSScript', () => {
       expect.objectContaining({
         functionType: 'TRANSFORMATION',
         id: 'my-name',
-        source: 'const t=1',
-        version: '1',
+        source: btoa('const t=1'),
+        version: 1,
       })
     )
     expect(error).toBeUndefined()
