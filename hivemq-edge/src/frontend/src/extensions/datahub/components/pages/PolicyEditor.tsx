@@ -17,7 +17,7 @@ import styles from './PolicyEditor.module.scss'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 import { PolicyType } from '@datahub/types.ts'
-import { CustomNodeTypes } from '@datahub/flow/mappings.tsx'
+import { CustomNodeTypes } from '@datahub/designer/mappings.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
 import { Toolbox } from '@datahub/components/controls/Toolbox.tsx'

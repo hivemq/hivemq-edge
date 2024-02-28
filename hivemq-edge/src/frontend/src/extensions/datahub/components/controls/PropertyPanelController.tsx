@@ -22,7 +22,7 @@ import {
 } from '@chakra-ui/react'
 import { LuConstruction } from 'react-icons/lu'
 
-import { DefaultEditor } from '@datahub/flow/mappings.tsx'
+import { DefaultEditor } from '@datahub/designer/mappings.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { NodeIcon } from '@datahub/components/helpers'
 

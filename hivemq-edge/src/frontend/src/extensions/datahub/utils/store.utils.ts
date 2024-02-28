@@ -2,9 +2,9 @@ import { Edge, Node } from 'reactflow'
 import { RJSFSchema } from '@rjsf/utils'
 
 import { FunctionSpecs, WorkspaceState } from '@datahub/types.ts'
-import { MOCK_OPERATION_SCHEMA } from '@datahub/flow/operation/OperationData.ts'
+import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData.ts'
 
-const getFunctions = (schema: RJSFSchema) => {
+export const getFunctions = (schema: RJSFSchema) => {
   if (!schema) return []
 
   const definitions = schema.definitions
@@ -13,9 +13,9 @@ const getFunctions = (schema: RJSFSchema) => {
   // @ts-ignore TODO[NVL] A weird jsonschema structure to go through; better alternative?
   const functionNames = definitions.functionId?.properties?.functionId?.enum as string[]
 
-  if (!definitions || !functionNames) return []
+  if (!functionNames) return []
 
-  const functions: FunctionSpecs[] = functionNames.map((functionName) => {
+  return functionNames.map((functionName) => {
     const definition = definitions[functionName]
     if (!definition) return {} as FunctionSpecs
 
@@ -28,8 +28,6 @@ const getFunctions = (schema: RJSFSchema) => {
     }
     return functionSpec
   })
-
-  return functions || []
 }
 
 export const initialStore = (): WorkspaceState => {
