@@ -297,6 +297,11 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         this.runtimeStatus.set(runtimeStatus);
     }
 
+    @Override
+    public void destroy() {
+        protocolAdapterMetricsHelper.clearAll();
+    }
+
     protected boolean running(){
         return runtimeStatus.get() == RuntimeStatus.STARTED;
     }
