@@ -32,6 +32,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;
 import org.eclipse.milo.opcua.stack.core.util.validation.ValidationCheck;
 
 import java.io.File;
+import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
@@ -63,6 +64,11 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
 
         if (checkAuthEnabled()) {
             configureIdentityProvider(opcUaClientConfigBuilder, tlsEnabled, keyPairWithChain);
+        }
+
+        if (keyPairWithChain != null) {
+            opcUaClientConfigBuilder.setKeyPair(new KeyPair(keyPairWithChain.getPublicKey().getPublicKey(),
+                    keyPairWithChain.getPrivateKey()));
         }
 
         return opcUaClientConfigBuilder.build();
@@ -136,7 +142,10 @@ public class OpcUaClientConfigurator implements Function<OpcUaClientConfigBuilde
         final boolean truststoreAvailable = checkTruststoreAvailable(tlsConfig);
         if (truststoreAvailable) {
             //if custom truststore is set
-            trustedCerts = KeystoreUtil.getCertificatesFromTruststore("JKS", "", "");
+            //noinspection DataFlowIssue nullability is checked in checkTruststoreAvailable()
+            final String trustStorePath = tlsConfig.getTruststore().getPath();
+            final String trustStorePassword = tlsConfig.getTruststore().getPassword();
+            trustedCerts = KeystoreUtil.getCertificatesFromTruststore("JKS", trustStorePath, trustStorePassword);
         } else {
             trustedCerts = KeystoreUtil.getCertificatesFromDefaultTruststore();
         }
