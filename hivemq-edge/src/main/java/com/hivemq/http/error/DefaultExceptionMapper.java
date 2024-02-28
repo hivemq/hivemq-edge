@@ -3,6 +3,7 @@ package com.hivemq.http.error;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.http.HttpStatus;
 import com.hivemq.util.ErrorResponseUtil;
 import com.hivemq.util.Exceptions;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 import java.io.EOFException;
+
 
 @Provider
 @Singleton
@@ -36,13 +38,17 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
             final int status = response.getStatus();
 
             if (exception instanceof NotFoundException) {
-                return ErrorResponseUtil.errorResponse(404, "Resource not found", null);
+                return ErrorResponseUtil.errorResponse(HttpStatus.NOT_FOUND_404, "Resource not found", null);
             } else if (exception instanceof BadRequestException) {
-                return ErrorResponseUtil.errorResponse(400, "Bad request", exception.getMessage());
+                return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400,
+                        "Bad request",
+                        exception.getMessage());
             } else if (exception instanceof NotAllowedException) {
-                return ErrorResponseUtil.errorResponse(405, "Method not allowed", null);
+                return ErrorResponseUtil.errorResponse(HttpStatus.METHOD_NOT_ALLOWED_405, "Method not allowed", null);
             } else if (exception instanceof NotSupportedException) {
-                return ErrorResponseUtil.errorResponse(415, "Unsupported Media Type", null);
+                return ErrorResponseUtil.errorResponse(HttpStatus.UNSUPPORTED_MEDIA_TYPE_415,
+                        "Unsupported Media Type",
+                        null);
             }
             //build a new response to prevent additional information from being passed out to the http clients by the exception
             return ErrorResponseUtil.errorResponse(status, "Internal error", null);
@@ -50,7 +56,7 @@ public class DefaultExceptionMapper implements ExceptionMapper<Throwable> {
 
         if (exception instanceof JsonProcessingException) {
             if (exception instanceof UnrecognizedPropertyException) {
-                return ErrorResponseUtil.errorResponse(400,
+                return ErrorResponseUtil.errorResponse(HttpStatus.BAD_REQUEST_400,
                         "Invalid input",
                         "Unrecognized field \"" +
                                 ((UnrecognizedPropertyException) exception).getPropertyName() +
