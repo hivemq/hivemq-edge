@@ -24,7 +24,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.IHttpRequestResponseHandler;
-import com.hivemq.http.error.JaxrsDefaultExceptionMapper;
+import com.hivemq.http.error.DefaultExceptionMapper;
 import com.hivemq.http.filters.CorsFilter;
 import com.hivemq.http.handlers.AlternativeClassloadingStaticFileHandler;
 import com.hivemq.http.handlers.StaticFileHandler;
@@ -57,12 +57,12 @@ public class JaxrsHttpServer {
     static final String MAX_REQ_TIME = "sun.net.httpserver.maxReqTime";
     static final String MAX_RESP_TIME = "sun.net.httpserver.maxRspTime";
     private static final Logger logger = LoggerFactory.getLogger(JaxrsHttpServer.class);
-    private @NotNull List<HttpServer> httpServers = new ArrayList<>();
+    private final @NotNull List<HttpServer> httpServers = new ArrayList<>();
     private final @NotNull List<JaxrsHttpServerConfiguration> configs;
     private final @Nullable ResourceConfig resourceConfig;
     private @Nullable ShutdownHooks shutdownHooks = null;
     private @Nullable JaxrsObjectMapperProvider objectMapperProvider;
-    private volatile @NotNull Object mutex = new Object();
+    private final @NotNull Object mutex = new Object();
     private volatile boolean running = false;
 
     public JaxrsHttpServer(
@@ -180,10 +180,10 @@ public class JaxrsHttpServer {
 //        resources.register(new JaxrsInjectorBridge(injector));
 
         //-- Provide a catch all Exception Mapper to handle fall back when custom mappers arent supplied
-        resources.register(new JaxrsDefaultExceptionMapper());
+        resources.register(new DefaultExceptionMapper());
 
         //-- Register any supplied mappers
-        List<ExceptionMapper> mappers = config.getExceptionMappers();
+        final List<ExceptionMapper> mappers = config.getExceptionMappers();
         if (!mappers.isEmpty()) {
             mappers.stream().forEach(resources::register);
         }
