@@ -133,7 +133,7 @@ const PolicyTable: FC = () => {
         ),
       },
     ]
-  }, [isLoading, navigate, t])
+  }, [deletePolicy, isLoading, navigate, t])
 
   return (
     <PaginatedTable<CombinedPolicy>

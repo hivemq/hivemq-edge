@@ -2,7 +2,6 @@ import { FC, useMemo } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
 
 import { Skeleton, Text } from '@chakra-ui/react'
 
@@ -19,7 +18,6 @@ const SchemaTable: FC = () => {
   const { t } = useTranslation('datahub')
   const { isLoading, data, isError } = useGetAllSchemas()
   const deleteSchema = useDeleteSchema()
-  const navigate = useNavigate()
 
   const safeData = useMemo<Schema[]>(() => {
     if (isLoading) return [mockSchemaTempHumidity]
@@ -92,7 +90,7 @@ const SchemaTable: FC = () => {
         },
       },
     ]
-  }, [isLoading, navigate, t])
+  }, [deleteSchema, isLoading, t])
 
   return (
     <PaginatedTable<Schema>

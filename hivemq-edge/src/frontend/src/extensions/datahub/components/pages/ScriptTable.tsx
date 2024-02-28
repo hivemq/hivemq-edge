@@ -2,7 +2,6 @@ import { FC, useMemo } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
 import { Skeleton, Text } from '@chakra-ui/react'
 
 import type { Script } from '@/api/__generated__'
@@ -18,8 +17,6 @@ const ScriptTable: FC = () => {
   const { t } = useTranslation('datahub')
   const { isLoading, data, isError } = useGetAllScripts({})
   const deleteScript = useDeleteScript()
-
-  const navigate = useNavigate()
 
   const safeData = useMemo<Script[]>(() => {
     if (isLoading) return [mockScript]
@@ -103,7 +100,7 @@ const ScriptTable: FC = () => {
         },
       },
     ]
-  }, [isLoading, navigate, t])
+  }, [deleteScript, isLoading, t])
 
   return (
     <PaginatedTable<Script>
