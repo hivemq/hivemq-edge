@@ -137,6 +137,10 @@ public class ModuleLoader {
                 final Iterable<Class<? extends T>> loaded = classServiceLoader.load(serviceClazz, module.classloader);
                 for (Class<? extends T> foundClass : loaded) {
                     classes.add(foundClass);
+                    log.debug("Found implementation '{}' of class '{}' in module '{}'",
+                            foundClass,
+                            serviceClazz,
+                            module.root);
                 }
             } catch (IOException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
