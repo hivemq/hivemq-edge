@@ -13,7 +13,7 @@ const DataHubListings: FC = () => {
   }
 
   return (
-    <Tabs onChange={handleTabsChange} isLazy colorScheme="brand">
+    <Tabs onChange={handleTabsChange} isLazy colorScheme="brand" data-testid="list-tabs">
       <TabList>
         <Tab fontSize="lg" fontWeight="bold">
           {t('Listings.tabs.policy.title')}

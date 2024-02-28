@@ -72,7 +72,7 @@
       "header": {
         "id": "Function name",
         "functionType": "Type",
-        "description": "description",
+        "description": "Description",
         "created": "Created",
         "version": "Version",
         "actions": "Actions"

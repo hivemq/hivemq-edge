@@ -16,12 +16,18 @@ const DataHubListAction: FC<DataHubListActionProps> = ({ onEdit, onDelete, isEdi
   return (
     <ButtonGroup size="sm" isAttached>
       <IconButton
+        data-testid="list-action-edit"
         onClick={onEdit}
         aria-label={t('Listings.action.edit')}
         icon={<FaEdit />}
         isDisabled={isEditDisabled}
       />
-      <IconButton onClick={onDelete} aria-label={t('Listings.action.delete')} icon={<FaTrashCan />} />
+      <IconButton
+        data-testid="list-action-delete"
+        onClick={onDelete}
+        aria-label={t('Listings.action.delete')}
+        icon={<FaTrashCan />}
+      />
     </ButtonGroup>
   )
 }
