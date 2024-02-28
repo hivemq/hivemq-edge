@@ -7,14 +7,18 @@ import {
   DataHubNodeData,
   DataHubNodeType,
   DataPolicyData,
+  FunctionData,
   OperationData,
+  PolicyDryRunStatus,
   SchemaData,
   SchemaType,
   StrategyType,
   TopicFilterData,
+  TransitionData,
   ValidatorData,
   ValidatorType,
 } from '../types.ts'
+import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
 
 export const getNodeId = () => `node_${self.crypto.randomUUID()}`
 
@@ -54,12 +58,11 @@ export const getNodePayload = (type: string): DataHubNodeData => {
     }
     return payload
   }
-  return { label: `${type} node` }
+  return {}
 }
 
 type ConnectionValidity = Record<string, (DataHubNodeType | [DataHubNodeType, string])[]>
 
-// TODO[NVL} worth moving as property to individual node?
 export const validConnections: ConnectionValidity = {
   [DataHubNodeType.TOPIC_FILTER]: [[DataHubNodeType.DATA_POLICY, DataPolicyData.Handle.TOPIC_FILTER]],
   [DataHubNodeType.VALIDATOR]: [[DataHubNodeType.DATA_POLICY, DataPolicyData.Handle.VALIDATION]],
@@ -100,3 +103,36 @@ export const isValidPolicyConnection = (connection: Connection, nodes: Node[]) =
     return destination?.type === elt
   })
 }
+
+/* istanbul ignore next -- @preserve */
+export const getDryRunStatusIcon = (state?: PolicyDryRunStatus) => {
+  switch (state) {
+    case PolicyDryRunStatus.IDLE: {
+      return RiPassPendingLine
+    }
+    case PolicyDryRunStatus.SUCCESS: {
+      return RiPassValidLine
+    }
+    case PolicyDryRunStatus.FAILURE: {
+      return RiPassExpiredLine
+    }
+    default: {
+      return RiPassPendingLine
+    }
+  }
+}
+
+export const isTopicFilterNodeType = (node: Node): node is Node<TopicFilterData> =>
+  node.type === DataHubNodeType.TOPIC_FILTER
+
+export const isClientFilterNodeType = (node: Node): node is Node<ClientFilterData> =>
+  node.type === DataHubNodeType.CLIENT_FILTER
+
+export const isSchemaNodeType = (node: Node): node is Node<SchemaData> => node.type === DataHubNodeType.SCHEMA
+
+export const isFunctionNodeType = (node: Node): node is Node<FunctionData> => node.type === DataHubNodeType.FUNCTION
+
+export const isValidatorNodeType = (node: Node): node is Node<ValidatorData> => node.type === DataHubNodeType.VALIDATOR
+
+export const isTransitionNodeType = (node: Node): node is Node<TransitionData> =>
+  node.type === DataHubNodeType.TRANSITION

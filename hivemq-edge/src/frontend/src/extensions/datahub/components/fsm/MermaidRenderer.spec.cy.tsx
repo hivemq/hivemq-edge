@@ -1,6 +1,6 @@
 import { MermaidRenderer } from '@datahub/components/fsm/MermaidRenderer.tsx'
 import { FiniteStateMachineSchema } from '@datahub/types.ts'
-import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/flow/behavior_policy/BehaviorPolicySchema.ts'
+import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
 
 // @ts-ignore
 const MOCK_FSM: FiniteStateMachineSchema = MOCK_BEHAVIOR_POLICY_SCHEMA.schema.definitions?.['Publish.quota']

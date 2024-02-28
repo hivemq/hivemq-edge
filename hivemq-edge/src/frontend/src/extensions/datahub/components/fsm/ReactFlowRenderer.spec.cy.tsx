@@ -1,5 +1,5 @@
 import { FiniteStateMachineSchema } from '@datahub/types.ts'
-import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/flow/behavior_policy/BehaviorPolicySchema.ts'
+import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
 import { ReactFlowRenderer } from '@datahub/components/fsm/ReactFlowRenderer.tsx'
 import { ReactFlowProvider } from 'reactflow'
 import { FC, PropsWithChildren } from 'react'

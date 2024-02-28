@@ -10,6 +10,7 @@ import {
 } from '@/api/__generated__'
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import { IChangeEvent } from '@rjsf/core'
+import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 
 export interface PanelSpecs {
   schema: RJSFSchema
@@ -37,6 +38,7 @@ export interface WorkspaceAction {
   onUpdateNodes: <T>(item: string, data: T) => void
 
   onAddFunctions: (changes: FunctionSpecs[]) => void
+  onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => string | undefined
 }
 
 export enum PolicyType {
@@ -68,9 +70,9 @@ export enum NodeCategory {
   RESOURCE = 'RESOURCE',
 }
 
-// TODO[NVL] Not sure of the pertinence of an empty interface
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface DataHubNodeData {}
+export interface DataHubNodeData {
+  dryRunStatus?: PolicyDryRunStatus
+}
 
 export interface TopicFilterData extends DataHubNodeData {
   adapter?: string
@@ -119,14 +121,14 @@ export enum SchemaType {
   PROTO = 'PROTOBUF',
 }
 
-export interface SchemaData {
+export interface SchemaData extends DataHubNodeData {
   type: SchemaType
   version: string
   schemaSource?: string
   core?: Schema
 }
 
-export interface FunctionData {
+export interface FunctionData extends DataHubNodeData {
   type: 'Javascript'
   name: string
   version: string
@@ -157,7 +159,7 @@ export interface FunctionSpecs {
 export interface OperationData extends DataHubNodeData {
   functionId?: string
   metadata?: FunctionDefinition
-  formData?: Record<string, string | number>
+  formData?: Record<string, string | number | string[]>
   core?: PolicyOperation
 }
 
@@ -223,6 +225,14 @@ export interface TransitionData extends DataHubNodeData {
   core?: BehaviorPolicyOnTransition
 }
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace TransitionData {
+  export enum Handle {
+    BEHAVIOR_POLICY = 'target',
+    OPERATION = 'source',
+  }
+}
+
 export interface FsmState {
   name: string
   description: string
@@ -241,4 +251,18 @@ export interface FiniteStateMachine {
 }
 export interface FiniteStateMachineSchema {
   metadata: FiniteStateMachine
+}
+
+export interface DryRunResults<T, R = never> {
+  node: Node<DataHubNodeData>
+  data?: T
+  error?: ProblemDetailsExtended
+  resources?: DryRunResults<R>[]
+}
+
+export enum PolicyDryRunStatus {
+  IDLE = 'IDLE',
+  RUNNING = 'RUNNING',
+  SUCCESS = 'SUCCESS',
+  FAILURE = 'FAILURE',
 }
