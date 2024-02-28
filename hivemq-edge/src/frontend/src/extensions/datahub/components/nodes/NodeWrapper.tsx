@@ -5,7 +5,6 @@ import { NodeProps } from 'reactflow'
 import { Avatar, BoxProps, Card, CardBody, CardBodyProps, HStack } from '@chakra-ui/react'
 import { DataHubNodeData, PolicyDryRunStatus } from '@datahub/types.ts'
 
-import { DataHubNodeData, PolicyDryRunStatus } from '@datahub/types.ts'
 import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
 
 interface NodeWrapperProps extends NodeProps<DataHubNodeData> {
