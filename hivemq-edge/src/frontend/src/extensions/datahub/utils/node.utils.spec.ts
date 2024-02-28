@@ -1,7 +1,9 @@
 import { describe, expect } from 'vitest'
-import { DataHubNodeType, SchemaType, StrategyType, ValidatorType } from '../types.ts'
-import { getNodeId, getNodePayload } from './node.utils.ts'
+import { DataHubNodeType, DataPolicyData, OperationData, SchemaType, StrategyType, ValidatorType } from '../types.ts'
+import { getNodeId, getNodePayload, isValidPolicyConnection } from './node.utils.ts'
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
+import { Node } from 'reactflow'
+import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 describe('getNodeId', () => {
   it('should return the initial state of the store', async () => {
@@ -18,9 +20,7 @@ describe('getNodePayload', () => {
   test.each<NodePayloadSuite>([
     {
       type: 'undefined',
-      expected: {
-        label: `undefined node`,
-      },
+      expected: {},
     },
     {
       type: DataHubNodeType.TOPIC_FILTER,
@@ -63,5 +63,107 @@ describe('getNodePayload', () => {
     },
   ])('should returns the payload for $type ', ({ type, expected }) => {
     expect(getNodePayload(type)).toStrictEqual(expected)
+  })
+})
+
+describe('isValidPolicyConnection', () => {
+  it('should not be a valid connection with an unknown source', async () => {
+    expect(
+      isValidPolicyConnection({ source: 'source', target: 'target', sourceHandle: null, targetHandle: null }, [])
+    ).toBeFalsy()
+  })
+
+  it('should not be a valid connection with an unknown source', async () => {
+    const MOCK_NODE_DATA_POLICY: Node = {
+      id: 'node-id',
+      data: {},
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    expect(
+      isValidPolicyConnection({ source: 'node-id', target: 'target', sourceHandle: null, targetHandle: null }, [
+        MOCK_NODE_DATA_POLICY,
+      ])
+    ).toBeFalsy()
+  })
+
+  it('should not be a valid connection with an uncontrolled connectivity', async () => {
+    const MOCK_NODE_DATA_POLICY: Node = {
+      id: 'node-id',
+      type: 'Test',
+      data: {},
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    expect(
+      isValidPolicyConnection({ source: 'node-id', target: 'target', sourceHandle: null, targetHandle: null }, [
+        MOCK_NODE_DATA_POLICY,
+      ])
+    ).toBeFalsy()
+  })
+
+  it('should be a valid connection with a controlled connectivity', async () => {
+    const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
+      id: 'node-id',
+      type: DataHubNodeType.DATA_POLICY,
+      data: {},
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const MOCK_NODE_OPERATION: Node = {
+      id: 'node-operation',
+      type: DataHubNodeType.OPERATION,
+      data: {},
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    expect(
+      isValidPolicyConnection({ source: 'node-id', target: 'node-operation', sourceHandle: null, targetHandle: null }, [
+        MOCK_NODE_DATA_POLICY,
+        MOCK_NODE_OPERATION,
+      ])
+    ).toBeTruthy()
+  })
+
+  it('should be a valid connection with a controlled handle connectivity', async () => {
+    const MOCK_NODE_DATA_POLICY: Node = {
+      id: 'node-schema',
+      type: DataHubNodeType.SCHEMA,
+      data: {},
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const MOCK_NODE_OPERATION: Node = {
+      id: 'node-operation',
+      type: DataHubNodeType.OPERATION,
+      data: {},
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    expect(
+      isValidPolicyConnection(
+        {
+          source: 'node-schema',
+          target: 'node-operation',
+          sourceHandle: null,
+          targetHandle: OperationData.Handle.SCHEMA,
+        },
+        [MOCK_NODE_DATA_POLICY, MOCK_NODE_OPERATION]
+      )
+    ).toBeTruthy()
+
+    expect(
+      isValidPolicyConnection(
+        {
+          source: 'node-schema',
+          target: 'node-operation',
+          sourceHandle: null,
+          targetHandle: DataPolicyData.Handle.ON_SUCCESS,
+        },
+        [MOCK_NODE_DATA_POLICY, MOCK_NODE_OPERATION]
+      )
+    ).toBeFalsy()
   })
 })
