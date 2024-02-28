@@ -132,6 +132,7 @@ public class ModuleLoader {
     public <T> @NotNull List<Class<? extends T>> findImplementations(final @NotNull Class<T> serviceClazz) {
         final ArrayList<Class<? extends T>> classes = new ArrayList<>();
         for (EdgeModule module : modules) {
+            log.debug("Looking for implementations of class '{}' in module '{}'", serviceClazz, module.root);
             try {
                 final Iterable<Class<? extends T>> loaded = classServiceLoader.load(serviceClazz, module.classloader);
                 for (Class<? extends T> foundClass : loaded) {
