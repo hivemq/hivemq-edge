@@ -75,8 +75,8 @@ export function checkValidityTransformFunction(
   // TODO[19240] Should serial and deserial be different ?
 
   ///////// Check the resources
-  const scriptNodes = functions.map((e) => checkValidityJSScript(e))
-  const schemaNodes = serialisers.map((e) => checkValiditySchema(e))
+  const scriptNodes = functions.map((node) => checkValidityJSScript(node))
+  const schemaNodes = serialisers.map((node) => checkValiditySchema(node))
 
   const scriptName = scriptNodes[0].node as Node<FunctionData>
   if (!scriptName) {
