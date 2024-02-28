@@ -5,19 +5,19 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import { Button, Skeleton, Text } from '@chakra-ui/react'
-import { FaEdit } from 'react-icons/fa'
 import { BiAddToQueue } from 'react-icons/bi'
 
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
-import IconButton from '@/components/Chakra/IconButton.tsx'
 
 import { BehaviorPolicy, BehaviorPolicyMatching, DataPolicy, DataPolicyMatching } from '@/api/__generated__'
-import { mockDataPolicy } from '../../api/hooks/DataHubDataPoliciesService/__handlers__'
-import { mockBehaviorPolicy } from '../../api/hooks/DataHubBehaviorPoliciesService/__handlers__'
-import { useGetAllDataPolicies } from '../../api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
-import { useGetAllBehaviorPolicies } from '../../api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.tsx'
-import { PolicyType } from '../../types.ts'
+import { PolicyType } from '@datahub/types.ts'
+import { useGetAllBehaviorPolicies } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.tsx'
+import { useDeleteDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useDeleteDataPolicy.tsx'
+import { mockDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
+import { mockBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/__handlers__'
+import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
+import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 
 type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { type: PolicyType })
 
@@ -30,6 +30,7 @@ const PolicyTable: FC = () => {
     isError: isBehaviorError,
   } = useGetAllBehaviorPolicies({})
   const navigate = useNavigate()
+  const deletePolicy = useDeleteDataPolicy()
 
   const isError = useMemo(() => {
     return isDataError || isBehaviorError
@@ -75,7 +76,7 @@ const PolicyTable: FC = () => {
             </Skeleton>
           )
         },
-        header: t('policyTable.header.type') as string,
+        header: t('Listings.policy.header.type') as string,
       },
       {
         accessorKey: 'matching',
@@ -89,7 +90,7 @@ const PolicyTable: FC = () => {
             </Skeleton>
           )
         },
-        header: t('policyTable.header.matching') as string,
+        header: t('Listings.policy.header.matching') as string,
       },
       {
         accessorKey: 'createdAt',
@@ -100,20 +101,23 @@ const PolicyTable: FC = () => {
             <DateTimeRenderer date={DateTime.fromMillis(info.getValue() as number)} isApprox />
           </Skeleton>
         ),
-        header: t('policyTable.header.created') as string,
+        header: t('Listings.policy.header.created') as string,
       },
       {
         id: 'actions',
-        header: t('policyTable.header.actions') as string,
+        header: t('Listings.policy.header.actions') as string,
         sortingFn: undefined,
         cell: (info) => {
           return (
             <Skeleton isLoaded={!isLoading}>
-              <IconButton
-                size="sm"
-                onClick={() => navigate(`/datahub/${info.row.original.type}/id`)}
-                aria-label={t('policyTable.action.edit')}
-                icon={<FaEdit />}
+              <DataHubListAction
+                onDelete={() =>
+                  deletePolicy
+                    .mutateAsync(info.row.original.id)
+                    .then((e) => console.log('XXXXXX', e))
+                    .catch((e) => console.log('XXXXX', e.toString(), info))
+                }
+                onEdit={() => navigate(`/datahub/${info.row.original.type}/id`)}
               />
             </Skeleton>
           )
@@ -124,7 +128,7 @@ const PolicyTable: FC = () => {
             onClick={() => navigate(`/datahub/${PolicyType.CREATE_POLICY}`)}
             variant="primary"
           >
-            {t('policyTable.action.create')}
+            {t('Listings.policy.action.create')}
           </Button>
         ),
       },
@@ -133,15 +137,10 @@ const PolicyTable: FC = () => {
 
   return (
     <PaginatedTable<CombinedPolicy>
-      aria-label={t('policyTable.title')}
+      aria-label={t('Listings.policy.label')}
       data={safeData}
       columns={columns}
       isError={isError}
-      // enablePagination={variant === 'full'}
-      // enableColumnFilters={variant === 'full'}
-      // getRowStyles={(row) => {
-      //   return { backgroundColor: theme.colors.blue[50] }
-      // }}
     />
   )
 }
