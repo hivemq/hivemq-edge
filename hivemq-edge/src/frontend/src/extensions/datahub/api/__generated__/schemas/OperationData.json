@@ -1,8 +1,8 @@
 {
   "$ref": "#/definitions/functionId",
   "definitions": {
-    "System.Log": {
-      "title": "System.Log",
+    "System.log": {
+      "title": "System.log",
       "metadata": {
         "isTerminal": false
       },
@@ -175,7 +175,7 @@
           "title": "Function",
           "description": "You can use two categories of functions in your policies. Non-terminal functions allow further operations in the pipeline to be executed,\n                          while terminal functions end further operations in the pipeline",
           "enum": [
-            "System.Log",
+            "System.log",
             "Delivery.redirectTo",
             "Mqtt.UserProperties.add",
             "Serdes.deserialize",
@@ -193,10 +193,10 @@
             {
               "properties": {
                 "functionId": {
-                  "enum": ["System.Log"]
+                  "enum": ["System.log"]
                 },
                 "formData": {
-                  "$ref": "#/definitions/System.Log"
+                  "$ref": "#/definitions/System.log"
                 }
               }
             },

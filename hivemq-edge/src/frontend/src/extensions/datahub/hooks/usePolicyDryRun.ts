@@ -83,31 +83,22 @@ export const usePolicyDryRun = () => {
     const schemaResources = validators.reduce(resourceReducer, [] as DryRunResults<Schema>[])
     const allResources = [...successResources, ...errorResources, ...schemaResources]
 
-    // TODO[19240] This is wrong. Only if no errors
-    const dataPolicy = checkValidityDataPolicy(
-      dataPolicyNode,
-      filter,
-      validators,
-      onSuccessPipeline,
-      onErrorPipeline,
-      allResources
-    )
+    const processedNodes = [filter, ...validators, ...onSuccessPipeline, ...onErrorPipeline, ...allResources]
+    const hasError = processedNodes.some((e) => !!e.error)
 
-    // TODO[19240] Remove
-    /* istanbul ignore next -- @preserve */
-    console.log('[DatHub] Payloads', {
-      dataPolicy: dataPolicy.data,
-      resources: dataPolicy.resources?.map((e) => e.data),
-    })
+    if (!hasError) {
+      const dataPolicy = checkValidityDataPolicy(
+        dataPolicyNode,
+        filter,
+        validators,
+        onSuccessPipeline,
+        onErrorPipeline,
+        allResources
+      )
+      processedNodes.push(dataPolicy)
+    }
 
-    return runPolicyChecks(allNodes, [
-      filter,
-      ...validators,
-      ...onSuccessPipeline,
-      ...onErrorPipeline,
-      ...allResources,
-      dataPolicy,
-    ])
+    return runPolicyChecks(allNodes, processedNodes)
   }
 
   const checkBehaviorPolicyAsync = (behaviourPolicyNode: Node<BehaviorPolicyData>) => {
@@ -142,6 +133,7 @@ export const usePolicyDryRun = () => {
       ...behaviorPolicyTransitions,
       ...(pipelines || []),
       ...(pipelineResources || []),
+      behaviorPolicy,
     ])
   }
 

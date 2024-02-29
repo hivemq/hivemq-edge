@@ -11,7 +11,7 @@ describe('DataHubPage', () => {
   it('should render the commercial warning', () => {
     cy.mountWithProviders(<DataHubPage />)
     cy.get('h1').should('contain.text', 'Data Hub')
-    cy.get('h2').should('contain.text', 'Datahub is now available to commercial licenses')
+    cy.get('h2').should('contain.text', 'Data Hub is now available to commercial licenses')
   })
 
   it('should be accessible', () => {
