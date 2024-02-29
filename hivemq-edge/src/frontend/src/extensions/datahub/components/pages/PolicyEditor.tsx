@@ -1,13 +1,5 @@
 import React, { FC, useCallback, useMemo, useRef, useState } from 'react'
-import ReactFlow, {
-  Background,
-  BackgroundVariant,
-  Connection,
-  Node,
-  ReactFlowInstance,
-  ReactFlowProvider,
-  XYPosition,
-} from 'reactflow'
+import ReactFlow, { Connection, Node, ReactFlowInstance, ReactFlowProvider, XYPosition } from 'reactflow'
 import { Outlet, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
@@ -20,9 +12,9 @@ import { PolicyType } from '@datahub/types.ts'
 import { CustomNodeTypes } from '@datahub/designer/mappings.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
-import { Toolbox } from '@datahub/components/controls/Toolbox.tsx'
 import CanvasControls from '@datahub/components/controls/CanvasControls.tsx'
 import Minimap from '@datahub/components/controls/Minimap.tsx'
+import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
 
 const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
@@ -104,20 +96,8 @@ const PolicyEditor: FC = () => {
           isValidConnection={checkValidity}
           // onError={(id: string, message: string) => console.log('XXXXXX e', id, message)}
         >
-          <Background
-            id="1"
-            gap={25}
-            //color="var(--chakra-colors-gray-100)"
-            variant={BackgroundVariant.Cross}
-          />
-          <Background
-            id="2"
-            gap={100}
-            // color="var(--chakra-colors-gray-300)"
-            variant={BackgroundVariant.Lines}
-          />
           <Box role="toolbar" aria-label={t('workspace.aria-label') as string} aria-controls="edge-workspace-canvas">
-            <Toolbox />
+            <DesignerToolbox />
             <CanvasControls />
             <Minimap />
           </Box>

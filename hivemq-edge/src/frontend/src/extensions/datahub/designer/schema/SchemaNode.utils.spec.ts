@@ -12,7 +12,7 @@ describe('checkValiditySchema', () => {
       type: DataHubNodeType.FUNCTION,
       data: {
         type: SchemaType.JSON,
-        version: '1',
+        version: 1,
       },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
@@ -38,7 +38,7 @@ describe('checkValiditySchema', () => {
       type: DataHubNodeType.FUNCTION,
       data: {
         type: SchemaType.JSON,
-        version: '1',
+        version: 1,
         schemaSource: '{ tg: 1}',
       },
       ...MOCK_DEFAULT_NODE,
@@ -52,7 +52,7 @@ describe('checkValiditySchema', () => {
       id: 'node-id',
       schemaDefinition: btoa(JSON.stringify(MOCK_NODE_SCHEMA.data.schemaSource)),
       type: 'JSON',
-      version: '1',
+      version: 1,
     })
     expect(resources).toBeUndefined()
     expect(error).toBeUndefined()

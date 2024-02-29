@@ -58,7 +58,7 @@ describe('checkValidityPolicyValidator', () => {
       type: DataHubNodeType.SCHEMA,
       data: {
         type: SchemaType.JSON,
-        version: '1',
+        version: 1,
         schemaSource: '{}',
       },
       ...MOCK_DEFAULT_NODE,
@@ -75,12 +75,15 @@ describe('checkValidityPolicyValidator', () => {
     expect(node).toStrictEqual(MOCK_NODE_VALIDATOR)
     expect(data).toEqual(
       expect.objectContaining({
-        arguments: [
-          {
-            schemaId: 'node-schema',
-            version: '1',
-          },
-        ],
+        arguments: {
+          schemas: [
+            {
+              schemaId: 'node-schema',
+              version: '1',
+            },
+          ],
+          strategy: 'ANY_OF',
+        },
         type: 'schema',
       })
     )
@@ -93,7 +96,7 @@ describe('checkValidityPolicyValidator', () => {
           id: 'node-schema',
           schemaDefinition: 'Int9Ig==',
           type: 'JSON',
-          version: '1',
+          version: 1,
         },
         node: MOCK_NODE_SCHEMA,
       })
@@ -140,7 +143,7 @@ describe('checkValidityPolicyValidators', () => {
       type: DataHubNodeType.SCHEMA,
       data: {
         type: SchemaType.JSON,
-        version: '1',
+        version: 1,
         schemaSource: '{}',
       },
       ...MOCK_DEFAULT_NODE,

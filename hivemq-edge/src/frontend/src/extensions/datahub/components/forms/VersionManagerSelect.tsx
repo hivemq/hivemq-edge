@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 interface VersionType {
   label: string
-  value: string
+  value: number
 }
 
 export const VersionManagerSelect = (props: WidgetProps) => {
@@ -15,7 +15,7 @@ export const VersionManagerSelect = (props: WidgetProps) => {
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
   const options: VersionType[] = [
-    { label: 'v0.0', value: 'v0.0' },
+    { label: 'latest', value: 0 },
     { label: props.value, value: props.value },
   ]
 

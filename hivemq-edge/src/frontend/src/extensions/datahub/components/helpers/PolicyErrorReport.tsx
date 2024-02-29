@@ -17,47 +17,45 @@ import { useTranslation } from 'react-i18next'
 interface PolicyErrorReportProps {
   errors: ProblemDetailsExtended[]
   onFitView?: (id: string) => void
-  openConfig?: (id: string) => void
+  onOpenConfig?: (id: string) => void
 }
 
-const PolicyErrorReport: FC<PolicyErrorReportProps> = ({ errors, onFitView, openConfig }) => {
+const PolicyErrorReport: FC<PolicyErrorReportProps> = ({ errors, onFitView, onOpenConfig }) => {
   const { t } = useTranslation('datahub')
-  const status = errors.length ? 'warning' : 'success'
 
   return (
-    <>
-      <Text as="span">{t('workspace.dryRun.report.success.description', { context: status })}</Text>
-      <Accordion allowToggle overflow="auto" maxHeight="180px">
-        {errors.map((problem, i) => {
-          const { id, title, detail } = problem
-          return (
-            <AccordionItem key={`${id as string}-item${i}`} borderColor="blackAlpha.500">
-              <h2>
-                <AccordionButton>
-                  <Box as="span" flex="1" textAlign="left">
-                    {t('workspace.nodes.type', { context: title })}
-                  </Box>
-                  <AccordionIcon />
-                </AccordionButton>
-              </h2>
-              <AccordionPanel pb={4}>
-                <VStack alignItems="flex-start">
-                  <Text>{detail}</Text>
-                  <ButtonGroup alignItems="flex-start" size="sm">
-                    <Button onClick={() => onFitView?.(id as string)}>
-                      {t('workspace.dryRun.report.cta.highlight')}
-                    </Button>
-                    <Button onClick={() => openConfig?.(id as string)}>
-                      {t('workspace.dryRun.report.cta.config')}
-                    </Button>
-                  </ButtonGroup>
-                </VStack>
-              </AccordionPanel>
-            </AccordionItem>
-          )
-        })}
-      </Accordion>
-    </>
+    <Accordion allowToggle overflow="auto" maxHeight="180px">
+      {errors.map((problem, i) => {
+        const { id, title, detail } = problem
+        // ProblemDetailsExtended doesn't type the extensions!
+        const nodeId = problem.id as string
+        return (
+          <AccordionItem key={`${id}-item${i}`} borderColor="blackAlpha.500">
+            <h2>
+              <AccordionButton>
+                <Box as="span" flex="1" textAlign="left">
+                  {t('workspace.nodes.type', { context: title })}
+                </Box>
+                <AccordionIcon />
+              </AccordionButton>
+            </h2>
+            <AccordionPanel pb={4}>
+              <VStack alignItems="flex-start">
+                <Text whiteSpace="normal">{detail}</Text>
+                <ButtonGroup alignItems="flex-start" size="sm">
+                  <Button onClick={() => onFitView?.(nodeId)} data-testid="report-error-fitView">
+                    {t('workspace.dryRun.report.cta.highlight')}
+                  </Button>
+                  <Button onClick={() => onOpenConfig?.(nodeId)} data-testid="report-error-config">
+                    {t('workspace.dryRun.report.cta.config')}
+                  </Button>
+                </ButtonGroup>
+              </VStack>
+            </AccordionPanel>
+          </AccordionItem>
+        )
+      })}
+    </Accordion>
   )
 }
 
