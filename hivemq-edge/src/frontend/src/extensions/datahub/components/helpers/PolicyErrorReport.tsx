@@ -27,8 +27,10 @@ const PolicyErrorReport: FC<PolicyErrorReportProps> = ({ errors, onFitView, onOp
     <Accordion allowToggle overflow="auto" maxHeight="180px">
       {errors.map((problem, i) => {
         const { id, title, detail } = problem
+        // ProblemDetailsExtended doesn't type the extensions!
+        const nodeId = problem.id as string
         return (
-          <AccordionItem key={`${id as string}-item${i}`} borderColor="blackAlpha.500">
+          <AccordionItem key={`${id}-item${i}`} borderColor="blackAlpha.500">
             <h2>
               <AccordionButton>
                 <Box as="span" flex="1" textAlign="left">
@@ -41,10 +43,10 @@ const PolicyErrorReport: FC<PolicyErrorReportProps> = ({ errors, onFitView, onOp
               <VStack alignItems="flex-start">
                 <Text whiteSpace="normal">{detail}</Text>
                 <ButtonGroup alignItems="flex-start" size="sm">
-                  <Button onClick={() => onFitView?.(id as string)} data-testid="report-error-fitView">
+                  <Button onClick={() => onFitView?.(nodeId)} data-testid="report-error-fitView">
                     {t('workspace.dryRun.report.cta.highlight')}
                   </Button>
-                  <Button onClick={() => onOpenConfig?.(id as string)} data-testid="report-error-config">
+                  <Button onClick={() => onOpenConfig?.(nodeId)} data-testid="report-error-config">
                     {t('workspace.dryRun.report.cta.config')}
                   </Button>
                 </ButtonGroup>

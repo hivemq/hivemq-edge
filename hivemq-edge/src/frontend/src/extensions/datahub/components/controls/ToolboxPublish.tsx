@@ -2,7 +2,7 @@ import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { UseMutateAsyncFunction } from '@tanstack/react-query'
 
-import { Box, Button, HStack, Icon, Stack, useToast, UseToastOptions } from '@chakra-ui/react'
+import { Box, Button, HStack, Icon, Stack, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
 
 import { BehaviorPolicy, DataPolicy, Schema, Script } from '@/api/__generated__'
@@ -13,6 +13,7 @@ import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCre
 import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
 import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.tsx'
 import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useCreateBehaviorPolicy.tsx'
+import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
 
 interface Mutate<T> {
   type: DataHubNodeType
@@ -35,11 +36,6 @@ const resourceReducer =
     accumulator.push(result.data)
     return accumulator
   }
-
-const toastOption: UseToastOptions = {
-  isClosable: true,
-  position: 'top-right',
-}
 
 export const ToolboxPublish: FC = () => {
   const { t } = useTranslation('datahub')
@@ -98,7 +94,7 @@ export const ToolboxPublish: FC = () => {
         .mutation(request.payload)
         .then(() =>
           toast({
-            ...toastOption,
+            ...dataHubToastOption,
             title: t('error.publish.title', { source: request.type }),
             description: t('error.publish.description', { source: request.type }),
             status: 'success',
@@ -106,7 +102,7 @@ export const ToolboxPublish: FC = () => {
         )
         .catch((err) => {
           toast({
-            ...toastOption,
+            ...dataHubToastOption,
             title: t('error.publish.error', { source: request.type }),
             description: err.toString(),
             status: 'error',

@@ -54,7 +54,6 @@ describe('checkValidityJSScript', () => {
         functionType: 'TRANSFORMATION',
         id: 'my-name',
         source: btoa('const t=1'),
-        version: 1,
       })
     )
     expect(error).toBeUndefined()
