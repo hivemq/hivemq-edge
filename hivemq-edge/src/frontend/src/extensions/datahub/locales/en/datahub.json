@@ -13,17 +13,70 @@
     "type_DATA": "Data Policy",
     "type_BEHAVIOR": "Behavior Policy"
   },
-  "policyTable": {
-    "title": "List of policies",
-    "header": {
-      "created": "Created",
-      "type": "Type",
-      "matching": "Matching",
-      "actions": "Actions"
+
+  "resource": {
+    "schema": {
+      "type_JSON": "JSON"
     },
+    "script": {
+      "functionType_TRANSFORMATION": "Transformation"
+    }
+  },
+  "Listings": {
     "action": {
       "edit": "Edit",
+      "delete": "Delete",
       "create": "Create a new policy"
+    },
+    "tabs": {
+      "policy": {
+        "title": "Policies",
+        "description": "This is where all your policies will be listed"
+      },
+      "schema": {
+        "title": "Schemas",
+        "description": "All your schemas used for validation or transformation will be listed there"
+      },
+      "script": {
+        "title": "Scripts",
+        "description": "Your transformation code will be listed there"
+      }
+    },
+    "policy": {
+      "label": "List of policies",
+      "header": {
+        "created": "Created",
+        "type": "Type",
+        "matching": "Matching",
+        "actions": "Actions"
+      },
+      "action": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "create": "Create a new policy"
+      }
+    },
+
+    "schema": {
+      "label": "List of schemas",
+      "header": {
+        "id": "Schema name",
+        "created": "Created",
+        "type": "Type",
+        "version": "Version",
+        "actions": "Actions"
+      }
+    },
+    "script": {
+      "label": "List of scripts",
+      "header": {
+        "id": "Function name",
+        "functionType": "Type",
+        "description": "Description",
+        "created": "Created",
+        "version": "Version",
+        "actions": "Actions"
+      }
     }
   },
   "workspace": {
@@ -147,6 +200,11 @@
       "noHandleConnected": "No $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to the \"{{ handle }}\" handle of $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
       "cardinality": "Too many $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
       "notConfigured": "The $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) is not properly defined. The following properties are missing: {{ properties }}"
+    },
+    "publish": {
+      "title": "$t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) published",
+      "description": "We've created a new $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) for you.",
+      "error": "Error publishing $t(datahub:workspace.nodes.type, { 'context': '{{source}}' })"
     },
     "noSet": {
       "select": "< not set >"

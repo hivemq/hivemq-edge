@@ -74,7 +74,7 @@ describe('checkValidityTransformFunction', () => {
       data: {
         type: 'Javascript',
         name: 'the_function',
-        version: 'v0.0',
+        version: 1,
         sourceCode: 'const t=1',
       },
       ...MOCK_DEFAULT_NODE,
@@ -133,7 +133,7 @@ describe('checkValidityTransformFunction', () => {
       data: {
         type: 'Javascript',
         name: 'the_function',
-        version: 'v0.0',
+        version: 1,
         sourceCode: 'const t=1',
       },
       ...MOCK_DEFAULT_NODE,
@@ -144,7 +144,7 @@ describe('checkValidityTransformFunction', () => {
       type: DataHubNodeType.SCHEMA,
       data: {
         type: SchemaType.JSON,
-        version: '1',
+        version: 1,
         schemaSource: '{ t: 1}',
       },
       ...MOCK_DEFAULT_NODE,
@@ -203,7 +203,7 @@ describe('checkValidityTransformFunction', () => {
       data: {
         type: 'Javascript',
         name: 'the_function',
-        version: 'v0.0',
+        version: 1,
         sourceCode: 'const t=1',
       },
       ...MOCK_DEFAULT_NODE,
@@ -214,7 +214,7 @@ describe('checkValidityTransformFunction', () => {
       type: DataHubNodeType.SCHEMA,
       data: {
         type: SchemaType.JSON,
-        version: '1',
+        version: 1,
         schemaSource: '{ t: 1}',
       },
       ...MOCK_DEFAULT_NODE,
@@ -280,7 +280,7 @@ describe('checkValidityTransformFunction', () => {
       data: {
         type: 'Javascript',
         name: 'the_function',
-        version: 'v0.0',
+        version: 1,
         sourceCode: 'const t=1',
       },
       ...MOCK_DEFAULT_NODE,
@@ -291,7 +291,7 @@ describe('checkValidityTransformFunction', () => {
       type: DataHubNodeType.SCHEMA,
       data: {
         type: SchemaType.JSON,
-        version: '1',
+        version: 1,
         schemaSource: '{ t: 1}',
       },
       ...MOCK_DEFAULT_NODE,
@@ -337,7 +337,7 @@ describe('checkValidityTransformFunction', () => {
         expect.objectContaining({
           arguments: {
             schemaId: 'node-schema',
-            schemaVersion: 1,
+            schemaVersion: '1',
           },
           functionId: 'Serdes.deserialize',
           id: 'node-id-deserializer',
@@ -353,7 +353,7 @@ describe('checkValidityTransformFunction', () => {
         expect.objectContaining({
           arguments: {
             schemaId: 'node-schema',
-            schemaVersion: 1,
+            schemaVersion: '1',
           },
           functionId: 'Serdes.serialize',
           id: 'node-id-serializer',
@@ -370,7 +370,7 @@ describe('checkValidityTransformFunction', () => {
           arguments: {
             transform: ['the_function'],
           },
-          functionId: 'DataHub.transform',
+          functionId: 'fn:the_function:latest',
           id: 'node-id',
         })
       )
@@ -491,7 +491,7 @@ describe('processOperations', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
-        functionId: 'System.Log',
+        functionId: 'System.log',
         formData: {
           level: 'DEBUG',
           message: 'test the message',
@@ -515,7 +515,7 @@ describe('processOperations', () => {
         level: 'DEBUG',
         message: 'test the message',
       },
-      functionId: 'System.Log',
+      functionId: 'System.log',
       id: 'node-id',
     })
     expect(error).toBeUndefined()

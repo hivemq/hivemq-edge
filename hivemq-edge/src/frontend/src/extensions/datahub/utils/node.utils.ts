@@ -49,7 +49,7 @@ export const getNodePayload = (type: string): DataHubNodeData => {
   if (type === DataHubNodeType.SCHEMA) {
     return {
       type: SchemaType.JSON,
-      version: '1',
+      version: 1,
       schemaSource: MOCK_JSONSCHEMA_SCHEMA,
     } as SchemaData
   }

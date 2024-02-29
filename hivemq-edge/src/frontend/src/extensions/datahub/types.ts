@@ -122,6 +122,11 @@ export enum StrategyType {
   ANY_OF = 'ANY_OF',
 }
 
+export interface SchemaArguments {
+  schemas: SchemaReference[]
+  strategy: StrategyType
+}
+
 export interface ValidatorData extends DataHubNodeData {
   type: ValidatorType
   strategy: StrategyType
@@ -137,7 +142,7 @@ export enum SchemaType {
 
 export interface SchemaData extends DataHubNodeData {
   type: SchemaType
-  version: string
+  version: number
   schemaSource?: string
   core?: Schema
 }
@@ -145,7 +150,7 @@ export interface SchemaData extends DataHubNodeData {
 export interface FunctionData extends DataHubNodeData {
   type: 'Javascript'
   name: string
-  version: string
+  version: number
   sourceCode?: string
 }
 
@@ -168,6 +173,11 @@ export interface FunctionSpecs {
   metadata?: FunctionDefinition
   schema?: RJSFSchema
   uiSchema?: UiSchema
+}
+
+export interface PolicyOperationArguments {
+  schemaId: string
+  schemaVersion: string
 }
 
 export interface OperationData extends DataHubNodeData {
