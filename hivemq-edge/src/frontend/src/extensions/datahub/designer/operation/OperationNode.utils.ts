@@ -5,7 +5,9 @@ import {
   DataHubNodeType,
   DataPolicyData,
   DryRunResults,
+  FunctionData,
   OperationData,
+  PolicyOperationArguments,
   TransitionData,
   WorkspaceState,
 } from '@datahub/types.ts'
@@ -73,34 +75,53 @@ export function checkValidityTransformFunction(
   // TODO[19240] Should serial and deserial be different ?
 
   ///////// Check the resources
-  const scriptNodes = functions.map((e) => checkValidityJSScript(e))
-  const schemaNodes = serialisers.map((e) => checkValiditySchema(e))
+  const scriptNodes = functions.map((node) => checkValidityJSScript(node))
+  const schemaNodes = serialisers.map((node) => checkValiditySchema(node))
 
-  // TODO[19240] Should not be hardcoded and should be Typescript-ed
+  const scriptName = scriptNodes[0].node as Node<FunctionData>
+  if (!scriptName) {
+    return [
+      {
+        node: operationNode,
+        error: PolicyCheckErrors.notConfigured(operationNode, 'script name'),
+      },
+    ]
+  }
+
+  // TODO[19497] This should not have to happen on the client side!
+  const formattedScriptName = (functionNode: Node<FunctionData>): string => {
+    return `fn:${functionNode.data.name}:latest`
+  }
+
   const deserializer: PolicyOperation = {
+    // TODO[19240] Should not be hardcoded and should be Typescript-ed
     functionId: 'Serdes.deserialize',
     arguments: {
       // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
       schemaId: serial.source,
-      // TODO[19475] Need to fix before merging!
-      schemaVersion: 1,
-    },
+      // TODO[19497] This is wrong!
+      schemaVersion: '1',
+    } as PolicyOperationArguments,
     id: `${operationNode.id}-deserializer`,
   }
+
+  // TODO[19497] there should be a list of functions
   const operation: PolicyOperation = {
-    functionId: operationNode.data.functionId,
+    functionId: formattedScriptName(scriptName),
     arguments: operationNode.data.formData,
     // TODO[19466] Id should be user-facing; Need to fix before merging!
     id: operationNode.id,
   }
+
   const serializer: PolicyOperation = {
+    // TODO[19240] Should not be hardcoded and should be Typescript-ed
     functionId: 'Serdes.serialize',
     arguments: {
       // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
       schemaId: deserial.source,
-      // TODO[19475] Need to fix before merging!
-      schemaVersion: 1,
-    },
+      // TODO[19497] This is wrong!
+      schemaVersion: '1',
+    } as PolicyOperationArguments,
     id: `${operationNode.id}-serializer`,
   }
   return [

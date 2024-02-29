@@ -35,7 +35,7 @@ describe('getFunctions', () => {
             functionId: {
               title: 'Function',
               description: 'description',
-              enum: ['System.Log'],
+              enum: ['System.log'],
             },
           },
         },
@@ -47,8 +47,8 @@ describe('getFunctions', () => {
   it('should return a function with a correct schema', async () => {
     const schema: GenericObjectType = {
       definitions: {
-        'System.Log': {
-          title: 'System.Log',
+        'System.log': {
+          title: 'System.log',
           metadata: {
             isTerminal: false,
           },
@@ -76,7 +76,7 @@ describe('getFunctions', () => {
             functionId: {
               title: 'Function',
               description: 'description',
-              enum: ['System.Log'],
+              enum: ['System.log'],
             },
           },
         },
@@ -86,7 +86,7 @@ describe('getFunctions', () => {
     expect(functions).toHaveLength(1)
     expect(functions[0]).toStrictEqual(
       expect.objectContaining({
-        functionId: 'System.Log',
+        functionId: 'System.log',
         metadata: {
           isTerminal: false,
         },

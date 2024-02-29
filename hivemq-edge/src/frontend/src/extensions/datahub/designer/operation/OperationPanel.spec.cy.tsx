@@ -45,7 +45,7 @@ describe('OperationPanel', () => {
       .find("[role='listbox']")
       .find("[role='option']")
       .eq(0)
-      .should('contain.text', 'System.Log')
+      .should('contain.text', 'System.log')
     cy.get('label#root_functionId-label + div')
       .find("[role='listbox']")
       .find("[role='option']")

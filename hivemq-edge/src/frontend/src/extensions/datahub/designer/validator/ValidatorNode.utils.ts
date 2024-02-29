@@ -1,7 +1,14 @@
 import { getIncomers, Node } from 'reactflow'
 
 import { DataPolicyValidator, Schema, SchemaReference } from '@/api/__generated__'
-import { DataHubNodeType, DataPolicyData, DryRunResults, ValidatorData, WorkspaceState } from '@datahub/types.ts'
+import {
+  DataHubNodeType,
+  DataPolicyData,
+  DryRunResults,
+  SchemaArguments,
+  ValidatorData,
+  WorkspaceState,
+} from '@datahub/types.ts'
 import { checkValiditySchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { isSchemaNodeType, isValidatorNodeType } from '@datahub/utils/node.utils.ts'
@@ -24,9 +31,13 @@ export function checkValidityPolicyValidator(
   const schemaNodes = schemas.map((e) => checkValiditySchema(e))
   const operation: DataPolicyValidator = {
     type: validator.data.type,
-    // extracting the value from the schema data
     // TODO[19466] Id should be user-facing; Need to fix before merging!
-    arguments: schemas.map<SchemaReference>((e) => ({ schemaId: e.id, version: e.data.version })),
+    // TODO[NVL] Arguments is not typed on the backend!
+    // TODO[NVL] Forcing the version to string is too awkward
+    arguments: {
+      schemas: schemas.map<SchemaReference>((e) => ({ schemaId: e.id, version: e.data.version.toString() })),
+      strategy: validator.data.strategy,
+    } as SchemaArguments,
   }
   return { data: operation, node: validator, resources: [...schemaNodes] }
 }

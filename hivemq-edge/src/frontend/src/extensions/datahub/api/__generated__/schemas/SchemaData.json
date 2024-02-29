@@ -9,7 +9,7 @@
       "default": "PROTOBUF"
     },
     "version": {
-      "type": "string",
+      "type": "number",
       "format": "datahub:version"
     }
   },

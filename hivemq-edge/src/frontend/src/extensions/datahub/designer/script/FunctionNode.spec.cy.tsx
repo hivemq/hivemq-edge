@@ -14,7 +14,7 @@ const MOCK_NODE_FUNCTION: NodeProps<FunctionData> = {
   data: {
     type: 'Javascript',
     name: 'string',
-    version: 'string',
+    version: 1,
     sourceCode: 'string',
   },
   ...MOCK_DEFAULT_NODE,
