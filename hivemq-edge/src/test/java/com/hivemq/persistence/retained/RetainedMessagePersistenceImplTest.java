@@ -16,6 +16,10 @@
 package com.hivemq.persistence.retained;
 
 import com.google.common.collect.Sets;
+import com.hivemq.configuration.service.InternalConfigurationService;
+import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.iteration.Chunker;
 import com.hivemq.persistence.RetainedMessage;
 import com.hivemq.persistence.SingleWriterService;
@@ -42,28 +46,28 @@ import static org.mockito.Mockito.*;
  */
 public class RetainedMessagePersistenceImplTest {
 
-    private AutoCloseable closeableMock;
+    private @NotNull AutoCloseable closeableMock;
 
-    @Mock
-    private RetainedMessageLocalPersistence localPersistence;
+    private final @NotNull RetainedMessageLocalPersistence localPersistence = mock();
+    private final @NotNull PublishPayloadPersistence payloadPersistence = mock();
 
-    @Mock
-    private PublishPayloadPersistence payloadPersistence;
+    private @NotNull RetainedMessagePersistenceImpl retainedMessagePersistence;
 
-    private RetainedMessagePersistenceImpl retainedMessagePersistence;
+    private @NotNull RetainedMessage message;
 
-    private RetainedMessage message;
-
-    private SingleWriterService singleWriterService;
+    private @NotNull SingleWriterService singleWriterService;
+    private final @NotNull InternalConfigurationService
+            internalConfigurationService = new InternalConfigurationServiceImpl();
 
     @Before
     public void setUp() throws Exception {
         closeableMock = MockitoAnnotations.openMocks(this);
+        internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "4");
         message = new RetainedMessage(TestMessageUtil.createMqtt3Publish(), 1000);
-        singleWriterService = TestSingleWriterFactory.defaultSingleWriter();
+        singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         retainedMessagePersistence =
                 new RetainedMessagePersistenceImpl(localPersistence, payloadPersistence,
-                        singleWriterService, new Chunker());
+                        singleWriterService, new Chunker(internalConfigurationService));
     }
 
     @After
@@ -121,13 +125,13 @@ public class RetainedMessagePersistenceImplTest {
 
     @Test
     public void test_get_success_null() throws ExecutionException, InterruptedException {
-        when(localPersistence.get("topic", BucketUtils.getBucket("topic", 64))).thenReturn(null);
+        when(localPersistence.get("topic", BucketUtils.getBucket("topic", internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT)))).thenReturn(null);
         assertNull(retainedMessagePersistence.get("topic").get());
     }
 
     @Test
     public void test_get_success_message() throws ExecutionException, InterruptedException {
-        when(localPersistence.get("topic", BucketUtils.getBucket("topic", 64))).thenReturn(message);
+        when(localPersistence.get("topic", BucketUtils.getBucket("topic", internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT)))).thenReturn(message);
         assertEquals(message, retainedMessagePersistence.get("topic").get());
     }
 
@@ -196,7 +200,7 @@ public class RetainedMessagePersistenceImplTest {
             throw e.getCause();
         }
         verify(localPersistence).put(eq(message), eq("topic"), anyInt());
-        verify(payloadPersistence).add(any(byte[].class), eq(1L), anyLong());
+        verify(payloadPersistence).add(any(byte[].class), anyLong());
     }
 
     @Test
@@ -208,12 +212,12 @@ public class RetainedMessagePersistenceImplTest {
     @Test
     public void test_close() throws ExecutionException, InterruptedException {
         retainedMessagePersistence.closeDB().get();
-        verify(localPersistence, times(64)).closeDB(anyInt());
+        verify(localPersistence, times(internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT))).closeDB(anyInt());
     }
 
     @Test
     public void test_clear() throws ExecutionException, InterruptedException {
         retainedMessagePersistence.clear().get();
-        verify(localPersistence, times(64)).clear(anyInt());
+        verify(localPersistence, times(internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT))).clear(anyInt());
     }
 }

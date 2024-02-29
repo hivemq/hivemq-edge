@@ -66,6 +66,8 @@ public interface EmbeddedHiveMQBuilder {
      */
     @NotNull EmbeddedHiveMQBuilder withExtensionsFolder(@Nullable Path extensionsFolder);
 
+    @NotNull EmbeddedHiveMQBuilder withLicenseFolder(@Nullable Path licenseFolder);
+
     /**
      * Sets the {@link EmbeddedExtension} to the given argument.
      *

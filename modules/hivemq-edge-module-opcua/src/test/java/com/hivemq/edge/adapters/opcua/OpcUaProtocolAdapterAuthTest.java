@@ -20,14 +20,18 @@ import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
 
+import static com.hivemq.edge.modules.api.adapters.ProtocolAdapter.*;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("NullabilityAnnotations")
 class OpcUaProtocolAdapterAuthTest {
@@ -46,7 +50,7 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.ConnectionStatus.CONNECTED, protocolAdapter.getConnectionStatus());
+        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
     }
 
     @Test
@@ -61,7 +65,7 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.ConnectionStatus.CONNECTED, protocolAdapter.getConnectionStatus());
+        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
     }
 
     @Test
@@ -78,7 +82,7 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.ConnectionStatus.CONNECTED, protocolAdapter.getConnectionStatus());
+        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
     }
 
     @Test
@@ -94,16 +98,21 @@ class OpcUaProtocolAdapterAuthTest {
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        assertEquals(ProtocolAdapter.ConnectionStatus.CONNECTED, protocolAdapter.getConnectionStatus());
+        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
     }
-
 
     private static class TestProtocolAdapterStartInput implements ProtocolAdapterStartInput {
 
+        private final @NotNull ModuleServices moduleServices;
+
+        TestProtocolAdapterStartInput() {
+            moduleServices = mock(ModuleServices.class);
+            when(moduleServices.eventService()).thenReturn(mock(EventService.class));
+        }
+
         @Override
         public @NotNull ModuleServices moduleServices() {
-            return mock(ModuleServices.class);
+            return moduleServices;
         }
     }
-
 }

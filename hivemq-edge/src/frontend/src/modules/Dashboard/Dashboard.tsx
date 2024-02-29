@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, Outlet } from 'react-router-dom'
 import { AbsoluteCenter, Box, Flex } from '@chakra-ui/react'
@@ -29,15 +29,21 @@ const Dashboard: FC = () => {
   return (
     <>
       <SkipNavLink>{t('translation:action.skipNavLink')}</SkipNavLink>
-      <main>
-        <Flex flexDirection="row" h={'100vh'}>
-          <SidePanel />
-          <Flex w={'100vw'} flexGrow={1} overflowY={'auto'}>
-            <SkipNavContent />
+      <Flex flexDirection="row" h={'100vh'} overflow={'hidden'}>
+        <SidePanel />
+        <Flex as={'main'} flexGrow={1} overflow={'auto'}>
+          <SkipNavContent />
+          <Suspense
+            fallback={
+              <AbsoluteCenter axis="both">
+                <LoaderSpinner />
+              </AbsoluteCenter>
+            }
+          >
             <Outlet />
-          </Flex>
+          </Suspense>
         </Flex>
-      </main>
+      </Flex>
     </>
   )
 }

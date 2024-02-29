@@ -15,6 +15,8 @@ import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import BridgeMainDrawer from '@/modules/Bridges/components/panels/BridgeMainDrawer.tsx'
 import { bridgeInitialState, useBridgeSetup } from '@/modules/Bridges/hooks/useBridgeConfig.tsx'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 
 interface BridgeEditorProps {
   isNew?: boolean
@@ -27,28 +29,38 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
 
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { bridgeId } = useParams()
-  const { bridge, setBridge } = useBridgeSetup()
+  const { setBridge } = useBridgeSetup()
   const { data } = useListBridges()
   const navigate = useNavigate()
   const createBridge = useCreateBridge()
   const updateBridge = useUpdateBridge()
   const deleteBridge = useDeleteBridge()
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
+  const { onDeleteNode } = useWorkspaceStore()
 
   useEffect(() => {
+    if (!data) return
     if (bridgeId) {
       const b = data?.find((e) => e.id === bridgeId)
       if (b) {
         setBridge(b)
+        onOpen()
       } else {
-        // TODO[NVL] handle error for the edge cases of not finding the right datapoint
-        setBridge(bridgeInitialState)
+        errorToast(
+          {
+            id: 'bridge-open-noExist',
+            title: t('bridge.toast.view.title'),
+            description: t('bridge.toast.view.error'),
+          },
+          new Error(t('bridge.toast.view.noLongerExist', { id: bridgeId }) as string)
+        )
+        navigate('/mqtt-bridges', { replace: true })
       }
     } else {
       setBridge(bridgeInitialState)
+      onOpen()
     }
-    onOpen()
-  }, [bridgeId, bridge, data, setBridge, onOpen])
+  }, [bridgeId, data, setBridge, onOpen, errorToast, t, navigate])
 
   const handleEditorOnClose = () => {
     onClose()
@@ -112,6 +124,8 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
   const handleConfirmOnSubmit = () => {
     if (bridgeId)
       deleteBridge.mutateAsync(bridgeId).then(() => {
+        onDeleteNode(NodeTypes.BRIDGE_NODE, bridgeId)
+
         successToast({
           title: t('bridge.toast.delete.title'),
           description: t('bridge.toast.delete.description'),

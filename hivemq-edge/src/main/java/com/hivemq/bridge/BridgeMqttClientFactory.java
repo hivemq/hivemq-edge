@@ -21,6 +21,7 @@ import com.hivemq.bridge.mqtt.BridgeInterceptorHandler;
 import com.hivemq.bridge.mqtt.BridgeMqttClient;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
+import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -33,20 +34,23 @@ public class BridgeMqttClientFactory {
     private final @NotNull HivemqId hivemqId;
     private final @NotNull SystemInformation systemInformation;
     private final @NotNull MetricRegistry metricRegistry;
+    private final @NotNull EventService eventService;
 
     @Inject
     public BridgeMqttClientFactory(
             final @NotNull BridgeInterceptorHandler bridgeInterceptorHandler,
             final @NotNull HivemqId hivemqId,
             final @NotNull SystemInformation systemInformation,
-            final @NotNull MetricRegistry metricRegistry) {
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull EventService eventService) {
         this.bridgeInterceptorHandler = bridgeInterceptorHandler;
         this.hivemqId = hivemqId;
         this.systemInformation = systemInformation;
         this.metricRegistry = metricRegistry;
+        this.eventService = eventService;
     }
 
     public @NotNull BridgeMqttClient createRemoteClient(final @NotNull MqttBridge bridge) {
-        return new BridgeMqttClient(systemInformation, bridge, bridgeInterceptorHandler, hivemqId, metricRegistry);
+        return new BridgeMqttClient(systemInformation, bridge, bridgeInterceptorHandler, hivemqId, metricRegistry, eventService);
     }
 }

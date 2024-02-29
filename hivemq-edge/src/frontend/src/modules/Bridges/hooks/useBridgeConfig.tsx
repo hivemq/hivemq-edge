@@ -25,6 +25,7 @@ export const bridgeInitialState: Bridge = {
   id: '',
   port: 1883,
   sessionExpiry: 3600,
+  persist: true,
 }
 
 export const BridgeProvider: FunctionComponent<PropsWithChildren> = ({ children }) => {

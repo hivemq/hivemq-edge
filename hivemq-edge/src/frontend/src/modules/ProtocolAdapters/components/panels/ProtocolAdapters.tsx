@@ -1,5 +1,5 @@
 import { FC, useMemo, useState } from 'react'
-import { Box, HStack, IconButton, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
+import { Box, HStack, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
 import { ColumnDef, Row } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
@@ -11,6 +11,7 @@ import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDel
 import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.tsx'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 
@@ -20,12 +21,17 @@ import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
+import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
+
+import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
-import { compareStatus } from '../../utils/pagination-utils.ts'
 import AdapterActionMenu from '../adapters/AdapterActionMenu.tsx'
-import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { compareStatus } from '../../utils/pagination-utils.ts'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const DEFAULT_PER_PAGE = 10
 
@@ -60,16 +66,25 @@ const ProtocolAdapters: FC = () => {
   const [deleteAdapter, setDeleteAdapter] = useState<string | undefined>(undefined)
   const deleteProtocolAdapter = useDeleteProtocolAdapter()
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
+  const { onDeleteNode } = useWorkspaceStore()
 
   const safeData: Adapter[] = adapters ? adapters : [mockAdapter, mockAdapter, mockAdapter, mockAdapter]
 
   const columns = useMemo<ColumnDef<Adapter>[]>(() => {
     const handleCreateInstance = (type: string | undefined) => {
-      navigate('/protocol-adapters/new', { state: { selectedAdapterId: type } })
+      const adapterNavigateState: AdapterNavigateState = {
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterType: type,
+      }
+      navigate('/protocol-adapters/new', { state: adapterNavigateState })
     }
 
     const handleEditInstance = (adapterId: string, type: string) => {
-      if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: { selectedAdapterId: type } })
+      const adapterNavigateState: AdapterNavigateState = {
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterType: type,
+      }
+      if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: adapterNavigateState })
     }
 
     const handleOnDelete = (adapterId: string) => {
@@ -116,7 +131,7 @@ const ProtocolAdapters: FC = () => {
         id: 'lastStartedAttemptTime',
         cell: (info) => (
           <Skeleton isLoaded={!isLoading}>
-            {DateTime.fromISO(info.getValue() as string).toRelativeCalendar({ unit: 'minutes' })}
+            <DateTimeRenderer date={DateTime.fromISO(info.getValue() as string)} isApprox />
           </Skeleton>
         ),
         header: t('protocolAdapter.table.header.lastStarted') as string,
@@ -127,7 +142,7 @@ const ProtocolAdapters: FC = () => {
         sortingFn: undefined,
         cell: (info) => {
           const { id, type } = info.row.original
-          const { selectedAdapter } = state || {}
+          const { selectedActiveAdapter } = (state || {}) as AdapterNavigateState
           return (
             <Skeleton isLoaded={!isLoading}>
               <AdapterActionMenu
@@ -137,7 +152,7 @@ const ProtocolAdapters: FC = () => {
                 onDelete={handleOnDelete}
                 onViewWorkspace={handleViewWorkspace}
               />
-              {id === selectedAdapter?.adapterId && (
+              {id === selectedActiveAdapter?.adapterId && (
                 <IconButton
                   size={'sm'}
                   ml={2}
@@ -164,6 +179,7 @@ const ProtocolAdapters: FC = () => {
     deleteProtocolAdapter
       .mutateAsync(deleteAdapter)
       .then(() => {
+        onDeleteNode(NodeTypes.ADAPTER_NODE, deleteAdapter)
         successToast({
           title: t('protocolAdapter.toast.delete.title'),
           description: t('protocolAdapter.toast.delete.description'),
@@ -213,11 +229,12 @@ const ProtocolAdapters: FC = () => {
           : t('protocolAdapter.loading.activeAdapters')}
       </Text>
       <PaginatedTable<Adapter>
+        aria-label={t('protocolAdapter.tabs.adapters')}
         data={safeData}
         columns={columns}
         getRowStyles={(row: Row<Adapter>) => {
-          const { selectedAdapter } = state || {}
-          return row.original.id === selectedAdapter?.adapterId ? { backgroundColor: colors.blue[50] } : {}
+          const { selectedActiveAdapter } = (state || {}) as AdapterNavigateState
+          return row.original.id === selectedActiveAdapter?.adapterId ? { backgroundColor: colors.blue[50] } : {}
         }}
       />
 

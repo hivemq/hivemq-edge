@@ -1,15 +1,16 @@
 import { FC } from 'react'
-import { ButtonGroup, IconButton } from '@chakra-ui/react'
+import { ButtonGroup } from '@chakra-ui/react'
 import { MdPlayArrow, MdRestartAlt, MdStop } from 'react-icons/md'
 import { StatusTransitionCommand } from '@/api/__generated__'
 import { ConnectionElementProps } from '@/components/ConnectionController/types.ts'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 import { useTranslation } from 'react-i18next'
 
 const ConnectionButton: FC<ConnectionElementProps> = ({ id, isRunning, onChangeStatus, isLoading }) => {
   const { t } = useTranslation()
 
   return (
-    <ButtonGroup size="sm" isAttached variant="outline">
+    <ButtonGroup size="sm" isAttached>
       {!isRunning && (
         <IconButton
           isDisabled={isLoading}

@@ -55,9 +55,8 @@ const ConnectionController: FC<ConnectionControllerProps> = ({ type, id, status,
         successToast({
           title: t('protocolAdapter.toast.status.title'),
           description: t('protocolAdapter.toast.status.description', {
-            action: status,
+            context: status,
             device: type,
-            callbackTimeoutMillis: callbackTimeoutMillis ? callbackTimeoutMillis / 1000 : 0,
           }),
         })
       })

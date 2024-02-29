@@ -2,7 +2,10 @@ import { FC } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { ChakraProvider } from '@chakra-ui/react'
 
-import { themeHiveMQ } from '@/modules/Theme/themeHiveMQ.ts'
+import themeHiveMQ from '@/modules/Theme/themeHiveMQ.ts'
+
+import '@fontsource/roboto/400.css'
+import '@fontsource/roboto/700.css'
 
 import { routes } from './routes.tsx'
 import { AuthProvider } from '../Auth/AuthProvider.tsx'

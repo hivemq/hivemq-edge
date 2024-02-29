@@ -289,4 +289,5 @@
             <maxPollingErrorsBeforeRemoval>5</maxPollingErrorsBeforeRemoval>
         </modbus-adapter>
     </protocol-adapters>
+    <internal></internal>
 </hivemq>

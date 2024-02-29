@@ -7,6 +7,7 @@ import com.hivemq.configuration.reader.BridgeConfigurator;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.configuration.reader.DynamicConfigConfigurator;
+import com.hivemq.configuration.reader.InternalConfigurator;
 import com.hivemq.configuration.reader.ListenerConfigurator;
 import com.hivemq.configuration.reader.MqttConfigurator;
 import com.hivemq.configuration.reader.MqttsnConfigurator;
@@ -84,7 +85,8 @@ public class TestHttpAdapterConfig {
                 mock(UnsConfigurator.class),
                 mock(DynamicConfigConfigurator.class),
                 mock(UsageTrackingConfigurator.class),
-                mock(ProtocolAdapterConfigurator.class));
+                mock(ProtocolAdapterConfigurator.class),
+                mock(InternalConfigurator.class));
         return readerWriter.applyConfig();
     }
 
@@ -115,7 +117,8 @@ public class TestHttpAdapterConfig {
                 final UnsConfigurator unsConfigurator,
                 final DynamicConfigConfigurator dynamicConfigConfigurator,
                 final UsageTrackingConfigurator usageTrackingConfigurator,
-                final ProtocolAdapterConfigurator protocolAdapterConfigurator) {
+                final ProtocolAdapterConfigurator protocolAdapterConfigurator,
+                final InternalConfigurator internalConfigurator) {
             super(configurationFile,
                     restrictionConfigurator,
                     securityConfigurator,
@@ -128,7 +131,8 @@ public class TestHttpAdapterConfig {
                     unsConfigurator,
                     dynamicConfigConfigurator,
                     usageTrackingConfigurator,
-                    protocolAdapterConfigurator);
+                    protocolAdapterConfigurator,
+                    internalConfigurator);
         }
     }
 }

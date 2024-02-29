@@ -21,6 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.hivemq.annotations.ExecuteInSingleWriter;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -52,6 +53,7 @@ import static com.hivemq.util.ThreadPreConditions.SINGLE_WRITER_THREAD_PREFIX;
 @Singleton
 public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSessionSubscriptionLocalPersistence {
 
+
     private final @NotNull Map<String, IterablePersistenceEntry<ImmutableSet<Topic>>> @NotNull [] buckets;
     private final int bucketCount;
 
@@ -59,9 +61,11 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
     final @NotNull AtomicLong currentMemorySize = new AtomicLong();
 
     @Inject
-    ClientSessionSubscriptionMemoryLocalPersistence(@NotNull final MetricRegistry metricRegistry) {
+    ClientSessionSubscriptionMemoryLocalPersistence(
+            @NotNull final MetricRegistry metricRegistry,
+            @NotNull final InternalConfigurationService internalConfigurationService) {
 
-        bucketCount = InternalConfigurations.PERSISTENCE_BUCKET_COUNT.get();
+        bucketCount = internalConfigurationService.getInteger(InternalConfigurations.PERSISTENCE_BUCKET_COUNT);
 
         //noinspection unchecked
         buckets = new HashMap[bucketCount];
@@ -78,10 +82,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
     @Override
     @ExecuteInSingleWriter
     public void addSubscription(
-            @NotNull final String client,
-            @NotNull final Topic topic,
-            final long timestamp,
-            final int bucketIndex) {
+            @NotNull final String client, @NotNull final Topic topic, final long timestamp, final int bucketIndex) {
         addSubscriptions(client, ImmutableSet.of(topic), timestamp, bucketIndex);
     }
 
@@ -99,7 +100,8 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
 
         buckets[bucketIndex].compute(client, (ignore, oldEntry) -> {
             if (oldEntry == null) {
-                final IterablePersistenceEntry<ImmutableSet<Topic>> newEntry = new IterablePersistenceEntry<>(topics, timestamp);
+                final IterablePersistenceEntry<ImmutableSet<Topic>> newEntry =
+                        new IterablePersistenceEntry<>(topics, timestamp);
                 currentMemorySize.addAndGet(newEntry.getEstimatedSize());
                 currentMemorySize.addAndGet(MemoryEstimator.stringSize(client));
                 return newEntry;
@@ -115,10 +117,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
     @Override
     @ExecuteInSingleWriter
     public void remove(
-            @NotNull final String client,
-            @NotNull final String topic,
-            final long timestamp,
-            final int bucketIndex) {
+            @NotNull final String client, @NotNull final String topic, final long timestamp, final int bucketIndex) {
         checkNotNull(client, "Clientid must not be null");
         checkNotNull(topic, "Topic must not be null");
         checkState(timestamp > 0, "Timestamp must not be 0");
@@ -191,9 +190,7 @@ public class ClientSessionSubscriptionMemoryLocalPersistence implements ClientSe
     @Override
     @NotNull
     public BucketChunkResult<Map<String, ImmutableSet<Topic>>> getAllSubscribersChunk(
-            final int bucketIndex,
-            @Nullable final String lastClientIdIgnored,
-            final int maxResultsIgnored) {
+            final int bucketIndex, @Nullable final String lastClientIdIgnored, final int maxResultsIgnored) {
 
         //as all subscriptions are already in memory, we can ignore any pagination here and return the whole bucket.
         final Map<String, ImmutableSet<Topic>> result = buckets[bucketIndex].entrySet()

@@ -34,6 +34,14 @@ public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
                        required = true)
     private @NotNull String uri;
 
+    @JsonProperty("overrideUri")
+    @ModuleConfigField(title = "Override server returned endpoint URI",
+                       description = "Overrides the endpoint URI returned from the OPC-UA server with the hostname and port from the specified URI.",
+                       format = ModuleConfigField.FieldType.BOOLEAN,
+                       defaultValue = "false",
+                       required = false)
+    private @NotNull Boolean overrideUri = false;
+
     @JsonProperty("subscriptions")
     private @NotNull List<Subscription> subscriptions = new ArrayList<>();
 
@@ -93,6 +101,10 @@ public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
 
     public void setSecurity(final @NotNull Security security) {
         this.security = security;
+    }
+
+    public @NotNull Boolean getOverrideUri() {
+        return overrideUri;
     }
 
     @Override

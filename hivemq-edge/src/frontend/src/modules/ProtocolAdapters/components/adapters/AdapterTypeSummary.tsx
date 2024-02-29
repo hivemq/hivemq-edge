@@ -26,13 +26,13 @@ const AdapterTypeSummary: FC<AdapterTypeSummaryProps> = ({ adapter, searchQuery,
         <Image boxSize="100px" objectFit="scale-down" src={adapter.logoUrl} aria-label={adapter.id} />
       </Skeleton>
       <Box ml="3">
-        <Skeleton isLoaded={!isLoading}>
-          <Text fontWeight="bold" data-testid={'protocol-name'}>
+        <Skeleton isLoaded={!isLoading} as={'p'}>
+          <Text fontWeight="bold" data-testid={'protocol-name'} id={`adapter-${adapter.id}`} as={'span'}>
             <AdapterHighlight query={searchQuery || ''}>{adapter.name || ''}</AdapterHighlight>
-            <Badge ml="1" colorScheme="brand" variant={'solid'} data-testid={'protocol-version'}>
-              {adapter.version}
-            </Badge>
           </Text>
+          <Badge ml="1" colorScheme="brand" variant={'solid'} data-testid={'protocol-version'}>
+            {adapter.version}
+          </Badge>
         </Skeleton>
         <Skeleton isLoaded={!isLoading} mt={1}>
           <Text fontSize="sm" data-testid={'protocol-type'}>

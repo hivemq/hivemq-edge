@@ -44,17 +44,6 @@ tasks.register("testClasses") {
     }
 }
 
-
-gradle.startParameter.taskNames.forEach { task ->
-    if (tasks.findByName(task) == null) {
-        tasks.register(task) {
-            gradle.includedBuilds.forEach {
-                dependsOn(it.task(":$name"))
-            }
-        }
-    }
-}
-
 /* ******************** release tasks ******************** */
 
 val hivemq: Configuration by configurations.creating { isCanBeConsumed = false; isCanBeResolved = false }
@@ -88,7 +77,6 @@ dependencies {
     edgeModule("com.hivemq:hivemq-edge-module-plc4x")
     edgeModule("com.hivemq:hivemq-edge-module-opcua")
     edgeModule("com.hivemq:hivemq-edge-module-modbus")
-
 }
 
 val hivemqEdgeZip by tasks.registering(Zip::class) {

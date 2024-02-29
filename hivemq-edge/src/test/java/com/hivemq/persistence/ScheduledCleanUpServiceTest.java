@@ -19,7 +19,10 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableScheduledFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.ClientSessionPersistence;
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
@@ -62,14 +65,14 @@ public class ScheduledCleanUpServiceTest {
     private ClientQueuePersistence clientQueuePersistence;
 
     private ScheduledCleanUpService scheduledCleanUpService;
-
+    private final @NotNull InternalConfigurationService
+            internalConfigurationService = new InternalConfigurationServiceImpl();
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "64");
         scheduledCleanUpService = new ScheduledCleanUpService(scheduledExecutorService, clientSessionPersistence,
-                subscriptionPersistence, retainedMessagePersistence, clientQueuePersistence);
-
-        InternalConfigurations.PERSISTENCE_BUCKET_COUNT.set(64);
+                subscriptionPersistence, retainedMessagePersistence, clientQueuePersistence, internalConfigurationService);
     }
 
     @Test
@@ -91,7 +94,7 @@ public class ScheduledCleanUpServiceTest {
     public void scheduleCleanUpTask_whenCalledRepeatedly_iteratesThroughBucketsAndPersistences() {
         final ListeningScheduledExecutorService scheduledExecutorService = mock(ListeningScheduledExecutorService.class);
         scheduledCleanUpService = new ScheduledCleanUpService(scheduledExecutorService, clientSessionPersistence,
-                subscriptionPersistence, retainedMessagePersistence, clientQueuePersistence);
+                subscriptionPersistence, retainedMessagePersistence, clientQueuePersistence, internalConfigurationService);
 
         final ArgumentCaptor<ScheduledCleanUpService.CleanUpTask> argumentCaptor = ArgumentCaptor.forClass(ScheduledCleanUpService.CleanUpTask.class);
         when(scheduledExecutorService.schedule(argumentCaptor.capture(), anyLong(), any(TimeUnit.class))).thenReturn(mock(ListenableScheduledFuture.class));

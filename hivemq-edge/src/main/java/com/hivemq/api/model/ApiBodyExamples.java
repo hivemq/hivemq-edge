@@ -51,6 +51,7 @@ public interface ApiBodyExamples {
             "        }\n" +
             "    ]\n" +
             "}";
+
     String EXAMPLE_CONFIGURATION_JSON = "{\n" +
             "    \"environment\": {\n" +
             "        \"properties\": {\n" +
@@ -149,6 +150,16 @@ public interface ApiBodyExamples {
             "    }\n" +
             "}";
 
+    String EXAMPLE_CAPABILITIES_JSON =
+            "{\n" +
+            "    \"items\": [\n" +
+            "        {\n" +
+            "            \"id\": \"test-capability\"\n" +
+            "            \"displayName\": \"Super useful Capability\"\n" +
+            "            \"description\": \"This capability is really useful for so many reasons.\"\n" +
+            "        }\n" +
+            "    ]\n" +
+            "}";
 
     String EXAMPLE_CONNECTION_STATUS_LIST_JSON = "{\n" +
             "    \"items\": [\n" +
@@ -942,4 +953,6 @@ public interface ApiBodyExamples {
             "    \"status\": \"PENDING\",\n" +
             "    \"callbackTimeoutMillis\": 1000" +
             "}";
+
+    String EXAMPLE_EVENT_LIST = "{\n}";
 }

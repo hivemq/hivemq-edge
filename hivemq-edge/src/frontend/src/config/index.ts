@@ -17,8 +17,7 @@ interface configType {
     TOPIC_EDITOR_SHOW_BRANCHES: boolean
     WORKSPACE_FLOW_PANEL: boolean
     PROTOCOL_ADAPTER_FACET: boolean
-    METRICS_SELECT_PANEL: boolean
-    METRICS_DEFAULTS: string[]
+    METRICS_SHOW_EDITOR: boolean
   }
 
   documentation: {
@@ -65,16 +64,9 @@ const config: configType = {
      */
     PROTOCOL_ADAPTER_FACET: import.meta.env.VITE_FLAG_FACET_SEARCH === 'true',
     /**
-     * Show the metrics panel on the dashboard (conditional to first use flag)
+     * Show the metrics editor in the workspace panels
      */
-    METRICS_SELECT_PANEL: true,
-    /**
-     * The initial list of metrics
-     */
-    METRICS_DEFAULTS: [
-      'com.hivemq.edge.messages.incoming.connect.count',
-      'com.hivemq.edge.subscriptions.overall.current',
-    ],
+    METRICS_SHOW_EDITOR: true,
   },
 
   documentation: {

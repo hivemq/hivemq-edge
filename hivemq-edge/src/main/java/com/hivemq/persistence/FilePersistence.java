@@ -36,4 +36,5 @@ public interface FilePersistence {
      */
     void stop();
 
+    void awaitStartup();
 }

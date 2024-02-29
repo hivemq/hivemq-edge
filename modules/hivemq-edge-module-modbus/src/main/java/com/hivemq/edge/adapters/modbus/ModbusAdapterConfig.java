@@ -69,6 +69,10 @@ public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
     public ModbusAdapterConfig() {
     }
 
+    public ModbusAdapterConfig(final @NotNull String adapterId) {
+        this.id = adapterId;
+    }
+
     public boolean getPublishChangedDataOnly() {
         return publishChangedDataOnly;
     }

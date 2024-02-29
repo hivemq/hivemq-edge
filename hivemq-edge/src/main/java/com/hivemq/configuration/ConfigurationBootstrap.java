@@ -24,6 +24,7 @@ import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.BridgeConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.ConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.GatewayConfigurationServiceImpl;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.MqttsnConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.PersistenceConfigurationServiceImpl;
@@ -54,7 +55,8 @@ public class ConfigurationBootstrap {
                         new UnsConfigurationServiceImpl(),
                         new GatewayConfigurationServiceImpl(),
                         new UsageTrackingConfigurationServiceImpl(),
-                        new ProtocolAdapterConfigurationServiceImpl());
+                        new ProtocolAdapterConfigurationServiceImpl(),
+                        new InternalConfigurationServiceImpl());
 
         final ConfigurationFile configurationFile = ConfigurationFileProvider.get(systemInformation);
 
@@ -70,7 +72,8 @@ public class ConfigurationBootstrap {
                 new UnsConfigurator(configurationService.unsConfiguration()),
                 new DynamicConfigConfigurator(configurationService.gatewayConfiguration()),
                 new UsageTrackingConfigurator(configurationService.usageTrackingConfiguration()),
-                new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()));
+                new ProtocolAdapterConfigurator(configurationService.protocolAdapterConfigurationService()),
+                new InternalConfigurator(configurationService.internalConfigurationService()));
 
         configFileReader.applyConfig();
         configurationService.setConfigFileReaderWriter(configFileReader);

@@ -26,6 +26,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
+import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;
@@ -86,6 +87,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
         when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
         adapterPublishBuilder = new TestProtocolAdapterPublishBuilder();
         when(adapterPublishService.publish()).thenReturn(adapterPublishBuilder);
+        when(moduleServices.eventService()).thenReturn(mock(EventService.class));
     }
 
     protected @NotNull PUBLISH expectAdapterPublish() {

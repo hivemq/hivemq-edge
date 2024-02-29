@@ -20,6 +20,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.configuration.service.InternalConfigurationService;
+import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.iteration.Chunker;
 import com.hivemq.logging.EventLog;
 import com.hivemq.mqtt.handler.disconnect.MqttServerDisconnector;
@@ -56,6 +60,7 @@ public class ClientSessionPersistenceImplTest {
     private ConnectionPersistenceImpl connectionPersistence;
     private ClientSessionPersistenceImpl clientSessionPersistence;
     private SingleWriterService singleWriterService;
+    private final @NotNull InternalConfigurationService internalConfigurationService = new InternalConfigurationServiceImpl();
 
     @Before
     public void setUp() throws Exception {
@@ -67,10 +72,10 @@ public class ClientSessionPersistenceImplTest {
         connectionPersistence = mock(ConnectionPersistenceImpl.class);
         clientSessionPersistence = mock(ClientSessionPersistenceImpl.class);
 
-        singleWriterService = TestSingleWriterFactory.defaultSingleWriter();
+        singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         clientSessionPersistence = new ClientSessionPersistenceImpl(localPersistence, subscriptionPersistence,
                 clientQueuePersistence, singleWriterService, connectionPersistence, mock(EventLog.class), pendingWillMessages,
-                mqttServerDisconnector, new Chunker());
+                mqttServerDisconnector, new Chunker(internalConfigurationService));
     }
 
     @After

@@ -1,11 +1,10 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { Box, Flex, SimpleGrid } from '@chakra-ui/react'
+import { Box, Button, Flex, SimpleGrid } from '@chakra-ui/react'
 
 import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUnifiedNamespace.tsx'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
-import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import PageContainer from '@/components/PageContainer.tsx'
 import InfoPanel from '@/modules/UnifiedNamespace/components/panels/InfoPanel.tsx'
@@ -43,13 +42,14 @@ const UnifiedNamespacePage: FC = () => {
       subtitle={t('unifiedNamespace.description') as string}
       cta={
         <Flex height={'100%'} justifyContent={'flex-end'} alignItems={'flex-end'} pb={6}>
-          <ButtonCTA
+          <Button
+            variant={'primary'}
             leftIcon={<BiPlus />}
             onClick={() => navigate('/namespace/edit')}
             isDisabled={isLoading || isError}
           >
             {t('unifiedNamespace.action.define')}
-          </ButtonCTA>
+          </Button>
         </Flex>
       }
     >

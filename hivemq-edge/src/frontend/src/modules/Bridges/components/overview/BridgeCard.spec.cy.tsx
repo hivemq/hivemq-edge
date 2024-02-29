@@ -20,7 +20,7 @@ describe('BridgeCard', () => {
     cy.wait('@getStatus')
 
     cy.getByTestId('bridge-name').should('contain.text', MOCK_BRIDGE_ID)
-    cy.getByAriaLabel('Edit the subscription').click()
+    cy.getByAriaLabel('Edit').click()
     cy.get('@onNavigate').should('be.calledWith', `/mqtt-bridges/${MOCK_BRIDGE_ID}`)
   })
 

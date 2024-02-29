@@ -15,12 +15,13 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaException;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
@@ -46,6 +47,7 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
     private final @NotNull OpcUaAdapterConfig.@NotNull Subscription subscription;
     private final @NotNull ReadValueId readValueId;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
+    private final @NotNull EventService eventService;
     private final @NotNull CompletableFuture<Void> resultFuture;
     private final @NotNull OpcUaClient opcUaClient;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap;
@@ -56,6 +58,7 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
             final @NotNull OpcUaAdapterConfig.Subscription subscription,
             final @NotNull ReadValueId readValueId,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
+            final @Nullable EventService eventService,
             final @NotNull CompletableFuture<Void> resultFuture,
             final @NotNull OpcUaClient opcUaClient,
             final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap,
@@ -64,6 +67,7 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
         this.subscription = subscription;
         this.readValueId = readValueId;
         this.adapterPublishService = adapterPublishService;
+        this.eventService = eventService;
         this.resultFuture = resultFuture;
         this.opcUaClient = opcUaClient;
         this.subscriptionMap = subscriptionMap;
@@ -93,7 +97,8 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
                         opcUaClient,
                         readValueId.getNodeId(),
                         metricsHelper,
-                        adapterId));
+                        adapterId,
+                        eventService));
 
         uaSubscription.createMonitoredItems(TimestampsToReturn.Both, List.of(request), onItemCreated)
                 .thenAccept(items -> {

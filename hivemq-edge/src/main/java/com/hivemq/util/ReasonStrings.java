@@ -56,6 +56,7 @@ public class ReasonStrings {
     public static final String CONNACK_NOT_AUTHORIZED_NO_AUTHENTICATOR = "Not authorized to connect. No authenticator registered.";
     public static final String CONNACK_NOT_AUTHORIZED_FAILED = "Not authorized to connect. Authentication failed.";
 
+    public static final String CONNACK_PACKET_TOO_LARGE = "Sent CONNECT exceeded the maximum permissible size.";
     public static final String CONNACK_TOPIC_NAME_INVALID_WILL_LENGTH = "Sent CONNECT with incorrect will topic length.";
     public static final String CONNACK_TOPIC_NAME_INVALID_WILL_MALFORMED = "Sent CONNECT with malformed will topic.";
     public static final String CONNACK_TOPIC_NAME_INVALID_WILL_EMPTY = "Sent CONNECT with empty will topic.";

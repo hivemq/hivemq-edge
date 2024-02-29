@@ -50,7 +50,18 @@ const useGetUiSchema = (isNewAdapter = true) => {
         'httpHeaders',
         'httpConnectTimeout',
         'httpPublishSuccessStatusCodeOnly',
+        'allowUntrustedCertificates',
       ],
+    },
+    {
+      id: 'ads',
+      title: t('protocolAdapter.uiSchema.groups.ads'),
+      properties: ['sourceAmsPort', 'targetAmsPort', 'sourceAmsNetId', 'targetAmsNetId'],
+    },
+    {
+      id: 'eip',
+      title: t('protocolAdapter.uiSchema.groups.eip'),
+      properties: ['slot', 'backplane'],
     },
     {
       id: 's7advanced',
@@ -69,8 +80,7 @@ const useGetUiSchema = (isNewAdapter = true) => {
         'pduSize',
         'retryTime',
         'retryTimeout',
-        'retryTime',
-        'retryTime',
+        'readTimeout',
       ],
     },
   ]

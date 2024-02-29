@@ -36,60 +36,63 @@ public interface ConfigurationService {
      *
      * @return the listener configuration service
      */
-    ListenerConfigurationService listenerConfiguration();
+    @NotNull ListenerConfigurationService listenerConfiguration();
 
     /**
      * Returns the configuration service for MQTT configuration
      *
      * @return the mqtt configuration service
      */
-    MqttConfigurationService mqttConfiguration();
+    @NotNull MqttConfigurationService mqttConfiguration();
 
     /**
      * Returns the throttling configuration service for global throttling
      *
      * @return the global throttling service
      */
-    RestrictionsConfigurationService restrictionsConfiguration();
+    @NotNull RestrictionsConfigurationService restrictionsConfiguration();
 
     /**
      * Returns the configuration service for MQTTSN configuration
      *
      * @return the mqttsn configuration service
      */
-    MqttsnConfigurationService mqttsnConfiguration();
+    @NotNull MqttsnConfigurationService mqttsnConfiguration();
 
     /**
      * Returns the configuration service for MQTTSN configuration
      *
      * @return the bridge configuration service
      */
-    BridgeConfigurationService bridgeConfiguration();
+    @NotNull BridgeConfigurationService bridgeConfiguration();
 
     /**
      * Returns the configuration service for Api configuration
      *
      * @return the api configuration service
      */
-    ApiConfigurationService apiConfiguration();
+    @NotNull ApiConfigurationService apiConfiguration();
 
-    UnsConfigurationService unsConfiguration();
+    @NotNull UnsConfigurationService unsConfiguration();
 
-    SecurityConfigurationService securityConfiguration();
+    @NotNull SecurityConfigurationService securityConfiguration();
 
-    PersistenceConfigurationService persistenceConfigurationService();
+    @NotNull PersistenceConfigurationService persistenceConfigurationService();
 
-    DynamicConfigurationService gatewayConfiguration();
+    @NotNull DynamicConfigurationService gatewayConfiguration();
 
-    UsageTrackingConfigurationService usageTrackingConfiguration();
+    @NotNull UsageTrackingConfigurationService usageTrackingConfiguration();
 
-    ProtocolAdapterConfigurationService protocolAdapterConfigurationService();
+    @NotNull ProtocolAdapterConfigurationService protocolAdapterConfigurationService();
 
-    void setConfigFileReaderWriter(ConfigFileReaderWriter configFileReaderWriter);
+    @NotNull InternalConfigurationService internalConfigurationService();
+
+    void setConfigFileReaderWriter(@NotNull ConfigFileReaderWriter configFileReaderWriter);
 
     void writeConfiguration(@NotNull final Writer writer);
 
-    Optional<Long> getLastUpdateTime();
+    @NotNull Optional<Long> getLastUpdateTime();
+
 }
 
 

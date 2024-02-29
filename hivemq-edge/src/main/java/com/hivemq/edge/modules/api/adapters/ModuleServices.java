@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.api.adapters;
 
+import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -26,5 +27,8 @@ public interface ModuleServices {
     @NotNull ScheduledExecutorService scheduledExecutorService();
 
     @NotNull ProtocolAdapterPollingService protocolAdapterPollingService();
+
+    @NotNull EventService eventService();
+
 
 }

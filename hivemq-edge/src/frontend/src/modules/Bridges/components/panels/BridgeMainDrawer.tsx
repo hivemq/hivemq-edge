@@ -20,13 +20,14 @@ import { useTranslation } from 'react-i18next'
 import { useForm } from 'react-hook-form'
 
 import { ApiError, Bridge } from '@/api/__generated__'
-import ButtonCTA from '@/components/Chakra/ButtonCTA.tsx'
+import { useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
 
 import ConnectionPanel from '../panels/ConnectionPanel.tsx'
 import NamePanel from '../panels/NamePanel.tsx'
 import OptionsPanel from '../panels/OptionsPanel.tsx'
 import SubscriptionsPanel from '../panels/SubscriptionsPanel.tsx'
 import SecurityPanel from '../panels/SecurityPanel.tsx'
+import PersistencePanel from '../panels/PersistencePanel.tsx'
 import { useBridgeSetup } from '../../hooks/useBridgeConfig.tsx'
 
 interface BridgeMainDrawerProps {
@@ -49,6 +50,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
 }) => {
   const { t } = useTranslation()
   const { bridge } = useBridgeSetup()
+  const hasPersistence = useGetCapability('mqtt-persistence')
   const form = useForm<Bridge>({
     mode: 'all',
     criteriaMode: 'all',
@@ -88,6 +90,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
                   <Tab>{t('bridge.drawer.connection')}</Tab>
                   <Tab>{t('bridge.drawer.broker')}</Tab>
                   <Tab>{t('bridge.drawer.security')}</Tab>
+                  {hasPersistence && <Tab>{t('bridge.drawer.persistence')}</Tab>}
                 </TabList>
 
                 <TabPanels>
@@ -118,6 +121,12 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
                   <TabPanel>
                     <SecurityPanel form={form} />
                   </TabPanel>
+
+                  {hasPersistence && (
+                    <TabPanel>
+                      <PersistencePanel form={form} hasPersistence={hasPersistence} />
+                    </TabPanel>
+                  )}
                 </TabPanels>
               </Tabs>
             </form>
@@ -125,20 +134,20 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
 
           <DrawerFooter borderTopWidth="1px">
             {!isNewBridge && (
-              <Button colorScheme="red" type="button" variant="outline" form="bridge-form" onClick={onDelete}>
+              <Button type="button" variant="danger" form="bridge-form" onClick={onDelete}>
                 {t('bridge.action.delete')}
               </Button>
             )}
             <Flex flexGrow={1} justifyContent={'flex-end'}>
-              <ButtonCTA
+              <Button
                 isDisabled={!form.formState.isValid}
                 isLoading={isSubmitting}
-                variant="solid"
+                variant={'primary'}
                 type="submit"
                 form="bridge-form"
               >
                 {isNewBridge ? t('bridge.action.create') : t('bridge.action.update')}
-              </ButtonCTA>
+              </Button>
             </Flex>
           </DrawerFooter>
         </DrawerContent>

@@ -74,11 +74,6 @@ const ConnectionPanel: FC<BridgePanelType> = ({ form }) => {
           </FormControl>
         </Box>
       </FormControl>
-      {/*<Flex justifyContent={'flex-end'}>*/}
-      {/*  <Button isDisabled size={'sm'} variant="outline" leftIcon={<FaConnectdevelop />}>*/}
-      {/*    {t('bridge.connection.testConnection')}*/}
-      {/*  </Button>*/}
-      {/*</Flex>*/}
     </Flex>
   )
 }

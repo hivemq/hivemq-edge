@@ -16,7 +16,9 @@
 package com.hivemq.metrics.ioc;
 
 import com.codahale.metrics.MetricRegistry;
+import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.logging.EventLog;
 import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.metrics.MetricsShutdownHook;
@@ -26,6 +28,7 @@ import com.hivemq.metrics.gauges.SessionsGauge;
 import com.hivemq.metrics.jmx.JmxReporterBootstrap;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
+import dagger.BindsInstance;
 import dagger.Module;
 import dagger.Provides;
 import dagger.multibindings.IntoSet;
@@ -38,18 +41,18 @@ public class MetricsModule {
 
     @Provides
     @Singleton
-    static @NotNull MetricsHolder metricsHolder(@NotNull MetricRegistry metricRegistry) {
-        return new MetricsHolder(metricRegistry);
-    }
-
-    @Provides
-    @Singleton
     static @NotNull SessionsGauge sessionsGauge(
             final @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence,
             final @NotNull MetricRegistry metricRegistry) {
         final SessionsGauge sessionsGauge = new SessionsGauge(clientSessionLocalPersistence);
         metricRegistry.register(HiveMQMetrics.CLIENT_SESSIONS_CURRENT.name(), sessionsGauge);
         return sessionsGauge;
+    }
+
+    @Provides
+    @Singleton
+    static @NotNull MetricsHolder metricsHolder(final @NotNull MetricRegistry metricRegistry) {
+        return new MetricsHolder(metricRegistry);
     }
 
     @Provides

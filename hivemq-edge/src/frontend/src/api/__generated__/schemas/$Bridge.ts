@@ -63,6 +63,11 @@ export const $Bridge = {
             format: 'string',
             maxLength: 65535,
         },
+        persist: {
+            type: 'boolean',
+            description: `Shall the publishes for the bridge be persisted.`,
+            isNullable: true,
+        },
         port: {
             type: 'number',
             description: `The port number to connect to`,

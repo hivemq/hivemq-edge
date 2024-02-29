@@ -38,7 +38,7 @@ public class LocalPersistenceFileUtil {
     private final SystemInformation systemInformation;
 
     @Inject
-    LocalPersistenceFileUtil(final SystemInformation systemInformation) {
+    public LocalPersistenceFileUtil(final SystemInformation systemInformation) {
         this.systemInformation = systemInformation;
     }
 

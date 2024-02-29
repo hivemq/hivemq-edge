@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright 2023-present HiveMQ GmbH
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="config.xsd">
+
+    <mqtt-listeners>
+        <tcp-listener>
+            <port>1883</port>
+            <bind-address>0.0.0.0</bind-address>
+        </tcp-listener>
+    </mqtt-listeners>
+    <protocol-adapters>
+        <s7>
+            <id>my-s7-id</id>
+            <host>172.16.10.51</host>
+            <port>102</port>
+            <controllerType>S7_1500</controllerType>
+            <maxPollingErrorsBeforeRemoval>10</maxPollingErrorsBeforeRemoval>
+            <pollingIntervalMillis>1000</pollingIntervalMillis>
+            <remoteRack>0</remoteRack>
+            <remoteRack2>0</remoteRack2>
+            <remoteSlot>0</remoteSlot>
+            <remoteSlot2>0</remoteSlot2>
+            <remoteTsap>0</remoteTsap>
+            <publishChangedDataOnly>true</publishChangedDataOnly>
+            <subscriptions>
+                <subscription>
+                    <tagName>my-tag-name-1</tagName>
+                    <tagAddress>%I205.0</tagAddress>
+                    <destination>my/topic</destination>
+                    <dataType>BOOL</dataType>
+                    <qos>1</qos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <includeTimestamp>true</includeTimestamp>
+                    <includeTagNames>false</includeTagNames>
+                </subscription>
+            </subscriptions>
+        </s7>
+    </protocol-adapters>
+</hivemq>

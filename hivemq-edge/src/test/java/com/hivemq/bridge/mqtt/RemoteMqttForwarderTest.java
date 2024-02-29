@@ -19,12 +19,13 @@ import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.hivemq.bridge.MqttForwarder;
 import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.metrics.PerBridgeMetrics;
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient;
-import com.hivemq.client.mqtt.mqtt5.Mqtt5Client;
 import com.hivemq.client.mqtt.mqtt5.datatypes.Mqtt5UserProperty;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator;
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish;
@@ -34,7 +35,6 @@ import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import util.TestMessageUtil;
@@ -45,38 +45,32 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-@Disabled
+
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 class RemoteMqttForwarderTest {
 
-    private @NotNull Mqtt5Client mqtt5Client;
-    private @NotNull Mqtt5AsyncClient mqtt5AsyncClient;
-    private @NotNull MetricRegistry metricRegistry;
+    private final @NotNull BridgeMqttClient bridgeClient = mock(BridgeMqttClient.class);
+    private final @NotNull Mqtt5AsyncClient mqtt5AsyncClient = mock(Mqtt5AsyncClient.class);
+    private final @NotNull MetricRegistry metricRegistry = new MetricRegistry();
+    private final @NotNull ExecutorService executorService = MoreExecutors.newDirectExecutorService();
+    private final @NotNull AtomicBoolean callbackCalled = new AtomicBoolean(false);
+    private final @NotNull RemoteMqttForwarder forwarder =
+            createForwarder(callbackCalled, false, "{#}", List.of(), List.of(), 2);
+
 
     @BeforeEach
     void setup() {
-        mqtt5Client = mock(Mqtt5Client.class);
-        mqtt5AsyncClient = mock(Mqtt5AsyncClient.class);
-        when(mqtt5Client.toAsync()).thenReturn(mqtt5AsyncClient);
+        when(bridgeClient.isConnected()).thenReturn(true);
+        when(bridgeClient.getMqtt5Client()).thenReturn(mqtt5AsyncClient);
         when(mqtt5AsyncClient.publish(any())).thenReturn(CompletableFuture.completedFuture(null));
-
-
-        metricRegistry = new MetricRegistry();
     }
 
     @Test
     public void whenLocalMessage_ThenPublishToDestinationWithCorrectFields() {
-        final AtomicBoolean called = new AtomicBoolean(false);
-        final RemoteMqttForwarder forwarder = createForwarder(called, false, "{#}", List.of(), List.of(), 2);
-
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         forwarder.onMessage(localPublish, "testqueue");
@@ -84,9 +78,10 @@ class RemoteMqttForwarderTest {
         final ArgumentCaptor<Mqtt5Publish> captor = ArgumentCaptor.forClass(Mqtt5Publish.class);
         verify(mqtt5AsyncClient).publish(captor.capture());
 
-        assertTrue(called.get());
+        assertTrue(callbackCalled.get());
         assertEquals(1, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.count").getCount());
-        assertEquals(0, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count").getCount());
+        assertEquals(0,
+                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count").getCount());
 
         final Mqtt5Publish publish = captor.getValue();
 
@@ -95,10 +90,8 @@ class RemoteMqttForwarderTest {
 
     @Test
     public void whenLocalMessageAndDestinationChanged_ThenPublishToNewDestination() {
-        final AtomicBoolean called = new AtomicBoolean(false);
         final RemoteMqttForwarder forwarder =
-                createForwarder(called, false, "prefix/{1}/suffix", List.of(), List.of(), 2);
-
+                createForwarder(callbackCalled, false, "prefix/{1}/suffix", List.of(), List.of(), 2);
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         forwarder.onMessage(localPublish, "testqueue");
@@ -106,9 +99,10 @@ class RemoteMqttForwarderTest {
         final ArgumentCaptor<Mqtt5Publish> captor = ArgumentCaptor.forClass(Mqtt5Publish.class);
         verify(mqtt5AsyncClient).publish(captor.capture());
 
-        assertTrue(called.get());
+        assertTrue(callbackCalled.get());
         assertEquals(1, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.count").getCount());
-        assertEquals(0, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count").getCount());
+        assertEquals(0,
+                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count").getCount());
 
         final Mqtt5Publish publish = captor.getValue();
 
@@ -117,7 +111,6 @@ class RemoteMqttForwarderTest {
 
     @Test
     public void whenLocalMessageRetainAndPreserveRetain_ThenPublishWithRetain() {
-        final AtomicBoolean callbackCalled = new AtomicBoolean(false);
         final RemoteMqttForwarder forwarder = createForwarder(callbackCalled, true, "{#}", List.of(), List.of(), 2);
 
         forwarder.start();
@@ -133,23 +126,29 @@ class RemoteMqttForwarderTest {
     }
 
     @Test
-    public void whenForwarderStopped_ThenNotPublishButCallbackIsCalled() {
+    public void whenForwarderStopped_ThenNotPublishAndCallbackIsNotCalled() {
         final AtomicBoolean called = new AtomicBoolean(false);
         final RemoteMqttForwarder forwarder = createForwarder(called, false, "{#}", List.of(), List.of(), 2);
+        final AtomicBoolean resetInFlightCallbackCalled = new AtomicBoolean(false);
+        forwarder.setResetInflightMarkerCallback((sharedSubscription, uniqueId) -> {
+            resetInFlightCallbackCalled.set(true);
+        });
         forwarder.start();
         forwarder.stop();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         forwarder.onMessage(localPublish, "testqueue");
 
         verify(mqtt5AsyncClient, never()).publish(any());
-        assertTrue(called.get());
+        assertTrue(resetInFlightCallbackCalled.get());
     }
 
     @Test
     public void whenHopCountExceeded_ThenNotPublishButCallbackIsCalled() {
         final AtomicBoolean called = new AtomicBoolean(false);
         final RemoteMqttForwarder forwarder = createForwarder(called, false, "{#}", List.of(), List.of(), 2);
+
         forwarder.start();
+
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         final ImmutableList.Builder<MqttUserProperty> props = ImmutableList.builder();
         props.addAll(localPublish.getUserProperties().asList());
@@ -170,6 +169,7 @@ class RemoteMqttForwarderTest {
     public void whenExcluded_ThenNotPublishButCallbackIsCalled() {
         final AtomicBoolean called = new AtomicBoolean(false);
         final RemoteMqttForwarder forwarder = createForwarder(called, false, "{#}", List.of("topic"), List.of(), 2);
+
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         forwarder.onMessage(localPublish, "testqueue");
@@ -184,13 +184,13 @@ class RemoteMqttForwarderTest {
 
     @Test
     public void whenCustomProps_ThenCustomPropsArePresentInRemotePub() {
-        final AtomicBoolean callbackCalled = new AtomicBoolean(false);
         final RemoteMqttForwarder forwarder = createForwarder(callbackCalled,
                 false,
                 "{#}",
                 List.of(),
                 List.of(CustomUserProperty.of("customk1", "customv1"), CustomUserProperty.of("customk2", "customv2")),
                 2);
+
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         forwarder.onMessage(localPublish, "testqueue");
@@ -225,8 +225,6 @@ class RemoteMqttForwarderTest {
 
     @Test
     public void whenNoProps_ThenOnlyHopCountPresentInRemotePub() {
-        final AtomicBoolean callbackCalled = new AtomicBoolean(false);
-        final RemoteMqttForwarder forwarder = createForwarder(callbackCalled, false, "{#}", List.of(), List.of(), 2);
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         localPublish.setUserProperties(Mqtt5UserProperties.NO_USER_PROPERTIES);
@@ -246,8 +244,6 @@ class RemoteMqttForwarderTest {
 
     @Test
     public void whenMinimalPub_ThenAllFieldsSetCorrectly() {
-        final AtomicBoolean callbackCalled = new AtomicBoolean(false);
-        final RemoteMqttForwarder forwarder = createForwarder(callbackCalled, false, "{#}", List.of(), List.of(), 2);
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createMqtt3Publish();
         forwarder.onMessage(localPublish, "testqueue");
@@ -275,9 +271,7 @@ class RemoteMqttForwarderTest {
 
     @Test
     public void whenMaxQoSExceeded_ThenPublishWithLessQoS() {
-        final AtomicBoolean callbackCalled = new AtomicBoolean(false);
         final RemoteMqttForwarder forwarder = createForwarder(callbackCalled, true, "{#}", List.of(), List.of(), 1);
-
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         forwarder.onMessage(localPublish, "testqueue");
@@ -292,8 +286,6 @@ class RemoteMqttForwarderTest {
 
     @Test
     public void whenHopPropIsNaN_ThenResetHop() {
-        final AtomicBoolean callbackCalled = new AtomicBoolean(false);
-        final RemoteMqttForwarder forwarder = createForwarder(callbackCalled, false, "{#}", List.of(), List.of(), 2);
         forwarder.start();
         final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
         localPublish.setUserProperties(Mqtt5UserProperties.of(MqttUserProperty.of("hmq-bridge-hop-count",
@@ -314,8 +306,6 @@ class RemoteMqttForwarderTest {
 
     @Test
     public void whenException_ThenCountMetric() {
-        final AtomicBoolean callbackCalled = new AtomicBoolean(false);
-        final RemoteMqttForwarder forwarder = createForwarder(callbackCalled, false, "{#}", List.of(), List.of(), 2);
         forwarder.start();
         when(mqtt5AsyncClient.publish(any())).thenThrow(new RuntimeException("Test Exception"));
 
@@ -324,7 +314,20 @@ class RemoteMqttForwarderTest {
 
         assertTrue(callbackCalled.get());
         assertEquals(0, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.count").getCount());
-        assertEquals(1, metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count").getCount());
+        assertEquals(1,
+                metricRegistry.counter("com.hivemq.edge.bridge.testbridge.forward.publish.failed.count").getCount());
+    }
+
+    @Test
+    void whenClientIsDisconnected_thenPublishesAreQueued() {
+        when(bridgeClient.isConnected()).thenReturn(false);
+        forwarder.start();
+        final PUBLISH localPublish = TestMessageUtil.createFullMqtt5Publish();
+        forwarder.onMessage(localPublish, "testqueue");
+        when(bridgeClient.isConnected()).thenReturn(true);
+        forwarder.onMessage(localPublish, "testqueue");
+
+        verify(mqtt5AsyncClient, times(2)).publish(any());
     }
 
     @NotNull
@@ -336,22 +339,21 @@ class RemoteMqttForwarderTest {
             final @NotNull List<CustomUserProperty> customProps,
             final int maxQoS) {
         final LocalSubscription localSubscription =
-                new LocalSubscription(List.of("#"), destination, excludes, customProps, preserveRetain, maxQoS);
+                new LocalSubscription(List.of("#"), destination, excludes, customProps, preserveRetain, maxQoS, 1000L);
         final MqttBridge bridge = new MqttBridge.Builder().withId("testbridge")
                 .withHost("1")
                 .withClientId("testcid")
                 .withLocalSubscriptions(List.of(localSubscription))
                 .build();
 
-        //TODO fixme - we wrapped the client into the forwarder
         final RemoteMqttForwarder forwarder = new RemoteMqttForwarder("testid",
                 bridge,
                 localSubscription,
-                /*mqtt5Client*/ null,
+                bridgeClient,
                 new PerBridgeMetrics("testbridge", metricRegistry),
                 new TestInterceptorHandler());
-
-        forwarder.setCallback((message, queueId, cancelled) -> {
+        forwarder.setExecutorService(executorService);
+        forwarder.setAfterForwardCallback((qos, uniqueId, queueId, cancelled) -> {
             if (queueId.equals("testqueue")) {
                 callbackCalled.set(true);
             }
@@ -359,7 +361,7 @@ class RemoteMqttForwarderTest {
         return forwarder;
     }
 
-    private void verifyFullPublish(Mqtt5Publish publish, final String topic) {
+    private void verifyFullPublish(Mqtt5Publish publish, final @NotNull String topic) {
         assertEquals(topic, publish.getTopic().toString());
         assertEquals("payload", new String(publish.getPayloadAsBytes()));
         assertEquals(2, publish.getQos().getCode());

@@ -19,8 +19,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.ImmutableIntArray;
 import com.hivemq.bootstrap.ClientConnection;
+import com.hivemq.configuration.service.InternalConfigurationService;
+import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.bridge.MessageForwarder;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
@@ -83,14 +87,17 @@ public class ClientQueuePersistenceImplTest {
 
     private ClientQueuePersistenceImpl clientQueuePersistence;
 
-    final int bucketSize = 64;
+    final int bucketSize = 4;
 
     private SingleWriterService singleWriterService;
+    private final @NotNull InternalConfigurationService
+            internalConfigurationService = new InternalConfigurationServiceImpl();
 
     @Before
     public void setUp() throws Exception {
         closeableMock = MockitoAnnotations.openMocks(this);
-        singleWriterService = TestSingleWriterFactory.defaultSingleWriter();
+        internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "" + bucketSize);
+        singleWriterService = TestSingleWriterFactory.defaultSingleWriter(internalConfigurationService);
         when(mqttConfigurationService.maxQueuedMessages()).thenReturn(1000L);
         when(mqttConfigurationService.getQueuedMessagesStrategy()).thenReturn(QueuedMessagesStrategy.DISCARD);
         clientQueuePersistence =

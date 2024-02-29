@@ -15,17 +15,25 @@
  */
 package com.hivemq.edge.modules.ioc;
 
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
+import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
+import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPollingServiceImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
+import com.hivemq.edge.modules.api.adapters.ModuleServices;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.api.events.EventListener;
+import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.EventStore;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import dagger.Binds;
 import dagger.Module;
+import dagger.Provides;
+import dagger.multibindings.ElementsIntoSet;
 
 import javax.inject.Singleton;
+import java.util.Set;
 
 @Module
 public abstract class ModulesModule {
@@ -41,4 +49,20 @@ public abstract class ModulesModule {
     @Binds
     @Singleton
     abstract @NotNull ProtocolAdapterPollingService protocolAdapterPollingService(@NotNull ProtocolAdapterPollingServiceImpl protocolAdapterPollingService);
+
+    @Binds
+    @Singleton
+    abstract @NotNull EventService eventService(@NotNull EventServiceDelegateImpl eventServiceDelegate);
+
+    @Binds
+    @Singleton
+    abstract @NotNull EventStore eventStore(@NotNull InMemoryEventImpl inMemoryEvent);
+
+    @Provides
+    @ElementsIntoSet
+    @Singleton
+    static Set<EventListener> provideEventListeners() {
+        //TODO register event listeners here
+        return Set.of();
+    }
 }

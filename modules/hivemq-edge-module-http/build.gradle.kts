@@ -57,6 +57,7 @@ dependencies {
     compileOnly("com.hivemq:hivemq-extension-sdk")
     testImplementation("org.apache.commons:commons-lang3:${property("commons-lang.version")}")
     testImplementation("commons-io:commons-io:${property("commons-io.version")}")
+    testImplementation("com.google.guava:guava:${property("guava.version")}")
     testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")
@@ -64,6 +65,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${property("junit.jupiter.version")}")
     testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
     testImplementation("org.mockito:mockito-junit-jupiter:${property("mockito.version")}")
+    testImplementation("net.javacrumbs.json-unit:json-unit-assertj:${property("jsonUnit")}")
 }
 
 tasks.test {

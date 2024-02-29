@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.http.model;
 
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
@@ -27,13 +28,11 @@ public class HttpData extends ProtocolAdapterDataSample {
     private final String contentType;
     private int httpStatusCode;
 
-    public HttpData(final String requestUrl,
-                    final int httpStatusCode,
-                    final @NotNull String contentType,
-                    final @NotNull Object data,
-                    final @NotNull String topic,
-                    final @NotNull int qos) {
-        super(data, topic, qos);
+    public HttpData(
+            AbstractProtocolAdapterConfig.Subscription subscription, final String requestUrl,
+            final int httpStatusCode,
+            final @NotNull String contentType) {
+        super(subscription);
         this.requestUrl = requestUrl;
         this.contentType = contentType;
         this.httpStatusCode = httpStatusCode;
@@ -49,9 +48,5 @@ public class HttpData extends ProtocolAdapterDataSample {
 
     public int getHttpStatusCode() {
         return httpStatusCode;
-    }
-
-    public Object getData() {
-        return data;
     }
 }

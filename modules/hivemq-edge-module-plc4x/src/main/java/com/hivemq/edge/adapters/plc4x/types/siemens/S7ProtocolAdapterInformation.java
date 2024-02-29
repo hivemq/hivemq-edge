@@ -16,10 +16,9 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
+import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
@@ -27,8 +26,7 @@ import java.util.List;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class S7ProtocolAdapterInformation
-    extends AbstractProtocolAdapterInformation {
+public class S7ProtocolAdapterInformation extends AbstractProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new S7ProtocolAdapterInformation();
 
@@ -52,12 +50,7 @@ public class S7ProtocolAdapterInformation
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to S7-300, S7-400, S7-1200 & S7-1500 devices, reading data from the PLC into MQTT.";
-    }
-
-    @Override
-    public String getVersion() {
-        return super.getVersion() + " (ALPHA)";
+        return "Connects HiveMQ Edge to S7-300, S7-400, S7-1200, S7-1500 & LOGO devices, reading data from the PLC into MQTT.";
     }
 
     @Override

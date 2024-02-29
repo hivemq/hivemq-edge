@@ -1,0 +1,2115 @@
+openapi: 3.0.1
+info:
+  contact:
+    url: https://www.hivemq.com
+  description: |
+    # Introduction
+    HiveMQ Edge's REST API provides endpoints for the following use cases:
+    - Authentication
+    - Health Checking
+    - Exploring Configuration
+    ## Errors
+    Conventional HTTP response codes are used to indicate the success or failure of an API request. Codes in the 2xx range generally indicate success. Codes in the 4xx range indicate an error that failed given the information provided (e.g., a required parameter was omitted). Codes in the 5xx range indicate an error on the server side.
+    For all errors a JSON response with additional details is returned in the format [Problem JSON](https://tools.ietf.org/html/rfc7807).
+    ## OpenAPI
+    HiveMQ's REST API provides an OpenAPI 3.0 schema definition that can imported into popular API tooling (e.g. Postman) or can be used to generate client-code for multiple programming languages.
+  title: HiveMQ Edge REST API
+  version: "2023.8"
+  x-logo:
+    url: https://www.hivemq.com/img/svg/hivemq-bee.svg
+tags:
+  - description: Services to obtain and validate security tokens with the HiveMQ Edge
+      API.
+    name: Authentication Endpoint
+  - description: Explore and interact with the Bridges configured on your Gateway.
+    name: Bridges
+  - description: Interact with the system event sub-system.
+    name: Events
+  - description: Services relating to the use of the portal.
+    name: Frontend
+  - description: Services to interact with the gateway configuration.
+    name: Gateway Endpoint
+  - description: Gain insight and system metrics.
+    name: Metrics Endpoint
+  - description: Interact with protocol adapters.
+    name: Protocol Adapters
+  - description: Configure Unified Namespace.
+    name: UNS
+paths:
+  /:
+    get:
+      operationId: getRoot
+      responses:
+        default:
+          content:
+            '*/*': { }
+          description: default response
+  /api/v1/auth/authenticate:
+    post:
+      description: Authorize the presented user to obtain a secure token for use on
+        the API.
+      operationId: authenticate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsernamePasswordCredentials'
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                example-authentication:
+                  description: Example Authentication configuration.
+                  summary: Example authentication
+                  value:
+                    token: eyJraWQiOiIwMDAwMSIsImFsZyI6IlJTMjU2In0.eyJqdGkiOiJpb09YbmdWQW1ncl9rSGxZMlRPNWx3IiwiaWF0IjoxNjg3OTQ2MzkwLCJhdWQiOiJIaXZlTVEtRWRnZS1BcGkiLCJpc3MiOiJIaXZlTVEtRWRnZSIsImV4cCI6MTY4Nzk0ODE5MCwibmJmIjoxNjg3OTQ2MjcwLCJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIl19.F4fCJcLobUJXR8rcER_sXVR2l6LhGc6LrnpDlBfuCmVQI22UjLjh-GBYPJV_VF17at_ChBS0UePN9dF4U0i5SsuLcLbrl6QMyI3kmiDxvZCKPWPJGJfiqljVysbQS5vK2F8eJmVFWr0Bb5rXjTtClLIfDGTLEoETbUOMfmic5EzPdWwLN7i3NbuE3xl9u0RepJwVNf0eZrvwIQjpeLZ8vNx9eIVUeMhXpylrQGlDeikJn_F6K89hc1igl2hzN4aU9oT-WOLeQ82oRq7IhL1Rzi1K9NdKMS_xrpV951basq_419oyGyQ6zcxORyC7vsGLZPGi0sHsSJdQ-j12xhPsMg
+              schema:
+                $ref: '#/components/schemas/ApiBearerToken'
+          description: Username & Password Credentials to Authenticate as.
+        "401":
+          content:
+            application/json:
+              examples:
+                authentication-invalid:
+                  description: Unable to authenticate credentials
+                  summary: The requested credentials could not be authenticated
+                  value:
+                    title: Invalid username and/or password
+              schema:
+                $ref: '#/components/schemas/ApiErrorMessage'
+          description: The requested credentials could not be authenticated.
+      summary: Authorize the presented user to obtain a secure token for use on the
+        API.
+      tags:
+        - Authentication
+        - Authentication Endpoint
+  /api/v1/auth/refresh-token:
+    post:
+      description: Authorize the presented user to obtain a secure token for use on
+        the API.
+      operationId: refresh-token
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                example-authentication:
+                  description: Example Authentication configuration.
+                  summary: Example authentication
+                  value:
+                    token: eyJraWQiOiIwMDAwMSIsImFsZyI6IlJTMjU2In0.eyJqdGkiOiJpb09YbmdWQW1ncl9rSGxZMlRPNWx3IiwiaWF0IjoxNjg3OTQ2MzkwLCJhdWQiOiJIaXZlTVEtRWRnZS1BcGkiLCJpc3MiOiJIaXZlTVEtRWRnZSIsImV4cCI6MTY4Nzk0ODE5MCwibmJmIjoxNjg3OTQ2MjcwLCJzdWIiOiJhZG1pbiIsInJvbGVzIjpbImFkbWluIl19.F4fCJcLobUJXR8rcER_sXVR2l6LhGc6LrnpDlBfuCmVQI22UjLjh-GBYPJV_VF17at_ChBS0UePN9dF4U0i5SsuLcLbrl6QMyI3kmiDxvZCKPWPJGJfiqljVysbQS5vK2F8eJmVFWr0Bb5rXjTtClLIfDGTLEoETbUOMfmic5EzPdWwLN7i3NbuE3xl9u0RepJwVNf0eZrvwIQjpeLZ8vNx9eIVUeMhXpylrQGlDeikJn_F6K89hc1igl2hzN4aU9oT-WOLeQ82oRq7IhL1Rzi1K9NdKMS_xrpV951basq_419oyGyQ6zcxORyC7vsGLZPGi0sHsSJdQ-j12xhPsMg
+              schema:
+                $ref: '#/components/schemas/ApiBearerToken'
+          description: Obtain a new JWT from a previously authentication token.
+        "401":
+          content:
+            application/json:
+              examples:
+                authentication-invalid:
+                  description: Unable to authenticate credentials
+                  summary: The requested credentials could not be authenticated
+                  value:
+                    title: Invalid username and/or password
+              schema:
+                $ref: '#/components/schemas/ApiErrorMessage'
+          description: The requested credentials could not be authenticated.
+      summary: Obtain a fresh JWT for the previously authenticated user.
+      tags:
+        - Authentication
+        - Authentication Endpoint
+  /api/v1/auth/validate-token:
+    post:
+      description: Authorize the presented user to obtain a secure token for use on
+        the API.
+      operationId: validate-token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApiBearerToken'
+      responses:
+        "200":
+          description: The token was valid
+        "401":
+          description: The token was invalid
+      summary: Authorize the presented user to obtain a secure token for use on the
+        API.
+      tags:
+        - Authentication
+        - Authentication Endpoint
+  /api/v1/frontend/capabilities:
+    get:
+      description: Obtain gateway capabilities.
+      operationId: get-capabilities
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                capabilities:
+                  description: An example capability list.
+                  summary: Example capabilities
+                  value: |-
+                    {
+                        "items": [
+                            {
+                                "id": "test-capability"
+                                "displayName": "Super useful Capability"
+                                "description": "This capability is really useful for so many reasons."
+                            }
+                        ]
+                    }
+              schema:
+                $ref: '#/components/schemas/CapabilityList'
+          description: Success
+      summary: Obtain Capabilities of the HiveMQ Edge Installation
+      tags:
+        - Frontend
+  /api/v1/frontend/configuration:
+    get:
+      description: Obtain configuration.
+      operationId: get-configuration
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                default-configuration:
+                  description: An example default gateway configuration.
+                  summary: Example gateway configuration
+                  value:
+                    environment:
+                      properties:
+                        environment-type: TEST
+                    cloudLink:
+                      displayText: HiveMQ Cloud
+                      url: https://hivemq.com/cloud
+                      description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
+                        \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
+                        \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
+                        \ eos et accusam et justo duo dolores et ea rebum. Stet clita\
+                        \ kasd gubergren,"
+                      external: true
+                    gitHubLink:
+                      displayText: GitHub
+                      url: https://github.com/hivemq/hivemq-edge
+                      description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
+                        \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
+                        \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
+                        \ eos et accusam et justo duo dolores et ea rebum. Stet clita\
+                        \ kasd gubergren,"
+                      external: true
+                    documentationLink:
+                      displayText: Documentation
+                      url: https://github.com/hivemq/hivemq-edge/README.MD
+                      description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
+                        \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
+                        \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
+                        \ eos et accusam et justo duo dolores et ea rebum. Stet clita\
+                        \ kasd gubergren,"
+                      external: true
+                    firstUseInformation:
+                      firstUse: false
+                      prefillUsername: admin
+                      prefillPassword: password
+                      firstUseTitle: Welcome To HiveMQ Edge
+                      firstUseDescription: "Lorem ipsum dolor sit amet, consetetur\
+                        \ sadipscing elitr, sed diam nonumy eirmod tempor invidunt\
+                        \ ut labore et dolore magna aliquyam erat, sed diam voluptua.\
+                        \ At vero eos et accusam et justo duo dolores et ea rebum.\
+                        \ Stet clita kasd gubergren, no sea takimata sanctus est Lorem\
+                        \ ipsum dolor sit amet."
+                    ctas:
+                      items:
+                        - displayText: Connect My First Device
+                          url: ./protocol-adapters?from=dashboard-cta
+                          description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
+                          \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
+                          \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
+                          \ eos et accusam et justo duo dolores et ea rebum. Stet\
+                          \ clita kasd gubergren,"
+                          external: false
+                        - displayText: Connect To My MQTT Broker
+                          url: ./bridges?from=dashboard-cta
+                          description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
+                          \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
+                          \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
+                          \ eos et accusam et justo duo dolores et ea rebum. Stet\
+                          \ clita kasd gubergren,"
+                          external: false
+                        - displayText: Learn More
+                          url: resources?from=dashboard-cta
+                          description: "Lorem ipsum dolor sit amet, consetetur sadipscing\
+                          \ elitr, sed diam nonumy eirmod tempor invidunt ut labore\
+                          \ et dolore magna aliquyam erat, sed diam voluptua. At vero\
+                          \ eos et accusam et justo duo dolores et ea rebum. Stet\
+                          \ clita kasd gubergren,"
+                          external: false
+                    resources:
+                      items:
+                        - displayText: Power Of Smart Manufacturing
+                          url: https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/
+                          description: ""
+                          target: ""
+                          imageUrl: ""
+                          external: true
+                        - displayText: Power Of Smart Manufacturing
+                          url: https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/
+                          description: ""
+                          target: ""
+                          imageUrl: ""
+                          external: true
+                    modules:
+                      items: [ ]
+                    extensions:
+                      items:
+                        - id: extension-1
+                          version: 1.0.0
+                          name: My First Extension
+                          description: Some extension description here which could span
+                            multiple lines
+                          author: HiveMQ
+                          priority: 0
+                        - id: hivemq-allow-all-extension
+                          version: 1.0.0
+                          name: Allow All Extension
+                          author: HiveMQ
+                          priority: 0
+                          installed: true
+              schema:
+                $ref: '#/components/schemas/GatewayConfiguration'
+          description: Success
+      summary: Obtain frontend configuration
+      tags:
+        - Frontend
+  /api/v1/frontend/notifications:
+    get:
+      description: Obtain gateway notifications.
+      operationId: get-notifications
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                notifications:
+                  description: An example notification list.
+                  summary: Example notifications
+                  value:
+                    items:
+                      - level: WARNING
+                        title: Default Credentials Need Changing!
+                        description: Your gateway access is configured to use the default
+                          username/password combination. This is a security risk. Please
+                          ensure you modify your access credentials in your configuration.xml
+                          file.
+              schema:
+                $ref: '#/components/schemas/NotificationList'
+          description: Success
+      summary: Obtain Notifications
+      tags:
+        - Frontend
+  /api/v1/gateway/configuration:
+    get:
+      description: Obtain gateway configuration.
+      operationId: get-xml-configuration
+      responses:
+        "200":
+          content:
+            application/xml:
+              schema:
+                type: string
+          description: Success
+        "405":
+          content:
+            application/xml:
+              examples:
+                export-not-allowed:
+                  description: Export is not allowed from gateway
+                  summary: Example export disabled
+                  value:
+                    message: An unknown error occurred processing your request
+                    cause: xml export not allowed
+              schema:
+                $ref: '#/components/schemas/ApiErrorMessage'
+          description: Error - function not supported
+      summary: Obtain HiveMQ Edge Configuration
+      tags:
+        - Gateway Endpoint
+  /api/v1/gateway/listeners:
+    get:
+      description: Obtain listener.
+      operationId: get-listeners
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                listener-configuration:
+                  description: A list of listeners configured in the gateway
+                  summary: Listener configuration
+                  value:
+                    items:
+                      - name: tcp-listener-1883
+                        hostName: localhost
+                        port: 1883
+                      - name: udp-listener-2442
+                        hostName: localhost
+                        port: 2442
+              schema:
+                $ref: '#/components/schemas/ListenerList'
+          description: Success
+      summary: 'Obtain the listeners configured '
+      tags:
+        - Gateway Endpoint
+  /api/v1/health/liveness:
+    get:
+      description: Endpoint to determine whether the gateway is considered UP.
+      operationId: liveness
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                success-health:
+                  description: An example success health response.
+                  value:
+                    status: UP
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+          description: Success
+      summary: Endpoint to determine whether the gateway is considered UP
+  /api/v1/health/readiness:
+    get:
+      description: Endpoint to determine whether the gateway is considered ready.
+      operationId: readiness
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                success-health:
+                  description: An example success health response.
+                  value:
+                    status: UP
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+          description: Success
+      summary: Endpoint to determine whether the gateway is considered ready
+  /api/v1/management/bridges:
+    get:
+      description: Get all bridges configured in the system.
+      operationId: getBridges
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                bridge-list-result:
+                  description: Example response with several bridges.
+                  summary: Bridge List result
+                  value:
+                    items:
+                      - id: cloud
+                        host: REDACTED.cloud
+                        port: 8883
+                        clientId: cloud
+                        keepAlive: 60
+                        sessionExpiry: 3600
+                        cleanStart: false
+                        username: username
+                        password: '*****'
+                        loopPreventionEnabled: true
+                        loopPreventionHopCount: 1
+                        remoteSubscriptions: [ ]
+                        localSubscriptions:
+                          - filters:
+                              - '#'
+                            destination: "prefix/{#}/bridge/${bridge.name}"
+                            excludes: [ ]
+                            customUserProperties:
+                              - key: test1
+                                value: test2
+                            preserveRetain: true
+                            maxQoS: 0
+                        tlsConfiguration:
+                          enabled: true
+                          keystorePassword: ""
+                          privateKeyPassword: ""
+                          truststorePassword: ""
+                          protocols: [ ]
+                          cipherSuites: [ ]
+                          keystoreType: JKS
+                          truststoreType: JKS
+                          verifyHostname: true
+                          handshakeTimeout: 10
+                        bridgeRuntimeInformation:
+                          connectionStatus:
+                            status: CONNECTED
+                            id: cloud
+                            type: bridge
+              schema:
+                $ref: '#/components/schemas/BridgeList'
+          description: Success
+      summary: List all bridges in the system
+      tags:
+        - Bridges
+    post:
+      description: Add bridge configured in the system.
+      operationId: addBridge
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Bridge'
+        description: The new bridge.
+        required: true
+      responses:
+        "200":
+          description: Success
+      summary: Add a new Bridge
+      tags:
+        - Bridges
+  /api/v1/management/bridges/status:
+    get:
+      description: Obtain the details.
+      operationId: get-bridges-status
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                example-connection-status:
+                  description: Example connection status list.
+                  summary: Example connection status
+                  value:
+                    items:
+                      - status: CONNECTED
+                        id: cloud
+                        type: bridge
+              schema:
+                $ref: '#/components/schemas/StatusList'
+          description: The Connection Details Verification Result.
+      summary: Get the status of all the bridges in the system.
+      tags:
+        - Bridges
+  /api/v1/management/bridges/{bridgeId}:
+    delete:
+      description: Remove bridge configured in the system.
+      operationId: removeBridge
+      parameters:
+        - description: The id of the bridge to delete.
+          in: path
+          name: bridgeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+      summary: Remove a Bridge
+      tags:
+        - Bridges
+    get:
+      description: Get a bridge by ID.
+      operationId: getBridgeByName
+      parameters:
+        - description: The id of the bridge to query.
+          in: path
+          name: bridgeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                bridge-get-result:
+                  description: Example Bridge.
+                  summary: Get Bridge Result
+                  value:
+                    id: cloud
+                    host: REDACTED.cloud
+                    port: 8883
+                    clientId: cloud
+                    keepAlive: 60
+                    sessionExpiry: 3600
+                    cleanStart: false
+                    username: username
+                    password: password
+                    loopPreventionEnabled: true
+                    loopPreventionHopCount: 1
+                    remoteSubscriptions: [ ]
+                    localSubscriptions:
+                      - filters:
+                          - '#'
+                        destination: "prefix/{#}/bridge/${bridge.name}"
+                        excludes: [ ]
+                        customUserProperties:
+                          - key: test1
+                            value: test2
+                        preserveRetain: true
+                        maxQoS: 0
+                    tlsConfiguration:
+                      enabled: true
+                      keystorePassword: ""
+                      privateKeyPassword: ""
+                      truststorePassword: ""
+                      protocols: [ ]
+                      cipherSuites: [ ]
+                      keystoreType: JKS
+                      truststoreType: JKS
+                      verifyHostname: true
+                      handshakeTimeout: 10
+                    bridgeRuntimeInformation:
+                      connectionStatus:
+                        status: CONNECTED
+                        id: simons-cloud
+                        type: bridge
+              schema:
+                $ref: '#/components/schemas/Bridge'
+          description: Success
+      summary: Get a bridge by ID
+      tags:
+        - Bridges
+    put:
+      description: Update bridge configured in the system.
+      operationId: updateBridge
+      parameters:
+        - description: The bridge to update.
+          in: path
+          name: bridgeId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Bridge'
+      responses:
+        "200":
+          description: Success
+      summary: Update a Bridge
+      tags:
+        - Bridges
+  /api/v1/management/bridges/{bridgeId}/connection-status:
+    get:
+      description: Get the up to date status of a bridge.
+      operationId: get-bridge-status
+      parameters:
+        - description: The name of the bridge to query.
+          in: path
+          name: bridgeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                bridge-connection-status-result:
+                  description: Example response with CONNECTED status.
+                  summary: Bridge Connection Status Result
+                  value:
+                    status: CONNECTED
+                    id: cloud
+                    type: bridge
+              schema:
+                $ref: '#/components/schemas/Status'
+          description: Success
+      summary: Get the up to date status of a bridge
+      tags:
+        - Bridges
+  /api/v1/management/bridges/{bridgeId}/status:
+    put:
+      description: Transition the connection status of a bridge.
+      operationId: transition-bridge-status
+      parameters:
+        - description: The id of the bridge whose runtime-status will change.
+          in: path
+          name: bridgeId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusTransitionCommand'
+        description: The command to transition the bridge runtime status.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                transition-status-result:
+                  description: Example response with PENDING status.
+                  summary: Bridge Connection Transition Result
+                  value:
+                    status: PENDING
+                    callbackTimeoutMillis: 1000
+              schema:
+                $ref: '#/components/schemas/StatusTransitionResult'
+          description: Success
+      summary: Transition the runtime status of a bridge
+      tags:
+        - Bridges
+  /api/v1/management/events:
+    get:
+      description: Get all bridges configured in the system.
+      operationId: getEvents
+      parameters:
+        - description: Obtain all events since the specified epoch.
+          in: query
+          name: limit
+          schema:
+            type: integer
+            format: int32
+            default: 100
+        - description: Obtain all events since the specified epoch.
+          in: query
+          name: since
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                event-list-result:
+                  description: Example response with several events.
+                  summary: Event List result
+                  value: { }
+              schema:
+                $ref: '#/components/schemas/EventList'
+          description: Success
+      summary: List most recent events in the system
+      tags:
+        - Events
+  /api/v1/management/protocol-adapters/adapters:
+    get:
+      description: Obtain a list of configured adapters.
+      operationId: getAdapters
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                adapter-list:
+                  description: An example adapter list.
+                  value:
+                    items:
+                      - id: test-simulation-server
+                        type: simulation
+                        config:
+                          id: test-simulation-server
+                          port: 5021
+                          host: 127.0.0.1
+                          pollingIntervalMillis: 1000
+                          subscriptions:
+                            - filter: my-simulation-server/my-simulation-path-100
+                              destination: test
+                              qos: 0
+                        adapterRuntimeInformation:
+                          lastStartedAttemptTime: 2023-06-28T10:57:18.707+01
+                          numberOfDaemonProcesses: 1
+                          connectionStatus:
+                            status: CONNECTED
+                            id: test-simulation-server
+                            type: adapter
+              schema:
+                $ref: '#/components/schemas/AdaptersList'
+          description: Success
+      summary: Obtain a list of configured adapters
+      tags:
+        - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}:
+    delete:
+      description: Delete adapter configured in the system.
+      operationId: deleteAdapter
+      parameters:
+        - description: The adapter Id.
+          in: path
+          name: adapterId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+      summary: Delete an adapter
+      tags:
+        - Protocol Adapters
+    get:
+      description: Obtain the details for a configured adapter for the specified type".
+      operationId: getAdapter
+      parameters:
+        - description: The adapter Id.
+          in: path
+          name: adapterId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                adapter:
+                  description: An example adapter.
+                  value:
+                    id: test-simulation-server
+                    type: simulation
+                    config:
+                      id: test-simulation-server
+                      port: 5021
+                      host: 127.0.0.1
+                      pollingIntervalMillis: 1000
+                      subscriptions:
+                        - filter: my-simulation-server/my-simulation-path-100
+                          destination: test
+                          qos: 0
+                    adapterRuntimeInformation:
+                      lastStartedAttemptTime: 2023-06-28T10:57:18.707+01
+                      numberOfDaemonProcesses: 1
+                      connectionStatus:
+                        status: CONNECTED
+                        id: test-simulation-server
+                        type: adapter
+              schema:
+                $ref: '#/components/schemas/Adapter'
+          description: Success
+      summary: Obtain the details for a configured adapter for the specified type
+      tags:
+        - Protocol Adapters
+    put:
+      description: Update adapter configured in the system.
+      operationId: updateAdapter
+      parameters:
+        - description: The adapter Id.
+          in: path
+          name: adapterId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Adapter'
+      responses:
+        "200":
+          description: Success
+      summary: Update an adapter
+      tags:
+        - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/discover:
+    get:
+      description: Obtain a list of available values accessible via this protocol
+        adapter.
+      operationId: discoverDataPoints
+      parameters:
+        - description: The adapter Id.
+          in: path
+          name: adapterId
+          required: true
+          schema:
+            type: string
+        - description: The root to browse.
+          in: query
+          name: root
+          schema:
+            type: string
+        - description: The recursive depth to include. Must be larger than 0.
+          in: query
+          name: depth
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                discover:
+                  description: An example discovery request.
+                  value:
+                    items:
+                      - id: holding-registers
+                        name: Holding Registers
+                        description: Holding Registers
+                        nodeType: FOLDER
+                        selectable: false
+                        children:
+                          - id: grouping-1
+                            name: Addresses 1-16
+                            description: ""
+                            nodeType: FOLDER
+                            selectable: false
+                            children:
+                              - id: address-location-1
+                                name: "1"
+                                description: ""
+                                nodeType: VALUE
+                                selectable: true
+                                children: [ ]
+              schema:
+                $ref: '#/components/schemas/ValuesTree'
+          description: Success
+        "400":
+          description: Protocol adapter does not support discovery
+      summary: Discover a list of available data points
+      tags:
+        - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/status:
+    get:
+      description: Get the up to date status an adapter.
+      operationId: get-adapter-status
+      parameters:
+        - description: The name of the adapter to query.
+          in: path
+          name: adapterId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                example-connection-status:
+                  description: Example connection status.
+                  summary: Example connection status
+                  value:
+                    status: CONNECTED
+                    id: cloud
+                    type: bridge
+              schema:
+                $ref: '#/components/schemas/Status'
+          description: Success
+      summary: Get the up to date status of an adapter
+      tags:
+        - Protocol Adapters
+    put:
+      description: Transition the runtime status of an adapter.
+      operationId: transition-adapter-status
+      parameters:
+        - description: The id of the adapter whose runtime status will change.
+          in: path
+          name: adapterId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusTransitionCommand'
+        description: The command to transition the adapter runtime status.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                transition-status-result:
+                  description: Example response with PENDING status.
+                  summary: Adapter Connection Transition Result
+                  value:
+                    status: PENDING
+                    callbackTimeoutMillis: 1000
+              schema:
+                $ref: '#/components/schemas/StatusTransitionResult'
+          description: Success
+      summary: Transition the runtime status of an adapter
+      tags:
+        - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterType}:
+    post:
+      description: Add adapter to the system.
+      operationId: addAdapter
+      parameters:
+        - description: The adapter type.
+          in: path
+          name: adapterType
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Adapter'
+        description: The new adapter.
+        required: true
+      responses:
+        "200":
+          description: Success
+      summary: Add a new Adapter
+      tags:
+        - Protocol Adapters
+  /api/v1/management/protocol-adapters/status:
+    get:
+      description: Obtain the details.
+      operationId: get-adapters-status
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                example-connection-status:
+                  description: Example connection status list.
+                  summary: Example connection status
+                  value:
+                    items:
+                      - status: CONNECTED
+                        id: cloud
+                        type: bridge
+              schema:
+                $ref: '#/components/schemas/StatusList'
+          description: The Connection Details Verification Result.
+      summary: Get the status of all the adapters in the system.
+      tags:
+        - Protocol Adapters
+  /api/v1/management/protocol-adapters/types:
+    get:
+      description: Obtain a list of available protocol adapter types.
+      operationId: getAdapterTypes
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolAdaptersList'
+          description: Success
+      summary: Obtain a list of available protocol adapter types
+      tags:
+        - Protocol Adapters
+  /api/v1/management/protocol-adapters/types/{adapterType}:
+    get:
+      description: Obtain a list of configured adapters for the specified type.
+      operationId: getAdaptersForType
+      parameters:
+        - description: The adapter type.
+          in: path
+          name: adapterType
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                filtered-adapters:
+                  description: An example filtered adapter list.
+                  value:
+                    items:
+                      - id: test-simulation-server
+                        type: simulation
+                        config:
+                          id: test-simulation-server
+                          port: 5021
+                          host: 127.0.0.1
+                          pollingIntervalMillis: 1000
+                          subscriptions:
+                            - filter: my-simulation-server/my-simulation-path-100
+                              destination: test
+                              qos: 0
+                        adapterRuntimeInformation:
+                          lastStartedAttemptTime: 2023-06-28T10:57:18.707+01
+                          numberOfDaemonProcesses: 1
+                          connectionStatus:
+                            status: CONNECTED
+                            id: test-simulation-server
+                            type: adapter
+              schema:
+                $ref: '#/components/schemas/AdaptersList'
+          description: Success
+      summary: Obtain a list of configured adapters for the specified type
+      tags:
+        - Protocol Adapters
+  /api/v1/management/uns/isa95:
+    get:
+      description: Obtain isa95 config.
+      operationId: get-isa95
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                default-configuration:
+                  description: An example ISA 95 config.
+                  summary: Example configuration
+                  value:
+                    enabled: true
+                    prefixAllTopics: true
+                    enterprise: enterprise
+                    site: site
+                    area: area
+                    productionLine: production-line
+                    workCell: work-cell
+              schema:
+                $ref: '#/components/schemas/ISA95ApiBean'
+          description: Success
+      summary: Obtain isa95 config
+      tags:
+        - UNS
+    post:
+      description: Set isa95 config.
+      operationId: set-isa95
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ISA95ApiBean'
+        description: The updated isa95 configuration.
+        required: true
+      responses:
+        "200":
+          description: Success
+      summary: Set isa95 config
+      tags:
+        - UNS
+  /api/v1/metrics:
+    get:
+      description: Obtain the latest sample for the metric requested.
+      operationId: getMetrics
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                metrics-list-sample:
+                  description: Example response with metrics listed.
+                  summary: List Metrics
+                  value:
+                    items:
+                      - name: com.hivemq.edge.bridge.simons-cloud.local.publish.count
+                      - name: simulation
+                      - name: com.hivemq.edge.messages.dropped.count
+                      - name: com.hivemq.edge.mqtt.connection.not-writable.current
+                      - name: com.hivemq.edge.bridge.simons-cloud.forward.publish.count
+                      - name: com.hivemq.edge.bridge.simons-cloud.local.publish.received.count
+                      - name: com.hivemq.edge.messages.outgoing.publish.count
+                      - name: com.hivemq.edge.sessions.overall.current
+                      - name: com.hivemq.edge.bridge.simons-cloud.forward.publish.failed.count
+                      - name: com.hivemq.edge.networking.bytes.read.total
+                      - name: com.hivemq.edge.messages.outgoing.total.count
+                      - name: com.hivemq.messages.governance.count
+                      - name: com.hivemq.edge.bridge.simons-cloud.local.publish.failed.count
+                      - name: com.hivemq.edge.networking.connections.current
+                      - name: com.hivemq.edge.persistence.retained-messages.in-memory.total-size
+                      - name: com.hivemq.edge.bridge.simons-cloud.forward.publish.loop-hops-exceeded.count
+                      - name: com.hivemq.edge.messages.incoming.connect.count
+                      - name: com.hivemq.edge.bridge.simons-cloud.local.publish.no-subscriber-present.count
+                      - name: com.hivemq.edge.messages.incoming.publish.count
+                      - name: com.hivemq.edge.messages.incoming.total.count
+                      - name: com.hivemq.edge.messages.will.count.current
+                      - name: com.hivemq.edge.messages.will.published.count.total
+                      - name: com.hivemq.edge.persistence.client-session.subscriptions.in-memory.total-size
+                      - name: com.hivemq.edge.bridge.simons-cloud.remote.publish.loop-hops-exceeded.count
+                      - name: com.hivemq.edge.networking.bytes.write.total
+                      - name: com.hivemq.edge.bridge.simons-cloud.forward.publish.excluded.count
+                      - name: com.hivemq.edge.networking.connections-closed.total.count
+                      - name: com.hivemq.edge.bridge.simons-cloud.remote.publish.received.count
+                      - name: com.hivemq.edge.subscriptions.overall.current
+                      - name: com.hivemq.edge.persistence.queued-messages.in-memory.total-size
+                      - name: com.hivemq.edge.persistence.client-sessions.in-memory.total-size
+                      - name: com.hivemq.edge.messages.retained.current
+              schema:
+                $ref: '#/components/schemas/MetricList'
+          description: Success
+      summary: Obtain a list of available metrics
+      tags:
+        - Metrics
+        - Metrics Endpoint
+  /api/v1/metrics/{metricName}/latest:
+    get:
+      description: Obtain the latest sample for the metric requested.
+      operationId: getSample
+      parameters:
+        - description: The metric to search for.
+          in: path
+          name: metricName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                metric-sample:
+                  description: Example response with metrics listed.
+                  summary: Metric Sample
+                  value:
+                    sampleTime: 2023-06-28T11:39:12.789+01
+                    value: 0
+              schema:
+                $ref: '#/components/schemas/DataPoint'
+          description: Success
+      summary: Obtain the latest sample for the metric requested
+      tags:
+        - Metrics
+        - Metrics Endpoint
+components:
+  schemas:
+    Adapter:
+      type: object
+      properties:
+        config:
+          type: object
+          additionalProperties:
+            type: object
+            description: The adapter configuration associated with this instance
+          description: The adapter configuration associated with this instance
+        id:
+          type: string
+          format: string
+          description: "The adapter id, must be unique and only contain alpha numeric\
+            \ characters with spaces and hyphens."
+          maxLength: 500
+          minLength: 1
+          pattern: "^([a-zA-Z_0-9-_])*$"
+        status:
+          $ref: '#/components/schemas/Status'
+        type:
+          type: string
+          description: The adapter type associated with this instance
+      required:
+        - id
+    AdaptersList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Adapter'
+    ApiBearerToken:
+      type: object
+      properties:
+        token:
+          type: string
+          description: The token associated a set of authenticated credentials
+    ApiErrorMessage:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Detailed contextual description of this error
+        fieldName:
+          type: string
+          description: Application Error Code associate with this field
+        title:
+          type: string
+          description: The title of this error
+    Bridge:
+      type: object
+      properties:
+        cleanStart:
+          type: boolean
+          format: boolean
+          default: true
+          description: The cleanStart value associated the the MQTT connection.
+        clientId:
+          type: string
+          format: string
+          description: The client identifier associated the the MQTT connection.
+          example: my-example-client-id
+          maxLength: 65535
+          nullable: true
+        host:
+          type: string
+          description: "The host the bridge connects to - a well formed hostname,\
+            \ ipv4 or ipv6 value."
+          maxLength: 255
+        id:
+          type: string
+          format: string
+          description: "The bridge id, must be unique and only contain alpha numeric\
+            \ characters with spaces and hyphens."
+          maxLength: 500
+          minLength: 1
+          pattern: "^([a-zA-Z_0-9-_])*$"
+        keepAlive:
+          type: integer
+          format: int32
+          default: 240
+          description: The keepAlive associated the the MQTT connection.
+          maximum: 65535
+          minimum: 0
+        localSubscriptions:
+          type: array
+          description: localSubscriptions associated with the bridge
+          items:
+            $ref: '#/components/schemas/LocalBridgeSubscription'
+        loopPreventionEnabled:
+          type: boolean
+          format: boolean
+          default: true
+          description: Is loop prevention enabled on the connection
+        loopPreventionHopCount:
+          type: integer
+          format: int32
+          default: 1
+          description: Loop prevention hop count
+          maximum: 100
+          minimum: 0
+        password:
+          type: string
+          format: string
+          description: The password value associated the the MQTT connection.
+          maxLength: 65535
+          nullable: true
+        persist:
+          type: boolean
+          description: "If this flag is set to true, any outgoing mqtt messages with\
+            \ QoS-1 or QoS-2 will be persisted on disc in case disc persistence is\
+            \ active.If this flag is set to false, the QoS of any outgoing mqtt messages\
+            \ will be set to QoS-0 and no traffic will be persisted on disc."
+          nullable: true
+        port:
+          type: integer
+          format: int32
+          description: The port number to connect to
+          maximum: 65535
+          minimum: 1
+        remoteSubscriptions:
+          type: array
+          description: remoteSubscriptions associated with the bridge
+          items:
+            $ref: '#/components/schemas/BridgeSubscription'
+        sessionExpiry:
+          type: integer
+          format: int32
+          default: 3600
+          description: The sessionExpiry associated the the MQTT connection.
+          maximum: 4294967295
+          minimum: 0
+        status:
+          $ref: '#/components/schemas/Status'
+        tlsConfiguration:
+          $ref: '#/components/schemas/TlsConfiguration'
+        username:
+          type: string
+          format: string
+          description: The username value associated the the MQTT connection.
+          maxLength: 65535
+          nullable: true
+      required:
+        - cleanStart
+        - host
+        - id
+        - keepAlive
+        - port
+        - sessionExpiry
+    BridgeCustomUserProperty:
+      type: object
+      description: The customUserProperties for this subscription
+      properties:
+        key:
+          type: string
+          format: string
+          description: The key the from the property
+        value:
+          type: string
+          format: string
+          description: The value the from the property
+      required:
+        - key
+        - value
+    BridgeList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Bridge'
+    BridgeSubscription:
+      type: object
+      description: remoteSubscriptions associated with the bridge
+      properties:
+        customUserProperties:
+          type: array
+          description: The customUserProperties for this subscription
+          items:
+            $ref: '#/components/schemas/BridgeCustomUserProperty'
+        destination:
+          type: string
+          description: The destination topic for this filter set.
+          example: some/topic/value
+        filters:
+          type: array
+          description: The filters for this subscription.
+          example: some/topic/value
+          items:
+            type: string
+            description: The filters for this subscription.
+            example: some/topic/value
+        maxQoS:
+          type: integer
+          format: int32
+          default: 0
+          description: The maxQoS for this subscription.
+          enum:
+            - 0
+            - 1
+            - 2
+          maximum: 2
+          minimum: 0
+        preserveRetain:
+          type: boolean
+          description: The preserveRetain for this subscription
+      required:
+        - destination
+        - filters
+        - maxQoS
+    Capability:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        description:
+          type: string
+          description: A description for the capability
+        displayName:
+          type: string
+          description: "A human readable name, intended to be used to display at front\
+            \ end."
+        id:
+          type: string
+          description: The identifier of this capability
+    CapabilityList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Capability'
+    DataPoint:
+      type: object
+      properties:
+        sampleTime:
+          type: string
+          format: date-time
+          description: Time the data-point was generated
+          nullable: true
+        value:
+          type: integer
+          format: int64
+          description: The value of the data point
+    EnvironmentProperties:
+      type: object
+      description: A map of properties relating to the installation
+      nullable: true
+      properties:
+        properties:
+          type: object
+          additionalProperties:
+            type: string
+            description: Map of properties that are returned by this endpoint
+          description: Map of properties that are returned by this endpoint
+    Event:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        associatedObject:
+          $ref: '#/components/schemas/TypeIdentifier'
+        created:
+          type: string
+          format: date-time
+          description: Time the event was in date format
+        identifier:
+          $ref: '#/components/schemas/TypeIdentifier'
+        message:
+          type: string
+          description: The message associated with the event. A message will be no
+            more than 1024 characters in length
+        payload:
+          $ref: '#/components/schemas/Payload'
+        severity:
+          type: string
+          description: The severity that this log is considered to be
+          enum:
+            - INFO
+            - WARN
+            - ERROR
+            - CRITICAL
+        source:
+          $ref: '#/components/schemas/TypeIdentifier'
+        timestamp:
+          type: integer
+          format: int64
+          description: Time the event was generated in epoch format
+      required:
+        - created
+        - identifier
+        - message
+        - severity
+        - timestamp
+    EventList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Event'
+    Extension:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        author:
+          type: string
+          description: The extension author
+        description:
+          type: string
+          description: The extension description
+          nullable: true
+        id:
+          type: string
+          description: A mandatory ID associated with the Extension
+        installed:
+          type: boolean
+          description: Is the extension installed
+          nullable: true
+        link:
+          $ref: '#/components/schemas/Link'
+        name:
+          type: string
+          description: The extension name
+        priority:
+          type: integer
+          format: int32
+          description: The extension priority
+        version:
+          type: string
+          description: The extension version
+    ExtensionList:
+      type: object
+      description: The extensions available for installation
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Extension'
+    FirstUseInformation:
+      type: object
+      description: Information relating to the firstuse experience
+      properties:
+        firstUse:
+          type: boolean
+          description: A mandatory Boolean indicating if the gateway is in firstUse
+            mode
+        firstUseDescription:
+          type: string
+          description: A description string to use when firstUse = true.
+          nullable: true
+        firstUseTitle:
+          type: string
+          description: A header string to use when firstUse = true.
+          nullable: true
+        prefillPassword:
+          type: string
+          description: A String indicating if the prefill data for the username/password
+            page.
+          nullable: true
+        prefillUsername:
+          type: string
+          description: A String indicating if the prefill data for the username/password
+            page.
+          nullable: true
+      required:
+        - firstUse
+    GatewayConfiguration:
+      type: object
+      properties:
+        cloudLink:
+          $ref: '#/components/schemas/Link'
+        ctas:
+          $ref: '#/components/schemas/LinkList'
+        documentationLink:
+          $ref: '#/components/schemas/Link'
+        environment:
+          $ref: '#/components/schemas/EnvironmentProperties'
+        extensions:
+          $ref: '#/components/schemas/ExtensionList'
+        firstUseInformation:
+          $ref: '#/components/schemas/FirstUseInformation'
+        gitHubLink:
+          $ref: '#/components/schemas/Link'
+        modules:
+          $ref: '#/components/schemas/ModuleList'
+        resources:
+          $ref: '#/components/schemas/LinkList'
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+    ISA95ApiBean:
+      type: object
+      properties:
+        area:
+          type: string
+          description: The area
+          nullable: true
+          pattern: "^[a-zA-Z0-9 -_]*$"
+        enabled:
+          type: boolean
+          description: Should UNS be available
+        enterprise:
+          type: string
+          description: The enterprise
+          nullable: true
+          pattern: "^[a-zA-Z0-9 -_]*"
+        prefixAllTopics:
+          type: boolean
+          description: Should all topics be prefixed with UNS placeholders
+        productionLine:
+          type: string
+          description: The productionLine
+          nullable: true
+          pattern: "^[a-zA-Z0-9 -_]*$"
+        site:
+          type: string
+          description: The site
+          nullable: true
+          pattern: "^[a-zA-Z0-9 -_]*$"
+        workCell:
+          type: string
+          description: The workCell
+          nullable: true
+          pattern: "^[a-zA-Z0-9 -_]*$"
+    JsonNode:
+      type: object
+      description: "JSONSchema in the 'https://json-schema.org/draft/2020-12/schema'\
+        \ format, which describes the configuration requirements for the adapter."
+    Link:
+      type: object
+      description: An associated link
+      nullable: true
+      properties:
+        description:
+          type: string
+          description: The optional link display description
+          nullable: true
+        displayText:
+          type: string
+          description: The link display text
+          nullable: true
+        external:
+          type: boolean
+          description: A mandatory Boolean indicating if the link is internal to the
+            context or an external webLink
+        imageUrl:
+          type: string
+          description: An optional imageUrl associated with the Link
+          nullable: true
+        target:
+          type: string
+          description: An optional target associated with the Link
+          nullable: true
+        url:
+          type: string
+          description: A mandatory URL associated with the Link
+      required:
+        - url
+    LinkList:
+      type: object
+      description: A list of resources to render
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Link'
+    Listener:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        description:
+          type: string
+          description: The extension description
+          nullable: true
+        externalHostname:
+          type: string
+          description: The external hostname
+          nullable: true
+        hostName:
+          type: string
+          description: A mandatory ID hostName with the Listener
+        name:
+          type: string
+          description: The listener name
+        port:
+          type: integer
+          format: int32
+          description: The listener port
+        protocol:
+          type: string
+          description: A protocol that this listener services
+          nullable: true
+        transport:
+          type: string
+          description: The underlying transport that this listener uses
+          enum:
+            - TCP
+            - UDP
+            - DCCP
+            - SCTP
+            - RSVP
+            - QUIC
+          nullable: true
+    ListenerList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Listener'
+    LocalBridgeSubscription:
+      type: object
+      description: localSubscriptions associated with the bridge
+      properties:
+        customUserProperties:
+          type: array
+          description: The customUserProperties for this subscription
+          items:
+            $ref: '#/components/schemas/BridgeCustomUserProperty'
+        destination:
+          type: string
+          description: The destination topic for this filter set.
+          example: some/topic/value
+        excludes:
+          type: array
+          description: The exclusion patterns
+          items:
+            type: string
+            description: The exclusion patterns
+            nullable: true
+          nullable: true
+        filters:
+          type: array
+          description: The filters for this subscription.
+          example: some/topic/value
+          items:
+            type: string
+            description: The filters for this subscription.
+            example: some/topic/value
+        maxQoS:
+          type: integer
+          format: int32
+          default: 0
+          description: The maxQoS for this subscription.
+          enum:
+            - 0
+            - 1
+            - 2
+          maximum: 2
+          minimum: 0
+        preserveRetain:
+          type: boolean
+          description: The preserveRetain for this subscription
+        queueLimit:
+          type: integer
+          format: int64
+          description: The limit of this bridge for QoS-1 and QoS-2 messages.
+          nullable: true
+      required:
+        - destination
+        - filters
+        - maxQoS
+    Metric:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        name:
+          type: string
+          description: The name of the metric
+    MetricList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Metric'
+    Module:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        author:
+          type: string
+          description: The module author
+        description:
+          type: string
+          description: The module description
+          nullable: true
+        documentationLink:
+          $ref: '#/components/schemas/Link'
+        id:
+          type: string
+          description: A mandatory ID associated with the Module
+        installed:
+          type: boolean
+          description: Is the module installed
+          nullable: true
+        logoUrl:
+          $ref: '#/components/schemas/Link'
+        moduleType:
+          type: string
+          description: The type of the module
+          nullable: true
+        name:
+          type: string
+          description: The module name
+        priority:
+          type: integer
+          format: int32
+          description: The module priority
+        provisioningLink:
+          $ref: '#/components/schemas/Link'
+        version:
+          type: string
+          description: The module version
+    ModuleList:
+      type: object
+      description: The modules available for installation
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Module'
+    Notification:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        description:
+          type: string
+          description: The notification description
+          nullable: true
+        level:
+          type: string
+          description: The notification level
+          enum:
+            - NOTICE
+            - WARNING
+            - ERROR
+        link:
+          $ref: '#/components/schemas/Link'
+        title:
+          type: string
+          description: The notification title
+    NotificationList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Notification'
+    ObjectNode:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/ObjectNode'
+        description:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        nodeType:
+          type: string
+          enum:
+            - FOLDER
+            - OBJECT
+            - VALUE
+        selectable:
+          type: boolean
+    Payload:
+      type: object
+      description: Object to denote the payload of the event
+      properties:
+        content:
+          type: string
+          description: The content of the payload encoded as a string
+        contentType:
+          type: string
+          description: The content type of the payload that the event contains
+          enum:
+            - JSON
+            - PLAIN_TEXT
+            - XML
+            - CSV
+      required:
+        - contentType
+    ProtocolAdapter:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        author:
+          type: string
+          description: The author of the adapter
+        capabilities:
+          type: array
+          description: The capabilities of this adapter
+          items:
+            type: string
+            description: The capabilities of this adapter
+            enum:
+              - READ
+              - WRITE
+              - DISCOVER
+        category:
+          $ref: '#/components/schemas/ProtocolAdapterCategory'
+        configSchema:
+          $ref: '#/components/schemas/JsonNode'
+        description:
+          type: string
+          description: The description
+        id:
+          type: string
+          description: The id assigned to the protocol adapter type
+        installed:
+          type: boolean
+          description: Is the adapter installed?
+        logoUrl:
+          type: string
+          description: The logo of the adapter
+        name:
+          type: string
+          description: The name of the adapter
+        protocol:
+          type: string
+          description: The supported protocol
+        provisioningUrl:
+          type: string
+          description: The provisioning url of the adapter
+        tags:
+          type: array
+          description: The search tags associated with this adapter
+          items:
+            type: string
+            description: The search tags associated with this adapter
+        url:
+          type: string
+          description: The url of the adapter
+        version:
+          type: string
+          description: The installed version of the adapter
+    ProtocolAdapterCategory:
+      type: object
+      description: The category of the adapter
+      properties:
+        description:
+          type: string
+          format: string
+          description: The description associated with the category.
+        displayName:
+          type: string
+          format: string
+          description: The display name of the category to be used in HCIs.
+          minLength: 1
+        image:
+          type: string
+          format: string
+          description: The image associated with the category.
+        name:
+          type: string
+          format: string
+          description: The unique name of the category to be used in API communication.
+          maxLength: 256
+          minLength: 1
+          pattern: "^[A-Za-z0-9-_](?:[A-Za-z0-9_ -]*[A-Za-z0-9_-])$"
+      required:
+        - displayName
+        - name
+    ProtocolAdaptersList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/ProtocolAdapter'
+    Status:
+      type: object
+      description: Information associated with the runtime of this adapter
+      properties:
+        connection:
+          type: string
+          description: A mandatory connection status field.
+          enum:
+            - CONNECTED
+            - DISCONNECTED
+            - STATELESS
+            - UNKNOWN
+            - ERROR
+        id:
+          type: string
+          description: The identifier of the object
+        lastActivity:
+          type: string
+          format: date-time
+          description: The datetime of the last activity through this connection
+        message:
+          type: string
+          description: A message associated with the state of a connection
+        runtime:
+          type: string
+          description: A object status field.
+          enum:
+            - STARTED
+            - STOPPED
+        startedAt:
+          type: string
+          format: date-time
+          description: The datetime the object was 'started' in the system.
+        type:
+          type: string
+          description: The type of the object
+    StatusList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/Status'
+    StatusTransitionCommand:
+      type: object
+      properties:
+        command:
+          type: string
+          description: The command to perform on the target connection.
+          enum:
+            - START
+            - STOP
+            - RESTART
+    StatusTransitionResult:
+      type: object
+      properties:
+        callbackTimeoutMillis:
+          type: integer
+          format: int32
+          description: The callback timeout specifies the minimum amount of time (in
+            milliseconds) that the API advises the client to backoff before rechecking
+            the (runtime or connection) status of this object. This is only applicable
+            when the status is 'PENDING'.
+        identifier:
+          type: string
+          description: The identifier of the object in transition
+        status:
+          type: string
+          description: The status to perform on the target connection.
+          enum:
+            - PENDING
+            - COMPLETE
+        type:
+          type: string
+          description: The type of the object in transition
+    TlsConfiguration:
+      type: object
+      description: tlsConfiguration associated with the bridge
+      nullable: true
+      properties:
+        cipherSuites:
+          type: array
+          description: The cipherSuites from the config
+          items:
+            type: string
+            description: The cipherSuites from the config
+        enabled:
+          type: boolean
+          description: If TLS is used
+        handshakeTimeout:
+          type: integer
+          format: int32
+          description: The handshakeTimeout from the config
+        keystorePassword:
+          type: string
+          description: The keystorePassword from the config
+        keystorePath:
+          type: string
+          description: The keystorePath from the config
+          nullable: true
+        keystoreType:
+          type: string
+          description: The keystoreType from the config
+        privateKeyPassword:
+          type: string
+          description: The privateKeyPassword from the config
+        protocols:
+          type: array
+          description: The protocols from the config
+          items:
+            type: string
+            description: The protocols from the config
+        truststorePassword:
+          type: string
+          description: The truststorePassword from the config
+        truststorePath:
+          type: string
+          description: The truststorePath from the config
+          nullable: true
+        truststoreType:
+          type: string
+          description: The truststoreType from the config
+        verifyHostname:
+          type: boolean
+          default: false
+          description: The verifyHostname from the config
+    TypeIdentifier:
+      type: object
+      description: The type-identifier of the object who caused the event to be generated
+      properties:
+        fullQualifiedIdentifier:
+          type: string
+        identifier:
+          type: string
+          description: "The identifier associated with the object, a combination of\
+            \ type and identifier is used to uniquely identify an object in the system"
+        type:
+          type: string
+          description: The type of the associated object/entity
+          enum:
+            - BRIDGE
+            - ADAPTER
+            - ADAPTER_TYPE
+            - EVENT
+            - USER
+      required:
+        - type
+    UsernamePasswordCredentials:
+      type: object
+      properties:
+        password:
+          type: string
+          description: The password associated with the user
+        userName:
+          type: string
+          description: The userName associated with the user
+    ValuesTree:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/ObjectNode'

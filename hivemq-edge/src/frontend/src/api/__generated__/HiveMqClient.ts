@@ -10,6 +10,7 @@ import { AuthenticationService } from './services/AuthenticationService';
 import { AuthenticationEndpointService } from './services/AuthenticationEndpointService';
 import { BridgesService } from './services/BridgesService';
 import { DefaultService } from './services/DefaultService';
+import { EventsService } from './services/EventsService';
 import { FrontendService } from './services/FrontendService';
 import { GatewayEndpointService } from './services/GatewayEndpointService';
 import { MetricsService } from './services/MetricsService';
@@ -25,6 +26,7 @@ export class HiveMqClient {
     public readonly authenticationEndpoint: AuthenticationEndpointService;
     public readonly bridges: BridgesService;
     public readonly default: DefaultService;
+    public readonly events: EventsService;
     public readonly frontend: FrontendService;
     public readonly gatewayEndpoint: GatewayEndpointService;
     public readonly metrics: MetricsService;
@@ -37,7 +39,7 @@ export class HiveMqClient {
     constructor(config?: Partial<OpenAPIConfig>, HttpRequest: HttpRequestConstructor = AxiosHttpRequest) {
         this.request = new HttpRequest({
             BASE: config?.BASE ?? '',
-            VERSION: config?.VERSION ?? '2023.7',
+            VERSION: config?.VERSION ?? '2023.8',
             WITH_CREDENTIALS: config?.WITH_CREDENTIALS ?? false,
             CREDENTIALS: config?.CREDENTIALS ?? 'include',
             TOKEN: config?.TOKEN,
@@ -51,6 +53,7 @@ export class HiveMqClient {
         this.authenticationEndpoint = new AuthenticationEndpointService(this.request);
         this.bridges = new BridgesService(this.request);
         this.default = new DefaultService(this.request);
+        this.events = new EventsService(this.request);
         this.frontend = new FrontendService(this.request);
         this.gatewayEndpoint = new GatewayEndpointService(this.request);
         this.metrics = new MetricsService(this.request);

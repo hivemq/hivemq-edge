@@ -15,7 +15,9 @@
  */
 package com.hivemq.persistence;
 
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.configuration.service.impl.InternalConfigurationServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
@@ -34,12 +36,13 @@ import static org.junit.Assert.assertNotSame;
 public class InMemorySingleWriterServiceTest {
 
     private @NotNull InMemorySingleWriter singleWriterServiceImpl;
-
+    private final @NotNull InternalConfigurationService
+            internalConfigurationService = new InternalConfigurationServiceImpl();
     @Before
     public void setUp() throws Exception {
         InternalConfigurations.PERSISTENCE_SHUTDOWN_GRACE_PERIOD_MSEC.set(200);
-        InternalConfigurations.PERSISTENCE_BUCKET_COUNT.set(64);
-        singleWriterServiceImpl = new InMemorySingleWriter();
+        internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "64");
+        singleWriterServiceImpl = new InMemorySingleWriter(internalConfigurationService);
     }
 
     @After

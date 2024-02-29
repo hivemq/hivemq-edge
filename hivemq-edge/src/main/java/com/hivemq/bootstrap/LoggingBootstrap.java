@@ -25,8 +25,9 @@ import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.read.ListAppender;
 import ch.qos.logback.core.util.StatusPrinter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.logging.LogLevelModifier;
-import com.hivemq.logging.NettyLogLevelModifier;
+import com.hivemq.logging.modifier.MiscLogLevelModifier;
+import com.hivemq.logging.LogLevelModifierTurboFilter;
+import com.hivemq.logging.modifier.NettyLogLevelModifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
@@ -40,18 +41,16 @@ import java.util.List;
  * This class is responsible for all logging bootstrapping. This is only
  * needed at the very beginning of HiveMQs lifecycle and before bootstrapping other
  * resources
- *
- * @author Dominik Obermaier
  */
 public class LoggingBootstrap {
 
-    private static @NotNull ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
-
     private static final Logger log = LoggerFactory.getLogger(LoggingBootstrap.class);
 
-    private static final NettyLogLevelModifier nettyLogLevelModifier = new NettyLogLevelModifier();
-    private static final LogLevelModifier LOG_LEVEL_MODIFIER = new LogLevelModifier();
+    private static @NotNull ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
     private static final List<Appender<ILoggingEvent>> defaultAppenders = new LinkedList<>();
+    private static final @NotNull LogLevelModifierTurboFilter logLevelModifierTurboFilter =
+            new LogLevelModifierTurboFilter();
+    private static final @NotNull LogbackChangeListener logbackChangeListener = new LogbackChangeListener();
 
     /**
      * Prepares the logging. This method must be called before any logging occurs
@@ -59,7 +58,6 @@ public class LoggingBootstrap {
     public static void prepareLogging() {
 
         final ch.qos.logback.classic.Logger logger = getRootLogger();
-
 
         final Iterator<Appender<ILoggingEvent>> iterator = logger.iteratorForAppenders();
         while (iterator.hasNext()) {
@@ -69,12 +67,10 @@ public class LoggingBootstrap {
             defaultAppenders.add(next);
         }
 
-
         //This appender just adds entries to an Array List so we can queue the log statements for later
         listAppender = new ListAppender<>();
         listAppender.start();
         logger.addAppender(listAppender);
-
     }
 
     /**
@@ -82,32 +78,34 @@ public class LoggingBootstrap {
      * at the very beginning of the HiveMQ lifecycle
      */
     public static void initLogging(final @NotNull File configFolder) {
-
         final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        final ch.qos.logback.classic.Logger logger = getRootLogger();
 
-        context.addListener(new LogbackChangeListener(logger));
+        context.addListener(logbackChangeListener);
 
-        final boolean overridden = overrideLogbackXml(configFolder);
-
+        final boolean overridden = tryToOverrideLogbackXml(configFolder);
         if (!overridden) {
             reEnableDefaultAppenders();
+            context.addTurboFilter(logLevelModifierTurboFilter);
         }
         redirectJULToSLF4J();
         logQueuedEntries();
 
         reset();
-
-        context.addTurboFilter(nettyLogLevelModifier);
-        context.addTurboFilter(LOG_LEVEL_MODIFIER);
+        logLevelModifierTurboFilter.registerLogLevelModifier(new NettyLogLevelModifier());
+        logLevelModifierTurboFilter.registerLogLevelModifier(new MiscLogLevelModifier());
         log.trace("Added Netty log level modifier");
+    }
+
+    public static void resetLogging() {
+        final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        context.getTurboFilterList().remove(logLevelModifierTurboFilter);
+        context.removeListener(logbackChangeListener);
     }
 
     /**
      * Re-enables all default appenders that were removed from the root logger for startup
      */
     private static void reEnableDefaultAppenders() {
-
         final ch.qos.logback.classic.Logger logger = getRootLogger();
 
         for (final Appender<ILoggingEvent> defaultAppender : defaultAppenders) {
@@ -119,7 +117,6 @@ public class LoggingBootstrap {
      * Logs all queued Entries to the logger. It is assumed that the logger is fully initialized at this point
      */
     private static void logQueuedEntries() {
-
         final ch.qos.logback.classic.Logger logger = getRootLogger();
 
         listAppender.stop();
@@ -146,15 +143,14 @@ public class LoggingBootstrap {
     }
 
     /**
-     * Overrides the standard Logging configuration delivered with HiveMQ with
+     * Attempts to override the standard Logging configuration delivered with HiveMQ with
      * a logback.xml from the config folder.
      *
      * @return If the default configuration was overridden
      */
-    private static boolean overrideLogbackXml(final @NotNull File configFolder) {
+    private static boolean tryToOverrideLogbackXml(final @NotNull File configFolder) {
         final File file = new File(configFolder, "logback.xml");
         if (file.canRead()) {
-            log.info("Log Configuration was overridden by {}", file.getAbsolutePath());
             final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
             try {
                 context.reset();
@@ -164,23 +160,28 @@ public class LoggingBootstrap {
                 configurator.doConfigure(file);
 
                 context.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(listAppender);
+                log.info("Log Configuration was overridden by {}", file.getAbsolutePath());
                 return true;
             } catch (final JoranException je) {
-                // StatusPrinter will handle this
+                // StatusPrinter will handle the rest
+                log.warn(
+                        "A configurator exception was thrown while attempting to configure Logback. Using HiveMQ default logging configuration.");
             } catch (final Exception ex) {
+                log.warn(
+                        "An exception was thrown while attempting to configure Logback. Using HiveMQ default logging configuration.");
                 // Just in case, so we see a stacktrace if the logger could not be initialized
                 ex.printStackTrace();
             } finally {
                 StatusPrinter.printInCaseOfErrorsOrWarnings(context);
             }
             // Print internal status data in case of warnings or errors.
-            return false;
-        } else {
+        } else { // we do not override if the custom config file does not exist
             log.warn(
-                    "The logging configuration file {} does not exist. Using HiveMQ default logging configuration.",
+                    "The logging configuration file {} cannot be read or does not exist. Using HiveMQ default logging configuration.",
                     file.getAbsolutePath());
-            return false;
         }
+
+        return false;
     }
 
     /**
@@ -191,14 +192,7 @@ public class LoggingBootstrap {
         listAppender.list.clear();
     }
 
-    private static class LogbackChangeListener implements LoggerContextListener {
-
-        private final @NotNull ch.qos.logback.classic.Logger logger;
-
-        private LogbackChangeListener(
-                final @NotNull ch.qos.logback.classic.Logger logger) {
-            this.logger = logger;
-        }
+    private static final class LogbackChangeListener implements LoggerContextListener {
 
         @Override
         public boolean isResetResistant() {
@@ -220,7 +214,7 @@ public class LoggingBootstrap {
         @Override
         public void onReset(final @NotNull LoggerContext context) {
             log.trace("logback.xml was changed");
-            addTurboFilters(context);
+            context.addTurboFilter(logLevelModifierTurboFilter);
         }
 
         @Override
@@ -231,11 +225,6 @@ public class LoggingBootstrap {
         @Override
         public void onLevelChange(final @NotNull ch.qos.logback.classic.Logger logger, final @NotNull Level level) {
             //noop
-        }
-
-        private void addTurboFilters(final @NotNull LoggerContext context) {
-            context.addTurboFilter(nettyLogLevelModifier);
-            context.addTurboFilter(LOG_LEVEL_MODIFIER);
         }
     }
 }
