@@ -8,12 +8,8 @@ import ScriptTable from '@datahub/components/pages/ScriptTable.tsx'
 const DataHubListings: FC = () => {
   const { t } = useTranslation('datahub')
 
-  function handleTabsChange() {
-    console.log('XXX')
-  }
-
   return (
-    <Tabs onChange={handleTabsChange} isLazy colorScheme="brand" data-testid="list-tabs">
+    <Tabs isLazy colorScheme="brand" data-testid="list-tabs">
       <TabList>
         <Tab fontSize="lg" fontWeight="bold">
           {t('Listings.tabs.policy.title')}
