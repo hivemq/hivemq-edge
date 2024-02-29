@@ -90,7 +90,7 @@ export function checkValidityTransformFunction(
 
   // TODO[19497] This should not have to happen on the client side!
   const formattedScriptName = (functionNode: Node<FunctionData>): string => {
-    return `fn:${functionNode.data.name}:${functionNode.data.version}`
+    return `fn:${functionNode.data.name}:latest`
   }
 
   const deserializer: PolicyOperation = {
