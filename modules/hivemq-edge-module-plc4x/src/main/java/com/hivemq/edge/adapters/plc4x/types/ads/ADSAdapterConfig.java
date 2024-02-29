@@ -62,6 +62,11 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig {
                        description = "The AMS Net ID of the device to connect to")
     private @NotNull String targetAmsNetId = "";
 
+    @Override
+    public int getPort() {
+        return port;
+    }
+
     public int getSourceAmsPort() {
         return sourceAmsPort;
     }
