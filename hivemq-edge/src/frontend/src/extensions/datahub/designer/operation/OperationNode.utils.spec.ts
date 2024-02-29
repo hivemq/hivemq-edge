@@ -370,7 +370,7 @@ describe('checkValidityTransformFunction', () => {
           arguments: {
             transform: ['the_function'],
           },
-          functionId: 'fn:the_function:1',
+          functionId: 'fn:the_function:latest',
           id: 'node-id',
         })
       )
