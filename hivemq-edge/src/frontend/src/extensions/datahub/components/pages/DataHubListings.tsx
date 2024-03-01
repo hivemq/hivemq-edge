@@ -90,8 +90,8 @@ const DataHubListings: FC = () => {
         isOpen={isConfirmDeleteOpen}
         onClose={handleConfirmOnClose}
         onSubmit={handleConfirmOnSubmit}
-        message={t('modals.generics.confirmation')}
-        header={t('modals.deleteBridgeDialog.header')}
+        message={t('Listings.modal.delete.header')}
+        header={t('Listings.modal.delete.message')}
       />
     </Tabs>
   )
