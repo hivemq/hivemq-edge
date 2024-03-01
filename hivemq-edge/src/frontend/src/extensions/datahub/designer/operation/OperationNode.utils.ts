@@ -145,7 +145,7 @@ export const processOperations =
     } else {
       const operation: PolicyOperation = {
         functionId: node.data.functionId,
-        arguments: node.data.formData,
+        arguments: node.data.formData || {},
         // TODO[19466] Id should be user-facing; Need to fix before merging!
         id: node.id,
       }
