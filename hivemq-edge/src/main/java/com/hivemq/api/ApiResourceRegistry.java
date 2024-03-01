@@ -20,7 +20,7 @@ import com.hivemq.api.auth.handler.IAuthenticationHandler;
 import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.auth.provider.ITokenVerifier;
 import com.hivemq.api.error.ApiExceptionMapper;
-import com.hivemq.api.error.UncaughtExceptionMapper;
+import com.hivemq.api.error.CustomJsonMappingExceptionMapper;
 import com.hivemq.api.filter.JWTReissuanceFilterImpl;
 import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.resources.BridgeApi;
@@ -34,6 +34,7 @@ import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.resources.impl.RootResource;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.http.error.DefaultExceptionMapper;
 import dagger.Lazy;
 import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
@@ -148,8 +149,9 @@ public class ApiResourceRegistry extends ResourceConfig {
 
     protected void registerMappers() {
         register(MarshallingFeature.class);
-        register(new UncaughtExceptionMapper());
-        register(new ApiExceptionMapper());
+        register(new CustomJsonMappingExceptionMapper(), 1);
+        register(new ApiExceptionMapper(), 1);
+        register(new DefaultExceptionMapper(), 1);
         if (Boolean.getBoolean("api.wire.logging.enabled")) {
             register(new LoggingFeature(new Logger(getClass().getName(), null) {
                 @Override
