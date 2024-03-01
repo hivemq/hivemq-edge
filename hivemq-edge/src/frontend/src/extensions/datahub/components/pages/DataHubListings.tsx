@@ -16,6 +16,10 @@ interface DeleteMutationRequest {
   id: string
 }
 
+export interface DataHubTableProps {
+  onDeleteItem?: (mutation: UseMutateAsyncFunction<void, unknown, string, unknown>, type: string, id: string) => void
+}
+
 const DataHubListings: FC = () => {
   const { t } = useTranslation('datahub')
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()

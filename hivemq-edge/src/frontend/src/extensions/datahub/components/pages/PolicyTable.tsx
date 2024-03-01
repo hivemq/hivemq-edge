@@ -1,6 +1,6 @@
 import { FC, useMemo } from 'react'
 import { CellContext, ColumnDef } from '@tanstack/react-table'
-import { UseMutateAsyncFunction, UseMutationResult } from '@tanstack/react-query'
+import { UseMutationResult } from '@tanstack/react-query'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -20,14 +20,11 @@ import { mockBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesSe
 import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import { useDeleteBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useDeleteBehaviorPolicy.tsx'
+import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 
 type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { type: PolicyType })
 
-interface PolicyTablePRops {
-  onDeleteItem?: (mutation: UseMutateAsyncFunction<void, unknown, string, unknown>, type: string, id: string) => void
-}
-
-const PolicyTable: FC<PolicyTablePRops> = ({ onDeleteItem }) => {
+const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
   const { isLoading: isDataLoading, data: dataPolicies, isError: isDataError } = useGetAllDataPolicies()
   const {
