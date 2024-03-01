@@ -1,5 +1,6 @@
 import { FC, useMemo } from 'react'
-import { ColumnDef } from '@tanstack/react-table'
+import { CellContext, ColumnDef } from '@tanstack/react-table'
+import { UseMutateAsyncFunction, UseMutationResult } from '@tanstack/react-query'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -18,10 +19,15 @@ import { mockDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/__
 import { mockBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/__handlers__'
 import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
+import { useDeleteBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useDeleteBehaviorPolicy.tsx'
 
 type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { type: PolicyType })
 
-const PolicyTable: FC = () => {
+interface PolicyTablePRops {
+  onDeleteItem?: (mutation: UseMutateAsyncFunction<void, unknown, string, unknown>, type: string, id: string) => void
+}
+
+const PolicyTable: FC<PolicyTablePRops> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
   const { isLoading: isDataLoading, data: dataPolicies, isError: isDataError } = useGetAllDataPolicies()
   const {
@@ -30,7 +36,8 @@ const PolicyTable: FC = () => {
     isError: isBehaviorError,
   } = useGetAllBehaviorPolicies({})
   const navigate = useNavigate()
-  const deletePolicy = useDeleteDataPolicy()
+  const deleteDataPolicy = useDeleteDataPolicy()
+  const deleteBehaviourPolicy = useDeleteBehaviorPolicy()
 
   const isError = useMemo(() => {
     return isDataError || isBehaviorError
@@ -58,6 +65,15 @@ const PolicyTable: FC = () => {
   }, [isLoading, dataPolicies, behaviorPolicies])
 
   const columns = useMemo<ColumnDef<CombinedPolicy>[]>(() => {
+    const onHandleDelete = (info: CellContext<CombinedPolicy, unknown>) => {
+      return () => {
+        const deleteMutation: UseMutationResult<void, unknown, string> =
+          info.row.original.type === PolicyType.DATA ? deleteDataPolicy : deleteBehaviourPolicy
+
+        onDeleteItem?.(deleteMutation.mutateAsync, info.row.original.type, info.row.original.id)
+      }
+    }
+
     return [
       {
         accessorKey: 'id',
@@ -111,12 +127,7 @@ const PolicyTable: FC = () => {
           return (
             <Skeleton isLoaded={!isLoading}>
               <DataHubListAction
-                onDelete={() =>
-                  deletePolicy
-                    .mutateAsync(info.row.original.id)
-                    .then((e) => console.log('XXXXXX', e))
-                    .catch((e) => console.log('XXXXX', e.toString(), info))
-                }
+                onDelete={onHandleDelete(info)}
                 onEdit={() => navigate(`/datahub/${info.row.original.type}/id`)}
               />
             </Skeleton>
@@ -133,7 +144,7 @@ const PolicyTable: FC = () => {
         ),
       },
     ]
-  }, [deletePolicy, isLoading, navigate, t])
+  }, [deleteBehaviourPolicy, deleteDataPolicy, isLoading, navigate, onDeleteItem, t])
 
   return (
     <PaginatedTable<CombinedPolicy>
