@@ -23,6 +23,8 @@ export const mockScript: Script = {
   createdAt: MOCK_CREATED_AT,
   functionType: Script.functionType.TRANSFORMATION,
   source: btoa(JSON.stringify(MOCK_SCRIPT_SOURCE)),
+  version: 1,
+  description: 'this is a description',
 }
 
 export const handlers = [
