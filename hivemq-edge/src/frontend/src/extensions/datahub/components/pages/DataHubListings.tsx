@@ -83,11 +83,11 @@ const DataHubListings: FC = () => {
         </TabPanel>
         <TabPanel>
           <Text mb={3}>{t('Listings.tabs.schema.description')}</Text>
-          <SchemaTable />
+          <SchemaTable onDeleteItem={handleOnDelete} />
         </TabPanel>
         <TabPanel>
           <Text mb={3}>{t('Listings.tabs.script.description')}</Text>
-          <ScriptTable />
+          <ScriptTable onDeleteItem={handleOnDelete} />
         </TabPanel>
       </TabPanels>
       <ConfirmationDialog
