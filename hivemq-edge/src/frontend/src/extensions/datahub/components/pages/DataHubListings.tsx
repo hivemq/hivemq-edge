@@ -32,8 +32,6 @@ const DataHubListings: FC = () => {
   }
 
   const handleConfirmOnSubmit = () => {
-    console.log(deleteItem)
-    if (!deleteItem?.mutation) return
     deleteItem
       ?.mutation(deleteItem?.id)
       .then(() =>
