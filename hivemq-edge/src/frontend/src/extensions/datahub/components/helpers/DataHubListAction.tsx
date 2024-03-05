@@ -1,9 +1,8 @@
 import { FC, MouseEventHandler } from 'react'
 import { ButtonGroup } from '@chakra-ui/react'
 import IconButton from '@/components/Chakra/IconButton.tsx'
-import { FaEdit } from 'react-icons/fa'
 import { useTranslation } from 'react-i18next'
-import { FaTrashCan } from 'react-icons/fa6'
+import { LuFileEdit, LuTrash2 } from 'react-icons/lu'
 
 interface DataHubListActionProps {
   onEdit?: MouseEventHandler<HTMLButtonElement>
@@ -19,14 +18,14 @@ const DataHubListAction: FC<DataHubListActionProps> = ({ onEdit, onDelete, isEdi
         data-testid="list-action-edit"
         onClick={onEdit}
         aria-label={t('Listings.action.edit')}
-        icon={<FaEdit />}
+        icon={<LuFileEdit />}
         isDisabled={isEditDisabled}
       />
       <IconButton
         data-testid="list-action-delete"
         onClick={onDelete}
         aria-label={t('Listings.action.delete')}
-        icon={<FaTrashCan />}
+        icon={<LuTrash2 />}
       />
     </ButtonGroup>
   )

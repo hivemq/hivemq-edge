@@ -30,6 +30,7 @@ export const mockSchemaTempHumidity: Schema = {
   schemaDefinition: btoa(JSON.stringify(MOCK_SCHEMA_SOURCE)),
   //TODO[NVL] Should be typed (enum): JSON, PROTOBUF
   type: 'JSON',
+  version: 1,
 }
 
 export const handlers = [
