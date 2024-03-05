@@ -10,8 +10,8 @@
     "description": "The Edge Data Hub provides mechanisms to define how MQTT data and MQTT client behavior are handled from the adaptors to the HiveMQ broker"
   },
   "policy": {
-    "type_DATA": "Data Policy",
-    "type_BEHAVIOR": "Behavior Policy"
+    "type_DATA_POLICY": "Data Policy",
+    "type_BEHAVIOR_POLICY": "Behavior Policy"
   },
 
   "resource": {
@@ -56,7 +56,12 @@
         "create": "Create a new policy"
       }
     },
-
+    "modal": {
+      "delete": {
+        "header": "Delete Item",
+        "message": "Are you sure? You can't undo this action afterwards."
+      }
+    },
     "schema": {
       "label": "List of schemas",
       "header": {
@@ -205,6 +210,10 @@
       "title": "$t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) published",
       "description": "We've created a new $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) for you.",
       "error": "Error publishing $t(datahub:workspace.nodes.type, { 'context': '{{source}}' })"
+    },
+    "delete": {
+      "title": "$t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) deleted",
+      "error": "Error deleting $t(datahub:workspace.nodes.type, { 'context': '{{source}}' })"
     },
     "noSet": {
       "select": "< not set >"
