@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
@@ -23,11 +24,13 @@ import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
@@ -100,8 +103,30 @@ public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
                            description = "Define the start and end index values for your memory addresses")
         private @NotNull AddressRange addressRange;
 
+        @JsonCreator
+        public Subscription(
+                @JsonProperty("destination") @Nullable final String destination,
+                @JsonProperty("qos") final int qos,
+                @JsonProperty("addressRange") @NotNull final AddressRange addressRange) {
+            super(destination, qos);
+            this.addressRange = addressRange;
+        }
+
         public @NotNull AddressRange getAddressRange() {
             return addressRange;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Subscription)) return false;
+            Subscription that = (Subscription) o;
+            return Objects.equals(addressRange, that.addressRange);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(addressRange);
         }
     }
 
@@ -134,6 +159,19 @@ public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
             sb.append(", to=").append(endIdx);
             sb.append('}');
             return sb.toString();
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (!(o instanceof AddressRange)) return false;
+            AddressRange that = (AddressRange) o;
+            return startIdx == that.startIdx && endIdx == that.endIdx;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(startIdx, endIdx);
         }
     }
 }

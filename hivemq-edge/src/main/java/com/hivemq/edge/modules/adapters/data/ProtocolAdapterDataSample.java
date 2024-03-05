@@ -81,9 +81,13 @@ public class ProtocolAdapterDataSample<T extends AbstractProtocolAdapterConfig> 
         dataPoints.add(new DataPoint(tagName,tagValue));
     }
 
+    public void setDataPoints(List<DataPoint> list){
+        this.dataPoints = list;
+    }
+
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<DataPoint> getDataPoints(){
-        return Collections.unmodifiableList(dataPoints);
+        return dataPoints;
     }
 
     public static class DataPoint {
