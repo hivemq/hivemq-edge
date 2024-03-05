@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
-import { DATAHUB_QUERY_KEYS } from '../../utils.ts'
+import { ApiError, ScriptList } from '@/api/__generated__'
+import { DATAHUB_QUERY_KEYS } from '@datahub/api/utils.ts'
 
 interface GetAllScriptsProps {
   fields?: string
@@ -12,7 +13,7 @@ interface GetAllScriptsProps {
 
 export const useGetAllScripts = ({ fields, functionTypes, scriptIds, limit, cursor }: GetAllScriptsProps) => {
   const appClient = useHttpClient()
-  return useQuery({
+  return useQuery<ScriptList, ApiError>({
     queryKey: [DATAHUB_QUERY_KEYS.SCRIPTS],
     queryFn: async () => {
       return appClient.dataHubScripts.getAllScripts(fields, functionTypes, scriptIds, limit, cursor)
