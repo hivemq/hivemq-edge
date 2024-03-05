@@ -194,6 +194,18 @@ export interface OperationData extends DataHubNodeData {
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace OperationData {
+  export enum Function {
+    SYSTEM_LOG = 'System.log',
+    MQTT_USER_PROPERTY = 'Mqtt.UserProperties.add',
+    MQTT_DISCONNECT = 'Mqtt.disconnect',
+    MQTT_DROP = 'Mqtt.drop',
+    DELIVERY_REDIRECT = 'Delivery.redirectTo',
+    SERDES_DESERIALIZE = 'Serdes.deserialize',
+    SERDES_SERIALIZE = 'Serdes.serialize',
+    METRICS_COUNTER_INC = 'Metrics.Counter.increment',
+    DATAHUB_TRANSFORM = 'DataHub.transform',
+  }
+
   export enum Handle {
     INPUT = 'input',
     OUTPUT = 'output',
