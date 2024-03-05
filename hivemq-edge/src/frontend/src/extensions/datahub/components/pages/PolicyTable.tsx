@@ -72,6 +72,10 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
       }
     }
 
+    const onHandleEdit = (info: CellContext<CombinedPolicy, unknown>) => () => {
+      navigate(`/datahub/${info.row.original.type}/${info.row.original.id}`)
+    }
+
     return [
       {
         accessorKey: 'id',
@@ -124,10 +128,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
         cell: (info) => {
           return (
             <Skeleton isLoaded={!isLoading}>
-              <DataHubListAction
-                onDelete={onHandleDelete(info)}
-                onEdit={() => navigate(`/datahub/${info.row.original.type}/id`)}
-              />
+              <DataHubListAction onDelete={onHandleDelete(info)} onEdit={onHandleEdit(info)} />
             </Skeleton>
           )
         },
