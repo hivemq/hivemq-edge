@@ -73,8 +73,8 @@ export enum DataHubNodeType {
 
 export enum PolicyType {
   CREATE_POLICY = 'CREATE_POLICY',
-  DATA = DataHubNodeType.DATA_POLICY,
-  BEHAVIOR = DataHubNodeType.BEHAVIOR_POLICY,
+  DATA_POLICY = DataHubNodeType.DATA_POLICY,
+  BEHAVIOR_POLICY = DataHubNodeType.BEHAVIOR_POLICY,
 }
 
 export enum NodeCategory {
