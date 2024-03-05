@@ -12,8 +12,10 @@ import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGe
 import { useDeleteScript } from '@datahub/api/hooks/DataHubScriptsService/useDeleteScript.tsx'
 import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
+import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
+import { DataHubNodeType } from '@datahub/types.ts'
 
-const ScriptTable: FC = () => {
+const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
   const { isLoading, data, isError } = useGetAllScripts({})
   const deleteScript = useDeleteScript()
@@ -89,10 +91,7 @@ const ScriptTable: FC = () => {
               <DataHubListAction
                 isEditDisabled={true}
                 onDelete={() =>
-                  deleteScript
-                    .mutateAsync(info.row.original.id)
-                    .then((e) => console.log('XXXXXX', e))
-                    .catch((e) => console.log('XXXXX', e.toString(), info))
+                  onDeleteItem?.(deleteScript.mutateAsync, DataHubNodeType.FUNCTION, info.row.original.id)
                 }
               />
             </Skeleton>
@@ -100,7 +99,7 @@ const ScriptTable: FC = () => {
         },
       },
     ]
-  }, [deleteScript, isLoading, t])
+  }, [deleteScript.mutateAsync, isLoading, onDeleteItem, t])
 
   return (
     <PaginatedTable<Script>

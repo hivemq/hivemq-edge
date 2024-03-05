@@ -55,12 +55,6 @@ export interface PolicyCheckAction {
   getErrors: () => ProblemDetailsExtended[] | undefined
 }
 
-export enum PolicyType {
-  CREATE_POLICY = 'CREATE_POLICY',
-  DATA = 'DATA',
-  BEHAVIOR = 'BEHAVIOR',
-}
-
 export enum DataHubNodeType {
   ADAPTOR = 'ADAPTOR',
   EDGE = 'EDGE',
@@ -75,6 +69,12 @@ export enum DataHubNodeType {
   TRANSITION = 'TRANSITION',
   FUNCTION = 'FUNCTION',
   EVENT = 'EVENT',
+}
+
+export enum PolicyType {
+  CREATE_POLICY = 'CREATE_POLICY',
+  DATA = DataHubNodeType.DATA_POLICY,
+  BEHAVIOR = DataHubNodeType.BEHAVIOR_POLICY,
 }
 
 export enum NodeCategory {

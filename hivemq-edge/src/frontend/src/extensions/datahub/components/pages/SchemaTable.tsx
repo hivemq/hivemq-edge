@@ -13,8 +13,10 @@ import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGe
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
 import { useDeleteSchema } from '@datahub/api/hooks/DataHubSchemasService/useDeleteSchema.tsx'
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
+import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
+import { DataHubNodeType } from '@datahub/types.ts'
 
-const SchemaTable: FC = () => {
+const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
   const { isLoading, data, isError } = useGetAllSchemas()
   const deleteSchema = useDeleteSchema()
@@ -78,19 +80,14 @@ const SchemaTable: FC = () => {
             <Skeleton isLoaded={!isLoading}>
               <DataHubListAction
                 isEditDisabled={true}
-                onDelete={() =>
-                  deleteSchema
-                    .mutateAsync(info.row.original.id)
-                    .then((e) => console.log('XXXXXX', e))
-                    .catch((e) => console.log('XXXXX', e.toString(), info))
-                }
+                onDelete={() => onDeleteItem?.(deleteSchema.mutateAsync, DataHubNodeType.SCHEMA, info.row.original.id)}
               />
             </Skeleton>
           )
         },
       },
     ]
-  }, [deleteSchema, isLoading, t])
+  }, [deleteSchema.mutateAsync, isLoading, onDeleteItem, t])
 
   return (
     <PaginatedTable<Schema>

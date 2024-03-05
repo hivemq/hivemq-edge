@@ -176,7 +176,7 @@ describe('checkValidityTransitions', () => {
     const [{ node, data, error, resources }] = behaviorPolicyTransitions
     expect(data).toEqual({
       'Mqtt.OnInboundDisconnect': {
-        pipelines: [
+        pipeline: [
           {
             arguments: {
               level: 'DEBUG',
