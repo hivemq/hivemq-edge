@@ -38,11 +38,11 @@ public class TopicFilterProcessor {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(TopicFilterProcessor.class);
 
-    private static final @NotNull Pattern REGEX_ENV_VAR = Pattern.compile(".*\\$ENV\\{.*}.*");
-    private static final @NotNull Pattern REGEX_OUT_TOPIC = Pattern.compile(".*\\\\\\{.*}.*");
+    private static final @NotNull Pattern REGEX_ENV_VAR = Pattern.compile("\\$ENV\\{.*}");
+    private static final @NotNull Pattern REGEX_OUT_TOPIC = Pattern.compile("\\\\\\{.*}");
     private static final @NotNull String REGEX_OUT_TOPIC_REPLACER = "\\\\\\{";
     private static final @NotNull Pattern REGEX_ARBITRARY_TOKENS = Pattern.compile("\\$\\{([^}]+)\\}");
-    private static final @NotNull Pattern REGEX_VAR = Pattern.compile(".*\\{.*}.*");
+    private static final @NotNull Pattern REGEX_VAR = Pattern.compile("\\{.*}");
     private static final @NotNull Pattern REGEX_NUM = Pattern.compile("[0-9]+");
 
 
