@@ -91,7 +91,9 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
 }
 
 export function loadSchema(
-  parent: Node<DataHubNodeData>,
+  parentNode: Node<DataHubNodeData>,
+  targetHandle: string | null,
+  positionDeltaX: number,
   schemaRef: SchemaReference,
   schemas: Schema[],
   store: WorkspaceState & WorkspaceAction
@@ -104,8 +106,8 @@ export function loadSchema(
     id: schemaRef.schemaId,
     type: DataHubNodeType.SCHEMA,
     position: {
-      x: parent.position.x,
-      y: parent.position.y - 150,
+      x: parentNode.position.x + positionDeltaX,
+      y: parentNode.position.y - 150,
     },
     data: {
       // @ts-ignore force undefined
@@ -117,8 +119,8 @@ export function loadSchema(
   onNodesChange([{ item: schemaNode, type: 'add' } as NodeAddChange])
   onConnect({
     source: schemaNode.id,
-    target: parent.id,
+    target: parentNode.id,
     sourceHandle: null,
-    targetHandle: null,
+    targetHandle: targetHandle,
   })
 }
