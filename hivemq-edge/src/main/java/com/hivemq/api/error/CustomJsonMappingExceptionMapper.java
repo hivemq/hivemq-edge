@@ -17,7 +17,7 @@ public class CustomJsonMappingExceptionMapper implements ExceptionMapper<JsonMap
         if (originalMessage != null) {
             return ErrorResponseUtil.invalidInput("Unable to parse JSON body: " + originalMessage);
         } else {
-            return ErrorResponseUtil.invalidInput("Unable to parse JSON body: No more detailed information present.");
+            return ErrorResponseUtil.invalidInput("Unable to parse JSON body, please check the input format.");
         }
     }
 }
