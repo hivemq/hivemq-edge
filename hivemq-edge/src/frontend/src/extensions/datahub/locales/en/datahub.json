@@ -222,6 +222,11 @@
       "description": "We've created a new $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) for you.",
       "error": "Error publishing $t(datahub:workspace.nodes.type, { 'context': '{{source}}' })"
     },
+    "load": {
+      "title": "$t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) published",
+      "description": "We've created a new $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) for you.",
+      "errorTitle": "Error loading $t(datahub:workspace.nodes.type, { 'context': '{{source}}' })"
+    },
     "delete": {
       "title": "$t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) deleted",
       "error": "Error deleting $t(datahub:workspace.nodes.type, { 'context': '{{source}}' })"
