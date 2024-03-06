@@ -30,6 +30,7 @@ import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.http.core.UsernamePasswordRoles;
 
 import javax.inject.Inject;
@@ -48,73 +49,74 @@ public class AuthenticationResourceImpl extends AbstractApi implements Authentic
     private final @NotNull IUsernamePasswordProvider usernamePasswordProvider;
 
     @Inject
-    public AuthenticationResourceImpl(final @NotNull IUsernamePasswordProvider usernamePasswordProvider,
-                                      final @NotNull ITokenGenerator tokenGenerator,
-                                      final @NotNull ITokenVerifier tokenVerifier) {
+    public AuthenticationResourceImpl(
+            final @NotNull IUsernamePasswordProvider usernamePasswordProvider,
+            final @NotNull ITokenGenerator tokenGenerator,
+            final @NotNull ITokenVerifier tokenVerifier) {
         this.usernamePasswordProvider = usernamePasswordProvider;
         this.tokenGenerator = tokenGenerator;
         this.tokenVerifier = tokenVerifier;
     }
 
     @Override
-    public Response authenticate(final UsernamePasswordCredentials credentials) {
+    public @NotNull Response authenticate(final @Nullable UsernamePasswordCredentials credentials) {
+        // check the parent object first and return early to avoid NPEs
+        if (credentials == null) {
+            return ApiErrorUtils.badRequest("Request body must contain credentials, none were found.");
+        }
 
-        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
-
-        ApiErrorUtils.validateRequiredEntity(errorMessages, "credentials", credentials);
+        final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "userName", credentials.getUserName(), false);
         ApiErrorUtils.validateRequiredField(errorMessages, "password", credentials.getPassword(), false);
 
-        if(ApiErrorUtils.hasRequestErrors(errorMessages)){
+        if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
             return ApiErrorUtils.badRequest(errorMessages);
         } else {
             final String userName = credentials.getUserName();
             final String password = credentials.getPassword();
-            Optional<UsernamePasswordRoles> usernamePasswordRoles =
-                    usernamePasswordProvider.findByUsername(userName);
-            if(usernamePasswordRoles.isPresent()){
+            Optional<UsernamePasswordRoles> usernamePasswordRoles = usernamePasswordProvider.findByUsername(userName);
+            if (usernamePasswordRoles.isPresent()) {
                 UsernamePasswordRoles user = usernamePasswordRoles.get();
-                if(user.getPassword().equals(password)){
+                if (user.getPassword().equals(password)) {
                     try {
                         ApiBearerToken token = new ApiBearerToken(tokenGenerator.generateToken(user.toPrincipal()));
-                        if(logger.isTraceEnabled()){
-                            logger.trace("Bearer authentication was success, token generated for {}", user.getUserName());
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("Bearer authentication was success, token generated for {}",
+                                    user.getUserName());
                         }
                         return Response.status(200).entity(token).build();
-                    } catch (AuthenticationException e){
+                    } catch (AuthenticationException e) {
                         logger.warn("Authentication failed with error", e);
                         throw new ApiException("error encountered during authentication", e);
                     }
                 }
             }
-            return Response.status(401).entity(
-                    ApiErrorMessage.from("Invalid username and/or password")).build();
+            return Response.status(401).entity(ApiErrorMessage.from("Invalid username and/or password")).build();
         }
     }
 
     @Override
-    public Response validate(final ApiBearerToken token) {
+    public @NotNull Response validate(final @Nullable ApiBearerToken token) {
         Preconditions.checkNotNull(token);
         Preconditions.checkState(token.getToken() != null, "Token value cannot be <null>");
         Optional<ApiPrincipal> principal = tokenVerifier.verify(token.getToken());
-        if(principal.isPresent()){
+        if (principal.isPresent()) {
             return Response.ok().build();
         } else {
-            return Response.status(401).entity(
-                    ApiErrorMessage.from("Invalid token")).build();
+            return Response.status(401).entity(ApiErrorMessage.from("Invalid token")).build();
         }
     }
 
     @Override
-    public Response reissueToken() {
+    public @NotNull Response reissueToken() {
         try {
             ApiPrincipal principal = getAuthenticatedPrincipalFromContext();
             ApiBearerToken token = new ApiBearerToken(tokenGenerator.generateToken(principal));
-            if(logger.isTraceEnabled()){
+            if (logger.isTraceEnabled()) {
                 logger.trace("Token reissue requested for {}", principal.getName());
             }
             return Response.status(200).entity(token).build();
-        } catch (AuthenticationException e){
+        } catch (AuthenticationException e) {
             logger.warn("Authentication failed with error", e);
             throw new ApiException("error encountered during authentication", e);
         }
