@@ -1,17 +1,21 @@
-import { getIncomers, Node } from 'reactflow'
+import { getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
 
-import { DataPolicyValidator, Schema, SchemaReference } from '@/api/__generated__'
+import { DataPolicy, DataPolicyValidator, Schema, SchemaReference } from '@/api/__generated__'
+import { enumFromStringValue } from '@/utils/types.utils.ts'
+
 import {
   DataHubNodeType,
   DataPolicyData,
   DryRunResults,
   SchemaArguments,
   ValidatorData,
+  ValidatorType,
+  WorkspaceAction,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { checkValiditySchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
-import { isSchemaNodeType, isValidatorNodeType } from '@datahub/utils/node.utils.ts'
+import { getNodeId, isSchemaNodeType, isValidatorNodeType } from '@datahub/utils/node.utils.ts'
 
 export function checkValidityPolicyValidator(
   validator: Node<ValidatorData>,
@@ -60,4 +64,43 @@ export function checkValidityPolicyValidators(
   }
 
   return incomers.map((validator) => checkValidityPolicyValidator(validator, store))
+}
+
+export const loadValidators = (policy: DataPolicy, schemas: Schema[], store: WorkspaceState & WorkspaceAction) => {
+  const { onNodesChange, onConnect } = store
+  const dataNode = store.nodes.find((n) => n.id === policy.id)
+  if (!dataNode) throw new Error('cannot find the data policy node')
+
+  const position: XYPosition = {
+    x: dataNode.position.x,
+    y: dataNode.position.y - 150,
+  }
+
+  for (const validator of policy.validation?.validators || []) {
+    const validatorArguments = validator.arguments as SchemaArguments
+
+    const validatorNode: Node<ValidatorData> = {
+      id: getNodeId(),
+      type: DataHubNodeType.VALIDATOR,
+      position,
+      data: {
+        strategy: validatorArguments.strategy,
+        // @ts-ignore force undefined
+        type: enumFromStringValue(ValidatorType, validator.type),
+        schemas: validatorArguments.schemas,
+      },
+    }
+
+    onNodesChange([{ item: validatorNode, type: 'add' } as NodeAddChange])
+    onConnect({
+      source: validatorNode.id,
+      target: dataNode.id,
+      sourceHandle: null,
+      targetHandle: DataPolicyData.Handle.VALIDATION,
+    })
+
+    for (const schemaRef of validatorArguments.schemas) {
+      loadSchema(validatorNode, schemaRef, schemas, store)
+    }
+  }
 }
