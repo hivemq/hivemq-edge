@@ -212,27 +212,30 @@ export const loadDataPolicyPipelines = (
   scripts: Script[],
   store: WorkspaceState & WorkspaceAction
 ) => {
+  const dataNode = store.nodes.find((n) => n.id === policy.id)
+  if (!dataNode) throw new Error('cannot find the data policy node')
+
   if (policy.onSuccess && policy.onSuccess.pipeline)
-    loadPipeline(policy, policy.onSuccess.pipeline, DataPolicyData.Handle.ON_SUCCESS, schemas, scripts, store)
+    loadPipeline(dataNode, policy.onSuccess.pipeline, DataPolicyData.Handle.ON_SUCCESS, schemas, scripts, store)
   if (policy.onFailure && policy.onFailure.pipeline)
-    loadPipeline(policy, policy.onFailure.pipeline, DataPolicyData.Handle.ON_ERROR, schemas, scripts, store)
+    loadPipeline(dataNode, policy.onFailure.pipeline, DataPolicyData.Handle.ON_ERROR, schemas, scripts, store)
 }
 
 export const loadPipeline = (
-  policy: DataPolicy,
+  parentNode: Node,
   pipeline: Array<PolicyOperation>,
-  handle: DataPolicyData.Handle,
+  handle: DataPolicyData.Handle | null,
   schemas: Schema[],
   scripts: Script[],
   store: WorkspaceState & WorkspaceAction
 ) => {
   const { onAddNodes, onConnect } = store
-  const dataNode = store.nodes.find((n) => n.id === policy.id)
-  if (!dataNode) throw new Error('cannot find the data policy node')
+  // const dataNode = store.nodes.find((n) => n.id === policy.id)
+  if (!parentNode) throw new Error('cannot find the data policy node')
 
   const position: XYPosition = {
-    x: dataNode.position.x,
-    y: dataNode.position.y + (handle === DataPolicyData.Handle.ON_ERROR ? 100 : 0),
+    x: parentNode.position.x,
+    y: parentNode.position.y + (handle === DataPolicyData.Handle.ON_ERROR ? 100 : 0),
   }
 
   const shiftPositionRight = () => {
@@ -241,7 +244,7 @@ export const loadPipeline = (
   }
 
   let connect: Connection = {
-    source: dataNode.id,
+    source: parentNode.id,
     target: null,
     sourceHandle: handle,
     targetHandle: null,
