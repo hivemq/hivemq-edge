@@ -1,12 +1,21 @@
-import { Node } from 'reactflow'
+import { Node, NodeAddChange } from 'reactflow'
 import { parse, util as protobufUtils } from 'protobufjs'
 import descriptor from 'protobufjs/ext/descriptor'
 
 import i18n from '@/config/i18n.config.ts'
 
-import { Schema } from '@/api/__generated__'
-import { DryRunResults, SchemaData, SchemaType } from '@datahub/types.ts'
+import { Schema, SchemaReference } from '@/api/__generated__'
+import {
+  DataHubNodeData,
+  DataHubNodeType,
+  DryRunResults,
+  SchemaData,
+  SchemaType,
+  WorkspaceAction,
+  WorkspaceState,
+} from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
+import { enumFromStringValue } from '@/utils/types.utils.ts'
 
 export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults<Schema> {
   if (!schemaNode.data.type || !schemaNode.data.version || !schemaNode.data.schemaSource) {
@@ -79,4 +88,37 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
     node: schemaNode,
     error: PolicyCheckErrors.notConfigured(schemaNode, 'schemaSource'),
   }
+}
+
+export function loadSchema(
+  parent: Node<DataHubNodeData>,
+  schemaRef: SchemaReference,
+  schemas: Schema[],
+  store: WorkspaceState & WorkspaceAction
+) {
+  const { onNodesChange, onConnect } = store
+  const schema = schemas.find((e) => e.id === schemaRef.schemaId)
+  if (!schema) throw new Error('cannot find the schema node')
+
+  const schemaNode: Node<SchemaData> = {
+    id: schemaRef.schemaId,
+    type: DataHubNodeType.SCHEMA,
+    position: {
+      x: parent.position.x,
+      y: parent.position.y - 150,
+    },
+    data: {
+      // @ts-ignore force undefined
+      type: enumFromStringValue(SchemaType, schema.type),
+      schemaSource: atob(schema.schemaDefinition),
+      version: 1,
+    },
+  }
+  onNodesChange([{ item: schemaNode, type: 'add' } as NodeAddChange])
+  onConnect({
+    source: schemaNode.id,
+    target: parent.id,
+    sourceHandle: null,
+    targetHandle: null,
+  })
 }
