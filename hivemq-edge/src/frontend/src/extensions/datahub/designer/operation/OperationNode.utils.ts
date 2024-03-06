@@ -1,6 +1,6 @@
 import { Connection, getConnectedEdges, getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
 
-import { DataPolicy, PolicyOperation, Schema, SchemaReference, Script } from '@/api/__generated__'
+import { BehaviorPolicy, DataPolicy, PolicyOperation, Schema, SchemaReference, Script } from '@/api/__generated__'
 import {
   DataHubNodeType,
   DataPolicyData,
@@ -16,6 +16,7 @@ import { checkValidityJSScript, loadScripts } from '@datahub/designer/script/Fun
 import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { isFunctionNodeType, isSchemaNodeType } from '@datahub/utils/node.utils.ts'
+import { getActiveTransition } from '@datahub/designer/transition/TransitionNode.utils.ts'
 
 export function checkValidityTransformFunction(
   operationNode: Node<OperationData>,
@@ -185,6 +186,24 @@ export function checkValidityPipeline(
   }
 
   return pipeline.reduce<DryRunResults<PolicyOperation>[]>(processOperations(store), [])
+}
+
+export const loadBehaviorPolicyPipelines = (
+  behaviorPolicy: BehaviorPolicy,
+  transitionNode: Node,
+  schemas: Schema[],
+  scripts: Script[],
+  store: WorkspaceState & WorkspaceAction
+) => {
+  for (const transition of behaviorPolicy.onTransitions || []) {
+    const activeTransition = getActiveTransition(transition)
+    if (!activeTransition) throw new Error("cannot create the transition pipeline's nodes")
+
+    const transitionOnEvent = transition[activeTransition]
+    if (!transitionOnEvent) throw new Error("cannot create the transition pipeline's nodes")
+
+    loadPipeline(transitionNode, transitionOnEvent.pipeline, null, schemas, scripts, store)
+  }
 }
 
 export const loadDataPolicyPipelines = (
