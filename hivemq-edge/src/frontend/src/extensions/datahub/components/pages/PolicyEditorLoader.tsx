@@ -14,7 +14,7 @@ import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGe
 import { loadDataPolicy } from '@datahub/designer/data_policy/DataPolicyNode.utils.ts'
 import { loadTopicFilter } from '@datahub/designer/topic_filter/TopicFilterNode.utils.ts'
 import { loadValidators } from '@datahub/designer/validator/ValidatorNode.utils.ts'
-import { loadPipelines } from '@datahub/designer/operation/OperationNode.utils.ts'
+import { loadDataPolicyPipelines } from '@datahub/designer/operation/OperationNode.utils.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
 
@@ -46,7 +46,7 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
       loadDataPolicy(dataPolicy, store)
       loadTopicFilter(dataPolicy, store)
       loadValidators(dataPolicy, schemas.items || [], store)
-      loadPipelines(dataPolicy, schemas.items || [], scripts.items || [], store)
+      loadDataPolicyPipelines(dataPolicy, schemas.items || [], scripts.items || [], store)
     } catch (error) {
       let message
       if (error instanceof Error) message = error.message

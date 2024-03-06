@@ -187,7 +187,7 @@ export function checkValidityPipeline(
   return pipeline.reduce<DryRunResults<PolicyOperation>[]>(processOperations(store), [])
 }
 
-export const loadPipelines = (
+export const loadDataPolicyPipelines = (
   policy: DataPolicy,
   schemas: Schema[],
   scripts: Script[],
