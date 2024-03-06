@@ -17,6 +17,9 @@ import { loadValidators } from '@datahub/designer/validator/ValidatorNode.utils.
 import { loadDataPolicyPipelines } from '@datahub/designer/operation/OperationNode.utils.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
+import { loadBehaviorPolicy } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
+import { loadClientFilter } from '@datahub/designer/client_filter/ClientFilterNode.utils.ts'
+import { loadTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
 
 interface PolicyLoaderProps {
   policyId: string
@@ -70,6 +73,47 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
 }
 
 export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
+  const { t } = useTranslation('datahub')
+  const store = useDataHubDraftStore()
+  const toast = useToast()
+
+  const {
+    isLoading: isPolicyLoading,
+    data: behaviorPolicy,
+    isError: isPolicyError,
+    error,
+  } = useGetBehaviorPolicy(policyId)
+  // TODO[19966] Waste of bandwidth; enable the request only is dataPolicy contains the relevant resources
+  const { isLoading: isScriptLoading, data: scripts, isError: isScriptError, error: scriptError } = useGetAllScripts({})
+  const { isLoading: isSchemaLoading, data: schemas, isError: isSchemaError, error: schemaError } = useGetAllSchemas()
+
+  useEffect(() => {
+    if (!behaviorPolicy || !schemas || !scripts) return
+
+    try {
+      // TODO[19966] should be loaded in a temp var until whole graph is correct
+      store.reset()
+      loadBehaviorPolicy(behaviorPolicy, store)
+      loadClientFilter(behaviorPolicy, store)
+      loadTransitions(behaviorPolicy, schemas.items || [], scripts.items || [], store)
+    } catch (error) {
+      let message
+      if (error instanceof Error) message = error.message
+      else message = String(error)
+      toast({
+        ...dataHubToastOption,
+        title: t('error.load.errorTitle', { source: PolicyType.DATA_POLICY }),
+        description: message,
+        status: 'error',
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [behaviorPolicy, schemas, scripts, t, toast])
+
+  if (isPolicyLoading || isScriptLoading || isSchemaLoading) return <Spinner />
+  if (isPolicyError) return <ErrorMessage type={t('error.notDefined.title') as string} message={error?.message} />
+  if (isScriptError) return <ErrorMessage type={t('error.notDefined.title') as string} message={scriptError?.message} />
+  if (isSchemaError) return <ErrorMessage type={t('error.notDefined.title') as string} message={schemaError?.message} />
   return <PolicyEditor />
 }
 
