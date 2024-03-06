@@ -58,7 +58,8 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
         status: 'error',
       })
     }
-  }, [dataPolicy])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataPolicy, schemas, scripts, t, toast])
 
   if (isDataPolicyLoading || isScriptLoading || isSchemaLoading) return <Spinner />
   if (isDataPolicyError) return <ErrorMessage type={t('error.notDefined.title') as string} message={error?.message} />
