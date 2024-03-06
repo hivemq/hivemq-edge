@@ -100,7 +100,7 @@ export const loadValidators = (policy: DataPolicy, schemas: Schema[], store: Wor
     })
 
     for (const schemaRef of validatorArguments.schemas) {
-      loadSchema(validatorNode, schemaRef, schemas, store)
+      loadSchema(validatorNode, null, 0, schemaRef, schemas, store)
     }
   }
 }
