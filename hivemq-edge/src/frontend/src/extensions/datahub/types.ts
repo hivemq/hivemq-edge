@@ -39,6 +39,8 @@ export interface WorkspaceAction {
 
   onAddFunctions: (changes: FunctionSpecs[]) => void
   onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => string | undefined
+
+  isDirty: () => boolean
 }
 
 export interface PolicyCheckState {
