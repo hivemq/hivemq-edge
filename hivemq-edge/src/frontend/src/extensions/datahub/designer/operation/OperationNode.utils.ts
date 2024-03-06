@@ -1,6 +1,6 @@
-import { getConnectedEdges, getIncomers, Node } from 'reactflow'
+import { Connection, getConnectedEdges, getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
 
-import { PolicyOperation, Schema, Script } from '@/api/__generated__'
+import { DataPolicy, PolicyOperation, Schema, SchemaReference, Script } from '@/api/__generated__'
 import {
   DataHubNodeType,
   DataPolicyData,
@@ -9,10 +9,11 @@ import {
   OperationData,
   PolicyOperationArguments,
   TransitionData,
+  WorkspaceAction,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { checkValidityJSScript } from '@datahub/designer/script/FunctionNode.utils.ts'
-import { checkValiditySchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import { checkValidityJSScript, loadScripts } from '@datahub/designer/script/FunctionNode.utils.ts'
+import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { isFunctionNodeType, isSchemaNodeType } from '@datahub/utils/node.utils.ts'
 
@@ -184,4 +185,122 @@ export function checkValidityPipeline(
   }
 
   return pipeline.reduce<DryRunResults<PolicyOperation>[]>(processOperations(store), [])
+}
+
+export const loadPipelines = (
+  policy: DataPolicy,
+  schemas: Schema[],
+  scripts: Script[],
+  store: WorkspaceState & WorkspaceAction
+) => {
+  if (policy.onSuccess && policy.onSuccess.pipeline)
+    loadPipeline(policy, policy.onSuccess.pipeline, DataPolicyData.Handle.ON_SUCCESS, schemas, scripts, store)
+  if (policy.onFailure && policy.onFailure.pipeline)
+    loadPipeline(policy, policy.onFailure.pipeline, DataPolicyData.Handle.ON_ERROR, schemas, scripts, store)
+}
+
+export const loadPipeline = (
+  policy: DataPolicy,
+  pipeline: Array<PolicyOperation>,
+  handle: DataPolicyData.Handle,
+  schemas: Schema[],
+  scripts: Script[],
+  store: WorkspaceState & WorkspaceAction
+) => {
+  const { onAddNodes, onConnect } = store
+  const dataNode = store.nodes.find((n) => n.id === policy.id)
+  if (!dataNode) throw new Error('cannot find the data policy node')
+
+  const position: XYPosition = {
+    x: dataNode.position.x,
+    y: dataNode.position.y + (handle === DataPolicyData.Handle.ON_ERROR ? 100 : 0),
+  }
+
+  const shiftPositionRight = () => {
+    position.x += 400
+    return position
+  }
+
+  let connect: Connection = {
+    source: dataNode.id,
+    target: null,
+    sourceHandle: handle,
+    targetHandle: null,
+  }
+  let operationNode: Node<OperationData> | undefined | PolicyOperation[] = undefined
+  for (const policyOperation of pipeline) {
+    switch (true) {
+      case OperationData.Function.SERDES_DESERIALIZE === policyOperation.functionId:
+        if (operationNode) throw new Error('Something wrong with the operation')
+        operationNode = [policyOperation]
+        break
+      case policyOperation.functionId.startsWith('fn:'):
+        if (!Array.isArray(operationNode)) throw new Error('something wrong with the operation')
+        operationNode?.push(policyOperation)
+        break
+      case OperationData.Function.SERDES_SERIALIZE === policyOperation.functionId:
+        {
+          if (!Array.isArray(operationNode)) throw new Error('something wrong with the operation')
+          const [deserializer, ...functions] = operationNode as PolicyOperation[]
+
+          operationNode = {
+            id: policyOperation.id,
+            type: DataHubNodeType.OPERATION,
+            position: { ...shiftPositionRight() },
+            data: {
+              functionId: OperationData.Function.DATAHUB_TRANSFORM,
+              metadata: {
+                isTerminal: false,
+                hasArguments: true,
+              },
+              formData: { transform: functions.map((e) => e.functionId) },
+            },
+          }
+
+          loadSchema(
+            operationNode,
+            OperationData.Handle.DESERIALISER,
+            -200,
+            deserializer.arguments as SchemaReference,
+            schemas,
+            store
+          )
+          loadSchema(
+            operationNode,
+            OperationData.Handle.SERIALISER,
+            200,
+            policyOperation.arguments as SchemaReference,
+            schemas,
+            store
+          )
+
+          loadScripts(operationNode, functions, scripts, store)
+        }
+        break
+      default:
+        if (operationNode) throw new Error('something wrong with the operation')
+        operationNode = {
+          id: policyOperation.id,
+          type: DataHubNodeType.OPERATION,
+          position: { ...shiftPositionRight() },
+          data: {
+            functionId: policyOperation.functionId,
+            formData: policyOperation.arguments,
+          },
+        }
+    }
+
+    if (!operationNode) throw new Error('something wrong with the operation')
+    if (!Array.isArray(operationNode)) {
+      onAddNodes([{ item: operationNode, type: 'add' } as NodeAddChange])
+      onConnect({ ...connect, target: operationNode.id })
+      connect = {
+        source: operationNode.id,
+        target: null,
+        sourceHandle: null,
+        targetHandle: null,
+      }
+      operationNode = undefined
+    }
+  }
 }
