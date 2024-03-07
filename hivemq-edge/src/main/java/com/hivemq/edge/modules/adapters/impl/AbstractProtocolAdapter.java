@@ -121,7 +121,9 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
                 data.getSubscription().getMessageHandlingOptions() ==
                         MessageHandlingOptions.MQTTMessagePerSubscription){
             //-- Put all derived samples into a single MQTT message
-            list.add(createMultiPublishPayload(timestamp, data.getDataPoints(), data.getSubscription().getIncludeTagNames()));
+            AbstractProtocolAdapterJsonPayload payload = createMultiPublishPayload(timestamp, data.getDataPoints(), data.getSubscription().getIncludeTagNames());
+            decoratePayloadMessage(data, payload);
+            list.add(payload);
         } else {
             //-- Put all derived samples into individual publish messages
             data.getDataPoints().stream().

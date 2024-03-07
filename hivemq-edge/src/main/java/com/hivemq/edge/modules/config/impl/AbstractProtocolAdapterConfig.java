@@ -71,7 +71,7 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
                            defaultValue = "0")
         private int qos = 0;
 
-        @JsonProperty(value = "messageHandlingOptions", required = false)
+        @JsonProperty(value = "messageHandlingOptions")
         @ModuleConfigField(title = "Message Handling Options",
                            description = "This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample",
                            required = false,
@@ -80,7 +80,7 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
                            defaultValue = "MQTTMessagePerTag")
         private @Nullable MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
 
-        @JsonProperty(value = "includeTimestamp", required = false)
+        @JsonProperty(value = "includeTimestamp")
         @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
                            description = "Include the unix timestamp of the sample time in the resulting MQTT message",
                            defaultValue = "true")
@@ -138,11 +138,11 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
 
     public static class UserProperty {
         @JsonProperty("propertyName")
-        @ModuleConfigField(title = "Property Name", description = "Username for basic authentication")
+        @ModuleConfigField(title = "Property Name", description = "Name of the associated property")
         private @Nullable String propertyName = null;
 
         @JsonProperty("propertyValue")
-        @ModuleConfigField(title = "Property Value", description = "Password for basic authentication")
+        @ModuleConfigField(title = "Property Value", description = "Value of the associated property")
         private @Nullable String propertyValue = null;
 
         public UserProperty() {
