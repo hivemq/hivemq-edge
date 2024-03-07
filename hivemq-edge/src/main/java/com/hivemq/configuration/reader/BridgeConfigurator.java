@@ -16,8 +16,21 @@
 package com.hivemq.configuration.reader;
 
 import com.google.common.collect.ImmutableList;
-import com.hivemq.bridge.config.*;
-import com.hivemq.configuration.entity.bridge.*;
+import com.hivemq.bridge.config.BridgeTls;
+import com.hivemq.bridge.config.CustomUserProperty;
+import com.hivemq.bridge.config.LocalSubscription;
+import com.hivemq.bridge.config.MqttBridge;
+import com.hivemq.bridge.config.RemoteSubscription;
+import com.hivemq.configuration.entity.bridge.BridgeAuthenticationEntity;
+import com.hivemq.configuration.entity.bridge.BridgeMqttEntity;
+import com.hivemq.configuration.entity.bridge.BridgeTlsEntity;
+import com.hivemq.configuration.entity.bridge.CustomUserPropertyEntity;
+import com.hivemq.configuration.entity.bridge.ForwardedTopicEntity;
+import com.hivemq.configuration.entity.bridge.LoopPreventionEntity;
+import com.hivemq.configuration.entity.bridge.MqttBridgeEntity;
+import com.hivemq.configuration.entity.bridge.MqttSimpleAuthenticationEntity;
+import com.hivemq.configuration.entity.bridge.RemoteBrokerEntity;
+import com.hivemq.configuration.entity.bridge.RemoteSubscriptionEntity;
 import com.hivemq.configuration.entity.listener.tls.KeystoreEntity;
 import com.hivemq.configuration.entity.listener.tls.TruststoreEntity;
 import com.hivemq.configuration.service.BridgeConfigurationService;
@@ -268,6 +281,7 @@ public class BridgeConfigurator {
         LoopPreventionEntity loopPreventionEntity = new LoopPreventionEntity();
         loopPreventionEntity.setEnabled(from.isLoopPreventionEnabled());
         loopPreventionEntity.setHopCountLimit(from.getLoopPreventionHopCount());
+        entity.setLoopPrevention(loopPreventionEntity);
 
         //-- ForwardedTopicEntity*
         if (from.getLocalSubscriptions() != null) {
