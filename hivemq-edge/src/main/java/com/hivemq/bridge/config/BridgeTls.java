@@ -30,8 +30,8 @@ public class BridgeTls {
     private final @NotNull String truststorePassword;
     private final @NotNull List<String> protocols;
     private final @NotNull List<String> cipherSuites;
-    private final @NotNull String keystoreType;
-    private final @NotNull String truststoreType;
+    private final @Nullable String keystoreType;
+    private final @Nullable String truststoreType;
     private final boolean verifyHostname;
     private final int handshakeTimeout;
 
@@ -43,8 +43,8 @@ public class BridgeTls {
             final @NotNull String truststorePassword,
             final @NotNull List<String> protocols,
             final @NotNull List<String> cipherSuites,
-            final @NotNull String keystoreType,
-            final @NotNull String truststoreType,
+            final @Nullable String keystoreType,
+            final @Nullable String truststoreType,
             final boolean verifyHostname,
             final int handshakeTimeout) {
         this.keystorePath = keystorePath;
@@ -88,11 +88,11 @@ public class BridgeTls {
         return cipherSuites;
     }
 
-    public @NotNull String getKeystoreType() {
+    public @Nullable String getKeystoreType() {
         return keystoreType;
     }
 
-    public @NotNull String getTruststoreType() {
+    public @Nullable String getTruststoreType() {
         return truststoreType;
     }
 
