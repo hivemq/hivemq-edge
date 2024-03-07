@@ -54,12 +54,14 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
       let message
       if (error instanceof Error) message = error.message
       else message = String(error)
-      toast({
-        ...dataHubToastOption,
-        title: t('error.load.errorTitle', { source: PolicyType.DATA_POLICY }),
-        description: message,
-        status: 'error',
-      })
+      if (!toast.isActive('loader-feedback'))
+        toast({
+          ...dataHubToastOption,
+          id: 'loader-feedback',
+          title: t('error.load.errorTitle', { source: PolicyType.DATA_POLICY }),
+          description: message,
+          status: 'error',
+        })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataPolicy, schemas, scripts, t, toast])
@@ -100,12 +102,14 @@ export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
       let message
       if (error instanceof Error) message = error.message
       else message = String(error)
-      toast({
-        ...dataHubToastOption,
-        title: t('error.load.errorTitle', { source: PolicyType.DATA_POLICY }),
-        description: message,
-        status: 'error',
-      })
+      if (!toast.isActive('loader-feedback'))
+        toast({
+          ...dataHubToastOption,
+          id: 'loader-feedback',
+          title: t('error.load.errorTitle', { source: PolicyType.DATA_POLICY }),
+          description: message,
+          status: 'error',
+        })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [behaviorPolicy, schemas, scripts, t, toast])
