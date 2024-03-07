@@ -63,7 +63,7 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
                                      final @NotNull UnifiedNamespaceDataGovernancePolicy namespaceDataGovernancePolicy) {
         this.internalPublishService = internalPublishService;
         this.executorService = MoreExecutors.listeningDecorator(executorService);
-        this.governatedMessagesCounter = metricRegistry.counter("com.hivemq.messages.governance.count");
+        this.governatedMessagesCounter = metricRegistry.counter("com.hivemq.edge.messages.governance.count");
         this.namespaceDataGovernancePolicy = namespaceDataGovernancePolicy;
     }
 
