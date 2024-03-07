@@ -54,13 +54,17 @@ import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
-import io.reactivex.internal.operators.completable.CompletableDoFinally;
+import com.hivemq.util.StoreTypeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -171,7 +175,9 @@ public class BridgeMqttClient {
                 sslConfigBuilder.protocols(bridgeTls.getProtocols());
             }
             if (bridgeTls.getKeystorePath() != null) {
-                final KeyManagerFactory keyManagerFactory = SslUtil.createKeyManagerFactory(bridgeTls.getKeystoreType(),
+                final KeyManagerFactory keyManagerFactory = SslUtil.createKeyManagerFactory(Objects.requireNonNullElse(
+                                bridgeTls.getKeystoreType(),
+                                StoreTypeUtil.deductType(bridgeTls.getKeystorePath())),
                         bridgeTls.getKeystorePath(),
                         bridgeTls.getKeystorePassword(),
                         bridgeTls.getPrivateKeyPassword());
@@ -180,7 +186,8 @@ public class BridgeMqttClient {
 
             if (bridgeTls.getTruststorePath() != null) {
                 final TrustManagerFactory trustManagerFactory =
-                        SslUtil.createTrustManagerFactory(bridgeTls.getTruststoreType(),
+                        SslUtil.createTrustManagerFactory(Objects.requireNonNullElse(bridgeTls.getTruststoreType(),
+                                        StoreTypeUtil.deductType(bridgeTls.getTruststorePath())),
                                 bridgeTls.getTruststorePath(),
                                 bridgeTls.getTruststorePassword());
                 sslConfigBuilder.trustManagerFactory(trustManagerFactory);

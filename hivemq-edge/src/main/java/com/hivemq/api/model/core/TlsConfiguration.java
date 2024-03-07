@@ -64,11 +64,11 @@ public class TlsConfiguration {
 
     @JsonProperty("keystoreType")
     @Schema(description = "The keystoreType from the config")
-    private final @NotNull String keystoreType;
+    private final @Nullable String keystoreType;
 
     @JsonProperty("truststoreType")
     @Schema(description = "The truststoreType from the config")
-    private final @NotNull String truststoreType;
+    private final @Nullable String truststoreType;
 
     @JsonProperty("verifyHostname")
     @Schema(description = "The verifyHostname from the config", defaultValue = "false")
@@ -88,8 +88,8 @@ public class TlsConfiguration {
             @JsonProperty("truststorePassword") final @NotNull String truststorePassword,
             @JsonProperty("protocols") final @NotNull List<String> protocols,
             @JsonProperty("cipherSuites") final @NotNull List<String> cipherSuites,
-            @JsonProperty("keystoreType") final @NotNull String keystoreType,
-            @JsonProperty("truststoreType") final @NotNull String truststoreType,
+            @JsonProperty("keystoreType") final @Nullable String keystoreType,
+            @JsonProperty("truststoreType") final @Nullable String truststoreType,
             @JsonProperty("verifyHostname") final boolean verifyHostname,
             @JsonProperty("handshakeTimeout") final int handshakeTimeout) {
         this.enabled = enabled;
@@ -138,11 +138,11 @@ public class TlsConfiguration {
         return cipherSuites;
     }
 
-    public @NotNull String getKeystoreType() {
+    public @Nullable String getKeystoreType() {
         return keystoreType;
     }
 
-    public @NotNull String getTruststoreType() {
+    public @Nullable String getTruststoreType() {
         return truststoreType;
     }
 
