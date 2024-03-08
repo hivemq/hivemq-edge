@@ -220,7 +220,7 @@ describe('checkValidityTransitions', () => {
     const [{ node, data, error, resources }] = behaviorPolicyTransitions
     expect(data).toEqual({
       'Mqtt.OnInboundSubscribe': {
-        pipelines: [],
+        pipeline: [],
       },
       fromState: 'NotDuplicated',
       toState: 'Violated',
