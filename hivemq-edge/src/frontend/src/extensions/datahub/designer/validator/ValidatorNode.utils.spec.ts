@@ -94,7 +94,7 @@ describe('checkValidityPolicyValidator', () => {
         data: {
           arguments: {},
           id: 'node-schema',
-          schemaDefinition: 'Int9Ig==',
+          schemaDefinition: 'e30=',
           type: 'JSON',
           version: 1,
         },
