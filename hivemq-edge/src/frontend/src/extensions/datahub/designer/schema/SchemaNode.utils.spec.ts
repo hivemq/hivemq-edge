@@ -50,7 +50,7 @@ describe('checkValiditySchema', () => {
     expect(data).toStrictEqual({
       arguments: {},
       id: 'node-id',
-      schemaDefinition: btoa(JSON.stringify(MOCK_NODE_SCHEMA.data.schemaSource)),
+      schemaDefinition: 'eyB0ZzogMX0=',
       type: 'JSON',
       version: 1,
     })
