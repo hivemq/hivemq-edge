@@ -44,7 +44,7 @@
       },
       "script": {
         "title": "Scripts",
-        "description": "Your transformation code will be listed there. "
+        "description": "Your transformation code will be listed there."
       }
     },
     "policy": {

@@ -145,14 +145,12 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   }, [deleteBehaviourPolicy, deleteDataPolicy, isLoading, navigate, onDeleteItem, t])
 
   return (
-    <>
-      <PaginatedTable<CombinedPolicy>
-        aria-label={t('Listings.policy.label')}
-        data={safeData}
-        columns={columns}
-        isError={isError}
-      />
-    </>
+    <PaginatedTable<CombinedPolicy>
+      aria-label={t('Listings.policy.label')}
+      data={safeData}
+      columns={columns}
+      isError={isError}
+    />
   )
 }
 
