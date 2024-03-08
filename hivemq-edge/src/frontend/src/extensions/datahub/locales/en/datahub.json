@@ -5,6 +5,11 @@
   "navigation": {
     "mainPage": "Data Hub"
   },
+  "flag": {
+    "behaviorPolicy": {
+      "notEnabled": "Note that the display and editing of Behavior Policies are not yet supported"
+    }
+  },
   "page": {
     "title": "Data Hub",
     "description": "The Edge Data Hub provides mechanisms to define how MQTT data and MQTT client behavior are handled from the adaptors to the HiveMQ broker"
@@ -31,15 +36,15 @@
     "tabs": {
       "policy": {
         "title": "Policies",
-        "description": "This is where all your policies will be listed"
+        "description": "This is where all your policies will be listed."
       },
       "schema": {
         "title": "Schemas",
-        "description": "All your schemas used for validation or transformation will be listed there"
+        "description": "All your schemas used for validation or transformation will be listed there."
       },
       "script": {
         "title": "Scripts",
-        "description": "Your transformation code will be listed there"
+        "description": "Your transformation code will be listed there. "
       }
     },
     "policy": {
