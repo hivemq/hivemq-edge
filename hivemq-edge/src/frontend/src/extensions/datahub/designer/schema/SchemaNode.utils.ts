@@ -1,7 +1,7 @@
 import { Node } from 'reactflow'
 import { DryRunResults, SchemaData, SchemaProtobufArguments, SchemaType } from '@datahub/types.ts'
 import { Schema } from '@/api/__generated__'
-import { parse, Root } from 'protobufjs'
+import { parse } from 'protobufjs'
 
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
@@ -24,10 +24,11 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
     args = { messageType: schemaNode.data.messageType }
 
     try {
-      // @ts-ignore
-      const root: Root = parse(schemaNode.data.schemaSource).root
+      parse(schemaNode.data.schemaSource)
       // TODO[20139] No compilation of PROTOBUF descriptor
-    } catch (e) {}
+    } catch (e) {
+      console.log(e)
+    }
   }
 
   const schema: Schema = {
