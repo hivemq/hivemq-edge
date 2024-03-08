@@ -169,7 +169,7 @@ public class JaxrsHttpServer {
 
         //-- Provide an Object Mapper either from config (If supplied) or one with reasonable defaults
         objectMapperProvider = createObjectMapperProvider(config);
-        resources.register(objectMapperProvider);
+        resources.register(objectMapperProvider, 1);
 
         //-- Add the Custom Filter which optionally adds request debug
 //        resources.register(new JaxrsRequestFilter());
