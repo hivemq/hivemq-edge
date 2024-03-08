@@ -57,7 +57,7 @@ export const MOCK_TRANSFORM = {
         functionId: 'Serdes.deserialize',
         formData: {
           schemaId: 'dfdffd',
-          schemaVersion: 'df',
+          schemaVersion: 'latest',
         },
         metadata: {
           isTerminal: false,

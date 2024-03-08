@@ -337,7 +337,7 @@ describe('checkValidityTransformFunction', () => {
         expect.objectContaining({
           arguments: {
             schemaId: 'node-schema',
-            schemaVersion: '1',
+            schemaVersion: 'latest',
           },
           functionId: 'Serdes.deserialize',
           id: 'node-id-deserializer',
@@ -353,7 +353,7 @@ describe('checkValidityTransformFunction', () => {
         expect.objectContaining({
           arguments: {
             schemaId: 'node-schema',
-            schemaVersion: '1',
+            schemaVersion: 'latest',
           },
           functionId: 'Serdes.serialize',
           id: 'node-id-serializer',
