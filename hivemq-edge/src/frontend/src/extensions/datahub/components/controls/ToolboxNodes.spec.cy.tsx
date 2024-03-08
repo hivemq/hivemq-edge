@@ -12,10 +12,11 @@ describe('Toolbox', () => {
 
     cy.getByAriaLabel('Policy controls').find('[role="group"]').as('policyControlsGroups')
 
-    cy.get('@policyControlsGroups').should('have.length', 4)
+    // Behavior policy disabled, see VITE_FLAG_DATAHUB_BEHAVIOR_ENABLED
+    cy.get('@policyControlsGroups').should('have.length', 3)
     cy.get('@policyControlsGroups').eq(0).should('contain.text', 'Pipeline')
     cy.get('@policyControlsGroups').eq(1).should('contain.text', 'Data Policy')
-    cy.get('@policyControlsGroups').eq(2).should('contain.text', 'Behavior Policy')
-    cy.get('@policyControlsGroups').eq(3).should('contain.text', 'Operation')
+    // cy.get('@policyControlsGroups').eq(2).should('contain.text', 'Behavior Policy')
+    cy.get('@policyControlsGroups').eq(2).should('contain.text', 'Operation')
   })
 })
