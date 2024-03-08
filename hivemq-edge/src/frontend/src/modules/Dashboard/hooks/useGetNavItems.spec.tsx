@@ -34,9 +34,9 @@ describe('useSpringClient', () => {
       expect(result.current.isSuccess).toBeTruthy()
     })
 
-    expect(result.current.data.map((e) => e.title)).toStrictEqual(['HiveMQ Edge', 'Extensions', 'External resources'])
-    expect(result.current.data[0].items).toHaveLength(5)
-    expect(result.current.data[2].items.map((e) => e.href)).toStrictEqual([
+    expect(result.current.data.map((e) => e.title)).toStrictEqual(['HiveMQ Edge', 'External resources'])
+    expect(result.current.data[0].items).toHaveLength(7)
+    expect(result.current.data[1].items.map((e) => e.href)).toStrictEqual([
       'https://www.hivemq.com/articles/power-of-iot-data-management-in-smart-manufacturing/',
       'https://github.com/hivemq/hivemq-edge',
       'https://github.com/hivemq/hivemq-edge/wiki',
