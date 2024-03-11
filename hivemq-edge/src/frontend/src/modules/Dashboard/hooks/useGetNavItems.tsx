@@ -4,7 +4,6 @@ import { Icon } from '@chakra-ui/react'
 import { IoHomeOutline } from 'react-icons/io5'
 import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
 import { BsIntersect } from 'react-icons/bs'
-import { HiOutlinePuzzle } from 'react-icons/hi'
 import { GoLinkExternal } from 'react-icons/go'
 import { MdOutlineEventNote, MdPolicy } from 'react-icons/md'
 
@@ -54,26 +53,15 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
           href: '/event-logs',
           label: t('translation:navigation.gateway.routes.eventLogs') as string,
         },
-      ],
-    },
-    {
-      title: t('translation:navigation.extensions.title'),
-      items: [
         {
-          icon: <HiOutlinePuzzle />,
-          href: '/modules',
-          isDisabled: true,
-          label: t('translation:navigation.extensions.routes.modules') as string,
+          icon: <Icon as={MdPolicy} fontSize="16px" />,
+          href: '/datahub',
+          label: t('datahub:navigation.mainPage') as string,
         },
         {
           icon: <BsIntersect />,
           href: '/namespace',
           label: t('translation:navigation.extensions.routes.namespace') as string,
-        },
-        {
-          icon: <Icon as={MdPolicy} fontSize="16px" />,
-          href: '/datahub',
-          label: t('datahub:navigation.mainPage') as string,
         },
       ],
     },

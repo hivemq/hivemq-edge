@@ -1,9 +1,9 @@
 {
   "brand": {
-    "extension": "Data Hub"
+    "extension": "Data Hub on Edge"
   },
   "navigation": {
-    "mainPage": "Data Hub"
+    "mainPage": "Data Hub on Edge"
   },
   "flag": {
     "behaviorPolicy": {
@@ -11,8 +11,8 @@
     }
   },
   "page": {
-    "title": "Data Hub",
-    "description": "The Edge Data Hub provides mechanisms to define how MQTT data and MQTT client behavior are handled from the adaptors to the HiveMQ broker"
+    "title": "Data Hub on Edge",
+    "description": "The Data Hub on Edge provides mechanisms to define how MQTT data and MQTT client behavior are handled from the adaptors to the HiveMQ broker"
   },
   "policy": {
     "type_DATA_POLICY": "Data Policy",
@@ -224,7 +224,7 @@
       "select": "< not set >"
     },
     "notActivated": {
-      "title": "Data Hub is now available to commercial licenses",
+      "title": "Data Hub on Edge is now available to commercial licenses",
       "description": "Please contact our sales team to gain access"
     },
     "notDefined": {
