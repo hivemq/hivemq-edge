@@ -102,25 +102,58 @@ export function loadSchema(
   const schema = schemas.find((e) => e.id === schemaRef.schemaId)
   if (!schema) throw new Error('cannot find the schema node')
 
-  const schemaNode: Node<SchemaData> = {
-    id: schemaRef.schemaId,
-    type: DataHubNodeType.SCHEMA,
-    position: {
-      x: parentNode.position.x + positionDeltaX,
-      y: parentNode.position.y - 150,
-    },
-    data: {
-      // @ts-ignore force undefined
-      type: enumFromStringValue(SchemaType, schema.type),
-      schemaSource: atob(schema.schemaDefinition),
-      version: 1,
-    },
+  if (schema.type === SchemaType.JSON) {
+    const schemaNode: Node<SchemaData> = {
+      id: schemaRef.schemaId,
+      type: DataHubNodeType.SCHEMA,
+      position: {
+        x: parentNode.position.x + positionDeltaX,
+        y: parentNode.position.y - 150,
+      },
+      data: {
+        // @ts-ignore force undefined
+        type: enumFromStringValue(SchemaType, schema.type),
+        schemaSource: atob(schema.schemaDefinition),
+        version: 1,
+      },
+    }
+    onNodesChange([{ item: schemaNode, type: 'add' } as NodeAddChange])
+    onConnect({
+      source: schemaNode.id,
+      target: parentNode.id,
+      sourceHandle: null,
+      targetHandle: targetHandle,
+    })
   }
-  onNodesChange([{ item: schemaNode, type: 'add' } as NodeAddChange])
-  onConnect({
-    source: schemaNode.id,
-    target: parentNode.id,
-    sourceHandle: null,
-    targetHandle: targetHandle,
-  })
+
+  if (schema.type === SchemaType.PROTOBUF) {
+    const encodedGraphBytes = new Uint8Array(protobufUtils.base64.length(schema.schemaDefinition))
+    protobufUtils.base64.decode(schema.schemaDefinition, encodedGraphBytes, 0)
+    const decodedMessage = descriptor.FileDescriptorSet.decode(encodedGraphBytes)
+    const messageTypeDecoded = decodedMessage.file[0].messageType[0].name
+
+    const schemaNode: Node<SchemaData> = {
+      id: schemaRef.schemaId,
+      type: DataHubNodeType.SCHEMA,
+      position: {
+        x: parentNode.position.x + positionDeltaX,
+        y: parentNode.position.y - 150,
+      },
+      data: {
+        // @ts-ignore force undefined
+        type: enumFromStringValue(SchemaType, schema.type),
+        schemaSource: i18n.t('datahub:error.validation.protobuf.template', { source: messageTypeDecoded }) as string,
+        version: 1,
+      },
+    }
+    onNodesChange([{ item: schemaNode, type: 'add' } as NodeAddChange])
+    onConnect({
+      source: schemaNode.id,
+      target: parentNode.id,
+      sourceHandle: null,
+      targetHandle: targetHandle,
+    })
+  }
+
+  if (!schema) throw new Error('cannot identify the type of the schema')
 }
