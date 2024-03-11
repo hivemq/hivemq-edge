@@ -43,6 +43,7 @@ import com.hivemq.mqtt.ioc.MQTTHandlerModule;
 import com.hivemq.mqtt.ioc.MQTTServiceModule;
 import com.hivemq.mqttsn.ioc.MqttsnServiceModule;
 import com.hivemq.persistence.PersistenceStartup;
+import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.ioc.PersistenceModule;
 import com.hivemq.security.ioc.SecurityModule;
 import com.hivemq.throttling.ioc.ThrottlingModule;
@@ -137,6 +138,9 @@ public interface Injector {
 
         @BindsInstance
         Builder coreModuleService(CoreModuleService coreModuleService);
+
+        @BindsInstance
+        Builder connectionPersistence(ConnectionPersistence connectionPersistence);
 
         Injector build();
     }

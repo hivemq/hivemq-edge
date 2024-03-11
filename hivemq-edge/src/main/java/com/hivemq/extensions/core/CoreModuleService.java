@@ -22,6 +22,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.persistence.connection.ConnectionPersistence;
 
 public interface CoreModuleService {
     @NotNull PersistencesService persistenceService();
@@ -40,6 +41,8 @@ public interface CoreModuleService {
 
     @NotNull RestComponentsService restComponentsService();
 
+    @NotNull ConnectionPersistence connectionPersistence();
 
     @NotNull HandlerService handlerService();
+
 }
