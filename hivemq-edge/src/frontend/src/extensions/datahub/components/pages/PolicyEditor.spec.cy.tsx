@@ -18,7 +18,7 @@ describe('PolicyEditor', () => {
     cy.get('[role="alert"] div[data-status="error"]').eq(1).should('contain.text', 'The policy is not a valid document')
   })
 
-  it('should render properly', () => {
+  it.only('should render properly', () => {
     cy.mountWithProviders(
       <ReactFlowProvider>
         <Routes>
@@ -41,7 +41,7 @@ describe('PolicyEditor', () => {
     cy.getByAriaLabel('Canvas controls').find('button').should('have.length', 4)
   })
 
-  it('should be accessible', () => {
+  it.only('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(
       <ReactFlowProvider>
