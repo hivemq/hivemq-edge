@@ -544,8 +544,18 @@ val releaseBinary: Configuration by configurations.creating {
     }
 }
 
+val releaseJar: Configuration by configurations.creating {
+    isCanBeConsumed = true
+    isCanBeResolved = false
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named("jar"))
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named("release"))
+    }
+}
+
 artifacts {
     add(releaseBinary.name, hivemqZip)
+    add(releaseJar.name, tasks.shadowJar)
 }
 
 
