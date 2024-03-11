@@ -50,7 +50,7 @@ describe('usePolicyDryRun', () => {
     const { result } = renderHook(usePolicyDryRun)
     await act(async () => {
       const results = await result.current.checkPolicyAsync(MOCK_NODE_DATA_POLICY)
-      expect(results).toHaveLength(2)
+      expect(results).toHaveLength(1)
       const { node } = results[0]
       expect(node).toStrictEqual(MOCK_NODE_DATA_POLICY)
     })
