@@ -137,13 +137,18 @@ export interface ValidatorData extends DataHubNodeData {
 // TODO[18755] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18755/details/
 export enum SchemaType {
   JSON = 'JSON',
-  PROTO = 'PROTOBUF',
+  PROTOBUF = 'PROTOBUF',
+}
+
+export interface SchemaProtobufArguments {
+  messageType: string
 }
 
 export interface SchemaData extends DataHubNodeData {
   type: SchemaType
   version: number
   schemaSource?: string
+  messageType?: string
   core?: Schema
 }
 
