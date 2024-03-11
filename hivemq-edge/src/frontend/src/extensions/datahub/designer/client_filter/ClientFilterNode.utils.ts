@@ -1,5 +1,9 @@
 import { getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
 
+import { getNodeId, isClientFilterNodeType } from '@datahub/utils/node.utils.ts'
+import { BehaviorPolicy } from '@/api/__generated__'
+import i18n from '@/config/i18n.config.ts'
+
 import {
   BehaviorPolicyData,
   ClientFilterData,
@@ -9,8 +13,6 @@ import {
   WorkspaceState,
 } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
-import { getNodeId, isClientFilterNodeType } from '@datahub/utils/node.utils.ts'
-import { BehaviorPolicy } from '@/api/__generated__'
 
 export function checkValidityClients(
   dataPolicyNode: Node<BehaviorPolicyData>,
@@ -45,8 +47,10 @@ export function checkValidityClients(
 export const loadClientFilter = (behaviorPolicy: BehaviorPolicy, store: WorkspaceState & WorkspaceAction) => {
   const { onNodesChange, onConnect } = store
   const BehaviorPolicyNode = store.nodes.find((n) => n.id === behaviorPolicy.id)
-  if (!BehaviorPolicyNode) throw new Error('cannot find the behavior policy node')
-
+  if (!BehaviorPolicyNode)
+    throw new Error(
+      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.BEHAVIOR_POLICY }) as string
+    )
   const position: XYPosition = {
     x: BehaviorPolicyNode.position.x - 300,
     y: BehaviorPolicyNode.position.y,

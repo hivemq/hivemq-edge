@@ -1,12 +1,18 @@
-import { DataPolicy } from '@/api/__generated__'
-import { DataHubNodeType, TopicFilterData, WorkspaceAction, WorkspaceState } from '@datahub/types.ts'
 import { Node, NodeAddChange, XYPosition } from 'reactflow'
+
+import { DataPolicy } from '@/api/__generated__'
+import i18n from '@/config/i18n.config.ts'
+
 import { getNodeId } from '@datahub/utils/node.utils.ts'
+import { DataHubNodeType, TopicFilterData, WorkspaceAction, WorkspaceState } from '@datahub/types.ts'
 
 export const loadTopicFilter = (policy: DataPolicy, store: WorkspaceState & WorkspaceAction) => {
   const { onNodesChange, onConnect } = store
   const dataNode = store.nodes.find((n) => n.id === policy.id)
-  if (!dataNode) throw new Error('cannot find the data policy node')
+  if (!dataNode)
+    throw new Error(
+      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
+    )
 
   const position: XYPosition = {
     x: dataNode.position.x - 300,

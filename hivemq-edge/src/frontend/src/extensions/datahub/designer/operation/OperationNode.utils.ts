@@ -1,5 +1,7 @@
 import { Connection, getConnectedEdges, getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
 
+import i18n from '@/config/i18n.config.ts'
+
 import { BehaviorPolicy, DataPolicy, PolicyOperation, Schema, SchemaReference, Script } from '@/api/__generated__'
 import {
   DataHubNodeType,
@@ -197,10 +199,12 @@ export const loadBehaviorPolicyPipelines = (
 ) => {
   for (const transition of behaviorPolicy.onTransitions || []) {
     const activeTransition = getActiveTransition(transition)
-    if (!activeTransition) throw new Error("cannot create the transition pipeline's nodes")
+    if (!activeTransition)
+      throw new Error(i18n.t('datahub:error.loading.operation.noTransition', { source: activeTransition }) as string)
 
     const transitionOnEvent = transition[activeTransition]
-    if (!transitionOnEvent) throw new Error("cannot create the transition pipeline's nodes")
+    if (!transitionOnEvent)
+      throw new Error(i18n.t('datahub:error.loading.operation.noTransition', { source: activeTransition }) as string)
 
     loadPipeline(transitionNode, transitionOnEvent.pipeline, null, schemas, scripts, store)
   }
@@ -213,7 +217,10 @@ export const loadDataPolicyPipelines = (
   store: WorkspaceState & WorkspaceAction
 ) => {
   const dataNode = store.nodes.find((n) => n.id === policy.id)
-  if (!dataNode) throw new Error('cannot find the data policy node')
+  if (!dataNode)
+    throw new Error(
+      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
+    )
 
   if (policy.onSuccess && policy.onSuccess.pipeline)
     loadPipeline(dataNode, policy.onSuccess.pipeline, DataPolicyData.Handle.ON_SUCCESS, schemas, scripts, store)
@@ -231,7 +238,8 @@ export const loadPipeline = (
 ) => {
   const { onAddNodes, onConnect } = store
   // const dataNode = store.nodes.find((n) => n.id === policy.id)
-  if (!parentNode) throw new Error('cannot find the data policy node')
+  if (!parentNode)
+    throw new Error(i18n.t('datahub:error.loading.schema.unknown', { type: DataHubNodeType.DATA_POLICY }) as string)
 
   const position: XYPosition = {
     x: parentNode.position.x,
@@ -253,16 +261,17 @@ export const loadPipeline = (
   for (const policyOperation of pipeline) {
     switch (true) {
       case OperationData.Function.SERDES_DESERIALIZE === policyOperation.functionId:
-        if (operationNode) throw new Error('Something wrong with the operation')
+        if (operationNode) throw new Error(i18n.t('datahub:error.loading.operation.unknown') as string)
         operationNode = [policyOperation]
         break
       case policyOperation.functionId.startsWith('fn:'):
-        if (!Array.isArray(operationNode)) throw new Error('something wrong with the operation')
+        if (!Array.isArray(operationNode)) throw new Error(i18n.t('datahub:error.loading.operation.unknown') as string)
         operationNode?.push(policyOperation)
         break
       case OperationData.Function.SERDES_SERIALIZE === policyOperation.functionId:
         {
-          if (!Array.isArray(operationNode)) throw new Error('something wrong with the operation')
+          if (!Array.isArray(operationNode))
+            throw new Error(i18n.t('datahub:error.loading.operation.unknown') as string)
           const [deserializer, ...functions] = operationNode as PolicyOperation[]
 
           operationNode = {
@@ -300,7 +309,7 @@ export const loadPipeline = (
         }
         break
       default:
-        if (operationNode) throw new Error('something wrong with the operation')
+        if (operationNode) throw new Error(i18n.t('datahub:error.loading.operation.unknown') as string)
         operationNode = {
           id: policyOperation.id,
           type: DataHubNodeType.OPERATION,
@@ -312,7 +321,7 @@ export const loadPipeline = (
         }
     }
 
-    if (!operationNode) throw new Error('something wrong with the operation')
+    if (!operationNode) throw new Error(i18n.t('datahub:error.loading.operation.unknown') as string)
     if (!Array.isArray(operationNode)) {
       onAddNodes([{ item: operationNode, type: 'add' } as NodeAddChange])
       onConnect({ ...connect, target: operationNode.id })

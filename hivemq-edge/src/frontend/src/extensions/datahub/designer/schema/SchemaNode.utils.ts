@@ -100,7 +100,8 @@ export function loadSchema(
 ) {
   const { onNodesChange, onConnect } = store
   const schema = schemas.find((e) => e.id === schemaRef.schemaId)
-  if (!schema) throw new Error('cannot find the schema node')
+  if (!schema)
+    throw new Error(i18n.t('datahub:error.loading.connection.notFound', { source: DataHubNodeType.SCHEMA }) as string)
 
   if (schema.type === SchemaType.JSON) {
     const schemaNode: Node<SchemaData> = {
@@ -124,12 +125,11 @@ export function loadSchema(
       sourceHandle: null,
       targetHandle: targetHandle,
     })
-  }
-
-  if (schema.type === SchemaType.PROTOBUF) {
+  } else if (schema.type === SchemaType.PROTOBUF) {
     const encodedGraphBytes = new Uint8Array(protobufUtils.base64.length(schema.schemaDefinition))
     protobufUtils.base64.decode(schema.schemaDefinition, encodedGraphBytes, 0)
     const decodedMessage = descriptor.FileDescriptorSet.decode(encodedGraphBytes)
+    // @ts-ignore
     const messageTypeDecoded = decodedMessage.file[0].messageType[0].name
 
     const schemaNode: Node<SchemaData> = {
@@ -153,7 +153,5 @@ export function loadSchema(
       sourceHandle: null,
       targetHandle: targetHandle,
     })
-  }
-
-  if (!schema) throw new Error('cannot identify the type of the schema')
+  } else throw new Error(i18n.t('datahub:error.loading.schema.unknown', { type: schema.type }) as string)
 }

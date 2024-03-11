@@ -3,6 +3,8 @@ import { getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
 import { DataPolicy, DataPolicyValidator, Schema, SchemaReference } from '@/api/__generated__'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 
+import i18n from '@/config/i18n.config.ts'
+
 import {
   DataHubNodeType,
   DataPolicyData,
@@ -69,7 +71,10 @@ export function checkValidityPolicyValidators(
 export const loadValidators = (policy: DataPolicy, schemas: Schema[], store: WorkspaceState & WorkspaceAction) => {
   const { onNodesChange, onConnect } = store
   const dataNode = store.nodes.find((n) => n.id === policy.id)
-  if (!dataNode) throw new Error('cannot find the data policy node')
+  if (!dataNode)
+    throw new Error(
+      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
+    )
 
   const position: XYPosition = {
     x: dataNode.position.x,

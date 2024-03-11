@@ -1,6 +1,16 @@
 import { getOutgoers, Node, NodeAddChange, XYPosition } from 'reactflow'
 
 import {
+  BehaviorPolicy,
+  BehaviorPolicyOnEvent,
+  BehaviorPolicyOnTransition,
+  PolicyOperation,
+  Schema,
+  Script,
+} from '@/api/__generated__'
+import i18n from '@/config/i18n.config.ts'
+
+import {
   BehaviorPolicyData,
   BehaviorPolicyType,
   DataHubNodeType,
@@ -12,14 +22,7 @@ import {
   WorkspaceState,
 } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
-import {
-  BehaviorPolicy,
-  BehaviorPolicyOnEvent,
-  BehaviorPolicyOnTransition,
-  PolicyOperation,
-  Schema,
-  Script,
-} from '@/api/__generated__'
+
 import { checkValidityPipeline, loadBehaviorPolicyPipelines } from '@datahub/designer/operation/OperationNode.utils.ts'
 import { getNodeId, isTransitionNodeType } from '@datahub/utils/node.utils.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
@@ -108,9 +111,12 @@ export const loadTransitions = (
 ) => {
   const { onNodesChange, onConnect } = store
   const BehaviorPolicyNode = store.nodes.find((n) => n.id === behaviorPolicy.id)
-  if (!BehaviorPolicyNode) throw new Error('cannot find the behavior policy node')
+  if (!BehaviorPolicyNode)
+    throw new Error(
+      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.BEHAVIOR_POLICY }) as string
+    )
   const model = enumFromStringValue(BehaviorPolicyType, behaviorPolicy.behavior.id)
-  if (!model) throw new Error('cannot find the behavior policy node')
+  if (!model) throw new Error(i18n.t('datahub:error.loading.behavior.noModel') as string)
 
   const position: XYPosition = {
     x: BehaviorPolicyNode.position.x + 350,

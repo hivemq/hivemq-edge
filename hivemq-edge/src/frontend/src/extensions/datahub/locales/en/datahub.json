@@ -211,6 +211,21 @@
         "encoding": "The encoding of the PROTOBUF code into a Base64 descriptor cannot be validated."
       }
     },
+    "loading": {
+      "connection": {
+        "notFound": "Cannot find the $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) node"
+      },
+      "schema": {
+        "unknown": "Cannot identify the type of the SCHEMA - {{ type }}"
+      },
+      "behavior": {
+        "noModel": "Something is wrong with the transition model"
+      },
+      "operation": {
+        "unknown": "Something is wrong with the operation",
+        "noTransition": "cannot create the node for the transition pipeline - {{ source }}"
+      }
+    },
     "dryRun": {
       "notConnected": "No $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
       "noHandleConnected": "No $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to the \"{{ handle }}\" handle of $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",

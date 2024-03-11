@@ -1,4 +1,8 @@
 import { Node, NodeAddChange } from 'reactflow'
+
+import { PolicyOperation, Script } from '@/api/__generated__'
+import i18n from '@/config/i18n.config.ts'
+
 import {
   DataHubNodeData,
   DataHubNodeType,
@@ -8,7 +12,6 @@ import {
   WorkspaceAction,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { PolicyOperation, Script } from '@/api/__generated__'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
 export function checkValidityJSScript(scriptNode: Node<FunctionData>): DryRunResults<Script> {
@@ -39,7 +42,10 @@ export const loadScripts = (
   for (const fct of functions) {
     const [, functionName] = fct.functionId.split(':')
     const functionScript = scripts.find((e) => e.id === functionName)
-    if (!functionScript) throw new Error('something wrong with the operation')
+    if (!functionScript)
+      throw new Error(
+        i18n.t('datahub:error.loading.connection.notFound', { source: DataHubNodeType.FUNCTION }) as string
+      )
 
     const functionScriptNode: Node<FunctionData> = {
       id: functionScript.id,
