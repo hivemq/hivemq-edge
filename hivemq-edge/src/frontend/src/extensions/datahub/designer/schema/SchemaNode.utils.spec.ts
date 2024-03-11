@@ -48,9 +48,8 @@ describe('checkValiditySchema', () => {
     const { node, error, data, resources } = checkValiditySchema(MOCK_NODE_SCHEMA)
     expect(node).toStrictEqual(MOCK_NODE_SCHEMA)
     expect(data).toStrictEqual({
-      arguments: {},
       id: 'node-id',
-      schemaDefinition: btoa(JSON.stringify(MOCK_NODE_SCHEMA.data.schemaSource)),
+      schemaDefinition: 'eyB0ZzogMX0=',
       type: 'JSON',
       version: 1,
     })

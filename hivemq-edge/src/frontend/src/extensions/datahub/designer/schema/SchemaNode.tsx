@@ -15,16 +15,15 @@ export const SchemaNode: FC<NodeProps<SchemaData>> = (props) => {
   const title = useMemo(() => {
     if (!data.schemaSource) return undefined
 
-    // TODO[NVL] PROTOBUF parser needed for extracting title out of the source
-    if (data.type !== SchemaType.JSON) return undefined
+    if (data.type === SchemaType.PROTOBUF) return data.messageType
 
     try {
       const schema = JSON.parse(data.schemaSource) as RJSFSchema
       return schema.title
-    } catch (e) {
+    } catch (error) {
       return undefined
     }
-  }, [data.schemaSource, data.type])
+  }, [data.messageType, data.schemaSource, data.type])
 
   return (
     <>
