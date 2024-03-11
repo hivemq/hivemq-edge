@@ -44,6 +44,8 @@ import com.hivemq.extensions.core.RestComponentsServiceImpl;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.metrics.MetricRegistryLogger;
 import com.hivemq.persistence.PersistenceStartup;
+import com.hivemq.persistence.connection.ConnectionPersistence;
+import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,6 +119,7 @@ public class HiveMQEdgeMain {
         final RestComponentsService restComponentsService = new RestComponentsServiceImpl(genericAPIHolder);
         final ShutdownHooks shutdownHooks = new ShutdownHooks();
         final HiveMQCapabilityService capabilityService = new CapabilityServiceImpl();
+        final ConnectionPersistence connectionPersistence = new ConnectionPersistenceImpl();
 
         CoreModuleServiceImpl coreModuleService = new CoreModuleServiceImpl(persistencesService,
                 systemInformation,
@@ -125,8 +128,7 @@ public class HiveMQEdgeMain {
                 moduleLoader,
                 configService,
                 capabilityService,
-                restComponentsService,
-                handlerService);
+                restComponentsService, handlerService, connectionPersistence);
 
         try {
             final CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(
@@ -152,6 +154,7 @@ public class HiveMQEdgeMain {
                 .capabilityService(capabilityService)
                 .restComponentService(restComponentsService)
                 .restComponentsHolder(genericAPIHolder).coreModuleService(coreModuleService)
+                .connectionPersistence(connectionPersistence)
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
         injector.persistences();
