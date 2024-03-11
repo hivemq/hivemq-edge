@@ -2,8 +2,9 @@ import { FC, useMemo } from 'react'
 import { Node } from 'reactflow'
 import { Card, CardBody } from '@chakra-ui/react'
 import { CustomValidator } from '@rjsf/utils'
+import { parse } from 'protobufjs'
 
-import { PanelProps, SchemaData } from '@datahub/types.ts'
+import { PanelProps, SchemaData, SchemaType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
@@ -20,8 +21,8 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
 
   const customValidate: CustomValidator<SchemaData> = (formData, errors) => {
     if (!formData) return errors
+    const { type, schemaSource } = formData
 
-    // TODO[NVL] Consider live validation
     // if (type === SchemaType.JAVASCRIPT && schemaSource) {
     //   try {
     //     const program = Parser.parse(schemaSource, { ecmaVersion: 'latest' })
@@ -39,14 +40,13 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
     //     // setFields(null)
     //   }
     // }
-    // if (type === SchemaType.PROTO && schemaSource) {
-    //   try {
-    //     const parsed = parse(schemaSource)
-    //   } catch (e) {
-    //     errors.schemaSource?.addError((e as SyntaxError).message)
-    //     // setFields(null)
-    //   }
-    // }
+    if (type === SchemaType.PROTOBUF && schemaSource) {
+      try {
+        parse(schemaSource)
+      } catch (e) {
+        errors.schemaSource?.addError((e as SyntaxError).message)
+      }
+    }
 
     return errors
   }

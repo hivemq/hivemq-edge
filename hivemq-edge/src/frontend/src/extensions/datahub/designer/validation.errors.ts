@@ -30,4 +30,17 @@ export const PolicyCheckErrors = {
     ...commonProperties,
     id: source.id,
   }),
+  internal: <T>(source: Node<T>, error: unknown) => {
+    let message: string
+    if (error instanceof Error) message = error.message
+    else message = String(error)
+
+    return {
+      title: source.type as string,
+      detail: i18n.t('datahub:error.dryRun.internal', { source: source.type, error: message }),
+      type: 'datahub.notConfigured',
+      ...commonProperties,
+      id: source.id,
+    }
+  },
 }
