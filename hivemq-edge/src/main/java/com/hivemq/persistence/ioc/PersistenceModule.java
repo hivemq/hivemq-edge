@@ -29,16 +29,18 @@ import com.hivemq.metrics.MetricsHolder;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.dropping.MessageDroppedServiceImpl;
 import com.hivemq.mqtt.topic.tree.TopicTreeStartup;
-import com.hivemq.persistence.InMemorySingleWriter;
 import com.hivemq.persistence.PersistenceShutdownHookInstaller;
 import com.hivemq.persistence.ScheduledCleanUpService;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueueLocalPersistence;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistenceImpl;
-import com.hivemq.persistence.clientsession.*;
-import com.hivemq.persistence.connection.ConnectionPersistence;
-import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
+import com.hivemq.persistence.clientsession.ClientSessionPersistence;
+import com.hivemq.persistence.clientsession.ClientSessionPersistenceImpl;
+import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence;
+import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistenceImpl;
+import com.hivemq.persistence.clientsession.SharedSubscriptionService;
+import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl;
 import com.hivemq.persistence.ioc.annotation.Persistence;
 import com.hivemq.persistence.ioc.provider.SingleWriterProvider;
 import com.hivemq.persistence.ioc.provider.local.PersistenceExecutorProvider;
@@ -47,8 +49,6 @@ import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.ClientSessionSubscriptionLocalPersistence;
 import com.hivemq.persistence.local.IncomingMessageFlowInMemoryLocalPersistence;
 import com.hivemq.persistence.local.IncomingMessageFlowLocalPersistence;
-import com.hivemq.persistence.local.memory.ClientSessionSubscriptionMemoryLocalPersistence;
-import com.hivemq.persistence.local.memory.RetainedMessageMemoryLocalPersistence;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
 import com.hivemq.persistence.qos.IncomingMessageFlowPersistenceImpl;
@@ -73,9 +73,6 @@ public abstract class PersistenceModule {
     @Binds
     abstract @NotNull RetainedMessagePersistence retainedMessagePersistence(
             @NotNull RetainedMessagePersistenceImpl retainedMessagePersistence);
-
-    @Binds
-    abstract @NotNull ConnectionPersistence connectionPersistence(@NotNull ConnectionPersistenceImpl connectionPersistence);
 
     @Binds
     abstract @NotNull ClientSessionPersistence clientSessionPersistence(@NotNull ClientSessionPersistenceImpl clientSessionPersistence);
