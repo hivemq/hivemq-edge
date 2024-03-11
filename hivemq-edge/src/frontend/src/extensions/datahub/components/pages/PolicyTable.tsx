@@ -35,6 +35,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const navigate = useNavigate()
   const deleteDataPolicy = useDeleteDataPolicy()
   const deleteBehaviourPolicy = useDeleteBehaviorPolicy()
+  const isBehaviorPolicyEnabled = import.meta.env.VITE_FLAG_DATAHUB_BEHAVIOR_ENABLED === 'true'
 
   const isError = useMemo(() => {
     return isDataError || isBehaviorError
@@ -55,11 +56,11 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
       ...(dataPolicies?.items
         ? dataPolicies.items.map((e) => ({ ...e, type: PolicyType.DATA } as CombinedPolicy))
         : []),
-      ...(behaviorPolicies?.items
+      ...(isBehaviorPolicyEnabled && behaviorPolicies?.items
         ? behaviorPolicies.items.map((e) => ({ ...e, type: PolicyType.BEHAVIOR } as CombinedPolicy))
         : []),
     ]
-  }, [isLoading, dataPolicies, behaviorPolicies])
+  }, [isLoading, dataPolicies?.items, isBehaviorPolicyEnabled, behaviorPolicies?.items])
 
   const columns = useMemo<ColumnDef<CombinedPolicy>[]>(() => {
     const onHandleDelete = (info: CellContext<CombinedPolicy, unknown>) => {

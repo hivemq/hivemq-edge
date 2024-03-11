@@ -5,6 +5,7 @@ import Tool from '@datahub/components/controls/Tool.tsx'
 
 export const ToolboxNodes = () => {
   const { t } = useTranslation('datahub')
+  const isBehaviorPolicyEnabled = import.meta.env.VITE_FLAG_DATAHUB_BEHAVIOR_ENABLED === 'true'
 
   return (
     <HStack
@@ -33,15 +34,17 @@ export const ToolboxNodes = () => {
           </HStack>
         </VStack>
       </ButtonGroup>
-      <ButtonGroup variant="outline" size="sm" aria-labelledby="group-behaviorPolicy">
-        <VStack alignItems="flex-start">
-          <Text id="group-behaviorPolicy">{t('workspace.toolbox.group.behaviorPolicy')}</Text>
-          <HStack>
-            <Tool nodeType={DataHubNodeType.BEHAVIOR_POLICY} />
-            <Tool nodeType={DataHubNodeType.TRANSITION} />
-          </HStack>
-        </VStack>
-      </ButtonGroup>
+      {isBehaviorPolicyEnabled && (
+        <ButtonGroup variant="outline" size="sm" aria-labelledby="group-behaviorPolicy">
+          <VStack alignItems="flex-start">
+            <Text id="group-behaviorPolicy">{t('workspace.toolbox.group.behaviorPolicy')}</Text>
+            <HStack>
+              <Tool nodeType={DataHubNodeType.BEHAVIOR_POLICY} />
+              <Tool nodeType={DataHubNodeType.TRANSITION} />
+            </HStack>
+          </VStack>
+        </ButtonGroup>
+      )}
       <ButtonGroup variant="outline" size="sm" aria-labelledby="group-operation">
         <VStack alignItems="flex-start" pr={2}>
           <Text id="group-operation">{t('workspace.toolbox.group.operation')}</Text>
