@@ -205,11 +205,17 @@
     }
   },
   "error": {
+    "validation": {
+      "protobuf": {
+        "encoding": "The encoding of the PROTOBUF code into a Base64 descriptor cannot be validated."
+      }
+    },
     "dryRun": {
       "notConnected": "No $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
       "noHandleConnected": "No $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to the \"{{ handle }}\" handle of $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
       "cardinality": "Too many $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
-      "notConfigured": "The $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) is not properly defined. The following properties are missing: {{ properties }}"
+      "notConfigured": "The $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) is not properly defined. The following properties are missing: {{ properties }}",
+      "internal": "Encountered an error while processing $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }): {{ error }}"
     },
     "publish": {
       "title": "$t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) published",
