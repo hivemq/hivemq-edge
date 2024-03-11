@@ -22,6 +22,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.persistence.connection.ConnectionPersistence;
 
 public class CoreModuleServiceImpl implements CoreModuleService {
 
@@ -34,6 +35,7 @@ public class CoreModuleServiceImpl implements CoreModuleService {
     private final @NotNull HiveMQCapabilityService capabilityService;
     private final @NotNull RestComponentsService restComponentsService;
     private final @NotNull HandlerService handlerService;
+    private final @NotNull ConnectionPersistence connectionPersistence;
 
 
     public CoreModuleServiceImpl(
@@ -45,7 +47,8 @@ public class CoreModuleServiceImpl implements CoreModuleService {
             final @NotNull ConfigurationService configService,
             final @NotNull HiveMQCapabilityService capabilityService,
             final @NotNull RestComponentsService restComponentsService,
-            final @NotNull HandlerService handlerService) {
+            final @NotNull HandlerService handlerService,
+            final @NotNull ConnectionPersistence connectionPersistence) {
         this.persistencesService = persistencesService;
         this.systemInformation = systemInformation;
         this.metricRegistry = metricRegistry;
@@ -55,6 +58,7 @@ public class CoreModuleServiceImpl implements CoreModuleService {
         this.capabilityService = capabilityService;
         this.restComponentsService = restComponentsService;
         this.handlerService = handlerService;
+        this.connectionPersistence = connectionPersistence;
     }
 
     @Override
@@ -95,6 +99,11 @@ public class CoreModuleServiceImpl implements CoreModuleService {
     @Override
     public @NotNull RestComponentsService restComponentsService() {
         return restComponentsService;
+    }
+
+    @Override
+    public @NotNull ConnectionPersistence connectionPersistence() {
+        return connectionPersistence;
     }
 
     @Override
