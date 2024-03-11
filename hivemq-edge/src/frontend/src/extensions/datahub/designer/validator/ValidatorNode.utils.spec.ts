@@ -92,7 +92,6 @@ describe('checkValidityPolicyValidator', () => {
     expect(resources?.[0]).toStrictEqual(
       expect.objectContaining({
         data: {
-          arguments: {},
           id: 'node-schema',
           schemaDefinition: 'e30=',
           type: 'JSON',
