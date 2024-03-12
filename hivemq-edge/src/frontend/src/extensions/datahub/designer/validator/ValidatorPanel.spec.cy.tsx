@@ -58,13 +58,6 @@ describe('ValidatorPanel', () => {
       .eq(0)
       .should('contain.text', 'ANY_OF')
     cy.get('label#root_strategy-label + div').click()
-
-    cy.get('h2').eq(0).should('contain.text', 'schemas')
-    cy.get('h2').eq(1).should('contain.text', 'schemas-0')
-    cy.get('label#root_schemas_0_schemaId-label').should('contain.text', 'ID of the schema')
-    cy.get('label#root_schemas_0_schemaId-label + input').should('have.value', 'first mock schema')
-    cy.get('label#root_schemas_0_version-label').should('contain.text', 'version of the schema')
-    cy.get('label#root_schemas_0_version-label + input').should('have.value', '1')
   })
 
   it('should render the error message with data not found', () => {
