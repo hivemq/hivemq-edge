@@ -99,8 +99,7 @@ export function checkValidityTransformFunction(
   }
 
   const deserializer: PolicyOperation = {
-    // TODO[19240] Should not be hardcoded and should be Typescript-ed
-    functionId: 'Serdes.deserialize',
+    functionId: OperationData.Function.SERDES_DESERIALIZE,
     arguments: {
       // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
       schemaId: serial.source,
@@ -118,8 +117,7 @@ export function checkValidityTransformFunction(
   }
 
   const serializer: PolicyOperation = {
-    // TODO[19240] Should not be hardcoded and should be Typescript-ed
-    functionId: 'Serdes.serialize',
+    functionId: OperationData.Function.SERDES_SERIALIZE,
     arguments: {
       // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
       schemaId: deserial.source,
@@ -129,7 +127,6 @@ export function checkValidityTransformFunction(
   }
   return [
     { data: deserializer, node: operationNode },
-    // TODO[NVL] Technically, resources should be associated with the serialiser/deserialiser
     { data: operation, node: operationNode, resources: [...scriptNodes, ...schemaNodes] },
     { data: serializer, node: operationNode },
   ]
