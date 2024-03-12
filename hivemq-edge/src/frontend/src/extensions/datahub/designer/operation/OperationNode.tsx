@@ -58,14 +58,14 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
           <CustomHandle
             type="target"
             position={Position.Top}
-            id={OperationData.Handle.SERIALISER}
+            id={OperationData.Handle.DESERIALISER}
             style={{ left: '20%' }}
           />
           <CustomHandle type="target" position={Position.Top} id={OperationData.Handle.FUNCTION} />
           <CustomHandle
             type="target"
             position={Position.Top}
-            id={OperationData.Handle.DESERIALISER}
+            id={OperationData.Handle.SERIALISER}
             style={{ left: '80%' }}
           />
         </>

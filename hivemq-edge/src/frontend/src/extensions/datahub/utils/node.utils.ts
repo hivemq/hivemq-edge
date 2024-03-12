@@ -76,8 +76,8 @@ export const validConnections: ConnectionValidity = {
 }
 
 export const isValidPolicyConnection = (connection: Connection, nodes: Node[]) => {
-  const source = nodes.find((e) => e.id === connection.source)
-  const destination = nodes.find((e) => e.id === connection.target)
+  const source = nodes.find((node) => node.id === connection.source)
+  const destination = nodes.find((node) => node.id === connection.target)
 
   if (!source) {
     return false

@@ -48,16 +48,16 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const safeData = useMemo<CombinedPolicy[]>(() => {
     if (isLoading)
       return [
-        { ...mockDataPolicy, type: PolicyType.DATA },
-        { ...mockBehaviorPolicy, type: PolicyType.BEHAVIOR },
+        { ...mockDataPolicy, type: PolicyType.DATA_POLICY },
+        { ...mockBehaviorPolicy, type: PolicyType.BEHAVIOR_POLICY },
       ]
 
     return [
       ...(dataPolicies?.items
-        ? dataPolicies.items.map((e) => ({ ...e, type: PolicyType.DATA } as CombinedPolicy))
+        ? dataPolicies.items.map((e) => ({ ...e, type: PolicyType.DATA_POLICY } as CombinedPolicy))
         : []),
       ...(isBehaviorPolicyEnabled && behaviorPolicies?.items
-        ? behaviorPolicies.items.map((e) => ({ ...e, type: PolicyType.BEHAVIOR } as CombinedPolicy))
+        ? behaviorPolicies.items.map((e) => ({ ...e, type: PolicyType.BEHAVIOR_POLICY } as CombinedPolicy))
         : []),
     ]
   }, [isLoading, dataPolicies?.items, isBehaviorPolicyEnabled, behaviorPolicies?.items])
@@ -66,10 +66,14 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
     const onHandleDelete = (info: CellContext<CombinedPolicy, unknown>) => {
       return () => {
         const deleteMutation: UseMutationResult<void, unknown, string> =
-          info.row.original.type === PolicyType.DATA ? deleteDataPolicy : deleteBehaviourPolicy
+          info.row.original.type === PolicyType.DATA_POLICY ? deleteDataPolicy : deleteBehaviourPolicy
 
         onDeleteItem?.(deleteMutation.mutateAsync, info.row.original.type, info.row.original.id)
       }
+    }
+
+    const onHandleEdit = (info: CellContext<CombinedPolicy, unknown>) => () => {
+      navigate(`/datahub/${info.row.original.type}/${info.row.original.id}`)
     }
 
     return [
@@ -124,10 +128,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
         cell: (info) => {
           return (
             <Skeleton isLoaded={!isLoading}>
-              <DataHubListAction
-                onDelete={onHandleDelete(info)}
-                onEdit={() => navigate(`/datahub/${info.row.original.type}/id`)}
-              />
+              <DataHubListAction onDelete={onHandleDelete(info)} onEdit={onHandleEdit(info)} />
             </Skeleton>
           )
         },

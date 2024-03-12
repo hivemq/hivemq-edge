@@ -54,7 +54,7 @@ const MonitoringEdge: FC<EdgeProps> = ({
     })
     if (!sourceFilters) return undefined
 
-    return `${PolicyType.DATA}/${sourceFilters.id}`
+    return `${PolicyType.DATA_POLICY}/${sourceFilters.id}`
   }, [workspaceNodes, datahubNodes, source, hasDataHub])
 
   return (

@@ -14,13 +14,15 @@ const DataHubListAction: FC<DataHubListActionProps> = ({ onEdit, onDelete, isEdi
   const { t } = useTranslation('datahub')
   return (
     <ButtonGroup size="sm" isAttached>
-      <IconButton
-        data-testid="list-action-edit"
-        onClick={onEdit}
-        aria-label={t('Listings.action.edit')}
-        icon={<LuFileEdit />}
-        isDisabled={isEditDisabled}
-      />
+      {!isEditDisabled && (
+        <IconButton
+          data-testid="list-action-edit"
+          onClick={onEdit}
+          aria-label={t('Listings.action.edit')}
+          icon={<LuFileEdit />}
+          isDisabled={isEditDisabled}
+        />
+      )}
       <IconButton
         data-testid="list-action-delete"
         onClick={onDelete}
