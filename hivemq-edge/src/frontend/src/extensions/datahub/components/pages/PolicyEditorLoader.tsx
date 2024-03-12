@@ -16,7 +16,7 @@ import { loadTopicFilter } from '@datahub/designer/topic_filter/TopicFilterNode.
 import { loadValidators } from '@datahub/designer/validator/ValidatorNode.utils.ts'
 import { loadDataPolicyPipelines } from '@datahub/designer/operation/OperationNode.utils.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
+import { DATAHUB_TOAST_ID, dataHubToastOption } from '@datahub/utils/toast.utils.ts'
 import { loadBehaviorPolicy } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
 import { loadClientFilter } from '@datahub/designer/client_filter/ClientFilterNode.utils.ts'
 import { loadTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
@@ -54,10 +54,10 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
       let message
       if (error instanceof Error) message = error.message
       else message = String(error)
-      if (!toast.isActive('loader-feedback'))
+      if (!toast.isActive(DATAHUB_TOAST_ID))
         toast({
           ...dataHubToastOption,
-          id: 'loader-feedback',
+          id: DATAHUB_TOAST_ID,
           title: t('error.load.errorTitle', { source: PolicyType.DATA_POLICY }),
           description: message,
           status: 'error',
@@ -102,10 +102,10 @@ export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
       let message
       if (error instanceof Error) message = error.message
       else message = String(error)
-      if (!toast.isActive('loader-feedback'))
+      if (!toast.isActive(DATAHUB_TOAST_ID))
         toast({
           ...dataHubToastOption,
-          id: 'loader-feedback',
+          id: DATAHUB_TOAST_ID,
           title: t('error.load.errorTitle', { source: PolicyType.DATA_POLICY }),
           description: message,
           status: 'error',
