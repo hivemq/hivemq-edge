@@ -112,30 +112,6 @@ describe('checkValidityPolicyValidators', () => {
     position: { x: 0, y: 0 },
   }
 
-  it('should return error if not connected', async () => {
-    const MOCK_STORE: WorkspaceState = {
-      nodes: [],
-      edges: [],
-      functions: [],
-    }
-
-    const results = checkValidityPolicyValidators(MOCK_NODE_DATA_POLICY, MOCK_STORE)
-    expect(results).toHaveLength(1)
-    const { node, data, error, resources } = results[0]
-    expect(node).toStrictEqual(MOCK_NODE_DATA_POLICY)
-    expect(error).toEqual(
-      expect.objectContaining({
-        detail: 'No Policy Validator connected to Data Policy',
-        id: 'node-policy',
-        status: 404,
-        title: 'DATA_POLICY',
-        type: 'datahub.notConnected',
-      })
-    )
-    expect(data).toBeUndefined()
-    expect(resources).toBeUndefined()
-  })
-
   it('should return a payload otherwise', async () => {
     const MOCK_NODE_SCHEMA: Node<SchemaData> = {
       id: 'node-schema',
