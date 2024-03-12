@@ -21,7 +21,8 @@
 
   "resource": {
     "schema": {
-      "type_JSON": "JSON"
+      "type_JSON": "JSON",
+      "type_PROTOBUF": "PROTOBUF"
     },
     "script": {
       "functionType_TRANSFORMATION": "Transformation"
