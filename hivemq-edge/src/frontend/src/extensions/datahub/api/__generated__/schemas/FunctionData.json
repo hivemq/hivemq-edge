@@ -20,7 +20,8 @@
     "sourceCode": {
       "title": "Source",
       "type": "string",
-      "format": "text/javascript"
+      "format": "text/javascript",
+      "default": "/**\n *\n * @param {Object} publish\n * @param {string} publish.topic    The MQTT topic that is currently specified for this PUBLISH packet.\n * @param {Object} publish.payload  A list of the name and value of all user properties of the MQTT 5 PUBLISH packet. This setting has no effect on MQTT 3 clients.\n * @param {Record<string, string>[]} publish.userProperties The JSON object representation of the deserialized MQTT payload.\n * @param {Object} context\n * @param {Record<string, string>[]} context.arguments  The arguments provided to the script. Currently, arguments can only be provided via a data policy.\n * @param {string} context.policyId The policy id of the policy from which the transformation function is called.\n * @param {string} context.clientId The client Id of the client from which the MQTT publish was sent.\n * @returns {Object} The publish-object is passed as a parameter into the transform function. The same object or a new object is returned as the transformed object.\n */\nfunction transform(publish, context) {\n  return publish\n}"
     }
   }
 }
