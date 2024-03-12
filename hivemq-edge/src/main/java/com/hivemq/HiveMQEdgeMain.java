@@ -165,6 +165,8 @@ public class HiveMQEdgeMain {
         } catch (InterruptedException e) {
             throw new HiveMQEdgeStartupException(e);
         }
+        log.info("HiveMQ Edge starts with Persistence Mode : '{}'",
+                configService.persistenceConfigurationService().getMode());
 
         log.trace("Initializing classes");
         Objects.requireNonNull(injector).initEagerSingletons();
