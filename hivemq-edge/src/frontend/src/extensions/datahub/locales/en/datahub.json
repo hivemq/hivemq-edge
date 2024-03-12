@@ -157,6 +157,9 @@
       "isDataOnly": "[Data]",
       "metricName": {
         "placeholder": "metricName"
+      },
+      "transform": {
+        "placeholder": "functionName"
       }
     },
     "codeEditor": {
