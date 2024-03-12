@@ -3,7 +3,7 @@
     "extension": "Data Hub on Edge"
   },
   "navigation": {
-    "mainPage": "Data Hub on Edge"
+    "mainPage": "Data Hub"
   },
   "flag": {
     "behaviorPolicy": {
@@ -21,7 +21,8 @@
 
   "resource": {
     "schema": {
-      "type_JSON": "JSON"
+      "type_JSON": "JSON",
+      "type_PROTOBUF": "PROTOBUF"
     },
     "script": {
       "functionType_TRANSFORMATION": "Transformation"

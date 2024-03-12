@@ -57,15 +57,6 @@ export function checkValidityPolicyValidators(
 
   const incomers = getIncomers(dataPolicyNode, nodes, edges).filter(isValidatorNodeType)
 
-  if (!incomers.length) {
-    return [
-      {
-        node: dataPolicyNode,
-        error: PolicyCheckErrors.notConnected(DataHubNodeType.VALIDATOR, dataPolicyNode),
-      },
-    ]
-  }
-
   return incomers.map((validator) => checkValidityPolicyValidator(validator, store))
 }
 
