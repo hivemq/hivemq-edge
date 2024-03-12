@@ -217,7 +217,7 @@ export const loadDataPolicyPipelines = (
   scripts: Script[],
   store: WorkspaceState & WorkspaceAction
 ) => {
-  const dataNode = store.nodes.find((n) => n.id === policy.id)
+  const dataNode = store.nodes.find((node) => node.id === policy.id)
   if (!dataNode)
     throw new Error(
       i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
@@ -238,7 +238,6 @@ export const loadPipeline = (
   store: WorkspaceState & WorkspaceAction
 ) => {
   const { onAddNodes, onConnect } = store
-  // const dataNode = store.nodes.find((n) => n.id === policy.id)
   if (!parentNode)
     throw new Error(i18n.t('datahub:error.loading.schema.unknown', { type: DataHubNodeType.DATA_POLICY }) as string)
 

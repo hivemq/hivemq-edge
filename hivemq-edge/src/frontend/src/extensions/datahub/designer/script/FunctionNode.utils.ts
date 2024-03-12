@@ -42,7 +42,7 @@ export const loadScripts = (
   const { onAddNodes, onConnect } = store
   for (const fct of functions) {
     const [, functionName] = fct.functionId.split(':')
-    const functionScript = scripts.find((e) => e.id === functionName)
+    const functionScript = scripts.find((script) => script.id === functionName)
     if (!functionScript)
       throw new Error(
         i18n.t('datahub:error.loading.connection.notFound', { source: DataHubNodeType.FUNCTION }) as string

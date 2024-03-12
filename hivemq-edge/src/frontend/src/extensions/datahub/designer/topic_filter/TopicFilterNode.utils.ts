@@ -9,7 +9,7 @@ import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
 export const loadTopicFilter = (policy: DataPolicy, store: WorkspaceState & WorkspaceAction) => {
   const { onNodesChange, onConnect } = store
-  const dataNode = store.nodes.find((n) => n.id === policy.id)
+  const dataNode = store.nodes.find((node) => node.id === policy.id)
   if (!dataNode)
     throw new Error(
       i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string

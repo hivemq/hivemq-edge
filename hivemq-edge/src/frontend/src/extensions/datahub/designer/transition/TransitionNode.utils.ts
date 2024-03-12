@@ -111,7 +111,7 @@ export const loadTransitions = (
   store: WorkspaceState & WorkspaceAction
 ) => {
   const { onNodesChange, onConnect } = store
-  const BehaviorPolicyNode = store.nodes.find((n) => n.id === behaviorPolicy.id)
+  const BehaviorPolicyNode = store.nodes.find((node) => node.id === behaviorPolicy.id)
   if (!BehaviorPolicyNode)
     throw new Error(
       i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.BEHAVIOR_POLICY }) as string

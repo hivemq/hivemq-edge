@@ -100,7 +100,7 @@ export function loadSchema(
   store: WorkspaceState & WorkspaceAction
 ) {
   const { onNodesChange, onConnect } = store
-  const schema = schemas.find((e) => e.id === schemaRef.schemaId)
+  const schema = schemas.find((schema) => schema.id === schemaRef.schemaId)
   if (!schema)
     throw new Error(i18n.t('datahub:error.loading.connection.notFound', { source: DataHubNodeType.SCHEMA }) as string)
 
