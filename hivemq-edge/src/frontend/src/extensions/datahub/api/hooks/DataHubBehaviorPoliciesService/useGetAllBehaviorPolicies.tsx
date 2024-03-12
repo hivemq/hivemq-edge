@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { DATAHUB_QUERY_KEYS } from '../../utils.ts'
 import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
+import { ApiError, BehaviorPolicyList } from '@/api/__generated__'
 
 interface GetAllBehaviorPoliciesProps {
   fields?: string
@@ -18,7 +19,7 @@ export const useGetAllBehaviorPolicies = ({
   cursor,
 }: GetAllBehaviorPoliciesProps) => {
   const appClient = useHttpClient()
-  return useQuery({
+  return useQuery<BehaviorPolicyList, ApiError>({
     queryKey: [DATAHUB_QUERY_KEYS.BEHAVIOR_POLICIES],
     queryFn: async () => {
       return appClient.dataHubBehaviorPolicies.getAllBehaviorPolicies(fields, policyIds, clientIds, limit, cursor)

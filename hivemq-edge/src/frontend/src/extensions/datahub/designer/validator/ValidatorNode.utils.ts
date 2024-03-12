@@ -1,17 +1,24 @@
-import { getIncomers, Node } from 'reactflow'
+import { getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
 
-import { DataPolicyValidator, Schema, SchemaReference } from '@/api/__generated__'
+import { DataPolicy, DataPolicyValidator, Schema, SchemaReference } from '@/api/__generated__'
+import { enumFromStringValue } from '@/utils/types.utils.ts'
+
+import i18n from '@/config/i18n.config.ts'
+
 import {
   DataHubNodeType,
   DataPolicyData,
   DryRunResults,
   SchemaArguments,
   ValidatorData,
+  ValidatorType,
+  WorkspaceAction,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { checkValiditySchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
-import { isSchemaNodeType, isValidatorNodeType } from '@datahub/utils/node.utils.ts'
+import { getNodeId, isSchemaNodeType, isValidatorNodeType } from '@datahub/utils/node.utils.ts'
+import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
 export function checkValidityPolicyValidator(
   validator: Node<ValidatorData>,
@@ -60,4 +67,46 @@ export function checkValidityPolicyValidators(
   }
 
   return incomers.map((validator) => checkValidityPolicyValidator(validator, store))
+}
+
+export const loadValidators = (policy: DataPolicy, schemas: Schema[], store: WorkspaceState & WorkspaceAction) => {
+  const { onNodesChange, onConnect } = store
+  const dataNode = store.nodes.find((node) => node.id === policy.id)
+  if (!dataNode)
+    throw new Error(
+      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
+    )
+
+  const position: XYPosition = {
+    x: dataNode.position.x + CANVAS_POSITION.Validator.x,
+    y: dataNode.position.y + CANVAS_POSITION.Validator.y,
+  }
+
+  for (const validator of policy.validation?.validators || []) {
+    const validatorArguments = validator.arguments as SchemaArguments
+
+    const validatorNode: Node<ValidatorData> = {
+      id: getNodeId(),
+      type: DataHubNodeType.VALIDATOR,
+      position,
+      data: {
+        strategy: validatorArguments.strategy,
+        // @ts-ignore force undefined
+        type: enumFromStringValue(ValidatorType, validator.type),
+        schemas: validatorArguments.schemas,
+      },
+    }
+
+    onNodesChange([{ item: validatorNode, type: 'add' } as NodeAddChange])
+    onConnect({
+      source: validatorNode.id,
+      target: dataNode.id,
+      sourceHandle: null,
+      targetHandle: DataPolicyData.Handle.VALIDATION,
+    })
+
+    for (const schemaRef of validatorArguments.schemas) {
+      loadSchema(validatorNode, null, 0, schemaRef, schemas, store)
+    }
+  }
 }

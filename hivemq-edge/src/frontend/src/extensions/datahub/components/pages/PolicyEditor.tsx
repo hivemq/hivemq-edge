@@ -1,14 +1,11 @@
 import React, { FC, useCallback, useMemo, useRef, useState } from 'react'
 import ReactFlow, { Connection, Node, ReactFlowInstance, ReactFlowProvider, XYPosition } from 'reactflow'
-import { Outlet, useParams } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
 
 import styles from './PolicyEditor.module.scss'
 
-import ErrorMessage from '@/components/ErrorMessage.tsx'
-
-import { PolicyType } from '@datahub/types.ts'
 import { CustomNodeTypes } from '@datahub/designer/mappings.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
@@ -21,7 +18,6 @@ const PolicyEditor: FC = () => {
   const reactFlowWrapper = useRef(null)
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
   const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onAddNodes } = useDataHubDraftStore()
-  const { policyType /*, policyId */ } = useParams()
 
   const nodeTypes = useMemo(() => CustomNodeTypes, [])
 
@@ -61,14 +57,6 @@ const PolicyEditor: FC = () => {
     },
     [onAddNodes, reactFlowInstance]
   )
-
-  if (!policyType || !(policyType in PolicyType))
-    return (
-      <ErrorMessage
-        type={t('error.notDefined.title') as string}
-        message={t('error.notDefined.description') as string}
-      />
-    )
 
   return (
     <>

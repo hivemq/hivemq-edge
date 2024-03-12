@@ -21,7 +21,7 @@ describe('DataHubListAction', () => {
   it('should render the buttons disabled', () => {
     cy.mountWithProviders(<DataHubListAction isEditDisabled />)
 
-    cy.get('button').should('have.length', 2)
-    cy.getByTestId('list-action-edit').should('be.disabled')
+    cy.get('button').should('have.length', 1)
+    cy.getByTestId('list-action-edit').should('not.exist')
   })
 })
