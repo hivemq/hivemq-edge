@@ -68,8 +68,8 @@ const getTopicsFromPath = (path: string, instance: RJSFSchema): string[] => {
     const res: string[] = []
 
     for (const item of instance as RJSFSchema[]) {
-      const gg = getTopicsFromPath(rest.join('.'), item)
-      res.push(...gg)
+      const topicsFromPath = getTopicsFromPath(rest.join('.'), item)
+      res.push(...topicsFromPath)
     }
     return res
   }
@@ -82,8 +82,8 @@ export const discoverAdapterTopics = (protocol: ProtocolAdapter, instance: Gener
   const topics: string[] = []
 
   paths.forEach((path) => {
-    const gg = getTopicsFromPath(path, instance)
-    topics.push(...gg)
+    const topicsFromPath = getTopicsFromPath(path, instance)
+    topics.push(...topicsFromPath)
   })
 
   return topics

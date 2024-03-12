@@ -21,11 +21,11 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
       const connectedFunctionIds = getIncomers(adapterNode, nodes, edges)
         .filter(isFunctionNodeType)
         .map((e) => e.data.name)
-      const gg = adapterNode.data.formData as unknown as OperationData.DataHubTransformType
+      const operationPayload = adapterNode.data.formData as unknown as OperationData.DataHubTransformType
 
-      const cleanedUp = gg.transform.filter((id) => connectedFunctionIds.includes(id))
+      const cleanedUp = operationPayload.transform.filter((id) => connectedFunctionIds.includes(id))
       const notIncluded = connectedFunctionIds.filter((id) => !cleanedUp.includes(id))
-      gg.transform = [...cleanedUp, ...notIncluded]
+      operationPayload.transform = [...cleanedUp, ...notIncluded]
     }
 
     return adapterNode?.data
