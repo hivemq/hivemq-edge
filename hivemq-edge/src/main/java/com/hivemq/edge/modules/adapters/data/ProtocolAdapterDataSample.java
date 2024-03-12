@@ -17,6 +17,7 @@ package com.hivemq.edge.modules.adapters.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -75,6 +76,7 @@ public class ProtocolAdapterDataSample<T extends AbstractProtocolAdapterConfig> 
         dataPoints.add(new DataPoint(tagName,tagValue));
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<DataPoint> getDataPoints(){
         return Collections.unmodifiableList(dataPoints);
     }
