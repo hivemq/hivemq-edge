@@ -18,6 +18,7 @@ import {
 import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { getNodeId, isSchemaNodeType, isValidatorNodeType } from '@datahub/utils/node.utils.ts'
+import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
 export function checkValidityPolicyValidator(
   validator: Node<ValidatorData>,
@@ -77,8 +78,8 @@ export const loadValidators = (policy: DataPolicy, schemas: Schema[], store: Wor
     )
 
   const position: XYPosition = {
-    x: dataNode.position.x,
-    y: dataNode.position.y - 150,
+    x: dataNode.position.x + CANVAS_POSITION.Validator.x,
+    y: dataNode.position.y + CANVAS_POSITION.Validator.y,
   }
 
   for (const validator of policy.validation?.validators || []) {

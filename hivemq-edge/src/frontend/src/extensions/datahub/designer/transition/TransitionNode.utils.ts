@@ -26,6 +26,7 @@ import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { checkValidityPipeline, loadBehaviorPolicyPipelines } from '@datahub/designer/operation/OperationNode.utils.ts'
 import { getNodeId, isTransitionNodeType } from '@datahub/utils/node.utils.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
+import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
 export function checkValidityTransitions(
   behaviorPolicyData: Node<BehaviorPolicyData>,
@@ -119,12 +120,12 @@ export const loadTransitions = (
   if (!model) throw new Error(i18n.t('datahub:error.loading.behavior.noModel') as string)
 
   const position: XYPosition = {
-    x: BehaviorPolicyNode.position.x + 350,
-    y: BehaviorPolicyNode.position.y - 100,
+    x: BehaviorPolicyNode.position.x + CANVAS_POSITION.Transition.x,
+    y: BehaviorPolicyNode.position.y + CANVAS_POSITION.Transition.y,
   }
 
   const shiftBottom = () => {
-    position.y += 100
+    position.y += CANVAS_POSITION.Transition.y
     return position
   }
 

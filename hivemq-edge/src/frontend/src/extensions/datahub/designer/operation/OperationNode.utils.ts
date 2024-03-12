@@ -19,6 +19,7 @@ import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/Schema
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { isFunctionNodeType, isSchemaNodeType } from '@datahub/utils/node.utils.ts'
 import { getActiveTransition } from '@datahub/designer/transition/TransitionNode.utils.ts'
+import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
 export function checkValidityTransformFunction(
   operationNode: Node<OperationData>,
@@ -241,13 +242,15 @@ export const loadPipeline = (
   if (!parentNode)
     throw new Error(i18n.t('datahub:error.loading.schema.unknown', { type: DataHubNodeType.DATA_POLICY }) as string)
 
+  const delta =
+    handle === DataPolicyData.Handle.ON_ERROR ? CANVAS_POSITION.OperationError : CANVAS_POSITION.OperationSuccess
   const position: XYPosition = {
-    x: parentNode.position.x,
-    y: parentNode.position.y + (handle === DataPolicyData.Handle.ON_ERROR ? 100 : 0),
+    x: parentNode.position.x + delta.x,
+    y: parentNode.position.y + delta.y,
   }
 
   const shiftPositionRight = () => {
-    position.x += 400
+    position.x += delta.x
     return position
   }
 

@@ -13,6 +13,7 @@ import {
   WorkspaceState,
 } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
+import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
 export function checkValidityJSScript(scriptNode: Node<FunctionData>): DryRunResults<Script> {
   if (!scriptNode.data.name || !scriptNode.data.version || !scriptNode.data.sourceCode) {
@@ -50,7 +51,10 @@ export const loadScripts = (
     const functionScriptNode: Node<FunctionData> = {
       id: functionScript.id,
       type: DataHubNodeType.FUNCTION,
-      position: { x: parentNode.position.x, y: parentNode.position.y - 275 },
+      position: {
+        x: parentNode.position.x + CANVAS_POSITION.Function.x,
+        y: parentNode.position.y + CANVAS_POSITION.Function.y,
+      },
       data: {
         type: 'Javascript',
         name: functionScript.id,

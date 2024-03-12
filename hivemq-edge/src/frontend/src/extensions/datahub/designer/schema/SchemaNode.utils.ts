@@ -16,6 +16,7 @@ import {
 } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
+import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
 export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults<Schema> {
   if (!schemaNode.data.type || !schemaNode.data.version || !schemaNode.data.schemaSource) {
@@ -109,7 +110,7 @@ export function loadSchema(
       type: DataHubNodeType.SCHEMA,
       position: {
         x: parentNode.position.x + positionDeltaX,
-        y: parentNode.position.y - 150,
+        y: parentNode.position.y + CANVAS_POSITION.Schema.y,
       },
       data: {
         // @ts-ignore force undefined
@@ -137,7 +138,7 @@ export function loadSchema(
       type: DataHubNodeType.SCHEMA,
       position: {
         x: parentNode.position.x + positionDeltaX,
-        y: parentNode.position.y - 150,
+        y: parentNode.position.y + CANVAS_POSITION.Schema.y,
       },
       data: {
         // @ts-ignore force undefined

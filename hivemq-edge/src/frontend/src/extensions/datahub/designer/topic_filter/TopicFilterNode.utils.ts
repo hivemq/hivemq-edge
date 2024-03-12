@@ -5,6 +5,7 @@ import i18n from '@/config/i18n.config.ts'
 
 import { getNodeId } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeType, TopicFilterData, WorkspaceAction, WorkspaceState } from '@datahub/types.ts'
+import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
 export const loadTopicFilter = (policy: DataPolicy, store: WorkspaceState & WorkspaceAction) => {
   const { onNodesChange, onConnect } = store
@@ -15,8 +16,8 @@ export const loadTopicFilter = (policy: DataPolicy, store: WorkspaceState & Work
     )
 
   const position: XYPosition = {
-    x: dataNode.position.x - 300,
-    y: dataNode.position.y,
+    x: dataNode.position.x + CANVAS_POSITION.Topic.x,
+    y: dataNode.position.y + CANVAS_POSITION.Topic.y,
   }
 
   const topicNode: Node<TopicFilterData> = {

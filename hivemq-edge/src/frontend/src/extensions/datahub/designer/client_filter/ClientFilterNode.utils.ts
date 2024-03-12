@@ -13,6 +13,7 @@ import {
   WorkspaceState,
 } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
+import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
 export function checkValidityClients(
   dataPolicyNode: Node<BehaviorPolicyData>,
@@ -52,8 +53,8 @@ export const loadClientFilter = (behaviorPolicy: BehaviorPolicy, store: Workspac
       i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.BEHAVIOR_POLICY }) as string
     )
   const position: XYPosition = {
-    x: BehaviorPolicyNode.position.x - 300,
-    y: BehaviorPolicyNode.position.y,
+    x: BehaviorPolicyNode.position.x + CANVAS_POSITION.Client.x,
+    y: BehaviorPolicyNode.position.y + CANVAS_POSITION.Client.y,
   }
 
   const topicNode: Node<ClientFilterData> = {
