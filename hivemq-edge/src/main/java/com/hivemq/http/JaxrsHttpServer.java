@@ -54,6 +54,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class JaxrsHttpServer {
 
+    public static final int MAX_BINDING_PRIORITY = 1;
+
     static final String MAX_REQ_TIME = "sun.net.httpserver.maxReqTime";
     static final String MAX_RESP_TIME = "sun.net.httpserver.maxRspTime";
     private static final Logger logger = LoggerFactory.getLogger(JaxrsHttpServer.class);
@@ -169,7 +171,7 @@ public class JaxrsHttpServer {
 
         //-- Provide an Object Mapper either from config (If supplied) or one with reasonable defaults
         objectMapperProvider = createObjectMapperProvider(config);
-        resources.register(objectMapperProvider, 1);
+        resources.register(objectMapperProvider, MAX_BINDING_PRIORITY);
 
         //-- Add the Custom Filter which optionally adds request debug
 //        resources.register(new JaxrsRequestFilter());
