@@ -30,6 +30,9 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceAction>()(
       reset: () => {
         set(initialStore())
       },
+      isDirty: () => {
+        return get().nodes.length !== 0 && get().edges.length !== 0
+      },
       onNodesChange: (changes: NodeChange[]) => {
         set({
           nodes: applyNodeChanges(changes, get().nodes),

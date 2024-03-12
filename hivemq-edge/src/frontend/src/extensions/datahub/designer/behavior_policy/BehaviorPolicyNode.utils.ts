@@ -1,8 +1,18 @@
-import { Node } from 'reactflow'
+import { Node, NodeAddChange, XYPosition } from 'reactflow'
 
-import { BehaviorPolicyData, DryRunResults } from '@datahub/types.ts'
-import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { BehaviorPolicy, BehaviorPolicyBehavior, BehaviorPolicyOnTransition } from '@/api/__generated__'
+import { enumFromStringValue } from '@/utils/types.utils.ts'
+import i18n from '@/config/i18n.config.ts'
+
+import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
+import {
+  BehaviorPolicyData,
+  BehaviorPolicyType,
+  DataHubNodeType,
+  DryRunResults,
+  WorkspaceAction,
+  WorkspaceState,
+} from '@datahub/types.ts'
 
 export function checkValidityModel(behaviorPolicy: Node<BehaviorPolicyData>): DryRunResults<BehaviorPolicyBehavior> {
   if (!behaviorPolicy.data.model) {
@@ -42,4 +52,31 @@ export function checkValidityBehaviorPolicy(
         : undefined,
     },
   }
+}
+
+export const loadBehaviorPolicy = (behaviorPolicy: BehaviorPolicy, store: WorkspaceState & WorkspaceAction) => {
+  const { onNodesChange } = store
+
+  const model = enumFromStringValue(BehaviorPolicyType, behaviorPolicy.behavior.id)
+  if (!model)
+    throw new Error(
+      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.BEHAVIOR_POLICY }) as string
+    )
+
+  const position: XYPosition = {
+    x: 0,
+    y: 0,
+  }
+
+  const behaviorPolicyNode: Node<BehaviorPolicyData> = {
+    id: behaviorPolicy.id,
+    type: DataHubNodeType.BEHAVIOR_POLICY,
+    position,
+    data: {
+      model: model,
+      arguments: behaviorPolicy.behavior.arguments,
+    },
+  }
+
+  onNodesChange([{ item: behaviorPolicyNode, type: 'add' } as NodeAddChange])
 }

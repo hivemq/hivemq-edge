@@ -43,7 +43,7 @@ describe('PaginatedTable', () => {
     cy.get('th').should('have.length', 2)
     cy.get('th').eq(0).should('contain.text', 'item')
     cy.get('th').eq(1).should('contain.text', 'value')
-    cy.get('tr').should('have.length', 10 + 1)
+    cy.get('tr').should('have.length', 10 + 2)
 
     cy.get('[aria-label="Go to the first page"]').should('be.visible')
   })
@@ -81,10 +81,11 @@ describe('PaginatedTable', () => {
 
     cy.get('th').eq(0).should('have.text', 'item')
     checkRowOrder()
-    cy.get('th').eq(0).click()
+    cy.get('th').eq(0).should('have.attr', 'aria-sort', 'none')
+    cy.get('th').eq(0).find('button').click()
     cy.get('th').eq(0).should('have.attr', 'aria-sort', 'ascending')
     checkRowOrder('asc')
-    cy.get('th').eq(0).click()
+    cy.get('th').eq(0).find('button').click()
     cy.get('th').eq(0).should('have.attr', 'aria-sort', 'descending')
     checkRowOrder('desc')
   })
@@ -113,7 +114,7 @@ describe('PaginatedTable', () => {
     cy.get('[role="alert"]').should('have.attr', 'data-status', 'info')
   })
 
-  it.only('should render the filters', () => {
+  it('should render the filters', () => {
     cy.mountWithProviders(
       <PaginatedTable<MOCK_TYPE>
         data={MOCK_DATA(4)}

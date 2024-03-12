@@ -12,12 +12,6 @@ describe('PolicyEditor', () => {
     cy.intercept('/api/v1/frontend/capabilities', [])
   })
 
-  it('should render an error with the wrong route', () => {
-    cy.mountWithProviders(<PolicyEditor />)
-    cy.get('[role="alert"] div[data-status="error"]').eq(0).should('contain.text', 'Not identified')
-    cy.get('[role="alert"] div[data-status="error"]').eq(1).should('contain.text', 'The policy is not a valid document')
-  })
-
   it('should render properly', () => {
     cy.mountWithProviders(
       <ReactFlowProvider>

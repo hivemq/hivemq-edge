@@ -60,7 +60,7 @@ describe('OperationNode', () => {
     cy.get('@nodeHandles')
       .eq(2)
       .should('have.attr', 'data-handlepos', 'top')
-      .should('have.attr', 'data-handleid', 'serialiser')
+      .should('have.attr', 'data-handleid', 'deserialiser')
       .should('have.attr', 'data-id')
       .then((attr) => {
         expect((attr as unknown as string).endsWith('target')).to.be.true

@@ -79,7 +79,7 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
           return (
             <Skeleton isLoaded={!isLoading}>
               <DataHubListAction
-                isEditDisabled={true}
+                isEditDisabled
                 onDelete={() => onDeleteItem?.(deleteSchema.mutateAsync, DataHubNodeType.SCHEMA, info.row.original.id)}
               />
             </Skeleton>
