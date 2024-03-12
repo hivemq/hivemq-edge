@@ -4,15 +4,13 @@ import { UseMutationResult } from '@tanstack/react-query'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-
-import { Button, Skeleton, Text } from '@chakra-ui/react'
-import { BiAddToQueue } from 'react-icons/bi'
+import { Skeleton, Text } from '@chakra-ui/react'
 
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
 import { BehaviorPolicy, BehaviorPolicyMatching, DataPolicy, DataPolicyMatching } from '@/api/__generated__'
-import { PolicyType } from '@datahub/types.ts'
+import { DesignerStatus, PolicyType } from '@datahub/types.ts'
 import { useGetAllBehaviorPolicies } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.tsx'
 import { useDeleteDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useDeleteDataPolicy.tsx'
 import { mockDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
@@ -21,6 +19,8 @@ import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesSer
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import { useDeleteBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useDeleteBehaviorPolicy.tsx'
 import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
+import DraftCTA from '@datahub/components/helpers/DraftCTA.tsx'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { type: PolicyType })
 
@@ -132,15 +132,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             </Skeleton>
           )
         },
-        footer: () => (
-          <Button
-            leftIcon={<BiAddToQueue />}
-            onClick={() => navigate(`/datahub/${PolicyType.CREATE_POLICY}`)}
-            variant="primary"
-          >
-            {t('Listings.policy.action.create')}
-          </Button>
-        ),
+        footer: () => <DraftCTA />,
       },
     ]
   }, [deleteBehaviourPolicy, deleteDataPolicy, isLoading, navigate, onDeleteItem, t])
