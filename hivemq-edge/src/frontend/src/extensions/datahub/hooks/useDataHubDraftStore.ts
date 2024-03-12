@@ -16,14 +16,16 @@ import {
   BehaviorPolicyData,
   DataHubNodeType,
   DataPolicyData,
+  DesignerStatus,
   FunctionSpecs,
   WorkspaceAction,
   WorkspaceState,
+  WorkspaceStatus,
 } from '../types.ts'
 import { initialStore } from '../utils/store.utils.ts'
 import { styleDefaultEdge } from '../utils/edge.utils.ts'
 
-const useDataHubDraftStore = create<WorkspaceState & WorkspaceAction>()(
+const useDataHubDraftStore = create<WorkspaceState & WorkspaceStatus & WorkspaceAction>()(
   persist(
     (set, get) => ({
       ...initialStore(),
@@ -90,6 +92,14 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceAction>()(
       onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => {
         if (node.type !== DataHubNodeType.BEHAVIOR_POLICY && node.type !== DataHubNodeType.DATA_POLICY) return undefined
         return undefined
+      },
+      setStatus: (
+        status: DesignerStatus,
+        option?: { name?: string; type?: DataHubNodeType.DATA_POLICY | DataHubNodeType.BEHAVIOR_POLICY }
+      ) => {
+        set({ status: status })
+        if (option?.name) set({ name: option.name })
+        if (option?.type) set({ type: option.type })
       },
     }),
     {
