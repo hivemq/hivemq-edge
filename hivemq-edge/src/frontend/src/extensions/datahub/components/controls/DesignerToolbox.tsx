@@ -26,6 +26,7 @@ import { MdSkipNext, MdSkipPrevious } from 'react-icons/md'
 import { ToolboxNodes } from '@datahub/components/controls/ToolboxNodes.tsx'
 import { ToolboxDryRun } from '@datahub/components/controls/ToolboxDryRun.tsx'
 import { ToolboxPublish } from '@datahub/components/controls/ToolboxPublish.tsx'
+import DraftStatus from '@datahub/components/helpers/DraftStatus.tsx'
 
 const stepKeys = ['build', 'check', 'publish']
 
@@ -139,6 +140,7 @@ const DesignerToolbox: FC = () => {
             </Stepper>
           </Stack>
         </motion.div>
+        <DraftStatus />
       </HStack>
     </Panel>
   )
