@@ -27,12 +27,6 @@
       "title": "Validation Strategy",
       "enum": ["ANY_OF", "ALL_OF"],
       "default": "ALL_OF"
-    },
-    "schemas": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/SchemaReference"
-      }
     }
   }
 }
