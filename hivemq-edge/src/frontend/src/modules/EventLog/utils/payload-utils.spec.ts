@@ -11,10 +11,10 @@ describe('prettyJSON', () => {
   })
 
   it('should prettify JSON', async () => {
-    const gg = mockEdgeEvent(2)[1].payload
-    expect(gg?.contentType).toStrictEqual(Payload.contentType.JSON)
-    expect(gg?.content?.length).toStrictEqual(381)
-    expect(prettyJSON(gg?.content as string)?.length).toStrictEqual(537)
+    const payload = mockEdgeEvent(2)[1].payload
+    expect(payload?.contentType).toStrictEqual(Payload.contentType.JSON)
+    expect(payload?.content?.length).toStrictEqual(381)
+    expect(prettyJSON(payload?.content as string)?.length).toStrictEqual(537)
   })
 })
 

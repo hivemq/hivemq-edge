@@ -16,7 +16,9 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
 
   const isTransform = metadata?.hasArguments && data.functionId === 'DataHub.transform'
   const isSerialiser =
-    metadata?.hasArguments && (data.functionId === 'Serdes.serialize' || data.functionId === 'Serdes.deserialize')
+    metadata?.hasArguments &&
+    (data.functionId === OperationData.Function.SERDES_SERIALIZE ||
+      data.functionId === OperationData.Function.SERDES_DESERIALIZE)
 
   return (
     <>
