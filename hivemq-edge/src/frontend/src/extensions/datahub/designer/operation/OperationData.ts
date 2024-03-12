@@ -13,7 +13,9 @@ export const MOCK_OPERATION_SCHEMA: PanelSpecs = {
     formData: {
       transform: {
         'ui:options': {
+          readonly: true,
           removable: false,
+          addable: false,
         },
       },
       message: {

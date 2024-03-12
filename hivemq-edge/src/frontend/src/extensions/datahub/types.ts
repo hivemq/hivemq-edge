@@ -216,6 +216,10 @@ export namespace OperationData {
     SERIALISER = 'serialiser',
     DESERIALISER = 'deserialiser',
   }
+
+  export interface DataHubTransformType {
+    transform: string[]
+  }
 }
 
 // TODO[18757] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18757/details/

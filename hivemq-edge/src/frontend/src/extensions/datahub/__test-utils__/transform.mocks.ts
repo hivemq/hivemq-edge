@@ -1,3 +1,5 @@
+import { OperationData } from '@datahub/types.ts'
+
 export const MOCK_TRANSFORM = {
   nodes: [
     {
@@ -30,7 +32,7 @@ export const MOCK_TRANSFORM = {
         y: 270,
       },
       data: {
-        functionId: 'Serdes.serialize',
+        functionId: OperationData.Function.SERDES_DESERIALIZE,
         metadata: {
           isTerminal: false,
           hasArguments: true,

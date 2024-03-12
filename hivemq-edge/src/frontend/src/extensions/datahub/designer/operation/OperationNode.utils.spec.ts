@@ -355,7 +355,7 @@ describe('checkValidityTransformFunction', () => {
             schemaId: 'node-schema',
             schemaVersion: 'latest',
           },
-          functionId: 'Serdes.serialize',
+          functionId: OperationData.Function.SERDES_SERIALIZE,
           id: 'node-id-serializer',
         })
       )
