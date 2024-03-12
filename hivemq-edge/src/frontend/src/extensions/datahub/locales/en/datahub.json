@@ -31,8 +31,7 @@
   "Listings": {
     "action": {
       "edit": "Edit",
-      "delete": "Delete",
-      "create": "Create a new policy"
+      "delete": "Delete"
     },
     "tabs": {
       "policy": {
@@ -48,6 +47,12 @@
         "description": "Your transformation code will be listed there."
       }
     },
+    "modal": {
+      "delete": {
+        "header": "Delete Item",
+        "message": "Are you sure? You can't undo this action afterwards."
+      }
+    },
     "policy": {
       "label": "List of policies",
       "header": {
@@ -57,17 +62,12 @@
         "actions": "Actions"
       },
       "action": {
-        "edit": "Edit",
-        "delete": "Delete",
-        "create": "Create a new policy"
+        "create": "Create a new policy",
+        "draft": "Continue on draft",
+        "clear": "Clear the draft"
       }
     },
-    "modal": {
-      "delete": {
-        "header": "Delete Item",
-        "message": "Are you sure? You can't undo this action afterwards."
-      }
-    },
+
     "schema": {
       "label": "List of schemas",
       "header": {
@@ -126,6 +126,11 @@
         "dataPolicy": "Data Policy",
         "behaviorPolicy": "Behavior Policy",
         "operation": "Operation"
+      },
+      "draft": {
+        "status_DRAFT": "Draft Policy",
+        "status_LOADED": "{{ type }} {{ name }} - Loaded",
+        "status_MODIFIED": "{{ type }} {{ name }} - Modified"
       }
     },
     "nodes": {
