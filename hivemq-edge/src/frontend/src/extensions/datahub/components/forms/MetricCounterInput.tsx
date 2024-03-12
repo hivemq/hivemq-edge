@@ -4,7 +4,7 @@ import { labelValue, WidgetProps } from '@rjsf/utils'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { FormControl, FormLabel, Input, InputGroup, InputLeftAddon } from '@chakra-ui/react'
 
-const PrefixInput = (prefix: string, props: WidgetProps) => {
+const PrefixInput = (prefix: string, placeholder: string, props: WidgetProps) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
@@ -34,7 +34,7 @@ const PrefixInput = (prefix: string, props: WidgetProps) => {
         <Input
           id={props.id}
           isRequired={props.required}
-          placeholder={t('workspace.function.metricName.placeholder') as string}
+          placeholder={t(placeholder) as string}
           value={props.value}
           onBlur={onBlur}
           onFocus={onFocus}
@@ -45,6 +45,8 @@ const PrefixInput = (prefix: string, props: WidgetProps) => {
   )
 }
 
-export const MetricCounterInput = (props: WidgetProps) => PrefixInput('com.hivemq.data-hub.custom.counters.', props)
+export const MetricCounterInput = (props: WidgetProps) =>
+  PrefixInput('com.hivemq.data-hub.custom.counters.', 'workspace.function.metricName.placeholder', props)
 
-export const JsFunctionInput = (props: WidgetProps) => PrefixInput('fn:', props)
+export const JsFunctionInput = (props: WidgetProps) =>
+  PrefixInput('fn:', 'workspace.function.transform.placeholder', props)
