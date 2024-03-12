@@ -47,7 +47,7 @@ const DesignerToolbox: FC = () => {
 
   return (
     <Panel position="top-left" style={{ margin: '4px' }}>
-      <HStack alignItems="flex-start">
+      <HStack alignItems="flex-start" userSelect="none">
         <Box>
           <IconButton
             data-testid="toolbox-trigger"
