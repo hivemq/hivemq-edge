@@ -19,6 +19,7 @@ import { OperationNode } from '@datahub/designer/operation/OperationNode.tsx'
 import { FunctionNode } from '@datahub/designer/script/FunctionNode.tsx'
 import { BehaviorPolicyNode } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.tsx'
 import { TransitionNode } from '@datahub/designer/transition/TransitionNode.tsx'
+import { DataPolicyPanel } from '@datahub/designer/data_policy/DataPolicyPanel.tsx'
 
 /**
  * Used in the side panel editor to render the content of the selected node
@@ -29,6 +30,7 @@ export const DefaultEditor: Record<string, FC<PanelProps>> = {
   [DataHubNodeType.VALIDATOR]: ValidatorPanel,
   [DataHubNodeType.SCHEMA]: SchemaPanel,
   [DataHubNodeType.BEHAVIOR_POLICY]: BehaviorPolicyPanel,
+  [DataHubNodeType.DATA_POLICY]: DataPolicyPanel,
   [DataHubNodeType.TRANSITION]: TransitionPanel,
   [DataHubNodeType.OPERATION]: OperationPanel,
   [DataHubNodeType.FUNCTION]: FunctionPanel,
