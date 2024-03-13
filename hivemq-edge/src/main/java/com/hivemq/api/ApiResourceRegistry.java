@@ -21,6 +21,7 @@ import com.hivemq.api.auth.provider.ITokenGenerator;
 import com.hivemq.api.auth.provider.ITokenVerifier;
 import com.hivemq.api.error.ApiExceptionMapper;
 import com.hivemq.api.error.CustomJsonMappingExceptionMapper;
+import com.hivemq.api.error.CustomJsonParseExceptionMapper;
 import com.hivemq.api.filter.JWTReissuanceFilterImpl;
 import com.hivemq.api.resources.AuthenticationApi;
 import com.hivemq.api.resources.BridgeApi;
@@ -46,6 +47,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
+import static com.hivemq.http.JaxrsHttpServer.MAX_BINDING_PRIORITY;
 
 /**
  * Define a Resource Config that passes managed objects into the JAX-RS context. NOTE: Using instances mean the objects
@@ -149,9 +152,10 @@ public class ApiResourceRegistry extends ResourceConfig {
 
     protected void registerMappers() {
         register(MarshallingFeature.class);
-        register(new CustomJsonMappingExceptionMapper(), 1);
-        register(new ApiExceptionMapper(), 1);
-        register(new DefaultExceptionMapper(), 1);
+        register(new CustomJsonMappingExceptionMapper(), MAX_BINDING_PRIORITY);
+        register(new CustomJsonParseExceptionMapper(), MAX_BINDING_PRIORITY);
+        register(new ApiExceptionMapper(), MAX_BINDING_PRIORITY);
+        register(new DefaultExceptionMapper(), MAX_BINDING_PRIORITY);
         if (Boolean.getBoolean("api.wire.logging.enabled")) {
             register(new LoggingFeature(new Logger(getClass().getName(), null) {
                 @Override

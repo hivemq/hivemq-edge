@@ -182,7 +182,7 @@ public class JaxrsHttpServer {
 //        resources.register(new JaxrsInjectorBridge(injector));
 
         //-- Provide a catch all Exception Mapper to handle fall back when custom mappers arent supplied
-        resources.register(new DefaultExceptionMapper());
+        resources.register(new DefaultExceptionMapper(), MAX_BINDING_PRIORITY);
 
         //-- Register any supplied mappers
         final List<ExceptionMapper> mappers = config.getExceptionMappers();
