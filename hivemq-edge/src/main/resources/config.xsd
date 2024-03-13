@@ -918,6 +918,12 @@
                                     </xs:all>
                                 </xs:complexType>
                             </xs:element>
+                            <xs:element name="persist" minOccurs="0">
+                                <xs:simpleType>
+                                    <xs:restriction base="xs:boolean">
+                                    </xs:restriction>
+                                </xs:simpleType>
+                            </xs:element>
                         </xs:all>
                     </xs:complexType>
                 </xs:element>
