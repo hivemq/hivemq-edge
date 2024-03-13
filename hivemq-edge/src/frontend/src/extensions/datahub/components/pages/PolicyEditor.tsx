@@ -47,7 +47,7 @@ const PolicyEditor: FC = () => {
         })
 
         const newNode: Node = {
-          id: getNodeId(),
+          id: getNodeId(type),
           type,
           position,
           data: getNodePayload(type),
