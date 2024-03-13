@@ -231,6 +231,7 @@ export enum BehaviorPolicyType {
 }
 
 export interface BehaviorPolicyData extends DataHubNodeData {
+  policyId: string
   model: BehaviorPolicyType
   arguments?: Record<string, string | number>
   core?: BehaviorPolicy
