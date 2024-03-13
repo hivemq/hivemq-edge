@@ -15,8 +15,6 @@
  */
 package com.hivemq.datagov.impl;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
@@ -51,19 +49,17 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
 
     private static final Logger log = LoggerFactory.getLogger(DataGovernanceServiceImpl.class);
 
-    private final @NotNull Counter governatedMessagesCounter;
     private final @NotNull InternalPublishService internalPublishService;
     private final @NotNull ListeningExecutorService executorService;
     private final @NotNull UnifiedNamespaceDataGovernancePolicy namespaceDataGovernancePolicy;
 
     @Inject
-    public DataGovernanceServiceImpl(final @NotNull MetricRegistry metricRegistry,
-                                     final @NotNull InternalPublishService internalPublishService,
-                                     final @NotNull ExecutorService executorService,
-                                     final @NotNull UnifiedNamespaceDataGovernancePolicy namespaceDataGovernancePolicy) {
+    public DataGovernanceServiceImpl(
+            final @NotNull InternalPublishService internalPublishService,
+            final @NotNull ExecutorService executorService,
+            final @NotNull UnifiedNamespaceDataGovernancePolicy namespaceDataGovernancePolicy) {
         this.internalPublishService = internalPublishService;
         this.executorService = MoreExecutors.listeningDecorator(executorService);
-        this.governatedMessagesCounter = metricRegistry.counter("com.hivemq.edge.messages.governance.count");
         this.namespaceDataGovernancePolicy = namespaceDataGovernancePolicy;
     }
 
@@ -132,7 +128,6 @@ public class DataGovernanceServiceImpl implements DataGovernanceService {
 
         @Override
         public DataGovernanceResult call() {
-            governatedMessagesCounter.inc();
             DataGovernanceResult result = context.getResult();
             for(DataGovernancePolicy policy : policies){
 //                log.trace("Data-Gov Executing '{}' with Id '{}'", policy.getName(), policy.getId());
