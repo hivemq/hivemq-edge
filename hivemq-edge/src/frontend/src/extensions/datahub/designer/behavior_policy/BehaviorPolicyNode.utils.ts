@@ -13,6 +13,7 @@ import {
   WorkspaceAction,
   WorkspaceState,
 } from '@datahub/types.ts'
+import { getNodeId } from '@datahub/utils/node.utils.ts'
 
 export function checkValidityModel(behaviorPolicy: Node<BehaviorPolicyData>): DryRunResults<BehaviorPolicyBehavior> {
   if (!behaviorPolicy.data.model) {
@@ -42,8 +43,7 @@ export function checkValidityBehaviorPolicy(
     node: node,
     data: {
       behavior: model.data as BehaviorPolicyBehavior,
-      // TODO[19466] Id should be user-facing; Need to fix before merging!
-      id: node.id,
+      id: node.data.policyId,
       matching: { clientIdRegex: client.data as string },
       onTransitions: transitions.length
         ? transitions.map((transition) => {
@@ -69,10 +69,11 @@ export const loadBehaviorPolicy = (behaviorPolicy: BehaviorPolicy, store: Worksp
   }
 
   const behaviorPolicyNode: Node<BehaviorPolicyData> = {
-    id: behaviorPolicy.id,
+    id: getNodeId(),
     type: DataHubNodeType.BEHAVIOR_POLICY,
     position,
     data: {
+      policyId: behaviorPolicy.id,
       model: model,
       arguments: behaviorPolicy.behavior.arguments,
     },
