@@ -1,4 +1,5 @@
 import { Connection, Node } from 'reactflow'
+import { v4 as uuidv4 } from 'uuid'
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
 
 import {
@@ -20,7 +21,7 @@ import {
 } from '../types.ts'
 import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
 
-export const getNodeId = () => `node_${self.crypto.randomUUID()}`
+export const getNodeId = (stub = 'node') => `${stub}_${uuidv4()}`
 
 export const getNodePayload = (type: string): DataHubNodeData => {
   if (type === DataHubNodeType.TOPIC_FILTER) {
