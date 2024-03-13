@@ -3,7 +3,7 @@ import { getIncomers, getOutgoers, Node, NodeAddChange, XYPosition } from 'react
 import { DataPolicy, DataPolicyValidator, PolicyOperation } from '@/api/__generated__'
 import { DataHubNodeType, DataPolicyData, DryRunResults, WorkspaceAction, WorkspaceState } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
-import { isTopicFilterNodeType } from '@datahub/utils/node.utils.ts'
+import { getNodeId, isTopicFilterNodeType } from '@datahub/utils/node.utils.ts'
 
 /* istanbul ignore next -- @preserve */
 export function getSubFlow(source: Node, acc: Node[], store: WorkspaceState, only = false) {
@@ -86,8 +86,7 @@ export const checkValidityDataPolicy = (
   return {
     node: dataPolicyNode,
     data: {
-      // TODO[19466] Id should be user-facing; Need to fix before merging!
-      id: dataPolicyNode.id,
+      id: dataPolicyNode.data.policyId,
       matching: { topicFilter: filter.data as string },
       validation: validators.length
         ? {
@@ -124,10 +123,10 @@ export const loadDataPolicy = (policy: DataPolicy, store: WorkspaceState & Works
   }
 
   const dataPolicyNode: Node<DataPolicyData> = {
-    id: policy.id,
+    id: getNodeId(),
     type: DataHubNodeType.DATA_POLICY,
     position,
-    data: {},
+    data: { policyId: policy.id },
   }
 
   onNodesChange([{ item: dataPolicyNode, type: 'add' } as NodeAddChange])
