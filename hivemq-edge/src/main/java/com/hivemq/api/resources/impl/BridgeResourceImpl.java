@@ -30,7 +30,11 @@ import com.hivemq.api.model.status.StatusTransitionResult;
 import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.bridge.BridgeService;
-import com.hivemq.bridge.config.*;
+import com.hivemq.bridge.config.BridgeTls;
+import com.hivemq.bridge.config.CustomUserProperty;
+import com.hivemq.bridge.config.LocalSubscription;
+import com.hivemq.bridge.config.MqttBridge;
+import com.hivemq.bridge.config.RemoteSubscription;
 import com.hivemq.configuration.reader.BridgeConfigurator;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
@@ -341,8 +345,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 .withSessionExpiry(bridge.getSessionExpiry())
                 .withLocalSubscriptions(bridge.getLocalSubscriptions() != null ?
                         bridge.getLocalSubscriptions()
-                                .stream()
-                                .map(f -> unconvertLocal(f))
+                                .stream().map(f -> unconvertLocal(f, bridge.isPersist()))
                                 .collect(Collectors.toList()) :
                         List.of())
                 .withRemoteSubscriptions(bridge.getRemoteSubscriptions() != null ?
@@ -356,8 +359,11 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         return builder.build();
     }
 
-    private static LocalSubscription unconvertLocal(final @NotNull Bridge.LocalBridgeSubscription subscription) {
 
+    private static LocalSubscription unconvertLocal(
+            final @NotNull Bridge.LocalBridgeSubscription subscription,
+            final boolean persist) {
+        int maxQoS = persist ? subscription.getMaxQoS() : 0;
         return new LocalSubscription(subscription.getFilters(),
                 subscription.getDestination(),
                 subscription.getExcludes() == null ? List.of() : subscription.getExcludes(),
@@ -367,8 +373,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                                 .map(f -> convertProperty(f))
                                 .collect(Collectors.toList()) :
                         List.of(),
-                subscription.isPreserveRetain(),
-                subscription.getMaxQoS(),
+                subscription.isPreserveRetain(), maxQoS,
                 subscription.getQueueLimit());
     }
 
