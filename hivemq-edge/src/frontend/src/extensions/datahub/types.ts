@@ -100,6 +100,7 @@ export interface ClientFilterData extends DataHubNodeData {
 }
 
 export interface DataPolicyData extends DataHubNodeData {
+  policyId: string
   core?: DataPolicy
 }
 
