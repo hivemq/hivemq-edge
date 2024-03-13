@@ -249,8 +249,13 @@
     }
   },
   "type": "object",
-  "required": ["model"],
+  "required": ["model", "policyId"],
   "properties": {
+    "policyId": {
+      "title": "Policy ID",
+      "type": "string",
+      "pattern": "^([a-zA-Z_0-9-_.]){1,1024}$"
+    },
     "model": {
       "title": "Behavior Model",
       "default": "Mqtt.events",
