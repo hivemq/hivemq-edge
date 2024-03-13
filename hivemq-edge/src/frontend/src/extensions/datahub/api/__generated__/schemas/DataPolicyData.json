@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "description": "Data policies describe how you want the HiveMQ broker to apply a selected schema to verify the payload data of incoming MQTT messages",
+  "required": ["policyId"],
+  "properties": {
+    "policyId": {
+      "title": "Policy ID",
+      "type": "string",
+      "pattern": "^([a-zA-Z_0-9-_.]){1,1024}$"
+    }
+  }
+}
