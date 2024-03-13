@@ -127,6 +127,8 @@ public class BridgeConfigurator {
                 builder.withClientId(bridgeConfig.getId());
             }
 
+            builder.persist(bridgeConfig.getPersist());
+
             bridgeConfigurationService.addBridge(builder.build());
         }
     }
@@ -282,6 +284,7 @@ public class BridgeConfigurator {
         loopPreventionEntity.setEnabled(from.isLoopPreventionEnabled());
         loopPreventionEntity.setHopCountLimit(from.getLoopPreventionHopCount());
         entity.setLoopPrevention(loopPreventionEntity);
+        entity.setPersist(from.isPersist());
 
         //-- ForwardedTopicEntity*
         if (from.getLocalSubscriptions() != null) {

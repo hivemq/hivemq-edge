@@ -50,6 +50,9 @@ public class MqttBridgeEntity {
     @XmlElementRef
     private @NotNull LoopPreventionEntity loopPrevention = new LoopPreventionEntity();
 
+    @XmlElement(name = "persist")
+    private boolean persist = true;
+
     public @NotNull RemoteBrokerEntity getRemoteBroker() {
         return remoteBroker;
     }
@@ -88,5 +91,13 @@ public class MqttBridgeEntity {
 
     public void setLoopPrevention(final LoopPreventionEntity loopPrevention) {
         this.loopPrevention = loopPrevention;
+    }
+
+    public boolean getPersist() {
+        return persist;
+    }
+
+    public void setPersist(final boolean persist) {
+        this.persist = persist;
     }
 }
