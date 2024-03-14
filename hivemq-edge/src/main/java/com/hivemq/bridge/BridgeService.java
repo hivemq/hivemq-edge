@@ -106,7 +106,7 @@ public class BridgeService {
     }
 
     private void stopAllBridges() {
-        activeBridges().stream().forEach(bridgeName -> stopBridge(bridgeName, false, List.of()));
+        activeBridges().forEach(bridgeName -> stopBridge(bridgeName, false, List.of()));
     }
 
 
@@ -178,7 +178,7 @@ public class BridgeService {
                     }
 
                     @Override
-                    public void onFailure(final Throwable t) {
+                    public void onFailure(final @NotNull Throwable t) {
                         log.error("Unable To Start Bridge '{}'.", bridge.getId(), t);
                         lastErrors.put(bridge.getId(), t);
                         HiveMQEdgeRemoteEvent errorEvent =
@@ -209,7 +209,7 @@ public class BridgeService {
         return Optional.empty();
     }
 
-    public @NotNull Throwable getLastError(@NotNull final String bridgeName) {
+    public @Nullable Throwable getLastError(@NotNull final String bridgeName) {
         return lastErrors.get(bridgeName);
     }
 
