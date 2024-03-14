@@ -16,10 +16,11 @@ interface ConfirmationDialogProps {
   onClose: () => void
   header: string
   message: string
+  action?: string | null
   onSubmit?: () => void
 }
 
-const ConfirmationDialog: FC<ConfirmationDialogProps> = ({ isOpen, onClose, header, message, onSubmit }) => {
+const ConfirmationDialog: FC<ConfirmationDialogProps> = ({ isOpen, onClose, header, message, action, onSubmit }) => {
   const { t } = useTranslation()
   const cancelRef = useRef<HTMLButtonElement>()
 
@@ -45,7 +46,7 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({ isOpen, onClose, head
               variant="danger"
               ml={3}
             >
-              {t('action.delete')}
+              {action || t('action.delete')}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
