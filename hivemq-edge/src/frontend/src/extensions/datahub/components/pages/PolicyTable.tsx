@@ -20,7 +20,7 @@ import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx
 import { useDeleteBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useDeleteBehaviorPolicy.tsx'
 import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import DraftCTA from '@datahub/components/helpers/DraftCTA.tsx'
-import { downloadTimeStamp } from '@datahub/utils/date.utils.ts'
+import { downloadJSON } from '@datahub/utils/download.utils.ts'
 
 type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { type: PolicyType })
 
@@ -78,12 +78,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
 
     const onHandleDownload = (info: CellContext<CombinedPolicy, unknown>) => () => {
       const { type, ...policy } = info.row.original
-      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(policy))}`
-      const link = document.createElement('a')
-      link.href = jsonString
-      link.download = `${info.row.original.id}-${downloadTimeStamp()}.json`
-
-      link.click()
+      downloadJSON<DataPolicy | BehaviorPolicy>(info.row.original.id, policy)
     }
 
     return [
