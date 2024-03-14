@@ -69,7 +69,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     @Override
-    public Response listBridges() {
+    public @NotNull Response listBridges() {
 
         logger.trace("Bridge API listing events at {}", System.currentTimeMillis());
         List<MqttBridge> bridges = configurationService.bridgeConfiguration().getBridges();
@@ -80,7 +80,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     @Override
-    public Response addBridge(final @NotNull Bridge bridge) {
+    public @NotNull Response addBridge(final @NotNull Bridge bridge) {
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         validateBridge(errorMessages, bridge);
@@ -95,13 +95,13 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 configurationService.bridgeConfiguration().addBridge(mqttBridge);
                 return Response.status(200).build();
             } finally {
-                executorService.submit(() -> bridgeService.updateBridges());
+                executorService.submit(bridgeService::updateBridges);
             }
         }
     }
 
     @Override
-    public Response getBridgeByName(final String bridgeId) {
+    public @NotNull Response getBridgeByName(final @NotNull String bridgeId) {
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
@@ -127,7 +127,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     @Override
-    public Response deleteBridge(final @NotNull String bridgeId) {
+    public @NotNull Response deleteBridge(final @NotNull String bridgeId) {
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", bridgeId, HiveMQEdgeConstants.ID_REGEX);
@@ -147,7 +147,8 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     @Override
-    public Response changeStatus(final String bridgeId, final StatusTransitionCommand command) {
+    public @NotNull Response changeStatus(
+            final @NotNull String bridgeId, final @NotNull StatusTransitionCommand command) {
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
@@ -178,7 +179,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     @Override
-    public Response updateBridge(final @NotNull String bridgeId, final @NotNull Bridge bridge) {
+    public @NotNull Response updateBridge(final @NotNull String bridgeId, final @NotNull Bridge bridge) {
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         validateBridge(errorMessages, bridge);
@@ -206,7 +207,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     @Override
-    public Response getStatus(final @NotNull String bridgeId) {
+    public @NotNull Response getStatus(final @NotNull String bridgeId) {
 
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", bridgeId, false);
@@ -222,7 +223,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     @Override
-    public Response status() {
+    public @NotNull Response status() {
         //-- Bridges
         ImmutableList.Builder<Status> builder = new ImmutableList.Builder<>();
         List<MqttBridge> bridges = configurationService.bridgeConfiguration().getBridges();
@@ -232,7 +233,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         return Response.status(200).entity(new StatusList(builder.build())).build();
     }
 
-    protected Status getStatusInternal(final @NotNull String bridgeId) {
+    protected @NotNull Status getStatusInternal(final @NotNull String bridgeId) {
 
         Preconditions.checkNotNull(bridgeId);
         boolean connected = bridgeService.isConnected(bridgeId);
@@ -247,7 +248,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         return status;
     }
 
-    protected String getLastErrorInternal(final @NotNull String bridgeId) {
+    protected @Nullable String getLastErrorInternal(final @NotNull String bridgeId) {
 
         Preconditions.checkNotNull(bridgeId);
         Throwable throwable = bridgeService.getLastError(bridgeId);
@@ -304,16 +305,16 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
         }
 
         bridge.getLocalSubscriptions()
-                .stream()
                 .forEach(s -> validateValidSubscribeTopicField(errorMessages, "local-filters", s.getFilters()));
 
         bridge.getRemoteSubscriptions()
-                .stream()
                 .forEach(s -> validateValidSubscribeTopicField(errorMessages, "remote-filters", s.getFilters()));
     }
 
     public static void validateValidSubscribeTopicField(
-            final ApiErrorMessages apiErrorMessages, final String fieldName, final List<String> topicFilters) {
+            final @NotNull ApiErrorMessages apiErrorMessages,
+            final @NotNull String fieldName,
+            final @NotNull List<String> topicFilters) {
         try {
             BridgeConfigurator.validateTopicFilters(fieldName, topicFilters);
         } catch (UnrecoverableException e) {
@@ -344,14 +345,12 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                         1)
                 .withSessionExpiry(bridge.getSessionExpiry())
                 .withLocalSubscriptions(bridge.getLocalSubscriptions() != null ?
-                        bridge.getLocalSubscriptions()
-                                .stream().map(f -> unconvertLocal(f, bridge.isPersist()))
+                        bridge.getLocalSubscriptions().stream().map(BridgeResourceImpl::unconvertLocal)
                                 .collect(Collectors.toList()) :
                         List.of())
                 .withRemoteSubscriptions(bridge.getRemoteSubscriptions() != null ?
                         bridge.getRemoteSubscriptions()
-                                .stream()
-                                .map(f -> unconvertRemote(f))
+                                .stream().map(BridgeResourceImpl::unconvertRemote)
                                 .collect(Collectors.toList()) :
                         List.of())
                 .withBridgeTls(convertTls(bridge.getTlsConfiguration()))
@@ -361,19 +360,15 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
 
 
     private static LocalSubscription unconvertLocal(
-            final @NotNull Bridge.LocalBridgeSubscription subscription,
-            final boolean persist) {
-        int maxQoS = persist ? subscription.getMaxQoS() : 0;
+            final @NotNull Bridge.LocalBridgeSubscription subscription) {
         return new LocalSubscription(subscription.getFilters(),
                 subscription.getDestination(),
                 subscription.getExcludes() == null ? List.of() : subscription.getExcludes(),
                 subscription.getCustomUserProperties() != null ?
                         subscription.getCustomUserProperties()
-                                .stream()
-                                .map(f -> convertProperty(f))
+                                .stream().map(BridgeResourceImpl::convertProperty)
                                 .collect(Collectors.toList()) :
-                        List.of(),
-                subscription.isPreserveRetain(), maxQoS,
+                        List.of(), subscription.isPreserveRetain(), subscription.getMaxQoS(),
                 subscription.getQueueLimit());
     }
 
@@ -383,8 +378,7 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 subscription.getDestination(),
                 subscription.getCustomUserProperties() != null ?
                         subscription.getCustomUserProperties()
-                                .stream()
-                                .map(f -> convertProperty(f))
+                                .stream().map(BridgeResourceImpl::convertProperty)
                                 .collect(Collectors.toList()) :
                         List.of(),
                 subscription.isPreserveRetain(),
@@ -392,29 +386,24 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
     }
 
     public static CustomUserProperty convertProperty(final @NotNull Bridge.BridgeCustomUserProperty customUserProperty) {
-        if (customUserProperty == null) {
-            return null;
-        }
-        CustomUserProperty property = CustomUserProperty.of(customUserProperty.getKey(), customUserProperty.getValue());
-        return property;
+        return CustomUserProperty.of(customUserProperty.getKey(), customUserProperty.getValue());
     }
 
-    public static BridgeTls convertTls(TlsConfiguration tls) {
+    public static @Nullable BridgeTls convertTls(final @Nullable TlsConfiguration tls) {
         if (tls == null || !tls.isEnabled()) {
             return null;
         }
 
-        BridgeTls tlsConfiguration = new BridgeTls(tls.getKeystorePath(),
+        tls.getCipherSuites();
+        tls.getProtocols();
+        return new BridgeTls(tls.getKeystorePath(),
                 tls.getKeystorePassword(),
                 tls.getPrivateKeyPassword(),
                 tls.getTruststorePath(),
-                tls.getTruststorePassword(),
-                tls.getProtocols() != null ? tls.getProtocols() : List.of(),
-                tls.getCipherSuites() != null ? tls.getCipherSuites() : List.of(),
+                tls.getTruststorePassword(), tls.getProtocols(), tls.getCipherSuites(),
                 tls.getKeystoreType(),
                 tls.getTruststoreType(),
                 tls.isVerifyHostname(),
                 Math.max(10, tls.getHandshakeTimeout()));
-        return tlsConfiguration;
     }
 }

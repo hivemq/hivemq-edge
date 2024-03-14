@@ -194,7 +194,7 @@ public class MqttBridge {
             return this;
         }
 
-        public @NotNull Builder withBridgeTls(final @NotNull BridgeTls bridgeTls) {
+        public @NotNull Builder withBridgeTls(final @Nullable BridgeTls bridgeTls) {
             this.bridgeTls = bridgeTls;
             return this;
         }

@@ -310,7 +310,7 @@ public class Bridge {
         }
 
 
-        public @NotNull List<BridgeCustomUserProperty> getCustomUserProperties() {
+        public @Nullable List<BridgeCustomUserProperty> getCustomUserProperties() {
             return customUserProperties;
         }
 
