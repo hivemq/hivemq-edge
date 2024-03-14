@@ -19,6 +19,8 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.service.BridgeConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,23 +28,31 @@ import java.util.List;
 
 public class BridgeConfigurationServiceImpl implements BridgeConfigurationService {
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(BridgeConfigurationServiceImpl.class);
+
     private final @NotNull List<MqttBridge> mqttBridges = Collections.synchronizedList(new ArrayList<>());
 
     @Override
     public void addBridge(final @NotNull MqttBridge mqttBridge) {
+        if (!mqttBridge.isPersist()) {
+            log.info(
+                    "MQTT Bridge '{}' has persist flag set to false, QoS for publishes from local subscriptions will be downgraded to AT_MOST_ONCE.",
+                    mqttBridge.getId());
+        }
+
         mqttBridges.add(mqttBridge);
     }
 
     @Override
     public @NotNull List<MqttBridge> getBridges() {
-        synchronized (mqttBridges){
+        synchronized (mqttBridges) {
             return new ImmutableList.Builder().addAll(mqttBridges).build();
         }
     }
 
     @Override
     public boolean removeBridge(@NotNull final String id) {
-        synchronized (mqttBridges){
+        synchronized (mqttBridges) {
             return mqttBridges.removeIf(mqttBridge -> mqttBridge.getId().equals(id));
         }
     }
