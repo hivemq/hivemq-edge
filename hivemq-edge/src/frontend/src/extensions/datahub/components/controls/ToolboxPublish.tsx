@@ -8,12 +8,13 @@ import { MdPublishedWithChanges } from 'react-icons/md'
 import { BehaviorPolicy, DataPolicy, Schema, Script } from '@/api/__generated__'
 
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
-import { DataHubNodeType, DryRunResults } from '@datahub/types.ts'
+import { DataHubNodeType, DesignerStatus, DryRunResults } from '@datahub/types.ts'
 import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCreateSchema.tsx'
 import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
 import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.tsx'
 import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useCreateBehaviorPolicy.tsx'
 import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 interface Mutate<T> {
   type: DataHubNodeType
@@ -40,12 +41,15 @@ const resourceReducer =
 export const ToolboxPublish: FC = () => {
   const { t } = useTranslation('datahub')
   const { report } = usePolicyChecksStore()
+  const { status: statusDraft } = useDataHubDraftStore()
   const createSchema = useCreateSchema()
   const createScript = useCreateScript()
   const createDataPolicy = useCreateDataPolicy()
   const createBehaviorPolicy = useCreateBehaviorPolicy()
   const toast = useToast()
 
+  const isEditEnabled =
+    import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true' || statusDraft === DesignerStatus.DRAFT
   const isValid = !!report && report.length >= 1 && report?.every((e) => !e.error)
 
   const handleMutation = async (promise: Promise<ValidMutate>, type: DataHubNodeType) => {
@@ -145,7 +149,7 @@ export const ToolboxPublish: FC = () => {
           <Button
             leftIcon={<Icon as={MdPublishedWithChanges} boxSize="24px" />}
             onClick={handlePublish}
-            isDisabled={!isValid}
+            isDisabled={!isValid || !isEditEnabled}
             isLoading={createSchema.isLoading}
           >
             {t('workspace.toolbar.policy.publish')}

@@ -12,7 +12,7 @@ import {
   AlertStatus,
   CloseButton,
 } from '@chakra-ui/react'
-import { DataHubNodeData, PolicyDryRunStatus } from '@datahub/types.ts'
+import { DataHubNodeData, DesignerStatus, PolicyDryRunStatus } from '@datahub/types.ts'
 import { useTranslation } from 'react-i18next'
 import { getDryRunStatusIcon, isBehaviorPolicyNodeType, isDataPolicyNodeType } from '@datahub/utils/node.utils.ts'
 import { useOnSelectionChange, useReactFlow } from 'reactflow'
@@ -25,10 +25,12 @@ export const ToolboxDryRun: FC = () => {
   const { t } = useTranslation('datahub')
   const { checkPolicyAsync } = usePolicyDryRun()
   const { fitView } = useReactFlow()
-  const { nodes, onUpdateNodes } = useDataHubDraftStore()
+  const { nodes, onUpdateNodes, status: statusDraft } = useDataHubDraftStore()
   const { status, node, report, setNode, initReport, setReport, getErrors, reset } = usePolicyChecksStore()
 
   const CheckIcon = useMemo(() => getDryRunStatusIcon(status), [status])
+  const isEditEnabled =
+    import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true' || statusDraft === DesignerStatus.DRAFT
 
   useOnSelectionChange({
     onChange: ({ nodes }) => {
@@ -69,7 +71,9 @@ export const ToolboxDryRun: FC = () => {
             isLoading={status === PolicyDryRunStatus.RUNNING}
             loadingText={t('workspace.dryRun.toolbar.checking')}
             onClick={handleCheckPolicy}
-            isDisabled={!node || status === PolicyDryRunStatus.SUCCESS || status === PolicyDryRunStatus.FAILURE}
+            isDisabled={
+              !node || status === PolicyDryRunStatus.SUCCESS || status === PolicyDryRunStatus.FAILURE || !isEditEnabled
+            }
           >
             {t('workspace.toolbar.policy.check')}
           </Button>
