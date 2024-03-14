@@ -20,6 +20,7 @@ import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx
 import { useDeleteBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useDeleteBehaviorPolicy.tsx'
 import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import DraftCTA from '@datahub/components/helpers/DraftCTA.tsx'
+import { downloadTimeStamp } from '@datahub/utils/date.utils.ts'
 
 type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { type: PolicyType })
 
@@ -75,6 +76,16 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
       navigate(`/datahub/${info.row.original.type}/${info.row.original.id}`)
     }
 
+    const onHandleDownload = (info: CellContext<CombinedPolicy, unknown>) => () => {
+      const { type, ...policy } = info.row.original
+      const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(policy))}`
+      const link = document.createElement('a')
+      link.href = jsonString
+      link.download = `${info.row.original.id}-${downloadTimeStamp()}.json`
+
+      link.click()
+    }
+
     return [
       {
         accessorKey: 'id',
@@ -127,7 +138,11 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
         cell: (info) => {
           return (
             <Skeleton isLoaded={!isLoading}>
-              <DataHubListAction onDelete={onHandleDelete(info)} onEdit={onHandleEdit(info)} />
+              <DataHubListAction
+                onDelete={onHandleDelete(info)}
+                onEdit={onHandleEdit(info)}
+                onDownload={onHandleDownload(info)}
+              />
             </Skeleton>
           )
         },
