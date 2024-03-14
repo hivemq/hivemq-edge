@@ -22,6 +22,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Generic model to transport TLS configuration across the API
@@ -56,11 +57,11 @@ public class TlsConfiguration {
 
     @JsonProperty("protocols")
     @Schema(description = "The protocols from the config")
-    private final @NotNull List<String> protocols;
+    private final @Nullable List<String> protocols;
 
     @JsonProperty("cipherSuites")
     @Schema(description = "The cipherSuites from the config")
-    private final @NotNull List<String> cipherSuites;
+    private final @Nullable List<String> cipherSuites;
 
     @JsonProperty("keystoreType")
     @Schema(description = "The keystoreType from the config")
@@ -131,11 +132,11 @@ public class TlsConfiguration {
     }
 
     public @NotNull List<String> getProtocols() {
-        return protocols;
+        return Objects.requireNonNullElse(protocols, List.of());
     }
 
     public @NotNull List<String> getCipherSuites() {
-        return cipherSuites;
+        return Objects.requireNonNullElse(cipherSuites, List.of());
     }
 
     public @Nullable String getKeystoreType() {
