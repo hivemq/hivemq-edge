@@ -1,7 +1,7 @@
 import { Edge, Node } from 'reactflow'
 import { RJSFSchema } from '@rjsf/utils'
 
-import { FunctionSpecs, WorkspaceState } from '@datahub/types.ts'
+import { DesignerStatus, FunctionSpecs, WorkspaceState, WorkspaceStatus } from '@datahub/types.ts'
 import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData.ts'
 
 export const getFunctions = (schema: RJSFSchema) => {
@@ -30,11 +30,11 @@ export const getFunctions = (schema: RJSFSchema) => {
   })
 }
 
-export const initialStore = (): WorkspaceState => {
+export const initialStore = (): WorkspaceState & WorkspaceStatus => {
   const nodes: Node[] = []
   const edges: Edge[] = []
 
   const functions = getFunctions(MOCK_OPERATION_SCHEMA.schema)
 
-  return { nodes, edges, functions: functions }
+  return { nodes, edges, functions: functions, name: '', status: DesignerStatus.DRAFT, type: undefined }
 }

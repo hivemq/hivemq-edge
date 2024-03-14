@@ -5,7 +5,7 @@ import { Spinner, useToast } from '@chakra-ui/react'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
-import { PolicyType } from '@datahub/types.ts'
+import { DesignerStatus, PolicyType } from '@datahub/types.ts'
 import PolicyEditor from '@datahub/components/pages/PolicyEditor.tsx'
 import { useGetDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetDataPolicy.tsx'
 import { useGetBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetBehaviorPolicy.tsx'
@@ -50,6 +50,7 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
       loadTopicFilter(dataPolicy, store)
       loadValidators(dataPolicy, schemas.items || [], store)
       loadDataPolicyPipelines(dataPolicy, schemas.items || [], scripts.items || [], store)
+      store.setStatus(DesignerStatus.LOADED, { name: dataPolicy.id })
     } catch (error) {
       let message
       if (error instanceof Error) message = error.message
@@ -98,6 +99,7 @@ export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
       loadBehaviorPolicy(behaviorPolicy, store)
       loadClientFilter(behaviorPolicy, store)
       loadTransitions(behaviorPolicy, schemas.items || [], scripts.items || [], store)
+      store.setStatus(DesignerStatus.LOADED, { name: behaviorPolicy.id })
     } catch (error) {
       let message
       if (error instanceof Error) message = error.message
