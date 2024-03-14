@@ -22,10 +22,22 @@ export interface PanelProps {
   onFormSubmit?: (data: IChangeEvent) => void
 }
 
+export enum DesignerStatus {
+  DRAFT = 'DRAFT',
+  LOADED = 'LOADED',
+  MODIFIED = 'MODIFIED',
+}
+
 export interface WorkspaceState {
   nodes: Node[]
   edges: Edge[]
   functions: FunctionSpecs[]
+}
+
+export interface WorkspaceStatus {
+  status: DesignerStatus
+  name: string
+  type: DataHubNodeType.DATA_POLICY | DataHubNodeType.BEHAVIOR_POLICY | undefined
 }
 
 export interface WorkspaceAction {
@@ -41,6 +53,11 @@ export interface WorkspaceAction {
   onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => string | undefined
 
   isDirty: () => boolean
+
+  setStatus: (
+    status: DesignerStatus,
+    option?: { name?: string; type?: DataHubNodeType.DATA_POLICY | DataHubNodeType.BEHAVIOR_POLICY }
+  ) => void
 }
 
 export interface PolicyCheckState {

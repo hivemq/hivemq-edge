@@ -1,16 +1,19 @@
 import { describe, expect } from 'vitest'
 import { getFunctions, initialStore } from './store.utils.ts'
-import { WorkspaceState } from '@/extensions/datahub/types.ts'
+import { DesignerStatus, WorkspaceState, WorkspaceStatus } from '@/extensions/datahub/types.ts'
 import { RJSFSchema } from '@rjsf/utils'
 import { GenericObjectType } from '@rjsf/utils/src/types.ts'
 
 describe('initialStore', () => {
   it('should return the initial state of the store', async () => {
     const store = initialStore()
-    expect(store).toStrictEqual<WorkspaceState>({
+    expect(store).toStrictEqual<WorkspaceState & WorkspaceStatus>({
       nodes: [],
       edges: [],
       functions: expect.arrayContaining([]),
+      name: '',
+      status: DesignerStatus.DRAFT,
+      type: undefined,
     })
     expect(store.functions).toHaveLength(9)
   })

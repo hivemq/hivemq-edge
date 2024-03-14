@@ -4,9 +4,7 @@ import { UseMutationResult } from '@tanstack/react-query'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-
-import { Button, Skeleton, Text } from '@chakra-ui/react'
-import { BiAddToQueue } from 'react-icons/bi'
+import { Skeleton, Text } from '@chakra-ui/react'
 
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
@@ -21,6 +19,7 @@ import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesSer
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import { useDeleteBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useDeleteBehaviorPolicy.tsx'
 import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
+import DraftCTA from '@datahub/components/helpers/DraftCTA.tsx'
 
 type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { type: PolicyType })
 
@@ -132,15 +131,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             </Skeleton>
           )
         },
-        footer: () => (
-          <Button
-            leftIcon={<BiAddToQueue />}
-            onClick={() => navigate(`/datahub/${PolicyType.CREATE_POLICY}`)}
-            variant="primary"
-          >
-            {t('Listings.policy.action.create')}
-          </Button>
-        ),
+        footer: () => <DraftCTA />,
       },
     ]
   }, [deleteBehaviourPolicy, deleteDataPolicy, isLoading, navigate, onDeleteItem, t])
