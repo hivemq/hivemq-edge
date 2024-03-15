@@ -21,6 +21,7 @@ import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.impl.AbstractPollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -178,16 +179,21 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
             String bodyData = response.body() == null ? null : response.body();
             //-- if the content type is json, then apply the JSON to the output data,
             //-- else encode using base64 (as we dont know what the content is).
-            if(bodyData != null){
+             if(bodyData != null){
                 responseContentType = response.headers().firstValue(HttpConstants.CONTENT_TYPE_HEADER).orElse(null);
+                responseContentType = config.isAssertResponseIsJson() ? HttpConstants.JSON_MIME_TYPE : responseContentType;
                 if(HttpConstants.JSON_MIME_TYPE.equals(responseContentType)) {
                     try {
                         payloadData = objectMapper.readTree(bodyData);
                     } catch (Exception e){
-                        log.warn("Error encountered marshalling HTTP response data to json", e);
                         if(log.isDebugEnabled()){
-                            log.debug("Invalid json data was [{}]", bodyData);
+                            log.debug("Invalid JSON data was [{}]", bodyData);
                         }
+                        eventService.fireEvent(
+                                eventBuilder(Event.SEVERITY.WARN).
+                                        withMessage(String.format("Http response on adapter '%s' could not be parsed as JSON data.",
+                                        adapterConfig.getId())).build());
+                        throw new RuntimeException("unable to parse JSON data from HTTP response");
                     }
                 } else {
                     if(responseContentType == null){
@@ -203,7 +209,13 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
                 adapterConfig.getUrl(),
                 response.statusCode(),
                 responseContentType);
-        data.addDataPoint(RESPONSE_DATA, payloadData);
+        if(payloadData != null){
+            data.addDataPoint(RESPONSE_DATA, payloadData);
+        } else {
+            //When the body is empty, just include the metadata
+            data.addDataPoint(RESPONSE_DATA,
+                    new HttpData(null, adapterConfig.getUrl(), response.statusCode(), responseContentType));
+        }
         return data;
     }
 

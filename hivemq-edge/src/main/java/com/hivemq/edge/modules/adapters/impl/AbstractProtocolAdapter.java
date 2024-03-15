@@ -79,7 +79,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected @NotNull T adapterConfig;
     protected @Nullable Long lastStartAttemptTime;
     protected @Nullable String errorMessage;
-    protected @Nullable volatile Object lock = new Object();
+    protected @Nullable final Object lock = new Object();
     protected @NotNull AtomicReference<RuntimeStatus> runtimeStatus =
             new AtomicReference<>(RuntimeStatus.STOPPED);
     protected @NotNull AtomicReference<ConnectionStatus> connectionStatus =

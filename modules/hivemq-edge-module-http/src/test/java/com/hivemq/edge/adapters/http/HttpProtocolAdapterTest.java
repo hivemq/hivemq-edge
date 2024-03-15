@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.math.BigDecimal;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -65,4 +66,21 @@ class HttpProtocolAdapterTest {
         assertThatJson(payloadAsString).node("timestamp").isIntegralNumber();
         assertThatJson(payloadAsString).node("value").isString().isEqualTo("hello world");
     }
+
+    @Test
+    void test_captureDataSample_errorPayloadFormat()
+            throws ExecutionException, InterruptedException {
+        final AbstractProtocolAdapterConfig.Subscription subscription =
+                new AbstractProtocolAdapterConfig.Subscription("topic", 2);
+        final HttpData httpData = new HttpData(subscription, "http://localhost:8080", 200, "text/plain");
+        final HttpData payload = new HttpData(null, "http://localhost:8080", 404, "text/plain");
+        httpData.addDataPoint(RESPONSE_DATA, payload);
+
+        httpProtocolAdapter.captureDataSample(httpData).get();
+
+        final String payloadAsString = new String(publishArgumentCaptor.getValue().getPayload());
+        assertThatJson(payloadAsString).node("timestamp").isIntegralNumber();
+        assertThatJson(payloadAsString).node("value").isObject().node("httpStatusCode").isNumber().isEqualTo(BigDecimal.valueOf(404));
+    }
+
 }
