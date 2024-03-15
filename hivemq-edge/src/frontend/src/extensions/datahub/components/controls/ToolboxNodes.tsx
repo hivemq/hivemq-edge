@@ -26,7 +26,9 @@ export const ToolboxNodes = () => {
           <Text id="group-pipeline">{t('workspace.toolbox.group.pipeline')}</Text>
           <HStack>
             <Tool nodeType={DataHubNodeType.TOPIC_FILTER} isDisabled={isDraftEmpty || !isEditEnabled} />
-            <Tool nodeType={DataHubNodeType.CLIENT_FILTER} isDisabled={isDraftEmpty || !isEditEnabled} />
+            {isBehaviorPolicyEnabled && (
+              <Tool nodeType={DataHubNodeType.CLIENT_FILTER} isDisabled={isDraftEmpty || !isEditEnabled} />
+            )}
           </HStack>
         </VStack>
       </ButtonGroup>

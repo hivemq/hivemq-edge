@@ -7,6 +7,7 @@ import { Button, ButtonGroup, FormControl, FormLabel, Textarea, VStack } from '@
 export const MessageInterpolationTextArea = (props: WidgetProps) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
+  const isInterpolationEnabled = import.meta.env.VITE_FLAG_DATAHUB_INTERPOLATION_ENABLED === 'true'
 
   const [currentSelection, setCurrentSelection] = useState<[number, number] | undefined>(undefined)
 
@@ -53,17 +54,19 @@ export const MessageInterpolationTextArea = (props: WidgetProps) => {
         props.hideLabel || !props.label
       )}
       <VStack alignItems="flex-start">
-        <ButtonGroup size="xs" variant="outline" fontFamily="monospace" flexWrap="wrap">
-          <Interpolation text="clientId" icon="#️⃣" />
-          <Interpolation text="policyId" icon="*️⃣" />
-          <ButtonGroup isAttached size="xs">
-            <Interpolation text="fromState" icon="📗" />
-            <Interpolation text="toState" icon="📕" />
+        {isInterpolationEnabled && (
+          <ButtonGroup size="xs" variant="outline" fontFamily="monospace" flexWrap="wrap">
+            <Interpolation text="clientId" icon="#️⃣" />
+            <Interpolation text="policyId" icon="*️⃣" />
+            <ButtonGroup isAttached size="xs">
+              <Interpolation text="fromState" icon="📗" />
+              <Interpolation text="toState" icon="📕" />
+            </ButtonGroup>
+            <Interpolation text="validationResult" icon="🧾" />
+            <Interpolation text="triggerEvent" icon="☑️" />
+            <Interpolation text="timestamp" icon="⏲️" />
           </ButtonGroup>
-          <Interpolation text="validationResult" icon="🧾" />
-          <Interpolation text="triggerEvent" icon="☑️" />
-          <Interpolation text="timestamp" icon="⏲️" />
-        </ButtonGroup>
+        )}
         <Textarea
           id={props.id}
           isRequired={props.required}
