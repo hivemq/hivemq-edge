@@ -187,7 +187,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
                         payloadData = objectMapper.readTree(bodyData);
                     } catch (Exception e){
                         if(log.isDebugEnabled()){
-                            log.debug("Invalid json data was [{}]", bodyData);
+                            log.debug("Invalid JSON data was [{}]", bodyData);
                         }
                         eventService.fireEvent(
                                 eventBuilder(Event.SEVERITY.WARN).
