@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.http.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -22,6 +23,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 /**
  * @author HiveMQ Adapter Generator
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class HttpData extends ProtocolAdapterDataSample {
 
     private final String requestUrl;
@@ -38,6 +40,7 @@ public class HttpData extends ProtocolAdapterDataSample {
         this.httpStatusCode = httpStatusCode;
     }
 
+
     public String getRequestUrl() {
         return requestUrl;
     }
@@ -49,4 +52,6 @@ public class HttpData extends ProtocolAdapterDataSample {
     public int getHttpStatusCode() {
         return httpStatusCode;
     }
+
+
 }

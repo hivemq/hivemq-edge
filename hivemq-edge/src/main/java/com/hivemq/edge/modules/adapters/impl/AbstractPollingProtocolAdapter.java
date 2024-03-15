@@ -33,7 +33,6 @@ import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
-import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

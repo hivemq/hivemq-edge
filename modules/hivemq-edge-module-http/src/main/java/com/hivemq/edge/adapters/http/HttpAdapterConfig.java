@@ -34,6 +34,7 @@ import java.util.List;
         "httpConnectTimeout",
         "httpRequestBodyContentType",
         "httpRequestBody",
+        "assertResponseIsJson",
         "httpPublishSuccessStatusCodeOnly",
         "httpHeaders"})
 public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
@@ -64,7 +65,6 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
     @JsonProperty("url")
     @ModuleConfigField(title = "URL", description = "The url of the http request you would like to make",
-//                       stringPattern = HttpConstants.HTTP_URL_REGEX,
                        format = ModuleConfigField.FieldType.URI, required = true)
     private @NotNull String url;
 
@@ -123,6 +123,13 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private boolean allowUntrustedCertificates = false;
 
+    @JsonProperty("assertResponseIsJson")
+    @ModuleConfigField(title = "Assert JSON Response?",
+                       description = "Always attempt to parse the body of the response as JSON data, regardless of the Content-Type on the response.",
+                       defaultValue = "false",
+                       format = ModuleConfigField.FieldType.BOOLEAN)
+    private boolean assertResponseIsJson = false;
+
     public HttpAdapterConfig() {
     }
 
@@ -132,6 +139,10 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
     public boolean isHttpPublishSuccessStatusCodeOnly() {
         return httpPublishSuccessStatusCodeOnly;
+    }
+
+    public boolean isAssertResponseIsJson() {
+        return assertResponseIsJson;
     }
 
     public @NotNull HttpMethod getHttpRequestMethod() {

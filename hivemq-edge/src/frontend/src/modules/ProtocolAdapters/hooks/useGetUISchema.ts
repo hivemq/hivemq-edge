@@ -49,6 +49,8 @@ const useGetUiSchema = (isNewAdapter = true) => {
         'httpRequestBody',
         'httpHeaders',
         'httpConnectTimeout',
+        'httpRequestBodyContentType',
+        'assertResponseIsJson',
         'httpPublishSuccessStatusCodeOnly',
         'allowUntrustedCertificates',
       ],
