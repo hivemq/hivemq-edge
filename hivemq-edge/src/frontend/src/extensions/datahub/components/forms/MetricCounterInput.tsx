@@ -46,7 +46,7 @@ const PrefixInput = (prefix: string, placeholder: string, props: WidgetProps) =>
 }
 
 export const MetricCounterInput = (props: WidgetProps) =>
-  PrefixInput('com.hivemq.data-hub.custom.counters.', 'workspace.function.metricName.placeholder', props)
+  PrefixInput('com.hivemq.com.data-hub.custom.counters.', 'workspace.function.metricName.placeholder', props)
 
 export const JsFunctionInput = (props: WidgetProps) =>
   PrefixInput('fn:', 'workspace.function.transform.placeholder', props)
