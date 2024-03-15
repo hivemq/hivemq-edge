@@ -1,15 +1,17 @@
 import { useTranslation } from 'react-i18next'
 import { HStack, Text, VStack, ButtonGroup } from '@chakra-ui/react'
-import { DataHubNodeType } from '@datahub/types.ts'
+import { DataHubNodeType, DesignerStatus } from '@datahub/types.ts'
 import Tool from '@datahub/components/controls/Tool.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 export const ToolboxNodes = () => {
   const { t } = useTranslation('datahub')
-  const { nodes } = useDataHubDraftStore()
+  const { nodes, status } = useDataHubDraftStore()
 
-  const isDraftEmpty = nodes.length === 0
   const isBehaviorPolicyEnabled = import.meta.env.VITE_FLAG_DATAHUB_BEHAVIOR_ENABLED === 'true'
+  const isEditEnabled =
+    import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true' || status === DesignerStatus.DRAFT
+  const isDraftEmpty = nodes.length === 0
 
   return (
     <HStack
@@ -23,8 +25,8 @@ export const ToolboxNodes = () => {
         <VStack alignItems="flex-start">
           <Text id="group-pipeline">{t('workspace.toolbox.group.pipeline')}</Text>
           <HStack>
-            <Tool nodeType={DataHubNodeType.TOPIC_FILTER} isDisabled={isDraftEmpty} />
-            <Tool nodeType={DataHubNodeType.CLIENT_FILTER} isDisabled={isDraftEmpty} />
+            <Tool nodeType={DataHubNodeType.TOPIC_FILTER} isDisabled={isDraftEmpty || !isEditEnabled} />
+            <Tool nodeType={DataHubNodeType.CLIENT_FILTER} isDisabled={isDraftEmpty || !isEditEnabled} />
           </HStack>
         </VStack>
       </ButtonGroup>
@@ -32,9 +34,9 @@ export const ToolboxNodes = () => {
         <VStack alignItems="flex-start">
           <Text id="group-dataPolicy">{t('workspace.toolbox.group.dataPolicy')}</Text>
           <HStack>
-            <Tool nodeType={DataHubNodeType.DATA_POLICY} />
-            <Tool nodeType={DataHubNodeType.VALIDATOR} isDisabled={isDraftEmpty} />
-            <Tool nodeType={DataHubNodeType.SCHEMA} isDisabled={isDraftEmpty} />
+            <Tool nodeType={DataHubNodeType.DATA_POLICY} isDisabled={!isEditEnabled} />
+            <Tool nodeType={DataHubNodeType.VALIDATOR} isDisabled={isDraftEmpty || !isEditEnabled} />
+            <Tool nodeType={DataHubNodeType.SCHEMA} isDisabled={isDraftEmpty || !isEditEnabled} />
           </HStack>
         </VStack>
       </ButtonGroup>
@@ -43,8 +45,8 @@ export const ToolboxNodes = () => {
           <VStack alignItems="flex-start">
             <Text id="group-behaviorPolicy">{t('workspace.toolbox.group.behaviorPolicy')}</Text>
             <HStack>
-              <Tool nodeType={DataHubNodeType.BEHAVIOR_POLICY} />
-              <Tool nodeType={DataHubNodeType.TRANSITION} isDisabled={isDraftEmpty} />
+              <Tool nodeType={DataHubNodeType.BEHAVIOR_POLICY} isDisabled={!isEditEnabled} />
+              <Tool nodeType={DataHubNodeType.TRANSITION} isDisabled={isDraftEmpty || !isEditEnabled} />
             </HStack>
           </VStack>
         </ButtonGroup>
@@ -53,8 +55,8 @@ export const ToolboxNodes = () => {
         <VStack alignItems="flex-start" pr={2}>
           <Text id="group-operation">{t('workspace.toolbox.group.operation')}</Text>
           <HStack>
-            <Tool nodeType={DataHubNodeType.OPERATION} isDisabled={isDraftEmpty} />
-            <Tool nodeType={DataHubNodeType.FUNCTION} isDisabled={isDraftEmpty} />
+            <Tool nodeType={DataHubNodeType.OPERATION} isDisabled={isDraftEmpty || !isEditEnabled} />
+            <Tool nodeType={DataHubNodeType.FUNCTION} isDisabled={isDraftEmpty || !isEditEnabled} />
           </HStack>
         </VStack>
       </ButtonGroup>

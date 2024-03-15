@@ -1,5 +1,5 @@
 import { FC, useMemo } from 'react'
-import { ColumnDef } from '@tanstack/react-table'
+import { CellContext, ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 
@@ -15,6 +15,7 @@ import { useDeleteSchema } from '@datahub/api/hooks/DataHubSchemasService/useDel
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import { DataHubNodeType } from '@datahub/types.ts'
+import { downloadJSON } from '@datahub/utils/download.utils.ts'
 
 const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
@@ -28,6 +29,10 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   }, [isLoading, data?.items])
 
   const columns = useMemo<ColumnDef<Schema>[]>(() => {
+    const onHandleDownload = (info: CellContext<Schema, unknown>) => () => {
+      downloadJSON<Schema>(info.row.original.id, info.row.original)
+    }
+
     return [
       {
         accessorKey: 'id',
@@ -79,8 +84,9 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
           return (
             <Skeleton isLoaded={!isLoading}>
               <DataHubListAction
-                isEditDisabled
+                isAccessDisabled
                 onDelete={() => onDeleteItem?.(deleteSchema.mutateAsync, DataHubNodeType.SCHEMA, info.row.original.id)}
+                onDownload={onHandleDownload(info)}
               />
             </Skeleton>
           )

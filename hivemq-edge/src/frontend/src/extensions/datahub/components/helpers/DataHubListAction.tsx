@@ -2,27 +2,46 @@ import { FC, MouseEventHandler } from 'react'
 import { ButtonGroup } from '@chakra-ui/react'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { useTranslation } from 'react-i18next'
-import { LuFileEdit, LuTrash2 } from 'react-icons/lu'
+import { LuFileEdit, LuTrash2, LuFileSearch, LuDownload } from 'react-icons/lu'
 
 interface DataHubListActionProps {
   onEdit?: MouseEventHandler<HTMLButtonElement>
   onDelete?: MouseEventHandler<HTMLButtonElement>
-  isEditDisabled?: boolean
+  onDownload?: MouseEventHandler<HTMLButtonElement>
+  isAccessDisabled?: boolean
 }
 
-const DataHubListAction: FC<DataHubListActionProps> = ({ onEdit, onDelete, isEditDisabled = false }) => {
+const DataHubListAction: FC<DataHubListActionProps> = ({ onEdit, onDelete, onDownload, isAccessDisabled = false }) => {
   const { t } = useTranslation('datahub')
+  const isEditEnabled = import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true'
+
   return (
     <ButtonGroup size="sm" isAttached>
-      {!isEditDisabled && (
-        <IconButton
-          data-testid="list-action-edit"
-          onClick={onEdit}
-          aria-label={t('Listings.action.edit')}
-          icon={<LuFileEdit />}
-          isDisabled={isEditDisabled}
-        />
+      {!isAccessDisabled && (
+        <>
+          {isEditEnabled ? (
+            <IconButton
+              data-testid="list-action-edit"
+              onClick={onEdit}
+              aria-label={t('Listings.action.edit')}
+              icon={<LuFileEdit />}
+            />
+          ) : (
+            <IconButton
+              data-testid="list-action-view"
+              onClick={onEdit}
+              aria-label={t('Listings.action.view')}
+              icon={<LuFileSearch />}
+            />
+          )}
+        </>
       )}
+      <IconButton
+        data-testid="list-action-download"
+        onClick={onDownload}
+        aria-label={t('Listings.action.download')}
+        icon={<LuDownload />}
+      />
       <IconButton
         data-testid="list-action-delete"
         onClick={onDelete}

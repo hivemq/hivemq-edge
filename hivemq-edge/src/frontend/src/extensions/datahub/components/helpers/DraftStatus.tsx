@@ -6,16 +6,19 @@ import { LuTrash2 } from 'react-icons/lu'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 
 import { NodeIcon } from '@datahub/components/helpers/index.ts'
-import { DataHubNodeType } from '@datahub/types.ts'
+import { DataHubNodeType, PolicyType } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { useNavigate } from 'react-router-dom'
 
 const DraftStatus: FC = () => {
   const { t } = useTranslation('datahub')
   const { status, name, type, reset } = useDataHubDraftStore()
+  const navigate = useNavigate()
 
   function onHandleClear() {
     // TODO[NVL] Add confirmation modal
     reset()
+    navigate(`/datahub/${PolicyType.CREATE_POLICY}`)
   }
 
   return (

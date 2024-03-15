@@ -628,6 +628,15 @@
       "layout": {
         "header": "Topology Graph: Layout",
         "prompt": "Select the grouping attributes, in order of application"
+      },
+      "reset": {
+        "legend": "Reset Visualisation",
+        "prompt": "If you experience disparities between your known topologies and the visualisation in the workspace, use the reset below to regenerate the graph.",
+        "warning": "Groups and panel configurations will be cleared too. The action cannot be reverted.",
+        "action": "Reset",
+        "modal": {
+          "description": "Are you sure you want to reset the workspace? Groups and panel configurations will be cleared too. The action cannot be reverted"
+        }
       }
     },
     "node": {

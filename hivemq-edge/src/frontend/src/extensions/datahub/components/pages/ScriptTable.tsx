@@ -1,5 +1,5 @@
 import { FC, useMemo } from 'react'
-import { ColumnDef } from '@tanstack/react-table'
+import { CellContext, ColumnDef } from '@tanstack/react-table'
 import { DateTime } from 'luxon'
 import { useTranslation } from 'react-i18next'
 import { Skeleton, Text } from '@chakra-ui/react'
@@ -14,6 +14,7 @@ import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers_
 import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
 import { DataHubNodeType } from '@datahub/types.ts'
+import { downloadJSON } from '@datahub/utils/download.utils.ts'
 
 const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   const { t } = useTranslation('datahub')
@@ -27,6 +28,10 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
   }, [isLoading, data?.items])
 
   const columns = useMemo<ColumnDef<Script>[]>(() => {
+    const onHandleDownload = (info: CellContext<Script, unknown>) => () => {
+      downloadJSON<Script>(info.row.original.id, info.row.original)
+    }
+
     return [
       {
         accessorKey: 'id',
@@ -89,10 +94,11 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
           return (
             <Skeleton isLoaded={!isLoading}>
               <DataHubListAction
-                isEditDisabled
+                isAccessDisabled
                 onDelete={() =>
                   onDeleteItem?.(deleteScript.mutateAsync, DataHubNodeType.FUNCTION, info.row.original.id)
                 }
+                onDownload={onHandleDownload(info)}
               />
             </Skeleton>
           )

@@ -31,6 +31,8 @@
   "Listings": {
     "action": {
       "edit": "Edit",
+      "view": "View",
+      "download": "Download",
       "delete": "Delete"
     },
     "tabs": {
