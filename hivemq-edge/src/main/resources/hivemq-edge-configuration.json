@@ -17,7 +17,7 @@
   },
   "documentationLink" : {
     "displayText" : "HiveMQ Edge Documentation",
-    "url" : "https://github.com/hivemq/hivemq-edge/wiki",
+    "url" : "https://docs.hivemq.com/hivemq-edge/index.html",
     "description" : "Find out more about HiveMQ Edge",
     "target" : "_blank",
     "imageUrl" : "",
