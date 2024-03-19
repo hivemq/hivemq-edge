@@ -263,8 +263,7 @@
       "select": "< not set >"
     },
     "notActivated": {
-      "title": "Data Hub on Edge is now available to commercial licenses",
-      "description": "Please contact our sales team to gain access"
+      "title": "Data Hub on Edge is available under a commercial license, <1>please contact us</1>."
     },
     "notDefined": {
       "title": "Not identified",
