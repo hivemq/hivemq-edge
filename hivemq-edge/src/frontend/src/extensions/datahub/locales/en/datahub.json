@@ -263,8 +263,8 @@
       "select": "< not set >"
     },
     "notActivated": {
-      "title": "Data Hub on Edge is available under a commercial license please contact us.",
-      "description": "Please contact our sales team at sales@hivemq.com to gain access."
+      "title": "Data Hub on Edge is available under a commercial license, please contact us.",
+      "description": "Please contact us."
     },
     "notDefined": {
       "title": "Not identified",
