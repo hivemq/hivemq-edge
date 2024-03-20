@@ -153,6 +153,25 @@ export interface ValidatorData extends DataHubNodeData {
   core?: DataPolicyValidator
 }
 
+export enum ResourceStatus {
+  DRAFT = 'DRAFT',
+  LOADED = 'LOADED',
+  MODIFIED = 'MODIFIED',
+}
+
+export interface ResourceState {
+  internalStatus?: ResourceStatus
+  internalVersions?: number[]
+}
+
+export interface ResourceFamily {
+  name: string
+  versions: number[]
+  description?: string
+  type?: string
+  label?: string
+}
+
 // TODO[18755] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18755/details/
 export enum SchemaType {
   JSON = 'JSON',
