@@ -9,6 +9,7 @@ import {
   DataHubNodeData,
   DataHubNodeType,
   DryRunResults,
+  ResourceFamily,
   SchemaData,
   SchemaType,
   WorkspaceAction,
@@ -17,6 +18,25 @@ import {
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
+
+export const getSchemaFamilies = (items: Schema[]) => {
+  return items.reduce<Record<string, ResourceFamily>>((acc, schema) => {
+    if (acc[schema.id]) {
+      if (schema.version) acc[schema.id].versions.push(schema.version)
+    } else {
+      let description: string | undefined
+      try {
+        const schemaDefinition = JSON.parse(atob(schema.schemaDefinition))
+        description = schemaDefinition.description
+      } catch (e) {
+        /* empty */
+      }
+      acc[schema.id] = { name: schema.id, versions: [], type: schema.type, description }
+      if (schema.version) acc[schema.id].versions.push(schema.version)
+    }
+    return acc
+  }, {})
+}
 
 export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults<Schema> {
   if (!schemaNode.data.type || !schemaNode.data.version || !schemaNode.data.schemaSource) {
