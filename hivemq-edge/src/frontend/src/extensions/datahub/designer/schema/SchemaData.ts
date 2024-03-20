@@ -5,7 +5,4 @@ import schema from '@datahub/api/__generated__/schemas/SchemaData.json'
 
 export const MOCK_SCHEMA_SCHEMA: PanelSpecs = {
   schema: schema as RJSFSchema,
-  uiSchema: {
-    type: {},
-  },
 }
