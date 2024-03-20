@@ -183,6 +183,7 @@ export interface SchemaProtobufArguments {
 }
 
 export interface SchemaData extends DataHubNodeData {
+  name: string
   type: SchemaType
   version: number
   schemaSource?: string
