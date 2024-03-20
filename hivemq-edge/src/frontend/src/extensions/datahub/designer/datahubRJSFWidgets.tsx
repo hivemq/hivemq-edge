@@ -6,6 +6,7 @@ import { JsFunctionInput, MetricCounterInput } from '@datahub/components/forms/M
 import { VersionManagerSelect } from '@datahub/components/forms/VersionManagerSelect.tsx'
 import { MessageInterpolationTextArea } from '@datahub/components/forms/MessageInterpolationTextArea.tsx'
 import { TransitionSelect } from '@datahub/components/forms/TransitionSelect.tsx'
+import { SchemaNameCreatableSelect } from '@datahub/components/forms/ResourceNameCreatableSelect.tsx'
 
 export const datahubRJSFWidgets: RegistryWidgetsType = {
   'application/schema+json': JSONSchemaEditor,
@@ -15,6 +16,7 @@ export const datahubRJSFWidgets: RegistryWidgetsType = {
   'datahub:transition-selector': TransitionSelect,
   'datahub:metric-counter': MetricCounterInput,
   'datahub:function-name': JsFunctionInput,
+  'datahub:schema-name': SchemaNameCreatableSelect,
   'datahub:version': VersionManagerSelect,
   'datahub:message-interpolation': MessageInterpolationTextArea,
   'edge:adapter-selector': AdapterSelect,
