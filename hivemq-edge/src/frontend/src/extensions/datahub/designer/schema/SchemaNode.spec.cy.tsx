@@ -11,7 +11,7 @@ import { SchemaNode } from './SchemaNode.tsx'
 const MOCK_NODE_SCHEMA: NodeProps<SchemaData> = {
   id: 'node-id',
   type: DataHubNodeType.SCHEMA,
-  data: { type: SchemaType.JSON, version: 1 },
+  data: { type: SchemaType.JSON, version: 1, name: 'node-id' },
   ...MOCK_DEFAULT_NODE,
 }
 
