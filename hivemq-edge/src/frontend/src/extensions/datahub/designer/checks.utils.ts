@@ -8,6 +8,6 @@ export const CANVAS_POSITION = {
   Transition: { x: 350, y: -100 } as XYPosition,
   Schema: { x: 0, y: -150 } as XYPosition,
   Validator: { x: 0, y: -150 } as XYPosition,
-  OperationSuccess: { x: 400, y: 0 } as XYPosition,
-  OperationError: { x: 400, y: 100 } as XYPosition,
+  OperationSuccess: { x: 200, y: 0 } as XYPosition,
+  OperationError: { x: 200, y: 100 } as XYPosition,
 }
