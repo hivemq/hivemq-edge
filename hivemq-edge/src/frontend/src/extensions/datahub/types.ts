@@ -7,6 +7,7 @@ import {
   PolicyOperation,
   Schema,
   SchemaReference,
+  Script,
 } from '@/api/__generated__'
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import { IChangeEvent } from '@rjsf/core'
@@ -159,7 +160,8 @@ export enum ResourceStatus {
   MODIFIED = 'MODIFIED',
 }
 
-export interface ResourceState {
+export interface ResourceState extends DataHubNodeData {
+  version: ResourceStatus.DRAFT | number | ResourceStatus.MODIFIED
   internalStatus?: ResourceStatus
   internalVersions?: number[]
 }
@@ -182,20 +184,19 @@ export interface SchemaProtobufArguments {
   messageType: string
 }
 
-export interface SchemaData extends DataHubNodeData {
+export interface SchemaData extends ResourceState {
   name: string
   type: SchemaType
-  version: number
   schemaSource?: string
   messageType?: string
   core?: Schema
 }
 
-export interface FunctionData extends DataHubNodeData {
-  type: 'Javascript'
+export interface FunctionData extends ResourceState {
   name: string
-  version: number
+  type: 'Javascript'
   sourceCode?: string
+  core?: Script
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
