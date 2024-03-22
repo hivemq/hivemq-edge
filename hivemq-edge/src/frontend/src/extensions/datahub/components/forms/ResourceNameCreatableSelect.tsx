@@ -12,12 +12,13 @@ import {
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { labelValue, WidgetProps } from '@rjsf/utils'
 import { FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
 
-import { DataHubNodeType, ResourceFamily } from '@datahub/types.ts'
+import { DataHubNodeType, FunctionData, ResourceFamily, ResourceStatus, SchemaData } from '@datahub/types.ts'
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.tsx'
 import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGetAllScripts.tsx'
 import { getSchemaFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
-import { useTranslation } from 'react-i18next'
+import { getNodePayload } from '@datahub/utils/node.utils.ts'
 
 const SingleValue = <T extends ResourceFamily>(props: SingleValueProps<T>) => {
   return (
@@ -61,11 +62,17 @@ const Option = <T extends ResourceFamily>(props: OptionProps<T>) => {
 const ResourceNameCreatableSelect = (
   props: WidgetProps,
   type: DataHubNodeType.SCHEMA | DataHubNodeType.FUNCTION,
-  options: Options<ResourceFamily> | undefined,
+  defaultOptions: Options<ResourceFamily>,
+  createNewOption: (inputValue: string) => ResourceFamily,
   isLoading: boolean
 ) => {
   const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
+  const [options, setOptions] = useState(defaultOptions)
+
+  useEffect(() => {
+    if (defaultOptions.length) setOptions(defaultOptions)
+  }, [defaultOptions])
 
   const onCreatableSelectChange = useCallback<
     (newValue: OnChangeValue<ResourceFamily, false>, actionMeta: ActionMeta<ResourceFamily>) => void
@@ -78,6 +85,11 @@ const ResourceNameCreatableSelect = (
     },
     [props]
   )
+
+  const handleCreate = (inputValue: string) => {
+    setOptions((prev) => [...(prev || []), createNewOption(inputValue)])
+    props.onChange(inputValue)
+  }
 
   const value = options?.find((e) => e.name === props.value)
   return (
@@ -113,6 +125,7 @@ const ResourceNameCreatableSelect = (
         })}
         noOptionsMessage={() => t('workspace.name.noOption', { type })}
         formatCreateLabel={(inputValue) => t('workspace.name.createOption', { type, inputValue })}
+        onCreateOption={handleCreate}
       />
     </FormControl>
   )
@@ -120,13 +133,39 @@ const ResourceNameCreatableSelect = (
 
 export const SchemaNameCreatableSelect = (props: WidgetProps) => {
   const { data, isLoading } = useGetAllSchemas()
-  const options = getSchemaFamilies(data?.items || [])
-  return ResourceNameCreatableSelect(props, DataHubNodeType.SCHEMA, Object.values(options), isLoading)
+
+  const options = useMemo<ResourceFamily[]>(() => {
+    if (!data) return []
+    if (!data.items) return []
+    const options = getSchemaFamilies(data.items)
+    return Object.values(options)
+  }, [data])
+
+  const createNewOption = (inputValue: string) => {
+    const schemaData = getNodePayload(DataHubNodeType.SCHEMA) as SchemaData
+    const newValue: ResourceFamily = {
+      name: inputValue,
+      versions: [1],
+      type: schemaData.type,
+      internalStatus: ResourceStatus.DRAFT,
+    }
+    return newValue
+  }
+
+  return ResourceNameCreatableSelect(props, DataHubNodeType.SCHEMA, options, createNewOption, isLoading)
 }
 
 export const ScriptNameCreatableSelect = (props: WidgetProps) => {
   const { isLoading } = useGetAllScripts({})
-
+  const createNewOption = (inputValue: string) => {
+    const schemaData = getNodePayload(DataHubNodeType.FUNCTION) as FunctionData
+    const newValue: ResourceFamily = {
+      name: inputValue,
+      versions: [1],
+      type: schemaData.type,
+    }
+    return newValue
+  }
   // TODO[NVL] Don't forget to convert the scripts
-  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, [], isLoading)
+  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, [], createNewOption, isLoading)
 }
