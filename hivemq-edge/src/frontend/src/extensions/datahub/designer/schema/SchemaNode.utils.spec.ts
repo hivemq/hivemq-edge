@@ -11,6 +11,7 @@ describe('checkValiditySchema', () => {
       id: 'node-id',
       type: DataHubNodeType.FUNCTION,
       data: {
+        name: 'node-id',
         type: SchemaType.JSON,
         version: 1,
       },
@@ -37,6 +38,7 @@ describe('checkValiditySchema', () => {
       id: 'node-id',
       type: DataHubNodeType.FUNCTION,
       data: {
+        name: 'node-id',
         type: SchemaType.JSON,
         version: 1,
         schemaSource: '{ tg: 1}',
