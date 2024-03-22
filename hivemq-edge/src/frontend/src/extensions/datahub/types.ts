@@ -172,6 +172,7 @@ export interface ResourceFamily {
   description?: string
   type?: string
   label?: string
+  internalStatus?: ResourceStatus
 }
 
 // TODO[18755] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18755/details/
