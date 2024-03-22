@@ -37,6 +37,9 @@ const Option = <T extends ResourceFamily>(props: OptionProps<T>) => {
     return <chakraComponents.Option {...props}>{props.children}</chakraComponents.Option>
   }
 
+  const [firstItem, ...all] = props.data.versions
+  const lastItem = all.pop()
+
   return (
     <chakraComponents.Option {...rest} isSelected={selectedOption && selectedOption.name === props.data.name}>
       <VStack w="100%" alignItems="stretch" gap={0}>
@@ -46,6 +49,7 @@ const Option = <T extends ResourceFamily>(props: OptionProps<T>) => {
           </Text>
           <HStack>
             <Text fontSize="sm">{props.data.type}</Text>
+            <Text fontSize="sm">{lastItem ? `[${firstItem}...${lastItem}]` : `[${firstItem}]`}</Text>
           </HStack>
         </HStack>
         <Text fontSize="sm">{props.data.description}</Text>
