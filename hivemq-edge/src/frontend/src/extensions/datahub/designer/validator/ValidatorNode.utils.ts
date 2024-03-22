@@ -42,7 +42,7 @@ export function checkValidityPolicyValidator(
     // TODO[NVL] Arguments is not typed on the backend!
     // TODO[NVL] Forcing the version to string is too awkward
     arguments: {
-      schemas: schemas.map<SchemaReference>((e) => ({ schemaId: e.id, version: e.data.version.toString() })),
+      schemas: schemas.map<SchemaReference>((schema) => ({ schemaId: schema.id, version: 'latest' })),
       strategy: validator.data.strategy,
     } as SchemaArguments,
   }
