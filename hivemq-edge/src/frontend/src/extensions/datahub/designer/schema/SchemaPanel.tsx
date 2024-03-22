@@ -8,7 +8,7 @@ import { Card, CardBody } from '@chakra-ui/react'
 
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 
-import { PanelProps, ResourceState, ResourceStatus, SchemaData, SchemaType } from '@datahub/types.ts'
+import { PanelProps, ResourceStatus, SchemaData, SchemaType } from '@datahub/types.ts'
 import { MOCK_JSONSCHEMA_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.tsx'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
@@ -21,9 +21,9 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
   const { data: allSchemas } = useGetAllSchemas()
   const { nodes } = useDataHubDraftStore()
-  const [formData, setFormData] = useState<(SchemaData & ResourceState) | null>(() => {
+  const [formData, setFormData] = useState<SchemaData | null>(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<SchemaData> | undefined
-    return adapterNode ? { ...adapterNode.data, internalStatus: ResourceStatus.LOADED } : null
+    return adapterNode ? adapterNode.data : null
   })
 
   const onReactFlowSchemaFormChange = useCallback(
@@ -110,7 +110,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
     return errors
   }
 
-  const getUISchema = (schema: (SchemaData & ResourceState) | null): UiSchema => {
+  const getUISchema = (schema: SchemaData | null): UiSchema => {
     const { internalStatus, internalVersions } = schema || {}
     return {
       'ui:order':
