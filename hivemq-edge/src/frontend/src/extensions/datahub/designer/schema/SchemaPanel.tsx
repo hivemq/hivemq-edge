@@ -35,7 +35,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
           setFormData({
             name: schema.id,
             type: enumFromStringValue(SchemaType, schema.type) || SchemaType.JSON,
-            version: schema.version?.toString() || '1',
+            version: schema.version || ResourceStatus.MODIFIED,
             schemaSource: atob(schema.schemaDefinition),
             internalVersions: getSchemaFamilies(allSchemas?.items || [])[schema.id].versions,
             internalStatus: ResourceStatus.LOADED,
@@ -45,7 +45,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
             internalStatus: ResourceStatus.DRAFT,
             name: changeEvent.formData.name,
             type: SchemaType.JSON,
-            version: t('workspace.version.status', { context: ResourceStatus.DRAFT }),
+            version: ResourceStatus.DRAFT,
             schemaSource: MOCK_JSONSCHEMA_SCHEMA,
           })
         }
@@ -53,10 +53,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
       if (id?.includes('schemaSource') && formData && formData.internalStatus === ResourceStatus.LOADED) {
         setFormData({
           ...formData,
-          version: t('workspace.version.status', {
-            context: ResourceStatus.MODIFIED,
-            version: Number.parseInt(formData.version) + 1,
-          }),
+          version: ResourceStatus.MODIFIED,
           internalStatus: ResourceStatus.MODIFIED,
         })
       }
