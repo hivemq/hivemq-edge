@@ -9,6 +9,7 @@ import {
   DataHubNodeType,
   DataPolicyData,
   DryRunResults,
+  ResourceStatus,
   SchemaArguments,
   ValidatorData,
   ValidatorType,
@@ -38,11 +39,15 @@ export function checkValidityPolicyValidator(
   const schemaNodes = schemas.map((e) => checkValiditySchema(e))
   const operation: DataPolicyValidator = {
     type: validator.data.type,
-    // TODO[19466] Id should be user-facing; Need to fix before merging!
     // TODO[NVL] Arguments is not typed on the backend!
-    // TODO[NVL] Forcing the version to string is too awkward
     arguments: {
-      schemas: schemas.map<SchemaReference>((schema) => ({ schemaId: schema.id, version: 'latest' })),
+      schemas: schemas.map<SchemaReference>((schema) => {
+        const version =
+          schema.data.version === ResourceStatus.DRAFT || schema.data.version === ResourceStatus.MODIFIED
+            ? 'latest'
+            : schema.data.version.toString()
+        return { schemaId: schema.data.name, version }
+      }),
       strategy: validator.data.strategy,
     } as SchemaArguments,
   }
