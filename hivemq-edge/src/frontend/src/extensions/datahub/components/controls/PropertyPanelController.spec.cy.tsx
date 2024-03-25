@@ -36,10 +36,11 @@ describe('PropertyPanelController', () => {
           <Route path="/node/:type/:nodeId" element={<PropertyPanelController />}></Route>
         </Routes>
       </ReactFlowProvider>,
-      { routerProps: { initialEntries: ['/node/TOPIC_FILTER/1'] } }
+      { routerProps: { initialEntries: ['/node/INTERNAL/1'] } }
     )
 
     cy.getByTestId('node-editor-under-construction').should('not.exist')
+    cy.getByTestId('loading-spinner').should('be.visible')
     cy.get('button[type="submit"]').should('be.visible')
   })
 })
