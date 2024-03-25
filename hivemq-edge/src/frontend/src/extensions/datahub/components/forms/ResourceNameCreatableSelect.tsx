@@ -29,6 +29,7 @@ const SingleValue = <T extends ResourceFamily>(props: SingleValueProps<T>) => {
 }
 
 const Option = <T extends ResourceFamily>(props: OptionProps<T>) => {
+  const { t } = useTranslation('datahub')
   const { isSelected, ...rest } = props
   const [selectedOption] = props.getValue()
 
@@ -47,6 +48,7 @@ const Option = <T extends ResourceFamily>(props: OptionProps<T>) => {
         <HStack>
           <Text as="b" flex={1}>
             {props.data.name}
+            {props.data.internalStatus && ` ${t('workspace.name.draft')}`}
           </Text>
           <HStack>
             <Text fontSize="sm">{props.data.type}</Text>
