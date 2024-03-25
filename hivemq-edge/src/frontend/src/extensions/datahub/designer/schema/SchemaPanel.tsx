@@ -1,7 +1,6 @@
 import { FC, useCallback, useState } from 'react'
 import { Node } from 'reactflow'
 import { parse } from 'protobufjs'
-import { useTranslation } from 'react-i18next'
 import { CustomValidator, UiSchema } from '@rjsf/utils'
 import { IChangeEvent } from '@rjsf/core/src/components/Form.tsx'
 import { Card, CardBody } from '@chakra-ui/react'
@@ -18,7 +17,6 @@ import { getSchemaFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
-  const { t } = useTranslation('datahub')
   const { data: allSchemas } = useGetAllSchemas()
   const { nodes } = useDataHubDraftStore()
   const [formData, setFormData] = useState<SchemaData | null>(() => {
@@ -71,7 +69,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
         }
       }
     },
-    [allSchemas?.items, formData, t]
+    [allSchemas?.items, formData]
   )
 
   const customValidate: CustomValidator<SchemaData> = (formData, errors) => {
@@ -110,10 +108,10 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const getUISchema = (schema: SchemaData | null): UiSchema => {
     const { internalStatus, internalVersions } = schema || {}
     return {
-      'ui:order':
-        internalStatus === ResourceStatus.DRAFT || !internalStatus
-          ? ['name', 'type', 'schemaSource', 'messageType', 'version']
-          : ['name', 'version', 'schemaSource', 'messageType', 'type'],
+      // 'ui:order':
+      //   internalStatus === ResourceStatus.DRAFT || !internalStatus
+      //     ? ['name', 'type', 'schemaSource', 'messageType', 'version']
+      //     : ['name', 'version', 'schemaSource', 'messageType', 'type'],
       name: {
         'ui:widget': 'datahub:schema-name',
       },
