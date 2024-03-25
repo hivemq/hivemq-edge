@@ -76,6 +76,7 @@ export interface PolicyCheckAction {
 }
 
 export enum DataHubNodeType {
+  INTERNAL = 'INTERNAL',
   ADAPTOR = 'ADAPTOR',
   EDGE = 'EDGE',
   BRIDGE = 'BRIDGE',
