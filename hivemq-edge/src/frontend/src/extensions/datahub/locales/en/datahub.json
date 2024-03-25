@@ -168,6 +168,9 @@
       },
       "transform": {
         "placeholder": "functionName"
+      },
+      "schema": {
+        "placeholder": "schemaName"
       }
     },
     "codeEditor": {
@@ -175,7 +178,16 @@
       "test": "Test code"
     },
     "version": {
-      "create": "Create a new version '{{ newVersion }}' from '{{ oldVersion }}'"
+      "display_one": "{{versionNumber}}",
+      "display_other": "{{versionNumber}} (latest)",
+      "create": "Create a new version '{{ newVersion }}' from '{{ oldVersion }}'",
+      "status_DRAFT": "1 (Draft)",
+      "status_MODIFIED": "{{version}} (New version)"
+    },
+    "name": {
+      "noOption": "No $t(datahub:workspace.nodes.type, { 'context': '{{type}}' }) available",
+      "createOption": "Create a new $t(datahub:workspace.nodes.type, { 'context': '{{type}}' }) \"{{inputValue}}\"",
+      "draft": "(Draft)"
     },
     "transition": {
       "select": {
