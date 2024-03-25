@@ -48,10 +48,8 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
 
   if (schemaNode.data.type === SchemaType.JSON) {
     const jsonSchema: Schema = {
-      // TODO[19466] Id should be user-facing; Need to fix before merging!
-      id: schemaNode.id,
+      id: schemaNode.data.name,
       type: schemaNode.data.type,
-      version: schemaNode.data.version,
       schemaDefinition: btoa(schemaNode.data.schemaSource),
     }
     return { data: jsonSchema, node: schemaNode }
@@ -87,10 +85,8 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
         }
 
       const schema: Schema = {
-        // @ts-ignore TODO[19466] Id should be user-facing; Need to fix before merging!
-        id: schemaNode.id,
+        id: schemaNode.data.name,
         type: schemaNode.data.type,
-        version: schemaNode.data.version,
         schemaDefinition: encoded,
         // TODO[20139] No definition of arguments in OpenAPI!
         arguments: { messageType: schemaNode.data.messageType },
