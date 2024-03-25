@@ -4,6 +4,8 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
+import com.hivemq.edge.modules.adapters.data.AdapterDataUtils;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
@@ -12,6 +14,7 @@ import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -53,8 +56,8 @@ class ModbusProtocolAdapterTest {
     @Test
     void test_captureDataSample_expectedPayloadPresent()
             throws ExecutionException, InterruptedException, JsonProcessingException {
-        final AbstractProtocolAdapterConfig.Subscription subscription =
-                new AbstractProtocolAdapterConfig.Subscription("topic", 2);
+        final ModbusAdapterConfig.Subscription subscription =
+                new ModbusAdapterConfig.Subscription("topic", 2, null);
         final ModBusData data = new ModBusData(subscription, ModBusData.TYPE.INPUT_REGISTERS);
         data.addDataPoint("register", "hello world");
 
@@ -65,4 +68,39 @@ class ModbusProtocolAdapterTest {
         assertThatJson(payloadAsString).node("value").isString().isEqualTo("hello world");
     }
 
+    @Test
+    void test_deltaSamples() {
+
+        final ModBusData data1 = createSampleData(10);
+        final ModBusData data2 = createSampleData(10);
+
+        Assertions.assertEquals(0,
+                AdapterDataUtils.margeChangedSamples(data1.getDataPoints(), data2.getDataPoints()).size(), "There should be no deltas");
+        data2.getDataPoints().set(5, new ProtocolAdapterDataSample.DataPoint("register-5", 777));
+
+        Assertions.assertEquals(1,
+                AdapterDataUtils.margeChangedSamples(data1.getDataPoints(), data2.getDataPoints()).size(), "There should be 1 delta");
+    }
+
+    @Test
+    void test_mergedSamples() {
+
+        final ModBusData data1 = createSampleData(10);
+        final ModBusData data2 = createSampleData(10);
+        data2.getDataPoints().set(5, new ProtocolAdapterDataSample.DataPoint("register-5", 777));
+
+        AdapterDataUtils.margeChangedSamples(data1.getDataPoints(), data2.getDataPoints());
+
+        Assertions.assertEquals(777, ((ProtocolAdapterDataSample.DataPoint)data1.getDataPoints().get(5)).getTagValue(), "Merged data should contain new value");
+    }
+
+    protected static ModBusData createSampleData(final int registerCount){
+        final AbstractProtocolAdapterConfig.Subscription subscription =
+                new AbstractProtocolAdapterConfig.Subscription("topic", 2);
+        final ModBusData data = new ModBusData(subscription, ModBusData.TYPE.INPUT_REGISTERS);
+        for (int i = 0; i < registerCount; i++){
+            data.addDataPoint("register-" + i, i);
+        }
+        return data;
+    }
 }

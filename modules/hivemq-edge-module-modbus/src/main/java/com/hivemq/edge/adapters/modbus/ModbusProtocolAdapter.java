@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.modbus;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
+import com.hivemq.edge.modules.adapters.data.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.impl.AbstractPollingPerSubscriptionAdapter;
 import com.hivemq.edge.modules.adapters.model.NodeTree;
@@ -43,7 +44,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull Object lock = new Object();
     private volatile @Nullable IModbusClient modbusClient;
-    private @Nullable Map<ModBusData.TYPE, ModBusData> lastSamples = new HashMap<>();
+    private @Nullable Map<ModbusAdapterConfig.Subscription, ModBusData> lastSamples = new HashMap<>();
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -112,14 +113,33 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     @Override
     protected CompletableFuture<?> captureDataSample(@NotNull final ModBusData data) {
         boolean publishData = true;
+        if(log.isTraceEnabled()){
+            log.trace("Captured ModBus data with {} data points.", data.getDataPoints().size());
+        }
         if (adapterConfig.getPublishChangedDataOnly()) {
-            ModBusData previousSample = lastSamples.put(data.getType(), data);
+            ModbusAdapterConfig.Subscription subscription =
+                    (ModbusAdapterConfig.Subscription) data.getSubscription();
+            ModBusData previousSample = lastSamples.put(subscription, data);
             if (previousSample != null) {
-                List<ProtocolAdapterDataSample.DataPoint> dataPoints = previousSample.getDataPoints();
-                publishData = !dataPoints.equals(data.getDataPoints());
+                List<ProtocolAdapterDataSample.DataPoint> previousSampleDataPoints = previousSample.getDataPoints();
+                List<ProtocolAdapterDataSample.DataPoint> currentSamplePoints = data.getDataPoints();
+                List<ProtocolAdapterDataSample.DataPoint> delta =
+                        AdapterDataUtils.margeChangedSamples(previousSampleDataPoints, currentSamplePoints);
+                if(log.isTraceEnabled()){
+                    log.trace("Calculating change data old {} samples, new {} sample, delta {}",
+                            previousSampleDataPoints.size(), currentSamplePoints.size(), delta.size());
+                }
+                if(!delta.isEmpty()){
+                    data.setDataPoints(delta);
+                } else {
+                    publishData = false;
+                }
             }
         }
         if (publishData) {
+            if(log.isTraceEnabled()){
+                log.trace("Publishing data with {} samples", data.getDataPoints().size());
+            }
             return super.captureDataSample(data);
         }
         return CompletableFuture.completedFuture(null);
