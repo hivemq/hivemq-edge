@@ -96,7 +96,6 @@ describe('checkValidityPolicyValidator', () => {
           id: 'node-schema',
           schemaDefinition: 'e30=',
           type: 'JSON',
-          version: 1,
         },
         node: MOCK_NODE_SCHEMA,
       })
