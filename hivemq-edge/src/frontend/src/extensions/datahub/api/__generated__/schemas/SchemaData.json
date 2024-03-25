@@ -10,11 +10,12 @@
     },
     "type": {
       "title": "Schema",
+      "type": "string",
       "enum": ["JSON", "PROTOBUF"],
       "default": "PROTOBUF"
     },
     "version": {
-      "type": "number",
+      "type": "string",
       "format": "datahub:version"
     }
   },
