@@ -1,0 +1,39 @@
+name: Gradle Dependency Submission
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    name: Dependencies
+    runs-on: ubuntu-latest
+    permissions: # The Dependency Submission API requires write permission
+      contents: write
+    steps:
+      - name: Checkout Gradle Build Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            !~/.gradle/wrapper/dists/**/gradle*.zip
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v3
+      - name: Run snapshot action
+        uses: mikepenz/gradle-dependency-submission@main
+        with:
+          gradle-project-path: "."
+          gradle-build-module: |-
+            :hivemq-edge
+            :hivemq-edge:hivemq-edge-frontend
+            :hivemq-edge-module-plc4x
+            :hivemq-edge-module-http
+            :hivemq-edge-module-modbus
+            :hivemq-edge-module-opcua
+          sub-module-mode: 'IGNORE'
+          include-build-environment: true
+
