@@ -1,7 +1,6 @@
 package com.hivemq.edge.adapters.http;
 
 import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
@@ -53,10 +52,9 @@ class HttpProtocolAdapterTest {
     }
 
     @Test
-    void test_captureDataSample_expectedPayloadPresent()
-            throws ExecutionException, InterruptedException, JsonProcessingException {
+    void test_captureDataSample_expectedPayloadPresent() throws ExecutionException, InterruptedException {
         final AbstractProtocolAdapterConfig.Subscription subscription =
-                new AbstractProtocolAdapterConfig.Subscription("topic", 2);
+                new AbstractProtocolAdapterConfig.Subscription("topic", 2, null);
         final HttpData httpData = new HttpData(subscription, "http://localhost:8080", 200, "text/plain");
         httpData.addDataPoint(RESPONSE_DATA, "hello world");
 
@@ -71,7 +69,7 @@ class HttpProtocolAdapterTest {
     void test_captureDataSample_errorPayloadFormat()
             throws ExecutionException, InterruptedException {
         final AbstractProtocolAdapterConfig.Subscription subscription =
-                new AbstractProtocolAdapterConfig.Subscription("topic", 2);
+                new AbstractProtocolAdapterConfig.Subscription("topic", 2, null);
         final HttpData httpData = new HttpData(subscription, "http://localhost:8080", 200, "text/plain");
         final HttpData payload = new HttpData(null, "http://localhost:8080", 404, "text/plain");
         httpData.addDataPoint(RESPONSE_DATA, payload);
