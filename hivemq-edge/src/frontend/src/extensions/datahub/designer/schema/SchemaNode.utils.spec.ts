@@ -53,7 +53,6 @@ describe('checkValiditySchema', () => {
       id: 'node-id',
       schemaDefinition: 'eyB0ZzogMX0=',
       type: 'JSON',
-      version: 1,
     })
     expect(resources).toBeUndefined()
     expect(error).toBeUndefined()
