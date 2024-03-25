@@ -172,7 +172,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 return CompletableFuture.failedFuture(e);
             }
         }
-        return CompletableFuture.completedFuture( new ProtocolAdapterDataSample<>(subscription));
+        return CompletableFuture.completedFuture(new ProtocolAdapterDataSample<>(subscription));
     }
 
 

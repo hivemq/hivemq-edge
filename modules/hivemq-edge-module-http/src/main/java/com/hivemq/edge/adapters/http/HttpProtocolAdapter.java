@@ -205,7 +205,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
             }
         }
         HttpData data = new HttpData(
-                new AbstractProtocolAdapterConfig.Subscription(config.getDestination(), config.getQos()),
+                new AbstractProtocolAdapterConfig.Subscription(config.getDestination(), config.getQos(), null),
                 adapterConfig.getUrl(),
                 response.statusCode(),
                 responseContentType);

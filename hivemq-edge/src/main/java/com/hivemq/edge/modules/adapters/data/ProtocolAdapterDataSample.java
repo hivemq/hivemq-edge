@@ -66,6 +66,11 @@ public class ProtocolAdapterDataSample<T extends AbstractProtocolAdapterConfig> 
         return timestamp;
     }
 
+    @JsonIgnore
+    public List<AbstractProtocolAdapterConfig.UserProperty> getUserProperties(){
+        return subscription.getUserProperties();
+    }
+
     public void setTimestamp(final Long timestamp) {
         this.timestamp = timestamp;
     }

@@ -1,7 +1,6 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
@@ -51,10 +50,9 @@ class ModbusProtocolAdapterTest {
     }
 
     @Test
-    void test_captureDataSample_expectedPayloadPresent()
-            throws ExecutionException, InterruptedException, JsonProcessingException {
+    void test_captureDataSample_expectedPayloadPresent() throws ExecutionException, InterruptedException {
         final AbstractProtocolAdapterConfig.Subscription subscription =
-                new AbstractProtocolAdapterConfig.Subscription("topic", 2);
+                new AbstractProtocolAdapterConfig.Subscription("topic", 2, null);
         final ModBusData data = new ModBusData(subscription, ModBusData.TYPE.INPUT_REGISTERS);
         data.addDataPoint("register", "hello world");
 

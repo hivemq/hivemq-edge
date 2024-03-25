@@ -65,7 +65,7 @@ public class LargeConfigFileTest extends AbstractConfigWriterTest {
         List<AbstractProtocolAdapterConfig.Subscription> subscriptions  = config.getSubscriptions();
 
         for (int i = 0; i < 100000; i++){
-            subscriptions.add(new AbstractProtocolAdapterConfig.Subscription("foo" + i, 1));
+            subscriptions.add(new AbstractProtocolAdapterConfig.Subscription("foo" + i, 1, null));
         }
 
         start = printTimer("Population", System.out, start);
