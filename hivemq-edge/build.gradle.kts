@@ -2,6 +2,13 @@ import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
+plugins.withId("com.hivemq.edge-version-updater") {
+    project.ext.set(
+        "versionUpdaterFiles",
+        arrayOf("src/main/resources/hivemq-edge-configuration.json", "gradle.properties")
+    )
+}
+
 plugins {
     java
     `java-library`
@@ -22,6 +29,7 @@ plugins {
     id("com.github.spotbugs")
     id("de.thetaphi.forbiddenapis")
     id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.8"
+    id("com.hivemq.edge-version-updater")
 }
 
 group = "com.hivemq"

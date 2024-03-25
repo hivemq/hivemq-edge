@@ -7,6 +7,9 @@ pluginManagement {
         id("com.github.hierynomus.license") version "${extra["plugin.license.version"]}"
         id("org.owasp.dependencycheck") version "${extra["plugin.dependencycheck.version"]}"
     }
+    includeBuild("../../edge-plugins")
+
 }
+
 
 includeBuild("../../hivemq-edge")
