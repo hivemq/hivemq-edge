@@ -8,7 +8,7 @@ import { MdPublishedWithChanges } from 'react-icons/md'
 import { BehaviorPolicy, DataPolicy, Schema, Script } from '@/api/__generated__'
 
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
-import { DataHubNodeType, DesignerStatus, DryRunResults } from '@datahub/types.ts'
+import { DataHubNodeType, DesignerStatus, DryRunResults, ResourceState, ResourceStatus } from '@datahub/types.ts'
 import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCreateSchema.tsx'
 import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
 import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.tsx'
@@ -24,12 +24,15 @@ interface Mutate<T> {
 type ValidMutate = Mutate<Schema> | Mutate<Script> | Mutate<DataPolicy> | Mutate<BehaviorPolicy>
 
 const resourceReducer =
-  <T extends { id: string }>(type: DataHubNodeType) =>
+  <T extends Schema | Script>(type: DataHubNodeType) =>
   (accumulator: T[], result: DryRunResults<T, never>) => {
     if (result.node.type !== type) return accumulator
     if (!result.data) return accumulator
     const { id } = result.data
     if (!id) return accumulator
+
+    const { version } = result.node.data as ResourceState
+    if (version !== ResourceStatus.DRAFT && version !== ResourceStatus.MODIFIED) return accumulator
 
     const allIds = accumulator.map((resource) => resource.id)
     if (allIds.includes(id)) return accumulator
