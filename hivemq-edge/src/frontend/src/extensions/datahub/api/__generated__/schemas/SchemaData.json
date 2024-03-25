@@ -12,9 +12,10 @@
       "title": "Schema",
       "type": "string",
       "enum": ["JSON", "PROTOBUF"],
-      "default": "PROTOBUF"
+      "default": "JSON"
     },
     "version": {
+      "title": "Version",
       "type": "string",
       "format": "datahub:version"
     }
