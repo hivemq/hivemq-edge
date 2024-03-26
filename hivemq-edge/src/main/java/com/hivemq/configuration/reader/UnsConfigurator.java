@@ -15,13 +15,16 @@
  */
 package com.hivemq.configuration.reader;
 
+import com.hivemq.api.model.uns.NamespaceProfileBean;
 import com.hivemq.configuration.entity.uns.ISA95Entity;
+import com.hivemq.configuration.entity.uns.NamespaceEntity;
 import com.hivemq.configuration.entity.uns.UnsConfigEntity;
 import com.hivemq.configuration.service.UnsConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.uns.config.ISA95;
 
 import javax.inject.Inject;
+import java.util.stream.Collectors;
 
 public class UnsConfigurator {
 
@@ -48,6 +51,8 @@ public class UnsConfigurator {
                 withPrefixAllTopics(isa95Entity.isPrefixAllTopics()).
                 withEnabled(isa95Entity.isEnabled());
         unsConfigurationService.setISA95(builderIsa95.build());
+        unsConfigurationService.setProfiles(configEntity.getProfiles().stream().
+                map(NamespaceEntity::unconvert).collect(Collectors.toList()));
     }
 
     public void syncUnsConfig(final @NotNull UnsConfigEntity configEntity){
@@ -55,6 +60,7 @@ public class UnsConfigurator {
             return;
         }
 
+        //-- legacy
         ISA95 isa95 = unsConfigurationService.getISA95();
         configEntity.getIsa95().setEnabled(isa95.isEnabled());
         configEntity.getIsa95().setPrefixAllTopics(isa95.isPrefixAllTopics());
@@ -63,5 +69,9 @@ public class UnsConfigurator {
         configEntity.getIsa95().setSite(isa95.getSite());
         configEntity.getIsa95().setWorkCell(isa95.getWorkCell());
         configEntity.getIsa95().setProductionLine(isa95.getProductionLine());
+
+        //-- new
+        configEntity.setProfiles(unsConfigurationService.getProfiles().stream().
+                map(NamespaceEntity::convert).collect(Collectors.toList()));
     }
 }

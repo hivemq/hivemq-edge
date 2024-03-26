@@ -948,6 +948,9 @@ public interface ApiBodyExamples {
             "    \"workCell\": \"work-cell\"\n" +
             "}";
 
+    String EXAMPLE_UNS_PROFILES_JSON = "{\n" +
+            "}";
+
     //-- Connection Statis
     String EXAMPLE_STATUS_TRANSITION_RESULT = "{\n" +
             "    \"status\": \"PENDING\",\n" +

@@ -17,6 +17,8 @@ package com.hivemq.api.resources;
 
 import com.hivemq.api.model.ApiBodyExamples;
 import com.hivemq.api.model.uns.ISA95ApiBean;
+import com.hivemq.api.model.uns.NamespaceProfileBean;
+import com.hivemq.api.model.uns.NamespaceProfilesList;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -45,39 +47,39 @@ public interface UnsApi {
 
     String PATH = "/api/v1/management/uns";
 
+
     @GET
-    @Path("/isa95")
-    @Operation(summary = "Obtain isa95 config",
-               operationId = "get-isa95",
-               description = "Obtain isa95 config.",
+    @Path("/profiles")
+    @Operation(summary = "Obtain UNS profiles",
+               operationId = "get-profiles",
+               description = "Obtain available profiles of UNS.",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                                                       schema = @Schema(implementation = ISA95ApiBean.class),
+                                                       schema = @Schema(implementation = NamespaceProfilesList.class),
                                                        examples = {
-                                                               @ExampleObject(description = "An example ISA 95 config.",
-                                                                              name = "default-configuration",
+                                                               @ExampleObject(description = "An example UNS profiles config.",
+                                                                              name = "default-profiles",
                                                                               summary = "Example configuration",
-                                                                              value = ApiBodyExamples.EXAMPLE_ISA_95_JSON)
+                                                                              value = ApiBodyExamples.EXAMPLE_UNS_PROFILES_JSON)
                                                        }))})
     @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response getIsa95();
+    @NotNull Response getProfiles();
 
 
     @POST
-    @Path("/isa95")
-    @Operation(summary = "Set isa95 config",
-               operationId = "set-isa95",
-               description = "Set isa95 config.",
+    @Path("/profile")
+    @Operation(summary = "Set active UNS profile",
+               operationId = "set-active-profile",
+               description = "Set active UNS profile.",
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success")})
     @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response setIsa95(@Parameter(name = "isa95",
-                                          description = "The updated isa95 configuration.",
-                                          required = true,
-                                          in = ParameterIn.DEFAULT)
-                                   final @NotNull ISA95ApiBean isa95);
-
+    @NotNull Response setActiveProfile(@Parameter(name = "namespace",
+                                            description = "The updated namespace configuration.",
+                                            required = true,
+                                            in = ParameterIn.DEFAULT)
+                                     final @NotNull NamespaceProfileBean bean) ;
 }
