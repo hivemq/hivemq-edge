@@ -44,14 +44,12 @@ jobs:
       - name: 🧪 Run Cypress E2E
         uses: cypress-io/github-action@v6
         with:
-          morgan: false
           working-directory: ./hivemq-edge/src/frontend/
           start: pnpm dev
 
       - name: 🧪 Run Cypress Component
         uses: cypress-io/github-action@v6
         with:
-          morgan: false
           working-directory: ./hivemq-edge/src/frontend/
           component: true
           start: pnpm dev
