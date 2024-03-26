@@ -91,5 +91,3 @@ describe('checkValiditySchema', () => {
     expect(error).toBeUndefined()
   })
 })
-
-describe('loadSchema', () => {})
