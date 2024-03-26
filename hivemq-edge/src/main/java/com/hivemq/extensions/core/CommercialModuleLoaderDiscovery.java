@@ -15,40 +15,73 @@
  */
 package com.hivemq.extensions.core;
 
+import com.hivemq.bootstrap.services.CompleteBootstrapService;
+import com.hivemq.bootstrap.services.GeneralBootstrapService;
+import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class CommercialModuleLoaderDiscovery {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(CommercialModuleLoaderDiscovery.class);
     private final @NotNull ModuleLoader moduleLoader;
-    private final @NotNull CoreModuleServiceImpl coreModuleService;
+    private final List<ModuleLoaderMain> instances = new ArrayList<>();
 
     public CommercialModuleLoaderDiscovery(
-            final @NotNull ModuleLoader moduleLoader, final @NotNull CoreModuleServiceImpl coreModuleService) {
+            final @NotNull ModuleLoader moduleLoader) {
         this.moduleLoader = moduleLoader;
-        this.coreModuleService = coreModuleService;
     }
 
-    public void loadAllCoreModules()
-            throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+    public void discoverModuleLoaderMainClasses() {
         moduleLoader.loadModules();
         final List<Class<? extends ModuleLoaderMain>> implementations =
                 moduleLoader.findImplementations(ModuleLoaderMain.class);
-        for (Class<? extends ModuleLoaderMain> implementation : implementations) {
-            loadAndStartMainClass(implementation);
+
+        implementations.forEach(impl -> {
+            try {
+                this.instances.add(impl.getDeclaredConstructor().newInstance());
+            } catch (Exception e) {
+                log.error("Error when instancing '{}':", impl, e);
+            }
+        });
+    }
+
+    public void generalBootstrap(final @NotNull GeneralBootstrapService generalBootstrapService) {
+        try {
+            for (ModuleLoaderMain instance : instances) {
+                instance.generalBootstrap(generalBootstrapService);
+            }
+        } catch (Exception e) {
+            log.error("Error when bootstrapping general information", e);
         }
     }
 
-    private void loadAndStartMainClass(Class<? extends ModuleLoaderMain> extensionMainClass)
-            throws InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        final ModuleLoaderMain instance = extensionMainClass.getDeclaredConstructor().newInstance();
-        instance.start(coreModuleService);
+    public void persistenceBootstrap(final @NotNull PersistenceBootstrapService persistenceBootstrapService) {
+        try {
+            for (ModuleLoaderMain instance : instances) {
+                instance.persistenceBootstrap(persistenceBootstrapService);
+            }
+        } catch (Exception e) {
+            log.error("Error when bootstrapping persistences ", e);
+        }
     }
+
+    public void completeBootstrap(final @NotNull CompleteBootstrapService completeBootstrapService) {
+        try {
+            for (ModuleLoaderMain instance : instances) {
+                instance.afterPersistenceBootstrap(completeBootstrapService);
+            }
+        } catch (Exception e) {
+            log.error("Error when completing bootstrap ", e);
+        }
+    }
+
+
 }
+
 

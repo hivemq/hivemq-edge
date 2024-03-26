@@ -17,41 +17,22 @@ package com.hivemq;
 
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
-import com.hivemq.api.resources.GenericAPIHolder;
-import com.hivemq.bootstrap.HiveMQExceptionHandlerBootstrap;
 import com.hivemq.bootstrap.LoggingBootstrap;
-import com.hivemq.bootstrap.ioc.DaggerInjector;
 import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.common.shutdown.ShutdownHooks;
-import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
-import com.hivemq.edge.HiveMQCapabilityService;
-import com.hivemq.edge.impl.capability.CapabilityServiceImpl;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.embedded.EmbeddedExtension;
 import com.hivemq.exceptions.HiveMQEdgeStartupException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
-import com.hivemq.extensions.core.CoreModuleServiceImpl;
-import com.hivemq.extensions.core.HandlerService;
-import com.hivemq.extensions.core.PersistencesService;
-import com.hivemq.extensions.core.RestComponentsService;
-import com.hivemq.extensions.core.RestComponentsServiceImpl;
 import com.hivemq.http.JaxrsHttpServer;
-import com.hivemq.metrics.MetricRegistryLogger;
-import com.hivemq.persistence.PersistenceStartup;
-import com.hivemq.persistence.connection.ConnectionPersistence;
-import com.hivemq.persistence.connection.ConnectionPersistenceImpl;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -62,7 +43,6 @@ public class HiveMQEdgeMain {
     private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull SystemInformation systemInformation;
-    private final @NotNull PersistenceStartup persistenceStartup = new PersistenceStartup();
 
     private @Nullable JaxrsHttpServer jaxrsServer;
 
@@ -85,94 +65,11 @@ public class HiveMQEdgeMain {
         if (injector != null) {
             return;
         }
-
-        metricRegistry.addListener(new MetricRegistryLogger());
-
-        LoggingBootstrap.prepareLogging();
-
-        // Embedded has already called init as it is required to read the config file.
-        if (!systemInformation.isEmbedded()) {
-            log.trace("Initializing HiveMQ home directory");
-            //Create SystemInformation this early because logging depends on it
-            systemInformation.init();
-        }
-
-        log.trace("Initializing Logging");
-        LoggingBootstrap.initLogging(systemInformation.getConfigFolder());
-
-        log.trace("Initializing Exception handlers");
-        HiveMQExceptionHandlerBootstrap.addUnrecoverableExceptionHandler();
-
-        if (configService == null) {
-            log.trace("Initializing configuration");
-            configService = ConfigurationBootstrap.bootstrapConfig(systemInformation);
-        }
-
-        //ungraceful shutdown does not delete tmp folders, so we clean them up on broker start
-        log.trace("Cleaning up temporary folders");
-        deleteTmpFolder(systemInformation.getDataFolder());
-
-        log.info("Integrating Core Modules");
-        final PersistencesService persistencesService = new PersistencesService(persistenceStartup);
-        final HandlerService handlerService = new HandlerService();
-        final GenericAPIHolder genericAPIHolder = new GenericAPIHolder();
-        final RestComponentsService restComponentsService = new RestComponentsServiceImpl(genericAPIHolder);
-        final ShutdownHooks shutdownHooks = new ShutdownHooks();
-        final HiveMQCapabilityService capabilityService = new CapabilityServiceImpl();
-        final ConnectionPersistence connectionPersistence = new ConnectionPersistenceImpl();
-
-        CoreModuleServiceImpl coreModuleService = new CoreModuleServiceImpl(persistencesService,
-                systemInformation,
-                metricRegistry,
-                shutdownHooks,
-                moduleLoader,
-                configService,
-                capabilityService,
-                restComponentsService, handlerService, connectionPersistence);
-
-        try {
-            final CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(
-                    moduleLoader,
-                    coreModuleService);
-            commercialModuleLoaderDiscovery.loadAllCoreModules();
-        } catch (Exception e) {
-            log.warn("Error on loading the commercial module loader.", e);
-            throw new HiveMQEdgeStartupException(e);
-        }
-
-        log.trace("Initializing injector");
-        final long startDagger = System.currentTimeMillis();
-        injector = DaggerInjector.builder()
-                .configurationService(configService)
-                .systemInformation(systemInformation)
-                .metricRegistry(metricRegistry)
-                .persistenceService(persistencesService)
-                .handlerService(handlerService)
-                .persistenceStartUp(persistenceStartup)
-                .moduleLoader(moduleLoader)
-                .shutdownHooks(shutdownHooks)
-                .capabilityService(capabilityService)
-                .restComponentService(restComponentsService)
-                .restComponentsHolder(genericAPIHolder).coreModuleService(coreModuleService)
-                .connectionPersistence(connectionPersistence)
-                .build();
-        log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
-        injector.persistences();
-        final long startInit = System.currentTimeMillis();
-        Objects.requireNonNull(injector).persistences();
-        try {
-            persistenceStartup.finish();
-        } catch (InterruptedException e) {
-            throw new HiveMQEdgeStartupException(e);
-        }
-        log.info("HiveMQ Edge starts with Persistence Mode: '{}'",
-                configService.persistenceConfigurationService().getMode());
-
-        log.trace("Initializing classes");
-        Objects.requireNonNull(injector).initEagerSingletons();
-        log.trace("Initialized classes in {}ms", (System.currentTimeMillis() - startInit));
-
+        final HiveMQEdgeBootstrap bootstrap =
+                new HiveMQEdgeBootstrap(metricRegistry, systemInformation, moduleLoader, configService);
+        injector = bootstrap.bootstrap();
     }
+
 
     protected void startGateway(final @Nullable EmbeddedExtension embeddedExtension) throws HiveMQEdgeStartupException {
         if (injector == null) {
@@ -274,18 +171,5 @@ public class HiveMQEdgeMain {
         return injector;
     }
 
-    private static void deleteTmpFolder(final @NotNull File dataFolder) {
-        final String tmpFolder = dataFolder.getPath() + File.separator + "tmp";
-        try {
-            //ungraceful shutdown does not delete tmp folders, so we clean them up on broker start
-            FileUtils.deleteDirectory(new File(tmpFolder));
-        } catch (IOException e) {
-            //No error because it's not business breaking
-            log.warn("The temporary folder could not be deleted ({}).", tmpFolder);
-            if (log.isDebugEnabled()) {
-                log.debug("Original Exception: ", e);
-            }
-        }
-    }
 
 }
