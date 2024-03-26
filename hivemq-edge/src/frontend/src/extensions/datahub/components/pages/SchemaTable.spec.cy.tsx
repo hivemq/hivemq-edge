@@ -22,7 +22,7 @@ describe('SchemaTable', () => {
   })
 
   it('should render the data', () => {
-    cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] }).as('getSchemas')
+    cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] })
 
     cy.mountWithProviders(<SchemaTable />)
     cy.get('tbody tr').should('have.length', 1)

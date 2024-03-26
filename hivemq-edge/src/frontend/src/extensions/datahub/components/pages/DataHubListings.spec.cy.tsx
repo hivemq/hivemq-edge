@@ -40,8 +40,8 @@ describe('DataHubListings', () => {
   })
 
   it('should support deletion', () => {
-    cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] }).as('getSchemas')
-    cy.intercept('/api/v1/data-hub/schemas/my-schema-id', {}).as('postDelete')
+    cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] })
+    cy.intercept('/api/v1/data-hub/schemas/my-schema-id', {})
     cy.mountWithProviders(<DataHubListings />)
 
     cy.getByTestId('list-tabs').find('button[role="tab"]').as('tabs')
@@ -57,10 +57,10 @@ describe('DataHubListings', () => {
     cy.get('@modal').find('header').should('have.text', 'Delete Item')
     cy.get('@modal').find('footer').find('button').as('actions')
     cy.get('@actions').eq(0).click()
-    cy.get("[role='alertdialog']").as('modal').should('not.exist')
+    cy.get("[role='alertdialog']").should('not.exist')
 
     cy.getByTestId('list-action-delete').click()
-    cy.get("[role='alertdialog']").as('modal').should('be.visible')
+    cy.get("[role='alertdialog']").should('be.visible')
     cy.get('@actions').eq(1).click()
     // cy.get('@postDelete').should('have.been.called')
     cy.get('div#toast-1-title')

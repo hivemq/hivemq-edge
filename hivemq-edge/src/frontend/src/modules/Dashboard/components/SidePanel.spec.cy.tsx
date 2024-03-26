@@ -8,7 +8,7 @@ describe('SidePanel', () => {
   beforeEach(() => {
     cy.viewport(350, 800)
     cy.intercept('/api/v1/frontend/notifications', { statusCode: 404 })
-    cy.intercept('/api/v1/frontend/configuration', mockGatewayConfiguration).as('getConfig')
+    cy.intercept('/api/v1/frontend/configuration', mockGatewayConfiguration)
   })
 
   it('should contain the version', () => {
