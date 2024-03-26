@@ -9,6 +9,7 @@ describe('ScriptTable', () => {
   })
 
   it('should render the table component', () => {
+    cy.intercept('/api/v1/data-hub/scripts', { statusCode: 404 })
     cy.mountWithProviders(<ScriptTable />)
 
     cy.get('table').should('have.attr', 'aria-label', 'List of scripts')

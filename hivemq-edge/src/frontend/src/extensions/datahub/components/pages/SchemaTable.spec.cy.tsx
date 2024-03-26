@@ -10,6 +10,7 @@ describe('SchemaTable', () => {
 
   it('should render the table component', () => {
     cy.mountWithProviders(<SchemaTable />)
+    cy.intercept('/api/v1/data-hub/schemas', { statusCode: 404 })
 
     cy.get('table').should('have.attr', 'aria-label', 'List of schemas')
     cy.get('table').find('thead').find('th').should('have.length', 5)
