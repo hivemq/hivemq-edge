@@ -110,6 +110,9 @@ dependencies:
   mermaid:
     specifier: ^10.8.0
     version: 10.8.0
+  monaco-editor:
+    specifier: ^0.47.0
+    version: 0.47.0
   mqtt-match:
     specifier: ^3.0.0
     version: 3.0.0
