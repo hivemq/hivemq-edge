@@ -33,7 +33,7 @@ vi.mock('@/hooks/useEdgeToast/useEdgeToast.tsx', () => {
   return { useEdgeToast: () => ({ successToast: successToast, errorToast: errorToast }) }
 })
 
-const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
+const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>{children}</AuthProvider>
   </QueryClientProvider>

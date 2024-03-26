@@ -75,7 +75,7 @@ const handlers: RequestHandler[] = [
   }),
 ]
 
-const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
+const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
   <AuthProvider>
     <MemoryRouter>{children}</MemoryRouter>
   </AuthProvider>
