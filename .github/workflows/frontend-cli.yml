@@ -98,6 +98,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           component: true
+          morgan: false
           start: pnpm preview
           working-directory: ./hivemq-edge/src/frontend/
           quiet: true
