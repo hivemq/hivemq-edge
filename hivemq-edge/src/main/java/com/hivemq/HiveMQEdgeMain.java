@@ -67,7 +67,12 @@ public class HiveMQEdgeMain {
         }
         final HiveMQEdgeBootstrap bootstrap =
                 new HiveMQEdgeBootstrap(metricRegistry, systemInformation, moduleLoader, configService);
+
+
         injector = bootstrap.bootstrap();
+        if (configService == null) {
+            configService = injector.configurationService();
+        }
     }
 
 
