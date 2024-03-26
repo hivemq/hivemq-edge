@@ -98,7 +98,6 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           component: true
-          morgan: false
           start: pnpm preview
           working-directory: ./hivemq-edge/src/frontend/
 
@@ -134,7 +133,6 @@ jobs:
       - name: 🧪 Run Cypress E2E
         uses: cypress-io/github-action@v6
         with:
-          morgan: false
           start: pnpm preview --port 3000
           working-directory: ./hivemq-edge/src/frontend/
 
