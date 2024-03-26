@@ -11,6 +11,8 @@ describe('PolicyTable', () => {
 
   it('should render the table component', () => {
     cy.mountWithProviders(<PolicyTable />)
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 404 })
+    cy.intercept('/api/v1/data-hub/behavior-validation/policies', { statusCode: 404 })
 
     cy.get('table').should('have.attr', 'aria-label', 'List of policies')
     cy.get('table').find('thead').find('th').should('have.length', 5)
@@ -23,6 +25,8 @@ describe('PolicyTable', () => {
 
   it('should render the error message', () => {
     cy.mountWithProviders(<PolicyTable />)
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 404 })
+    cy.intercept('/api/v1/data-hub/behavior-validation/policies', { statusCode: 404 })
 
     cy.get('div.chakra-skeleton').should('have.length', 10)
     cy.get('[role="alert"]')
@@ -59,6 +63,8 @@ describe('PolicyTable', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<PolicyTable />)
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 404 })
+    cy.intercept('/api/v1/data-hub/behavior-validation/policies', { statusCode: 404 })
 
     cy.checkAccessibility()
     cy.percySnapshot('Component: PolicyTable')

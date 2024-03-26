@@ -6,6 +6,9 @@ import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService
 describe('DataHubListings', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 404 })
+    cy.intercept('/api/v1/data-hub/behavior-validation/policies', { statusCode: 404 })
+    cy.intercept('/api/v1/data-hub/schemas', { statusCode: 404 })
   })
 
   it('should render the tabs', () => {
