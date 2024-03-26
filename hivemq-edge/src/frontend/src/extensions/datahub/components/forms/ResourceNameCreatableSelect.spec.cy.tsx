@@ -24,14 +24,14 @@ describe.only('SchemaNameCreatableSelect', () => {
     cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] }).as('getSchemas')
   })
 
-  it.only('should properly render the SchemaNameCreatableSelect', () => {
+  it('should properly render the SchemaNameCreatableSelect', () => {
     cy.mountWithProviders(<SchemaNameCreatableSelect {...MOCK_RESOURCE_NAME_PROPS} />)
     cy.get('#resource-label').should('have.text', 'Select a resource')
     cy.get('#resource-label + div').should('have.text', 'Select...')
     cy.get('#resource-label').click()
     cy.get('#resource').type('my')
 
-    cy.get('#react-select-2-listbox').find('[role="option"]').as('optionList')
+    cy.get('#resource-label + div').find('[role="option"]').as('optionList')
     cy.get('@optionList').should('have.length', 2)
     cy.get('@optionList').eq(0).should('contain.text', 'my-schema-id')
     cy.get('@optionList').eq(1).should('contain.text', 'Create a new Schema "my"')

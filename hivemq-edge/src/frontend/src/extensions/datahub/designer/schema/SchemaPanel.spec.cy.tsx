@@ -54,7 +54,7 @@ describe('SchemaPanel', () => {
     cy.get('label#root_schemaSource-label').should('contain.text', 'schemaSource')
   })
 
-  it.only('should control the editing flow', () => {
+  it('should control the editing flow', () => {
     cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
 
     cy.get('#root_name-label + div').should('contain.text', 'Select...')
@@ -64,7 +64,7 @@ describe('SchemaPanel', () => {
     // create a draft
     cy.get('#root_name-label + div').click()
     cy.get('#root_name-label + div').type('new-schema')
-    cy.get('#react-select-2-listbox').find('[role="option"]').as('optionList')
+    cy.get('#root_name-label + div').find('[role="option"]').as('optionList')
     cy.get('@optionList').eq(0).click()
 
     cy.get('#root_name-label + div').should('contain.text', 'new-schema')
@@ -79,7 +79,7 @@ describe('SchemaPanel', () => {
     // select an existing schema
     cy.get('#root_name-label + div').click()
     cy.get('#root_name-label + div').type('my-schema')
-    cy.get('#react-select-2-listbox').find('[role="option"]').as('optionList')
+    cy.get('#root_name-label + div').find('[role="option"]').as('optionList')
     cy.get('@optionList').eq(0).click()
 
     cy.get('#root_name-label + div').should('contain.text', 'my-schema-id')
@@ -89,7 +89,7 @@ describe('SchemaPanel', () => {
     // TODO[NVL] This is a bug. Fix it!
     cy.get('#root_version-label').should('have.attr', 'data-invalid')
     cy.get('#root_version-label + div').click()
-    cy.get('#react-select-4-listbox').find('[role="option"]').as('optionList2')
+    cy.get('#root_version-label + div').find('[role="option"]').as('optionList2')
     cy.get('@optionList2').eq(0).click()
     cy.get('#root_version-label').should('not.have.attr', 'data-invalid')
     // TODO[NVL] This is a bug. Fix it!
