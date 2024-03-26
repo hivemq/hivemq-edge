@@ -27,7 +27,7 @@ describe('ScriptTable', () => {
   })
 
   it('should render the data', () => {
-    cy.intercept('/api/v1/data-hub/scripts', { items: [mockScript] }).as('getScripts')
+    cy.intercept('/api/v1/data-hub/scripts', { items: [mockScript] })
 
     cy.mountWithProviders(<ScriptTable />)
     cy.get('tbody tr').should('have.length', 1)
