@@ -6,7 +6,7 @@ import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Placeholder from '@tiptap/extension-placeholder'
 
-import { Box } from '@chakra-ui/react'
+import { Box, chakra, Spinner } from '@chakra-ui/react'
 
 import { Suggestion } from '@datahub/components/interpolation/Suggestion.ts'
 import { parseInterpolations } from '@datahub/components/interpolation/interpolation.utils.ts'
@@ -17,13 +17,14 @@ interface EditorProps {
   placeholder?: string
   value: string | undefined
   onChange?: (value: string) => void
+  isInvalid?: boolean
 }
 
-export const Editor: FC<EditorProps> = ({ id, onChange, value, placeholder }) => {
+const StyledEditor = chakra(EditorContent)
+
+export const Editor: FC<EditorProps> = ({ id, onChange, value, placeholder, isInvalid }) => {
   const editor = useEditor({
-    onUpdate: (e) => {
-      onChange?.(e.editor.getText())
-    },
+    onUpdate: ({ editor }) => onChange?.(editor.getText()),
     extensions: [
       Document,
       Paragraph,
@@ -43,12 +44,21 @@ export const Editor: FC<EditorProps> = ({ id, onChange, value, placeholder }) =>
     injectCSS: false,
   })
 
+  const focus = () => editor?.chain().focus()
+
   if (!editor) {
-    return null
+    return <Spinner />
   }
 
   return (
     <Box
+      pb="4"
+      w="full"
+      onClick={focus}
+      borderRadius="md"
+      border="1px solid"
+      borderColor={isInvalid ? 'red.500' : 'gray.200'}
+      boxShadow={isInvalid ? 'invalidInput' : 'none'}
       sx={{
         '.mention': { backgroundColor: 'red.100', padding: '5px', userSelect: 'none', borderRadius: '2px' },
         '.tiptap p.is-editor-empty:first-child::before': {
@@ -60,7 +70,7 @@ export const Editor: FC<EditorProps> = ({ id, onChange, value, placeholder }) =>
         },
       }}
     >
-      <EditorContent editor={editor} id={id} />
+      <StyledEditor editor={editor} id={id} sx={{ minH: '36', pl: 4, '& :focus-visible': { outline: '0px' } }} />
     </Box>
   )
 }
