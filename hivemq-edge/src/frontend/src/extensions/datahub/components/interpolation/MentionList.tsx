@@ -72,6 +72,8 @@ const SuggestionList = forwardRef<SuggestionListRef, SuggestionListProps>((props
       {props.items.length ? (
         props.items.map((item, index) => (
           <Button
+            colorScheme="gray"
+            variant={index === selectedIndex ? 'solid' : 'ghost'}
             className={`item ${index === selectedIndex ? 'is-selected' : ''}`}
             key={item.id}
             onClick={() => selectItem(index)}
