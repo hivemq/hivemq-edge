@@ -162,7 +162,8 @@ public class HiveMQEdgeBootstrap {
         try {
             commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(moduleLoader);
             commercialModuleLoaderDiscovery.discoverModuleLoaderMainClasses();
-            generalBootstrapService = new GeneralBootstrapServiceImpl(shutdownHooks, metricRegistry, systemInformation);
+            generalBootstrapService =
+                    new GeneralBootstrapServiceImpl(shutdownHooks, metricRegistry, systemInformation, configService);
             commercialModuleLoaderDiscovery.generalBootstrap(generalBootstrapService);
         } catch (Exception e) {
             log.warn("Error on loading the commercial module loader.", e);
@@ -178,7 +179,6 @@ public class HiveMQEdgeBootstrap {
 
         try {
             persistenceBootstrapService = PersistenceBootstrapServiceImpl.decorate(generalBootstrapService,
-                    configService,
                     persistencesService,
                     capabilityService);
             commercialModuleLoaderDiscovery.persistenceBootstrap(persistenceBootstrapService);
