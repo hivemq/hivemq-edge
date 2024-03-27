@@ -31,7 +31,6 @@ export const Suggestion: MentionOptions['suggestion'] = {
     return ['clientId', 'policyId', 'fromState', 'toState', 'validationResult', 'triggerEvent', 'timestamp']
       .map<MentionNodeAttrs>((name, index) => ({ label: name, id: index.toString() }))
       .filter((item) => item.label.toLowerCase().startsWith(query.toLowerCase()))
-      .slice(0, 5)
   },
 
   render: () => {
