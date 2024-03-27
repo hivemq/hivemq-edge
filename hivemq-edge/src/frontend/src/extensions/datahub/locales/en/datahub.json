@@ -168,6 +168,9 @@
       },
       "transform": {
         "placeholder": "functionName"
+      },
+      "message": {
+        "placeholder": "Write the message"
       }
     },
     "codeEditor": {
