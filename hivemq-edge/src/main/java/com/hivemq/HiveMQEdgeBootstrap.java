@@ -96,12 +96,12 @@ public class HiveMQEdgeBootstrap {
         log.trace("Cleaning up temporary folders");
         deleteTmpFolder(systemInformation.getDataFolder());
 
-        bootstrapCoreComponents();
-
         if (configService == null) {
             log.trace("Initializing configuration");
             configService = ConfigurationBootstrap.bootstrapConfig(systemInformation);
         }
+        bootstrapCoreComponents();
+
         bootstrapInjector();
         final long startInit = System.currentTimeMillis();
 
