@@ -11,17 +11,14 @@ import com.hivemq.extensions.core.PersistencesService;
 public class PersistenceBootstrapServiceImpl implements PersistenceBootstrapService {
 
     private final @NotNull GeneralBootstrapService delegate;
-    private final @NotNull ConfigurationService configurationService;
     private final @NotNull PersistencesService persistencesService;
     private final @NotNull HiveMQCapabilityService capabilityService;
 
     private PersistenceBootstrapServiceImpl(
             final @NotNull GeneralBootstrapService delegate,
-            final @NotNull ConfigurationService configurationService,
             final @NotNull PersistencesService persistencesService,
             final @NotNull HiveMQCapabilityService capabilityService) {
         this.delegate = delegate;
-        this.configurationService = configurationService;
         this.persistencesService = persistencesService;
         this.capabilityService = capabilityService;
     }
@@ -44,7 +41,7 @@ public class PersistenceBootstrapServiceImpl implements PersistenceBootstrapServ
 
     @Override
     public @NotNull ConfigurationService configurationService() {
-        return configurationService;
+        return delegate.configurationService();
     }
 
     @Override
@@ -59,11 +56,9 @@ public class PersistenceBootstrapServiceImpl implements PersistenceBootstrapServ
 
     public static @NotNull PersistenceBootstrapService decorate(
             final @NotNull GeneralBootstrapService generalBootstrapService,
-            final @NotNull ConfigurationService configurationService,
             final @NotNull PersistencesService persistencesService,
             final @NotNull HiveMQCapabilityService capabilityService) {
         return new PersistenceBootstrapServiceImpl(generalBootstrapService,
-                configurationService,
                 persistencesService,
                 capabilityService);
     }

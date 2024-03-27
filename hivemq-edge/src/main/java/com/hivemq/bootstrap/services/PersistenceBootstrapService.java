@@ -16,11 +16,9 @@ public interface PersistenceBootstrapService extends GeneralBootstrapService {
 
     static PersistenceBootstrapService decorate(
             final @NotNull GeneralBootstrapService generalBootstrapService,
-            final @NotNull ConfigurationService configurationService,
             final @NotNull PersistencesService persistencesService,
             final @NotNull HiveMQCapabilityService capabilityService) {
         return PersistenceBootstrapServiceImpl.decorate(generalBootstrapService,
-                configurationService,
                 persistencesService,
                 capabilityService);
     }
