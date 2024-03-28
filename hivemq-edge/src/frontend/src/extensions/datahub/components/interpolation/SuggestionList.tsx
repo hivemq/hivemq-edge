@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
-import { Button, Card } from '@chakra-ui/react'
+import { Alert, AlertTitle, Button, VStack } from '@chakra-ui/react'
 import { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion'
+import { useTranslation } from 'react-i18next'
 
 // This type is based on
 // https://github.com/ueberdosis/tiptap/blob/a27c35ac8f1afc9d51f235271814702bc72f1e01/packages/extension-mention/src/mention.ts#L73-L103.
@@ -21,6 +22,7 @@ export type SuggestionListRef = {
 export type SuggestionListProps = SuggestionProps<MentionNodeAttrs>
 
 const SuggestionList = forwardRef<SuggestionListRef, SuggestionListProps>((props, ref) => {
+  const { t } = useTranslation('datahub')
   const [selectedIndex, setSelectedIndex] = useState(0)
 
   const selectItem = (index: number) => {
@@ -68,13 +70,23 @@ const SuggestionList = forwardRef<SuggestionListRef, SuggestionListProps>((props
   }))
 
   return (
-    <Card className="items">
+    <VStack
+      // TODO[NV} Second time styling is replicated; crate a component
+      data-testid="interpolation-container"
+      alignItems="stretch"
+      p={0}
+      gap={0}
+      borderWidth={1}
+      bg="var(--chakra-colors-chakra-body-bg)"
+      borderRadius="var(--chakra-radii-base)"
+      boxShadow="var(--chakra-shadows-lg)"
+    >
       {props.items.length ? (
         props.items.map((item, index) => (
           <Button
+            size="sm"
             colorScheme="gray"
             variant={index === selectedIndex ? 'solid' : 'ghost'}
-            className={`item ${index === selectedIndex ? 'is-selected' : ''}`}
             key={item.id}
             onClick={() => selectItem(index)}
           >
@@ -82,9 +94,11 @@ const SuggestionList = forwardRef<SuggestionListRef, SuggestionListProps>((props
           </Button>
         ))
       ) : (
-        <div className="item">No result</div>
+        <Alert status="warning" size="sm">
+          <AlertTitle> {t('workspace.interpolation.noResult')}</AlertTitle>
+        </Alert>
       )}
-    </Card>
+    </VStack>
   )
 })
 
