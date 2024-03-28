@@ -16,9 +16,10 @@ const mockNode: Node<Bridge | Adapter> = {
 describe('NodePropertyDrawer', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/metrics', []).as('getMetrics')
-    cy.intercept('/api/v1/metrics/**', []).as('getMetricForX')
-    cy.intercept('/api/v1/management/events?*', []).as('getEvents')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 404 })
+    cy.intercept('/api/v1/metrics', [])
+    cy.intercept('/api/v1/metrics/**', [])
+    cy.intercept('/api/v1/management/events?*', [])
   })
 
   it('should render properly', () => {

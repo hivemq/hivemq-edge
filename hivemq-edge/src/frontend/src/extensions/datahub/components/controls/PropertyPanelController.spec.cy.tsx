@@ -7,6 +7,7 @@ import PropertyPanelController from './PropertyPanelController.tsx'
 describe('PropertyPanelController', () => {
   beforeEach(() => {
     cy.viewport(800, 600)
+    cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 404 })
   })
 
   it('should display an error panel without an action', () => {

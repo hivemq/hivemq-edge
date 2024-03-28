@@ -6,6 +6,7 @@ import { MOCK_NOTIFICATIONS } from '@/api/hooks/useFrontendServices/__handlers__
 describe('NotificationBadge', () => {
   beforeEach(() => {
     cy.viewport(900, 500)
+    cy.intercept('/api/v1/frontend/configuration', { statusCode: 404 })
     cy.intercept('https://api.github.com/repos/hivemq/hivemq-edge/releases', []).as('getReleases')
     cy.intercept('/api/v1/frontend/notifications', { items: MOCK_NOTIFICATIONS }).as('getNotifications')
   })
