@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -69,7 +69,7 @@ jobs:
         run: pnpm run build
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4
         with:
           name: application
           path: hivemq-edge/src/frontend/dist
@@ -80,7 +80,7 @@ jobs:
     needs: [ build_production ]
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -89,7 +89,7 @@ jobs:
           run-install: true
 
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4
         with:
           name: application
           path: hivemq-edge/src/frontend/dist
@@ -104,7 +104,7 @@ jobs:
       # after the test run completes store videos
       - name: 💾 Upload Component videos
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4
         with:
           name: cypress-component-videos
           path: hivemq-edge/src/frontend/cypress/videos
@@ -116,7 +116,7 @@ jobs:
     needs: [ build_production ]
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -125,7 +125,7 @@ jobs:
           run-install: true
 
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4
         with:
           name: application
           path: hivemq-edge/src/frontend/dist
@@ -138,7 +138,7 @@ jobs:
 
       - name: 💾 Upload E2E videos
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4
         with:
           name: cypress-e2e-videos
           path: hivemq-edge/src/frontend/cypress/videos
@@ -150,16 +150,16 @@ jobs:
     needs: [ build_production ]
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4
         with:
           name: application
           path: hivemq-edge/src/frontend/dist
 
       - name: 🚥 Run Lighthouse audits
-        uses: treosh/lighthouse-ci-action@v10
+        uses: treosh/lighthouse-ci-action@1b0e7c33270fbba31a18a0fbb1de7cc5256b6d39 # v11
         id: lighthouse
         with:
           temporaryPublicStorage: true # upload lighthouse report to the temporary storage
