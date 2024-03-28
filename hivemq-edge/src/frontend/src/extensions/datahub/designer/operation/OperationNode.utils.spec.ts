@@ -143,6 +143,7 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-schema',
       type: DataHubNodeType.SCHEMA,
       data: {
+        name: 'node-schema',
         type: SchemaType.JSON,
         version: 1,
         schemaSource: '{ t: 1}',
@@ -213,6 +214,7 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-schema',
       type: DataHubNodeType.SCHEMA,
       data: {
+        name: 'node-schema',
         type: SchemaType.JSON,
         version: 1,
         schemaSource: '{ t: 1}',
@@ -290,6 +292,7 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-schema',
       type: DataHubNodeType.SCHEMA,
       data: {
+        name: 'node-schema',
         type: SchemaType.JSON,
         version: 1,
         schemaSource: '{ t: 1}',

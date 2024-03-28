@@ -57,6 +57,7 @@ describe('checkValidityPolicyValidator', () => {
       id: 'node-schema',
       type: DataHubNodeType.SCHEMA,
       data: {
+        name: 'node-schema',
         type: SchemaType.JSON,
         version: 1,
         schemaSource: '{}',
@@ -95,7 +96,6 @@ describe('checkValidityPolicyValidator', () => {
           id: 'node-schema',
           schemaDefinition: 'e30=',
           type: 'JSON',
-          version: 1,
         },
         node: MOCK_NODE_SCHEMA,
       })
@@ -117,6 +117,7 @@ describe('checkValidityPolicyValidators', () => {
       id: 'node-schema',
       type: DataHubNodeType.SCHEMA,
       data: {
+        name: 'node-schema',
         type: SchemaType.JSON,
         version: 1,
         schemaSource: '{}',
