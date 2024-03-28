@@ -6,7 +6,7 @@ describe('Editor', () => {
   })
 
   it('should render the editor', () => {
-    cy.mountWithProviders(<Editor id="my-id" value="This is a test" />)
+    cy.mountWithProviders(<Editor id="my-id" labelId="my-label-id" value="This is a test" />)
     cy.get('#my-id').should('contain.text', 'This is a test')
     cy.get('#my-id').click()
     cy.get('#my-id').type('{selectall}')
@@ -19,7 +19,7 @@ describe('Editor', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<Editor id="my-id" value="This is a test ${validationResult}" />)
+    cy.mountWithProviders(<Editor id="my-id" labelId="my-label-id" value="This is a test ${validationResult}" />)
     cy.checkAccessibility()
   })
 })
