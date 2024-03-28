@@ -71,7 +71,7 @@ Connect any number of bridges to transport Edge data upstream. By connecting Edg
 
 == Documentation
 
-The documentation for the HiveMQ Edge can be found https://github.com/hivemq/hivemq-edge/wiki[here].
+The documentation for the HiveMQ Edge can be found https://docs.hivemq.com/hivemq-edge/index.html[here].
 
 Additional Resources
 
@@ -87,7 +87,7 @@ The ideal place for questions or discussions about the HiveMQ Edge Edition is ou
 
 === Quick Start
 
-* Download the latest https://github.com/hivemq/hivemq-edge/releases/download/2023.9/hivemq-edge-2023.9.zip[HiveMQ Edge binary package].
+* Download the latest https://github.com/hivemq/hivemq-edge/releases/latest[HiveMQ Edge binary package].
 * Unzip the package.
 * Run the run.sh (Linux/OSX) or run.bat (Windows) in the bin folder of the package.
 
