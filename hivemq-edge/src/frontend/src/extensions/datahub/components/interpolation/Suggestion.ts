@@ -2,7 +2,7 @@ import { ReactRenderer } from '@tiptap/react'
 import { MentionOptions } from '@tiptap/extension-mention'
 import tippy, { type Instance as TippyInstance } from 'tippy.js'
 
-import MentionList, { SuggestionListRef } from './MentionList.jsx'
+import SuggestionList, { SuggestionListRef } from './SuggestionList.jsx'
 import { getItems } from '@datahub/components/interpolation/interpolation.utils.ts'
 
 /**
@@ -34,7 +34,7 @@ export const Suggestion: MentionOptions['suggestion'] = {
 
     return {
       onStart: (props) => {
-        component = new ReactRenderer(MentionList, {
+        component = new ReactRenderer(SuggestionList, {
           props,
           editor: props.editor,
         })
