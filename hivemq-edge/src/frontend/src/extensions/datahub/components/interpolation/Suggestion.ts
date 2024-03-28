@@ -2,7 +2,8 @@ import { ReactRenderer } from '@tiptap/react'
 import { MentionOptions } from '@tiptap/extension-mention'
 import tippy, { type Instance as TippyInstance } from 'tippy.js'
 
-import MentionList, { MentionNodeAttrs, SuggestionListRef } from './MentionList.jsx'
+import MentionList, { SuggestionListRef } from './MentionList.jsx'
+import { getItems } from '@datahub/components/interpolation/interpolation.utils.ts'
 
 /**
  * Workaround for the current typing incompatibility between Tippy.js and Tiptap
@@ -26,13 +27,7 @@ const DOM_RECT_FALLBACK: DOMRect = {
 }
 
 export const Suggestion: MentionOptions['suggestion'] = {
-  items: ({ query }) => {
-    // TODO[NVL] Get the list from the datahub API
-    return ['clientId', 'policyId', 'fromState', 'toState', 'validationResult', 'triggerEvent', 'timestamp']
-      .map<MentionNodeAttrs>((name, index) => ({ label: name, id: index.toString() }))
-      .filter((item) => item.label.toLowerCase().startsWith(query.toLowerCase()))
-  },
-
+  items: ({ query }) => getItems(query),
   render: () => {
     let component: ReactRenderer<SuggestionListRef> | undefined
     let popup: TippyInstance | undefined
