@@ -15,10 +15,17 @@
  */
 package com.hivemq.extensions.core;
 
+import com.hivemq.bootstrap.services.CompleteBootstrapService;
+import com.hivemq.bootstrap.services.GeneralBootstrapService;
+import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 public interface ModuleLoaderMain {
 
-    void start(@NotNull CoreModuleService coreModuleService);
+    void generalBootstrap(@NotNull GeneralBootstrapService coreModuleService);
 
+    void persistenceBootstrap(@NotNull PersistenceBootstrapService coreModuleService);
+
+
+    void afterPersistenceBootstrap(@NotNull CompleteBootstrapService completeBootstrapService);
 }
