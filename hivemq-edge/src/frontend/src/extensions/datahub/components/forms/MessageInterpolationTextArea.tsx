@@ -31,6 +31,7 @@ export const MessageInterpolationTextArea = (props: WidgetProps) => {
 
       <Editor
         id={props.id}
+        labelId={`${props.id}-label`}
         isRequired={props.required}
         placeholder={t('workspace.function.message.placeholder') as string}
         value={props.value}

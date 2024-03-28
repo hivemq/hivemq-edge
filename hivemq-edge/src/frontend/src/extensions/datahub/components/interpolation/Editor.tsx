@@ -14,6 +14,7 @@ import { parseInterpolations } from '@datahub/components/interpolation/interpola
 interface EditorProps {
   as?: 'input' | 'textarea'
   id: string
+  labelId: string
   isRequired?: boolean
   placeholder?: string
   value: string | undefined
@@ -26,7 +27,16 @@ const SingleLineDocument = Document.extend({
   content: 'block',
 })
 
-export const Editor: FC<EditorProps> = ({ as = 'input', id, onChange, value, placeholder, isInvalid }) => {
+export const Editor: FC<EditorProps> = ({
+  as = 'input',
+  id,
+  labelId,
+  isRequired,
+  onChange,
+  value,
+  placeholder,
+  isInvalid,
+}) => {
   const editor = useEditor({
     onUpdate: ({ editor }) => onChange?.(editor.getText()),
     extensions: [
@@ -50,7 +60,6 @@ export const Editor: FC<EditorProps> = ({ as = 'input', id, onChange, value, pla
 
   const focus = () => editor?.chain().focus()
 
-  console.log('XXXXXXX type', as)
   if (!editor) {
     return <Spinner />
   }
@@ -75,7 +84,17 @@ export const Editor: FC<EditorProps> = ({ as = 'input', id, onChange, value, pla
         },
       }}
     >
-      <StyledEditor editor={editor} id={id} sx={{ minH: '36', pl: 4, '& :focus-visible': { outline: '0px' } }} />
+      <StyledEditor
+        role="textbox"
+        aria-required={isRequired}
+        aria-multiline={as === 'textarea'}
+        aria-autocomplete="list"
+        aria-placeholder={placeholder}
+        aria-labelledby={labelId}
+        editor={editor}
+        id={id}
+        sx={{ minH: '36', pl: 4, '& :focus-visible': { outline: '0px' } }}
+      />
     </Box>
   )
 }
