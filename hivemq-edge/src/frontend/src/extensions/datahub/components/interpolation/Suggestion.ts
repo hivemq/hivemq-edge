@@ -28,6 +28,7 @@ const DOM_RECT_FALLBACK: DOMRect = {
 
 export const Suggestion: MentionOptions['suggestion'] = {
   items: ({ query }) => getItems(query),
+  char: '@',
   render: () => {
     let component: ReactRenderer<SuggestionListRef> | undefined
     let popup: TippyInstance | undefined
