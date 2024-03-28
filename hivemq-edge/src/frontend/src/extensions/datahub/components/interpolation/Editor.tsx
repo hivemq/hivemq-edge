@@ -12,6 +12,7 @@ import { Suggestion } from '@datahub/components/interpolation/Suggestion.ts'
 import { parseInterpolations } from '@datahub/components/interpolation/interpolation.utils.ts'
 
 interface EditorProps {
+  as?: 'input' | 'textarea'
   id: string
   isRequired?: boolean
   placeholder?: string
@@ -21,12 +22,15 @@ interface EditorProps {
 }
 
 const StyledEditor = chakra(EditorContent)
+const SingleLineDocument = Document.extend({
+  content: 'block',
+})
 
-export const Editor: FC<EditorProps> = ({ id, onChange, value, placeholder, isInvalid }) => {
+export const Editor: FC<EditorProps> = ({ as = 'input', id, onChange, value, placeholder, isInvalid }) => {
   const editor = useEditor({
     onUpdate: ({ editor }) => onChange?.(editor.getText()),
     extensions: [
-      Document,
+      as === 'input' ? SingleLineDocument : Document,
       Paragraph,
       Text,
       Mention.configure({
@@ -46,6 +50,7 @@ export const Editor: FC<EditorProps> = ({ id, onChange, value, placeholder, isIn
 
   const focus = () => editor?.chain().focus()
 
+  console.log('XXXXXXX type', as)
   if (!editor) {
     return <Spinner />
   }
