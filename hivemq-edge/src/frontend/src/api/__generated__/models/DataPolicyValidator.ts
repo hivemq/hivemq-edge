@@ -14,6 +14,18 @@ export type DataPolicyValidator = {
     /**
      * The type of the validator.
      */
-    type: string;
+    type: DataPolicyValidator.type;
 };
+
+export namespace DataPolicyValidator {
+
+    /**
+     * The type of the validator.
+     */
+    export enum type {
+        SCHEMA = 'SCHEMA',
+    }
+
+
+}
 
