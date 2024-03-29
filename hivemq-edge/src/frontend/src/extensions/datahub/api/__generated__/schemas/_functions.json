@@ -1,48 +1,53 @@
 {
   "anyOf": [
     {
-      "title": "Mqtt.disconnect",
-      "description": "Disconnects the client.",
+      "title": "Serdes.deserialize",
+      "description": "Deserializes a binary MQTT message payload into a data object based on the configured JSON or Protobuf Schema.",
       "type": "object",
-      "required": [],
+      "required": ["schemaId", "schemaVersion"],
       "metaData": {
-        "inLicenseAllowed": false,
-        "isTerminal": true,
-        "isDataOnly": false,
-        "hasArguments": false,
-        "supportedEvents": ["Mqtt.OnInboundConnect", "Mqtt.OnInboundPublish", "Mqtt.OnInboundSubscribe"]
-      },
-      "properties": {}
-    },
-    {
-      "title": "Mqtt.UserProperties.add",
-      "description": "Adds a user property to the MQTT message.",
-      "type": "object",
-      "required": ["name", "value"],
-      "metaData": {
-        "inLicenseAllowed": false,
         "isTerminal": false,
-        "isDataOnly": false,
+        "isDataOnly": true,
         "hasArguments": true,
-        "supportedEvents": [
-          "Mqtt.OnInboundConnect",
-          "Mqtt.OnInboundPublish",
-          "Mqtt.OnInboundSubscribe",
-          "Mqtt.OnInboundDisconnect"
-        ]
+        "supportedEvents": []
       },
       "properties": {
-        "name": {
+        "schemaId": {
           "type": "string",
-          "title": "name",
-          "description": "Specifies the name of the user property. Multiple user properties with the same name are allowed.",
-          "format": "interpolation",
+          "title": "schemaId",
+          "description": "The identifier of the JSON or Protobuf Schema to be used for deserialization.",
           "metadata": {}
         },
-        "value": {
+        "schemaVersion": {
           "type": "string",
-          "title": "value",
-          "description": "Specifies the value of the user property.",
+          "title": "schemaVersion",
+          "description": "The version of the schema to be used for deserialization.",
+          "metadata": {}
+        }
+      }
+    },
+    {
+      "title": "Serdes.serialize",
+      "description": "Serializes a data object into a binary MQTT message payload based on the configured JSON Schema. Protobuf Schemas are currently not supported for serialization.",
+      "type": "object",
+      "required": ["schemaId", "schemaVersion"],
+      "metaData": {
+        "isTerminal": false,
+        "isDataOnly": true,
+        "hasArguments": true,
+        "supportedEvents": []
+      },
+      "properties": {
+        "schemaId": {
+          "type": "string",
+          "title": "schemaId",
+          "description": "The identifier of the JSON Schema to be used for serialization",
+          "metadata": {}
+        },
+        "schemaVersion": {
+          "type": "string",
+          "title": "schemaVersion",
+          "description": "The version of the schema to be used for serialization.",
           "metadata": {}
         }
       }
@@ -53,9 +58,8 @@
       "type": "object",
       "required": ["level", "message"],
       "metaData": {
-        "inLicenseAllowed": false,
         "isTerminal": false,
-        "isDataOnly": true,
+        "isDataOnly": false,
         "hasArguments": true,
         "supportedEvents": [
           "Event.OnAny",
@@ -71,124 +75,46 @@
           "type": "string",
           "title": "Log Level",
           "description": "Specifies the log level of the function.",
-          "format": "interpolation",
           "metadata": {}
         },
         "message": {
           "type": "string",
           "title": "Message",
           "description": "Adds a user-defined string that prints to the log file. For more information, see Example log message.",
-          "format": "interpolation",
           "metadata": {}
         }
       }
     },
     {
-      "title": "Delivery.redirectTo",
-      "description": "Redirects an MQTT PUBLISH message to a specified topic.",
+      "title": "Mqtt.UserProperties.add",
+      "description": "Adds a user property to the MQTT message.",
       "type": "object",
-      "required": ["topic", "applyPolicies"],
+      "required": ["name", "value"],
       "metaData": {
-        "inLicenseAllowed": true,
-        "isTerminal": true,
-        "isDataOnly": false,
-        "hasArguments": true,
-        "supportedEvents": []
-      },
-      "properties": {
-        "topic": {
-          "type": "string",
-          "title": "topic",
-          "description": "The destination MQTT topic according to the MQTT specification.",
-          "format": "interpolation",
-          "metadata": {}
-        },
-        "applyPolicies": {
-          "type": "boolean",
-          "title": "applyPolicies",
-          "description": "Defines whether policies are executed after publishing to a different topic.",
-          "format": "interpolation",
-          "metadata": {}
-        }
-      }
-    },
-    {
-      "title": "Serdes.deserialize",
-      "description": "Deserializes a binary MQTT message payload into a data object based on the configured JSON or Protobuf Schema.",
-      "type": "object",
-      "required": ["schemaId", "schemaVersion"],
-      "metaData": {
-        "inLicenseAllowed": true,
         "isTerminal": false,
         "isDataOnly": false,
         "hasArguments": true,
-        "supportedEvents": []
+        "supportedEvents": [
+          "Mqtt.OnInboundConnect",
+          "Mqtt.OnInboundPublish",
+          "Mqtt.OnInboundSubscribe",
+          "Mqtt.OnInboundDisconnect"
+        ]
       },
       "properties": {
-        "schemaId": {
+        "name": {
           "type": "string",
-          "title": "schemaId",
-          "description": "The identifier of the JSON or Protobuf Schema to be used for deserialization.",
-          "format": "interpolation",
+          "title": "name",
+          "description": "Specifies the name of the user property. Multiple user properties with the same name are allowed.",
           "metadata": {}
         },
-        "schemaVersion": {
+        "value": {
           "type": "string",
-          "title": "schemaVersion",
-          "description": "The version of the schema to be used for deserialization.",
-          "format": "interpolation",
-          "metadata": {}
-        }
-      }
-    },
-    {
-      "title": "Mqtt.drop",
-      "description": "Drops the MQTT XXXXXXXXXX packet that is currently processed.",
-      "type": "object",
-      "required": [],
-      "metaData": {
-        "inLicenseAllowed": false,
-        "isTerminal": true,
-        "isDataOnly": false,
-        "hasArguments": true,
-        "supportedEvents": ["Mqtt.OnInboundPublish", "Mqtt.OnInboundSubscribe"]
-      },
-      "properties": {
-        "reasonString": {
-          "type": "string",
-          "title": "reasonString",
-          "description": "Specifies the reason string that is returned to MQTT 5 clients.",
-          "format": "interpolation",
-          "metadata": {}
-        }
-      }
-    },
-    {
-      "title": "Serdes.serialize",
-      "description": "Serializes a data object into a binary MQTT message payload based on the configured JSON Schema. Protobuf Schemas are currently not supported for serialization.",
-      "type": "object",
-      "required": ["schemaId", "schemaVersion"],
-      "metaData": {
-        "inLicenseAllowed": true,
-        "isTerminal": false,
-        "isDataOnly": false,
-        "hasArguments": true,
-        "supportedEvents": []
-      },
-      "properties": {
-        "schemaId": {
-          "type": "string",
-          "title": "schemaId",
-          "description": "The identifier of the JSON Schema to be used for serialization",
-          "format": "interpolation",
-          "metadata": {}
-        },
-        "schemaVersion": {
-          "type": "string",
-          "title": "schemaVersion",
-          "description": "The version of the schema to be used for serialization.",
-          "format": "interpolation",
-          "metadata": {}
+          "title": "value",
+          "description": "Specifies the value of the user property.",
+          "metadata": {
+            "interpolation_forbidden": true
+          }
         }
       }
     },
@@ -198,9 +124,8 @@
       "type": "object",
       "required": ["metricName", "incrementBy"],
       "metaData": {
-        "inLicenseAllowed": false,
         "isTerminal": false,
-        "isDataOnly": true,
+        "isDataOnly": false,
         "hasArguments": true,
         "supportedEvents": [
           "Event.OnAny",
@@ -216,38 +141,76 @@
           "type": "string",
           "title": "metricName",
           "description": "Specifies the name of the metric to be incremented.",
-          "metadata": {}
+          "metadata": {
+            "interpolation_forbidden": true
+          }
         },
         "incrementBy": {
           "type": "integer",
           "title": "incrementBy",
           "description": "Specifies the amount by which the counter should be incremented. Negative values are supported.",
-          "format": "interpolation",
           "metadata": {}
         }
       }
     },
     {
-      "title": "fn:Script-7:1",
-      "description": "Calls a transform script to modify the publish.",
+      "title": "Mqtt.drop",
+      "description": "Drops the MQTT packet that is currently processed.",
       "type": "object",
-      "required": ["transform"],
+      "required": [],
       "metaData": {
-        "inLicenseAllowed": true,
-        "isTerminal": false,
+        "isTerminal": true,
         "isDataOnly": false,
+        "hasArguments": true,
+        "supportedEvents": ["Mqtt.OnInboundPublish", "Mqtt.OnInboundSubscribe"]
+      },
+      "properties": {
+        "reasonString": {
+          "type": "string",
+          "title": "reasonString",
+          "description": "Specifies the reason string that is returned to MQTT 5 clients.",
+          "metadata": {}
+        }
+      }
+    },
+    {
+      "title": "Delivery.redirectTo",
+      "description": "Redirects an MQTT PUBLISH message to a specified topic.",
+      "type": "object",
+      "required": ["topic", "applyPolicies"],
+      "metaData": {
+        "isTerminal": true,
+        "isDataOnly": true,
         "hasArguments": true,
         "supportedEvents": []
       },
       "properties": {
-        "transform": {
+        "topic": {
           "type": "string",
-          "title": "Function name",
-          "description": "The script name that should be called.",
-          "format": "datahub:function-name",
+          "title": "topic",
+          "description": "The destination MQTT topic according to the MQTT specification.",
+          "metadata": {}
+        },
+        "applyPolicies": {
+          "type": "boolean",
+          "title": "applyPolicies",
+          "description": "Defines whether policies are executed after publishing to a different topic.",
           "metadata": {}
         }
       }
+    },
+    {
+      "title": "Mqtt.disconnect",
+      "description": "Disconnects the client.",
+      "type": "object",
+      "required": [],
+      "metaData": {
+        "isTerminal": true,
+        "isDataOnly": false,
+        "hasArguments": false,
+        "supportedEvents": ["Mqtt.OnInboundConnect", "Mqtt.OnInboundPublish", "Mqtt.OnInboundSubscribe"]
+      },
+      "properties": {}
     }
   ]
 }
