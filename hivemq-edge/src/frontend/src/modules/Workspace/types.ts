@@ -5,7 +5,6 @@ export interface EdgeFlowOptions {
   showStatus: boolean
   showHosts: boolean
   showGateway: boolean
-  showMonitoringOnEdge: boolean
 }
 
 export enum EdgeFlowLayout {
