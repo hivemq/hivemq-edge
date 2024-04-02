@@ -17,7 +17,7 @@ describe('getBridgeTopics', () => {
     const actual = getBridgeTopics(mockBridge)
     const expected: { local: TopicFilter[]; remote: TopicFilter[] } = {
       local: [{ topic: '#' }],
-      remote: [{ topic: 'root/topic/act/1' }],
+      remote: [{ topic: 'root/topic/ref/1' }],
     }
 
     expect(actual).toStrictEqual(expected)
@@ -135,7 +135,7 @@ describe('mergeAllTopics', () => {
 
     expect(actual).toStrictEqual([
       '#',
-      'root/topic/act/1',
+      'root/topic/ref/1',
       'a/valid/topic/opc-ua-client/1',
       'a/valid/topic/opc-ua-client/2',
       'a/valid/topic/modbus/1',
@@ -145,7 +145,7 @@ describe('mergeAllTopics', () => {
   it('should extract every topics from all bridges', async () => {
     const actual = mergeAllTopics(undefined, undefined, [mockBridge, mockBridge])
 
-    expect(actual).toStrictEqual(['#', 'root/topic/act/1'])
+    expect(actual).toStrictEqual(['#', 'root/topic/ref/1'])
   })
 
   it('should extract every topics from all  adapters', async () => {

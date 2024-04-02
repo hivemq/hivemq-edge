@@ -2,7 +2,7 @@
 
 import { MOCK_NODE_BRIDGE } from '@/__test-utils__/react-flow/nodes.ts'
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
-import { MOCK_TOPIC_ACT1, MOCK_TOPIC_ALL } from '@/__test-utils__/react-flow/topics.ts'
+import { MOCK_TOPIC_ALL, MOCK_TOPIC_REF1 } from '@/__test-utils__/react-flow/topics.ts'
 
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { formatTopicString } from '@/components/MQTT/topic-utils.ts'
@@ -29,7 +29,7 @@ describe('NodeBridge', () => {
     cy.getByTestId('topics-container')
       .eq(0)
       .should('be.visible')
-      .should('contain.text', formatTopicString(MOCK_TOPIC_ACT1))
+      .should('contain.text', formatTopicString(MOCK_TOPIC_REF1))
     cy.getByTestId('topics-container')
       .eq(1)
       .should('be.visible')

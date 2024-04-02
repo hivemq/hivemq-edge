@@ -7,7 +7,7 @@ export const MOCK_DATA_POLICY_ID = 'my-policy-id'
 export const mockDataPolicy: DataPolicy = {
   id: MOCK_DATA_POLICY_ID,
   createdAt: MOCK_CREATED_AT,
-  matching: { topicFilter: 'topic/mock/1' },
+  matching: { topicFilter: 'root/topic/ref/1' },
 }
 
 export const handlers = [
