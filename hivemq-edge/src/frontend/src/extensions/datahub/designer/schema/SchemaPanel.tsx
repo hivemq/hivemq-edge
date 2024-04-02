@@ -21,13 +21,14 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { nodes } = useDataHubDraftStore()
   const [formData, setFormData] = useState<SchemaData | null>(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<SchemaData> | undefined
-    return adapterNode ? adapterNode.data : null
+
+    const internalStatus = typeof adapterNode?.data.version === 'number' ? undefined : adapterNode?.data.version
+    return adapterNode ? { ...adapterNode.data, internalStatus } : null
   })
 
   const onReactFlowSchemaFormChange = useCallback(
     (changeEvent: IChangeEvent, id?: string | undefined) => {
       // id have form "root_XXXXXX", which makes the test unsafe
-      console.log('xxxxxchang', id)
       if (id?.includes('name')) {
         const schema = allSchemas?.items?.findLast((e) => e.id === changeEvent.formData.name)
         if (schema) {
@@ -124,6 +125,9 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
       //     : ['name', 'version', 'schemaSource', 'messageType', 'type'],
       name: {
         'ui:widget': 'datahub:schema-name',
+        'ui:options': {
+          isDraft: schema?.version === ResourceStatus.DRAFT,
+        },
       },
       version: {
         'ui:options': {
