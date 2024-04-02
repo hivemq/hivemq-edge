@@ -52,7 +52,9 @@ const Option = <T extends ResourceFamily>(props: OptionProps<T>) => {
           </Text>
           <HStack>
             <Text fontSize="sm">{props.data.type}</Text>
-            <Text fontSize="sm">{lastItem ? `[${firstItem}...${lastItem}]` : `[${firstItem}]`}</Text>
+            {props.data.versions.length && (
+              <Text fontSize="sm">{lastItem ? `[${firstItem}...${lastItem}]` : `[${firstItem}]`}</Text>
+            )}
           </HStack>
         </HStack>
         <Text fontSize="sm">{props.data.description}</Text>
@@ -73,7 +75,16 @@ const ResourceNameCreatableSelect = (
   const [options, setOptions] = useState(defaultOptions)
 
   useEffect(() => {
-    if (defaultOptions.length) setOptions(defaultOptions)
+    if (defaultOptions.length) {
+      const options = [...defaultOptions]
+      const { isDraft } = props.options
+      if (isDraft)
+        options.push({
+          name: props.value,
+          versions: [],
+        })
+      setOptions(options)
+    }
   }, [defaultOptions])
 
   const onCreatableSelectChange = useCallback<
@@ -135,7 +146,6 @@ const ResourceNameCreatableSelect = (
 
 export const SchemaNameCreatableSelect = (props: WidgetProps) => {
   const { data, isLoading } = useGetAllSchemas()
-
   const options = useMemo<ResourceFamily[]>(() => {
     if (!data) return []
     if (!data.items) return []
