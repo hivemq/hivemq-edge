@@ -1,35 +1,16 @@
 import { FC, useMemo } from 'react'
+import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from 'reactflow'
+
+import DataPolicyEdgeCTA from '@/modules/Workspace/components/edges/DataPolicyEdgeCTA.tsx'
+import ObservabilityEdgeCTA from '@/modules/Workspace/components/edges/ObservabilityEdgeCTA.tsx'
+import { useGetPoliciesMatching } from '@/modules/Workspace/hooks/useGetPoliciesMatching.ts'
+
+import { DataHubNodeType } from '@datahub/types.ts'
+import { HStack } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
-import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath, Node } from 'reactflow'
-import { Icon, useColorMode } from '@chakra-ui/react'
-import { BiBarChartSquare } from 'react-icons/bi'
-import { MdPolicy } from 'react-icons/md'
 
-import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.tsx'
-import IconButton from '@/components/Chakra/IconButton.tsx'
-import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
-import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
-
-import { DataHubNodeType, PolicyType, TopicFilterData } from '@datahub/types.ts'
-import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-
-const MonitoringEdge: FC<EdgeProps> = ({
-  source,
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
-  markerEnd,
-  style,
-}) => {
-  const { t } = useTranslation()
-  const { options } = useEdgeFlowContext()
-  const navigate = useNavigate()
-  const { colorMode } = useColorMode()
+const MonitoringEdge: FC<EdgeProps> = (props) => {
+  const { id, source, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, markerEnd, style } = props
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -38,64 +19,50 @@ const MonitoringEdge: FC<EdgeProps> = ({
     targetY,
     targetPosition,
   })
-  const hasDataHub = useGetCapability(CAPABILITY.DATAHUB)
-  const { nodes: datahubNodes } = useDataHubDraftStore()
-  const { nodes: workspaceNodes } = useWorkspaceStore()
+  const policies = useGetPoliciesMatching(source)
+  const navigate = useNavigate()
 
-  // TODO[NVL] Might be worth exporting as a custom hook if more usage
-  const policyRoute = useMemo(() => {
-    if (!hasDataHub) return undefined
+  const policyRoutes = useMemo(() => {
+    if (!policies) return undefined
 
-    const sourceNode = workspaceNodes.find((node) => node.id === source)
-    if (!sourceNode) return undefined
+    return policies.map((e) => `/datahub/${DataHubNodeType.DATA_POLICY}/${e.id}`)
+  }, [policies])
 
-    const sourceFilters = datahubNodes.find((node: Node<TopicFilterData>) => {
-      return node.type === DataHubNodeType.TOPIC_FILTER && node.data.adapter === sourceNode.data.id
-    })
-    if (!sourceFilters) return undefined
+  const handleOpenObservability = () => {
+    navigate(`/edge-flow/link/${id}`)
+  }
 
-    return `${PolicyType.DATA_POLICY}/${sourceFilters.id}`
-  }, [workspaceNodes, datahubNodes, source, hasDataHub])
+  const handleShowPolicy = (route: string) => {
+    navigate(route)
+  }
+
+  const handleShowAllPolicies = () => {
+    navigate('/datahub')
+  }
 
   return (
     <>
       <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
-      {options.showMonitoringOnEdge && (
-        <EdgeLabelRenderer>
-          <div
-            style={{
-              position: 'absolute',
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-
-              // everything inside EdgeLabelRenderer has no pointer events by default
-              // if you have an interactive element, set pointer-events: all
-              pointerEvents: 'all',
-            }}
-            className="nodrag nopan"
-          >
-            <IconButton
-              aria-label={t('workspace.observability.aria-label', { device: source })}
-              variant={colorMode === 'light' ? 'outline' : 'solid'}
-              icon={<Icon as={BiBarChartSquare} boxSize={6} />}
-              backgroundColor={colorMode === 'light' ? 'white' : 'gray.700'}
-              color={style?.stroke}
-              onClick={() => navigate(`/edge-flow/link/${id}`)}
-              borderRadius={25}
+      <EdgeLabelRenderer>
+        <HStack
+          sx={{
+            position: 'absolute',
+            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+            pointerEvents: 'all',
+          }}
+          className="nodrag nopan"
+        >
+          <ObservabilityEdgeCTA source={source} style={style} onClick={handleOpenObservability} />
+          {policyRoutes && (
+            <DataPolicyEdgeCTA
+              style={style}
+              policyRoutes={policyRoutes}
+              onClickPolicy={handleShowPolicy}
+              onClickAll={handleShowAllPolicies}
             />
-            {policyRoute && (
-              <IconButton
-                aria-label="Datahub Policy"
-                variant={colorMode === 'light' ? 'outline' : 'solid'}
-                icon={<Icon as={MdPolicy} boxSize={6} />}
-                backgroundColor={colorMode === 'light' ? 'white' : 'gray.700'}
-                color={style?.stroke}
-                onClick={() => navigate(`/datahub/${policyRoute}`)}
-                borderRadius={25}
-              />
-            )}
-          </div>
-        </EdgeLabelRenderer>
-      )}
+          )}
+        </HStack>
+      </EdgeLabelRenderer>
     </>
   )
 }
