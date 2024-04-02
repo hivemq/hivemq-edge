@@ -181,8 +181,8 @@
       "display_one": "{{versionNumber}}",
       "display_other": "{{versionNumber}} (latest)",
       "create": "Create a new version '{{ newVersion }}' from '{{ oldVersion }}'",
-      "status_DRAFT": "1 (Draft)",
-      "status_MODIFIED": "{{version}} (New version)"
+      "status_DRAFT": "DRAFT",
+      "status_MODIFIED": "MODIFIED - a new version will be created"
     },
     "name": {
       "noOption": "No $t(datahub:workspace.nodes.type, { 'context': '{{type}}' }) available",
