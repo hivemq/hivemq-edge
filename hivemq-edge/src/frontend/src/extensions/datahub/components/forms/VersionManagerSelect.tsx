@@ -4,6 +4,7 @@ import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { OnChangeValue, Select } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 import { FormControl, FormLabel } from '@chakra-ui/react'
+import { ResourceStatus } from '@datahub/types.ts'
 
 export const VersionManagerSelect = (props: WidgetProps) => {
   const { t } = useTranslation('datahub')
@@ -18,6 +19,12 @@ export const VersionManagerSelect = (props: WidgetProps) => {
       value: versionNumber.toString(),
     }))
   }, [t, options.selectOptions])
+
+  const label = useMemo(() => {
+    if (props.value === ResourceStatus.MODIFIED || props.value === ResourceStatus.DRAFT)
+      return t('workspace.version.status', { context: props.value })
+    return props.value.toString()
+  }, [props.value, t])
 
   const onChange = useCallback<(newValue: OnChangeValue<{ label: string; value: string }, false>) => void>(
     (newValue) => {
@@ -49,7 +56,7 @@ export const VersionManagerSelect = (props: WidgetProps) => {
         inputId={props.id}
         isRequired={props.required}
         options={selectOptions}
-        value={{ label: props.value, value: props.value }}
+        value={{ label: label, value: props.value }}
         onBlur={onBlur}
         onFocus={onFocus}
         onChange={onChange}
