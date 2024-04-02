@@ -8,7 +8,7 @@ import { Card, CardBody } from '@chakra-ui/react'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 
 import { PanelProps, ResourceStatus, SchemaData, SchemaType } from '@datahub/types.ts'
-import { MOCK_JSONSCHEMA_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
+import { MOCK_JSONSCHEMA_SCHEMA, MOCK_PROTOBUF_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.tsx'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
@@ -27,6 +27,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const onReactFlowSchemaFormChange = useCallback(
     (changeEvent: IChangeEvent, id?: string | undefined) => {
       // id have form "root_XXXXXX", which makes the test unsafe
+      console.log('xxxxxchang', id)
       if (id?.includes('name')) {
         const schema = allSchemas?.items?.findLast((e) => e.id === changeEvent.formData.name)
         if (schema) {
@@ -45,6 +46,15 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
             type: SchemaType.JSON,
             version: ResourceStatus.DRAFT,
             schemaSource: MOCK_JSONSCHEMA_SCHEMA,
+          })
+        }
+      }
+      if (id?.includes('type') && formData) {
+        if (formData.type !== changeEvent.formData.type) {
+          setFormData({
+            ...formData,
+            type: changeEvent.formData.type,
+            schemaSource: changeEvent.formData.type === SchemaType.JSON ? MOCK_JSONSCHEMA_SCHEMA : MOCK_PROTOBUF_SCHEMA,
           })
         }
       }
