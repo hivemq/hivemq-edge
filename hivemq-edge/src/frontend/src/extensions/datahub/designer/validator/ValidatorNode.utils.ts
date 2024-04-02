@@ -11,7 +11,6 @@ import {
   DryRunResults,
   SchemaArguments,
   ValidatorData,
-  ValidatorType,
   WorkspaceAction,
   WorkspaceState,
 } from '@datahub/types.ts'

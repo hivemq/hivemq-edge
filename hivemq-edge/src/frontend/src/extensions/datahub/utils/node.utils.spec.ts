@@ -1,9 +1,10 @@
 import { describe, expect } from 'vitest'
-import { DataHubNodeType, DataPolicyData, OperationData, SchemaType, StrategyType, ValidatorType } from '../types.ts'
+import { DataHubNodeType, DataPolicyData, OperationData, SchemaType, StrategyType } from '../types.ts'
 import { getNodeId, getNodePayload, isValidPolicyConnection } from './node.utils.ts'
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
 import { Node } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
+import { DataPolicyValidator } from '@/api/__generated__'
 
 describe('getNodeId', () => {
   it('should return the initial state of the store', async () => {
@@ -43,7 +44,7 @@ describe('getNodePayload', () => {
             version: '1',
           },
         ],
-        type: ValidatorType.SCHEMA,
+        type: DataPolicyValidator.type.SCHEMA,
         strategy: StrategyType.ALL_OF,
       },
     },

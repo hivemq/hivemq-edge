@@ -131,11 +131,6 @@ export namespace DataPolicyData {
 }
 
 // TODO[18740] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18740/details/
-export enum ValidatorType {
-  SCHEMA = 'schema',
-}
-
-// TODO[18740] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18740/details/
 export enum StrategyType {
   ALL_OF = 'ALL_OF',
   ANY_OF = 'ANY_OF',
@@ -147,7 +142,7 @@ export interface SchemaArguments {
 }
 
 export interface ValidatorData extends DataHubNodeData {
-  type: ValidatorType
+  type: DataPolicyValidator.type
   strategy: StrategyType
   schemas: SchemaReference[]
   core?: DataPolicyValidator

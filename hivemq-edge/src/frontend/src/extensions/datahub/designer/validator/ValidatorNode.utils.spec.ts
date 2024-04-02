@@ -9,19 +9,19 @@ import {
   SchemaType,
   StrategyType,
   ValidatorData,
-  ValidatorType,
   WorkspaceState,
 } from '@datahub/types.ts'
 import {
   checkValidityPolicyValidator,
   checkValidityPolicyValidators,
 } from '@datahub/designer/validator/ValidatorNode.utils.ts'
+import { DataPolicyValidator } from '@/api/__generated__'
 
 const MOCK_NODE_VALIDATOR: Node<ValidatorData> = {
   id: 'node-id',
   type: DataHubNodeType.VALIDATOR,
   data: {
-    type: ValidatorType.SCHEMA,
+    type: DataPolicyValidator.type.SCHEMA,
     strategy: StrategyType.ANY_OF,
     schemas: [],
   },

@@ -17,9 +17,9 @@ import {
   TopicFilterData,
   TransitionData,
   ValidatorData,
-  ValidatorType,
 } from '../types.ts'
 import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
+import { DataPolicyValidator } from '@/api/__generated__'
 
 export const getNodeId = (stub = 'node') => `${stub}_${uuidv4()}`
 
@@ -37,7 +37,7 @@ export const getNodePayload = (type: string): DataHubNodeData => {
 
   if (type === DataHubNodeType.VALIDATOR) {
     return {
-      type: ValidatorType.SCHEMA,
+      type: DataPolicyValidator.type.SCHEMA,
       strategy: StrategyType.ALL_OF,
       schemas: [{ version: '1', schemaId: 'first mock schema' }],
     } as ValidatorData
