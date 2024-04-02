@@ -1,5 +1,4 @@
-export const MOCK_PROTOBUF_SCHEMA = `
-syntax = "proto3";
+export const MOCK_PROTOBUF_SCHEMA = `syntax = "proto3";
 
 message GpsCoordinates {
   int32 longitude = 1;
@@ -7,8 +6,7 @@ message GpsCoordinates {
 }
 `
 
-export const MOCK_JSONSCHEMA_SCHEMA = `
-{
+export const MOCK_JSONSCHEMA_SCHEMA = `{
    "$schema":"https://json-schema.org/draft/2020-12/schema",
    "title":"",
    "description":"",
