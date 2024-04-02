@@ -97,7 +97,7 @@ describe.only('MultiTopicsCreatableSelect', () => {
     cy.get('#react-select-3-listbox').contains('Add the topic ... 123')
     // cy.get('#my-id').type('{Enter}')
 
-    cy.get('#react-select-3-option-4').click()
+    cy.get('#react-select-3-option-3').click()
 
     cy.get('@onChange').should('have.been.calledWith', ['123'])
   })
@@ -120,7 +120,7 @@ describe.only('MultiTopicsCreatableSelect', () => {
     cy.get('#react-select-4-listbox').contains('Add the topic ... 123')
     // cy.get('#my-id').type('{Enter}')
 
-    cy.get('#react-select-4-option-4').click()
+    cy.get('#react-select-4-option-3').click()
 
     cy.get('@onChange').should('have.been.calledWith', ['old topic', '123'])
 
