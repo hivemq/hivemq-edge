@@ -85,7 +85,7 @@ const ResourceNameCreatableSelect = (
         })
       setOptions(options)
     }
-  }, [defaultOptions])
+  }, [defaultOptions, props.options, props.value])
 
   const onCreatableSelectChange = useCallback<
     (newValue: OnChangeValue<ResourceFamily, false>, actionMeta: ActionMeta<ResourceFamily>) => void
