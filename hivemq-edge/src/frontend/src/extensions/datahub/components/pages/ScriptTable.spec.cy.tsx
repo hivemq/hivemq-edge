@@ -2,6 +2,8 @@
 
 import ScriptTable from '@datahub/components/pages/ScriptTable.tsx'
 import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
+import { DateTime } from 'luxon'
+import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
 
 describe('ScriptTable', () => {
   beforeEach(() => {
@@ -28,7 +30,9 @@ describe('ScriptTable', () => {
 
   it('should render the data', () => {
     cy.intercept('/api/v1/data-hub/scripts', { items: [mockScript] })
+    const now = DateTime.fromISO(MOCK_CREATED_AT).plus({ day: 2 }).toJSDate()
 
+    cy.clock(now)
     cy.mountWithProviders(<ScriptTable />)
     cy.get('tbody tr').should('have.length', 1)
     cy.get('tbody tr').first().as('firstItem')
@@ -39,6 +43,6 @@ describe('ScriptTable', () => {
     cy.get('@firstItemContent').eq(1).should('have.text', 'Transformation')
     cy.get('@firstItemContent').eq(2).should('have.text', '1')
     cy.get('@firstItemContent').eq(3).should('have.text', 'this is a description')
-    cy.get('@firstItemContent').eq(4).should('have.text', '5 months ago')
+    cy.get('@firstItemContent').eq(4).should('have.text', '2 days ago')
   })
 })
