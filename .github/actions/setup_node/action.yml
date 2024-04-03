@@ -18,7 +18,7 @@ runs:
         version: 8.4.0
         run_install: ${{ inputs.run-install }}
 
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3
       with:
         node-version: 18.16.0
         cache: 'pnpm'
