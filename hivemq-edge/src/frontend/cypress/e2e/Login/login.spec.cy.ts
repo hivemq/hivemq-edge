@@ -14,6 +14,7 @@ describe('Login Page', () => {
         firstUseDescription: null,
       },
     })
+    cy.intercept('/api/v1/frontend/notifications', { statusCode: 404 })
     loginPage.visit()
   })
 
