@@ -59,7 +59,7 @@ describe('useGetPoliciesMatching', () => {
     })
     expect(result.current).toEqual([
       {
-        createdAt: '2023-10-13T11:51:24.234+01:00',
+        createdAt: '2023-10-13T11:51:24.234Z',
         id: 'my-policy-id',
         matching: {
           topicFilter: 'root/topic/ref/1',
@@ -77,7 +77,7 @@ describe('useGetPoliciesMatching', () => {
     })
     expect(result.current).toEqual([
       {
-        createdAt: '2023-10-13T11:51:24.234+01:00',
+        createdAt: '2023-10-13T11:51:24.234Z',
         id: 'my-policy-id',
         matching: {
           topicFilter: 'root/topic/ref/1',
@@ -95,7 +95,7 @@ describe('useGetPoliciesMatching', () => {
     })
     expect(result.current).toEqual([
       {
-        createdAt: '2023-10-13T11:51:24.234+01:00',
+        createdAt: '2023-10-13T11:51:24.234Z',
         id: 'my-policy-id',
         matching: {
           topicFilter: 'root/topic/ref/1',
