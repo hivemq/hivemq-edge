@@ -77,7 +77,7 @@ describe.only('MultiTopicsCreatableSelect', () => {
 
     cy.wait(['@getConfig1', '@getConfig2', '@getConfig3'])
     cy.get('#my-id').click()
-    cy.get('#react-select-2-listbox').contains('No topic loaded')
+    cy.get('#my-id').find('[role="listbox"]').contains('No topic loaded')
   })
 
   it('should render a single topic', () => {
@@ -91,13 +91,13 @@ describe.only('MultiTopicsCreatableSelect', () => {
 
     cy.get('#my-id').click()
 
-    cy.get('#react-select-3-listbox').contains('#')
+    cy.get('#my-id').find('[role="listbox"]').contains('#')
 
     cy.get('#my-id').type('123')
-    cy.get('#react-select-3-listbox').contains('Add the topic ... 123')
+    cy.get('#my-id').find('[role="listbox"]').contains('Add the topic ... 123')
     // cy.get('#my-id').type('{Enter}')
 
-    cy.get('#react-select-3-option-3').click()
+    cy.get('[role="option"]').eq(0).click()
 
     cy.get('@onChange').should('have.been.calledWith', ['123'])
   })
@@ -114,13 +114,12 @@ describe.only('MultiTopicsCreatableSelect', () => {
     cy.get('#my-id').contains('old topic')
     cy.get('#my-id').click()
 
-    cy.get('#react-select-4-listbox').contains('#')
+    cy.get('#my-id').find('[role="listbox"]').contains('#')
 
     cy.get('#my-id').type('123')
-    cy.get('#react-select-4-listbox').contains('Add the topic ... 123')
-    // cy.get('#my-id').type('{Enter}')
+    cy.get('#my-id').find('[role="listbox"]').contains('Add the topic ... 123')
 
-    cy.get('#react-select-4-option-3').click()
+    cy.get('[role="option"]').eq(0).click()
 
     cy.get('@onChange').should('have.been.calledWith', ['old topic', '123'])
 

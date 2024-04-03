@@ -15,9 +15,7 @@ export const useGetPoliciesMatching = (id: string) => {
   const { nodes: workspaceNodes } = useWorkspaceStore()
   const { data: protocols } = useGetAdapterTypes()
 
-  if (!hasDataHub) return undefined
-  if (isDataLoading) return undefined
-  if (isDataError) return undefined
+  if (!hasDataHub || isDataLoading || isDataError) return undefined
 
   const sourceNode = workspaceNodes.find((node) => node.id === id)
   if (!sourceNode) return []
@@ -36,8 +34,6 @@ export const useGetPoliciesMatching = (id: string) => {
     if (!adapterProtocol) return undefined
 
     const allTopics = discoverAdapterTopics(adapterProtocol, node.data.config)
-      .map((e) => ({ topic: e }))
-      .map((e) => e.topic)
 
     // TODO[NVL] It cannot be allTopics.includes! This is a topic filter matching
     return dataPolicies.items?.filter((policy) => allTopics.includes(policy.matching.topicFilter))
@@ -49,14 +45,14 @@ export const useGetPoliciesMatching = (id: string) => {
 
   if (sourceNode.type === NodeTypes.CLUSTER_NODE) {
     const group = sourceNode.data as Group
-    const adapterIDs = group.childrenNodeIds.map<Node | undefined>((e) => workspaceNodes.find((x) => x.id === e))
+    const adapterIDs = group.childrenNodeIds
+      .map<Node | undefined>((e) => workspaceNodes.find((x) => x.id === e))
+      .filter((e) => e !== undefined) as Node[]
 
     const policies: DataPolicy[] = []
     for (const node of adapterIDs) {
-      if (node) {
-        const hh = getPoliciesForAdapter(node)
-        if (hh) policies.push(...hh)
-      }
+      const policy = getPoliciesForAdapter(node)
+      if (policy) policies.push(...policy)
     }
     return Array.from(new Set(policies))
   }
