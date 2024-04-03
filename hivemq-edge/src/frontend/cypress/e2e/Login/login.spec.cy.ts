@@ -1,26 +1,20 @@
-/// <reference types="cypress" />
-
-// @ts-ignore an import is not working
-import { CyHttpMessages } from 'cypress/types/net-stubbing'
 import { mockAuthApi, mockValidCredentials } from '@/api/hooks/usePostAuthentication/__handlers__'
 import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
 import { loginPage } from '../../pages/Login/LoginPage.ts'
 
 describe('Login Page', () => {
   beforeEach(() => {
-    loginPage.visit()
     cy.intercept('/api/v1/auth/authenticate', mockAuthApi(mockValidCredentials))
-    cy.intercept('/api/v1/frontend/configuration', (req: CyHttpMessages.IncomingHttpRequest) => {
-      req.reply({
-        ...mockGatewayConfiguration,
-        firstUseInformation: {
-          prefillUsername: null,
-          prefillPassword: null,
-          firstUseTitle: null,
-          firstUseDescription: null,
-        },
-      })
+    cy.intercept('/api/v1/frontend/configuration', {
+      ...mockGatewayConfiguration,
+      firstUseInformation: {
+        prefillUsername: null,
+        prefillPassword: null,
+        firstUseTitle: null,
+        firstUseDescription: null,
+      },
     })
+    loginPage.visit()
   })
 
   it('should be accessible', () => {
