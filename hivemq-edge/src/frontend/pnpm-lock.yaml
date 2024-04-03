@@ -125,8 +125,8 @@ dependencies:
     specifier: ^5.0.1
     version: 5.0.1(react@18.2.0)
   react-router-dom:
-    specifier: ^6.11.2
-    version: 6.11.2(react-dom@18.2.0)(react@18.2.0)
+    specifier: ^6.22.3
+    version: 6.22.3(react-dom@18.2.0)(react@18.2.0)
   reactflow:
     specifier: ^11.10.2
     version: 11.10.2(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
