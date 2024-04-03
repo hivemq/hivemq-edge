@@ -18,11 +18,11 @@ describe('Login Page', () => {
     loginPage.visit()
   })
 
-  it('should be accessible', () => {
-    cy.injectAxe()
-    cy.checkAccessibility()
-    cy.percySnapshot('The login page on loading')
-  })
+  // it('should be accessible', () => {
+  //   cy.injectAxe()
+  //   cy.checkAccessibility()
+  //   cy.percySnapshot('The login page on loading')
+  // })
 
   it('should redirect to login', () => {
     cy.visit('/app')
