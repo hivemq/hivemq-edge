@@ -9,7 +9,6 @@ describe('ScriptTable', () => {
   })
 
   it('should render the table component', () => {
-    cy.intercept('/api/v1/data-hub/scripts', { statusCode: 404 })
     cy.mountWithProviders(<ScriptTable />)
 
     cy.get('table').should('have.attr', 'aria-label', 'List of scripts')
@@ -27,7 +26,7 @@ describe('ScriptTable', () => {
   })
 
   it('should render the data', () => {
-    cy.intercept('/api/v1/data-hub/scripts', { items: [mockScript] })
+    cy.intercept('/api/v1/data-hub/scripts', { items: [mockScript] }).as('getScripts')
 
     cy.mountWithProviders(<ScriptTable />)
     cy.get('tbody tr').should('have.length', 1)

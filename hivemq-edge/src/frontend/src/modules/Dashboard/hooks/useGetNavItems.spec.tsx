@@ -13,7 +13,7 @@ import '@/config/i18n.config.ts'
 
 import useGetNavItems from './useGetNavItems.tsx'
 
-const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
+const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <MemoryRouter>{children}</MemoryRouter>

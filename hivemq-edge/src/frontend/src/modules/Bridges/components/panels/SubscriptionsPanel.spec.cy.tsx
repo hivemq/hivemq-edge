@@ -46,7 +46,6 @@ describe('SubscriptionsPanel', () => {
   })
 
   it('should be accessible', () => {
-    cy.intercept('/api/v1/frontend/capabilities', { statusCode: 404 })
     cy.injectAxe()
     cy.mountWithProviders(<TestingComponent onSubmit={cy.stub} defaultValues={mockBridge} />)
     cy.getByTestId('bridge-subscription-add').click()
@@ -66,7 +65,6 @@ describe('SubscriptionsPanel', () => {
   })
 
   it('should initialise with OpenAPI defaults', () => {
-    cy.intercept('/api/v1/frontend/capabilities', { statusCode: 404 })
     cy.mountWithProviders(<TestingComponent onSubmit={cy.stub} defaultValues={mockBridge} />)
     cy.getByTestId('bridge-subscription-add').click()
     // force validation to trigger error messages. Better alternative?

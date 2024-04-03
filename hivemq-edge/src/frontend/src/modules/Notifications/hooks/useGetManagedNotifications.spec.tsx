@@ -12,7 +12,7 @@ import { useGetManagedNotifications } from './useGetManagedNotifications.tsx'
 
 import '@/config/i18n.config.ts'
 
-const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
+const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
   <QueryClientProvider client={new QueryClient()}>
     <AuthProvider>
       <MemoryRouter>{children}</MemoryRouter>

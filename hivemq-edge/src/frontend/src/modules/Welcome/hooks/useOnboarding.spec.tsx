@@ -12,7 +12,7 @@ import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
 import { useOnboarding } from './useOnboarding.tsx'
 
-const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
+const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <MemoryRouter>{children}</MemoryRouter>
