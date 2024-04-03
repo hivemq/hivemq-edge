@@ -25,7 +25,6 @@ describe('BridgeCard', () => {
   })
 
   it('should be accessible', () => {
-    cy.intercept('/api/v1/management/bridges/status', { statusCode: 404 })
     cy.injectAxe()
     cy.mountWithProviders(<BridgeCard {...mockBridge} />)
     cy.checkAccessibility()

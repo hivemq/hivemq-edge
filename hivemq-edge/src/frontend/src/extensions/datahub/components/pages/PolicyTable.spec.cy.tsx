@@ -7,8 +7,6 @@ import PolicyTable from './PolicyTable.tsx'
 describe('PolicyTable', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 404 })
-    cy.intercept('/api/v1/data-hub/behavior-validation/policies', { statusCode: 404 })
   })
 
   it('should render the table component', () => {
@@ -61,8 +59,6 @@ describe('PolicyTable', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<PolicyTable />)
-    cy.intercept('/api/v1/data-hub/data-validation/policies', { statusCode: 404 })
-    cy.intercept('/api/v1/data-hub/behavior-validation/policies', { statusCode: 404 })
 
     cy.checkAccessibility()
     cy.percySnapshot('Component: PolicyTable')

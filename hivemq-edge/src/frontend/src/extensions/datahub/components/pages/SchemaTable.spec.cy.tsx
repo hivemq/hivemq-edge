@@ -6,7 +6,6 @@ import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService
 describe('SchemaTable', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/data-hub/schemas', { statusCode: 404 })
   })
 
   it('should render the table component', () => {
@@ -22,7 +21,7 @@ describe('SchemaTable', () => {
   })
 
   it('should render the data', () => {
-    cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] })
+    cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] }).as('getSchemas')
 
     cy.mountWithProviders(<SchemaTable />)
     cy.get('tbody tr').should('have.length', 1)
