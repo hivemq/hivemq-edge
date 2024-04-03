@@ -5,7 +5,7 @@ import { useEdgeFlowContext } from './useEdgeFlowContext.tsx'
 import { EdgeFlowProvider } from './FlowContext.tsx'
 import { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
 
-const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
+const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
   <EdgeFlowProvider>{children}</EdgeFlowProvider>
 )
 

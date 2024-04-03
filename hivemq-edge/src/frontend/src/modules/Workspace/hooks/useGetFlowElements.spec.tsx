@@ -23,7 +23,7 @@ vi.mock('@chakra-ui/react', async () => {
   return { ...actual, useTheme: vi.fn<[], Partial<WithCSSVar<Dict>>>(() => MOCK_THEME) }
 })
 
-const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
+const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <MemoryRouter>

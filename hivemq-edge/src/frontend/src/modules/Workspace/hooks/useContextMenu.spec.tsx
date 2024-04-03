@@ -1,11 +1,11 @@
 import { renderHook, act } from '@testing-library/react'
 import { describe, expect, vi } from 'vitest'
-import { MouseEvent, ReactNode } from 'react'
+import { MouseEvent, ReactElement } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 
 import { useContextMenu } from './useContextMenu.tsx'
 
-const wrapper: React.JSXElementConstructor<{ children: ReactNode }> = ({ children }) => (
+const wrapper: React.JSXElementConstructor<{ children: ReactElement }> = ({ children }) => (
   <MemoryRouter>{children}</MemoryRouter>
 )
 
