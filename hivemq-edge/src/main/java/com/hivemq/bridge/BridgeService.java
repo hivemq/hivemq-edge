@@ -15,6 +15,7 @@
  */
 package com.hivemq.bridge;
 
+import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -27,6 +28,7 @@ import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.metrics.HiveMQMetrics;
 import com.hivemq.util.Checkpoints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +54,7 @@ public class BridgeService {
     private final @NotNull BridgeMqttClientFactory bridgeMqttClientFactory;
     private final @NotNull ExecutorService executorService;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
+    private final @NotNull MetricRegistry metricRegistry;
 
     private final Map<String, BridgeMqttClient> bridgeToClientMap = new ConcurrentHashMap<>(0);
     private final Map<String, Throwable> lastErrors = new ConcurrentHashMap<>(0);
@@ -63,12 +66,15 @@ public class BridgeService {
             final @NotNull BridgeMqttClientFactory bridgeMqttClientFactory,
             final @NotNull ExecutorService executorService,
             final @NotNull HiveMQEdgeRemoteService remoteService,
-            final @NotNull ShutdownHooks shutdownHooks) {
+            final @NotNull ShutdownHooks shutdownHooks,
+            final @NotNull MetricRegistry metricRegistry) {
         this.bridgeConfig = bridgeConfig;
         this.messageForwarder = messageForwarder;
         this.bridgeMqttClientFactory = bridgeMqttClientFactory;
         this.executorService = executorService;
         this.remoteService = remoteService;
+        this.metricRegistry = metricRegistry;
+        metricRegistry.registerGauge(HiveMQMetrics.BRIDGES_CURRENT.name(), () -> bridgeToClientMap.keySet().size());
         shutdownHooks.add(new BridgeShutdownHook(this));
     }
 
