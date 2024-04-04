@@ -23,7 +23,7 @@ export const VersionManagerSelect = (props: WidgetProps) => {
   const label = useMemo(() => {
     if (props.value === ResourceStatus.MODIFIED || props.value === ResourceStatus.DRAFT)
       return t('workspace.version.status', { context: props.value })
-    return props.value.toString()
+    return props.value?.toString()
   }, [props.value, t])
 
   const onChange = useCallback<(newValue: OnChangeValue<{ label: string; value: string }, false>) => void>(
