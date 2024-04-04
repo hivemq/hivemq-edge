@@ -10,6 +10,7 @@ import {
   DataHubNodeType,
   DryRunResults,
   ResourceFamily,
+  ResourceStatus,
   SchemaData,
   SchemaType,
   WorkspaceAction,
@@ -129,10 +130,12 @@ export function loadSchema(
         y: parentNode.position.y + CANVAS_POSITION.Schema.y,
       },
       data: {
+        name: schema.id,
         // @ts-ignore force undefined
         type: enumFromStringValue(SchemaType, schema.type),
         schemaSource: atob(schema.schemaDefinition),
-        version: 1,
+        version: schema.version || ResourceStatus.DRAFT,
+        internalVersions: schema.version ? [schema.version] : undefined,
       },
     }
     onNodesChange([{ item: schemaNode, type: 'add' } as NodeAddChange])
