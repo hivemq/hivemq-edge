@@ -181,5 +181,22 @@ public class HiveMQMetrics {
             HiveMQMetric.valueOf(HIVEMQ_PREFIX + "messages.will.published.count.total", Counter.class);
 
 
+    /**
+     * represents a {@link Gauge}, which holds the current total number of adapters
+     *
+     * @since 3.0
+     */
+    public static final HiveMQMetric<Gauge<Number>> ADAPTERS_CURRENT =
+            HiveMQMetric.gaugeValue(PROTOCOL_ADAPTER_PREFIX + "current");
+
+
+    /**
+     * represents a {@link Gauge}, which holds the current total number of bridges
+     *
+     * @since 3.0
+     */
+    public static final HiveMQMetric<Gauge<Number>> BRIDGES_CURRENT =
+            HiveMQMetric.gaugeValue(HIVEMQ_PREFIX + "bridges.current");
+
 }
 
