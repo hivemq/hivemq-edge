@@ -5,6 +5,7 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 import { Group, NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { discoverAdapterTopics, getBridgeTopics } from '@/modules/Workspace/utils/topics-utils.ts'
+import mqttTopicMatch from 'mqtt-match'
 
 import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
 
@@ -25,8 +26,9 @@ export const useGetPoliciesMatching = (id: string) => {
     const { remote } = getBridgeTopics(bridge)
     const allTopics = remote.map((topic) => topic.topic)
 
-    // TODO[NVL] It cannot be allTopics.includes! This is a topic filter matching
-    return dataPolicies.items?.filter((policy) => allTopics.includes(policy.matching.topicFilter))
+    return dataPolicies.items?.filter((policy) =>
+      allTopics.some((topic) => mqttTopicMatch(policy.matching.topicFilter, topic))
+    )
   }
 
   const getPoliciesForAdapter = (node: Node): DataPolicy[] | undefined => {
@@ -35,8 +37,9 @@ export const useGetPoliciesMatching = (id: string) => {
 
     const allTopics = discoverAdapterTopics(adapterProtocol, node.data.config)
 
-    // TODO[NVL] It cannot be allTopics.includes! This is a topic filter matching
-    return dataPolicies.items?.filter((policy) => allTopics.includes(policy.matching.topicFilter))
+    return dataPolicies.items?.filter((policy) =>
+      allTopics.some((topic) => mqttTopicMatch(policy.matching.topicFilter, topic))
+    )
   }
 
   if (sourceNode.type === NodeTypes.ADAPTER_NODE) {
