@@ -22,7 +22,9 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const [formData, setFormData] = useState<SchemaData | null>(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<SchemaData> | undefined
 
-    const internalStatus = typeof adapterNode?.data.version === 'number' ? undefined : adapterNode?.data.version
+    const internalStatus =
+      typeof adapterNode?.data.version === 'number' ? ResourceStatus.LOADED : adapterNode?.data.version
+
     return adapterNode ? { ...adapterNode.data, internalStatus } : null
   })
 
