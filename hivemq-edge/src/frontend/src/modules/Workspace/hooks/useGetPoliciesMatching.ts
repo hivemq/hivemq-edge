@@ -48,15 +48,18 @@ export const useGetPoliciesMatching = (id: string) => {
 
   if (sourceNode.type === NodeTypes.CLUSTER_NODE) {
     const group = sourceNode.data as Group
-    const adapterIDs = group.childrenNodeIds
-      .map<Node | undefined>((e) => workspaceNodes.find((x) => x.id === e))
-      .filter((e) => e !== undefined) as Node[]
 
-    const policies: DataPolicy[] = []
-    for (const node of adapterIDs) {
-      const policy = getPoliciesForAdapter(node)
-      if (policy) policies.push(...policy)
-    }
+    const policies = group.childrenNodeIds.reduce((acc: DataPolicy[], curr: string) => {
+      const node = workspaceNodes.find((n: Node) => n.id === curr)
+      if (node) {
+        const policy = getPoliciesForAdapter(node)
+        if (policy) {
+          acc.push(...policy)
+        }
+      }
+      return acc
+    }, [])
+
     return Array.from(new Set(policies))
   }
 
