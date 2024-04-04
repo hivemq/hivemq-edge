@@ -62,7 +62,6 @@ describe('DataHubListings', () => {
     cy.getByTestId('list-action-delete').click()
     cy.get("[role='alertdialog']").should('be.visible')
     cy.get('@actions').eq(1).click()
-    // cy.get('@postDelete').should('have.been.called')
     cy.get('div#toast-1-title')
       .should('have.attr', 'data-status', 'success')
       .should('be.visible')

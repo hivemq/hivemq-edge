@@ -92,8 +92,8 @@ describe.only('MultiTopicsCreatableSelect', () => {
     cy.get('#my-id').find('[role="listbox"]').contains('Add the topic ... 123')
     // cy.get('#my-id').type('{Enter}')
 
+    cy.get('@onChange').should('not.have.been.called')
     cy.get('[role="option"]').eq(0).click()
-
     cy.get('@onChange').should('have.been.calledWith', ['123'])
   })
 
@@ -114,8 +114,8 @@ describe.only('MultiTopicsCreatableSelect', () => {
     cy.get('#my-id').type('123')
     cy.get('#my-id').find('[role="listbox"]').contains('Add the topic ... 123')
 
+    cy.get('@onChange').should('not.have.been.called')
     cy.get('[role="option"]').eq(0).click()
-
     cy.get('@onChange').should('have.been.calledWith', ['old topic', '123'])
 
     cy.clearInterceptList('@getConfig3')

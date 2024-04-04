@@ -23,10 +23,12 @@ describe('ConnectionButton', () => {
 
     cy.getByTestId('device-action-start').should('not.exist')
     cy.getByTestId('device-action-stop').should('have.attr', 'aria-label', 'Stop')
+    cy.get('@onChangeStatus').should('not.have.been.called')
     cy.getByTestId('device-action-stop').click()
     cy.get('@onChangeStatus').should('have.been.calledWith', MOCK_ID, StatusTransitionCommand.command.STOP)
 
     cy.getByTestId('device-action-restart').should('have.attr', 'aria-label', 'Restart')
+    cy.get('@onChangeStatus').should('not.have.been.calledWith', MOCK_ID, StatusTransitionCommand.command.RESTART)
     cy.getByTestId('device-action-restart').click()
     cy.get('@onChangeStatus').should('have.been.calledWith', MOCK_ID, StatusTransitionCommand.command.RESTART)
   })
@@ -37,6 +39,7 @@ describe('ConnectionButton', () => {
 
     cy.getByTestId('device-action-stop').should('not.exist')
     cy.getByTestId('device-action-start').should('have.attr', 'aria-label', 'Start')
+    cy.get('@onChangeStatus').should('not.have.been.called')
     cy.getByTestId('device-action-start').click()
     cy.get('@onChangeStatus').should('have.been.calledWith', MOCK_ID, StatusTransitionCommand.command.START)
 

@@ -12,8 +12,12 @@ describe('DataHubListAction', () => {
 
     cy.get('button').should('have.length', 3)
     cy.getByTestId('list-action-view').should('not.be.disabled')
+
+    cy.get('@onEdit').should('not.have.been.called')
     cy.getByTestId('list-action-view').click()
     cy.get('@onEdit').should('have.been.called')
+
+    cy.get('@onDelete').should('not.have.been.called')
     cy.getByTestId('list-action-delete').click()
     cy.get('@onDelete').should('have.been.called')
   })

@@ -57,9 +57,11 @@ describe('ProtocolsBrowser', () => {
       <ProtocolsBrowser items={MOCK_ADAPTERS} facet={{ search: 'from an edge device' }} onCreate={mockOnCreate} />
     )
 
+    cy.get('@createAdapter').should('not.have.been.called')
     cy.getByTestId('protocol-create-adapter').eq(0).click()
     cy.get('@createAdapter').should('have.been.calledWith', 'simulation1')
 
+    cy.get('@createAdapter').should('not.have.been.calledWith', 'simulation4')
     cy.getByTestId('protocol-create-adapter').eq(3).click()
     cy.get('@createAdapter').should('have.been.calledWith', 'simulation4')
   })
@@ -76,6 +78,7 @@ describe('ProtocolsBrowser', () => {
     )
 
     cy.getByTestId('protocol-create-adapter').should('have.length', 2)
+    cy.get('@createAdapter').should('not.have.been.called')
     cy.getByTestId('protocol-create-adapter').eq(1).click()
     cy.get('@createAdapter').should('have.been.calledWith', 'simulation3')
   })
@@ -92,6 +95,7 @@ describe('ProtocolsBrowser', () => {
     )
 
     cy.getByTestId('protocol-create-adapter').should('have.length', 2)
+    cy.get('@createAdapter').should('not.have.been.called')
     cy.getByTestId('protocol-create-adapter').eq(1).click()
     cy.get('@createAdapter').should('have.been.calledWith', 'simulation4')
   })
@@ -108,6 +112,7 @@ describe('ProtocolsBrowser', () => {
     )
 
     cy.getByTestId('protocol-create-adapter').should('have.length', 1)
+    cy.get('@createAdapter').should('not.have.been.called')
     cy.getByTestId('protocol-create-adapter').eq(0).click()
     cy.get('@createAdapter').should('have.been.calledWith', 'simulation3')
   })

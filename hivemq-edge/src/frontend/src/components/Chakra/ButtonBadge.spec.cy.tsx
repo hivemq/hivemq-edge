@@ -29,7 +29,7 @@ describe('ButtonBadge', () => {
     cy.mountWithProviders(
       <ButtonBadge aria-label="You have one notification" badgeCount={1} icon={<FiMail />} onClick={onClick} />
     )
-
+    cy.get('@onClick').should('not.have.been.called')
     cy.getByAriaLabel('You have one notification').click()
     cy.get('@onClick').should('have.been.called')
   })
