@@ -91,9 +91,13 @@ const ResourceNameCreatableSelect = (
     (newValue: OnChangeValue<ResourceFamily, false>, actionMeta: ActionMeta<ResourceFamily>) => void
   >(
     (newValue, actionMeta) => {
-      if (actionMeta.action === 'select-option' && newValue) props.onChange(newValue.name)
+      if (actionMeta.action === 'select-option' && newValue) {
+        props.onChange(newValue.name)
+        return
+      }
       if (actionMeta.action === 'create-option' && newValue) {
         props.onChange(newValue.label)
+        return
       }
     },
     [props]
