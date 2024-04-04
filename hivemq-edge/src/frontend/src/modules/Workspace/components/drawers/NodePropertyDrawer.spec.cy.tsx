@@ -36,6 +36,7 @@ describe('NodePropertyDrawer', () => {
     )
 
     // check the panel control
+    cy.get('@onClose').should('not.have.been.called')
     cy.getByAriaLabel('Close').click()
     cy.get('@onClose').should('have.been.calledOnce')
 
@@ -50,7 +51,9 @@ describe('NodePropertyDrawer', () => {
     cy.get('tbody').find('tr').should('have.length', 5)
 
     // check that the controller is there
-    cy.getByTestId('protocol-create-adapter').should('contain.text', 'Modify the adapter').click()
+    cy.getByTestId('protocol-create-adapter').should('contain.text', 'Modify the adapter')
+    cy.get('@onEditEntity').should('not.have.been.called')
+    cy.getByTestId('protocol-create-adapter').click()
     cy.get('@onEditEntity').should('have.been.calledOnce')
     cy.getByTestId('device-action-start').should('exist')
   })

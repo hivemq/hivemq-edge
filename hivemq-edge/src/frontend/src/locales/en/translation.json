@@ -696,6 +696,10 @@
       "header_ADAPTER_NODE": "Adapter Observability",
       "header_BRIDGE_NODE": "Bridge Observability",
       "header_CLUSTER_NODE": "Group Observability"
+    },
+    "datahub": {
+      "aria-label": "Open the Data Hub policy",
+      "list": "Show all the policies"
     }
   },
   "modals": {

@@ -52,16 +52,19 @@ describe('AdapterActionMenu', () => {
       <AdapterActionMenu adapter={mockAdapter} onEdit={onEdit} onCreate={onCreate} onDelete={onDelete} />
     )
 
+    cy.get('@onCreate').should('not.have.been.called')
     cy.getByAriaLabel('Actions').click()
     cy.getByTestId('adapter-action-create').click()
     cy.get('@onCreate').should('have.been.calledWith', 'simulation')
     cy.getByTestId('adapter-action-create').should('not.be.visible')
 
+    cy.get('@onEdit').should('not.have.been.called')
     cy.getByAriaLabel('Actions').click()
     cy.getByTestId('adapter-action-edit').click()
     cy.get('@onEdit').should('have.been.calledWith', 'my-adapter', 'simulation')
     cy.getByTestId('adapter-action-edit').should('not.be.visible')
 
+    cy.get('@onDelete').should('not.have.been.called')
     cy.getByAriaLabel('Actions').click()
     cy.getByTestId('adapter-action-delete').click()
     cy.get('@onDelete').should('have.been.calledWith', 'my-adapter')

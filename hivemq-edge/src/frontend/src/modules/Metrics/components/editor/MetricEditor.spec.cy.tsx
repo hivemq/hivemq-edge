@@ -40,6 +40,7 @@ describe('MetricEditor', () => {
 
       cy.get('div#react-select-2-listbox').find("[role='option']").eq(5).click()
       cy.get("button[type='submit']").should('not.be.disabled')
+      cy.get('@onSubmit').should('not.have.been.called')
       cy.get("button[type='submit']").click()
       cy.get('@onSubmit').should('have.been.calledWithMatch', {
         selectedTopic: {

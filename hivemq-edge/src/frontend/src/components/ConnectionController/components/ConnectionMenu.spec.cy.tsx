@@ -44,6 +44,7 @@ describe('ConnectionMenu', () => {
 
     cy.getByTestId('device-action-start').should('not.exist')
     cy.getByTestId('device-action-stop').should('have.text', 'Stop')
+    cy.get('@onChangeStatus').should('not.have.been.called')
     cy.getByTestId('device-action-stop').click()
     cy.get('@onChangeStatus').should('have.been.calledWith', MOCK_ID, StatusTransitionCommand.command.STOP)
   })
@@ -61,6 +62,7 @@ describe('ConnectionMenu', () => {
 
     cy.getByTestId('device-action-stop').should('not.exist')
     cy.getByTestId('device-action-start').should('have.text', 'Start')
+    cy.get('@onChangeStatus').should('not.have.been.called')
     cy.getByTestId('device-action-start').click()
     cy.get('@onChangeStatus').should('have.been.calledWith', MOCK_ID, StatusTransitionCommand.command.START)
   })
@@ -92,6 +94,7 @@ describe('ConnectionMenu', () => {
     cy.getByTestId('mock-trigger').click()
 
     cy.getByTestId('device-action-restart').should('have.text', 'Restart')
+    cy.get('@onChangeStatus').should('not.have.been.called')
     cy.getByTestId('device-action-restart').click()
     cy.get('@onChangeStatus').should('have.been.calledWith', MOCK_ID, StatusTransitionCommand.command.RESTART)
   })

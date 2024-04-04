@@ -50,6 +50,7 @@ describe('GroupPropertyDrawer', () => {
     cy.get('dt').eq(1).should('contain.text', 'my-adapter')
 
     // check the panel control
+    cy.get('@onClose').should('not.have.been.called')
     cy.getByAriaLabel('Close').click()
     cy.get('@onClose').should('have.been.calledOnce')
 

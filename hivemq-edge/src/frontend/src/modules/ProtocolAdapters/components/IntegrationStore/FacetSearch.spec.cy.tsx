@@ -48,6 +48,8 @@ describe('FacetSearch', () => {
     cy.mountWithProviders(
       <FacetSearch items={[mockProtocolAdapter]} facet={{ search: '123', filter: undefined }} onChange={mockOnSubmit} />
     )
+
+    cy.get('@onSubmit').should('not.have.been.called')
     cy.get('#facet-search-input').type('4')
     cy.get('@onSubmit').should('have.been.calledWith', { search: '1234' })
   })
@@ -58,6 +60,7 @@ describe('FacetSearch', () => {
     cy.mountWithProviders(
       <FacetSearch items={[mockProtocolAdapter]} facet={{ search: '123', filter: undefined }} onChange={mockOnSubmit} />
     )
+    cy.get('@onSubmit').should('not.have.been.called')
     cy.get('#facet-search-clear').click()
     cy.get('@onSubmit').should('have.been.calledWith', { search: null })
   })

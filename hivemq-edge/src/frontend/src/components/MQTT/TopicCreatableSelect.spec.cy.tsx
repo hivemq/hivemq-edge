@@ -12,10 +12,8 @@ describe('SingleTopicCreatableSelect', () => {
   })
 
   it('should render', () => {
-    const mockOnChange = cy.stub().as('onChange')
-
     cy.mountWithProviders(
-      <SingleTopicCreatableSelect options={[]} isLoading={false} id={MOCK_ID} value="" onChange={mockOnChange} />
+      <SingleTopicCreatableSelect options={[]} isLoading={false} id={MOCK_ID} value="" onChange={cy.stub()} />
     )
 
     cy.get('#my-id').click()
@@ -23,7 +21,6 @@ describe('SingleTopicCreatableSelect', () => {
   })
 
   it('should render', () => {
-    const mockOnChange = cy.stub().as('onChange')
     const mockOptions = ['topic/1', 'topic/2']
 
     cy.mountWithProviders(
@@ -32,7 +29,7 @@ describe('SingleTopicCreatableSelect', () => {
         isLoading={false}
         id={MOCK_ID}
         value={mockOptions[0]}
-        onChange={mockOnChange}
+        onChange={cy.stub()}
       />
     )
     cy.get('#my-id').contains('topic/1')
@@ -43,7 +40,6 @@ describe('SingleTopicCreatableSelect', () => {
   })
 
   it('should be accessible', () => {
-    const mockOnChange = cy.stub().as('onChange')
     const mockOptions = ['topic/1', 'topic/2']
     cy.injectAxe()
 
@@ -53,7 +49,7 @@ describe('SingleTopicCreatableSelect', () => {
         isLoading={false}
         id={MOCK_ID}
         value={mockOptions[0]}
-        onChange={mockOnChange}
+        onChange={cy.stub()}
       />
     )
     cy.get('#my-id').click()
@@ -68,16 +64,15 @@ describe.only('MultiTopicsCreatableSelect', () => {
   })
 
   it('should render an empty component', () => {
-    const mockOnChange = cy.stub().as('onChange')
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [] }).as('getConfig1')
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [] }).as('getConfig2')
     cy.intercept('/api/v1/management/bridges', { items: [] }).as('getConfig3')
 
-    cy.mountWithProviders(<MultiTopicsCreatableSelect id={MOCK_ID} value={[]} onChange={mockOnChange} />)
+    cy.mountWithProviders(<MultiTopicsCreatableSelect id={MOCK_ID} value={[]} onChange={cy.stub()} />)
 
     cy.wait(['@getConfig1', '@getConfig2', '@getConfig3'])
     cy.get('#my-id').click()
-    cy.get('#react-select-2-listbox').contains('No topic loaded')
+    cy.get('#my-id').find('[role="listbox"]').contains('No topic loaded')
   })
 
   it('should render a single topic', () => {
@@ -91,14 +86,14 @@ describe.only('MultiTopicsCreatableSelect', () => {
 
     cy.get('#my-id').click()
 
-    cy.get('#react-select-3-listbox').contains('#')
+    cy.get('#my-id').find('[role="listbox"]').contains('#')
 
     cy.get('#my-id').type('123')
-    cy.get('#react-select-3-listbox').contains('Add the topic ... 123')
+    cy.get('#my-id').find('[role="listbox"]').contains('Add the topic ... 123')
     // cy.get('#my-id').type('{Enter}')
 
-    cy.get('#react-select-3-option-4').click()
-
+    cy.get('@onChange').should('not.have.been.called')
+    cy.get('[role="option"]').eq(0).click()
     cy.get('@onChange').should('have.been.calledWith', ['123'])
   })
 
@@ -114,14 +109,13 @@ describe.only('MultiTopicsCreatableSelect', () => {
     cy.get('#my-id').contains('old topic')
     cy.get('#my-id').click()
 
-    cy.get('#react-select-4-listbox').contains('#')
+    cy.get('#my-id').find('[role="listbox"]').contains('#')
 
     cy.get('#my-id').type('123')
-    cy.get('#react-select-4-listbox').contains('Add the topic ... 123')
-    // cy.get('#my-id').type('{Enter}')
+    cy.get('#my-id').find('[role="listbox"]').contains('Add the topic ... 123')
 
-    cy.get('#react-select-4-option-4').click()
-
+    cy.get('@onChange').should('not.have.been.called')
+    cy.get('[role="option"]').eq(0).click()
     cy.get('@onChange').should('have.been.calledWith', ['old topic', '123'])
 
     cy.clearInterceptList('@getConfig3')
