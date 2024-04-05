@@ -4,7 +4,7 @@ import descriptor from 'protobufjs/ext/descriptor'
 
 import i18n from '@/config/i18n.config.ts'
 
-import { Schema, SchemaReference } from '@/api/__generated__'
+import { Schema, SchemaReference, Script } from '@/api/__generated__'
 import {
   DataHubNodeData,
   DataHubNodeType,
@@ -19,6 +19,18 @@ import {
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
+
+export const getScriptFamilies = (items: Script[]) => {
+  return items.reduce<Record<string, ResourceFamily>>((acc, script) => {
+    if (acc[script.id]) {
+      if (script.version) acc[script.id].versions.push(script.version)
+    } else {
+      acc[script.id] = { name: script.id, versions: [], type: script.functionType }
+      if (script.version) acc[script.id].versions.push(script.version)
+    }
+    return acc
+  }, {})
+}
 
 export const getSchemaFamilies = (items: Schema[]) => {
   return items.reduce<Record<string, ResourceFamily>>((acc, schema) => {
