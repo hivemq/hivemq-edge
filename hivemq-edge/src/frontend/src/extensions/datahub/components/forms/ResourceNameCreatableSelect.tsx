@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next'
 import { DataHubNodeType, FunctionData, ResourceFamily, ResourceStatus, SchemaData } from '@datahub/types.ts'
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.tsx'
 import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGetAllScripts.tsx'
-import { getSchemaFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import { getSchemaFamilies, getScriptFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { getNodePayload } from '@datahub/utils/node.utils.ts'
 
 const SingleValue = <T extends ResourceFamily>(props: SingleValueProps<T>) => {
@@ -172,7 +172,7 @@ export const SchemaNameCreatableSelect = (props: WidgetProps) => {
 }
 
 export const ScriptNameCreatableSelect = (props: WidgetProps) => {
-  const { isLoading } = useGetAllScripts({})
+  const { isLoading, data } = useGetAllScripts({})
   const createNewOption = (inputValue: string) => {
     const schemaData = getNodePayload(DataHubNodeType.FUNCTION) as FunctionData
     const newValue: ResourceFamily = {
@@ -182,6 +182,13 @@ export const ScriptNameCreatableSelect = (props: WidgetProps) => {
     }
     return newValue
   }
-  // TODO[NVL] Don't forget to convert the scripts
-  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, [], createNewOption, isLoading)
+
+  const options = useMemo<ResourceFamily[]>(() => {
+    if (!data) return []
+    if (!data.items) return []
+    const options = getScriptFamilies(data.items)
+    return Object.values(options)
+  }, [data])
+
+  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, options, createNewOption, isLoading)
 }
