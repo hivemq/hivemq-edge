@@ -21,7 +21,7 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
       <CardBody>
         <ReactFlowSchemaForm
           schema={MOCK_FUNCTION_SCHEMA.schema}
-          uiSchema={MOCK_FUNCTION_SCHEMA.uiSchema}
+          uiSchema={getUISchema(formData)}
           widgets={datahubRJSFWidgets}
           formData={data}
           onSubmit={onFormSubmit}
