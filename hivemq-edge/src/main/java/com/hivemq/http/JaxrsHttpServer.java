@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
+import java.net.BindException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -128,10 +129,17 @@ public class JaxrsHttpServer {
                                     ((HttpsServer) httpServer).setHttpsConfigurator(config.getHttpsConfigurator());
                                 }
                             } catch (ProcessingException processingException) {
-                                logger.error(
-                                        "Unable to start the Https Server for uri '{}'. Is another service using the port '{}'?",
-                                        baseUri,
-                                        config.getPort());
+                                if (processingException.getCause() instanceof BindException) {
+                                    logger.error(
+                                            "Unable to start the Http Server for uri '{}'. The port '{}' is already in use.",
+                                            baseUri,
+                                            config.getPort());
+                                } else {
+                                    logger.error(
+                                            "Unable to start the Http Server for uri '{}'. Is another service using the port '{}'?",
+                                            baseUri,
+                                            config.getPort());
+                                }
                                 // still throw the exception to mitigate a silent fail
                                 throw processingException;
                             }
@@ -140,10 +148,17 @@ public class JaxrsHttpServer {
                             try {
                                 httpServer = JdkHttpServerFactory.createHttpServer(baseUri, resources, false);
                             } catch (ProcessingException processingException) {
-                                logger.error(
-                                        "Unable to start the Http Server for uri '{}'. Is another service using the port '{}'?",
-                                        baseUri,
-                                        config.getPort());
+                                if (processingException.getCause() instanceof BindException) {
+                                    logger.error(
+                                            "Unable to start the Https Server for uri '{}'. The port '{}' is already in use.",
+                                            baseUri,
+                                            config.getPort());
+                                } else {
+                                    logger.error(
+                                            "Unable to start the Https Server for uri '{}'. Is another service using the port '{}'?",
+                                            baseUri,
+                                            config.getPort());
+                                }
                                 // still throw the exception to mitigate a silent fail
                                 throw processingException;
                             }
