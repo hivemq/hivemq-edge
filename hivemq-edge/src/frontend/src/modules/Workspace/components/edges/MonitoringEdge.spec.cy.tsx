@@ -11,8 +11,8 @@ describe('MonitoringEdge', () => {
   beforeEach(() => {
     cy.viewport(400, 400)
     cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocolTypes')
-    cy.intercept('/api/v1/data-hub/data-validation/policies', []).as('getPolicies')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
+    cy.intercept('/api/v1/data-hub/data-validation/policies', [])
   })
 
   it('should be accessible', () => {
