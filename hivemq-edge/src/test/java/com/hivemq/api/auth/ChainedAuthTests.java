@@ -30,6 +30,7 @@ import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.api.model.auth.ApiBearerToken;
 import com.hivemq.api.model.auth.UsernamePasswordCredentials;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpConstants;
@@ -52,6 +53,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * @author Simon L Johnson
  */
@@ -64,14 +67,14 @@ public class ChainedAuthTests {
     static final int READ_TIMEOUT = 1000;
     static final String HTTP = "http";
 
-    protected static JaxrsHttpServer server;
+    protected static @NotNull JaxrsHttpServer server;
 
     @BeforeClass
     public static void setUp() throws Exception {
         JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
 
-        ApiJwtConfiguration configuration = new ApiJwtConfiguration(2048, "Test-Issuer","Test-Audience", 10, 2);
+        ApiJwtConfiguration configuration = new ApiJwtConfiguration(2048, "Test-Issuer", "Test-Audience", 10, 2);
         JwtAuthenticationProvider jwtAuthenticationProvider = new JwtAuthenticationProvider(configuration);
 
         IUsernamePasswordProvider usernamePasswordProvider = AuthTestUtils.createTestUsernamePasswordProvider();
@@ -79,7 +82,8 @@ public class ChainedAuthTests {
         authenticationHandlers.add(new BearerTokenAuthenticationHandler(jwtAuthenticationProvider));
         authenticationHandlers.add(new BasicAuthenticationHandler(usernamePasswordProvider));
 
-        ResourceConfig conf = new ResourceConfig(){{
+        ResourceConfig conf = new ResourceConfig() {
+            {
                 register(new ApiAuthenticationFeature(authenticationHandlers));
             }
         };
@@ -87,20 +91,21 @@ public class ChainedAuthTests {
         conf.register(TestPermitAllApiResource.class);
         conf.register(TestResourceLevelRolesApiResource.class);
         conf.register(new AuthenticationResourceImpl(usernamePasswordProvider,
-                jwtAuthenticationProvider, jwtAuthenticationProvider));
+                jwtAuthenticationProvider,
+                jwtAuthenticationProvider));
         //-- ensure we supplied our own test mapper as this can effect output
         ObjectMapper mapper = new ObjectMapper();
         config.setObjectMapper(mapper);
-        server = new JaxrsHttpServer(List.of(config), conf);
+        server = new JaxrsHttpServer(mock(), List.of(config), conf);
         server.startServer();
     }
 
     @AfterClass
-    public static void tearDown(){
+    public static void tearDown() {
         server.stopServer();
     }
 
-    protected static String getTestServerAddress(String protocol, int port, String uri){
+    protected static String getTestServerAddress(final @NotNull String protocol, int port, String uri) {
         String url = String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
         return url;
     }
@@ -110,13 +115,15 @@ public class ChainedAuthTests {
 
         ObjectMapper mapper = new ObjectMapper();
         UsernamePasswordCredentials creds = new UsernamePasswordCredentials("testuser", "test");
-        HttpResponse response =
-                HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
-                        new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
+                new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
-        Assert.assertEquals("API authenticate response should be json", MediaType.APPLICATION_JSON, response.getContentType());
+        Assert.assertEquals("API authenticate response should be json",
+                MediaType.APPLICATION_JSON,
+                response.getContentType());
         ApiBearerToken token = mapper.readValue(response.getResponseBody(), ApiBearerToken.class);
         Assert.assertNotNull("Response should contain a bearer token", token.getToken());
     }
@@ -126,15 +133,19 @@ public class ChainedAuthTests {
 
         ObjectMapper mapper = new ObjectMapper();
         UsernamePasswordCredentials creds = new UsernamePasswordCredentials("testuser", "invalidpassword");
-        HttpResponse response =
-                HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
-                        new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
+                new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should NOT be accepted", 401, response.getStatusCode());
-        Assert.assertEquals("API authenticate response should be json", MediaType.APPLICATION_JSON, response.getContentType());
+        Assert.assertEquals("API authenticate response should be json",
+                MediaType.APPLICATION_JSON,
+                response.getContentType());
         ApiErrorMessage message = mapper.readValue(response.getResponseBody(), ApiErrorMessage.class);
-        Assert.assertEquals("Response should indicate correct failure message", "Invalid username and/or password", message.getTitle());
+        Assert.assertEquals("Response should indicate correct failure message",
+                "Invalid username and/or password",
+                message.getTitle());
     }
 
     @Test
@@ -142,34 +153,39 @@ public class ChainedAuthTests {
 
         ObjectMapper mapper = new ObjectMapper();
         UsernamePasswordCredentials creds = new UsernamePasswordCredentials("testuser", "test");
-        HttpResponse response =
-                HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
-                        new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        HttpResponse response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/authenticate"),
+                new ByteArrayInputStream(mapper.writeValueAsBytes(creds)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
-        Assert.assertEquals("API authenticate response should be json", MediaType.APPLICATION_JSON, response.getContentType());
+        Assert.assertEquals("API authenticate response should be json",
+                MediaType.APPLICATION_JSON,
+                response.getContentType());
         ApiBearerToken token = mapper.readValue(response.getResponseBody(), ApiBearerToken.class);
         Assert.assertNotNull("Response should contain a bearer token", token.getToken());
 
         //-- now validate the token against the UNSECURE API which returns whether its valid
-        response =
-                HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/validate-token"),
-                        new ByteArrayInputStream(mapper.writeValueAsBytes(token)),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        response = HttpUrlConnectionClient.post(HttpUrlConnectionClient.JSON_HEADERS,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "api/v1/auth/validate-token"),
+                new ByteArrayInputStream(mapper.writeValueAsBytes(token)),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
 
         //-- finally use it as a bear token header against a secure endpoint
 
         Map<String, String> headers = Map.of(HttpConstants.AUTH_HEADER,
-                HttpUtils.getBearerTokenAuthenticationHeaderValue(token.getToken()), "Content-Type", "application/json",
-                "Accept", "application/json");
+                HttpUtils.getBearerTokenAuthenticationHeaderValue(token.getToken()),
+                "Content-Type",
+                "application/json",
+                "Accept",
+                "application/json");
 
-        response =
-                HttpUrlConnectionClient.get(headers,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/user"),
-                        CONNECT_TIMEOUT, READ_TIMEOUT);
+        response = HttpUrlConnectionClient.get(headers,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/user"),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
         ApiPrincipal user = mapper.readValue(response.getResponseBody(), ApiPrincipal.class);
         Assert.assertEquals("Username should match that supplied at point of auth", "testuser", user.getName());
@@ -180,11 +196,12 @@ public class ChainedAuthTests {
     public void testGetSecuredResourceWithBasicAuthHeader() throws IOException {
 
         ObjectMapper mapper = new ObjectMapper();
-        Map<String, String> headers = Map.of(HttpConstants.AUTH_HEADER,
-                HttpUtils.getBasicAuthenticationHeaderValue("testadmin", "test"));
-        HttpResponse response =
-                HttpUrlConnectionClient.get(headers,
-                        getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"), CONNECT_TIMEOUT, READ_TIMEOUT);
+        Map<String, String> headers =
+                Map.of(HttpConstants.AUTH_HEADER, HttpUtils.getBasicAuthenticationHeaderValue("testadmin", "test"));
+        HttpResponse response = HttpUrlConnectionClient.get(headers,
+                getTestServerAddress(HTTP, TEST_HTTP_PORT, "test/get/auth/admin"),
+                CONNECT_TIMEOUT,
+                READ_TIMEOUT);
         Assert.assertEquals("Resource should be accepted", 200, response.getStatusCode());
         ApiPrincipal user = mapper.readValue(response.getResponseBody(), ApiPrincipal.class);
         Assert.assertEquals("Username should match that supplied at point of auth", "testadmin", user.getName());

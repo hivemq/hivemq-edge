@@ -16,7 +16,7 @@
 package com.hivemq.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.bootstrap.ioc.Injector;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsHttpServerConfiguration;
 import com.hivemq.http.core.HttpResponse;
@@ -27,7 +27,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.TestKeyStoreGenerator;
@@ -47,6 +46,8 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.List;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * @author Simon L Johnson
  */
@@ -59,15 +60,12 @@ public class JaxrsSSLTests {
     static final int READ_TIMEOUT = 1000;
     static final String HTTPS = "https";
 
-    protected JaxrsHttpServer server;
-    @Mock
-    private Injector injector;
-    protected TestKeyStoreGenerator testKeyStoreGenerator;
-    protected SSLContext context;
+    protected @NotNull JaxrsHttpServer server;
+    protected @NotNull TestKeyStoreGenerator testKeyStoreGenerator;
+    protected @NotNull SSLContext context;
 
     @Before
     public void setUp() throws Exception {
-
         testKeyStoreGenerator = new TestKeyStoreGenerator();
         JaxrsHttpServerConfiguration config = new JaxrsHttpServerConfiguration();
         config.setPort(TEST_HTTP_PORT);
@@ -77,7 +75,7 @@ public class JaxrsSSLTests {
         config.addResourceClasses(TestApiResource.class);
         config.setHttpsConfigurator(new HttpsConfigurator(context) {
             @Override
-            public void configure(final HttpsParameters params) {
+            public void configure(final @NotNull HttpsParameters params) {
                 SSLParameters parameters = getSSLContext().getDefaultSSLParameters();
                 parameters.setProtocols(new String[]{"TLSv1.2"});
                 params.setSSLParameters(parameters);
@@ -86,7 +84,7 @@ public class JaxrsSSLTests {
         //-- ensure we supplied our own test mapper as this can effect output
         ObjectMapper mapper = new ObjectMapper();
         config.setObjectMapper(mapper);
-        server = new JaxrsHttpServer(List.of(config), null);
+        server = new JaxrsHttpServer(mock(), List.of(config), null);
         server.startServer();
     }
 
@@ -96,7 +94,7 @@ public class JaxrsSSLTests {
         testKeyStoreGenerator.release();
     }
 
-    private SSLContext getSslContext(String password) throws Exception {
+    private SSLContext getSslContext(final @NotNull String password) throws Exception {
         final KeyStore keyStore = createKeyStore(password);
         final KeyManagerFactory keyManagerFactory =
                 KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -108,34 +106,32 @@ public class JaxrsSSLTests {
         return sslContext;
     }
 
-    private TrustManagerFactory defaultTrustManager(KeyStore keyStore) throws GeneralSecurityException {
+    private TrustManagerFactory defaultTrustManager(@NotNull KeyStore keyStore) throws GeneralSecurityException {
         TrustManagerFactory trustManagerFactory =
                 TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(keyStore);
         return trustManagerFactory;
     }
 
-    private KeyStore createKeyStore(String password) throws Exception {
+    private KeyStore createKeyStore(@NotNull String password) throws Exception {
         KeyStore keyStore = KeyStore.getInstance("JKS");
         FileInputStream fis = new FileInputStream(generateKeystore(password));
         keyStore.load(fis, password.toCharArray());
         return keyStore;
     }
 
-    private KeyManager[] getKeyManagers(final KeyManagerFactory keyManagerFactory) {
-        final KeyManager[] keyManagers = keyManagerFactory.getKeyManagers();
-        return keyManagers;
+    private KeyManager @NotNull [] getKeyManagers(final KeyManagerFactory keyManagerFactory) {
+        return keyManagerFactory.getKeyManagers();
     }
 
-    protected File generateKeystore(String password) throws Exception {
+    protected @NotNull File generateKeystore(@NotNull String password) throws Exception {
         final File file = testKeyStoreGenerator.generateKeyStore("teststore", "JKS", password, password);
         file.deleteOnExit();
         return file;
     }
 
-    protected static String getTestServerAddress(String protocol, int port, String uri) {
-        String url = String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
-        return url;
+    protected static @NotNull String getTestServerAddress(@NotNull String protocol, int port, @NotNull String uri) {
+        return String.format("%s://%s:%s/%s", protocol, "localhost", port, uri);
     }
 
     @Test
