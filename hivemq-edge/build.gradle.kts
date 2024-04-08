@@ -28,7 +28,7 @@ plugins {
     id("pmd")
     id("com.github.spotbugs")
     id("de.thetaphi.forbiddenapis")
-    id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.8"
+    id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.21"
     id("com.hivemq.edge-version-updater")
 }
 
@@ -177,7 +177,7 @@ dependencies {
     implementation("com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:${property("jackson.version")}")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${property("jackson.version")}")
 
-    implementation("com.hivemq:hivemq-mqtt-client:1.3.1")
+    implementation("com.hivemq:hivemq-mqtt-client:1.3.3")
 
     //Open API
     implementation("io.swagger.core.v3:swagger-annotations:${property("swagger.openapi.annotations.version")}")
