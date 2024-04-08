@@ -113,6 +113,10 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                     onError={(errors) => console.log('XXXXXXX', errors)}
                     formData={defaultValues}
                     customValidate={customValidate(schema, allAdapters, t)}
+                    transformErrors={(e) => {
+                      console.log('XXXXX Error with schema', e)
+                      return e
+                    }}
                   />
                 </>
               )}
