@@ -33,9 +33,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
 describe('SchemaPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/data-hub/schemas', { items: [{ ...mockSchemaTempHumidity, type: SchemaType.PROTOBUF }] }).as(
-      'getSchemas'
-    )
+    cy.intercept('/api/v1/data-hub/schemas', { items: [{ ...mockSchemaTempHumidity, type: SchemaType.PROTOBUF }] })
   })
 
   it('should render the fields for a Validator', () => {
