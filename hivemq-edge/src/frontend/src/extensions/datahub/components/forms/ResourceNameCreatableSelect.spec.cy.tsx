@@ -5,6 +5,7 @@ import {
   ScriptNameCreatableSelect,
 } from '@datahub/components/forms/ResourceNameCreatableSelect.tsx'
 import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
+import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
 
 // @ts-ignore No need for the whole props for testing
 const MOCK_RESOURCE_NAME_PROPS: WidgetProps = {
@@ -18,7 +19,7 @@ const MOCK_RESOURCE_NAME_PROPS: WidgetProps = {
   options: {},
 }
 
-describe.only('SchemaNameCreatableSelect', () => {
+describe('SchemaNameCreatableSelect', () => {
   beforeEach(() => {
     cy.viewport(800, 600)
     cy.intercept('/api/v1/data-hub/schemas', { items: [mockSchemaTempHumidity] }).as('getSchemas')
@@ -66,12 +67,17 @@ describe.only('SchemaNameCreatableSelect', () => {
 describe('ScriptNameCreatableSelect', () => {
   beforeEach(() => {
     cy.viewport(800, 600)
+    cy.intercept('/api/v1/data-hub/scripts', { items: [mockScript] }).as('getSchemas')
   })
 
   it('should render the ScriptNameCreatableSelect', () => {
     cy.injectAxe()
 
     cy.mountWithProviders(<ScriptNameCreatableSelect {...MOCK_RESOURCE_NAME_PROPS} />)
+    cy.get('#resource-label').should('have.text', 'Select a resource')
+    cy.get('#resource-label + div').should('have.text', 'Select...')
+    cy.get('#resource-label').click()
+    cy.get('#resource').type('my')
 
     cy.checkAccessibility(undefined, {
       rules: {
