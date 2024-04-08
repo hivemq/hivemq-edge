@@ -45,7 +45,7 @@ dependencies {
         exclude("org.checkerframework", "checker-qual")
         exclude("com.google.errorprone", "error_prone_annotations")
     }
-    implementation("com.digitalpetri.modbus:modbus-master-tcp:1.2.0")
+    implementation("com.digitalpetri.modbus:modbus-master-tcp:1.2.2")
 }
 
 configurations {
