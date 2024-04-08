@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * @author Simon L Johnson
  */
@@ -78,7 +80,7 @@ public class BasicAuthenticationTests {
         //-- ensure we supplied our own test mapper as this can effect output
         ObjectMapper mapper = new ObjectMapper();
         config.setObjectMapper(mapper);
-        server = new JaxrsHttpServer(List.of(config), conf);
+        server = new JaxrsHttpServer(mock(), List.of(config), conf);
         server.startServer();
     }
 

@@ -38,6 +38,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
 import java.net.URI;
@@ -62,7 +63,6 @@ public class JaxrsHttpServer {
     private final @NotNull List<HttpServer> httpServers = new ArrayList<>();
     private final @NotNull List<JaxrsHttpServerConfiguration> configs;
     private final @Nullable ResourceConfig resourceConfig;
-    private @Nullable ShutdownHooks shutdownHooks = null;
     private @Nullable JaxrsObjectMapperProvider objectMapperProvider;
     private final @NotNull Object mutex = new Object();
     private volatile boolean running = false;
@@ -73,14 +73,7 @@ public class JaxrsHttpServer {
             final @Nullable ResourceConfig resourceConfig) {
         this.configs = configs;
         this.resourceConfig = resourceConfig;
-        this.shutdownHooks = shutdownHooks;
-        this.shutdownHooks.add(new Shutdown());
-    }
-
-    public JaxrsHttpServer(
-            final @NotNull List<JaxrsHttpServerConfiguration> configs, final @Nullable ResourceConfig resourceConfig) {
-        this.configs = configs;
-        this.resourceConfig = resourceConfig;
+        shutdownHooks.add(new Shutdown());
     }
 
     public void startServer() {
@@ -124,18 +117,36 @@ public class JaxrsHttpServer {
                         if (isSecure) {
                             Preconditions.checkNotNull(config.getSslContext(),
                                     "When configured with SSL, context must be supplied");
-                            httpServer = JdkHttpServerFactory.createHttpServer(baseUri,
-                                    resources,
-                                    config.getSslContext(),
-                                    false);
-                            if (config.getHttpsConfigurator() != null) {
-                                logger.debug("WebServer configured with SSL [{}] configuration..",
-                                        config.getHttpsConfigurator().getSSLContext().getProtocol());
-                                ((HttpsServer) httpServer).setHttpsConfigurator(config.getHttpsConfigurator());
+                            try {
+                                httpServer = JdkHttpServerFactory.createHttpServer(baseUri,
+                                        resources,
+                                        config.getSslContext(),
+                                        false);
+                                if (config.getHttpsConfigurator() != null) {
+                                    logger.debug("WebServer configured with SSL [{}] configuration..",
+                                            config.getHttpsConfigurator().getSSLContext().getProtocol());
+                                    ((HttpsServer) httpServer).setHttpsConfigurator(config.getHttpsConfigurator());
+                                }
+                            } catch (ProcessingException processingException) {
+                                logger.error(
+                                        "Unable to start the Https Server for uri '{}'. Is another service using the port '{}'?",
+                                        baseUri,
+                                        config.getPort());
+                                // still throw the exception to mitigate a silent fail
+                                throw processingException;
                             }
                         } else {
                             logger.trace("Creating HTTP service {} with {}", baseUri, resources);
-                            httpServer = JdkHttpServerFactory.createHttpServer(baseUri, resources, false);
+                            try {
+                                httpServer = JdkHttpServerFactory.createHttpServer(baseUri, resources, false);
+                            } catch (ProcessingException processingException) {
+                                logger.error(
+                                        "Unable to start the Http Server for uri '{}'. Is another service using the port '{}'?",
+                                        baseUri,
+                                        config.getPort());
+                                // still throw the exception to mitigate a silent fail
+                                throw processingException;
+                            }
                         }
                         logger.trace("Created API server in {}ms", (System.currentTimeMillis() - startCreate));
                         final long startRegister = System.currentTimeMillis();
@@ -147,9 +158,16 @@ public class JaxrsHttpServer {
                         //-- If a static resource path has been supplied in config, ensure we mount it
                         registerStaticRoot(config, httpServer);
 
-                        registerContext("/app", new WebAppHandler(objectMapperProvider.getMapper(), "httpd"), httpServer);
-                        registerContext("/images", new StaticFileHandler(objectMapperProvider.getMapper(), "httpd/images"), httpServer);
-                        registerContext("/module/images", new AlternativeClassloadingStaticFileHandler(objectMapperProvider.getMapper(), "httpd/images"), httpServer);
+                        registerContext("/app",
+                                new WebAppHandler(objectMapperProvider.getMapper(), "httpd"),
+                                httpServer);
+                        registerContext("/images",
+                                new StaticFileHandler(objectMapperProvider.getMapper(), "httpd/images"),
+                                httpServer);
+                        registerContext("/module/images",
+                                new AlternativeClassloadingStaticFileHandler(objectMapperProvider.getMapper(),
+                                        "httpd/images"),
+                                httpServer);
 
 
                         httpServers.add(httpServer);
