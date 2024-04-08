@@ -52,7 +52,7 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
       },
       sourceCode: {
         'ui:options': {
-          readonly: !internalStatus,
+          // readonly: !internalStatus,
         },
       },
       description: {
