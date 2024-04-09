@@ -11,11 +11,12 @@ import {
   createFilter,
 } from 'chakra-react-select'
 
-import { FiniteStateMachine, FsmTransition } from '@datahub/types.ts'
+import { FiniteStateMachine, FsmState, FsmTransition } from '@datahub/types.ts'
 import { useTranslation } from 'react-i18next'
 
 interface FsmTransitionWithId extends FsmTransition {
   id: string
+  endStateType?: FsmState.Type
 }
 
 const SingleValue = (props: SingleValueProps<FsmTransitionWithId>) => {
@@ -38,6 +39,8 @@ const Option = (props: OptionProps<FsmTransitionWithId>) => {
   if (__isNew__) {
     return <chakraComponents.Option {...props}>{props.children}</chakraComponents.Option>
   }
+  const isTerminal =
+    props.data.endStateType === FsmState.Type.FAILED || props.data.endStateType === FsmState.Type.SUCCESS
 
   return (
     <chakraComponents.Option {...rest} isSelected={selectedTransition && selectedTransition.id === props.data.id}>
@@ -56,6 +59,7 @@ const Option = (props: OptionProps<FsmTransitionWithId>) => {
           </Text>
           <Text fontSize="sm" whiteSpace="nowrap">
             {t('workspace.transition.select.toState', { state: props.data.toState })}
+            {isTerminal && ` [${props.data.endStateType}]`}
           </Text>
         </VStack>
       </HStack>
@@ -79,10 +83,16 @@ export const TransitionSelect = (props: WidgetProps) => {
     const metadata = props.options.metadata as FiniteStateMachine | null
     if (!metadata) return []
 
-    const opts = metadata.transitions.map<FsmTransitionWithId>((transition) => ({
-      ...transition,
-      id: `${transition.event}-${transition.fromState}-${transition.toState}`,
-    }))
+    const states = metadata.states
+    const opts = metadata.transitions.map<FsmTransitionWithId>((transition) => {
+      const endState = states.find((e) => e.name === transition.toState)
+
+      return {
+        ...transition,
+        id: `${transition.event}-${transition.fromState}-${transition.toState}-${endState?.type}`,
+        endStateType: endState?.type,
+      }
+    })
     opts.push({
       id: 'Event.OnAny-Any.*-Any.*',
       event: 'Event.OnAny',
