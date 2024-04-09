@@ -300,8 +300,19 @@ export namespace TransitionData {
 export interface FsmState {
   name: string
   description: string
-  type: string
+  type: FsmState.Type
 }
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace FsmState {
+  export enum Type {
+    INITIAL = 'INITIAL',
+    INTERMEDIATE = 'INTERMEDIATE',
+    SUCCESS = 'SUCCESS',
+    FAILED = 'FAILED',
+  }
+}
+
 export interface FsmTransition {
   fromState: string
   toState: string
