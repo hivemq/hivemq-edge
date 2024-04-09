@@ -7,6 +7,7 @@ import {
   BehaviorPolicyData,
   DataHubNodeType,
   FiniteStateMachineSchema,
+  FsmState,
   PanelProps,
   StateType,
   TransitionData,
@@ -53,12 +54,12 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
       return null
     }
 
-    const { event, from, to } = adapterNode.data
+    const { event, from, to, type } = adapterNode.data
     const tempData: TransitionData = {
       ...adapterNode.data,
       model: parentPolicy ? parentPolicy.data.model : undefined,
       // @ts-ignore
-      event: `${event || ''}-${from || ''}-${to || ''}`,
+      event: `${event || ''}-${from || ''}-${to || ''}-${type || ''}`,
     }
     return tempData
   }, [nodes, parentPolicy, selectedNode])
@@ -90,12 +91,18 @@ export const TransitionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) 
       if (formData) {
         const { event: originalEvent } = formData
         if (originalEvent) {
-          const [event, from, to] = originalEvent.split('-') as [TransitionType, StateType, StateType]
+          const [event, from, to, type] = originalEvent.split('-') as [
+            TransitionType,
+            StateType,
+            StateType,
+            FsmState.Type | undefined
+          ]
           initData.formData = {
             ...initData.formData,
             event,
             from,
             to,
+            type: type,
           }
         }
       }
