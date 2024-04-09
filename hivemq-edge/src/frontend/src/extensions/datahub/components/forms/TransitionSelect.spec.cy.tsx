@@ -38,7 +38,7 @@ describe('TransitionSelect', () => {
     cy.get('label#transition-label + div').click()
 
     cy.get('div#react-select-transition-listbox').find('[role="option"]').as('optionList')
-    cy.get('@optionList').should('have.length', 7)
+    cy.get('@optionList').should('have.length', 8)
     cy.get('#react-select-transition-option-0').should('contain.text', 'Mqtt.OnInboundConnect')
 
     cy.checkAccessibility(undefined, {
