@@ -4,6 +4,7 @@ import { loginPage } from '../../pages/Login/LoginPage.ts'
 
 describe('Login Page', () => {
   beforeEach(() => {
+    cy.intercept('/api/v1/frontend/notifications', { statusCode: 404 })
     cy.intercept('/api/v1/auth/authenticate', mockAuthApi(mockValidCredentials))
     cy.intercept('/api/v1/frontend/configuration', {
       ...mockGatewayConfiguration,
@@ -14,7 +15,6 @@ describe('Login Page', () => {
         firstUseDescription: null,
       },
     })
-    cy.intercept('/api/v1/frontend/notifications', { statusCode: 404 })
     loginPage.visit()
   })
 
