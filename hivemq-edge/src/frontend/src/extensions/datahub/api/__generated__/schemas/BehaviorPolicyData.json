@@ -66,6 +66,12 @@
             "toState": "Violated",
             "description": "Transition that gets triggered then the client sends a publish, which does not exceed the maximum amount of publishes.",
             "event": "Connection.OnDisconnect"
+          },
+          {
+            "fromState": "Publishing",
+            "toState": "Disconnected",
+            "description": "Once the client connection is closed, the model transitions into the Disconnected state",
+            "event": "Connection.OnDisconnect"
           }
         ]
       },
@@ -138,6 +144,12 @@
             "toState": "Connected",
             "description": "Transition that gets triggered then the connected client disconnects.",
             "event": "Mqtt.OnInboundDisconnect"
+          },
+          {
+            "fromState": "Connected",
+            "toState": "Disconnected",
+            "description": "Once the client connection is closed, the model transitions into the Disconnected state",
+            "event": "Connection.OnDisconnect"
           }
         ]
       },
@@ -233,6 +245,18 @@
             "fromState": "NotDuplicated",
             "toState": "Violated",
             "description": "Transition that gets triggered then the client disconnects and the DUPLICATE state has every been reached during this connection.",
+            "event": "Connection.OnDisconnect"
+          },
+          {
+            "fromState": "Connected",
+            "toState": "Disconnected",
+            "description": "Once the client connection is closed, the model transitions into the Disconnected state",
+            "event": "Connection.OnDisconnect"
+          },
+          {
+            "fromState": "NotDuplicated",
+            "toState": "Disconnected",
+            "description": "Once the client connection is closed, the model transitions into the Disconnected state",
             "event": "Connection.OnDisconnect"
           }
         ]
