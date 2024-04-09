@@ -286,6 +286,7 @@ export interface TransitionData extends DataHubNodeData {
   event?: TransitionType
   from?: StateType
   to?: StateType
+  type?: FsmState.Type
   core?: BehaviorPolicyOnTransition
 }
 
