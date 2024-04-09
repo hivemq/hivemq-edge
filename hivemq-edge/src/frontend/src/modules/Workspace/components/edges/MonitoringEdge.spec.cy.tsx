@@ -5,10 +5,12 @@ import { CustomNodeTesting } from '@/__test-utils__/react-flow/CustomNodeTesting
 import { EdgeTypes } from '@/modules/Workspace/types.ts'
 
 import MonitoringEdge from './MonitoringEdge.tsx'
+import { MOCK_CAPABILITIES } from '@/api/hooks/useFrontendServices/__handlers__'
 
 describe('MonitoringEdge', () => {
   beforeEach(() => {
     cy.viewport(400, 400)
+    cy.intercept('/api/v1/frontend/capabilities', MOCK_CAPABILITIES)
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocolTypes')
     cy.intercept('/api/v1/data-hub/data-validation/policies', []).as('getPolicies')
   })
