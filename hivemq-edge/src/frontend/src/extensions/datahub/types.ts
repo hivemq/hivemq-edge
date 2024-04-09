@@ -295,6 +295,8 @@ export namespace TransitionData {
   export enum Handle {
     BEHAVIOR_POLICY = 'target',
     OPERATION = 'source',
+    ON_SUCCESS = 'onSuccess',
+    ON_ERROR = 'onError',
   }
 }
 
