@@ -190,9 +190,9 @@ dependencies {
     implementation("org.bouncycastle:bcprov-jdk15on")
 
     //json schema
-    implementation("com.networknt:json-schema-validator:1.0.82")
-    implementation("com.github.victools:jsonschema-generator:4.31.1")
-    implementation("com.github.victools:jsonschema-module-jackson:4.31.1")
+    implementation("com.networknt:json-schema-validator:1.4.0")
+    implementation("com.github.victools:jsonschema-generator:4.35.0")
+    implementation("com.github.victools:jsonschema-module-jackson:4.35.0")
 }
 
 /* ******************** test ******************** */
@@ -370,7 +370,7 @@ spotbugs {
 }
 
 dependencies {
-    spotbugsPlugins("com.h3xstream.findsecbugs:findsecbugs-plugin:1.8.0")
+    spotbugsPlugins("com.h3xstream.findsecbugs:findsecbugs-plugin:1.13.0")
 }
 
 dependencyCheck {
