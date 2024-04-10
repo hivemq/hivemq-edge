@@ -45,16 +45,6 @@
             ]
         },
         {
-            "groupName": "all patch dependencies",
-            "groupSlug": "all-patch",
-            "matchUpdateTypes": [
-                "patch"
-            ],
-            "matchCurrentVersion": "!/^0/",
-            "automerge": true,
-            "platformAutomerge": false
-        },
-        {
             "groupName": "xodus non-major dependencies",
             "groupSlug": "xodus-non-major",
             "matchPackagePrefixes": [
@@ -169,6 +159,32 @@
                 "minor",
                 "patch"
             ],
+            "automerge": true,
+            "platformAutomerge": false
+        },
+        {
+            "matchManagers": [
+                "gradle"
+            ],
+            "groupName": "gradle patch dependencies",
+            "groupSlug": "gradle-patch",
+            "matchUpdateTypes": [
+                "patch"
+            ],
+            "matchCurrentVersion": "!/^0/",
+            "automerge": true,
+            "platformAutomerge": false
+        },
+        {
+            "matchManagers": [
+                "npm"
+            ],
+            "groupName": "npm patch dependencies",
+            "groupSlug": "npm-patch",
+            "matchUpdateTypes": [
+                "patch"
+            ],
+            "matchCurrentVersion": "!/^0/",
             "automerge": true,
             "platformAutomerge": false
         },
