@@ -148,6 +148,27 @@ const ResourceNameCreatableSelect = (
   )
 }
 
+const createNewSchemaOption = (inputValue: string) => {
+  const schemaData = getNodePayload(DataHubNodeType.SCHEMA) as SchemaData
+  const newValue: ResourceFamily = {
+    name: inputValue,
+    versions: [1],
+    type: schemaData.type,
+    internalStatus: ResourceStatus.DRAFT,
+  }
+  return newValue
+}
+
+const createNewScriptOption = (inputValue: string) => {
+  const functionData = getNodePayload(DataHubNodeType.FUNCTION) as FunctionData
+  const newValue: ResourceFamily = {
+    name: inputValue,
+    versions: [1],
+    type: functionData.type,
+  }
+  return newValue
+}
+
 export const SchemaNameCreatableSelect = (props: WidgetProps) => {
   const { data, isLoading } = useGetAllSchemas()
   const options = useMemo<ResourceFamily[]>(() => {
@@ -157,38 +178,17 @@ export const SchemaNameCreatableSelect = (props: WidgetProps) => {
     return Object.values(options)
   }, [data])
 
-  const createNewOption = (inputValue: string) => {
-    const schemaData = getNodePayload(DataHubNodeType.SCHEMA) as SchemaData
-    const newValue: ResourceFamily = {
-      name: inputValue,
-      versions: [1],
-      type: schemaData.type,
-      internalStatus: ResourceStatus.DRAFT,
-    }
-    return newValue
-  }
-
-  return ResourceNameCreatableSelect(props, DataHubNodeType.SCHEMA, options, createNewOption, isLoading)
+  return ResourceNameCreatableSelect(props, DataHubNodeType.SCHEMA, options, createNewSchemaOption, isLoading)
 }
 
 export const ScriptNameCreatableSelect = (props: WidgetProps) => {
   const { isLoading, data } = useGetAllScripts({})
-  const createNewOption = (inputValue: string) => {
-    const schemaData = getNodePayload(DataHubNodeType.FUNCTION) as FunctionData
-    const newValue: ResourceFamily = {
-      name: inputValue,
-      versions: [1],
-      type: schemaData.type,
-    }
-    return newValue
-  }
 
   const options = useMemo<ResourceFamily[]>(() => {
-    if (!data) return []
-    if (!data.items) return []
+    if (!data?.items) return []
     const options = getScriptFamilies(data.items)
     return Object.values(options)
   }, [data])
 
-  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, options, createNewOption, isLoading)
+  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, options, createNewScriptOption, isLoading)
 }

@@ -99,7 +99,7 @@ export function checkValidityTransformFunction(
     return `fn:${functionNode.data.name}:latest`
   }
 
-  const sourceDeserial = serialisers.find((e) => e.id === deserial.source)
+  const sourceDeserial = serialisers.find((node) => node.id === deserial.source)
   if (!sourceDeserial) {
     return [
       {
@@ -128,7 +128,7 @@ export function checkValidityTransformFunction(
     id: operationNode.id,
   }
 
-  const sourceSerial = serialisers.find((e) => e.id === serial.source)
+  const sourceSerial = serialisers.find((node) => node.id === serial.source)
   if (!sourceSerial) {
     return [
       {

@@ -32,7 +32,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
     (changeEvent: IChangeEvent, id?: string | undefined) => {
       // id have form "root_XXXXXX", which makes the test unsafe
       if (id?.includes('name')) {
-        const schema = allSchemas?.items?.findLast((e) => e.id === changeEvent.formData.name)
+        const schema = allSchemas?.items?.findLast((schema) => schema.id === changeEvent.formData.name)
         if (schema) {
           setFormData({
             name: schema.id,
@@ -70,7 +70,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
       }
       if (id?.includes('version') && formData) {
         const schema = allSchemas?.items?.find(
-          (e) => e.id === formData.name && e.version?.toString() === changeEvent.formData.version
+          (schema) => schema.id === formData.name && schema.version?.toString() === changeEvent.formData.version
         )
 
         if (schema) {
