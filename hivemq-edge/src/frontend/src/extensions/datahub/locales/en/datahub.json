@@ -168,11 +168,17 @@
       },
       "transform": {
         "placeholder": "functionName"
+      },
+      "message": {
+        "placeholder": "Write the message"
       }
     },
     "codeEditor": {
       "delete": "Delete this version",
       "test": "Test code"
+    },
+    "interpolation": {
+      "noResult": "No matching variables"
     },
     "version": {
       "create": "Create a new version '{{ newVersion }}' from '{{ oldVersion }}'"
