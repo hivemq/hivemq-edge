@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -55,7 +56,7 @@ class ModbusProtocolAdapterTest {
     @Test
     void test_captureDataSample_expectedPayloadPresent() throws ExecutionException, InterruptedException {
         final ModbusAdapterConfig.Subscription subscription =
-                new ModbusAdapterConfig.Subscription("topic", 2, null);
+                new ModbusAdapterConfig.Subscription("topic", 2, null, null);
         final ModBusData data = new ModBusData(subscription, ModBusData.TYPE.INPUT_REGISTERS);
         data.addDataPoint("register", "hello world");
 
@@ -73,11 +74,13 @@ class ModbusProtocolAdapterTest {
         final ModBusData data2 = createSampleData(10);
 
         Assertions.assertEquals(0,
-                AdapterDataUtils.margeChangedSamples(data1.getDataPoints(), data2.getDataPoints()).size(), "There should be no deltas");
+                AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints()).size(),
+                "There should be no deltas");
         data2.getDataPoints().set(5, new ProtocolAdapterDataSample.DataPoint("register-5", 777));
 
         Assertions.assertEquals(1,
-                AdapterDataUtils.margeChangedSamples(data1.getDataPoints(), data2.getDataPoints()).size(), "There should be 1 delta");
+                AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints()).size(),
+                "There should be 1 delta");
     }
 
     @Test
@@ -87,14 +90,14 @@ class ModbusProtocolAdapterTest {
         final ModBusData data2 = createSampleData(10);
         data2.getDataPoints().set(5, new ProtocolAdapterDataSample.DataPoint("register-5", 777));
 
-        AdapterDataUtils.margeChangedSamples(data1.getDataPoints(), data2.getDataPoints());
+        AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints());
 
         Assertions.assertEquals(777, ((ProtocolAdapterDataSample.DataPoint)data1.getDataPoints().get(5)).getTagValue(), "Merged data should contain new value");
     }
 
     protected static ModBusData createSampleData(final int registerCount){
         final AbstractProtocolAdapterConfig.Subscription subscription =
-                new AbstractProtocolAdapterConfig.Subscription("topic", 2);
+                new AbstractProtocolAdapterConfig.Subscription("topic", 2, List.of());
         final ModBusData data = new ModBusData(subscription, ModBusData.TYPE.INPUT_REGISTERS);
         for (int i = 0; i < registerCount; i++){
             data.addDataPoint("register-" + i, i);

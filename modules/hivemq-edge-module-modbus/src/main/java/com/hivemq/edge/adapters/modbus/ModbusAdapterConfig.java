@@ -27,9 +27,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
@@ -107,8 +105,9 @@ public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         public Subscription(
                 @JsonProperty("destination") @Nullable final String destination,
                 @JsonProperty("qos") final int qos,
-                @JsonProperty("addressRange") @NotNull final AddressRange addressRange) {
-            super(destination, qos);
+                @JsonProperty("addressRange") @NotNull final AddressRange addressRange,
+                @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {
+            super(destination, qos, userProperties);
             this.addressRange = addressRange;
         }
 

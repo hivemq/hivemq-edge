@@ -105,7 +105,7 @@ public class AbstractProtocolAdapterConfig implements CustomConfig {
         public Subscription(
                 @JsonProperty("destination") @Nullable final String destination,
                 @JsonProperty("qos") final int qos,
-                @JsonProperty("userProperties") List<UserProperty> userProperties) {
+                @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {
             this.destination = destination;
             this.qos = qos;
             this.userProperties = userProperties;
