@@ -1,15 +1,21 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { NodeProps, Position } from 'reactflow'
 
-import { DataHubNodeType, TransitionData } from '@datahub/types.ts'
+import { DataHubNodeType, FsmState, TransitionData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
 import { NodeIcon, NodeParams } from '@datahub/components/helpers'
 
 export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
   const { t } = useTranslation('datahub')
   const { data, id, type } = props
+
+  const className = useMemo(() => {
+    if (data.type === FsmState.Type.SUCCESS) return TransitionData.Handle.ON_SUCCESS
+    if (data.type === FsmState.Type.FAILED) return TransitionData.Handle.ON_ERROR
+    return undefined
+  }, [data.type])
 
   return (
     <>
@@ -23,7 +29,13 @@ export const TransitionNode: FC<NodeProps<TransitionData>> = (props) => {
         </HStack>
       </NodeWrapper>
       <CustomHandle type="target" position={Position.Left} id={TransitionData.Handle.BEHAVIOR_POLICY} />
-      <CustomHandle type="source" id={TransitionData.Handle.OPERATION} position={Position.Right} isConnectable={1} />
+      <CustomHandle
+        type="source"
+        id={TransitionData.Handle.OPERATION}
+        position={Position.Right}
+        isConnectable={1}
+        className={className}
+      />
     </>
   )
 }

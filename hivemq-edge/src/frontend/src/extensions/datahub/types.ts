@@ -286,6 +286,7 @@ export interface TransitionData extends DataHubNodeData {
   event?: TransitionType
   from?: StateType
   to?: StateType
+  type?: FsmState.Type
   core?: BehaviorPolicyOnTransition
 }
 
@@ -294,14 +295,27 @@ export namespace TransitionData {
   export enum Handle {
     BEHAVIOR_POLICY = 'target',
     OPERATION = 'source',
+    ON_SUCCESS = 'onSuccess',
+    ON_ERROR = 'onError',
   }
 }
 
 export interface FsmState {
   name: string
   description: string
-  type: string
+  type: FsmState.Type
 }
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace FsmState {
+  export enum Type {
+    INITIAL = 'INITIAL',
+    INTERMEDIATE = 'INTERMEDIATE',
+    SUCCESS = 'SUCCESS',
+    FAILED = 'FAILED',
+  }
+}
+
 export interface FsmTransition {
   fromState: string
   toState: string

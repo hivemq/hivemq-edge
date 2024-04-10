@@ -53,7 +53,7 @@ describe('TransitionPanel', () => {
     cy.get('label#root_event-label + div').click()
 
     cy.get('div#react-select-root_event-listbox').find('[role="option"]').as('optionList')
-    cy.get('@optionList').should('have.length', 7)
+    cy.get('@optionList').should('have.length', 8)
     cy.get('@optionList').eq(0).should('contain.text', 'Mqtt.OnInboundConnect')
   })
 
