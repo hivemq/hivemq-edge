@@ -45,46 +45,6 @@
             ]
         },
         {
-            "groupName": "all major dependencies gradle",
-            "groupSlug": "all-major",
-            "matchUpdateTypes": [
-                "major"
-            ],
-            "matchManagers": [
-                "gradle"
-            ]
-        },
-        {
-            "groupName": "all minor dependencies gradle",
-            "groupSlug": "all-minor",
-            "matchUpdateTypes": [
-                "minor"
-            ],
-            "matchManagers": [
-                "gradle"
-            ]
-        },
-        {
-            "groupName": "all major dependencies npm",
-            "groupSlug": "all-major",
-            "matchUpdateTypes": [
-                "major"
-            ],
-            "matchManagers": [
-                "npm"
-            ]
-        },
-        {
-            "groupName": "all minor dependencies npm",
-            "groupSlug": "all-minor",
-            "matchUpdateTypes": [
-                "minor"
-            ],
-            "matchManagers": [
-                "npm"
-            ]
-        },
-        {
             "groupName": "all patch dependencies",
             "groupSlug": "all-patch",
             "matchUpdateTypes": [
@@ -211,6 +171,46 @@
             ],
             "automerge": true,
             "platformAutomerge": false
+        },
+        {
+            "matchManagers": [
+                "gradle"
+            ],
+            "groupName": "all major dependencies gradle",
+            "groupSlug": "all-major-gradle",
+            "matchUpdateTypes": [
+                "major"
+            ]
+        },
+        {
+            "matchManagers": [
+                "gradle"
+            ],
+            "groupName": "all minor dependencies gradle",
+            "groupSlug": "all-minor-gradle",
+            "matchUpdateTypes": [
+                "minor"
+            ]
+        },
+        {
+            "matchManagers": [
+                "npm"
+            ],
+            "groupName": "all major dependencies npm",
+            "groupSlug": "all-major-npm",
+            "matchUpdateTypes": [
+                "major"
+            ]
+        },
+        {
+            "matchManagers": [
+                "npm"
+            ],
+            "groupName": "all minor dependencies npm",
+            "groupSlug": "all-minor-npm",
+            "matchUpdateTypes": [
+                "minor"
+            ]
         }
     ]
 }
