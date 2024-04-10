@@ -1,17 +1,17 @@
 import { FC, useMemo } from 'react'
 import {
+  Button,
   Drawer,
   DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
   DrawerFooter,
   DrawerHeader,
   DrawerOverlay,
-  DrawerContent,
-  DrawerCloseButton,
   Flex,
-  Text,
-  Image,
   HStack,
-  Button,
+  Image,
+  Text,
 } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
@@ -19,7 +19,7 @@ import { IChangeEvent } from '@rjsf/core'
 import { RJSFSchema } from '@rjsf/utils'
 import Form from '@rjsf/chakra-ui'
 
-import { ApiError, Adapter, ProtocolAdapter } from '@/api/__generated__'
+import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 
@@ -32,6 +32,7 @@ import { ArrayFieldTemplate } from '../templates/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '../templates/ArrayFieldItemTemplate.tsx'
 import useGetUiSchema from '../../hooks/useGetUISchema.ts'
 import { customFormatsValidator, customValidate } from '../../utils/validation-utils.ts'
+import { RJSFValidationError } from '@rjsf/utils/src/types.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -71,6 +72,11 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
 
   const onValidate = (data: IChangeEvent<Adapter, RJSFSchema>) => {
     if (data.formData) onSubmit(data.formData)
+  }
+
+  const filterUnboundErrors = (errors: RJSFValidationError[]) => {
+    // Hide the AJV8 validation error from the view. It has no other identifier so matching the text
+    return errors.filter((error) => !error.stack.startsWith('no schema with key or ref'))
   }
 
   return (
@@ -113,6 +119,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                     onError={(errors) => console.log('XXXXXXX', errors)}
                     formData={defaultValues}
                     customValidate={customValidate(schema, allAdapters, t)}
+                    transformErrors={filterUnboundErrors}
                   />
                 </>
               )}

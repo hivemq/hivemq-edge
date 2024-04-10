@@ -1,4 +1,5 @@
 import { Editor } from '@datahub/components/interpolation/Editor.tsx'
+import { SUGGESTION_TRIGGER_CHAR } from '@datahub/components/interpolation/Suggestion.ts'
 
 describe('Editor', () => {
   beforeEach(() => {
@@ -10,11 +11,11 @@ describe('Editor', () => {
     cy.get('#my-id').should('contain.text', 'This is a test')
     cy.get('#my-id').click()
     cy.get('#my-id').type('{selectall}')
-    cy.get('#my-id').type('A new topic @')
+    cy.get('#my-id').type(`A new topic ${SUGGESTION_TRIGGER_CHAR}`)
     cy.getByTestId('interpolation-container').should('be.visible')
     // cy.getByTestId('interpolation-container').type('{downArrow}')
     cy.getByTestId('interpolation-container').find('button').eq(4).click()
-    cy.get('#my-id').should('contain.text', 'A new topic @validationResult')
+    cy.get('#my-id').should('contain.text', `A new topic ${SUGGESTION_TRIGGER_CHAR}validationResult`)
   })
 
   it('should be accessible', () => {
