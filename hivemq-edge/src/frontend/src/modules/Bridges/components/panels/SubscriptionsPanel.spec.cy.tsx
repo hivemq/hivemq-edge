@@ -65,7 +65,7 @@ describe('SubscriptionsPanel', () => {
     cy.percySnapshot('Component: SubscriptionsPanel')
   })
 
-  it.only('should initialise with OpenAPI defaults', () => {
+  it('should initialise with OpenAPI defaults', () => {
     cy.intercept('/api/v1/frontend/capabilities', { statusCode: 404 })
     cy.mountWithProviders(<TestingComponent onSubmit={cy.stub} defaultValues={mockBridge} />)
     cy.getByTestId('bridge-subscription-add').click()
