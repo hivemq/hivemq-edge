@@ -26,9 +26,11 @@ const DOM_RECT_FALLBACK: DOMRect = {
   },
 }
 
+const TRIGGER_CHAR = '$'
+
 export const Suggestion: MentionOptions['suggestion'] = {
   items: ({ query }) => getItems(query),
-  char: '@',
+  char: TRIGGER_CHAR,
   render: () => {
     let component: ReactRenderer<SuggestionListRef> | undefined
     let popup: TippyInstance | undefined
