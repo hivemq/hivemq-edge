@@ -31,7 +31,6 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,7 +123,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
                 List<ProtocolAdapterDataSample.DataPoint> previousSampleDataPoints = previousSample.getDataPoints();
                 List<ProtocolAdapterDataSample.DataPoint> currentSamplePoints = data.getDataPoints();
                 List<ProtocolAdapterDataSample.DataPoint> delta =
-                        AdapterDataUtils.margeChangedSamples(previousSampleDataPoints, currentSamplePoints);
+                        AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
                 if(log.isTraceEnabled()){
                     log.trace("Calculating change data old {} samples, new {} sample, delta {}",
                             previousSampleDataPoints.size(), currentSamplePoints.size(), delta.size());

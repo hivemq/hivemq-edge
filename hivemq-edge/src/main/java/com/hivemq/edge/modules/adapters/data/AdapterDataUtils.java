@@ -11,8 +11,9 @@ public class AdapterDataUtils {
                 .anyMatch(dp -> dp.getTagValue().equals(point.getTagValue())); // Then check for tagValue
     }
 
-    public static List<ProtocolAdapterDataSample.DataPoint> margeChangedSamples(final @NotNull List<ProtocolAdapterDataSample.DataPoint> historicalSamples,
-                                           final @NotNull List<ProtocolAdapterDataSample.DataPoint> currentSamples) {
+    public static List<ProtocolAdapterDataSample.DataPoint> mergeChangedSamples(
+            final @NotNull List<ProtocolAdapterDataSample.DataPoint> historicalSamples,
+            final @NotNull List<ProtocolAdapterDataSample.DataPoint> currentSamples) {
         List<ProtocolAdapterDataSample.DataPoint> delta = new ArrayList<>();
         for (int i = 0; i < currentSamples.size(); i++) {
             ProtocolAdapterDataSample.DataPoint currentSample = currentSamples.get(i);
