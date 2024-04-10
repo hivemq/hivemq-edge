@@ -28,7 +28,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
   return (
     <FormControl variant="hivemq" flexGrow={1} display="flex" flexDirection="column" gap={4} as="fieldset">
       <FormControl isInvalid={!!errors.cleanStart}>
-        <Checkbox defaultChecked {...register('cleanStart')}>
+        <Checkbox id="cleanStart" {...register('cleanStart')}>
           {t('bridge.options.cleanStart.label')}
         </Checkbox>
         <FormHelperText> {t('bridge.options.cleanStart.helper')}</FormHelperText>
@@ -70,7 +70,7 @@ const OptionsPanel: FC<BridgePanelType> = ({ form }) => {
 
       <FormControl isInvalid={!!errors.loopPreventionEnabled} mt={3}>
         <Checkbox
-          defaultChecked
+          id="loopPreventionEnabled"
           {...register('loopPreventionEnabled', {
             ...getRulesForProperty($Bridge.properties.loopPreventionEnabled),
           })}
