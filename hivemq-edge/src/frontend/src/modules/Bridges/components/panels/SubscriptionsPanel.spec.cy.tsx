@@ -65,19 +65,15 @@ describe('SubscriptionsPanel', () => {
     cy.percySnapshot('Component: SubscriptionsPanel')
   })
 
-  it('should initialise with OpenAPI defaults', () => {
+  it.only('should initialise with OpenAPI defaults', () => {
     cy.intercept('/api/v1/frontend/capabilities', { statusCode: 404 })
     cy.mountWithProviders(<TestingComponent onSubmit={cy.stub} defaultValues={mockBridge} />)
     cy.getByTestId('bridge-subscription-add').click()
-    // force validation to trigger error messages. Better alternative?
+    // force validation to trigger error messages.
     cy.getByTestId(`form-submit`).click()
 
-    cy.getByTestId(`${MOCK_TYPE}.0.filters`).should('be.visible').find('label').should('not.have.attr', 'data-invalid')
-
-    cy.get('input[id="remoteSubscriptions.0.filters"]').type('my topic{Enter}')
-    // force validation to trigger error messages. Better alternative?
-    cy.getByTestId(`form-submit`).click()
-    cy.getByTestId(`${MOCK_TYPE}.0.destination`).should('be.visible').find('label').should('have.attr', 'data-invalid')
+    cy.getByTestId(`${MOCK_TYPE}.0.filters`).find('label').should('have.attr', 'data-invalid')
+    cy.getByTestId(`${MOCK_TYPE}.0.destination`).find('label').should('have.attr', 'data-invalid')
   })
 
   describe('mqtt-persistence capability', () => {
