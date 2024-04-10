@@ -34,34 +34,22 @@ const SuggestionList = forwardRef<SuggestionListRef, SuggestionListProps>((props
     props.command(suggestion)
   }
 
-  const upHandler = () => {
-    setSelectedIndex((selectedIndex + props.items.length - 1) % props.items.length)
-  }
-
-  const downHandler = () => {
-    setSelectedIndex((selectedIndex + 1) % props.items.length)
-  }
-
-  const enterHandler = () => {
-    selectItem(selectedIndex)
-  }
-
   useEffect(() => setSelectedIndex(0), [props.items])
 
   useImperativeHandle(ref, () => ({
     onKeyDown: ({ event }) => {
       if (event.key === 'ArrowUp') {
-        upHandler()
+        setSelectedIndex((selectedIndex + props.items.length - 1) % props.items.length)
         return true
       }
 
       if (event.key === 'ArrowDown') {
-        downHandler()
+        setSelectedIndex((selectedIndex + 1) % props.items.length)
         return true
       }
 
       if (event.key === 'Enter') {
-        enterHandler()
+        selectItem(selectedIndex)
         return true
       }
 
