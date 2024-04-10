@@ -85,7 +85,7 @@ export const TransitionSelect = (props: WidgetProps) => {
 
     const states = metadata.states
     const opts = metadata.transitions.map<FsmTransitionWithId>((transition) => {
-      const endState = states.find((e) => e.name === transition.toState)
+      const endState = states.find((state) => state.name === transition.toState)
 
       return {
         ...transition,
