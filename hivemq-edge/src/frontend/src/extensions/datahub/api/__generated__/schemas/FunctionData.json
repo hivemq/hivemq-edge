@@ -2,6 +2,11 @@
   "type": "object",
   "required": ["type", "name", "version"],
   "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string",
+      "pattern": "^([a-zA-Z_0-9-_])*$"
+    },
     "type": {
       "title": "Format",
       "type": "string",
@@ -9,13 +14,13 @@
       "default": "Javascript",
       "readOnly": true
     },
-    "name": {
-      "title": "Name",
+    "version": {
+      "title": "Version",
       "type": "string"
     },
-    "version": {
-      "type": "number",
-      "format": "datahub:version"
+    "description": {
+      "title": "Description",
+      "type": "string"
     },
     "sourceCode": {
       "title": "Source",

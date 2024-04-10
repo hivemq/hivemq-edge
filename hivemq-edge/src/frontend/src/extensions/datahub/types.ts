@@ -197,6 +197,7 @@ export interface SchemaData extends ResourceState {
 export interface FunctionData extends ResourceState {
   name: string
   type: 'Javascript'
+  description?: string
   sourceCode?: string
   core?: Script
 }

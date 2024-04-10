@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next'
 import { DataHubNodeType, FunctionData, ResourceFamily, ResourceStatus, SchemaData } from '@datahub/types.ts'
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.tsx'
 import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGetAllScripts.tsx'
-import { getSchemaFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
+import { getSchemaFamilies, getScriptFamilies } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { getNodePayload } from '@datahub/utils/node.utils.ts'
 
 const SingleValue = <T extends ResourceFamily>(props: SingleValueProps<T>) => {
@@ -148,6 +148,27 @@ const ResourceNameCreatableSelect = (
   )
 }
 
+const createNewSchemaOption = (inputValue: string) => {
+  const schemaData = getNodePayload(DataHubNodeType.SCHEMA) as SchemaData
+  const newValue: ResourceFamily = {
+    name: inputValue,
+    versions: [1],
+    type: schemaData.type,
+    internalStatus: ResourceStatus.DRAFT,
+  }
+  return newValue
+}
+
+const createNewScriptOption = (inputValue: string) => {
+  const functionData = getNodePayload(DataHubNodeType.FUNCTION) as FunctionData
+  const newValue: ResourceFamily = {
+    name: inputValue,
+    versions: [1],
+    type: functionData.type,
+  }
+  return newValue
+}
+
 export const SchemaNameCreatableSelect = (props: WidgetProps) => {
   const { data, isLoading } = useGetAllSchemas()
   const options = useMemo<ResourceFamily[]>(() => {
@@ -157,31 +178,17 @@ export const SchemaNameCreatableSelect = (props: WidgetProps) => {
     return Object.values(options)
   }, [data])
 
-  const createNewOption = (inputValue: string) => {
-    const schemaData = getNodePayload(DataHubNodeType.SCHEMA) as SchemaData
-    const newValue: ResourceFamily = {
-      name: inputValue,
-      versions: [1],
-      type: schemaData.type,
-      internalStatus: ResourceStatus.DRAFT,
-    }
-    return newValue
-  }
-
-  return ResourceNameCreatableSelect(props, DataHubNodeType.SCHEMA, options, createNewOption, isLoading)
+  return ResourceNameCreatableSelect(props, DataHubNodeType.SCHEMA, options, createNewSchemaOption, isLoading)
 }
 
 export const ScriptNameCreatableSelect = (props: WidgetProps) => {
-  const { isLoading } = useGetAllScripts({})
-  const createNewOption = (inputValue: string) => {
-    const schemaData = getNodePayload(DataHubNodeType.FUNCTION) as FunctionData
-    const newValue: ResourceFamily = {
-      name: inputValue,
-      versions: [1],
-      type: schemaData.type,
-    }
-    return newValue
-  }
-  // TODO[NVL] Don't forget to convert the scripts
-  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, [], createNewOption, isLoading)
+  const { isLoading, data } = useGetAllScripts({})
+
+  const options = useMemo<ResourceFamily[]>(() => {
+    if (!data?.items) return []
+    const options = getScriptFamilies(data.items)
+    return Object.values(options)
+  }, [data])
+
+  return ResourceNameCreatableSelect(props, DataHubNodeType.FUNCTION, options, createNewScriptOption, isLoading)
 }
