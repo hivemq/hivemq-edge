@@ -6,7 +6,7 @@ import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Placeholder from '@tiptap/extension-placeholder'
 
-import { Box, chakra, Spinner } from '@chakra-ui/react'
+import { Box, chakra, Spinner, useColorModeValue } from '@chakra-ui/react'
 
 import { Suggestion } from '@datahub/components/interpolation/Suggestion.ts'
 import { parseInterpolations } from '@datahub/components/interpolation/interpolation.utils.ts'
@@ -37,6 +37,9 @@ export const Editor: FC<EditorProps> = ({
   placeholder,
   isInvalid,
 }) => {
+  const bgMention = useColorModeValue('gray.100', 'rgba(226, 232, 240, 0.16)')
+  const colorMention = useColorModeValue('gray.800', 'gray.200')
+
   const editor = useEditor({
     onUpdate: ({ editor }) => onChange?.(editor.getText()),
     extensions: [
@@ -66,7 +69,8 @@ export const Editor: FC<EditorProps> = ({
 
   return (
     <Box
-      pb="4"
+      pt={2}
+      pb={4}
       w="full"
       onClick={focus}
       borderRadius="md"
@@ -74,7 +78,13 @@ export const Editor: FC<EditorProps> = ({
       borderColor={isInvalid ? 'red.500' : 'gray.200'}
       boxShadow={isInvalid ? 'invalidInput' : 'none'}
       sx={{
-        '.mention': { backgroundColor: 'red.100', padding: '5px', userSelect: 'none', borderRadius: '2px' },
+        '.mention': {
+          backgroundColor: bgMention,
+          color: colorMention,
+          padding: '5px',
+          userSelect: 'none',
+          borderRadius: '2px',
+        },
         '.tiptap p.is-editor-empty:first-child::before': {
           color: '#adb5bd',
           content: `attr(data-placeholder)`,
