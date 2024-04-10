@@ -157,7 +157,7 @@ const ProtocolAdapters: FC = () => {
                   size="sm"
                   ml={2}
                   onClick={() => handleViewWorkspace(id, type as string)}
-                  aria-label={t('bridge.subscription.delete')}
+                  aria-label={t('protocolAdapter.table.actions.workspace')}
                   icon={<WorkspaceIcon />}
                 />
               )}
