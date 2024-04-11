@@ -9,12 +9,14 @@ import {
   Script,
 } from '@/api/__generated__'
 import i18n from '@/config/i18n.config.ts'
+import { enumFromStringValue } from '@/utils/types.utils.ts'
 
 import {
   BehaviorPolicyData,
   BehaviorPolicyType,
   DataHubNodeType,
   DryRunResults,
+  FiniteStateMachineSchema,
   StateType,
   TransitionData,
   TransitionType,
@@ -22,11 +24,10 @@ import {
   WorkspaceState,
 } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
-
 import { checkValidityPipeline, loadBehaviorPolicyPipelines } from '@datahub/designer/operation/OperationNode.utils.ts'
-import { getNodeId, isTransitionNodeType } from '@datahub/utils/node.utils.ts'
-import { enumFromStringValue } from '@/utils/types.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
+import { MOCK_BEHAVIOR_POLICY_SCHEMA } from '@datahub/designer/behavior_policy/BehaviorPolicySchema.ts'
+import { getNodeId, isTransitionNodeType } from '@datahub/utils/node.utils.ts'
 
 export function checkValidityTransitions(
   behaviorPolicyData: Node<BehaviorPolicyData>,
@@ -94,13 +95,22 @@ export const getActiveTransition = (transition: BehaviorPolicyOnTransition) => {
 }
 
 const extractEventStates = (
+  model: BehaviorPolicyType,
   behaviorPolicyTransition: BehaviorPolicyOnTransition
-): Pick<TransitionData, 'event' | 'from' | 'to'> => {
-  // return { event: TransitionType.ON_INBOUND_DISCONNECT, from: StateType.Publishing, to: StateType.Violated }
+): TransitionData => {
+  const definition = MOCK_BEHAVIOR_POLICY_SCHEMA.schema.definitions?.[model]
+  const { metadata } = definition as FiniteStateMachineSchema
+  const { states } = metadata
+
+  const to = enumFromStringValue(StateType, behaviorPolicyTransition.toState)
+  const endState = states.find((state) => state.name === to)
+
   return {
+    model: model,
     event: enumFromStringValue(TransitionType, getActiveTransition(behaviorPolicyTransition) || ''),
     from: enumFromStringValue(StateType, behaviorPolicyTransition.fromState),
-    to: enumFromStringValue(StateType, behaviorPolicyTransition.toState),
+    to,
+    type: endState?.type,
   }
 }
 
@@ -135,10 +145,7 @@ export const loadTransitions = (
       id: getNodeId(),
       type: DataHubNodeType.TRANSITION,
       position: { ...shiftBottom() },
-      data: {
-        model: model,
-        ...extractEventStates(behaviorPolicyTransition),
-      },
+      data: extractEventStates(model, behaviorPolicyTransition),
     }
 
     onNodesChange([{ item: transitionNode, type: 'add' } as NodeAddChange])
