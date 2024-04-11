@@ -30,6 +30,10 @@ import DraftStatus from '@datahub/components/helpers/DraftStatus.tsx'
 
 const stepKeys = ['build', 'check', 'publish']
 
+export interface DesignerToolBoxProps {
+  onActiveStep?: (step: number) => void
+}
+
 const DesignerToolbox: FC = () => {
   const { t } = useTranslation('datahub')
   const { getButtonProps, getDisclosureProps, isOpen } = useDisclosure()
@@ -38,6 +42,10 @@ const DesignerToolbox: FC = () => {
     index: 0,
     count: stepKeys.length,
   })
+
+  const onActiveStep = (step: number) => {
+    setActiveStep(step)
+  }
 
   const steps = stepKeys.map((key) => ({
     key: key,
@@ -130,8 +138,8 @@ const DesignerToolbox: FC = () => {
                     <>
                       <Box pt={5} h="100%">
                         {activeStep === 0 && <ToolboxNodes />}
-                        {activeStep === 1 && <ToolboxDryRun />}
-                        {activeStep === 2 && <ToolboxPublish />}
+                        {activeStep === 1 && <ToolboxDryRun onActiveStep={onActiveStep} />}
+                        {activeStep === 2 && <ToolboxPublish onActiveStep={onActiveStep} />}
                       </Box>
                     </>
                   )}
