@@ -1,20 +1,20 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { UseMutateAsyncFunction } from '@tanstack/react-query'
-
 import { Box, Button, HStack, Icon, Stack, useToast } from '@chakra-ui/react'
 import { MdPublishedWithChanges } from 'react-icons/md'
 
 import { BehaviorPolicy, DataPolicy, Schema, Script } from '@/api/__generated__'
 
-import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
-import { DataHubNodeType, DesignerStatus, DryRunResults, ResourceState, ResourceStatus } from '@datahub/types.ts'
-import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCreateSchema.tsx'
-import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
 import { useCreateDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useCreateDataPolicy.tsx'
 import { useCreateBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useCreateBehaviorPolicy.tsx'
-import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
+import { DesignerToolBoxProps } from '@datahub/components/controls/DesignerToolbox.tsx'
+import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
+import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCreateSchema.tsx'
+import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
+import { DataHubNodeType, DesignerStatus, DryRunResults, ResourceState, ResourceStatus } from '@datahub/types.ts'
 
 interface Mutate<T> {
   type: DataHubNodeType
@@ -41,7 +41,7 @@ const resourceReducer =
     return accumulator
   }
 
-export const ToolboxPublish: FC = () => {
+export const ToolboxPublish: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
   const { t } = useTranslation('datahub')
   const { report, node: selectedNode, setNode, reset } = usePolicyChecksStore()
   const { status: statusDraft } = useDataHubDraftStore()
@@ -146,6 +146,7 @@ export const ToolboxPublish: FC = () => {
       .finally(() => {
         reset()
         setNode(selectedNode)
+        onActiveStep?.(1)
       })
   }
 
