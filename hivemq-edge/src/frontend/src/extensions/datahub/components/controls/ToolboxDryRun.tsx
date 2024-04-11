@@ -1,4 +1,6 @@
 import { FC, useMemo } from 'react'
+import { useReactFlow } from 'reactflow'
+import { useTranslation } from 'react-i18next'
 import {
   Alert,
   AlertDescription,
@@ -12,40 +14,39 @@ import {
   AlertStatus,
   CloseButton,
 } from '@chakra-ui/react'
-import { DataHubNodeData, DesignerStatus, PolicyDryRunStatus } from '@datahub/types.ts'
-import { useTranslation } from 'react-i18next'
-import { getDryRunStatusIcon, isBehaviorPolicyNodeType, isDataPolicyNodeType } from '@datahub/utils/node.utils.ts'
-import { useOnSelectionChange, useReactFlow } from 'reactflow'
-import { usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
+
 import PolicyErrorReport from '@datahub/components/helpers/PolicyErrorReport.tsx'
+import { usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
+import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
+import { DataHubNodeData, DesignerStatus, PolicyDryRunStatus } from '@datahub/types.ts'
 
 export const ToolboxDryRun: FC = () => {
   const { t } = useTranslation('datahub')
   const { checkPolicyAsync } = usePolicyDryRun()
   const { fitView } = useReactFlow()
   const { nodes, onUpdateNodes, status: statusDraft } = useDataHubDraftStore()
-  const { status, node, report, setNode, initReport, setReport, getErrors, reset } = usePolicyChecksStore()
+  const {
+    status,
+    node: selectedNode,
+    report,
+    initReport,
+    setReport,
+    setNode,
+    getErrors,
+    reset,
+  } = usePolicyChecksStore()
 
   const CheckIcon = useMemo(() => getDryRunStatusIcon(status), [status])
   const isEditEnabled =
     import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true' || statusDraft === DesignerStatus.DRAFT
 
-  useOnSelectionChange({
-    onChange: ({ nodes }) => {
-      if (nodes.length === 1) {
-        const [node] = nodes
-        if (isDataPolicyNodeType(node) || isBehaviorPolicyNodeType(node)) setNode(node)
-      } else if (nodes.length === 0) setNode(undefined)
-    },
-  })
-
   const handleCheckPolicy = () => {
-    if (!node) return
+    if (!selectedNode) return
 
     initReport()
-    checkPolicyAsync(node).then((results): void => {
+    checkPolicyAsync(selectedNode).then((results): void => {
       setReport(results)
     })
   }
@@ -72,7 +73,10 @@ export const ToolboxDryRun: FC = () => {
             loadingText={t('workspace.dryRun.toolbar.checking')}
             onClick={handleCheckPolicy}
             isDisabled={
-              !node || status === PolicyDryRunStatus.SUCCESS || status === PolicyDryRunStatus.FAILURE || !isEditEnabled
+              !selectedNode ||
+              status === PolicyDryRunStatus.SUCCESS ||
+              status === PolicyDryRunStatus.FAILURE ||
+              !isEditEnabled
             }
           >
             {t('workspace.toolbar.policy.check')}

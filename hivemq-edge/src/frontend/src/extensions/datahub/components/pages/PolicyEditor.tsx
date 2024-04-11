@@ -12,6 +12,7 @@ import { getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/uti
 import CanvasControls from '@datahub/components/controls/CanvasControls.tsx'
 import Minimap from '@datahub/components/controls/Minimap.tsx'
 import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
+import ToolboxSelectionListener from '@datahub/components/controls/ToolboxSelectionListener.tsx'
 
 const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
@@ -85,6 +86,7 @@ const PolicyEditor: FC = () => {
           // onError={(id: string, message: string) => console.log('XXXXXX e', id, message)}
         >
           <Box role="toolbar" aria-label={t('workspace.aria-label') as string} aria-controls="edge-workspace-canvas">
+            <ToolboxSelectionListener />
             <DesignerToolbox />
             <CanvasControls />
             <Minimap />
