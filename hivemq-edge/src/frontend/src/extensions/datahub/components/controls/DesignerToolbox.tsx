@@ -20,8 +20,8 @@ import {
   useSteps,
   VStack,
 } from '@chakra-ui/react'
-import { FaAngleLeft, FaAngleRight, FaTools } from 'react-icons/fa'
-import { MdSkipNext, MdSkipPrevious } from 'react-icons/md'
+import { FaTools } from 'react-icons/fa'
+import { LuPanelLeftOpen, LuPanelRightOpen, LuSkipBack, LuSkipForward } from 'react-icons/lu'
 
 import { ToolboxNodes } from '@datahub/components/controls/ToolboxNodes.tsx'
 import { ToolboxDryRun } from '@datahub/components/controls/ToolboxDryRun.tsx'
@@ -55,7 +55,7 @@ const DesignerToolbox: FC = () => {
             icon={
               <>
                 <Icon as={FaTools} />
-                <Icon as={isOpen ? FaAngleLeft : FaAngleRight} />
+                <Icon as={isOpen ? LuPanelRightOpen : LuPanelLeftOpen} ml={2} boxSize="24px" />
               </>
             }
             {...getButtonProps()}
@@ -109,14 +109,14 @@ const DesignerToolbox: FC = () => {
                           <IconButton
                             data-testid="toolbox-navigation-prev"
                             aria-label={t('workspace.toolbox.navigation.previous')}
-                            icon={<MdSkipPrevious />}
+                            icon={<LuSkipBack />}
                             isDisabled={activeStep === 0}
                             onClick={() => setActiveStep((s) => s - 1)}
                           />
                           <IconButton
                             data-testid="toolbox-navigation-next"
                             aria-label={t('workspace.toolbox.navigation.next')}
-                            icon={<MdSkipNext />}
+                            icon={<LuSkipForward />}
                             isDisabled={activeStep === 2}
                             onClick={() => setActiveStep((s) => s + 1)}
                           />
