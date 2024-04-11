@@ -13,7 +13,11 @@ import {
   Stack,
   AlertStatus,
   CloseButton,
+  Link,
+  Text,
 } from '@chakra-ui/react'
+
+import { ConditionalWrapper } from '@/components/ConditonalWrapper.tsx'
 
 import PolicyErrorReport from '@datahub/components/helpers/PolicyErrorReport.tsx'
 import { usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
@@ -21,8 +25,9 @@ import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeData, DesignerStatus, PolicyDryRunStatus } from '@datahub/types.ts'
+import { DesignerToolBoxProps } from '@datahub/components/controls/DesignerToolbox.tsx'
 
-export const ToolboxDryRun: FC = () => {
+export const ToolboxDryRun: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
   const { t } = useTranslation('datahub')
   const { checkPolicyAsync } = usePolicyDryRun()
   const { fitView } = useReactFlow()
@@ -90,9 +95,23 @@ export const ToolboxDryRun: FC = () => {
           <Alert status={alertStatus} data-testid="toolbox-policy-check-status">
             <AlertIcon />
             <Box whiteSpace="normal">
-              <AlertTitle> {t('workspace.dryRun.report.success.title', { context: alertStatus })}</AlertTitle>
+              <AlertTitle>
+                <Text as="span">{t('workspace.dryRun.report.success.title', { context: alertStatus })}</Text>
+              </AlertTitle>
               <AlertDescription>
-                {t('workspace.dryRun.report.success.description', { context: alertStatus })}
+                <ConditionalWrapper
+                  condition={status === PolicyDryRunStatus.SUCCESS}
+                  wrapper={(children) => (
+                    <Link
+                      aria-label={t('workspace.toolbox.navigation.goPublish') as string}
+                      onClick={() => onActiveStep?.(2)}
+                    >
+                      {children}{' '}
+                    </Link>
+                  )}
+                >
+                  <Text as="span">{t('workspace.dryRun.report.success.description', { context: alertStatus })}</Text>
+                </ConditionalWrapper>
               </AlertDescription>
             </Box>
             <CloseButton alignSelf="flex-start" position="relative" right={-1} top={-1} onClick={handleClearPolicy} />
