@@ -169,6 +169,9 @@
       "transform": {
         "placeholder": "functionName"
       },
+      "schema": {
+        "placeholder": "schemaName"
+      },
       "message": {
         "placeholder": "Write the message"
       }
@@ -181,7 +184,16 @@
       "noResult": "No matching variables"
     },
     "version": {
-      "create": "Create a new version '{{ newVersion }}' from '{{ oldVersion }}'"
+      "display_one": "{{versionNumber}}",
+      "display_other": "{{versionNumber}} (latest)",
+      "create": "Create a new version '{{ newVersion }}' from '{{ oldVersion }}'",
+      "status_DRAFT": "DRAFT",
+      "status_MODIFIED": "MODIFIED - a new version will be created"
+    },
+    "name": {
+      "noOption": "No $t(datahub:workspace.nodes.type, { 'context': '{{type}}' }) available",
+      "createOption": "Create a new $t(datahub:workspace.nodes.type, { 'context': '{{type}}' }) \"{{inputValue}}\"",
+      "draft": "(Draft)"
     },
     "transition": {
       "select": {

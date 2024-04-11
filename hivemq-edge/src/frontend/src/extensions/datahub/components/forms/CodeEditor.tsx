@@ -1,19 +1,20 @@
+import { useMemo } from 'react'
 import { labelValue, WidgetProps } from '@rjsf/utils'
 import { Editor } from '@monaco-editor/react'
-import { Button, FormControl, FormLabel, HStack, VStack } from '@chakra-ui/react'
+import { FormControl, FormLabel, VStack } from '@chakra-ui/react'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
-import { useTranslation } from 'react-i18next'
 
 const CodeEditor = (lng: string, props: WidgetProps) => {
-  const { t } = useTranslation('datahub')
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
+
+  const isReadOnly = useMemo(() => props.readonly || props.options.readonly, [props.readonly, props.options.readonly])
 
   return (
     <FormControl
       {...chakraProps}
       isDisabled={props.disabled || props.readonly}
       isRequired={props.required}
-      isReadOnly={props.readonly}
+      isReadOnly={isReadOnly}
       isInvalid={props.rawErrors && props.rawErrors.length > 0}
     >
       {labelValue(
@@ -28,17 +29,10 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
           height="40vh"
           defaultLanguage={lng}
           defaultValue={props.value}
+          value={props.value}
           onChange={(event) => props.onChange(event)}
+          options={{ readOnly: isReadOnly }}
         />
-
-        <HStack>
-          <Button variant="danger" isDisabled size="sm">
-            {t('workspace.codeEditor.delete')}
-          </Button>
-          <Button isDisabled size="sm">
-            {t('workspace.codeEditor.test')}
-          </Button>
-        </HStack>
       </VStack>
     </FormControl>
   )

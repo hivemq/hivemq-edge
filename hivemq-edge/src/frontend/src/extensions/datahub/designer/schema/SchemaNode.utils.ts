@@ -4,11 +4,13 @@ import descriptor from 'protobufjs/ext/descriptor'
 
 import i18n from '@/config/i18n.config.ts'
 
-import { Schema, SchemaReference } from '@/api/__generated__'
+import { Schema, SchemaReference, Script } from '@/api/__generated__'
 import {
   DataHubNodeData,
   DataHubNodeType,
   DryRunResults,
+  ResourceFamily,
+  ResourceStatus,
   SchemaData,
   SchemaType,
   WorkspaceAction,
@@ -17,6 +19,37 @@ import {
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
+
+export const getScriptFamilies = (items: Script[]) => {
+  return items.reduce<Record<string, ResourceFamily>>((acc, script) => {
+    if (acc[script.id]) {
+      if (script.version) acc[script.id].versions.push(script.version)
+    } else {
+      acc[script.id] = { name: script.id, versions: [], type: script.functionType }
+      if (script.version) acc[script.id].versions.push(script.version)
+    }
+    return acc
+  }, {})
+}
+
+export const getSchemaFamilies = (items: Schema[]) => {
+  return items.reduce<Record<string, ResourceFamily>>((acc, schema) => {
+    if (acc[schema.id]) {
+      if (schema.version) acc[schema.id].versions.push(schema.version)
+    } else {
+      let description: string | undefined
+      try {
+        const schemaDefinition = JSON.parse(atob(schema.schemaDefinition))
+        description = schemaDefinition.description
+      } catch (e) {
+        /* empty */
+      }
+      acc[schema.id] = { name: schema.id, versions: [], type: schema.type, description }
+      if (schema.version) acc[schema.id].versions.push(schema.version)
+    }
+    return acc
+  }, {})
+}
 
 export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults<Schema> {
   if (!schemaNode.data.type || !schemaNode.data.version || !schemaNode.data.schemaSource) {
@@ -28,10 +61,8 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
 
   if (schemaNode.data.type === SchemaType.JSON) {
     const jsonSchema: Schema = {
-      // TODO[19466] Id should be user-facing; Need to fix before merging!
-      id: schemaNode.id,
+      id: schemaNode.data.name,
       type: schemaNode.data.type,
-      version: schemaNode.data.version,
       schemaDefinition: btoa(schemaNode.data.schemaSource),
     }
     return { data: jsonSchema, node: schemaNode }
@@ -67,10 +98,8 @@ export function checkValiditySchema(schemaNode: Node<SchemaData>): DryRunResults
         }
 
       const schema: Schema = {
-        // @ts-ignore TODO[19466] Id should be user-facing; Need to fix before merging!
-        id: schemaNode.id,
+        id: schemaNode.data.name,
         type: schemaNode.data.type,
-        version: schemaNode.data.version,
         schemaDefinition: encoded,
         // TODO[20139] No definition of arguments in OpenAPI!
         arguments: { messageType: schemaNode.data.messageType },
@@ -113,10 +142,12 @@ export function loadSchema(
         y: parentNode.position.y + CANVAS_POSITION.Schema.y,
       },
       data: {
+        name: schema.id,
         // @ts-ignore force undefined
         type: enumFromStringValue(SchemaType, schema.type),
         schemaSource: atob(schema.schemaDefinition),
-        version: 1,
+        version: schema.version || ResourceStatus.DRAFT,
+        internalVersions: schema.version ? [schema.version] : undefined,
       },
     }
     onNodesChange([{ item: schemaNode, type: 'add' } as NodeAddChange])

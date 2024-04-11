@@ -5,8 +5,8 @@ import { Button } from '@chakra-ui/react'
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
 import { DataHubNodeType, SchemaType } from '@datahub/types.ts'
 import { getNodePayload } from '@datahub/utils/node.utils.ts'
-import { SchemaPanel } from '@datahub/designer/schema/SchemaPanel.tsx'
-import { mockSchemaTempHumidity } from '@datahub/api/hooks/DataHubSchemasService/__handlers__'
+import { mockScript } from '@datahub/api/hooks/DataHubScriptsService/__handlers__'
+import { FunctionPanel } from '@datahub/designer/script/FunctionPanel.tsx'
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
   <MockStoreWrapper
@@ -15,9 +15,9 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
         nodes: [
           {
             id: '3',
-            type: DataHubNodeType.SCHEMA,
+            type: DataHubNodeType.FUNCTION,
             position: { x: 0, y: 0 },
-            data: getNodePayload(DataHubNodeType.SCHEMA),
+            data: getNodePayload(DataHubNodeType.FUNCTION),
           },
         ],
       },
@@ -30,33 +30,34 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
   </MockStoreWrapper>
 )
 
-describe('SchemaPanel', () => {
+describe('FunctionPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/data-hub/schemas', { items: [{ ...mockSchemaTempHumidity, type: SchemaType.PROTOBUF }] })
+    cy.intercept('/api/v1/data-hub/scripts', { items: [{ ...mockScript, type: SchemaType.PROTOBUF }] }).as('getSchemas')
   })
 
-  it('should render the fields for a Validator', () => {
-    cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
+  it('should render the fields for a Function node', () => {
+    cy.mountWithProviders(<FunctionPanel selectedNode="3" />, { wrapper })
 
     cy.get('label#root_name-label').should('contain.text', 'Name')
     cy.get('label#root_name-label + div').should('contain.text', 'Select...')
     cy.get('label#root_name-label').should('have.attr', 'data-invalid')
 
-    cy.get('label#root_type-label').should('contain.text', 'Schema')
-    cy.get('label#root_type-label + div').should('contain.text', 'JSON')
-
     cy.get('label#root_version-label').should('contain.text', 'Version')
     cy.get('label#root_version-label + div').should('contain.text', '')
 
-    cy.get('label#root_schemaSource-label').should('contain.text', 'schemaSource')
+    cy.get('label#root_description-label').should('contain.text', 'Description')
+    cy.get('input#root_description').should('contain.text', '')
+    cy.get('input#root_description').should('have.attr', 'placeholder', 'A short description for this version')
+
+    cy.get('label#root_sourceCode-label').should('contain.text', 'Source')
+    cy.get('div#root_sourceCode').should('contain.html', '&nbsp;*&nbsp;@param&nbsp;{Object}&nbsp;publish')
   })
 
   it('should control the editing flow', () => {
-    cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
+    cy.mountWithProviders(<FunctionPanel selectedNode="3" />, { wrapper })
 
     cy.get('#root_name-label + div').should('contain.text', 'Select...')
-    cy.get('#root_type-label + div').should('contain.text', 'JSON')
     cy.get('#root_version-label + div').should('contain.text', '')
 
     // create a draft
@@ -66,46 +67,36 @@ describe('SchemaPanel', () => {
     cy.get('@optionList').eq(0).click()
 
     cy.get('#root_name-label + div').should('contain.text', 'new-schema')
-    cy.get('#root_type-label + div').should('contain.text', 'JSON')
     cy.get('#root_version-label + div').should('contain.text', 'DRAFT')
-    cy.get('#root_schemaSource-label + div').should('contain.text', '"title":""')
-    cy.get('#root_schemaSource-label + div').find('div.monaco-mouse-cursor-text').first().as('editor')
-    cy.get('@editor').click()
-    cy.get('@editor').type('{command}a rr', { delay: 50, waitForAnimations: true })
-    cy.get('#root_schemaSource-label + div').should('contain.text', 'rr')
+    cy.get('div#root_sourceCode').should('contain.html', '&nbsp;*&nbsp;@param&nbsp;{Object}&nbsp;publish')
+    cy.get('div#root_sourceCode').find('div.monaco-mouse-cursor-text').as('editor')
+    // TODO[NVL] this doesn't work
+    // cy.get('@editor').click()
+    // cy.get('@editor').type('{command}a rr', { delay: 50, waitForAnimations: true })
+    // cy.get('#root_schemaSource-label + div').should('contain.text', 'rr')
 
     // select an existing schema
     cy.get('#root_name-label + div').click()
-    cy.get('#root_name-label + div').type('my-schema')
+    cy.get('#root_name-label + div').type('my-script')
     cy.get('#root_name-label + div').find('[role="option"]').as('optionList')
     cy.get('@optionList').eq(0).click()
 
-    cy.get('#root_name-label + div').should('contain.text', 'my-schema-id')
-    cy.get('#root_type-label + div').should('contain.text', 'PROTOBUF')
+    cy.get('#root_name-label + div').should('contain.text', 'my-script-id')
     cy.get('#root_version-label + div').should('contain.text', '1')
 
-    // TODO[NVL] This is a bug. Fix it!
+    // // TODO[NVL] This is a bug. Fix it!
     cy.get('#root_version-label').should('have.attr', 'data-invalid')
     cy.get('#root_version-label + div').click()
     cy.get('#root_version-label + div').find('[role="option"]').as('optionList2')
     cy.get('@optionList2').eq(0).click()
     cy.get('#root_version-label').should('not.have.attr', 'data-invalid')
-    // TODO[NVL] This is a bug. Fix it!
-
-    // modify the schema#
-    // TODO[NVL] Triggering edit in Monaco not working
-    // cy.get('@editor').type('this is fun')
-    // cy.get('#root_name-label + div').should('contain.text', 'my-schema-id')
-    // cy.get('#root_type-label + div').should('contain.text', 'PROTOBUF')
-    // cy.get('#root_type-label + div input').should('be.disabled')
-    // cy.get('#root_version-label + div').should('contain.text', 'MODIFIED')
-    // cy.get('#root_version-label + div input').should('be.disabled')
+    // // TODO[NVL] This is a bug. Fix it!
   })
 
   // TODO[NVL] Weird import worker error
   it.skip('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<SchemaPanel selectedNode="3" />, { wrapper })
+    cy.mountWithProviders(<FunctionPanel selectedNode="3" />, { wrapper })
 
     cy.checkAccessibility(undefined, {
       rules: {

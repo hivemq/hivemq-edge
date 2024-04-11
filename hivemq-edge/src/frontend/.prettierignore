@@ -1,5 +1,6 @@
 pnpm-lock.*
 
+.idea/
 docs/
 dist/
 coverage/

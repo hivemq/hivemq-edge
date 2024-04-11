@@ -7,6 +7,7 @@ import {
   PolicyOperation,
   Schema,
   SchemaReference,
+  Script,
 } from '@/api/__generated__'
 import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import { IChangeEvent } from '@rjsf/core'
@@ -75,6 +76,7 @@ export interface PolicyCheckAction {
 }
 
 export enum DataHubNodeType {
+  INTERNAL = 'INTERNAL',
   ADAPTOR = 'ADAPTOR',
   EDGE = 'EDGE',
   BRIDGE = 'BRIDGE',
@@ -153,6 +155,27 @@ export interface ValidatorData extends DataHubNodeData {
   core?: DataPolicyValidator
 }
 
+export enum ResourceStatus {
+  DRAFT = 'DRAFT',
+  LOADED = 'LOADED',
+  MODIFIED = 'MODIFIED',
+}
+
+export interface ResourceState extends DataHubNodeData {
+  version: ResourceStatus.DRAFT | number | ResourceStatus.MODIFIED
+  internalStatus?: ResourceStatus
+  internalVersions?: number[]
+}
+
+export interface ResourceFamily {
+  name: string
+  versions: number[]
+  description?: string
+  type?: string
+  label?: string
+  internalStatus?: ResourceStatus
+}
+
 // TODO[18755] Add to the OpenAPI specs; see https://hivemq.kanbanize.com/ctrl_board/4/cards/18755/details/
 export enum SchemaType {
   JSON = 'JSON',
@@ -163,19 +186,20 @@ export interface SchemaProtobufArguments {
   messageType: string
 }
 
-export interface SchemaData extends DataHubNodeData {
+export interface SchemaData extends ResourceState {
+  name: string
   type: SchemaType
-  version: number
   schemaSource?: string
   messageType?: string
   core?: Schema
 }
 
-export interface FunctionData extends DataHubNodeData {
-  type: 'Javascript'
+export interface FunctionData extends ResourceState {
   name: string
-  version: number
+  type: 'Javascript'
+  description?: string
   sourceCode?: string
+  core?: Script
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace

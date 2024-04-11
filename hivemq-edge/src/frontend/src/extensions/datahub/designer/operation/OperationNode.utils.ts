@@ -10,6 +10,7 @@ import {
   FunctionData,
   OperationData,
   PolicyOperationArguments,
+  ResourceStatus,
   TransitionData,
   WorkspaceAction,
   WorkspaceState,
@@ -98,12 +99,23 @@ export function checkValidityTransformFunction(
     return `fn:${functionNode.data.name}:latest`
   }
 
+  const sourceDeserial = serialisers.find((node) => node.id === deserial.source)
+  if (!sourceDeserial) {
+    return [
+      {
+        node: operationNode,
+        error: PolicyCheckErrors.notConnected(DataHubNodeType.SCHEMA, operationNode, OperationData.Handle.DESERIALISER),
+      },
+    ]
+  }
   const deserializer: PolicyOperation = {
     functionId: OperationData.Function.SERDES_DESERIALIZE,
     arguments: {
-      // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
-      schemaId: serial.source,
-      schemaVersion: 'latest',
+      schemaId: sourceDeserial.data.name,
+      schemaVersion:
+        sourceDeserial.data.version === ResourceStatus.DRAFT || sourceDeserial.data.version === ResourceStatus.MODIFIED
+          ? 'latest'
+          : sourceDeserial.data.version.toString(),
     } as PolicyOperationArguments,
     id: `${operationNode.id}-deserializer`,
   }
@@ -116,12 +128,24 @@ export function checkValidityTransformFunction(
     id: operationNode.id,
   }
 
+  const sourceSerial = serialisers.find((node) => node.id === serial.source)
+  if (!sourceSerial) {
+    return [
+      {
+        node: operationNode,
+        error: PolicyCheckErrors.notConnected(DataHubNodeType.SCHEMA, operationNode, OperationData.Handle.SERIALISER),
+      },
+    ]
+  }
+
   const serializer: PolicyOperation = {
     functionId: OperationData.Function.SERDES_SERIALIZE,
     arguments: {
-      // TODO[19466] Id should come from the node's data when fixed; Need to fix before merging!
-      schemaId: deserial.source,
-      schemaVersion: 'latest',
+      schemaId: sourceSerial.data.name,
+      schemaVersion:
+        sourceSerial.data.version === ResourceStatus.DRAFT || sourceSerial.data.version === ResourceStatus.MODIFIED
+          ? 'latest'
+          : sourceSerial.data.version.toString(),
     } as PolicyOperationArguments,
     id: `${operationNode.id}-serializer`,
   }

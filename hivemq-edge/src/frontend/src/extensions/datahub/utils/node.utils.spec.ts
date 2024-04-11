@@ -56,8 +56,9 @@ describe('getNodePayload', () => {
     {
       type: DataHubNodeType.SCHEMA,
       expected: {
+        internalStatus: 'DRAFT',
         type: SchemaType.JSON,
-        version: 1,
+        version: 'DRAFT',
         schemaSource: MOCK_JSONSCHEMA_SCHEMA,
       },
     },

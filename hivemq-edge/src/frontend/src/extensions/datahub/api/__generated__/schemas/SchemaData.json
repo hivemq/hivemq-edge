@@ -1,15 +1,22 @@
 {
   "type": "object",
   "description": "Data validation relies on the definition of schemas to interact with policies. The HiveMQ Data Hub supports schema definitions with JSON Schema or Protobuf formats:",
-  "required": ["type", "version"],
+  "required": ["name", "type", "version"],
   "properties": {
+    "name": {
+      "title": "Name",
+      "type": "string",
+      "pattern": "^([a-zA-Z_0-9-_])*$"
+    },
     "type": {
       "title": "Schema",
+      "type": "string",
       "enum": ["JSON", "PROTOBUF"],
-      "default": "PROTOBUF"
+      "default": "JSON"
     },
     "version": {
-      "type": "number",
+      "title": "Version",
+      "type": "string",
       "format": "datahub:version"
     }
   },
