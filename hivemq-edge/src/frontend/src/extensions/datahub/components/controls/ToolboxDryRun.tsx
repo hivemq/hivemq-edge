@@ -53,6 +53,7 @@ export const ToolboxDryRun: FC = () => {
 
   const handleClearPolicy = () => {
     reset()
+    setNode(selectedNode)
     nodes.forEach((node) => {
       onUpdateNodes<DataHubNodeData>(node.id, {
         ...node.data,

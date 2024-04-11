@@ -43,7 +43,7 @@ const resourceReducer =
 
 export const ToolboxPublish: FC = () => {
   const { t } = useTranslation('datahub')
-  const { report } = usePolicyChecksStore()
+  const { report, node: selectedNode, setNode, reset } = usePolicyChecksStore()
   const { status: statusDraft } = useDataHubDraftStore()
   const createSchema = useCreateSchema()
   const createScript = useCreateScript()
@@ -142,6 +142,10 @@ export const ToolboxPublish: FC = () => {
           description: e.toString(),
           status: 'error',
         })
+      })
+      .finally(() => {
+        reset()
+        setNode(selectedNode)
       })
   }
 
