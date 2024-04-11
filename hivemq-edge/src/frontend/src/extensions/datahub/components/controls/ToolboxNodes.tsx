@@ -1,10 +1,13 @@
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HStack, Text, VStack, ButtonGroup } from '@chakra-ui/react'
+
 import { DataHubNodeType, DesignerStatus } from '@datahub/types.ts'
 import Tool from '@datahub/components/controls/Tool.tsx'
+import { DesignerToolBoxProps } from '@datahub/components/controls/DesignerToolbox.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
-export const ToolboxNodes = () => {
+export const ToolboxNodes: FC<DesignerToolBoxProps> = () => {
   const { t } = useTranslation('datahub')
   const { nodes, status } = useDataHubDraftStore()
 
