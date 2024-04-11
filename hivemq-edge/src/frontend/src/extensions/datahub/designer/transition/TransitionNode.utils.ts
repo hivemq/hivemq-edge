@@ -119,9 +119,10 @@ export const loadTransitions = (
   const model = enumFromStringValue(BehaviorPolicyType, behaviorPolicy.behavior.id)
   if (!model) throw new Error(i18n.t('datahub:error.loading.behavior.noModel') as string)
 
+  const delta = ((Math.max(behaviorPolicy.onTransitions?.length || 0, 1) - 1) * CANVAS_POSITION.Transition.y) / 2
   const position: XYPosition = {
     x: BehaviorPolicyNode.position.x + CANVAS_POSITION.Transition.x,
-    y: BehaviorPolicyNode.position.y + CANVAS_POSITION.Transition.y,
+    y: BehaviorPolicyNode.position.y - CANVAS_POSITION.Transition.y - delta,
   }
 
   const shiftBottom = () => {
