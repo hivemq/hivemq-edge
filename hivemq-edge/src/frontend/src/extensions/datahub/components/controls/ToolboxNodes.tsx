@@ -8,7 +8,6 @@ export const ToolboxNodes = () => {
   const { t } = useTranslation('datahub')
   const { nodes, status } = useDataHubDraftStore()
 
-  const isBehaviorPolicyEnabled = import.meta.env.VITE_FLAG_DATAHUB_BEHAVIOR_ENABLED === 'true'
   const isEditEnabled =
     import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true' || status === DesignerStatus.DRAFT
   const isDraftEmpty = nodes.length === 0
@@ -26,9 +25,7 @@ export const ToolboxNodes = () => {
           <Text id="group-pipeline">{t('workspace.toolbox.group.pipeline')}</Text>
           <HStack>
             <Tool nodeType={DataHubNodeType.TOPIC_FILTER} isDisabled={isDraftEmpty || !isEditEnabled} />
-            {isBehaviorPolicyEnabled && (
-              <Tool nodeType={DataHubNodeType.CLIENT_FILTER} isDisabled={isDraftEmpty || !isEditEnabled} />
-            )}
+            <Tool nodeType={DataHubNodeType.CLIENT_FILTER} isDisabled={isDraftEmpty || !isEditEnabled} />
           </HStack>
         </VStack>
       </ButtonGroup>
@@ -42,17 +39,15 @@ export const ToolboxNodes = () => {
           </HStack>
         </VStack>
       </ButtonGroup>
-      {isBehaviorPolicyEnabled && (
-        <ButtonGroup variant="outline" size="sm" aria-labelledby="group-behaviorPolicy">
-          <VStack alignItems="flex-start">
-            <Text id="group-behaviorPolicy">{t('workspace.toolbox.group.behaviorPolicy')}</Text>
-            <HStack>
-              <Tool nodeType={DataHubNodeType.BEHAVIOR_POLICY} isDisabled={!isEditEnabled} />
-              <Tool nodeType={DataHubNodeType.TRANSITION} isDisabled={isDraftEmpty || !isEditEnabled} />
-            </HStack>
-          </VStack>
-        </ButtonGroup>
-      )}
+      <ButtonGroup variant="outline" size="sm" aria-labelledby="group-behaviorPolicy">
+        <VStack alignItems="flex-start">
+          <Text id="group-behaviorPolicy">{t('workspace.toolbox.group.behaviorPolicy')}</Text>
+          <HStack>
+            <Tool nodeType={DataHubNodeType.BEHAVIOR_POLICY} isDisabled={!isEditEnabled} />
+            <Tool nodeType={DataHubNodeType.TRANSITION} isDisabled={isDraftEmpty || !isEditEnabled} />
+          </HStack>
+        </VStack>
+      </ButtonGroup>
       <ButtonGroup variant="outline" size="sm" aria-labelledby="group-operation">
         <VStack alignItems="flex-start" pr={2}>
           <Text id="group-operation">{t('workspace.toolbox.group.operation')}</Text>

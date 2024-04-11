@@ -25,7 +25,6 @@ const DataHubListings: FC = () => {
   const { isOpen: isConfirmDeleteOpen, onOpen: onConfirmDeleteOpen, onClose: onConfirmDeleteClose } = useDisclosure()
   const [deleteItem, setDeleteItem] = useState<DeleteMutationRequest | undefined>(undefined)
   const toast = useToast()
-  const isBehaviorPolicyEnabled = import.meta.env.VITE_FLAG_DATAHUB_BEHAVIOR_ENABLED === 'true'
 
   const handleConfirmOnClose = () => {
     onConfirmDeleteClose()
@@ -77,9 +76,7 @@ const DataHubListings: FC = () => {
 
       <TabPanels>
         <TabPanel>
-          <Text mb={3}>
-            {t('Listings.tabs.policy.description')} {!isBehaviorPolicyEnabled && t('flag.behaviorPolicy.notEnabled')}
-          </Text>
+          <Text mb={3}>{t('Listings.tabs.policy.description')}</Text>
 
           <PolicyTable onDeleteItem={handleOnDelete} />
         </TabPanel>
