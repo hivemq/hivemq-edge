@@ -86,6 +86,14 @@ const PaginatedTable = <T,>({
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
   })
 
+  const hasFooters =
+    table
+      .getFooterGroups()
+      .map((group) => group.headers.map((header) => header.column.columnDef.footer))
+      .flat()
+      .filter(Boolean).length > 0
+
+  console.log('XXXXX', hasFooters)
   return (
     <>
       <TableContainer overflowY="auto" overflowX="auto" whiteSpace="normal">
@@ -167,17 +175,19 @@ const PaginatedTable = <T,>({
                 )
               })}
           </Tbody>
-          <Tfoot>
-            {table.getFooterGroups().map((footerGroup) => (
-              <Tr key={footerGroup.id}>
-                {footerGroup.headers.map((header) => (
-                  <Td key={header.id}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.footer, header.getContext())}
-                  </Td>
-                ))}
-              </Tr>
-            ))}
-          </Tfoot>
+          {hasFooters && (
+            <Tfoot>
+              {table.getFooterGroups().map((footerGroup) => (
+                <Tr key={footerGroup.id}>
+                  {footerGroup.headers.map((header) => (
+                    <Td key={header.id}>
+                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.footer, header.getContext())}
+                    </Td>
+                  ))}
+                </Tr>
+              ))}
+            </Tfoot>
+          )}
         </Table>
       </TableContainer>
       {enablePagination && <PaginationBar table={table} pageSizes={pageSizes} />}
