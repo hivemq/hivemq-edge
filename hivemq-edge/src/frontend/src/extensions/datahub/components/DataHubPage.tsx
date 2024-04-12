@@ -20,7 +20,8 @@ const DataHubPage: FC = () => {
       title={t('page.title') as string}
       subtitle={t('page.description') as string}
       cta={
-        isMainPage && (
+        isMainPage &&
+        hasDataHub && (
           <Flex height="100%" justifyContent="flex-end" alignItems="flex-end" pb={6}>
             <DraftCTA />
           </Flex>
