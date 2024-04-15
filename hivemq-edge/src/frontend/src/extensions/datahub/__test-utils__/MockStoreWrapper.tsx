@@ -56,7 +56,7 @@ export const MockChecksStoreWrapper: FC<MockChecksStoreWrapperProps> = ({ config
     }
 
     if (report) setReport(report)
-  }, [config, setNode, setReport])
+  }, [config, onAddNodes, setNode, setReport])
 
   return (
     <>
