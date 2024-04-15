@@ -1,5 +1,6 @@
 import { FC, useState } from 'react'
-import { Panel } from 'reactflow'
+import { Panel, useReactFlow } from 'reactflow'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import {
@@ -36,6 +37,9 @@ export interface DesignerToolBoxProps {
 
 const DesignerToolbox: FC = () => {
   const { t } = useTranslation('datahub')
+  const { fitView } = useReactFlow()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
   const { getButtonProps, getDisclosureProps, isOpen } = useDisclosure()
   const [hidden, setHidden] = useState(!isOpen)
   const { activeStep, setActiveStep } = useSteps({
@@ -138,7 +142,15 @@ const DesignerToolbox: FC = () => {
                     <>
                       <Box pt={5} h="100%">
                         {activeStep === 0 && <ToolboxNodes />}
-                        {activeStep === 1 && <ToolboxDryRun onActiveStep={onActiveStep} />}
+                        {activeStep === 1 && (
+                          <ToolboxDryRun
+                            onActiveStep={onActiveStep}
+                            onShowNode={(node) => fitView({ nodes: [node], padding: 3, duration: 800 })}
+                            onShowEditor={(node) =>
+                              navigate(`node/${node.type}/${node.id}`, { state: { origin: pathname } })
+                            }
+                          />
+                        )}
                         {activeStep === 2 && <ToolboxPublish onActiveStep={onActiveStep} />}
                       </Box>
                     </>

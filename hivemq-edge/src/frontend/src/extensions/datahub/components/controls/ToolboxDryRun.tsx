@@ -1,7 +1,6 @@
 import { FC, useCallback, useMemo } from 'react'
-import { useReactFlow } from 'reactflow'
+import { Node } from 'reactflow'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Alert,
   AlertDescription,
@@ -28,12 +27,15 @@ import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeData, DesignerStatus, PolicyDryRunStatus } from '@datahub/types.ts'
 import { DesignerToolBoxProps } from '@datahub/components/controls/DesignerToolbox.tsx'
 
-export const ToolboxDryRun: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
+interface ToolboxDryRunProps extends DesignerToolBoxProps {
+  onShowNode?: (node: Node) => void
+  onShowEditor?: (node: Node) => void
+}
+
+export const ToolboxDryRun: FC<ToolboxDryRunProps> = ({ onActiveStep, onShowNode, onShowEditor }) => {
   const { t } = useTranslation('datahub')
   const { checkPolicyAsync } = usePolicyDryRun()
-  const { fitView } = useReactFlow()
-  const navigate = useNavigate()
-  const { pathname } = useLocation()
+
   const { nodes, onUpdateNodes, status: statusDraft } = useDataHubDraftStore()
   const {
     status,
@@ -124,11 +126,11 @@ export const ToolboxDryRun: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
             errors={getErrors() || []}
             onFitView={(id) => {
               const errorNode = errorNodeFrom(id)
-              if (errorNode) fitView({ nodes: [errorNode], padding: 3, duration: 800 })
+              if (errorNode && onShowNode) onShowNode(errorNode)
             }}
             onOpenConfig={(id) => {
               const errorNode = errorNodeFrom(id)
-              if (errorNode) navigate(`node/${errorNode.type}/${id}`, { state: { origin: pathname } })
+              if (errorNode && onShowEditor) onShowEditor(errorNode)
             }}
           />
         </>
