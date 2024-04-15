@@ -1,6 +1,7 @@
-import { FC, useMemo } from 'react'
+import { FC, useCallback, useMemo } from 'react'
 import { useReactFlow } from 'reactflow'
 import { useTranslation } from 'react-i18next'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Alert,
   AlertDescription,
@@ -31,6 +32,8 @@ export const ToolboxDryRun: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
   const { t } = useTranslation('datahub')
   const { checkPolicyAsync } = usePolicyDryRun()
   const { fitView } = useReactFlow()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
   const { nodes, onUpdateNodes, status: statusDraft } = useDataHubDraftStore()
   const {
     status,
@@ -66,8 +69,9 @@ export const ToolboxDryRun: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
       })
     })
   }
-
+  const errorNodeFrom = useCallback((id: string) => nodes.find((node) => node.id === id), [nodes])
   const alertStatus: AlertStatus = status === PolicyDryRunStatus.SUCCESS ? 'success' : 'warning'
+
   return (
     <Stack maxW={500}>
       <HStack>
@@ -119,8 +123,12 @@ export const ToolboxDryRun: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
           <PolicyErrorReport
             errors={getErrors() || []}
             onFitView={(id) => {
-              const errorNode = nodes.find((node) => node.id === id)
+              const errorNode = errorNodeFrom(id)
               if (errorNode) fitView({ nodes: [errorNode], padding: 3, duration: 800 })
+            }}
+            onOpenConfig={(id) => {
+              const errorNode = errorNodeFrom(id)
+              if (errorNode) navigate(`node/${errorNode.type}/${id}`, { state: { origin: pathname } })
             }}
           />
         </>
