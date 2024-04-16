@@ -139,7 +139,7 @@ const DesignerToolbox: FC = () => {
                             data-testid="toolbox-navigation-next"
                             aria-label={t('workspace.toolbox.navigation.next')}
                             icon={<LuSkipForward />}
-                            isDisabled={activeStep === DesignerToolBoxProps.Steps.TOOLBOX_CHECK}
+                            isDisabled={activeStep === DesignerToolBoxProps.Steps.TOOLBOX_PUBLISH}
                             onClick={() => setActiveStep((s) => s + 1)}
                           />
                         </ButtonGroup>
