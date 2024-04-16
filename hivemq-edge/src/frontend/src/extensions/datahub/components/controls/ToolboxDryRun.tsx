@@ -110,9 +110,9 @@ export const ToolboxDryRun: FC<ToolboxDryRunProps> = ({ onActiveStep, onShowNode
                   wrapper={(children) => (
                     <Link
                       aria-label={t('workspace.toolbox.navigation.goPublish') as string}
-                      onClick={() => onActiveStep?.(2)}
+                      onClick={() => onActiveStep?.(DesignerToolBoxProps.Steps.TOOLBOX_CHECK)}
                     >
-                      {children}{' '}
+                      {children}
                     </Link>
                   )}
                 >

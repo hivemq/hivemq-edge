@@ -31,8 +31,17 @@ import DraftStatus from '@datahub/components/helpers/DraftStatus.tsx'
 
 const stepKeys = ['build', 'check', 'publish']
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace DesignerToolBoxProps {
+  export enum Steps {
+    TOOLBOX_NODES = 0,
+    TOOLBOX_CHECK = 1,
+    TOOLBOX_PUBLISH = 2,
+  }
+}
+
 export interface DesignerToolBoxProps {
-  onActiveStep?: (step: number) => void
+  onActiveStep?: (step: DesignerToolBoxProps.Steps) => void
 }
 
 const DesignerToolbox: FC = () => {
@@ -43,7 +52,7 @@ const DesignerToolbox: FC = () => {
   const { getButtonProps, getDisclosureProps, isOpen } = useDisclosure()
   const [hidden, setHidden] = useState(!isOpen)
   const { activeStep, setActiveStep } = useSteps({
-    index: 0,
+    index: DesignerToolBoxProps.Steps.TOOLBOX_NODES,
     count: stepKeys.length,
   })
 
@@ -122,14 +131,14 @@ const DesignerToolbox: FC = () => {
                             data-testid="toolbox-navigation-prev"
                             aria-label={t('workspace.toolbox.navigation.previous')}
                             icon={<LuSkipBack />}
-                            isDisabled={activeStep === 0}
+                            isDisabled={activeStep === DesignerToolBoxProps.Steps.TOOLBOX_NODES}
                             onClick={() => setActiveStep((s) => s - 1)}
                           />
                           <IconButton
                             data-testid="toolbox-navigation-next"
                             aria-label={t('workspace.toolbox.navigation.next')}
                             icon={<LuSkipForward />}
-                            isDisabled={activeStep === 2}
+                            isDisabled={activeStep === DesignerToolBoxProps.Steps.TOOLBOX_CHECK}
                             onClick={() => setActiveStep((s) => s + 1)}
                           />
                         </ButtonGroup>
@@ -141,8 +150,8 @@ const DesignerToolbox: FC = () => {
                   {activeStep === index && (
                     <>
                       <Box pt={5} h="100%">
-                        {activeStep === 0 && <ToolboxNodes />}
-                        {activeStep === 1 && (
+                        {activeStep === DesignerToolBoxProps.Steps.TOOLBOX_NODES && <ToolboxNodes />}
+                        {activeStep === DesignerToolBoxProps.Steps.TOOLBOX_CHECK && (
                           <ToolboxDryRun
                             onActiveStep={onActiveStep}
                             onShowNode={(node) => fitView({ nodes: [node], padding: 3, duration: 800 })}
@@ -151,7 +160,9 @@ const DesignerToolbox: FC = () => {
                             }
                           />
                         )}
-                        {activeStep === 2 && <ToolboxPublish onActiveStep={onActiveStep} />}
+                        {activeStep === DesignerToolBoxProps.Steps.TOOLBOX_PUBLISH && (
+                          <ToolboxPublish onActiveStep={onActiveStep} />
+                        )}
                       </Box>
                     </>
                   )}
