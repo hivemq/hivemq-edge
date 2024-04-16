@@ -28,6 +28,7 @@ import { ToolboxNodes } from '@datahub/components/controls/ToolboxNodes.tsx'
 import { ToolboxDryRun } from '@datahub/components/controls/ToolboxDryRun.tsx'
 import { ToolboxPublish } from '@datahub/components/controls/ToolboxPublish.tsx'
 import DraftStatus from '@datahub/components/helpers/DraftStatus.tsx'
+import { ANIMATION } from '@datahub/utils/datahub.utils.ts'
 
 const stepKeys = ['build', 'check', 'publish']
 
@@ -154,7 +155,9 @@ const DesignerToolbox: FC = () => {
                         {activeStep === DesignerToolBoxProps.Steps.TOOLBOX_CHECK && (
                           <ToolboxDryRun
                             onActiveStep={onActiveStep}
-                            onShowNode={(node) => fitView({ nodes: [node], padding: 3, duration: 800 })}
+                            onShowNode={(node) =>
+                              fitView({ nodes: [node], padding: 3, duration: ANIMATION.FIT_VIEW_DURATION_MS })
+                            }
                             onShowEditor={(node) =>
                               navigate(`node/${node.type}/${node.id}`, { state: { origin: pathname } })
                             }
