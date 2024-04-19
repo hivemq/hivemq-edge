@@ -128,5 +128,9 @@
   },
   "msw": {
     "workerDirectory": "public"
+  },
+  "engines": {
+    "node": "18",
+    "pnpm": "8"
   }
 }
