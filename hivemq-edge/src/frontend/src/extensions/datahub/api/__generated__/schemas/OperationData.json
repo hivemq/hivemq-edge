@@ -163,8 +163,7 @@
           "description": "Change the order in which the transform functions will be executed",
           "items": {
             "type": "string",
-            "title": "Function name",
-            "format": "datahub:function-name"
+            "title": "Function name"
           }
         }
       }
