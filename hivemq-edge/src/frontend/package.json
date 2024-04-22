@@ -25,6 +25,10 @@
     "test:ui": "vitest --ui",
     "preview": "vite preview"
   },
+  "engines": {
+    "node": "20",
+    "pnpm": "8"
+  },
   "dependencies": {
     "@chakra-ui/anatomy": "^2.1.1",
     "@chakra-ui/icons": "^2.0.19",
