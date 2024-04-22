@@ -15,7 +15,12 @@ import {
   WorkspaceAction,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { checkValidityJSScript, loadScripts } from '@datahub/designer/script/FunctionNode.utils.ts'
+import {
+  checkValidityJSScript,
+  formatScriptName,
+  loadScripts,
+  parseScriptName,
+} from '@datahub/designer/script/FunctionNode.utils.ts'
 import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { isFunctionNodeType, isSchemaNodeType } from '@datahub/utils/node.utils.ts'
@@ -81,11 +86,6 @@ export function checkValidityTransformFunction(
   const scriptNodes = functions.map((node) => checkValidityJSScript(node))
   const schemaNodes = serialisers.map((node) => checkValiditySchema(node))
 
-  // TODO[19497] This should not have to happen on the client side!
-  const formattedScriptName = (functionNode: Node<FunctionData>): string => {
-    return `fn:${functionNode.data.name}:latest`
-  }
-
   if (!scriptNodes.length) {
     return [
       {
@@ -105,7 +105,7 @@ export function checkValidityTransformFunction(
       const scriptName = script.node as Node<FunctionData>
 
       const operation: PolicyOperation = {
-        functionId: formattedScriptName(scriptName),
+        functionId: formatScriptName(scriptName),
         arguments: {},
         // TODO[19466] Id should be user-facing; Need to fix before merging!
         id: scriptName.id,
@@ -306,8 +306,6 @@ export const loadPipeline = (
             throw new Error(i18n.t('datahub:error.loading.operation.unknown') as string)
           const [deserializer, ...functions] = operationNode as PolicyOperation[]
 
-          console.log('XXXXXX fc', functions)
-
           operationNode = {
             id: policyOperation.id,
             type: DataHubNodeType.OPERATION,
@@ -318,7 +316,7 @@ export const loadPipeline = (
                 isTerminal: false,
                 hasArguments: true,
               },
-              formData: { transform: functions.map((e) => e.functionId) },
+              formData: { transform: functions.map((operation) => parseScriptName(operation)) },
             },
           }
 

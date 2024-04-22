@@ -14,6 +14,21 @@ import {
 } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
+import {
+  SCRIPT_FUNCTION_LATEST,
+  SCRIPT_FUNCTION_PREFIX,
+  SCRIPT_FUNCTION_SEPARATOR,
+} from '@datahub/utils/datahub.utils.ts'
+
+export const formatScriptName = (functionNode: Node<FunctionData>): string => {
+  return `${SCRIPT_FUNCTION_PREFIX}:${functionNode.data.name}:${SCRIPT_FUNCTION_LATEST}`
+}
+
+export const parseScriptName = (operation: PolicyOperation): string => {
+  const splitId = operation.functionId.split(SCRIPT_FUNCTION_SEPARATOR)
+  if (splitId.length !== 3) return splitId[0]
+  return splitId[1]
+}
 
 export function checkValidityJSScript(scriptNode: Node<FunctionData>): DryRunResults<Script> {
   if (!scriptNode.data.name || !scriptNode.data.version || !scriptNode.data.sourceCode) {
