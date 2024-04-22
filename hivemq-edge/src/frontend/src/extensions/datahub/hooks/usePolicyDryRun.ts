@@ -36,6 +36,14 @@ export const onlyNonNullResources = (acc: DryRunResults<unknown, never>[], oper:
   return acc
 }
 
+export const onlyUniqueResources = (acc: DryRunResults<unknown, never>[], item: DryRunResults<unknown, never>) => {
+  const existingResourceIds = acc.map((e) => e.node.id)
+  if (!existingResourceIds.includes(item.node.id)) {
+    acc.push(item)
+  }
+  return acc
+}
+
 export const usePolicyDryRun = () => {
   const store = useDataHubDraftStore()
   const { nodes, edges, onUpdateNodes } = store
