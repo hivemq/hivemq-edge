@@ -36,8 +36,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-edge")
-    compileOnly("com.hivemq:hivemq-extension-sdk")
+    compileOnly("com.hivemq:hivemq-edge-extension-sdk")
     implementation("org.apache.plc4x:plc4j-api:${property("org.apache.plc4x.version")}")
     implementation("org.apache.plc4x:plc4j-driver-s7:${property("org.apache.plc4x.version")}")
     implementation("org.apache.plc4x:plc4j-driver-ads:${property("org.apache.plc4x.version")}")
@@ -66,6 +65,7 @@ configurations {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
+    testImplementation("com.hivemq:hivemq-edge-extension-sdk")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")
     testImplementation("org.junit.platform:junit-platform-launcher:${property("junit.jupiter.platform.version")}")

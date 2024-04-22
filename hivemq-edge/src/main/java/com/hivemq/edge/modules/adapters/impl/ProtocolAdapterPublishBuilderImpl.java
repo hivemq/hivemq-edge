@@ -105,6 +105,7 @@ public class ProtocolAdapterPublishBuilderImpl implements ProtocolAdapterPublish
         return sendCallback.onPublishSend(publish, Objects.requireNonNull(adapter), dynamicContext.buildKeepingLast());
     }
 
+    @Override
     public @NotNull ProtocolAdapterPublishBuilder withAdapter(final @NotNull ProtocolAdapter adapter) {
         this.adapter = adapter;
         return this;

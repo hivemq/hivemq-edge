@@ -16,10 +16,10 @@
 package com.hivemq.edge.adapters.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
@@ -37,7 +37,7 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<HttpAdapterConfig> input) {
-        return new HttpProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry());
+        return new HttpProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry(), input.getVersion());
     }
 
     @Override

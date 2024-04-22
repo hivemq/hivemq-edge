@@ -42,16 +42,15 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-edge")
-    compileOnly("com.hivemq:hivemq-extension-sdk")
-    implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
+    compileOnly("com.hivemq:hivemq-edge-extension-sdk")
     runtimeOnly("com.google.guava:guava:${property("guava.version")}")
-
+    implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     implementation("org.eclipse.milo:sdk-client:${property("milo.version")}")
     implementation("org.eclipse.milo:dictionary-reader:${property("milo.version")}")
     implementation("org.eclipse.milo:bsd-parser-gson:${property("milo.version")}")
 
     testImplementation("com.hivemq:hivemq-edge")
+    testImplementation("com.hivemq:hivemq-edge-extension-sdk")
     testImplementation("org.eclipse.milo:sdk-server:${property("milo.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")

@@ -21,11 +21,12 @@ import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
+import com.hivemq.edge.modules.api.adapters.ModuleServices;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
@@ -142,6 +143,11 @@ abstract class AbstractOpcUaPayloadConverterTest {
         }
 
         @Override
+        public @NotNull ProtocolAdapterPublishBuilder withAdapter(@NotNull final ProtocolAdapter adapter) {
+            return this;
+        }
+
+        @Override
         public @NotNull ProtocolAdapterPublishBuilder withContextInformation(
                 @NotNull final String key,
                 @NotNull final String value) {
@@ -157,6 +163,8 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
             return CompletableFuture.completedFuture(PublishReturnCode.DELIVERED);
         }
+
+
 
         public @NotNull List<PUBLISH> getPublishes() {
             return publishes;

@@ -1,5 +1,6 @@
-package com.hivemq.edge.modules.adapters.data;
+package com.hivemq.edge.adapters.modbus.util;
 
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;

@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.http;
 
 import com.codahale.metrics.MetricRegistry;
-import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.model.impl.AbstractPollingProtocolAdapter;
@@ -48,23 +47,28 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE;
+
 /**
  * @author HiveMQ Adapter Generator
  */
 public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdapterConfig, HttpData> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
+    private final @NotNull String version;
     private volatile @Nullable HttpClient httpClient = null;
     static final String RESPONSE_DATA = "httpResponseData";
 
     public HttpProtocolAdapter(final @NotNull ProtocolAdapterInformation adapterInformation,
-                             final @NotNull HttpAdapterConfig adapterConfig,
-                             final @NotNull MetricRegistry metricRegistry) {
+                               final @NotNull HttpAdapterConfig adapterConfig,
+                               final @NotNull MetricRegistry metricRegistry,
+                               final @NotNull String version){
         super(adapterInformation, adapterConfig, metricRegistry);
+        this.version = version;
     }
 
     @Override
-    protected CompletableFuture<ProtocolAdapterStartOutput> startInternal(final @NotNull ProtocolAdapterStartOutput output) {
+    protected @NotNull CompletableFuture<ProtocolAdapterStartOutput> startInternal(final @NotNull ProtocolAdapterStartOutput output) {
         try {
             setConnectionStatus(ConnectionStatus.STATELESS);
             if(httpClient == null){
@@ -161,7 +165,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         timeout = Math.max(timeout, HttpAdapterConstants.MAX_TIMEOUT_SECONDS);
         builder.timeout(Duration.ofSeconds(timeout));
         builder.setHeader(HttpConstants.USER_AGENT_HEADER,
-                String.format(HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE, HiveMQEdgeConstants.VERSION));
+                String.format(CLIENT_AGENT_PROPERTY_VALUE, version));
         if (config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()) {
             config.getHttpHeaders().stream().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
         }

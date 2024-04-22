@@ -38,8 +38,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-edge")
-    compileOnly("com.hivemq:hivemq-extension-sdk")
+    compileOnly("com.hivemq:hivemq-edge-extension-sdk")
     implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     runtimeOnly("com.google.guava:guava:${property("guava.version")}") {
         exclude("org.checkerframework", "checker-qual")
@@ -59,7 +58,7 @@ configurations {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    compileOnly("com.hivemq:hivemq-extension-sdk")
+    testImplementation("com.hivemq:hivemq-edge-extension-sdk")
     testImplementation("com.google.guava:guava:${property("guava.version")}")
     testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")

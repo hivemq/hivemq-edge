@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.http.core;
+package com.hivemq.edge.adapters.opcua.util;
 
-import java.io.IOException;
+/**
+ * @author Christoph Schäbel
+ */
+public class SslException extends RuntimeException {
 
-public class MimeTypeNotFoundException extends IOException{
-
-    public MimeTypeNotFoundException() {
+    public SslException() {
     }
 
-    public MimeTypeNotFoundException(String message) {
+    public SslException(final String message) {
         super(message);
     }
 
-    public MimeTypeNotFoundException(String message, Throwable cause) {
+    public SslException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
-    public MimeTypeNotFoundException(Throwable cause) {
+    public SslException(final Throwable cause) {
         super(cause);
     }
 }

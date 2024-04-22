@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
+import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.ModuleLoader;
@@ -69,6 +70,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ModuleLoader moduleLoader;
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull EventService eventService;
+    private final @NotNull VersionProvider versionProvider;
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics;
 
     private final @NotNull Object lock = new Object();
@@ -82,6 +84,7 @@ public class ProtocolAdapterManager {
             final @NotNull ModuleLoader moduleLoader,
             final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull EventService eventService,
+            final @NotNull VersionProvider versionProvider,
             final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
@@ -90,6 +93,7 @@ public class ProtocolAdapterManager {
         this.moduleLoader = moduleLoader;
         this.remoteService = remoteService;
         this.eventService = eventService;
+        this.versionProvider = versionProvider;
         this.protocolAdapterMetrics = protocolAdapterMetrics;
     }
 
@@ -143,7 +147,8 @@ public class ProtocolAdapterManager {
             }
 
             for (Map<String, Object> adapterConfig : adapterConfigs) {
-                ProtocolAdapterWrapper instance = createAdapterInstance(adapterType, adapterConfig);
+                ProtocolAdapterWrapper instance =
+                        createAdapterInstance(adapterType, adapterConfig, versionProvider.getVersion());
                 protocolAdapterMetrics.increaseProtocolAdapterMetric(instance.getAdapter()
                         .getProtocolAdapterInformation()
                         .getProtocolId());
@@ -267,7 +272,8 @@ public class ProtocolAdapterManager {
             final @NotNull ProtocolAdapter protocolAdapter, @NotNull final ProtocolAdapterStartOutputImpl output) {
         if (log.isWarnEnabled()) {
             log.warn("Protocol-adapter \"{}\" could not be started, reason: {}",
-                    protocolAdapter.getId(), output.message, output.getThrowable());
+                    protocolAdapter.getId(), output.message,
+                    output.getThrowable());
         }
         HiveMQEdgeRemoteEvent adapterCreatedEvent =
                 new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_ERROR);
@@ -363,8 +369,10 @@ public class ProtocolAdapterManager {
         return protocolAdapters;
     }
 
-    protected ProtocolAdapterWrapper createAdapterInstance(
-            final String adapterType, final @NotNull Map<String, Object> config) {
+    protected @NotNull ProtocolAdapterWrapper createAdapterInstance(
+            final @NotNull String adapterType,
+            final @NotNull Map<String, Object> config,
+            final @NotNull String version) {
 
         ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -373,7 +381,7 @@ public class ProtocolAdapterManager {
             final CustomConfig configObject = protocolAdapterFactory.convertConfigObject(objectMapper, config);
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
-                            new ProtocolAdapterInputImpl(configObject, metricRegistry));
+                            new ProtocolAdapterInputImpl(configObject, metricRegistry, version));
             ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(protocolAdapter,
                     protocolAdapterFactory,
                     protocolAdapterFactory.getInformation(),
@@ -386,11 +394,11 @@ public class ProtocolAdapterManager {
         }
     }
 
-    protected CompletableFuture<Void> addAdapterAndStartInRuntime(
-            final String adapterType, final @NotNull Map<String, Object> config) {
+    protected @NotNull CompletableFuture<Void> addAdapterAndStartInRuntime(
+            final @NotNull String adapterType, final @NotNull Map<String, Object> config) {
 
         synchronized (lock) {
-            ProtocolAdapterWrapper instance = createAdapterInstance(adapterType, config);
+            ProtocolAdapterWrapper instance = createAdapterInstance(adapterType, config, versionProvider.getVersion());
 
             //-- Write the protocol adapter back to the main config (through the proxy)
             List<Map> adapterList = getAdapterListForType(adapterType);
@@ -425,11 +433,15 @@ public class ProtocolAdapterManager {
     public static class ProtocolAdapterInputImpl<T extends CustomConfig> implements ProtocolAdapterInput<T> {
         private final @NotNull T configObject;
         private final @NotNull MetricRegistry metricRegistry;
+        private final @NotNull String version;
 
         public ProtocolAdapterInputImpl(
-                final @NotNull T configObject, final @NotNull MetricRegistry metricRegistry) {
+                final @NotNull T configObject,
+                final @NotNull MetricRegistry metricRegistry,
+                final @NotNull String version) {
             this.configObject = configObject;
             this.metricRegistry = metricRegistry;
+            this.version = version;
         }
 
         @NotNull
@@ -441,6 +453,11 @@ public class ProtocolAdapterManager {
         @Override
         public @NotNull MetricRegistry getMetricRegistry() {
             return metricRegistry;
+        }
+
+        @Override
+        public @NotNull String getVersion() {
+            return version;
         }
     }
 
