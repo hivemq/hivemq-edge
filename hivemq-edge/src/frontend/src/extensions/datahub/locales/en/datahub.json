@@ -122,7 +122,8 @@
       },
       "navigation": {
         "previous": "Previous step",
-        "next": "Next step"
+        "next": "Next step",
+        "goPublish": "Go to Publish"
       },
       "group": {
         "pipeline": "Pipeline",
@@ -225,7 +226,7 @@
           "title_warning": "The policy is not completely valid and will not successfully run on your topology.",
           "description_warning": "The following parts of the policy needs correction:",
           "title_success": "The policy is fully valid to run on your topology.",
-          "description_success": "Go for it!"
+          "description_success": "You can now publish it"
         },
         "cta": {
           "highlight": "Show in designer",

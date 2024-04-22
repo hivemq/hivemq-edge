@@ -6,20 +6,19 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { Skeleton, Text } from '@chakra-ui/react'
 
+import { BehaviorPolicy, BehaviorPolicyMatching, DataPolicy, DataPolicyMatching } from '@/api/__generated__'
 import DateTimeRenderer from '@/components/DateTime/DateTimeRenderer.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
-import { BehaviorPolicy, BehaviorPolicyMatching, DataPolicy, DataPolicyMatching } from '@/api/__generated__'
 import { PolicyType } from '@datahub/types.ts'
 import { useGetAllBehaviorPolicies } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useGetAllBehaviorPolicies.tsx'
 import { useDeleteDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/useDeleteDataPolicy.tsx'
 import { mockDataPolicy } from '@datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
 import { mockBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/__handlers__'
 import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
-import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import { useDeleteBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/useDeleteBehaviorPolicy.tsx'
+import DataHubListAction from '@datahub/components/helpers/DataHubListAction.tsx'
 import { DataHubTableProps } from '@datahub/components/pages/DataHubListings.tsx'
-import DraftCTA from '@datahub/components/helpers/DraftCTA.tsx'
 import { downloadJSON } from '@datahub/utils/download.utils.ts'
 
 type CombinedPolicy = (DataPolicy & { type: PolicyType }) | (BehaviorPolicy & { type: PolicyType })
@@ -140,7 +139,6 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             </Skeleton>
           )
         },
-        footer: () => <DraftCTA />,
       },
     ]
   }, [deleteBehaviourPolicy, deleteDataPolicy, isLoading, navigate, onDeleteItem, t])

@@ -1,4 +1,6 @@
-import { FC, useMemo } from 'react'
+import { FC, useCallback, useMemo } from 'react'
+import { Node } from 'reactflow'
+import { useTranslation } from 'react-i18next'
 import {
   Alert,
   AlertDescription,
@@ -11,47 +13,57 @@ import {
   Stack,
   AlertStatus,
   CloseButton,
+  Link,
+  Text,
 } from '@chakra-ui/react'
-import { DataHubNodeData, DesignerStatus, PolicyDryRunStatus } from '@datahub/types.ts'
-import { useTranslation } from 'react-i18next'
-import { getDryRunStatusIcon, isBehaviorPolicyNodeType, isDataPolicyNodeType } from '@datahub/utils/node.utils.ts'
-import { useOnSelectionChange, useReactFlow } from 'reactflow'
-import { usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
+
+import { ConditionalWrapper } from '@/components/ConditonalWrapper.tsx'
+
 import PolicyErrorReport from '@datahub/components/helpers/PolicyErrorReport.tsx'
+import { usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
+import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
+import { DataHubNodeData, DesignerStatus, PolicyDryRunStatus } from '@datahub/types.ts'
+import { DesignerToolBoxProps } from '@datahub/components/controls/DesignerToolbox.tsx'
 
-export const ToolboxDryRun: FC = () => {
+interface ToolboxDryRunProps extends DesignerToolBoxProps {
+  onShowNode?: (node: Node) => void
+  onShowEditor?: (node: Node) => void
+}
+
+export const ToolboxDryRun: FC<ToolboxDryRunProps> = ({ onActiveStep, onShowNode, onShowEditor }) => {
   const { t } = useTranslation('datahub')
   const { checkPolicyAsync } = usePolicyDryRun()
-  const { fitView } = useReactFlow()
+
   const { nodes, onUpdateNodes, status: statusDraft } = useDataHubDraftStore()
-  const { status, node, report, setNode, initReport, setReport, getErrors, reset } = usePolicyChecksStore()
+  const {
+    status,
+    node: selectedNode,
+    report,
+    initReport,
+    setReport,
+    setNode,
+    getErrors,
+    reset,
+  } = usePolicyChecksStore()
 
   const CheckIcon = useMemo(() => getDryRunStatusIcon(status), [status])
   const isEditEnabled =
     import.meta.env.VITE_FLAG_DATAHUB_EDIT_POLICY_ENABLED === 'true' || statusDraft === DesignerStatus.DRAFT
 
-  useOnSelectionChange({
-    onChange: ({ nodes }) => {
-      if (nodes.length === 1) {
-        const [node] = nodes
-        if (isDataPolicyNodeType(node) || isBehaviorPolicyNodeType(node)) setNode(node)
-      } else if (nodes.length === 0) setNode(undefined)
-    },
-  })
-
   const handleCheckPolicy = () => {
-    if (!node) return
+    if (!selectedNode) return
 
     initReport()
-    checkPolicyAsync(node).then((results): void => {
+    checkPolicyAsync(selectedNode).then((results): void => {
       setReport(results)
     })
   }
 
   const handleClearPolicy = () => {
     reset()
+    setNode(selectedNode)
     nodes.forEach((node) => {
       onUpdateNodes<DataHubNodeData>(node.id, {
         ...node.data,
@@ -59,8 +71,9 @@ export const ToolboxDryRun: FC = () => {
       })
     })
   }
-
+  const errorNodeFrom = useCallback((id: string) => nodes.find((node) => node.id === id), [nodes])
   const alertStatus: AlertStatus = status === PolicyDryRunStatus.SUCCESS ? 'success' : 'warning'
+
   return (
     <Stack maxW={500}>
       <HStack>
@@ -72,7 +85,10 @@ export const ToolboxDryRun: FC = () => {
             loadingText={t('workspace.dryRun.toolbar.checking')}
             onClick={handleCheckPolicy}
             isDisabled={
-              !node || status === PolicyDryRunStatus.SUCCESS || status === PolicyDryRunStatus.FAILURE || !isEditEnabled
+              !selectedNode ||
+              status === PolicyDryRunStatus.SUCCESS ||
+              status === PolicyDryRunStatus.FAILURE ||
+              !isEditEnabled
             }
           >
             {t('workspace.toolbar.policy.check')}
@@ -85,9 +101,23 @@ export const ToolboxDryRun: FC = () => {
           <Alert status={alertStatus} data-testid="toolbox-policy-check-status">
             <AlertIcon />
             <Box whiteSpace="normal">
-              <AlertTitle> {t('workspace.dryRun.report.success.title', { context: alertStatus })}</AlertTitle>
+              <AlertTitle>
+                <Text as="span">{t('workspace.dryRun.report.success.title', { context: alertStatus })}</Text>
+              </AlertTitle>
               <AlertDescription>
-                {t('workspace.dryRun.report.success.description', { context: alertStatus })}
+                <ConditionalWrapper
+                  condition={status === PolicyDryRunStatus.SUCCESS}
+                  wrapper={(children) => (
+                    <Link
+                      aria-label={t('workspace.toolbox.navigation.goPublish') as string}
+                      onClick={() => onActiveStep?.(DesignerToolBoxProps.Steps.TOOLBOX_CHECK)}
+                    >
+                      {children}
+                    </Link>
+                  )}
+                >
+                  <Text as="span">{t('workspace.dryRun.report.success.description', { context: alertStatus })}</Text>
+                </ConditionalWrapper>
               </AlertDescription>
             </Box>
             <CloseButton alignSelf="flex-start" position="relative" right={-1} top={-1} onClick={handleClearPolicy} />
@@ -95,8 +125,12 @@ export const ToolboxDryRun: FC = () => {
           <PolicyErrorReport
             errors={getErrors() || []}
             onFitView={(id) => {
-              const errorNode = nodes.find((node) => node.id === id)
-              if (errorNode) fitView({ nodes: [errorNode], padding: 3, duration: 800 })
+              const errorNode = errorNodeFrom(id)
+              if (errorNode && onShowNode) onShowNode(errorNode)
+            }}
+            onOpenConfig={(id) => {
+              const errorNode = errorNodeFrom(id)
+              if (errorNode && onShowEditor) onShowEditor(errorNode)
             }}
           />
         </>

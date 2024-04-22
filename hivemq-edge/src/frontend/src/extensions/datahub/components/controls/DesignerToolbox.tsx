@@ -1,5 +1,6 @@
 import { FC, useState } from 'react'
-import { Panel } from 'reactflow'
+import { Panel, useReactFlow } from 'reactflow'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import {
@@ -20,24 +21,45 @@ import {
   useSteps,
   VStack,
 } from '@chakra-ui/react'
-import { FaAngleLeft, FaAngleRight, FaTools } from 'react-icons/fa'
-import { MdSkipNext, MdSkipPrevious } from 'react-icons/md'
+import { FaTools } from 'react-icons/fa'
+import { LuPanelLeftOpen, LuPanelRightOpen, LuSkipBack, LuSkipForward } from 'react-icons/lu'
 
 import { ToolboxNodes } from '@datahub/components/controls/ToolboxNodes.tsx'
 import { ToolboxDryRun } from '@datahub/components/controls/ToolboxDryRun.tsx'
 import { ToolboxPublish } from '@datahub/components/controls/ToolboxPublish.tsx'
 import DraftStatus from '@datahub/components/helpers/DraftStatus.tsx'
+import { ANIMATION } from '@datahub/utils/datahub.utils.ts'
 
 const stepKeys = ['build', 'check', 'publish']
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace DesignerToolBoxProps {
+  export enum Steps {
+    TOOLBOX_NODES = 0,
+    TOOLBOX_CHECK = 1,
+    TOOLBOX_PUBLISH = 2,
+  }
+}
+
+export interface DesignerToolBoxProps {
+  onActiveStep?: (step: DesignerToolBoxProps.Steps) => void
+}
+
 const DesignerToolbox: FC = () => {
   const { t } = useTranslation('datahub')
+  const { fitView } = useReactFlow()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
   const { getButtonProps, getDisclosureProps, isOpen } = useDisclosure()
   const [hidden, setHidden] = useState(!isOpen)
   const { activeStep, setActiveStep } = useSteps({
-    index: 0,
+    index: DesignerToolBoxProps.Steps.TOOLBOX_NODES,
     count: stepKeys.length,
   })
+
+  const onActiveStep = (step: number) => {
+    setActiveStep(step)
+  }
 
   const steps = stepKeys.map((key) => ({
     key: key,
@@ -55,7 +77,7 @@ const DesignerToolbox: FC = () => {
             icon={
               <>
                 <Icon as={FaTools} />
-                <Icon as={isOpen ? FaAngleLeft : FaAngleRight} />
+                <Icon as={isOpen ? LuPanelRightOpen : LuPanelLeftOpen} ml={2} boxSize="24px" />
               </>
             }
             {...getButtonProps()}
@@ -109,15 +131,15 @@ const DesignerToolbox: FC = () => {
                           <IconButton
                             data-testid="toolbox-navigation-prev"
                             aria-label={t('workspace.toolbox.navigation.previous')}
-                            icon={<MdSkipPrevious />}
-                            isDisabled={activeStep === 0}
+                            icon={<LuSkipBack />}
+                            isDisabled={activeStep === DesignerToolBoxProps.Steps.TOOLBOX_NODES}
                             onClick={() => setActiveStep((s) => s - 1)}
                           />
                           <IconButton
                             data-testid="toolbox-navigation-next"
                             aria-label={t('workspace.toolbox.navigation.next')}
-                            icon={<MdSkipNext />}
-                            isDisabled={activeStep === 2}
+                            icon={<LuSkipForward />}
+                            isDisabled={activeStep === DesignerToolBoxProps.Steps.TOOLBOX_PUBLISH}
                             onClick={() => setActiveStep((s) => s + 1)}
                           />
                         </ButtonGroup>
@@ -129,9 +151,21 @@ const DesignerToolbox: FC = () => {
                   {activeStep === index && (
                     <>
                       <Box pt={5} h="100%">
-                        {activeStep === 0 && <ToolboxNodes />}
-                        {activeStep === 1 && <ToolboxDryRun />}
-                        {activeStep === 2 && <ToolboxPublish />}
+                        {activeStep === DesignerToolBoxProps.Steps.TOOLBOX_NODES && <ToolboxNodes />}
+                        {activeStep === DesignerToolBoxProps.Steps.TOOLBOX_CHECK && (
+                          <ToolboxDryRun
+                            onActiveStep={onActiveStep}
+                            onShowNode={(node) =>
+                              fitView({ nodes: [node], padding: 3, duration: ANIMATION.FIT_VIEW_DURATION_MS })
+                            }
+                            onShowEditor={(node) =>
+                              navigate(`node/${node.type}/${node.id}`, { state: { origin: pathname } })
+                            }
+                          />
+                        )}
+                        {activeStep === DesignerToolBoxProps.Steps.TOOLBOX_PUBLISH && (
+                          <ToolboxPublish onActiveStep={onActiveStep} />
+                        )}
                       </Box>
                     </>
                   )}
