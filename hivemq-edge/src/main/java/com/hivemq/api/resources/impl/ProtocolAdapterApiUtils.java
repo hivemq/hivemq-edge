@@ -26,10 +26,12 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.core.HttpConstants;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -60,6 +62,12 @@ public class ProtocolAdapterApiUtils {
             logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
         }
+
+
+        final ProtocolAdapterFactory protocolAdapterFactory =
+                adapterManager.getProtocolAdapterFactory(info.getProtocolId());
+        final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
+                new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterFactory.getConfigClass());
         return new ProtocolAdapter(info.getProtocolId(),
                 info.getProtocolName(),
                 info.getDisplayName(),
@@ -74,8 +82,7 @@ public class ProtocolAdapterApiUtils {
                 info == null ? null : convertApiCategory(info.getCategory()),
                 info.getTags() == null ? null : info.getTags().stream().
                         map(Enum::toString).collect(Collectors.toList()),
-                adapterManager.getProtocolAdapterFactory(info.getProtocolId()).
-                        getConfigSchemaManager(objectMapper).generateSchemaNode());
+                protocolAdapterSchemaManager.generateSchemaNode());
     }
 
     /**

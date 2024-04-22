@@ -21,7 +21,12 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
-import com.hivemq.api.model.adapters.*;
+import com.hivemq.api.model.adapters.Adapter;
+import com.hivemq.api.model.adapters.AdapterStatusModelConversionUtils;
+import com.hivemq.api.model.adapters.AdaptersList;
+import com.hivemq.api.model.adapters.ProtocolAdapter;
+import com.hivemq.api.model.adapters.ProtocolAdaptersList;
+import com.hivemq.api.model.adapters.ValuesTree;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
@@ -34,18 +39,25 @@ import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailure;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.protocols.ProtocolAdapterManager;
+import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import com.hivemq.protocols.params.NodeTreeImpl;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
@@ -314,10 +326,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return;
         }
 
-        List<ProtocolAdapterValidationFailure> errors =
-                protocolAdapterManager.getProtocolAdapterFactory(information.getProtocolId())
-                        .getValidator()
-                        .validateConfiguration(objectMapper, adapter.getConfig());
+        final ProtocolAdapterFactory protocolAdapterFactory =
+                protocolAdapterManager.getProtocolAdapterFactory(information.getProtocolId());
+        final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
+                new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterFactory.getConfigClass());
+        final List<ProtocolAdapterValidationFailure> errors =
+                protocolAdapterSchemaManager.validateObject(adapter.getConfig());
 
         errors.forEach(e -> ApiErrorUtils.addValidationError(apiErrorMessages, e.getFieldName(), e.getMessage()));
     }
