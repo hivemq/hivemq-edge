@@ -4,7 +4,7 @@ import { XYPosition } from 'reactflow'
 export const CANVAS_POSITION = {
   Client: { x: -300, y: 0 } as XYPosition,
   Topic: { x: -300, y: 0 } as XYPosition,
-  Function: { x: 0, y: -275 } as XYPosition,
+  Function: { x: 350, y: -400 } as XYPosition,
   Transition: { x: 400, y: 100 } as XYPosition,
   Schema: { x: 0, y: -150 } as XYPosition,
   Validator: { x: 0, y: -150 } as XYPosition,

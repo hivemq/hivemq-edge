@@ -1,4 +1,4 @@
-import { Node, NodeAddChange } from 'reactflow'
+import { Node, NodeAddChange, XYPosition } from 'reactflow'
 
 import { PolicyOperation, Script } from '@/api/__generated__'
 import i18n from '@/config/i18n.config.ts'
@@ -55,6 +55,18 @@ export const loadScripts = (
   store: WorkspaceState & WorkspaceAction
 ) => {
   const { onAddNodes, onConnect } = store
+
+  const delta = ((Math.max(functions.length || 0, 1) - 1) * CANVAS_POSITION.Function.x) / 2
+  const position: XYPosition = {
+    x: parentNode.position.x - CANVAS_POSITION.Function.x - delta,
+    y: parentNode.position.y + CANVAS_POSITION.Function.y,
+  }
+
+  const shiftLeft = () => {
+    position.x += CANVAS_POSITION.Function.x
+    return position
+  }
+
   for (const fct of functions) {
     const [, functionName] = fct.functionId.split(':')
     const functionScript = scripts.find((script) => script.id === functionName)
@@ -66,10 +78,7 @@ export const loadScripts = (
     const functionScriptNode: Node<FunctionData> = {
       id: functionScript.id,
       type: DataHubNodeType.FUNCTION,
-      position: {
-        x: parentNode.position.x + CANVAS_POSITION.Function.x,
-        y: parentNode.position.y + CANVAS_POSITION.Function.y,
-      },
+      position: { ...shiftLeft() },
       data: {
         type: 'Javascript',
         name: functionScript.id,
