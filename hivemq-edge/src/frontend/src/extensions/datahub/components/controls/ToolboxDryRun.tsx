@@ -1,5 +1,5 @@
-import { FC, useMemo } from 'react'
-import { useReactFlow } from 'reactflow'
+import { FC, useCallback, useMemo } from 'react'
+import { Node } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import {
   Alert,
@@ -27,10 +27,15 @@ import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeData, DesignerStatus, PolicyDryRunStatus } from '@datahub/types.ts'
 import { DesignerToolBoxProps } from '@datahub/components/controls/DesignerToolbox.tsx'
 
-export const ToolboxDryRun: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
+interface ToolboxDryRunProps extends DesignerToolBoxProps {
+  onShowNode?: (node: Node) => void
+  onShowEditor?: (node: Node) => void
+}
+
+export const ToolboxDryRun: FC<ToolboxDryRunProps> = ({ onActiveStep, onShowNode, onShowEditor }) => {
   const { t } = useTranslation('datahub')
   const { checkPolicyAsync } = usePolicyDryRun()
-  const { fitView } = useReactFlow()
+
   const { nodes, onUpdateNodes, status: statusDraft } = useDataHubDraftStore()
   const {
     status,
@@ -66,8 +71,9 @@ export const ToolboxDryRun: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
       })
     })
   }
-
+  const errorNodeFrom = useCallback((id: string) => nodes.find((node) => node.id === id), [nodes])
   const alertStatus: AlertStatus = status === PolicyDryRunStatus.SUCCESS ? 'success' : 'warning'
+
   return (
     <Stack maxW={500}>
       <HStack>
@@ -104,9 +110,9 @@ export const ToolboxDryRun: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
                   wrapper={(children) => (
                     <Link
                       aria-label={t('workspace.toolbox.navigation.goPublish') as string}
-                      onClick={() => onActiveStep?.(2)}
+                      onClick={() => onActiveStep?.(DesignerToolBoxProps.Steps.TOOLBOX_CHECK)}
                     >
-                      {children}{' '}
+                      {children}
                     </Link>
                   )}
                 >
@@ -119,8 +125,12 @@ export const ToolboxDryRun: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
           <PolicyErrorReport
             errors={getErrors() || []}
             onFitView={(id) => {
-              const errorNode = nodes.find((node) => node.id === id)
-              if (errorNode) fitView({ nodes: [errorNode], padding: 3, duration: 800 })
+              const errorNode = errorNodeFrom(id)
+              if (errorNode && onShowNode) onShowNode(errorNode)
+            }}
+            onOpenConfig={(id) => {
+              const errorNode = errorNodeFrom(id)
+              if (errorNode && onShowEditor) onShowEditor(errorNode)
             }}
           />
         </>

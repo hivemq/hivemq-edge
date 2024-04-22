@@ -1,5 +1,6 @@
 import { FC, useState } from 'react'
-import { Panel } from 'reactflow'
+import { Panel, useReactFlow } from 'reactflow'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import {
@@ -27,19 +28,32 @@ import { ToolboxNodes } from '@datahub/components/controls/ToolboxNodes.tsx'
 import { ToolboxDryRun } from '@datahub/components/controls/ToolboxDryRun.tsx'
 import { ToolboxPublish } from '@datahub/components/controls/ToolboxPublish.tsx'
 import DraftStatus from '@datahub/components/helpers/DraftStatus.tsx'
+import { ANIMATION } from '@datahub/utils/datahub.utils.ts'
 
 const stepKeys = ['build', 'check', 'publish']
 
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace DesignerToolBoxProps {
+  export enum Steps {
+    TOOLBOX_NODES = 0,
+    TOOLBOX_CHECK = 1,
+    TOOLBOX_PUBLISH = 2,
+  }
+}
+
 export interface DesignerToolBoxProps {
-  onActiveStep?: (step: number) => void
+  onActiveStep?: (step: DesignerToolBoxProps.Steps) => void
 }
 
 const DesignerToolbox: FC = () => {
   const { t } = useTranslation('datahub')
+  const { fitView } = useReactFlow()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
   const { getButtonProps, getDisclosureProps, isOpen } = useDisclosure()
   const [hidden, setHidden] = useState(!isOpen)
   const { activeStep, setActiveStep } = useSteps({
-    index: 0,
+    index: DesignerToolBoxProps.Steps.TOOLBOX_NODES,
     count: stepKeys.length,
   })
 
@@ -118,14 +132,14 @@ const DesignerToolbox: FC = () => {
                             data-testid="toolbox-navigation-prev"
                             aria-label={t('workspace.toolbox.navigation.previous')}
                             icon={<LuSkipBack />}
-                            isDisabled={activeStep === 0}
+                            isDisabled={activeStep === DesignerToolBoxProps.Steps.TOOLBOX_NODES}
                             onClick={() => setActiveStep((s) => s - 1)}
                           />
                           <IconButton
                             data-testid="toolbox-navigation-next"
                             aria-label={t('workspace.toolbox.navigation.next')}
                             icon={<LuSkipForward />}
-                            isDisabled={activeStep === 2}
+                            isDisabled={activeStep === DesignerToolBoxProps.Steps.TOOLBOX_PUBLISH}
                             onClick={() => setActiveStep((s) => s + 1)}
                           />
                         </ButtonGroup>
@@ -137,9 +151,21 @@ const DesignerToolbox: FC = () => {
                   {activeStep === index && (
                     <>
                       <Box pt={5} h="100%">
-                        {activeStep === 0 && <ToolboxNodes />}
-                        {activeStep === 1 && <ToolboxDryRun onActiveStep={onActiveStep} />}
-                        {activeStep === 2 && <ToolboxPublish onActiveStep={onActiveStep} />}
+                        {activeStep === DesignerToolBoxProps.Steps.TOOLBOX_NODES && <ToolboxNodes />}
+                        {activeStep === DesignerToolBoxProps.Steps.TOOLBOX_CHECK && (
+                          <ToolboxDryRun
+                            onActiveStep={onActiveStep}
+                            onShowNode={(node) =>
+                              fitView({ nodes: [node], padding: 3, duration: ANIMATION.FIT_VIEW_DURATION_MS })
+                            }
+                            onShowEditor={(node) =>
+                              navigate(`node/${node.type}/${node.id}`, { state: { origin: pathname } })
+                            }
+                          />
+                        )}
+                        {activeStep === DesignerToolBoxProps.Steps.TOOLBOX_PUBLISH && (
+                          <ToolboxPublish onActiveStep={onActiveStep} />
+                        )}
                       </Box>
                     </>
                   )}

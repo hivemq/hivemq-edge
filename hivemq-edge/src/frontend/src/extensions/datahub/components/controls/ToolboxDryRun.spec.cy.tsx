@@ -46,11 +46,35 @@ describe('ToolboxDryRun', () => {
     cy.getByAriaLabel('Close').click()
   })
 
+  it('should allow access to node', () => {
+    cy.mountWithProviders(
+      <ToolboxDryRun onShowNode={cy.stub().as('onShowNode')} onShowEditor={cy.stub().as('onShowEditor')} />,
+      { wrapper }
+    )
+    cy.getByTestId('toolbox-policy-check').click()
+    cy.get('h2 button').eq(0).click()
+
+    cy.get('@onShowNode').should('not.have.been.calledWith')
+    cy.getByTestId('report-error-fitView').click()
+    cy.get('@onShowNode').should('have.been.calledWithMatch', { id: 'node-id', type: DataHubNodeType.DATA_POLICY })
+
+    cy.get('@onShowEditor').should('not.have.been.calledWith')
+    cy.getByTestId('report-error-config').click()
+    cy.get('@onShowEditor').should('have.been.calledWithMatch', { id: 'node-id', type: DataHubNodeType.DATA_POLICY })
+    cy.getByAriaLabel('Close').click()
+  })
+
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ToolboxDryRun />, { wrapper })
     cy.getByTestId('toolbox-policy-check').click()
-    cy.checkAccessibility()
+    cy.get('h2 button').eq(0).click()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        // TODO[NVL] CTooltip seems to generate false positives
+        'color-contrast': { enabled: false },
+      },
+    })
     cy.percySnapshot('Component: ToolboxDryRun')
   })
 })

@@ -146,7 +146,7 @@ export const ToolboxPublish: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
       .finally(() => {
         reset()
         setNode(selectedNode)
-        onActiveStep?.(1)
+        onActiveStep?.(DesignerToolBoxProps.Steps.TOOLBOX_NODES)
       })
   }
 
