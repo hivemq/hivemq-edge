@@ -25,10 +25,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

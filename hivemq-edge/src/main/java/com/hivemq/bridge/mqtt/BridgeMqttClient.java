@@ -52,6 +52,7 @@ import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
 import com.hivemq.util.StoreTypeUtil;
@@ -334,8 +335,8 @@ public class BridgeMqttClient {
         return connected.get();
     }
 
-    protected @NotNull Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity) {
-        Event.Builder builder = new Event.Builder();
+    protected @NotNull EventBuilder eventBuilder(final @NotNull Event.SEVERITY severity) {
+        EventBuilder builder = new EventBuilder();
         builder.withTimestamp(System.currentTimeMillis());
         builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.BRIDGE, bridge.getId()));
         builder.withSeverity(severity);

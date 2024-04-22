@@ -25,6 +25,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.util.Bytes;
@@ -100,7 +101,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
 
             if (firstMessageReceived.compareAndSet(false, true)) {
-                final Event event = new Event.Builder().withTimestamp(System.currentTimeMillis())
+                final Event event = new EventBuilder().withTimestamp(System.currentTimeMillis())
                         .withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterId))
                         .withSeverity(Event.SEVERITY.INFO)
                         .withMessage(String.format("Adapter took first sample to be published to '%s'",

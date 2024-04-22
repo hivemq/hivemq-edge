@@ -24,7 +24,6 @@ import com.codahale.metrics.Gauge;
 public class HiveMQMetrics {
 
     public static final String HIVEMQ_PREFIX = "com.hivemq.edge.";
-    public static final String PROTOCOL_ADAPTER_PREFIX = "com.hivemq.edge.protocol-adapters.";
     /**
      * represents a {@link Counter}, which counts every incoming MQTT message
      *

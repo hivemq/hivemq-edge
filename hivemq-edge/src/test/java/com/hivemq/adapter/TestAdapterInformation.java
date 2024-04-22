@@ -15,8 +15,7 @@
  */
 package com.hivemq.adapter;
 
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 
 /**

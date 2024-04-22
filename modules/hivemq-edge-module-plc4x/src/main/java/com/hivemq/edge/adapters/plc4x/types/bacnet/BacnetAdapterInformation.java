@@ -15,12 +15,10 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.bacnet;
 
-import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;

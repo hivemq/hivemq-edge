@@ -15,9 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 public class OpcUaProtocolAdapterInformation

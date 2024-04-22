@@ -38,6 +38,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -490,11 +491,11 @@ public class ProtocolAdapterManager {
         }
     }
 
-    protected Event.Builder eventBuilder(
+    protected EventBuilder eventBuilder(
             final @NotNull Event.SEVERITY severity, final @NotNull ProtocolAdapter adapter) {
         Preconditions.checkNotNull(severity);
         Preconditions.checkNotNull(adapter);
-        Event.Builder builder = new Event.Builder();
+        EventBuilder builder = new EventBuilder();
         builder.withTimestamp(System.currentTimeMillis());
         builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapter.getId()));
         builder.withSeverity(severity);

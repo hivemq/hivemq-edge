@@ -17,10 +17,7 @@ package com.hivemq.edge.impl.events.impl;
 
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.api.events.model.Event;
-import com.hivemq.util.RollingList;
-import com.hivemq.util.Strings;
-import net.openhft.hashing.LongHashFunction;
-import org.apache.commons.io.filefilter.FalseFileFilter;
+import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -131,7 +128,7 @@ public class InMemoryEventTest {
     private static void fill(InMemoryEventImpl impl, int count){
         int initialSize = impl.readEvents(null, null).size();
         for (int i = 0; i < count; i++){
-            Event.Builder builder = new Event.Builder().withMessage((initialSize + i) + "").
+            EventBuilder builder = new EventBuilder().withMessage((initialSize + i) + "").
                     withSeverity(Event.SEVERITY.INFO).withTimestamp(System.currentTimeMillis());
             impl.storeEvent(builder.build());
             try {
