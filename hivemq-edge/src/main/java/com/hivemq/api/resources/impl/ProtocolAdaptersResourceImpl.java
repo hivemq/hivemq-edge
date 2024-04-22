@@ -41,6 +41,7 @@ import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidator;
 import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailure;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -330,9 +331,9 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 protocolAdapterManager.getProtocolAdapterFactory(information.getProtocolId());
         final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
                 new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterFactory.getConfigClass());
+        ProtocolAdapterValidator validator = (objectMapper, config) -> protocolAdapterSchemaManager.validateObject(config);
         final List<ProtocolAdapterValidationFailure> errors =
-                protocolAdapterSchemaManager.validateObject(adapter.getConfig());
-
+                validator.validateConfiguration(objectMapper, adapter.getConfig());
         errors.forEach(e -> ApiErrorUtils.addValidationError(apiErrorMessages, e.getFieldName(), e.getMessage()));
     }
 
