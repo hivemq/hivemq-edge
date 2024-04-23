@@ -107,11 +107,27 @@ export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
     if (!behaviorPolicy || !schemas || !scripts) return
 
     try {
-      // TODO[19966] should be loaded in a temp var until whole graph is correct
       store.reset()
-      loadBehaviorPolicy(behaviorPolicy, store)
-      loadClientFilter(behaviorPolicy, store)
-      loadTransitions(behaviorPolicy, schemas.items || [], scripts.items || [], store)
+      const behaviorPolicyNode = loadBehaviorPolicy(behaviorPolicy)
+      const filterNode = loadClientFilter(behaviorPolicy, behaviorPolicyNode.item)
+      const pipelines = loadTransitions(
+        behaviorPolicy,
+        schemas.items || [],
+        scripts.items || [],
+        behaviorPolicyNode.item
+      )
+
+      const allArtefactsLoaded = [behaviorPolicyNode, ...filterNode, ...pipelines]
+      const nodeChanges = allArtefactsLoaded.reduce<NodeAddChange[]>((acc, element) => {
+        const allIds = acc.map((nodeAddChange) => nodeAddChange.item.id)
+        const nodeChange = element as NodeAddChange
+        if (nodeChange.item && !allIds.includes(nodeChange.item.id)) acc.push(nodeChange)
+        return acc
+      }, [])
+      const edgeConnects = allArtefactsLoaded.filter((element) => (element as Connection).source) as Connection[]
+
+      store.onNodesChange(nodeChanges)
+      edgeConnects.map((connection) => store.onConnect(connection))
       store.setStatus(DesignerStatus.LOADED, { name: behaviorPolicy.id })
     } catch (error) {
       let message
