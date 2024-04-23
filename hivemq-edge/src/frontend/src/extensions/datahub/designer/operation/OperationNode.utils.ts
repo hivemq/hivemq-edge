@@ -2,7 +2,14 @@ import { Connection, getConnectedEdges, getIncomers, Node, NodeAddChange, XYPosi
 
 import i18n from '@/config/i18n.config.ts'
 
-import { BehaviorPolicy, DataPolicy, PolicyOperation, Schema, SchemaReference, Script } from '@/api/__generated__'
+import {
+  BehaviorPolicyOnTransition,
+  DataPolicy,
+  PolicyOperation,
+  Schema,
+  SchemaReference,
+  Script,
+} from '@/api/__generated__'
 import {
   DataHubNodeType,
   DataPolicyData,
@@ -221,26 +228,20 @@ export function checkValidityPipeline(
 }
 
 export const loadBehaviorPolicyPipelines = (
-  behaviorPolicy: BehaviorPolicy,
-  transitionNode: Node,
+  behaviorPolicyTransition: BehaviorPolicyOnTransition,
+  transitionNode: Node<TransitionData>,
   schemas: Schema[],
   scripts: Script[]
 ) => {
-  const newNodes: (NodeAddChange | Connection)[] = []
+  const activeTransition = getActiveTransition(behaviorPolicyTransition)
+  if (!activeTransition)
+    throw new Error(i18n.t('datahub:error.loading.operation.noTransition', { source: activeTransition }) as string)
 
-  for (const transition of behaviorPolicy.onTransitions || []) {
-    const activeTransition = getActiveTransition(transition)
-    if (!activeTransition)
-      throw new Error(i18n.t('datahub:error.loading.operation.noTransition', { source: activeTransition }) as string)
+  const transitionOnEvent = behaviorPolicyTransition[activeTransition]
+  if (!transitionOnEvent)
+    throw new Error(i18n.t('datahub:error.loading.operation.noTransition', { source: activeTransition }) as string)
 
-    const transitionOnEvent = transition[activeTransition]
-    if (!transitionOnEvent)
-      throw new Error(i18n.t('datahub:error.loading.operation.noTransition', { source: activeTransition }) as string)
-
-    const pipelines = loadPipeline(transitionNode, transitionOnEvent.pipeline, null, schemas, scripts)
-    newNodes.push(...pipelines)
-  }
-  return newNodes
+  return loadPipeline(transitionNode, transitionOnEvent.pipeline, null, schemas, scripts)
 }
 
 export const loadDataPolicyPipelines = (

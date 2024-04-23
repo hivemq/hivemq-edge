@@ -145,7 +145,7 @@ export const loadTransitions = (
       position: { ...shiftBottom() },
       data: extractEventStates(model, behaviorPolicyTransition),
     }
-    const pipelines = loadBehaviorPolicyPipelines(behaviorPolicy, transitionNode, schemas, scripts)
+    const pipelines = loadBehaviorPolicyPipelines(behaviorPolicyTransition, transitionNode, schemas, scripts)
 
     newNodes.push(
       { item: transitionNode, type: 'add' } as NodeAddChange,
