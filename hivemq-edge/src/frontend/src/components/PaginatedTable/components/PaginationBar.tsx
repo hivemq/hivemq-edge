@@ -1,5 +1,6 @@
 import { FC } from 'react'
 import { Table } from '@tanstack/react-table'
+import { useTranslation } from 'react-i18next'
 import {
   Box,
   ButtonGroup,
@@ -14,11 +15,10 @@ import {
   NumberInputStepper,
   Select,
   Text,
+  type IconButtonProps,
 } from '@chakra-ui/react'
-import { type IconButtonProps } from '@chakra-ui/react'
-import { MdArrowLeft, MdArrowRight } from 'react-icons/md'
-import { BiSkipNext, BiSkipPrevious } from 'react-icons/bi'
-import { useTranslation } from 'react-i18next'
+import { LuSkipBack, LuSkipForward, LuStepBack, LuStepForward } from 'react-icons/lu'
+
 import IconButton from '@/components/Chakra/IconButton.tsx'
 
 interface PaginationProps<T> {
@@ -27,7 +27,7 @@ interface PaginationProps<T> {
 }
 
 const PaginationButton: FC<IconButtonProps> = (props) => (
-  <IconButton {...props} size="sm" fontSize="24px" icon={<BiSkipNext />} />
+  <IconButton icon={<LuSkipBack />} {...props} size="sm" fontSize="18px" />
 )
 
 const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
@@ -36,25 +36,25 @@ const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
     <HStack as="nav" aria-label={t('components:pagination.ariaLabel') as string} gap={8} mt={4}>
       <ButtonGroup isAttached variant="ghost">
         <PaginationButton
-          icon={<BiSkipPrevious />}
+          icon={<LuSkipBack />}
           onClick={() => table.setPageIndex(0)}
           aria-label={t('components:pagination.goFirstPage')}
           isDisabled={!table.getCanPreviousPage()}
         />
         <PaginationButton
-          icon={<MdArrowLeft />}
+          icon={<LuStepBack />}
           onClick={() => table.previousPage()}
           aria-label={t('components:pagination.goPreviousPage')}
           isDisabled={!table.getCanPreviousPage()}
         />
         <PaginationButton
-          icon={<MdArrowRight />}
+          icon={<LuStepForward />}
           onClick={() => table.nextPage()}
           aria-label={t('components:pagination.goNextPage')}
           isDisabled={!table.getCanNextPage()}
         />
         <PaginationButton
-          icon={<BiSkipNext />}
+          icon={<LuSkipForward />}
           onClick={() => table.setPageIndex(table.getPageCount() - 1)}
           aria-label={t('components:pagination.goLastPage')}
           isDisabled={!table.getCanNextPage()}
