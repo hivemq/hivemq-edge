@@ -46,7 +46,7 @@ public class EIPProtocolAdapterFactory implements ProtocolAdapterFactory<EIPAdap
     }
 
     @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final CustomConfig config) {
+    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
         return EIPConfigConverter.unconvertConfig(objectMapper, config);
     }
 

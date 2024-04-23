@@ -27,5 +27,5 @@ public interface EventStore {
 
     void storeEvent(@NotNull Event event);
 
-    List<Event> readEvents(@NotNull Long since, @NotNull Integer limit);
+    @NotNull List<Event> readEvents(@NotNull Long since, @NotNull Integer limit);
 }

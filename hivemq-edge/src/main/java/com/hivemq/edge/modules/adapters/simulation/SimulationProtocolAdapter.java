@@ -37,7 +37,7 @@ public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAda
     }
 
     @Override
-    public ConnectionStatus getConnectionStatus() {
+    public @NotNull ConnectionStatus getConnectionStatus() {
         return ConnectionStatus.STATELESS;
     }
 

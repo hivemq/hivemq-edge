@@ -46,7 +46,7 @@ public class BacnetAdapterFactory implements ProtocolAdapterFactory<BacnetAdapte
     }
 
     @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final CustomConfig config) {
+    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
         return BacnetConfigConverter.unconvertConfig(objectMapper, config);
     }
 

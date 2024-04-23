@@ -48,9 +48,9 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
     protected @NotNull AtomicLong publishCount = new AtomicLong();
 
     public AbstractPollingProtocolAdapter(
-            final ProtocolAdapterInformation adapterInformation,
-            final T adapterConfig,
-            final MetricRegistry metricRegistry) {
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull T adapterConfig,
+            final @NotNull MetricRegistry metricRegistry) {
         super(adapterInformation, adapterConfig, metricRegistry);
     }
 
@@ -64,14 +64,14 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
     }
 
     @Override
-    public CompletableFuture<Void> stop() {
+    public @NotNull CompletableFuture<Void> stop() {
         publishCount.set(0);
         return super.stop().whenComplete((v, t) ->
-                protocolAdapterPollingService.getPollingJobsForAdapter(getId()).stream().forEach(
+                protocolAdapterPollingService.getPollingJobsForAdapter(getId()).forEach(
                     protocolAdapterPollingService::stopPolling));
     }
 
-    protected CompletableFuture<?> captureDataSample(final @NotNull U sample){
+    protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull U sample){
         Preconditions.checkNotNull(sample);
         Preconditions.checkNotNull(sample.getTopic());
         Preconditions.checkArgument(sample.getQos() <= 2 && sample.getQos() >= 0, "QoS needs to be a valid Quality-Of-Service value (0,1,2)");
@@ -114,7 +114,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
      * Method is invoked by the sampling engine on the schedule determined by the configuration
      * supplied.
      */
-    protected abstract CompletableFuture<U> onSamplerInvoked(T config) ;
+    protected abstract @NotNull CompletableFuture<U> onSamplerInvoked(@NotNull T config) ;
 
     /**
      * Hook Method is invoked by the sampling engine when the scheduling engine is removing the
@@ -138,7 +138,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
 
     protected class Sampler extends ProtocolAdapterPollingSamplerImpl<U> {
 
-        protected final T config;
+        protected final @NotNull T config;
 
         public Sampler(final @NotNull T config) {
             super(AbstractPollingProtocolAdapter.this.getId(), config.getPollingIntervalMillis(),
@@ -149,7 +149,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
         }
 
         @Override
-        public CompletableFuture<U> execute() {
+        public @NotNull CompletableFuture<U> execute() {
             if(Thread.currentThread().isInterrupted()){
                 return CompletableFuture.failedFuture(new InterruptedException());
             }

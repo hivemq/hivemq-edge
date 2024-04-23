@@ -5,8 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.edge.modules.config.UserProperty;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AdapterSubscriptionImpl implements AdapterSubscription {
@@ -30,30 +32,29 @@ public class AdapterSubscriptionImpl implements AdapterSubscription {
     @JsonProperty(value = "messageHandlingOptions")
     @ModuleConfigField(title = "Message Handling Options",
                        description = "This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample",
-                       required = false,
                        enumDisplayValues = {
                                "MQTT Message Per Device Tag",
                                "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
                        defaultValue = "MQTTMessagePerTag")
-    protected @Nullable MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
+    protected @NotNull MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
 
     @JsonProperty(value = "includeTimestamp")
     @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
                        description = "Include the unix timestamp of the sample time in the resulting MQTT message",
                        defaultValue = "true")
-    protected @Nullable Boolean includeTimestamp = Boolean.TRUE;
+    protected @NotNull Boolean includeTimestamp = Boolean.TRUE;
 
     @JsonProperty(value = "includeTagNames")
     @ModuleConfigField(title = "Include Tag Names In Publish?",
                        description = "Include the names of the tags in the resulting MQTT publish",
                        defaultValue = "false")
-    protected @Nullable Boolean includeTagNames = Boolean.FALSE;
+    protected @NotNull Boolean includeTagNames = Boolean.FALSE;
 
     @JsonProperty(value = "userProperties")
     @ModuleConfigField(title = "User Properties",
                        description = "Arbitrary properties to associate with the subscription",
                        arrayMaxItems = 10)
-    private @Nullable List<UserProperty> userProperties;
+    private @NotNull List<UserProperty> userProperties = new ArrayList<>();
 
     public AdapterSubscriptionImpl() {
     }
@@ -65,11 +66,13 @@ public class AdapterSubscriptionImpl implements AdapterSubscription {
             @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {
         this.destination = destination;
         this.qos = qos;
-        this.userProperties = userProperties;
+        if (userProperties != null) {
+            this.userProperties = userProperties;
+        }
     }
 
     @Override
-    public String getDestination() {
+    public @Nullable String getDestination() {
         return destination;
     }
 
@@ -79,22 +82,22 @@ public class AdapterSubscriptionImpl implements AdapterSubscription {
     }
 
     @Override
-    public MessageHandlingOptions getMessageHandlingOptions() {
+    public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
         return messageHandlingOptions;
     }
 
     @Override
-    public Boolean getIncludeTimestamp() {
+    public @NotNull Boolean getIncludeTimestamp() {
         return includeTimestamp;
     }
 
     @Override
-    public Boolean getIncludeTagNames() {
+    public @NotNull Boolean getIncludeTagNames() {
         return includeTagNames;
     }
 
     @Override
-    public List<UserProperty> getUserProperties() {
+    public @NotNull List<UserProperty> getUserProperties() {
         return userProperties;
     }
 }

@@ -43,7 +43,7 @@ public class AbstractProtocolAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public void setId(String id) {
+    public void setId(final @NotNull String id) {
         this.id = id;
     }
 

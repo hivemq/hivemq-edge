@@ -22,6 +22,7 @@ import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.edge.modules.config.UserProperty;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,11 +36,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ProtocolAdapterDataSampleImpl<T extends AbstractProtocolAdapterConfig>
         implements ProtocolAdapterDataSample<T> {
 
-    protected Long timestamp = System.currentTimeMillis();
-    protected AdapterSubscription adapterSubscription;
+    protected @NotNull Long timestamp = System.currentTimeMillis();
+    protected @NotNull AdapterSubscription adapterSubscription;
 
     //-- Handle multiple tags in the same sample
-    protected List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
+    protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
     public ProtocolAdapterDataSampleImpl(final @NotNull AdapterSubscription adapterSubscription) {
         this.adapterSubscription = adapterSubscription;
@@ -47,13 +48,13 @@ public class ProtocolAdapterDataSampleImpl<T extends AbstractProtocolAdapterConf
 
     @Override
     @JsonIgnore
-    public AdapterSubscription getSubscription() {
+    public @NotNull AdapterSubscription getSubscription() {
         return adapterSubscription;
     }
 
     @Override
     @JsonIgnore
-    public String getTopic() {
+    public @Nullable String getTopic() {
         return adapterSubscription.getDestination();
     }
 
@@ -65,36 +66,36 @@ public class ProtocolAdapterDataSampleImpl<T extends AbstractProtocolAdapterConf
 
     @Override
     @JsonIgnore
-    public Long getTimestamp() {
+    public @NotNull Long getTimestamp() {
         return timestamp;
     }
 
     @Override
     @JsonIgnore
-    public List<UserProperty> getUserProperties(){
+    public @NotNull List<UserProperty> getUserProperties() {
         return adapterSubscription.getUserProperties();
     }
 
     @Override
-    public void setTimestamp(final Long timestamp) {
+    public void setTimestamp(final @NotNull Long timestamp) {
         this.timestamp = timestamp;
     }
 
     @Override
-    public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue){
+    public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
         Preconditions.checkNotNull(tagName);
         Preconditions.checkNotNull(tagValue);
-        dataPoints.add(new DataPointImpl(tagName,tagValue));
+        dataPoints.add(new DataPointImpl(tagName, tagValue));
     }
 
     @Override
-    public void setDataPoints(List<DataPoint> list){
+    public void setDataPoints(@NotNull List<DataPoint> list) {
         this.dataPoints = list;
     }
 
     @Override
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public List<DataPoint> getDataPoints(){
+    public @NotNull List<DataPoint> getDataPoints() {
         return dataPoints;
     }
 

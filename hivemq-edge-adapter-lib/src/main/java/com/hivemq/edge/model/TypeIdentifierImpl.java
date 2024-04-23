@@ -36,7 +36,7 @@ public class TypeIdentifierImpl implements TypeIdentifier {
 
     @JsonProperty("identifier")
     @Schema(description = "The identifier associated with the object, a combination of type and identifier is used to uniquely identify an object in the system")
-    private final @Nullable String identifier;
+    private final @NotNull String identifier;
 
     public TypeIdentifierImpl(@NotNull @JsonProperty("type") final TYPE type,
                               @NotNull @JsonProperty("identifier") final String identifier) {
@@ -47,26 +47,26 @@ public class TypeIdentifierImpl implements TypeIdentifier {
     }
 
     @Override
-    public TYPE getType() {
+    public @NotNull TYPE getType() {
         return type;
     }
 
     @Override
-    public String getIdentifier() {
+    public @NotNull String getIdentifier() {
         return identifier;
     }
 
     @Override
-    public String getFullQualifiedIdentifier() {
+    public @NotNull String getFullQualifiedIdentifier() {
         return toString();
     }
 
-    public String toString() {
+    public @NotNull String toString() {
         return String.format("%s:%s", type.toString().toLowerCase(), identifier);
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final TypeIdentifierImpl that = (TypeIdentifierImpl) o;

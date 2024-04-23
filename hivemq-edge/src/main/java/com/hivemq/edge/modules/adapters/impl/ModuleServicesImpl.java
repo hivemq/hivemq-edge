@@ -16,8 +16,8 @@
 package com.hivemq.edge.modules.adapters.impl;
 
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
@@ -59,7 +59,7 @@ public class ModuleServicesImpl implements ModuleServices {
     }
 
     @Override
-    public EventService eventService() {
+    public @NotNull EventService eventService() {
         return eventService;
     }
 }

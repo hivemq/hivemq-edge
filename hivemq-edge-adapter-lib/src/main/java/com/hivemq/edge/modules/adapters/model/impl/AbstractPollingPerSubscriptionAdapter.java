@@ -32,23 +32,23 @@ public abstract class AbstractPollingPerSubscriptionAdapter<T extends AbstractPo
         extends AbstractPollingProtocolAdapter <T, U>{
 
     public AbstractPollingPerSubscriptionAdapter(
-            final ProtocolAdapterInformation adapterInformation,
-            final T adapterConfig,
-            final MetricRegistry metricRegistry) {
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull T adapterConfig,
+            final @NotNull MetricRegistry metricRegistry) {
         super(adapterInformation, adapterConfig, metricRegistry);
     }
 
     @Override
-    protected CompletableFuture<U> onSamplerInvoked(final T config) {
+    protected CompletableFuture<U> onSamplerInvoked(final @NotNull T config) {
         return CompletableFuture.failedFuture(new UnsupportedOperationException("Subscription sampler should be used."));
 
     }
 
-    protected abstract CompletableFuture<U> onSamplerInvoked(@NotNull T config, @NotNull AdapterSubscription adapterSubscription) ;
+    protected abstract @NotNull CompletableFuture<U> onSamplerInvoked(@NotNull T config, @NotNull AdapterSubscription adapterSubscription) ;
 
     protected class SubscriptionSampler extends Sampler {
 
-        protected final AdapterSubscription adapterSubscription;
+        protected final @NotNull AdapterSubscription adapterSubscription;
 
         public SubscriptionSampler(final @NotNull T config,
                       final @NotNull AdapterSubscription adapterSubscription) {

@@ -20,7 +20,6 @@ import com.hivemq.edge.modules.api.events.EventStore;
 import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.util.IntMap;
 import com.hivemq.util.RollingList;
 
 import javax.inject.Inject;
@@ -54,7 +53,7 @@ public class InMemoryEventImpl implements EventStore {
         this.inMemoryEventList = new RollingList<>(max);
     }
 
-    public void storeEvent(final Event event) {
+    public void storeEvent(final @NotNull Event event) {
         Lock writeLock = lock.writeLock();
         try {
             writeLock.lock();
@@ -65,7 +64,7 @@ public class InMemoryEventImpl implements EventStore {
     }
 
     @Override
-    public List<Event> readEvents(@Nullable Long since, @Nullable Integer limit){
+    public @NotNull List<Event> readEvents(@Nullable Long since, @Nullable Integer limit){
         Lock readLock = lock.writeLock();
         List<Event> events;
         try {

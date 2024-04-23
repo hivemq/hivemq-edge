@@ -53,7 +53,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected CompletableFuture<ProtocolAdapterStartOutput> startInternal( final @NotNull ProtocolAdapterStartOutput output) {
+    protected @NotNull CompletableFuture<ProtocolAdapterStartOutput> startInternal(final @NotNull ProtocolAdapterStartOutput output) {
         CompletableFuture<IModbusClient> startFuture = CompletableFuture.supplyAsync(() -> initConnection());
         startFuture.thenAccept(this::subscribeAllInternal);
         return startFuture.thenApply(connection -> output);
@@ -63,7 +63,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
         if (modbusClient == null) {
             synchronized (lock) {
                 if (modbusClient == null) {
-                    if(log.isTraceEnabled()){
+                    if (log.isTraceEnabled()) {
                         log.trace("Creating new instance of Modbus Client with {}.", adapterConfig);
                     }
                     modbusClient = new ModbusClient(adapterConfig);
@@ -74,7 +74,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected CompletableFuture<Void> stopInternal() {
+    protected @NotNull CompletableFuture<Void> stopInternal() {
         return CompletableFuture.completedFuture(null);
     }
 
@@ -86,7 +86,8 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
         }
     }
 
-    protected void subscribeInternal(@NotNull final IModbusClient client, final @NotNull ModbusAdapterConfig.AdapterSubscription subscription) {
+    protected void subscribeInternal(
+            @NotNull final IModbusClient client, final @NotNull ModbusAdapterConfig.AdapterSubscription subscription) {
         if (subscription != null) {
             ModbusAdapterConfig.AddressRange registerAddressRange = subscription.getAddressRange();
             if (registerAddressRange != null) {
@@ -96,11 +97,17 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    public CompletableFuture<Void> discoverValues(@NotNull ProtocolAdapterDiscoveryInput input, @NotNull ProtocolAdapterDiscoveryOutput output) {
+    public @NotNull CompletableFuture<Void> discoverValues(
+            @NotNull ProtocolAdapterDiscoveryInput input, @NotNull ProtocolAdapterDiscoveryOutput output) {
         //-- Do the discovery of registers and coils, only for root level
         final NodeTree nodeTree = output.getNodeTree();
         if (input.getRootNode() == null) {
-            nodeTree.addNode("holding-registers", "Holding Registers", "Holding Registers", null, NodeType.FOLDER, false);
+            nodeTree.addNode("holding-registers",
+                    "Holding Registers",
+                    "Holding Registers",
+                    null,
+                    NodeType.FOLDER,
+                    false);
             nodeTree.addNode("coils", "Coils", "Coils", null, NodeType.FOLDER, false);
         }
         addAddresses(nodeTree, "holding-registers", 1, 256, 16);
@@ -110,9 +117,9 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected CompletableFuture<?> captureDataSample(@NotNull final ModBusData data) {
+    protected @NotNull CompletableFuture<?> captureDataSample(@NotNull final ModBusData data) {
         boolean publishData = true;
-        if(log.isTraceEnabled()){
+        if (log.isTraceEnabled()) {
             log.trace("Captured ModBus data with {} data points.", data.getDataPoints().size());
         }
         if (adapterConfig.getPublishChangedDataOnly()) {
@@ -124,11 +131,13 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
                 List<DataPoint> currentSamplePoints = data.getDataPoints();
                 List<DataPoint> delta =
                         AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
-                if(log.isTraceEnabled()){
+                if (log.isTraceEnabled()) {
                     log.trace("Calculating change data old {} samples, new {} sample, delta {}",
-                            previousSampleDataPoints.size(), currentSamplePoints.size(), delta.size());
+                            previousSampleDataPoints.size(),
+                            currentSamplePoints.size(),
+                            delta.size());
                 }
-                if(!delta.isEmpty()){
+                if (!delta.isEmpty()) {
                     data.setDataPoints(delta);
                 } else {
                     publishData = false;
@@ -136,7 +145,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
             }
         }
         if (publishData) {
-            if(log.isTraceEnabled()){
+            if (log.isTraceEnabled()) {
                 log.trace("Publishing data with {} samples", data.getDataPoints().size());
             }
             return super.captureDataSample(data);
@@ -146,39 +155,37 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
 
 
     @Override
-    protected void onSamplerClosed(final ProtocolAdapterPollingSampler sampler) {
+    protected void onSamplerClosed(final @NotNull ProtocolAdapterPollingSampler sampler) {
         try {
-            if(log.isTraceEnabled()){
+            if (log.isTraceEnabled()) {
                 log.trace("Sampler was closed by framework, disconnect Modbus device.");
             }
-            if(modbusClient != null){
+            if (modbusClient != null) {
                 modbusClient.disconnect();
             }
-        } catch(Exception e){
-            if(log.isWarnEnabled()){
+        } catch (Exception e) {
+            if (log.isWarnEnabled()) {
                 log.warn("Error encountered closing connection to Modbus device.", e);
             }
         }
     }
 
     @Override
-    protected CompletableFuture<ModBusData> onSamplerInvoked(
-            final ModbusAdapterConfig config,
-            final AdapterSubscription adapterSubscription) {
+    protected @NotNull CompletableFuture<ModBusData> onSamplerInvoked(
+            final @NotNull ModbusAdapterConfig config, final @NotNull AdapterSubscription adapterSubscription) {
 
         //-- If a previously linked job has terminally disconnected the client
         //-- we need to ensure any orphaned jobs tidy themselves up properly
         try {
-            if(modbusClient != null){
+            if (modbusClient != null) {
                 if (!modbusClient.isConnected()) {
-                    modbusClient.connect().thenRun(() ->
-                                setConnectionStatus(ConnectionStatus.CONNECTED)).get();
+                    modbusClient.connect().thenRun(() -> setConnectionStatus(ConnectionStatus.CONNECTED)).get();
                 }
                 return CompletableFuture.supplyAsync(() -> readRegisters(adapterSubscription));
             } else {
                 return CompletableFuture.failedFuture(new IllegalStateException("client not initialised"));
             }
-        } catch(Exception e){
+        } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
     }
@@ -191,11 +198,11 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
                     addressRange.endIdx - addressRange.startIdx);
             ModBusData data = new ModBusData(subscription, ModBusData.TYPE.HOLDING_REGISTERS);
             //add data point per register
-            for (int i = 0; i < registers.length; i++){
-                data.addDataPoint("register-"+(addressRange.startIdx + i), registers[i]);
+            for (int i = 0; i < registers.length; i++) {
+                data.addDataPoint("register-" + (addressRange.startIdx + i), registers[i]);
             }
             return data;
-        } catch(Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -205,13 +212,22 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
         String parentNode = parent;
         if (groupIdx < count) {
             tree.addNode("grouping-" + startIdx,
-                    "Addresses " + startIdx + "-" + (startIdx + groupIdx - 1), "", parent, NodeType.FOLDER, false);
+                    "Addresses " + startIdx + "-" + (startIdx + groupIdx - 1),
+                    "",
+                    parent,
+                    NodeType.FOLDER,
+                    false);
             parentNode = "grouping-" + startIdx;
         }
         for (int i = startIdx; i <= count; i++) {
             tree.addNode("address-location-" + i, String.valueOf(i), "", parentNode, NodeType.VALUE, true);
             if (i % groupIdx == 0 && i < count) {
-                tree.addNode("grouping-" + i, "Addresses " + (i + 1) + "-" + (i + groupIdx), "", parent, NodeType.FOLDER, false);
+                tree.addNode("grouping-" + i,
+                        "Addresses " + (i + 1) + "-" + (i + groupIdx),
+                        "",
+                        parent,
+                        NodeType.FOLDER,
+                        false);
                 parentNode = "grouping-" + i;
             }
         }

@@ -27,15 +27,15 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProtocolAdapterMultiPublishJsonPayload extends AbstractProtocolAdapterJsonPayload {
 
-   private List<TagSample> samples;
+   private final @NotNull List<TagSample> samples;
 
-    public ProtocolAdapterMultiPublishJsonPayload(final Long timestamp, final @NotNull List<TagSample> samples) {
+    public ProtocolAdapterMultiPublishJsonPayload(final @NotNull Long timestamp, final @NotNull List<TagSample> samples) {
         super(timestamp);
         Preconditions.checkNotNull(samples);
         this.samples = samples;
     }
 
-    public List<TagSample> getSamples() {
+    public @NotNull List<TagSample> getSamples() {
         return samples;
     }
 }

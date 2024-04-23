@@ -66,7 +66,7 @@ public abstract class ProtocolAdapterPollingSamplerImpl<U extends ProtocolAdapte
     }
 
     @Override
-    public TimeUnit getUnit() {
+    public @NotNull TimeUnit getUnit() {
         return unit;
     }
 
@@ -86,7 +86,7 @@ public abstract class ProtocolAdapterPollingSamplerImpl<U extends ProtocolAdapte
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final ProtocolAdapterPollingSamplerImpl that = (ProtocolAdapterPollingSamplerImpl) o;
@@ -94,27 +94,27 @@ public abstract class ProtocolAdapterPollingSamplerImpl<U extends ProtocolAdapte
     }
 
     @Override
-    public UUID getId() {
+    public @NotNull UUID getId() {
         return uuid;
     }
 
     @Override
-    public Date getCreated() {
+    public @NotNull Date getCreated() {
         return created;
     }
 
     @Override
-    public String getAdapterId() {
+    public @NotNull String getAdapterId() {
         return adapterId;
     }
 
     @Override
-    public ScheduledFuture getScheduledFuture() {
+    public @Nullable ScheduledFuture<?> getScheduledFuture() {
         return future;
     }
 
     @Override
-    public void setScheduledFuture(final ScheduledFuture future) {
+    public void setScheduledFuture(final @NotNull ScheduledFuture future) {
         this.future = future;
     }
 

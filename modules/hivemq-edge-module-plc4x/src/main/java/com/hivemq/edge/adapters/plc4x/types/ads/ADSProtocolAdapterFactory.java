@@ -46,7 +46,7 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
     }
 
     @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final CustomConfig config) {
+    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
         return ADSConfigConverter.unconvertConfig(objectMapper, config);
     }
 

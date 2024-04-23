@@ -59,7 +59,7 @@ import java.util.stream.Collectors;
 /**
  * The abstract adapter contains the baseline coupling and basic lifecycle operations of
  * a given protocol adapter in the system.
- *
+ * <p>
  * It will provide services to manage polling, publishing and standardised metrics which
  * will provide a cohesive runtime lifecycle of all the running instances
  *
@@ -104,7 +104,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * Returns the static information relating to this adapter implementation, include plugin names etc.
      * @return
      */
-    public ProtocolAdapterInformation getProtocolAdapterInformation() {
+    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapterInformation;
     }
 
@@ -114,7 +114,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * @param data - The data you wish to wrap into the standard JSONB envelope
      * @return a valid JSON document encoded to UTF-8 with the supplied value wrapped as an attribute on the envelope
      */
-    public List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(final @NotNull ProtocolAdapterDataSample<T> data) {
+    public @NotNull List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(final @NotNull ProtocolAdapterDataSample<T> data) {
         Preconditions.checkNotNull(data);
         List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
         //-- Only include the timestamp if the settings say so
@@ -137,11 +137,11 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         return list;
     }
 
-    protected ProtocolAdapterPublisherJsonPayload createPublishPayload(final Long timestamp, DataPoint dataPoint, boolean includeTagName){
+    protected @NotNull ProtocolAdapterPublisherJsonPayload createPublishPayload(final @Nullable Long timestamp, @NotNull DataPoint dataPoint, boolean includeTagName){
         return new ProtocolAdapterPublisherJsonPayload(timestamp, createTagSample(dataPoint, includeTagName));
     }
 
-    protected AbstractProtocolAdapterJsonPayload createMultiPublishPayload(final Long timestamp, List<DataPoint> dataPoint, boolean includeTagName){
+    protected @NotNull AbstractProtocolAdapterJsonPayload createMultiPublishPayload(final @Nullable Long timestamp, List<DataPoint> dataPoint, boolean includeTagName){
         return new ProtocolAdapterMultiPublishJsonPayload(timestamp, dataPoint.stream().map(dp -> createTagSample(dp, includeTagName)).collect(Collectors.toList()));
     }
 
@@ -149,7 +149,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         return new TagSample(includeTagName ? dataPoint.getTagName() : null, dataPoint.getTagValue());
     }
 
-    protected AbstractProtocolAdapterJsonPayload decoratePayloadMessage(ProtocolAdapterDataSample<T> sample, AbstractProtocolAdapterJsonPayload payload){
+    protected @NotNull AbstractProtocolAdapterJsonPayload decoratePayloadMessage(ProtocolAdapterDataSample<T> sample, @NotNull AbstractProtocolAdapterJsonPayload payload){
         if(sample.getUserProperties() != null && !sample.getUserProperties().isEmpty()){
             payload.setUserProperties(sample.getUserProperties());
         }
@@ -162,7 +162,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * @param data - The data you wish to wrap into the standard JSONB envelope
      * @return a valid JSON document encoded to UTF-8 with the supplied value wrapped as an attribute on the envelope
      */
-    public byte[] convertToJson(final @NotNull AbstractProtocolAdapterJsonPayload data) throws ProtocolAdapterException {
+    public byte @NotNull [] convertToJson(final @NotNull AbstractProtocolAdapterJsonPayload data) throws ProtocolAdapterException {
         try {
             Preconditions.checkNotNull(data);
             return objectMapper.writeValueAsBytes(data);
@@ -194,7 +194,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * give an indication of the status of an adapter runtime.
      * @param errorMessage
      */
-    protected void reportErrorMessage(@Nullable final Throwable throwable, @NotNull final String errorMessage, final boolean sendEvent){
+    protected void reportErrorMessage(@Nullable final Throwable throwable, @Nullable final String errorMessage, final boolean sendEvent){
         this.errorMessage = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
         if(sendEvent){
             eventService.fireEvent(
@@ -212,8 +212,8 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     }
 
     @Override
-    public CompletableFuture<Void> discoverValues(final @NotNull ProtocolAdapterDiscoveryInput input,
-                                                  final @NotNull ProtocolAdapterDiscoveryOutput output) {
+    public @NotNull CompletableFuture<Void> discoverValues(final @NotNull ProtocolAdapterDiscoveryInput input,
+                                                           final @NotNull ProtocolAdapterDiscoveryOutput output) {
         if(!ProtocolAdapterCapability.supportsCapability(
                 getProtocolAdapterInformation(), ProtocolAdapterCapability.DISCOVER)){
             return CompletableFuture.failedFuture(new UnsupportedOperationException("Adapter type does not support discovery"));
@@ -233,9 +233,9 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * @return A future that marks the starting of the adapter.
      */
     @Override
-    public CompletableFuture<ProtocolAdapterStartOutput> start(
-            final ProtocolAdapterStartInput input,
-            final ProtocolAdapterStartOutput output) {
+    public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
+            final @NotNull ProtocolAdapterStartInput input,
+            final @NotNull ProtocolAdapterStartOutput output) {
         CompletableFuture<ProtocolAdapterStartOutput> future = null;
         if(running()){
             return CompletableFuture.completedFuture(output);
@@ -264,7 +264,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * @return A future that marks the stopping of the adapter.
      */
     @Override
-    public CompletableFuture<Void> stop() {
+    public @NotNull CompletableFuture<Void> stop() {
         if(!running()){
             return CompletableFuture.completedFuture(null);
         }
@@ -274,7 +274,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
             return future;
         } finally {
             if(future != null){
-                future.thenRun(() -> onStop());
+                future.thenRun(this::onStop);
             }
         }
     }
@@ -294,7 +294,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * A convenience method that sets the ConnectionStatus to Error
      * and the errorMessage to that supplied.
      */
-    protected void setErrorConnectionStatus(@Nullable final Throwable t, @NotNull final String errorMessage){
+    protected void setErrorConnectionStatus(@Nullable final Throwable t, @Nullable final String errorMessage){
         boolean changed = setConnectionStatus(ConnectionStatus.ERROR);
         reportErrorMessage(t, errorMessage, changed);
     }
@@ -320,7 +320,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     }
 
     @Override
-    public String getErrorMessage() {
+    public @Nullable String getErrorMessage() {
         return errorMessage;
     }
 
@@ -333,12 +333,12 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     }
 
     @Override
-    public ConnectionStatus getConnectionStatus() {
+    public @NotNull ConnectionStatus getConnectionStatus() {
         return connectionStatus.get();
     }
 
     @Override
-    public RuntimeStatus getRuntimeStatus() {
+    public @NotNull RuntimeStatus getRuntimeStatus() {
         return runtimeStatus.get();
     }
 
@@ -374,16 +374,16 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * @param output
      * @return
      */
-    protected CompletableFuture<Void> discoverValuesInternal(final @NotNull ProtocolAdapterDiscoveryInput input,
-                                                             final @NotNull ProtocolAdapterDiscoveryOutput output){
+    protected @NotNull CompletableFuture<Void> discoverValuesInternal(final @NotNull ProtocolAdapterDiscoveryInput input,
+                                                                      final @NotNull ProtocolAdapterDiscoveryOutput output){
         return CompletableFuture.completedFuture(null);
     }
 
-    protected abstract CompletableFuture<ProtocolAdapterStartOutput> startInternal(final ProtocolAdapterStartOutput output);
+    protected abstract @NotNull CompletableFuture<ProtocolAdapterStartOutput> startInternal(final @NotNull ProtocolAdapterStartOutput output);
 
-    protected abstract CompletableFuture<Void> stopInternal();
+    protected abstract @NotNull CompletableFuture<Void> stopInternal();
 
-    protected EventBuilder eventBuilder(final @NotNull EventImpl.SEVERITY severity){
+    protected @NotNull EventBuilder eventBuilder(final @NotNull EventImpl.SEVERITY severity){
         EventBuilder builder = new EventBuilderImpl();
         builder.withTimestamp(System.currentTimeMillis());
         builder.withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER, adapterConfig.getId()));

@@ -110,7 +110,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
         return statusCode >= 200 && statusCode <= 299;
     }
 
-    protected CompletableFuture<?> captureDataSample(final @NotNull HttpData data){
+     protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull HttpData data){
         boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) || !adapterConfig.isHttpPublishSuccessStatusCodeOnly();
         setConnectionStatus(isSuccessStatusCode(data.getHttpStatusCode()) ? ConnectionStatus.STATELESS : ConnectionStatus.ERROR);
         if (publishData) {

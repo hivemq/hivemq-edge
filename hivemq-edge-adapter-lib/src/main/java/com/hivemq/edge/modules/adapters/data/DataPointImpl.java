@@ -1,12 +1,13 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.Objects;
 
 public class DataPointImpl implements DataPoint {
-    private final Object tagValue;
-    private final String tagName;
+    private final @NotNull Object tagValue;
+    private final @NotNull String tagName;
 
     public DataPointImpl(final @NotNull String tagName, final @NotNull Object tagValue) {
         this.tagName = tagName;
@@ -14,17 +15,17 @@ public class DataPointImpl implements DataPoint {
     }
 
     @Override
-    public Object getTagValue() {
+    public @NotNull Object getTagValue() {
         return tagValue;
     }
 
     @Override
-    public String getTagName() {
+    public @NotNull String getTagName() {
         return tagName;
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(final @Nullable Object o) {
         if (this == o) {
             return true;
         }

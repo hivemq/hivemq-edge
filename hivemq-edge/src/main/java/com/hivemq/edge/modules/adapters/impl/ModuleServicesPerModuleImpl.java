@@ -57,7 +57,7 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
     }
 
     @Override
-    public EventService eventService() {
+    public @NotNull EventService eventService() {
         return eventService;
     }
 

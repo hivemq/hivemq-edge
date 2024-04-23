@@ -46,7 +46,7 @@ public class ABProtocolAdapterFactory implements ProtocolAdapterFactory<ABAdapte
     }
 
     @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final CustomConfig config) {
+    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
         return ABConfigConverter.unconvertConfig(objectMapper, config);
     }
 

@@ -35,29 +35,29 @@ public class PayloadImpl implements Payload {
     @Schema(description = "The content of the payload encoded as a string")
     private @NotNull String content;
 
-    public PayloadImpl(@JsonProperty("contentType") final ContentType contentType,
-                       @JsonProperty("content") final String content) {
+    public PayloadImpl(@JsonProperty("contentType") final @NotNull ContentType contentType,
+                       @JsonProperty("content") final @NotNull String content) {
         this.contentType = contentType;
         this.content = content;
     }
 
     @Override
-    public ContentType getContentType() {
+    public @NotNull ContentType getContentType() {
         return contentType;
     }
 
     @Override
-    public String getContent() {
+    public @NotNull String getContent() {
         return content;
     }
 
-    public static Payload from(Payload.ContentType contentType, String data) {
+    public static Payload from(final @NotNull Payload.ContentType contentType, final @NotNull String data) {
         Preconditions.checkNotNull(contentType);
         Preconditions.checkNotNull(data);
         return new PayloadImpl(contentType, data);
     }
 
-    public static Payload fromObject(ObjectMapper mapper, Object data) {
+    public static Payload fromObject(final @NotNull ObjectMapper mapper, final @NotNull Object data) {
         try {
             Preconditions.checkNotNull(mapper);
             Preconditions.checkNotNull(data);

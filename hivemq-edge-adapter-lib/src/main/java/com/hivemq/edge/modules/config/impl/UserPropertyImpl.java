@@ -23,22 +23,22 @@ public class UserPropertyImpl implements UserProperty {
     }
 
     @Override
-    public String getPropertyName() {
+    public String getName() {
         return propertyName;
     }
 
     @Override
-    public void setPropertyName(final String propertyName) {
+    public void setName(final String propertyName) {
         this.propertyName = propertyName;
     }
 
     @Override
-    public String getPropertyValue() {
+    public String getValue() {
         return propertyValue;
     }
 
     @Override
-    public void setPropertyValue(final String propertyValue) {
+    public void setValue(final String propertyValue) {
         this.propertyValue = propertyValue;
     }
 }

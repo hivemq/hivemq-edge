@@ -26,10 +26,10 @@ import java.util.List;
  */
 public abstract class AbstractProtocolAdapterJsonPayload {
 
-    private final Long timestamp;
+    private final @Nullable Long timestamp;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private List<UserProperty> userProperties;
+    private @Nullable List<UserProperty> userProperties;
 
     public AbstractProtocolAdapterJsonPayload(final @Nullable Long timestamp) {
         this.timestamp = timestamp;
