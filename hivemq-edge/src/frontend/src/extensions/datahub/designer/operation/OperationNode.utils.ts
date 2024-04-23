@@ -12,7 +12,6 @@ import {
   PolicyOperationArguments,
   ResourceStatus,
   TransitionData,
-  WorkspaceAction,
   WorkspaceState,
 } from '@datahub/types.ts'
 import {
@@ -245,18 +244,37 @@ export const loadDataPolicyPipelines = (
   policy: DataPolicy,
   schemas: Schema[],
   scripts: Script[],
-  store: WorkspaceState & WorkspaceAction
+  dataPolicyNode: Node<DataPolicyData>
 ) => {
-  const dataNode = store.nodes.find((node) => node.id === policy.id)
-  if (!dataNode)
+  if (dataPolicyNode.id !== policy.id)
     throw new Error(
       i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
     )
 
-  if (policy.onSuccess && policy.onSuccess.pipeline)
-    loadPipeline(dataNode, policy.onSuccess.pipeline, DataPolicyData.Handle.ON_SUCCESS, schemas, scripts, store)
-  if (policy.onFailure && policy.onFailure.pipeline)
-    loadPipeline(dataNode, policy.onFailure.pipeline, DataPolicyData.Handle.ON_ERROR, schemas, scripts, store)
+  const newNodes: (NodeAddChange | Connection)[] = []
+
+  if (policy.onSuccess && policy.onSuccess.pipeline) {
+    const res = loadPipeline(
+      dataPolicyNode,
+      policy.onSuccess.pipeline,
+      DataPolicyData.Handle.ON_SUCCESS,
+      schemas,
+      scripts
+    )
+    newNodes.push(...res)
+  }
+  if (policy.onFailure && policy.onFailure.pipeline) {
+    const res = loadPipeline(
+      dataPolicyNode,
+      policy.onFailure.pipeline,
+      DataPolicyData.Handle.ON_ERROR,
+      schemas,
+      scripts
+    )
+    newNodes.push(...res)
+  }
+
+  return newNodes
 }
 
 export const loadPipeline = (
@@ -264,10 +282,8 @@ export const loadPipeline = (
   pipeline: Array<PolicyOperation>,
   handle: DataPolicyData.Handle | null,
   schemas: Schema[],
-  scripts: Script[],
-  store: WorkspaceState & WorkspaceAction
+  scripts: Script[]
 ) => {
-  const { onAddNodes, onConnect } = store
   if (!parentNode)
     throw new Error(i18n.t('datahub:error.loading.schema.unknown', { type: DataHubNodeType.DATA_POLICY }) as string)
 
@@ -282,6 +298,8 @@ export const loadPipeline = (
     position.x += delta.x
     return position
   }
+
+  const newNodes: (NodeAddChange | Connection)[] = []
 
   let connect: Connection = {
     source: parentNode.id,
@@ -320,24 +338,25 @@ export const loadPipeline = (
             },
           }
 
-          loadSchema(
+          const deserialisers = loadSchema(
             operationNode,
             OperationData.Handle.DESERIALISER,
             -200,
             deserializer.arguments as SchemaReference,
-            schemas,
-            store
+            schemas
           )
-          loadSchema(
+          const serialisers = loadSchema(
             operationNode,
             OperationData.Handle.SERIALISER,
             200,
             policyOperation.arguments as SchemaReference,
-            schemas,
-            store
+            schemas
           )
 
-          loadScripts(operationNode, functions, scripts, store)
+          const allScripts = loadScripts(operationNode, functions, scripts)
+          newNodes.push(...deserialisers)
+          newNodes.push(...serialisers)
+          newNodes.push(...allScripts)
         }
         break
       default:
@@ -355,8 +374,10 @@ export const loadPipeline = (
 
     if (!operationNode) throw new Error(i18n.t('datahub:error.loading.operation.unknown') as string)
     if (!Array.isArray(operationNode)) {
-      onAddNodes([{ item: operationNode, type: 'add' } as NodeAddChange])
-      onConnect({ ...connect, target: operationNode.id })
+      newNodes.push(
+        { item: operationNode, type: 'add' } as NodeAddChange,
+        { ...connect, target: operationNode.id } as Connection
+      )
       connect = {
         source: operationNode.id,
         target: null,
@@ -366,4 +387,6 @@ export const loadPipeline = (
       operationNode = undefined
     }
   }
+
+  return newNodes
 }
