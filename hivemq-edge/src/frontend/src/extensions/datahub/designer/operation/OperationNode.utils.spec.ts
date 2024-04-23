@@ -351,7 +351,7 @@ describe('checkValidityTransformFunction', () => {
       const { node, data, error, resources } = results[2]
       expect(node).toStrictEqual(MOCK_NODE_OPERATION)
       expect(error).toBeUndefined()
-      expect(resources).toBeUndefined()
+      expect(resources).toHaveLength(2)
       expect(data).toEqual(
         expect.objectContaining({
           arguments: {
@@ -367,14 +367,12 @@ describe('checkValidityTransformFunction', () => {
       const { node, data, error, resources } = results[1]
       expect(node).toStrictEqual(MOCK_NODE_OPERATION)
       expect(error).toBeUndefined()
-      expect(resources).toHaveLength(2)
+      expect(resources).toBeUndefined()
       expect(data).toEqual(
         expect.objectContaining({
-          arguments: {
-            transform: ['the_function'],
-          },
+          arguments: {},
           functionId: 'fn:the_function:latest',
-          id: 'node-id',
+          id: 'node-function',
         })
       )
     }

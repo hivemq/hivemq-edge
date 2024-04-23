@@ -1,4 +1,4 @@
-import { Node, NodeAddChange } from 'reactflow'
+import { Node, NodeAddChange, XYPosition } from 'reactflow'
 
 import { PolicyOperation, Script } from '@/api/__generated__'
 import i18n from '@/config/i18n.config.ts'
@@ -14,6 +14,21 @@ import {
 } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
+import {
+  SCRIPT_FUNCTION_LATEST,
+  SCRIPT_FUNCTION_PREFIX,
+  SCRIPT_FUNCTION_SEPARATOR,
+} from '@datahub/utils/datahub.utils.ts'
+
+export const formatScriptName = (functionNode: Node<FunctionData>): string => {
+  return `${SCRIPT_FUNCTION_PREFIX}:${functionNode.data.name}:${SCRIPT_FUNCTION_LATEST}`
+}
+
+export const parseScriptName = (operation: PolicyOperation): string => {
+  const splitId = operation.functionId.split(SCRIPT_FUNCTION_SEPARATOR)
+  if (splitId.length !== 3) return splitId[0]
+  return splitId[1]
+}
 
 export function checkValidityJSScript(scriptNode: Node<FunctionData>): DryRunResults<Script> {
   if (!scriptNode.data.name || !scriptNode.data.version || !scriptNode.data.sourceCode) {
@@ -40,6 +55,18 @@ export const loadScripts = (
   store: WorkspaceState & WorkspaceAction
 ) => {
   const { onAddNodes, onConnect } = store
+
+  const delta = ((Math.max(functions.length || 0, 1) - 1) * CANVAS_POSITION.Function.x) / 2
+  const position: XYPosition = {
+    x: parentNode.position.x - CANVAS_POSITION.Function.x - delta,
+    y: parentNode.position.y + CANVAS_POSITION.Function.y,
+  }
+
+  const shiftLeft = () => {
+    position.x += CANVAS_POSITION.Function.x
+    return position
+  }
+
   for (const fct of functions) {
     const [, functionName] = fct.functionId.split(':')
     const functionScript = scripts.find((script) => script.id === functionName)
@@ -51,10 +78,7 @@ export const loadScripts = (
     const functionScriptNode: Node<FunctionData> = {
       id: functionScript.id,
       type: DataHubNodeType.FUNCTION,
-      position: {
-        x: parentNode.position.x + CANVAS_POSITION.Function.x,
-        y: parentNode.position.y + CANVAS_POSITION.Function.y,
-      },
+      position: { ...shiftLeft() },
       data: {
         type: 'Javascript',
         name: functionScript.id,

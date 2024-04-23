@@ -93,7 +93,6 @@ const PaginatedTable = <T,>({
       .flat()
       .filter(Boolean).length > 0
 
-  console.log('XXXXX', hasFooters)
   return (
     <>
       <TableContainer overflowY="auto" overflowX="auto" whiteSpace="normal">

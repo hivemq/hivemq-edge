@@ -15,7 +15,12 @@ import {
   WorkspaceAction,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { checkValidityJSScript, loadScripts } from '@datahub/designer/script/FunctionNode.utils.ts'
+import {
+  checkValidityJSScript,
+  formatScriptName,
+  loadScripts,
+  parseScriptName,
+} from '@datahub/designer/script/FunctionNode.utils.ts'
 import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { isFunctionNodeType, isSchemaNodeType } from '@datahub/utils/node.utils.ts'
@@ -39,7 +44,6 @@ export function checkValidityTransformFunction(
 
   ///////// Check the function handle
   const functions = getIncomers(operationNode, nodes, edges).filter(isFunctionNodeType)
-
   if (!functions.length) {
     return [
       {
@@ -51,9 +55,9 @@ export function checkValidityTransformFunction(
 
   ///////// Check the serializers
   const serialisers = getIncomers(operationNode, nodes, edges).filter(isSchemaNodeType)
-
   const connectedEdges = getConnectedEdges([...serialisers], edges).filter(
-    (e) => e.targetHandle === OperationData.Handle.SERIALISER || e.targetHandle === OperationData.Handle.DESERIALISER
+    (edge) =>
+      edge.targetHandle === OperationData.Handle.SERIALISER || edge.targetHandle === OperationData.Handle.DESERIALISER
   )
   const [serial, ...restSerial] = connectedEdges.filter((edge) => edge.targetHandle === OperationData.Handle.SERIALISER)
   const [deserial, ...restDeserial] = connectedEdges.filter(
@@ -78,14 +82,11 @@ export function checkValidityTransformFunction(
     ]
   }
 
-  // TODO[19240] Should serial and deserial be different ?
-
   ///////// Check the resources
   const scriptNodes = functions.map((node) => checkValidityJSScript(node))
   const schemaNodes = serialisers.map((node) => checkValiditySchema(node))
 
-  const scriptName = scriptNodes[0].node as Node<FunctionData>
-  if (!scriptName) {
+  if (!scriptNodes.length) {
     return [
       {
         node: operationNode,
@@ -94,9 +95,23 @@ export function checkValidityTransformFunction(
     ]
   }
 
-  // TODO[19497] This should not have to happen on the client side!
-  const formattedScriptName = (functionNode: Node<FunctionData>): string => {
-    return `fn:${functionNode.data.name}:latest`
+  const { transform } = operationNode.data.formData as unknown as OperationData.DataHubTransformType
+  const defaultOrder = transform.length ? transform : scriptNodes.map((e) => e.data?.id)
+
+  const allTransformScripts: DryRunResults<PolicyOperation, Script>[] = []
+  for (const scriptId of defaultOrder) {
+    const script = scriptNodes.find((e) => e.data?.id === scriptId)
+    if (script) {
+      const scriptName = script.node as Node<FunctionData>
+
+      const operation: PolicyOperation = {
+        functionId: formatScriptName(scriptName),
+        arguments: {},
+        // TODO[19466] Id should be user-facing; Need to fix before merging!
+        id: scriptName.id,
+      }
+      allTransformScripts.push({ data: operation, node: operationNode })
+    }
   }
 
   const sourceDeserial = serialisers.find((node) => node.id === deserial.source)
@@ -120,14 +135,6 @@ export function checkValidityTransformFunction(
     id: `${operationNode.id}-deserializer`,
   }
 
-  // TODO[19497] there should be a list of functions
-  const operation: PolicyOperation = {
-    functionId: formattedScriptName(scriptName),
-    arguments: operationNode.data.formData,
-    // TODO[19466] Id should be user-facing; Need to fix before merging!
-    id: operationNode.id,
-  }
-
   const sourceSerial = serialisers.find((node) => node.id === serial.source)
   if (!sourceSerial) {
     return [
@@ -149,10 +156,12 @@ export function checkValidityTransformFunction(
     } as PolicyOperationArguments,
     id: `${operationNode.id}-serializer`,
   }
+
+  // The resources are added tp the last item for convenience
   return [
     { data: deserializer, node: operationNode },
-    { data: operation, node: operationNode, resources: [...scriptNodes, ...schemaNodes] },
-    { data: serializer, node: operationNode },
+    ...allTransformScripts,
+    { data: serializer, node: operationNode, resources: [...scriptNodes, ...schemaNodes] },
   ]
 }
 
@@ -307,7 +316,7 @@ export const loadPipeline = (
                 isTerminal: false,
                 hasArguments: true,
               },
-              formData: { transform: functions.map((e) => e.functionId) },
+              formData: { transform: functions.map((operation) => parseScriptName(operation)) },
             },
           }
 

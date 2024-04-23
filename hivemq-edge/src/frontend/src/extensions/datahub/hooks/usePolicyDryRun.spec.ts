@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { resourceReducer, usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
+import { onlyNonNullResources, usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
 import {
   BehaviorPolicyData,
   BehaviorPolicyType,
@@ -11,7 +11,7 @@ import {
 import { Node } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-describe('resourceReducer', () => {
+describe('onlyNonNullResources', () => {
   it('should return an async function', async () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
@@ -32,8 +32,8 @@ describe('resourceReducer', () => {
       resources: [{ node: MOCK_NODE_TEST }],
     }
 
-    expect(resourceReducer([], {} as DryRunResults<unknown, never>)).toStrictEqual([])
-    expect(resourceReducer([], result)).toStrictEqual([{ node: MOCK_NODE_TEST }])
+    expect(onlyNonNullResources([], {} as DryRunResults<unknown, never>)).toStrictEqual([])
+    expect(onlyNonNullResources([], result)).toStrictEqual([{ node: MOCK_NODE_TEST }])
   })
 })
 

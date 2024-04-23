@@ -29,9 +29,17 @@ import { isClientFilterNodeType, isTopicFilterNodeType } from '@datahub/utils/no
 /* istanbul ignore next -- @preserve */
 const mockDelay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms))
 
-export const resourceReducer = (acc: DryRunResults<unknown, never>[], oper: DryRunResults<unknown, never>) => {
+export const onlyNonNullResources = (acc: DryRunResults<unknown, never>[], oper: DryRunResults<unknown, never>) => {
   if (oper.resources) {
     acc.push(...oper.resources)
+  }
+  return acc
+}
+
+export const onlyUniqueResources = (acc: DryRunResults<unknown, never>[], item: DryRunResults<unknown, never>) => {
+  const existingResourceIds = acc.map((e) => e.node.id)
+  if (!existingResourceIds.includes(item.node.id)) {
+    acc.push(item)
   }
   return acc
 }
@@ -78,10 +86,10 @@ export const usePolicyDryRun = () => {
     const onSuccessPipeline = checkValidityPipeline(dataPolicyNode, DataPolicyData.Handle.ON_SUCCESS, reducedStore)
     const onErrorPipeline = checkValidityPipeline(dataPolicyNode, DataPolicyData.Handle.ON_ERROR, reducedStore)
 
-    const successResources = onSuccessPipeline.reduce(resourceReducer, [] as DryRunResults<Script>[])
-    const errorResources = onErrorPipeline.reduce(resourceReducer, [] as DryRunResults<Script>[])
-    const schemaResources = validators.reduce(resourceReducer, [] as DryRunResults<Schema>[])
-    const allResources = [...successResources, ...errorResources, ...schemaResources]
+    const successResources = onSuccessPipeline.reduce(onlyNonNullResources, [] as DryRunResults<Script>[])
+    const errorResources = onErrorPipeline.reduce(onlyNonNullResources, [] as DryRunResults<Script>[])
+    const schemaResources = validators.reduce(onlyNonNullResources, [] as DryRunResults<Schema>[])
+    const allResources = [...successResources, ...errorResources, ...schemaResources].reduce(onlyUniqueResources, [])
 
     const processedNodes = [filter, ...validators, ...onSuccessPipeline, ...onErrorPipeline, ...allResources]
     const hasError = processedNodes.some((e) => !!e.error)
@@ -115,7 +123,7 @@ export const usePolicyDryRun = () => {
     const model = checkValidityModel(behaviourPolicyNode)
     const { behaviorPolicyTransitions, pipelines } = checkValidityTransitions(behaviourPolicyNode, reducedStore)
 
-    const pipelineResources = pipelines?.reduce(resourceReducer, [] as DryRunResults<Schema>[])
+    const pipelineResources = pipelines?.reduce(onlyNonNullResources, [] as DryRunResults<Schema>[])
 
     // TODO[19240] This is wrong. Only if no errors
     const behaviorPolicy = checkValidityBehaviorPolicy(behaviourPolicyNode, clients, model, behaviorPolicyTransitions)

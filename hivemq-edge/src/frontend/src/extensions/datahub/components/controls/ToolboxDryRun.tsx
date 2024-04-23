@@ -1,23 +1,7 @@
 import { FC, useCallback, useMemo } from 'react'
 import { Node } from 'reactflow'
 import { useTranslation } from 'react-i18next'
-import {
-  Alert,
-  AlertDescription,
-  AlertIcon,
-  AlertTitle,
-  Box,
-  Button,
-  HStack,
-  Icon,
-  Stack,
-  AlertStatus,
-  CloseButton,
-  Link,
-  Text,
-} from '@chakra-ui/react'
-
-import { ConditionalWrapper } from '@/components/ConditonalWrapper.tsx'
+import { Box, Button, HStack, Icon, Stack } from '@chakra-ui/react'
 
 import PolicyErrorReport from '@datahub/components/helpers/PolicyErrorReport.tsx'
 import { usePolicyDryRun } from '@datahub/hooks/usePolicyDryRun.ts'
@@ -26,6 +10,7 @@ import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { getDryRunStatusIcon } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeData, DesignerStatus, PolicyDryRunStatus } from '@datahub/types.ts'
 import { DesignerToolBoxProps } from '@datahub/components/controls/DesignerToolbox.tsx'
+import PolicySummaryReport from '@datahub/components/helpers/PolicySummaryReport.tsx'
 
 interface ToolboxDryRunProps extends DesignerToolBoxProps {
   onShowNode?: (node: Node) => void
@@ -72,7 +57,6 @@ export const ToolboxDryRun: FC<ToolboxDryRunProps> = ({ onActiveStep, onShowNode
     })
   }
   const errorNodeFrom = useCallback((id: string) => nodes.find((node) => node.id === id), [nodes])
-  const alertStatus: AlertStatus = status === PolicyDryRunStatus.SUCCESS ? 'success' : 'warning'
 
   return (
     <Stack maxW={500}>
@@ -98,30 +82,11 @@ export const ToolboxDryRun: FC<ToolboxDryRunProps> = ({ onActiveStep, onShowNode
 
       {report && (
         <>
-          <Alert status={alertStatus} data-testid="toolbox-policy-check-status">
-            <AlertIcon />
-            <Box whiteSpace="normal">
-              <AlertTitle>
-                <Text as="span">{t('workspace.dryRun.report.success.title', { context: alertStatus })}</Text>
-              </AlertTitle>
-              <AlertDescription>
-                <ConditionalWrapper
-                  condition={status === PolicyDryRunStatus.SUCCESS}
-                  wrapper={(children) => (
-                    <Link
-                      aria-label={t('workspace.toolbox.navigation.goPublish') as string}
-                      onClick={() => onActiveStep?.(DesignerToolBoxProps.Steps.TOOLBOX_CHECK)}
-                    >
-                      {children}
-                    </Link>
-                  )}
-                >
-                  <Text as="span">{t('workspace.dryRun.report.success.description', { context: alertStatus })}</Text>
-                </ConditionalWrapper>
-              </AlertDescription>
-            </Box>
-            <CloseButton alignSelf="flex-start" position="relative" right={-1} top={-1} onClick={handleClearPolicy} />
-          </Alert>
+          <PolicySummaryReport
+            status={status || PolicyDryRunStatus.FAILURE}
+            onOpenPublish={() => onActiveStep?.(DesignerToolBoxProps.Steps.TOOLBOX_PUBLISH)}
+            onClearPolicy={handleClearPolicy}
+          />
           <PolicyErrorReport
             errors={getErrors() || []}
             onFitView={(id) => {
