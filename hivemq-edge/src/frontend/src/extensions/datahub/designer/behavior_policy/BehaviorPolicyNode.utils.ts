@@ -5,14 +5,7 @@ import { enumFromStringValue } from '@/utils/types.utils.ts'
 import i18n from '@/config/i18n.config.ts'
 
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
-import {
-  BehaviorPolicyData,
-  BehaviorPolicyType,
-  DataHubNodeType,
-  DryRunResults,
-  WorkspaceAction,
-  WorkspaceState,
-} from '@datahub/types.ts'
+import { BehaviorPolicyData, BehaviorPolicyType, DataHubNodeType, DryRunResults } from '@datahub/types.ts'
 
 export function checkValidityModel(behaviorPolicy: Node<BehaviorPolicyData>): DryRunResults<BehaviorPolicyBehavior> {
   if (!behaviorPolicy.data.model) {
@@ -54,9 +47,7 @@ export function checkValidityBehaviorPolicy(
   }
 }
 
-export const loadBehaviorPolicy = (behaviorPolicy: BehaviorPolicy, store: WorkspaceState & WorkspaceAction) => {
-  const { onNodesChange } = store
-
+export const loadBehaviorPolicy = (behaviorPolicy: BehaviorPolicy) => {
   const model = enumFromStringValue(BehaviorPolicyType, behaviorPolicy.behavior.id)
   if (!model)
     throw new Error(
@@ -78,5 +69,5 @@ export const loadBehaviorPolicy = (behaviorPolicy: BehaviorPolicy, store: Worksp
     },
   }
 
-  onNodesChange([{ item: behaviorPolicyNode, type: 'add' } as NodeAddChange])
+  return { item: behaviorPolicyNode, type: 'add' } as NodeAddChange
 }
