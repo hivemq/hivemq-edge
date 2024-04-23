@@ -17,7 +17,7 @@ package com.hivemq.http.sun;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.http.core.HttpConstants;
+import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.HttpRequestResponse;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;

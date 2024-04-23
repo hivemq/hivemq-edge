@@ -29,7 +29,7 @@ import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
+import com.hivemq.mqtt.PublishReturnCode;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;

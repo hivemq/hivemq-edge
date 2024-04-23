@@ -13,23 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.http.handlers;
+package com.hivemq.edge.modules.adapters;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.http.HttpConstants;
-import com.hivemq.http.core.Html;
-import com.hivemq.http.core.IHttpRequestResponse;
+/**
+ * @author Simon L Johnson
+ */
+public class ProtocolAdapterException extends Exception {
 
-import java.io.IOException;
-
-public class HelloWorldHandler extends AbstractHttpRequestResponseHandler {
-
-    public HelloWorldHandler(ObjectMapper mapper) {
-        super(mapper);
+    public ProtocolAdapterException() {
     }
 
-    @Override
-    protected void handleHttpGet(IHttpRequestResponse request) throws IOException {
-        writeHTMLResponse(request, HttpConstants.SC_OK, Html.span("Hello World From HiveMQ Edge Console!", Html.RED, true));
+    public ProtocolAdapterException(final String message) {
+        super(message);
+    }
+
+    public ProtocolAdapterException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
+
+    public ProtocolAdapterException(final Throwable cause) {
+        super(cause);
     }
 }

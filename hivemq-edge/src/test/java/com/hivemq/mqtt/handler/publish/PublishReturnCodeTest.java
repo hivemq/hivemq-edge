@@ -15,6 +15,7 @@
  */
 package com.hivemq.mqtt.handler.publish;
 
+import com.hivemq.mqtt.PublishReturnCode;
 import org.junit.Test;
 import util.EnumTestUtil;
 

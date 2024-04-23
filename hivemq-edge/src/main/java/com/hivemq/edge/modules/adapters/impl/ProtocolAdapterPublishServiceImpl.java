@@ -21,7 +21,7 @@ import com.hivemq.configuration.HivemqId;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
+import com.hivemq.mqtt.PublishReturnCode;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 
 import javax.inject.Inject;

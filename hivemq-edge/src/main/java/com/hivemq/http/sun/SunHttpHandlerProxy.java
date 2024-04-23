@@ -16,7 +16,7 @@
 package com.hivemq.http.sun;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.http.core.HttpConstants;
+import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.IHttpRequestResponseHandler;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;

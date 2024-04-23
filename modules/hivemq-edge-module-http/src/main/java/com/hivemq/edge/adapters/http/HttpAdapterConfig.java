@@ -21,7 +21,7 @@ import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.http.core.HttpConstants;
+import com.hivemq.http.HttpConstants;
 
 import java.util.ArrayList;
 import java.util.List;

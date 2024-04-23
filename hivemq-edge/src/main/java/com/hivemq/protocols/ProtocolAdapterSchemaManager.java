@@ -19,7 +19,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
-import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailure;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
+import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailureImpl;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -93,7 +94,7 @@ public class ProtocolAdapterSchemaManager {
 
 
     static ProtocolAdapterValidationFailure convertMessage(ValidationMessage validationMessage) {
-        return new ProtocolAdapterValidationFailure(validationMessage.getMessage(),
+        return new ProtocolAdapterValidationFailureImpl(validationMessage.getMessage(),
                 validationMessage.getPath(),
                 validationMessage.getClass());
     }

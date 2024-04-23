@@ -16,10 +16,10 @@
 package com.hivemq.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.Files;
 import com.hivemq.http.core.Html;
 import com.hivemq.http.core.HttpBadRequestException;
-import com.hivemq.http.core.HttpConstants;
 import com.hivemq.http.core.HttpException;
 import com.hivemq.http.core.HttpInternalServerError;
 import com.hivemq.http.core.HttpUtils;

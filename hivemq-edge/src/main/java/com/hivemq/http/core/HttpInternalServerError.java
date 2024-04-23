@@ -15,6 +15,8 @@
  */
 package com.hivemq.http.core;
 
+import com.hivemq.http.HttpConstants;
+
 public class HttpInternalServerError extends HttpException {
 
     public HttpInternalServerError(String responseMessage, Exception e) {

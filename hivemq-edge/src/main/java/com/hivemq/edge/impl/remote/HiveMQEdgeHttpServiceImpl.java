@@ -17,12 +17,12 @@ package com.hivemq.edge.impl.remote;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConfiguration;
 import com.hivemq.edge.model.HiveMQEdgeRemoteConnectivityException;
+import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.edge.model.HiveMQEdgeRemoteServices;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.http.core.HttpConstants;
+import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.HttpResponse;
 import com.hivemq.http.core.HttpUrlConnectionClient;
 import org.slf4j.Logger;

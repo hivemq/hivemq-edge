@@ -24,8 +24,7 @@ import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.http.core.HttpConstants;
-import com.hivemq.http.core.HttpUtils;
+import com.hivemq.http.HttpConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

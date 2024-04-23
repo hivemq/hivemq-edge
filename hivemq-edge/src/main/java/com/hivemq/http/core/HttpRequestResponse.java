@@ -15,6 +15,8 @@
  */
 package com.hivemq.http.core;
 
+import com.hivemq.http.HttpConstants;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;

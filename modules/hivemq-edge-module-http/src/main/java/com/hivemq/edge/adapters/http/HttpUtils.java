@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.http.core;
+package com.hivemq.edge.adapters.http;
 
-import com.hivemq.http.HttpConstants;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-public class HttpBadRequestException extends HttpException {
+import java.net.URL;
 
-    public HttpBadRequestException(String responseMessage) {
-        super(HttpConstants.SC_BAD_REQUEST, responseMessage);
-    }
-
-    public HttpBadRequestException(String responseMessage, Throwable cause) {
-        super(HttpConstants.SC_BAD_REQUEST, responseMessage, cause);
+public class HttpUtils {
+    public static boolean validHttpOrHttpsUrl(@NotNull final String url){
+        try {
+            new URL(url);
+            return true;
+        } catch(Exception e){
+            return false;
+        }
     }
 }

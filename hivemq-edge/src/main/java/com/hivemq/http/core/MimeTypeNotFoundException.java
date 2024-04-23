@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.http.handlers;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.http.HttpConstants;
-import com.hivemq.http.core.Html;
-import com.hivemq.http.core.IHttpRequestResponse;
+package com.hivemq.http.core;
 
 import java.io.IOException;
 
-public class HelloWorldHandler extends AbstractHttpRequestResponseHandler {
+public class MimeTypeNotFoundException extends IOException{
 
-    public HelloWorldHandler(ObjectMapper mapper) {
-        super(mapper);
+    public MimeTypeNotFoundException() {
     }
 
-    @Override
-    protected void handleHttpGet(IHttpRequestResponse request) throws IOException {
-        writeHTMLResponse(request, HttpConstants.SC_OK, Html.span("Hello World From HiveMQ Edge Console!", Html.RED, true));
+    public MimeTypeNotFoundException(String message) {
+        super(message);
+    }
+
+    public MimeTypeNotFoundException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public MimeTypeNotFoundException(Throwable cause) {
+        super(cause);
     }
 }

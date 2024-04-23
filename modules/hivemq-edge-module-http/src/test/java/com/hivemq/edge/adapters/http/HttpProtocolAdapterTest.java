@@ -11,7 +11,7 @@ import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
+import com.hivemq.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
