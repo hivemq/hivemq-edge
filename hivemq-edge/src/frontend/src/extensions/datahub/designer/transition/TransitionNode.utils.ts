@@ -1,4 +1,4 @@
-import { getOutgoers, Node, NodeAddChange, XYPosition } from 'reactflow'
+import { Connection, getOutgoers, Node, NodeAddChange, XYPosition } from 'reactflow'
 
 import {
   BehaviorPolicy,
@@ -20,7 +20,6 @@ import {
   StateType,
   TransitionData,
   TransitionType,
-  WorkspaceAction,
   WorkspaceState,
 } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
@@ -118,11 +117,9 @@ export const loadTransitions = (
   behaviorPolicy: BehaviorPolicy,
   schemas: Schema[],
   scripts: Script[],
-  store: WorkspaceState & WorkspaceAction
+  behaviorPolicyNode: Node<BehaviorPolicyData>
 ) => {
-  const { onNodesChange, onConnect } = store
-  const BehaviorPolicyNode = store.nodes.find((node) => node.id === behaviorPolicy.id)
-  if (!BehaviorPolicyNode)
+  if (behaviorPolicyNode.id !== behaviorPolicy.id)
     throw new Error(
       i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.BEHAVIOR_POLICY }) as string
     )
@@ -131,8 +128,8 @@ export const loadTransitions = (
 
   const delta = ((Math.max(behaviorPolicy.onTransitions?.length || 0, 1) - 1) * CANVAS_POSITION.Transition.y) / 2
   const position: XYPosition = {
-    x: BehaviorPolicyNode.position.x + CANVAS_POSITION.Transition.x,
-    y: BehaviorPolicyNode.position.y - CANVAS_POSITION.Transition.y - delta,
+    x: behaviorPolicyNode.position.x + CANVAS_POSITION.Transition.x,
+    y: behaviorPolicyNode.position.y - CANVAS_POSITION.Transition.y - delta,
   }
 
   const shiftBottom = () => {
@@ -140,6 +137,7 @@ export const loadTransitions = (
     return position
   }
 
+  const newNodes: (NodeAddChange | Connection)[] = []
   for (const behaviorPolicyTransition of behaviorPolicy.onTransitions || []) {
     const transitionNode: Node<TransitionData> = {
       id: getNodeId(),
@@ -147,9 +145,19 @@ export const loadTransitions = (
       position: { ...shiftBottom() },
       data: extractEventStates(model, behaviorPolicyTransition),
     }
+    const pipelines = loadBehaviorPolicyPipelines(behaviorPolicy, transitionNode, schemas, scripts)
 
-    onNodesChange([{ item: transitionNode, type: 'add' } as NodeAddChange])
-    onConnect({ source: behaviorPolicy.id, target: transitionNode.id, sourceHandle: null, targetHandle: null })
-    loadBehaviorPolicyPipelines(behaviorPolicy, transitionNode, schemas, scripts, store)
+    newNodes.push(
+      { item: transitionNode, type: 'add' } as NodeAddChange,
+      {
+        source: behaviorPolicy.id,
+        target: transitionNode.id,
+        sourceHandle: null,
+        targetHandle: null,
+      } as Connection,
+      ...pipelines
+    )
   }
+
+  return newNodes
 }
