@@ -1,4 +1,4 @@
-import { getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
+import { Connection, getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
 
 import { DataPolicy, DataPolicyValidator, Schema, SchemaReference } from '@/api/__generated__'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
@@ -13,7 +13,6 @@ import {
   SchemaArguments,
   ValidatorData,
   ValidatorType,
-  WorkspaceAction,
   WorkspaceState,
 } from '@datahub/types.ts'
 import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
@@ -65,19 +64,18 @@ export function checkValidityPolicyValidators(
   return incomers.map((validator) => checkValidityPolicyValidator(validator, store))
 }
 
-export const loadValidators = (policy: DataPolicy, schemas: Schema[], store: WorkspaceState & WorkspaceAction) => {
-  const { onNodesChange, onConnect } = store
-  const dataNode = store.nodes.find((node) => node.id === policy.id)
-  if (!dataNode)
+export const loadValidators = (policy: DataPolicy, schemas: Schema[], dataPolicyNode: Node<DataPolicyData>) => {
+  if (dataPolicyNode.id !== policy.id)
     throw new Error(
       i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
     )
 
   const position: XYPosition = {
-    x: dataNode.position.x + CANVAS_POSITION.Validator.x,
-    y: dataNode.position.y + CANVAS_POSITION.Validator.y,
+    x: dataPolicyNode.position.x + CANVAS_POSITION.Validator.x,
+    y: dataPolicyNode.position.y + CANVAS_POSITION.Validator.y,
   }
 
+  const newNodes: (NodeAddChange | Connection)[] = []
   for (const validator of policy.validation?.validators || []) {
     const validatorArguments = validator.arguments as SchemaArguments
 
@@ -93,16 +91,19 @@ export const loadValidators = (policy: DataPolicy, schemas: Schema[], store: Wor
       },
     }
 
-    onNodesChange([{ item: validatorNode, type: 'add' } as NodeAddChange])
-    onConnect({
+    newNodes.push({ item: validatorNode, type: 'add' } as NodeAddChange)
+    newNodes.push({
       source: validatorNode.id,
-      target: dataNode.id,
+      target: dataPolicyNode.id,
       sourceHandle: null,
       targetHandle: DataPolicyData.Handle.VALIDATION,
-    })
+    } as Connection)
 
     for (const schemaRef of validatorArguments.schemas) {
-      loadSchema(validatorNode, null, 0, schemaRef, schemas, store)
+      const schemaNodes = loadSchema(validatorNode, null, 0, schemaRef, schemas)
+      newNodes.push(...schemaNodes)
     }
   }
+
+  return newNodes
 }
