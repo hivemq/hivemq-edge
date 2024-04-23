@@ -95,11 +95,11 @@ export function checkValidityTransformFunction(
   }
 
   const { transform } = operationNode.data.formData as unknown as OperationData.DataHubTransformType
-  const defaultOrder = transform.length ? transform : scriptNodes.map((e) => e.data?.id)
+  const defaultOrder = transform.length ? transform : scriptNodes.map((scriptNode) => scriptNode.data?.id)
 
   const allTransformScripts: DryRunResults<PolicyOperation, Script>[] = []
   for (const scriptId of defaultOrder) {
-    const script = scriptNodes.find((e) => e.data?.id === scriptId)
+    const script = scriptNodes.find((scriptNode) => scriptNode.data?.id === scriptId)
     if (script) {
       const scriptName = script.node as Node<FunctionData>
 
@@ -224,9 +224,10 @@ export const loadBehaviorPolicyPipelines = (
   behaviorPolicy: BehaviorPolicy,
   transitionNode: Node,
   schemas: Schema[],
-  scripts: Script[],
-  store: WorkspaceState & WorkspaceAction
+  scripts: Script[]
 ) => {
+  const newNodes: (NodeAddChange | Connection)[] = []
+
   for (const transition of behaviorPolicy.onTransitions || []) {
     const activeTransition = getActiveTransition(transition)
     if (!activeTransition)
@@ -236,8 +237,10 @@ export const loadBehaviorPolicyPipelines = (
     if (!transitionOnEvent)
       throw new Error(i18n.t('datahub:error.loading.operation.noTransition', { source: activeTransition }) as string)
 
-    loadPipeline(transitionNode, transitionOnEvent.pipeline, null, schemas, scripts, store)
+    const pipelines = loadPipeline(transitionNode, transitionOnEvent.pipeline, null, schemas, scripts)
+    newNodes.push(...pipelines)
   }
+  return newNodes
 }
 
 export const loadDataPolicyPipelines = (
