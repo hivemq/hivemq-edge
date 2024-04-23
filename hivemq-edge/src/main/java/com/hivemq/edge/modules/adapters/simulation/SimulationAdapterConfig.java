@@ -18,8 +18,8 @@ package com.hivemq.edge.modules.adapters.simulation;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ public class SimulationAdapterConfig extends AbstractPollingProtocolAdapterConfi
     @ModuleConfigField(title = "Subscriptions",
                        description = "List of subscriptions for the simulation",
                        required = true)
-    private @NotNull List<AdapterSubscription> adapterSubscriptions = new ArrayList<>();
+    private @NotNull List<AdapterSubscriptionImpl> adapterSubscriptions = new ArrayList<>();
 
     @JsonProperty("minValue")
     @ModuleConfigField(title = "Min. Generated Value",
@@ -52,16 +52,16 @@ public class SimulationAdapterConfig extends AbstractPollingProtocolAdapterConfi
 
     public SimulationAdapterConfig(
             final @NotNull String id,
-            final @NotNull List<AdapterSubscription> adapterSubscriptions) {
+            final @NotNull List<AdapterSubscriptionImpl> adapterSubscriptions) {
         this.id = id;
         this.adapterSubscriptions = adapterSubscriptions;
     }
 
-    public void setSubscriptions(List<AdapterSubscription> adapterSubscriptions) {
+    public void setSubscriptions(List<AdapterSubscriptionImpl> adapterSubscriptions) {
         this.adapterSubscriptions = adapterSubscriptions;
     }
 
-    public @NotNull List<AdapterSubscription> getSubscriptions() {
+    public @NotNull List<AdapterSubscriptionImpl> getSubscriptions() {
         return adapterSubscriptions;
     }
 
