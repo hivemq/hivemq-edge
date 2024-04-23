@@ -20,7 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.hivemq.edge.model.TypeIdentifier;
+import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
 import com.hivemq.edge.modules.adapters.data.DataPoint;
@@ -40,8 +40,9 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventUtils;
-import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.api.events.model.EventBuilder;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.edge.modules.config.AdapterSubscription.MessageHandlingOptions;
 import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -197,7 +198,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         this.errorMessage = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
         if(sendEvent){
             eventService.fireEvent(
-                    eventBuilder(Event.SEVERITY.ERROR).
+                    eventBuilder(EventImpl.SEVERITY.ERROR).
                             withMessage(String.format("Adapter '%s' encountered an error.",
                             adapterConfig.getId())).
                             withPayload(EventUtils.generateErrorPayload(throwable)).
@@ -345,7 +346,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         setErrorConnectionStatus(throwable, null);
         output.failStart(throwable, throwable.getMessage());
         eventService.fireEvent(
-                eventBuilder(Event.SEVERITY.CRITICAL).
+                eventBuilder(EventImpl.SEVERITY.CRITICAL).
                         withPayload(EventUtils.generateErrorPayload(throwable)).
                         withMessage("Error starting adapter").build());
     }
@@ -354,7 +355,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         setRuntimeStatus(RuntimeStatus.STARTED);
         output.startedSuccessfully("adapter start OK");
         eventService.fireEvent(
-                eventBuilder(Event.SEVERITY.INFO).
+                eventBuilder(EventImpl.SEVERITY.INFO).
                         withMessage(String.format("Adapter '%s' started OK.",
                         adapterConfig.getId())).build());
     }
@@ -362,7 +363,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected void onStop(){
         setRuntimeStatus(RuntimeStatus.STOPPED);
         eventService.fireEvent(
-                eventBuilder(Event.SEVERITY.INFO).
+                eventBuilder(EventImpl.SEVERITY.INFO).
                         withMessage(String.format("Adapter '%s' stopped OK.",
                         adapterConfig.getId())).build());
     }
@@ -382,11 +383,11 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
 
     protected abstract CompletableFuture<Void> stopInternal();
 
-    protected EventBuilder eventBuilder(final @NotNull Event.SEVERITY severity){
-        EventBuilder builder = new EventBuilder();
+    protected EventBuilder eventBuilder(final @NotNull EventImpl.SEVERITY severity){
+        EventBuilder builder = new EventBuilderImpl();
         builder.withTimestamp(System.currentTimeMillis());
-        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterConfig.getId()));
-        builder.withAssociatedObject(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER_TYPE,
+        builder.withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER, adapterConfig.getId()));
+        builder.withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER_TYPE,
                 adapterInformation.getProtocolId()));
         builder.withSeverity(severity);
         return builder;

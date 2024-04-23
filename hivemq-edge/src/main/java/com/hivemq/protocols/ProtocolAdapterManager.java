@@ -25,7 +25,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
-import com.hivemq.edge.model.TypeIdentifier;
+import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
@@ -38,8 +38,9 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.events.EventService;
-import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.api.events.model.EventBuilder;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -322,7 +323,7 @@ public class ProtocolAdapterManager {
                     }
                     return true;
                 } finally {
-                    eventService.fireEvent(eventBuilder(Event.SEVERITY.WARN,
+                    eventService.fireEvent(eventBuilder(EventImpl.SEVERITY.WARN,
                             adapterInstance.get().getAdapter()).withMessage(String.format(
                             "Adapter \"%s\" was deleted from the system permanently.",
                             adapterInstance.get().getAdapter().getId())).build());
@@ -509,12 +510,12 @@ public class ProtocolAdapterManager {
     }
 
     protected EventBuilder eventBuilder(
-            final @NotNull Event.SEVERITY severity, final @NotNull ProtocolAdapter adapter) {
+            final @NotNull EventImpl.SEVERITY severity, final @NotNull ProtocolAdapter adapter) {
         Preconditions.checkNotNull(severity);
         Preconditions.checkNotNull(adapter);
-        EventBuilder builder = new EventBuilder();
+        EventBuilder builder = new EventBuilderImpl();
         builder.withTimestamp(System.currentTimeMillis());
-        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapter.getId()));
+        builder.withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER, adapter.getId()));
         builder.withSeverity(severity);
         return builder;
     }

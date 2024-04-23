@@ -16,6 +16,7 @@
 package com.hivemq.bridge.mqtt;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -49,10 +50,12 @@ import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.model.TypeIdentifier;
+import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventUtils;
-import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.api.events.model.EventBuilder;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
 import com.hivemq.util.StoreTypeUtil;
@@ -66,6 +69,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -126,13 +130,13 @@ public class BridgeMqttClient {
             forwarders.forEach(MqttForwarder::drainQueue);
         });
 
-        builder.addConnectedListener(context -> eventService.fireEvent(eventBuilder(Event.SEVERITY.INFO).withMessage(
+        builder.addConnectedListener(context -> eventService.fireEvent(eventBuilder(EventImpl.SEVERITY.INFO).withMessage(
                 String.format("Bridge '%s' connected", getBridge().getId())).build()));
 
         //-- Fire a system event for the various logging layers
         builder.addDisconnectedListener(context -> eventService.fireEvent(eventBuilder(context.getCause() == null ?
-                Event.SEVERITY.INFO :
-                Event.SEVERITY.ERROR).withMessage(String.format("Bridge '%s' disconnected", getBridge().getId()))
+                EventImpl.SEVERITY.INFO :
+                EventImpl.SEVERITY.ERROR).withMessage(String.format("Bridge '%s' disconnected", getBridge().getId()))
                 .withPayload(EventUtils.generateErrorPayload(context.getCause()))
                 .build()));
 
@@ -335,11 +339,22 @@ public class BridgeMqttClient {
         return connected.get();
     }
 
-    protected @NotNull EventBuilder eventBuilder(final @NotNull Event.SEVERITY severity) {
-        EventBuilder builder = new EventBuilder();
+    protected @NotNull EventBuilder eventBuilder(final @NotNull EventImpl.SEVERITY severity) {
+        EventBuilder builder = new EventBuilderImpl();
         builder.withTimestamp(System.currentTimeMillis());
-        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.BRIDGE, bridge.getId()));
+        builder.withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.BRIDGE, bridge.getId()));
         builder.withSeverity(severity);
         return builder;
     }
+
+    /**
+     * Generate a globally unique type identifier in the namespace supplied
+     *
+     * @return The generated ID
+     */
+    static TypeIdentifier generate(@NotNull TypeIdentifierImpl.TYPE type) {
+        Preconditions.checkNotNull(type);
+        return new TypeIdentifierImpl(type, UUID.randomUUID().toString());
+    }
+
 }

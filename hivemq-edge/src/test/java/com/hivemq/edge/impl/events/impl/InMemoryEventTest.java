@@ -18,6 +18,8 @@ package com.hivemq.edge.impl.events.impl;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.api.events.model.EventBuilder;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import com.hivemq.edge.modules.api.events.model.EventImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -128,8 +130,8 @@ public class InMemoryEventTest {
     private static void fill(InMemoryEventImpl impl, int count){
         int initialSize = impl.readEvents(null, null).size();
         for (int i = 0; i < count; i++){
-            EventBuilder builder = new EventBuilder().withMessage((initialSize + i) + "").
-                    withSeverity(Event.SEVERITY.INFO).withTimestamp(System.currentTimeMillis());
+            EventBuilder builder = new EventBuilderImpl().withMessage((initialSize + i) + "").
+                    withSeverity(EventImpl.SEVERITY.INFO).withTimestamp(System.currentTimeMillis());
             impl.storeEvent(builder.build());
             try {
                 Thread.sleep(1);

@@ -27,7 +27,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.events.EventUtils;
-import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -88,7 +88,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
                 publishFuture.thenAccept(publishReturnCode -> {
                     protocolAdapterMetricsHelper.incrementReadPublishSuccess();
                     if(publishCount.incrementAndGet() == 1){
-                        eventService.fireEvent(eventBuilder(Event.SEVERITY.INFO).
+                        eventService.fireEvent(eventBuilder(EventImpl.SEVERITY.INFO).
                                 withMessage(String.format("Adapter took first sample to be published to '%s'", sample.getTopic())).
                                 withPayload(EventUtils.generateJsonPayload(json)).build());
                     }

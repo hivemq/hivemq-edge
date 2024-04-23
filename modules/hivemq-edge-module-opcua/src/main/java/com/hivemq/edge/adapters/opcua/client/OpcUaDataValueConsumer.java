@@ -19,14 +19,15 @@ import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaStringPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
-import com.hivemq.edge.model.TypeIdentifier;
+import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.Event;
-import com.hivemq.edge.modules.api.events.model.EventBuilder;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -101,9 +102,9 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
 
             if (firstMessageReceived.compareAndSet(false, true)) {
-                final Event event = new EventBuilder().withTimestamp(System.currentTimeMillis())
-                        .withSource(TypeIdentifier.create(TypeIdentifier.TYPE.ADAPTER, adapterId))
-                        .withSeverity(Event.SEVERITY.INFO)
+                final Event event = new EventBuilderImpl().withTimestamp(System.currentTimeMillis())
+                        .withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER, adapterId))
+                        .withSeverity(EventImpl.SEVERITY.INFO)
                         .withMessage(String.format("Adapter took first sample to be published to '%s'",
                                 subscription.getMqttTopic()))
                         .withPayload(EventUtils.generateJsonPayload(convertedPayload))

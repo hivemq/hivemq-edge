@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.opcua;
 
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
-import com.hivemq.api.model.core.Payload;
+import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
@@ -28,7 +28,7 @@ import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
@@ -225,8 +225,8 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
         });
         opcUaClient.addFaultListener(serviceFault -> {
             eventService.fireEvent(
-                    eventBuilder(Event.SEVERITY.ERROR).
-                            withPayload(Payload.fromObject(objectMapper, serviceFault.getResponseHeader().getServiceResult())).
+                    eventBuilder(EventImpl.SEVERITY.ERROR).
+                            withPayload(PayloadImpl.fromObject(objectMapper, serviceFault.getResponseHeader().getServiceResult())).
                             withMessage("A Service Fault was Detected.").build());
         });
         setRuntimeStatus(RuntimeStatus.STARTED);

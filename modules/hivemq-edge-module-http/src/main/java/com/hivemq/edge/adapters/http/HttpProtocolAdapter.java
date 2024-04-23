@@ -20,7 +20,7 @@ import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.model.impl.AbstractPollingProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -193,7 +193,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
                             log.debug("Invalid JSON data was [{}]", bodyData);
                         }
                         eventService.fireEvent(
-                                eventBuilder(Event.SEVERITY.WARN).
+                                eventBuilder(EventImpl.SEVERITY.WARN).
                                         withMessage(String.format("Http response on adapter '%s' could not be parsed as JSON data.",
                                         adapterConfig.getId())).build());
                         throw new RuntimeException("unable to parse JSON data from HTTP response");
