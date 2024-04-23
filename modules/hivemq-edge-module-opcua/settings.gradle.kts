@@ -11,4 +11,4 @@ pluginManagement {
 }
 
 
-includeBuild("../../hivemq-edge")
+includeBuild("../../hivemq-edge-adapter-lib")

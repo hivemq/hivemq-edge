@@ -16,25 +16,25 @@
 package com.hivemq.edge.adapters.http.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
+import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
  * @author HiveMQ Adapter Generator
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class HttpData extends ProtocolAdapterDataSample {
+public class HttpData extends ProtocolAdapterDataSampleImpl {
 
     private final String requestUrl;
     private final String contentType;
     private int httpStatusCode;
 
     public HttpData(
-            AbstractProtocolAdapterConfig.Subscription subscription, final String requestUrl,
+            AdapterSubscription adapterSubscription, final String requestUrl,
             final int httpStatusCode,
             final @NotNull String contentType) {
-        super(subscription);
+        super(adapterSubscription);
         this.requestUrl = requestUrl;
         this.contentType = contentType;
         this.httpStatusCode = httpStatusCode;

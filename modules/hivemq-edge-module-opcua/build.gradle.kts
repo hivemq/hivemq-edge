@@ -43,6 +43,8 @@ repositories {
 
 dependencies {
     compileOnly("com.hivemq:hivemq-edge-extension-sdk")
+    compileOnly("com.hivemq:hivemq-edge-adapter-lib")
+
     runtimeOnly("com.google.guava:guava:${property("guava.version")}")
     implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     implementation("org.eclipse.milo:sdk-client:${property("milo.version")}")
@@ -51,6 +53,7 @@ dependencies {
 
     testImplementation("com.hivemq:hivemq-edge")
     testImplementation("com.hivemq:hivemq-edge-extension-sdk")
+    testImplementation("com.hivemq:hivemq-edge-adapter-lib")
     testImplementation("org.eclipse.milo:sdk-server:${property("milo.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")

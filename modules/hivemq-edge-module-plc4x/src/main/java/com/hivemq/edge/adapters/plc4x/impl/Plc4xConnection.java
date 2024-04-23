@@ -127,7 +127,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
                 plcConnection.isConnected();
     }
 
-    public CompletableFuture<? extends PlcReadResponse> read(final @NotNull T.Subscription subscription) {
+    public CompletableFuture<? extends PlcReadResponse> read(final @NotNull Plc4xAdapterConfig.AdapterSubscription subscription) {
         lazyConnectionCheck();
         if (!plcConnection.getMetadata().isReadSupported()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type read-blocking"));
@@ -146,7 +146,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
 
 
 
-    public CompletableFuture<? extends PlcSubscriptionResponse> subscribe(final @NotNull T.Subscription subscription, final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
+    public CompletableFuture<? extends PlcSubscriptionResponse> subscribe(final @NotNull Plc4xAdapterConfig.AdapterSubscription subscription, final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
         lazyConnectionCheck();
         if (!plcConnection.getMetadata().isSubscribeSupported()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type cannot subscribe"));
@@ -190,5 +190,5 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
     /**
      * Each adapter type will have its own address format. The implementation should provide the defaults
      */
-    protected abstract String getTagAddressForSubscription(T.Subscription subscription);
+    protected abstract String getTagAddressForSubscription(Plc4xAdapterConfig.AdapterSubscription subscription);
 }

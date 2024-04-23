@@ -16,29 +16,12 @@
 package com.hivemq.edge.adapters.plc4x.types.ab;
 
 import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.impl.Plc4xConnection;
 import com.hivemq.edge.adapters.plc4x.impl.Plc4xDataUtils;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;
-import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.math.BigInteger;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -74,7 +57,7 @@ public class ABProtocolAdapter extends AbstractPlc4xAdapter<ABAdapterConfig> {
             }
 
             @Override
-            protected String getTagAddressForSubscription(final Plc4xAdapterConfig.Subscription subscription) {
+            protected String getTagAddressForSubscription(final Plc4xAdapterConfig.AdapterSubscription subscription) {
                 return createTagAddressForSubscription(subscription);
             }
         };

@@ -101,12 +101,12 @@ public class S7ProtocolAdapterTest {
         }
 
         @Override
-        public String createTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull Subscription subscription) {
+        public String createTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull AdapterSubscription subscription) {
             return super.createTagAddressForSubscription(subscription);
         }
     }
 
-    private static class S7TestSub extends Plc4xAdapterConfig.Subscription {
+    private static class S7TestSub extends Plc4xAdapterConfig.AdapterSubscription {
 
         private final String address;
         private final Plc4xDataType.DATA_TYPE type;

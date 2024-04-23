@@ -21,7 +21,7 @@ import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.model.impl.AbstractPollingProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.events.model.Event;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.http.core.HttpConstants;
@@ -208,7 +208,7 @@ public class HttpProtocolAdapter extends AbstractPollingProtocolAdapter<HttpAdap
             }
         }
         HttpData data = new HttpData(
-                new AbstractProtocolAdapterConfig.Subscription(config.getDestination(), config.getQos(), null),
+                new AdapterSubscriptionImpl(config.getDestination(), config.getQos(), null),
                 adapterConfig.getUrl(),
                 response.statusCode(),
                 responseContentType);

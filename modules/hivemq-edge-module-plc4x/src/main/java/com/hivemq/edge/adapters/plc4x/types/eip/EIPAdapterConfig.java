@@ -50,7 +50,7 @@ public class EIPAdapterConfig extends Plc4xAdapterConfig {
 
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions", description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<EIPAdapterConfig.Subscription> subscriptions = new ArrayList<>();
+    private @NotNull List<AdapterSubscription> subscriptions = new ArrayList<>();
 
     @Override
     public int getPort() {
@@ -59,7 +59,7 @@ public class EIPAdapterConfig extends Plc4xAdapterConfig {
 
     @NotNull
     @Override
-    public List<EIPAdapterConfig.Subscription> getSubscriptions() {
+    public List<AdapterSubscription> getSubscriptions() {
         return subscriptions;
     }
 
@@ -82,7 +82,7 @@ public class EIPAdapterConfig extends Plc4xAdapterConfig {
 
     @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "destination", "qos"})
     @JsonIgnoreProperties({"dataType"})
-    public static class Subscription extends Plc4xAdapterConfig.Subscription {
+    public static class AdapterSubscription extends Plc4xAdapterConfig.AdapterSubscription {
         @JsonProperty("eipDataType")
         @ModuleConfigField(title = "Data Type", description = "The expected data type of the tag", enumDisplayValues = {
                 "Bool",

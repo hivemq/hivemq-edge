@@ -18,8 +18,8 @@ package com.hivemq.edge.modules.adapters.simulation;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
+import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ public class SimulationAdapterConfig extends AbstractPollingProtocolAdapterConfi
     @ModuleConfigField(title = "Subscriptions",
                        description = "List of subscriptions for the simulation",
                        required = true)
-    private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+    private @NotNull List<AdapterSubscription> adapterSubscriptions = new ArrayList<>();
 
     @JsonProperty("minValue")
     @ModuleConfigField(title = "Min. Generated Value",
@@ -52,17 +52,17 @@ public class SimulationAdapterConfig extends AbstractPollingProtocolAdapterConfi
 
     public SimulationAdapterConfig(
             final @NotNull String id,
-            final @NotNull List<Subscription> subscriptions) {
+            final @NotNull List<AdapterSubscription> adapterSubscriptions) {
         this.id = id;
-        this.subscriptions = subscriptions;
+        this.adapterSubscriptions = adapterSubscriptions;
     }
 
-    public void setSubscriptions(List<Subscription> subscriptions) {
-        this.subscriptions = subscriptions;
+    public void setSubscriptions(List<AdapterSubscription> adapterSubscriptions) {
+        this.adapterSubscriptions = adapterSubscriptions;
     }
 
-    public @NotNull List<Subscription> getSubscriptions() {
-        return subscriptions;
+    public @NotNull List<AdapterSubscription> getSubscriptions() {
+        return adapterSubscriptions;
     }
 
     public int getMinValue() {

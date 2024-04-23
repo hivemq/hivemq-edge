@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
                        description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<? extends Subscription> subscriptions = new ArrayList<>();
+    private @NotNull List<? extends AdapterSubscription> subscriptions = new ArrayList<>();
 
     public Plc4xAdapterConfig() {
     }
@@ -68,12 +68,12 @@ public class Plc4xAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         return publishChangedDataOnly;
     }
 
-    public @NotNull List<? extends Subscription> getSubscriptions() {
+    public @NotNull List<? extends AdapterSubscription> getSubscriptions() {
         return subscriptions;
     }
 
     @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "destination", "qos"})
-    public static class Subscription extends AbstractProtocolAdapterConfig.Subscription {
+    public static class AdapterSubscription extends AdapterSubscriptionImpl {
 
         @JsonProperty(value = "tagName", required = true)
         @ModuleConfigField(title = "Tag Name",

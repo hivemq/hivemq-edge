@@ -21,8 +21,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.UserProperty;
 import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -65,7 +66,7 @@ public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
             description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+    private @NotNull List<AdapterSubscription> subscriptions = new ArrayList<>();
 
     public ModbusAdapterConfig() {
     }
@@ -86,7 +87,7 @@ public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         return host;
     }
 
-    public @NotNull List<Subscription> getSubscriptions() {
+    public @NotNull List<AdapterSubscription> getSubscriptions() {
         return subscriptions;
     }
 
@@ -94,7 +95,7 @@ public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         return timeout;
     }
 
-    public static class Subscription extends AbstractProtocolAdapterConfig.Subscription {
+    public static class AdapterSubscription extends AdapterSubscriptionImpl {
         @JsonProperty("addressRange")
         @JsonAlias("holding-registers")
         @ModuleConfigField(title = "Holding Registers",
@@ -102,7 +103,7 @@ public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         private @NotNull AddressRange addressRange;
 
         @JsonCreator
-        public Subscription(
+        public AdapterSubscription(
                 @JsonProperty("destination") @Nullable final String destination,
                 @JsonProperty("qos") final int qos,
                 @JsonProperty("addressRange") @NotNull final AddressRange addressRange,
@@ -118,8 +119,8 @@ public class ModbusAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         @Override
         public boolean equals(final Object o) {
             if (this == o) return true;
-            if (!(o instanceof Subscription)) return false;
-            Subscription that = (Subscription) o;
+            if (!(o instanceof AdapterSubscription)) return false;
+            AdapterSubscription that = (AdapterSubscription) o;
             return Objects.equals(addressRange, that.addressRange);
         }
 

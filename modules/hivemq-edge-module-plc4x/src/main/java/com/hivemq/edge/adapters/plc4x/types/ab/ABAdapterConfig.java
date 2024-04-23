@@ -36,7 +36,7 @@ public class ABAdapterConfig extends Plc4xAdapterConfig {
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
                        description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<? extends Subscription> subscriptions = new ArrayList<>();
+    private @NotNull List<? extends AdapterSubscription> subscriptions = new ArrayList<>();
 
     public String getStation() {
         return station;
@@ -67,7 +67,7 @@ public class ABAdapterConfig extends Plc4xAdapterConfig {
 
     @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "destination", "qos"})
     @JsonIgnoreProperties({"dataType"})
-    public static class Subscription extends Plc4xAdapterConfig.Subscription {
+    public static class AdapterSubscription extends Plc4xAdapterConfig.AdapterSubscription {
         @JsonProperty("abDataType")
         @ModuleConfigField(title = "Data Type",
                            description = "The expected data type of the tag",

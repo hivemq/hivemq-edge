@@ -15,13 +15,13 @@
  */
 package com.hivemq.edge.adapters.modbus.model;
 
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
+import com.hivemq.edge.modules.config.AdapterSubscription;
 
 /**
  * @author Simon L Johnson
  */
-public class ModBusData extends ProtocolAdapterDataSample {
+public class ModBusData extends ProtocolAdapterDataSampleImpl {
 
     public enum TYPE {
         COILS,
@@ -31,8 +31,8 @@ public class ModBusData extends ProtocolAdapterDataSample {
 
     private final TYPE type;
 
-    public ModBusData(AbstractProtocolAdapterConfig.Subscription subscription, final TYPE type) {
-        super(subscription);
+    public ModBusData(AdapterSubscription adapterSubscription, final TYPE type) {
+        super(adapterSubscription);
         this.type = type;
     }
 

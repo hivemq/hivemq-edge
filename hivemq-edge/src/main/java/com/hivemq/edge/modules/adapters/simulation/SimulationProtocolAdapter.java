@@ -17,10 +17,11 @@ package com.hivemq.edge.modules.adapters.simulation;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.model.impl.AbstractPollingPerSubscriptionAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
@@ -44,8 +45,8 @@ public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAda
     protected CompletableFuture<ProtocolAdapterStartOutput> startInternal( final @NotNull ProtocolAdapterStartOutput output) {
         try {
             if (adapterConfig.getSubscriptions() != null) {
-                for (SimulationAdapterConfig.Subscription subscription : adapterConfig.getSubscriptions()) {
-                    startPolling(new SubscriptionSampler(adapterConfig, subscription));
+                for (AdapterSubscription adapterSubscription : adapterConfig.getSubscriptions()) {
+                    startPolling(new SubscriptionSampler(adapterConfig, adapterSubscription));
                 }
             }
             return CompletableFuture.completedFuture(output);
@@ -62,9 +63,9 @@ public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAda
     @Override
     protected CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(
             final SimulationAdapterConfig config,
-            final AbstractProtocolAdapterConfig.Subscription subscription) {
+            final AdapterSubscription adapterSubscription) {
         ProtocolAdapterDataSample dataSample =
-                new ProtocolAdapterDataSample(subscription);
+                new ProtocolAdapterDataSampleImpl(adapterSubscription);
 
         dataSample.addDataPoint("sample", ThreadLocalRandom.current().nextDouble(
                 Math.min(config.getMinValue(), config.getMaxValue()),
