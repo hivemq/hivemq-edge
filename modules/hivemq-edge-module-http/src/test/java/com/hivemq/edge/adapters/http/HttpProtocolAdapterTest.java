@@ -8,7 +8,8 @@ import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.AdapterSubscription;
+import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -54,8 +55,8 @@ class HttpProtocolAdapterTest {
 
     @Test
     void test_captureDataSample_expectedPayloadPresent() throws ExecutionException, InterruptedException {
-        final AbstractProtocolAdapterConfig.Subscription subscription =
-                new AbstractProtocolAdapterConfig.Subscription("topic", 2, null);
+        final AdapterSubscription subscription =
+                new AdapterSubscriptionImpl("topic", 2, null);
         final HttpData httpData = new HttpData(subscription, "http://localhost:8080", 200, "text/plain");
         httpData.addDataPoint(RESPONSE_DATA, "hello world");
 
@@ -69,8 +70,8 @@ class HttpProtocolAdapterTest {
     @Test
     void test_captureDataSample_errorPayloadFormat()
             throws ExecutionException, InterruptedException {
-        final AbstractProtocolAdapterConfig.Subscription subscription =
-                new AbstractProtocolAdapterConfig.Subscription("topic", 2, null);
+        final AdapterSubscription subscription =
+                new AdapterSubscriptionImpl("topic", 2, null);
         final HttpData httpData = new HttpData(subscription, "http://localhost:8080", 200, "text/plain");
         final HttpData payload = new HttpData(null, "http://localhost:8080", 404, "text/plain");
         httpData.addDataPoint(RESPONSE_DATA, payload);
