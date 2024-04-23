@@ -17,17 +17,17 @@ package com.hivemq.adapter;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
-import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
+import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
+import com.hivemq.edge.modules.config.impl.UserPropertyImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,7 +58,7 @@ public class AdapterConfigModelTest {
 
         AdapterConfiguration entity = new AdapterConfiguration();
         entity.subscriptions = new ArrayList<>();
-        entity.subscriptions.add(new AbstractProtocolAdapterConfig.Subscription("some/path",1,List.of(new AbstractProtocolAdapterConfig.UserProperty("propertyName", "propertyValue"))));
+        entity.subscriptions.add(new AdapterSubscriptionImpl("some/path",1,List.of(new UserPropertyImpl("propertyName", "propertyValue"))));
         String marhslaled = mapper.writeValueAsString(entity);
         System.err.println(marhslaled);
 
@@ -95,6 +95,6 @@ public class AdapterConfigModelTest {
         @ModuleConfigField(title = "Subscriptions",
                            description = "List of subscriptions for the simulation",
                            required = true)
-        private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+        private @NotNull List<AdapterSubscription> subscriptions = new ArrayList<>();
     }
 }
