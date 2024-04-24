@@ -1,8 +1,8 @@
 import React, { FC, useCallback, useMemo, useRef, useState } from 'react'
-import ReactFlow, { Connection, Node, Panel, ReactFlowInstance, ReactFlowProvider, XYPosition } from 'reactflow'
+import ReactFlow, { Connection, Node, ReactFlowInstance, ReactFlowProvider, XYPosition } from 'reactflow'
 import { Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Box, Text } from '@chakra-ui/react'
+import { Box } from '@chakra-ui/react'
 
 import styles from './PolicyEditor.module.scss'
 
@@ -14,6 +14,7 @@ import Minimap from '@datahub/components/controls/Minimap.tsx'
 import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
 import ToolboxSelectionListener from '@datahub/components/controls/ToolboxSelectionListener.tsx'
 import { CopyPasteListener } from '@datahub/components/controls/CopyPasteListener.tsx'
+import CopyPasteStatus from '@datahub/components/controls/CopyPasteStatus.tsx'
 
 const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
@@ -89,13 +90,7 @@ const PolicyEditor: FC = () => {
         >
           <Box role="toolbar" aria-label={t('workspace.aria-label') as string} aria-controls="edge-workspace-canvas">
             <ToolboxSelectionListener />
-            <CopyPasteListener
-              render={(copiedNodes) => (
-                <Panel position="bottom-center">
-                  {!!copiedNodes.length && <Text>{copiedNodes.length} elements copied!</Text>}
-                </Panel>
-              )}
-            />
+            <CopyPasteListener render={(copiedNodes) => <CopyPasteStatus nbCopied={copiedNodes.length} />} />
             <DesignerToolbox />
             <CanvasControls />
             <Minimap />
