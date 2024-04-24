@@ -1,12 +1,12 @@
 import { FC } from 'react'
 import { ControlProps, Panel, ReactFlowState, useReactFlow, useStore, useStoreApi } from 'reactflow'
-
+import { useTranslation } from 'react-i18next'
 import { ButtonGroup } from '@chakra-ui/react'
 import { FaLock, FaLockOpen, FaMinus, FaPlus } from 'react-icons/fa6'
 import { LuBoxSelect } from 'react-icons/lu'
-import { useTranslation } from 'react-i18next'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import DesignerCheatSheet from '@datahub/components/controls/DesignerCheatSheet.tsx'
 
 import 'reactflow/dist/style.css'
 
@@ -47,6 +47,7 @@ const CanvasControls: FC<ControlProps> = ({ onInteractiveChange }) => {
           onClick={onToggleInteractivity}
           aria-label={t('workspace.controls.toggleInteractivity') as string}
         />
+        <DesignerCheatSheet />
       </ButtonGroup>
     </Panel>
   )
