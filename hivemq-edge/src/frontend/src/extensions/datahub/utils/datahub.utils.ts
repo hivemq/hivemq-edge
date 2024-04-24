@@ -6,3 +6,9 @@ export const SCRIPT_FUNCTION_LATEST = 'latest'
 export const ANIMATION = {
   FIT_VIEW_DURATION_MS: 500,
 }
+
+export const DATAHUB_HOTKEY = {
+  COPY: 'Meta+C',
+  PASTE: 'Meta+V',
+  ESCAPE: 'ESC',
+}
