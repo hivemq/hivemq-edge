@@ -5,6 +5,7 @@ import { useHotkeys } from 'react-hotkeys-hook'
 
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { DATAHUB_HOTKEY } from '@datahub/utils/datahub.utils.ts'
+import { DesignerStatus } from '@datahub/types.ts'
 
 const DEFAULT_POSITION_DELTA: XYPosition = { x: 100, y: 75 }
 
@@ -13,7 +14,7 @@ interface CopyPasteListenerProps {
 }
 
 export const CopyPasteListener: FC<CopyPasteListenerProps> = ({ render }) => {
-  const { nodes, edges, onNodesChange, onEdgesChange } = useDataHubDraftStore()
+  const { status, nodes, edges, onNodesChange, onEdgesChange } = useDataHubDraftStore()
   const [copiedNodes, setCopiedNodes] = useState<Node[]>([])
   const [delta, setDelta] = useState<XYPosition>(DEFAULT_POSITION_DELTA)
 
@@ -25,14 +26,14 @@ export const CopyPasteListener: FC<CopyPasteListenerProps> = ({ render }) => {
 
   useHotkeys(DATAHUB_HOTKEY.COPY, () => {
     const selectedNodes = nodes.filter((node) => node.selected)
-    if (selectedNodes.length) {
+    if (selectedNodes.length && status !== DesignerStatus.LOADED) {
       setCopiedNodes(selectedNodes)
     } else setCopiedNodes([])
     setDelta(DEFAULT_POSITION_DELTA)
   })
 
   useHotkeys(DATAHUB_HOTKEY.PASTE, () => {
-    if (!copiedNodes.length) return
+    if (!copiedNodes.length && status !== DesignerStatus.LOADED) return
 
     const ids = copiedNodes.map((node) => node.id)
     const newIds = copiedNodes.reduce<Record<string, string>>((acc, node) => {
