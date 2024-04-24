@@ -75,6 +75,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.43.9",
+    "react-hotkeys-hook": "^4.5.0",
     "react-i18next": "^12.3.0",
     "react-icons": "^5.0.1",
     "react-router-dom": "^6.11.2",
