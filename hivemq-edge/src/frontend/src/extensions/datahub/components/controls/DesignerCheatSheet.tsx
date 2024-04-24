@@ -29,7 +29,7 @@ const DesignerCheatSheet: FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   const groupedKeys = useMemo(() => {
-    const groups = DATAHUB_HOTKEY_CONTEXT.reduce<Record<string, HotKeyItem[]>>((acc, item) => {
+    return DATAHUB_HOTKEY_CONTEXT.reduce<Record<string, HotKeyItem[]>>((acc, item) => {
       if (!acc[item.category]) {
         acc[item.category] = []
       }
@@ -37,7 +37,6 @@ const DesignerCheatSheet: FC = () => {
       acc[item.category].push(item)
       return acc
     }, {})
-    return groups
   }, [])
 
   return (
