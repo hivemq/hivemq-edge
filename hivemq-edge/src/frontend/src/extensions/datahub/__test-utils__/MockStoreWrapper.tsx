@@ -46,7 +46,11 @@ interface MockChecksStoreWrapperProps {
 
 export const MockChecksStoreWrapper: FC<MockChecksStoreWrapperProps> = ({ config, children }) => {
   const { setNode, setReport } = usePolicyChecksStore()
-  const { onAddNodes } = useDataHubDraftStore()
+  const { onAddNodes, reset } = useDataHubDraftStore()
+
+  useEffect(() => {
+    reset()
+  }, [reset])
 
   useEffect(() => {
     const { node, report } = config
