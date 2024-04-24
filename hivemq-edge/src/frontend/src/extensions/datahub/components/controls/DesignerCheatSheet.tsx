@@ -41,11 +41,7 @@ const DesignerCheatSheet: FC = () => {
 
   return (
     <>
-      <IconButton
-        icon={<LuBadgeHelp />}
-        onClick={onOpen}
-        aria-label={t('workspace.controls.toggleInteractivity') as string}
-      />
+      <IconButton icon={<LuBadgeHelp />} onClick={onOpen} aria-label={t('workspace.controls.shortcuts') as string} />
       <Modal isOpen={isOpen} onClose={onClose} size="2xl" isCentered motionPreset="scale" scrollBehavior="inside">
         <ModalOverlay />
         <ModalContent>

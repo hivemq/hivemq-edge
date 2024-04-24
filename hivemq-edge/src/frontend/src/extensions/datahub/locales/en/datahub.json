@@ -100,7 +100,8 @@
       "zoomIOut": "Zoom out",
       "fitView": "Fit to the canvas",
       "toggleInteractivity": "Lock the canvas",
-      "clear": "Clear the Designer"
+      "clear": "Clear the Designer",
+      "shortcuts": "Help using the Designer"
     },
     "toolbox": {
       "aria-label": "Policy controls",
