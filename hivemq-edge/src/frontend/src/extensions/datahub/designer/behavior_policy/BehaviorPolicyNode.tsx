@@ -27,7 +27,7 @@ export const BehaviorPolicyNode: FC<NodeProps<BehaviorPolicyData>> = (props) => 
         </VStack>
       </NodeWrapper>
       <CustomHandle type="target" position={Position.Left} id={BehaviorPolicyData.Handle.CLIENT_FILTER} />
-      <CustomHandle type="source" position={Position.Right} id="transitions" />
+      <CustomHandle type="source" position={Position.Right} id={BehaviorPolicyData.Handle.TRANSITIONS} />
     </>
   )
 }

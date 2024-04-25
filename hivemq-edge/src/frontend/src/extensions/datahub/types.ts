@@ -285,6 +285,7 @@ export interface BehaviorPolicyData extends DataHubNodeData {
 export namespace BehaviorPolicyData {
   export enum Handle {
     CLIENT_FILTER = 'clientFilter',
+    TRANSITIONS = 'transitions',
   }
 }
 
