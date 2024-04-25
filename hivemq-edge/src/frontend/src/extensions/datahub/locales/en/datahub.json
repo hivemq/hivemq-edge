@@ -157,7 +157,11 @@
       "validation_onSuccess": "onSuccess",
       "validation_onError": "onError",
       "behavior_serial.will": "onWill",
-      "behavior_serial.publish": "onPublish"
+      "behavior_serial.publish": "onPublish",
+      "operation_deserialiser": "deserializer",
+      "operation_serialiser": "serializer",
+      "operation_function": "functions",
+      "operation_schema": "schemas"
     },
     "panel": {
       "submit": "Submit"
