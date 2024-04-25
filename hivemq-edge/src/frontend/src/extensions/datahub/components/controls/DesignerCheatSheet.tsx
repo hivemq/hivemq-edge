@@ -41,7 +41,12 @@ const DesignerCheatSheet: FC = () => {
 
   return (
     <>
-      <IconButton icon={<LuBadgeHelp />} onClick={onOpen} aria-label={t('workspace.controls.shortcuts') as string} />
+      <IconButton
+        icon={<LuBadgeHelp />}
+        onClick={onOpen}
+        aria-label={t('workspace.controls.shortcuts') as string}
+        data-testid="canvas-control-help"
+      />
       <Modal isOpen={isOpen} onClose={onClose} size="2xl" isCentered motionPreset="scale" scrollBehavior="inside">
         <ModalOverlay />
         <ModalContent>
