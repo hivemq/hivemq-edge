@@ -36,6 +36,8 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, route, w
     boxShadow: '0 0 10px 2px rgba(0,121,36, 0.75), 0 1px 1px rgb(0 0 0 / 15%)',
   }
 
+  const isDryRun = data.dryRunStatus !== undefined && data.dryRunStatus !== PolicyDryRunStatus.IDLE
+
   return (
     <Card
       variant="elevated"
@@ -52,7 +54,7 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, route, w
         setInternalSelection(true)
       }}
     >
-      {data.dryRunStatus !== PolicyDryRunStatus.IDLE && (
+      {isDryRun && (
         <Avatar
           position="absolute"
           left="-1rem"
