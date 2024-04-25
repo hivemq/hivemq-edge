@@ -282,7 +282,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                             InternalConfigurations.ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT.get();
                     if (!continuing) {
                         if (log.isInfoEnabled()) {
-                            log.info(
+                            log.warn(
                                     "Detected Bad System Process {} In Sampler {} - Terminating Process to Maintain Health ({}ms Runtime)",
                                     errorCountTotal,
                                     sampler.getAdapterId(),
@@ -304,6 +304,11 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     if (maxErrorsBeforeRemoval < 0) {
                         continuing = true;
                     } else {
+                        log.info(
+                                "Detected '{}' recent errors when sampling. This exceeds the configured limit of '{}'. Sampling for adapter with id '{}' gets stopped.",
+                                errorCountTotal,
+                                maxErrorsBeforeRemoval,
+                                sampler.getAdapterId());
                         continuing = errorCountTotal < maxErrorsBeforeRemoval;
                     }
                     if (log.isDebugEnabled()) {
