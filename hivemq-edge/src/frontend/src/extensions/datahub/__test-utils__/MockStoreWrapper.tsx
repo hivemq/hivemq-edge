@@ -16,7 +16,11 @@ interface MockStoreWrapperProps {
 }
 
 export const MockStoreWrapper: FC<MockStoreWrapperProps> = ({ config, children }) => {
-  const { onAddNodes, onAddEdges } = useDataHubDraftStore()
+  const { onAddNodes, onAddEdges, reset } = useDataHubDraftStore()
+
+  useEffect(() => {
+    reset()
+  }, [reset])
 
   useEffect(() => {
     const { initialState } = config
