@@ -1,4 +1,4 @@
-import { Connection, Node } from 'reactflow'
+import { Connection, Edge, getOutgoers, Node } from 'reactflow'
 import { v4 as uuidv4 } from 'uuid'
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
 
@@ -78,18 +78,41 @@ export const validConnections: ConnectionValidity = {
   [DataHubNodeType.FUNCTION]: [[DataHubNodeType.OPERATION, OperationData.Handle.FUNCTION]],
 }
 
-export const isValidPolicyConnection = (connection: Connection, nodes: Node[]) => {
+export const isValidPolicyConnection = (connection: Connection, nodes: Node[], edges: Edge[]) => {
   const source = nodes.find((node) => node.id === connection.source)
   const destination = nodes.find((node) => node.id === connection.target)
 
-  if (!source) {
+  const hasCycle = (node: Node, visited = new Set()) => {
+    if (visited.has(node.id)) return false
+
+    visited.add(node.id)
+
+    for (const outgoer of getOutgoers(node, nodes, edges)) {
+      if (outgoer.id === connection.source) return true
+      if (hasCycle(outgoer, visited)) return true
+    }
+  }
+
+  if (!source || !destination) {
     return false
   }
-  const { type } = source
-  if (!type) {
+
+  if (!source.type) {
+    // node that are not Data Hub types are illegal
     return false
   }
-  const connectionValidators = validConnections[type]
+
+  if (destination.id === source.id) {
+    // self-connection are illegal
+    return false
+  }
+
+  if (hasCycle(destination)) {
+    // cycle are illegal
+    return false
+  }
+
+  const connectionValidators = validConnections[source.type]
   if (!connectionValidators) {
     return false
   }

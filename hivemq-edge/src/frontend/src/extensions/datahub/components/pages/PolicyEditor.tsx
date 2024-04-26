@@ -24,7 +24,10 @@ const PolicyEditor: FC = () => {
 
   const nodeTypes = useMemo(() => CustomNodeTypes, [])
 
-  const checkValidity = useCallback((connection: Connection) => isValidPolicyConnection(connection, nodes), [nodes])
+  const checkValidity = useCallback(
+    (connection: Connection) => isValidPolicyConnection(connection, nodes, edges),
+    [edges, nodes]
+  )
 
   const onDragOver = useCallback((event: React.DragEvent<HTMLElement> | undefined) => {
     if (event) {
