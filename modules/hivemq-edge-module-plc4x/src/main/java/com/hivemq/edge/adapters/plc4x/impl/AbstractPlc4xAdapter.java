@@ -51,14 +51,14 @@ import java.util.concurrent.CompletableFuture;
  * @author Simon L Johnson
  */
 public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
-        extends AbstractPollingPerSubscriptionAdapter<T, ProtocolAdapterDataSample<T>> {
+        extends AbstractPollingPerSubscriptionAdapter<T, ProtocolAdapterDataSample> {
 
     protected static final String TAG_ADDRESS_TYPE_SEP = ":";
     private final Logger log = LoggerFactory.getLogger(getClass());
     protected final static @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
     private final @NotNull Object lock = new Object();
     protected volatile @Nullable Plc4xConnection connection;
-    private final @NotNull Map<String, ProtocolAdapterDataSample<T>> lastSamples = new HashMap<>(1);
+    private final @NotNull Map<String, ProtocolAdapterDataSample> lastSamples = new HashMap<>(1);
 
     public enum ReadType {
         Read,
@@ -177,7 +177,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
 
 
     @Override
-    protected @NotNull CompletableFuture<ProtocolAdapterDataSample<T>> onSamplerInvoked(
+    protected @NotNull CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(
             final T config, final AdapterSubscription adapterSubscription) {
         if (connection.isConnected()) {
             try {
@@ -194,10 +194,10 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
 
 
     @Override
-    protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull ProtocolAdapterDataSample<T> data) {
+    protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull ProtocolAdapterDataSample data) {
         boolean publishData = true;
         if (adapterConfig.getPublishChangedDataOnly()) {
-            ProtocolAdapterDataSample<T> previousSample =
+            ProtocolAdapterDataSample previousSample =
                     lastSamples.put(((Plc4xAdapterConfig.AdapterSubscription) data.getSubscription()).getTagAddress(),
                             data);
             if (previousSample != null) {
@@ -258,7 +258,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         return Objects.toString(o, null);
     }
 
-    protected @NotNull ProtocolAdapterDataSample<T> processReadResponse(
+    protected @NotNull ProtocolAdapterDataSample processReadResponse(
             final @NotNull Plc4xAdapterConfig.AdapterSubscription subscription,
             final @NotNull PlcReadResponse readEvent) {
         //it is possible that the read response does not contain any values at all, leading to unexpected error states, especially with EIP adapter
@@ -276,10 +276,10 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         return new ProtocolAdapterDataSampleImpl<>(subscription);
     }
 
-    protected @NotNull ProtocolAdapterDataSample<T> processPlcFieldData(
+    protected @NotNull ProtocolAdapterDataSample processPlcFieldData(
             final @NotNull Plc4xAdapterConfig.AdapterSubscription subscription,
             final @NotNull List<Pair<String, PlcValue>> l) {
-        ProtocolAdapterDataSample<T> data = new ProtocolAdapterDataSampleImpl<>(subscription);
+        ProtocolAdapterDataSample data = new ProtocolAdapterDataSampleImpl<>(subscription);
         //-- For every tag value associated with the sample, write a data point to be published
         if (!l.isEmpty()) {
             l.forEach(pair -> data.addDataPoint(pair.getLeft(), convertTagValue(pair.getLeft(), pair.getValue())));

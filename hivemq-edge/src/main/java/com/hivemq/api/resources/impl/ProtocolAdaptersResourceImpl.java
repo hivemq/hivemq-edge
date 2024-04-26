@@ -308,8 +308,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     protected Status getStatusInternal(final @NotNull String adapterId) {
         Optional<ProtocolAdapterWrapper> optionalAdapterInstance = protocolAdapterManager.getAdapterById(adapterId);
-        return optionalAdapterInstance.map(protocolAdapterWrapper ->
-                AdapterStatusModelConversionUtils.getAdapterStatus(protocolAdapterWrapper.getAdapter())).orElseGet(() -> Status.unknown(Status.RUNTIME_STATUS.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
+        return optionalAdapterInstance.map(AdapterStatusModelConversionUtils::getAdapterStatus).orElseGet(() -> Status.unknown(Status.RUNTIME_STATUS.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
     }
 
     protected void validateAdapterSchema(
@@ -342,7 +341,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         ImmutableList.Builder<Status> builder = new ImmutableList.Builder<>();
         Map<String, ProtocolAdapterWrapper> adapters = protocolAdapterManager.getProtocolAdapters();
         for (ProtocolAdapterWrapper instance : adapters.values()) {
-            builder.add(AdapterStatusModelConversionUtils.getAdapterStatus(instance.getAdapter()));
+            builder.add(AdapterStatusModelConversionUtils.getAdapterStatus(instance));
         }
         return Response.status(200).entity(new StatusList(builder.build())).build();
     }

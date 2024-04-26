@@ -34,7 +34,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Simon L Johnson
  */
 public class ProtocolAdapterDataSampleImpl<T extends AbstractProtocolAdapterConfig>
-        implements ProtocolAdapterDataSample<T> {
+        implements ProtocolAdapterDataSample {
 
     protected @NotNull Long timestamp = System.currentTimeMillis();
     protected @NotNull AdapterSubscription adapterSubscription;

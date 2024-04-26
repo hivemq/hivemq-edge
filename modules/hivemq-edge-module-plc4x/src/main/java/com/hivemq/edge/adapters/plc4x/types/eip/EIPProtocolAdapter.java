@@ -68,7 +68,7 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
     }
 
     @Override
-    protected CompletableFuture<ProtocolAdapterDataSample<EIPAdapterConfig>> onSamplerInvoked(
+    protected CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(
             final EIPAdapterConfig config, final AdapterSubscription adapterSubscription) {
         if (!(adapterSubscription instanceof EIPAdapterConfig.AdapterSubscription)) {
             throw new IllegalStateException("Subscription configuration is not of correct type Ethernet/IP");
@@ -77,7 +77,7 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
             try {
                 CompletableFuture<? extends PlcReadResponse> request =
                         connection.read((Plc4xAdapterConfig.AdapterSubscription) adapterSubscription);
-                return request.thenApply(response -> (ProtocolAdapterDataSample<EIPAdapterConfig>) processReadResponse((EIPAdapterConfig.AdapterSubscription) adapterSubscription,
+                return request.thenApply(response -> (ProtocolAdapterDataSample) processReadResponse((EIPAdapterConfig.AdapterSubscription) adapterSubscription,
                         response)).exceptionally(throwable -> {
                     if (throwable instanceof InterruptedException ||
                             throwable.getCause() instanceof InterruptedException) {

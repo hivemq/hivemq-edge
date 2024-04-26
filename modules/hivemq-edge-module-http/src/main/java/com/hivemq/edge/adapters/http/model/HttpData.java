@@ -15,29 +15,46 @@
  */
 package com.hivemq.edge.adapters.http.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
+import com.hivemq.edge.modules.adapters.data.DataPoint;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.edge.modules.adapters.factories.DataPointFactory;
 import com.hivemq.edge.modules.config.AdapterSubscription;
+import com.hivemq.edge.modules.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author HiveMQ Adapter Generator
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class HttpData extends ProtocolAdapterDataSampleImpl {
+public class HttpData implements ProtocolAdapterDataSample {
 
     private final String requestUrl;
     private final String contentType;
     private int httpStatusCode;
+    private final @NotNull DataPointFactory dataPointFactory;
+    protected @NotNull AdapterSubscription adapterSubscription;
+
+    //-- Handle multiple tags in the same sample
+    protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
+    private @NotNull Long timestamp = System.currentTimeMillis();
 
     public HttpData(
-            AdapterSubscription adapterSubscription, final String requestUrl,
+            final @NotNull AdapterSubscription adapterSubscription,
+            final @NotNull String requestUrl,
             final int httpStatusCode,
-            final @NotNull String contentType) {
-        super(adapterSubscription);
+            final @NotNull String contentType,
+            final @NotNull DataPointFactory dataPointFactory) {
+        this.adapterSubscription = adapterSubscription;
         this.requestUrl = requestUrl;
         this.contentType = contentType;
         this.httpStatusCode = httpStatusCode;
+        this.dataPointFactory = dataPointFactory;
     }
 
 
@@ -53,5 +70,55 @@ public class HttpData extends ProtocolAdapterDataSampleImpl {
         return httpStatusCode;
     }
 
+    @Override
+    @JsonIgnore
+    public @NotNull AdapterSubscription getSubscription() {
+        return adapterSubscription;
+    }
+
+    @Override
+    @JsonIgnore
+    public @Nullable String getTopic() {
+        return adapterSubscription.getDestination();
+    }
+
+    @Override
+    @JsonIgnore
+    public int getQos() {
+        return adapterSubscription.getQos();
+    }
+
+    @Override
+    @JsonIgnore
+    public @NotNull Long getTimestamp() {
+        return timestamp;
+    }
+
+    @Override
+    @JsonIgnore
+    public @NotNull List<UserProperty> getUserProperties() {
+        return adapterSubscription.getUserProperties();
+    }
+
+    @Override
+    public void setTimestamp(final @NotNull Long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    @Override
+    public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
+        dataPoints.add(dataPointFactory.create(tagName, tagValue));
+    }
+
+    @Override
+    public void setDataPoints(@NotNull List<DataPoint> list) {
+        this.dataPoints = list;
+    }
+
+    @Override
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public @NotNull List<DataPoint> getDataPoints() {
+        return dataPoints;
+    }
 
 }

@@ -63,6 +63,7 @@ public class ABProtocolAdapter extends AbstractPlc4xAdapter<ABAdapterConfig> {
         };
     }
 
+
         /*
     The connection string looks as follows: ab-eth://<ip-address>/<station>
     The field address: N<file>:<offset></bitnumber>:<datatype>[<numberofbytes>]. The following data types are available at the moment: SINBLEBIT (requires bitnumber to be set), WORD (2 byte integer), DWORD (4 byte integer), INTEGER (returns the number of bytes requested as an array, for other data types <numberofbytes> will be ignored).

@@ -71,7 +71,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
                     protocolAdapterPollingService::stopPolling));
     }
 
-    protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull U sample){
+    protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull ProtocolAdapterDataSample sample){
         Preconditions.checkNotNull(sample);
         Preconditions.checkNotNull(sample.getTopic());
         Preconditions.checkArgument(sample.getQos() <= 2 && sample.getQos() >= 0, "QoS needs to be a valid Quality-Of-Service value (0,1,2)");
@@ -114,7 +114,7 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
      * Method is invoked by the sampling engine on the schedule determined by the configuration
      * supplied.
      */
-    protected abstract @NotNull CompletableFuture<U> onSamplerInvoked(@NotNull T config) ;
+    protected abstract @NotNull CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(@NotNull T config) ;
 
     /**
      * Hook Method is invoked by the sampling engine when the scheduling engine is removing the
@@ -149,11 +149,11 @@ public abstract class AbstractPollingProtocolAdapter <T extends AbstractPollingP
         }
 
         @Override
-        public @NotNull CompletableFuture<U> execute() {
+        public @NotNull CompletableFuture<ProtocolAdapterDataSample> execute() {
             if(Thread.currentThread().isInterrupted()){
                 return CompletableFuture.failedFuture(new InterruptedException());
             }
-            CompletableFuture<U> data = onSamplerInvoked(config);
+            CompletableFuture<ProtocolAdapterDataSample> data = onSamplerInvoked(config);
             data.thenApply(d -> captureDataSample(d));
             return data;
         }

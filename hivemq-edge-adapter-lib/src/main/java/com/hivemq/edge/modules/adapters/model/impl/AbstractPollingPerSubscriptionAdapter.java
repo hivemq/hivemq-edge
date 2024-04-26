@@ -39,12 +39,12 @@ public abstract class AbstractPollingPerSubscriptionAdapter<T extends AbstractPo
     }
 
     @Override
-    protected CompletableFuture<U> onSamplerInvoked(final @NotNull T config) {
+    protected CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(final @NotNull T config) {
         return CompletableFuture.failedFuture(new UnsupportedOperationException("Subscription sampler should be used."));
 
     }
 
-    protected abstract @NotNull CompletableFuture<U> onSamplerInvoked(@NotNull T config, @NotNull AdapterSubscription adapterSubscription) ;
+    protected abstract @NotNull CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(@NotNull T config, @NotNull AdapterSubscription adapterSubscription) ;
 
     protected class SubscriptionSampler extends Sampler {
 
@@ -57,11 +57,11 @@ public abstract class AbstractPollingPerSubscriptionAdapter<T extends AbstractPo
         }
 
         @Override
-        public CompletableFuture<U> execute() {
+        public @NotNull CompletableFuture<ProtocolAdapterDataSample> execute() {
             if(Thread.currentThread().isInterrupted()){
                 return CompletableFuture.failedFuture(new InterruptedException());
             }
-            CompletableFuture<U> future = onSamplerInvoked(config, adapterSubscription);
+            CompletableFuture<ProtocolAdapterDataSample> future = onSamplerInvoked(config, adapterSubscription);
             future.thenApply(d -> captureDataSample(d));
             return future;
         }

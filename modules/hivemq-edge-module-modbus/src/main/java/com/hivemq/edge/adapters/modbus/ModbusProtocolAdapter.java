@@ -20,6 +20,7 @@ import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.DataPoint;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.model.NodeTree;
 import com.hivemq.edge.modules.adapters.model.NodeType;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
@@ -43,7 +44,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull Object lock = new Object();
     private volatile @Nullable IModbusClient modbusClient;
-    private @Nullable Map<ModbusAdapterConfig.AdapterSubscription, ModBusData> lastSamples = new HashMap<>();
+    private @Nullable Map<ModbusAdapterConfig.AdapterSubscription, ProtocolAdapterDataSample> lastSamples = new HashMap<>();
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -117,7 +118,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected @NotNull CompletableFuture<?> captureDataSample(@NotNull final ModBusData data) {
+    protected @NotNull CompletableFuture<?> captureDataSample(@NotNull final ProtocolAdapterDataSample data) {
         boolean publishData = true;
         if (log.isTraceEnabled()) {
             log.trace("Captured ModBus data with {} data points.", data.getDataPoints().size());
@@ -125,7 +126,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
         if (adapterConfig.getPublishChangedDataOnly()) {
             ModbusAdapterConfig.AdapterSubscription subscription =
                     (ModbusAdapterConfig.AdapterSubscription) data.getSubscription();
-            ModBusData previousSample = lastSamples.put(subscription, data);
+            ModBusData previousSample = (ModBusData) lastSamples.put(subscription, data);
             if (previousSample != null) {
                 List<DataPoint> previousSampleDataPoints = previousSample.getDataPoints();
                 List<DataPoint> currentSamplePoints = data.getDataPoints();
@@ -171,7 +172,7 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected @NotNull CompletableFuture<ModBusData> onSamplerInvoked(
+    protected @NotNull CompletableFuture onSamplerInvoked(
             final @NotNull ModbusAdapterConfig config, final @NotNull AdapterSubscription adapterSubscription) {
 
         //-- If a previously linked job has terminally disconnected the client

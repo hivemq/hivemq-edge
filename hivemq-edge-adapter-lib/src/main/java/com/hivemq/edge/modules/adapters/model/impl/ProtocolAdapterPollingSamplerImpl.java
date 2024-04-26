@@ -31,7 +31,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author Simon L Johnson
  */
-public abstract class ProtocolAdapterPollingSamplerImpl<U extends ProtocolAdapterDataSample> implements ProtocolAdapterPollingSampler<U> {
+public abstract class ProtocolAdapterPollingSamplerImpl<U extends ProtocolAdapterDataSample>
+        implements ProtocolAdapterPollingSampler {
 
     private final long initialDelay;
     private final long period;
@@ -43,7 +44,12 @@ public abstract class ProtocolAdapterPollingSamplerImpl<U extends ProtocolAdapte
     private final Date created;
     private @Nullable ScheduledFuture<?> future;
 
-    public ProtocolAdapterPollingSamplerImpl(final String adapterId, final long initialDelay, final long period, final @NotNull TimeUnit unit, final int maxErrorsBeforeRemoval) {
+    public ProtocolAdapterPollingSamplerImpl(
+            final String adapterId,
+            final long initialDelay,
+            final long period,
+            final @NotNull TimeUnit unit,
+            final int maxErrorsBeforeRemoval) {
         Preconditions.checkNotNull(adapterId);
         Preconditions.checkNotNull(unit);
         this.adapterId = adapterId;
@@ -87,8 +93,12 @@ public abstract class ProtocolAdapterPollingSamplerImpl<U extends ProtocolAdapte
 
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final ProtocolAdapterPollingSamplerImpl that = (ProtocolAdapterPollingSamplerImpl) o;
         return uuid.equals(that.uuid);
     }

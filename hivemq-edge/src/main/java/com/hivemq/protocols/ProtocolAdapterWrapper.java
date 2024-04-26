@@ -20,6 +20,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 /**
  * Wraps the protocol adapter instance, the factory that created it, the information of the adapter type and the configuration object that it was instantiated
@@ -31,6 +32,7 @@ public class ProtocolAdapterWrapper {
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull CustomConfig configObject;
+    protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
             final @NotNull ProtocolAdapter adapter,
@@ -41,6 +43,10 @@ public class ProtocolAdapterWrapper {
         this.adapterFactory = adapterFactory;
         this.adapterInformation = adapterInformation;
         this.configObject = configObject;
+    }
+
+    protected void initStartAttempt(){
+        lastStartAttemptTime = System.currentTimeMillis();
     }
 
     public @NotNull ProtocolAdapter getAdapter() {
@@ -59,5 +65,7 @@ public class ProtocolAdapterWrapper {
         return configObject;
     }
 
-
+    public @NotNull Long getTimeOfLastStartAttempt() {
+        return lastStartAttemptTime;
+    }
 }

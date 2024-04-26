@@ -81,7 +81,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
     protected @NotNull T adapterConfig;
     protected @Nullable Long lastStartAttemptTime;
     protected @Nullable String errorMessage;
-    protected @Nullable final Object lock = new Object();
+    protected @NotNull final Object lock = new Object();
     protected @NotNull AtomicReference<RuntimeStatus> runtimeStatus =
             new AtomicReference<>(RuntimeStatus.STOPPED);
     protected @NotNull AtomicReference<ConnectionStatus> connectionStatus =
@@ -114,7 +114,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
      * @param data - The data you wish to wrap into the standard JSONB envelope
      * @return a valid JSON document encoded to UTF-8 with the supplied value wrapped as an attribute on the envelope
      */
-    public @NotNull List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(final @NotNull ProtocolAdapterDataSample<T> data) {
+    public @NotNull List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(final @NotNull ProtocolAdapterDataSample data) {
         Preconditions.checkNotNull(data);
         List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
         //-- Only include the timestamp if the settings say so
@@ -149,7 +149,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         return new TagSample(includeTagName ? dataPoint.getTagName() : null, dataPoint.getTagValue());
     }
 
-    protected @NotNull AbstractProtocolAdapterJsonPayload decoratePayloadMessage(ProtocolAdapterDataSample<T> sample, @NotNull AbstractProtocolAdapterJsonPayload payload){
+    protected @NotNull AbstractProtocolAdapterJsonPayload decoratePayloadMessage(ProtocolAdapterDataSample sample, @NotNull AbstractProtocolAdapterJsonPayload payload){
         if(sample.getUserProperties() != null && !sample.getUserProperties().isEmpty()){
             payload.setUserProperties(sample.getUserProperties());
         }
@@ -204,11 +204,6 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
                             withPayload(EventUtils.generateErrorPayload(throwable)).
                             build());
         }
-    }
-
-    @Override
-    public Long getTimeOfLastStartAttempt() {
-        return lastStartAttemptTime;
     }
 
     @Override

@@ -15,16 +15,19 @@
  */
 package com.hivemq.edge.adapters.http;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.http.HttpConstants;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
 
 @JsonPropertyOrder({
         "url",
@@ -37,7 +40,7 @@ import java.util.List;
         "assertResponseIsJson",
         "httpPublishSuccessStatusCodeOnly",
         "httpHeaders"})
-public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
+public class HttpAdapterConfig implements CustomConfig {
 
     public enum HttpMethod {
         GET,
@@ -62,6 +65,32 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
             return contentType;
         }
     }
+
+    @JsonProperty(value = "id", required = true)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    protected @NotNull String id;
+
+    @JsonProperty("pollingIntervalMillis")
+    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
+    @ModuleConfigField(title = "Polling Interval [ms]",
+                       description = "Time in millisecond that this endpoint will be polled",
+                       numberMin = 1,
+                       required = true,
+                       defaultValue = "1000")
+    private int pollingIntervalMillis = 1000; //1 second
+
+    @JsonProperty("maxPollingErrorsBeforeRemoval")
+    @ModuleConfigField(title = "Max. Polling Errors",
+                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
+                       numberMin = 3,
+                       defaultValue = "10")
+    private int maxPollingErrorsBeforeRemoval = DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL;
 
     @JsonProperty("url")
     @ModuleConfigField(title = "URL", description = "The url of the http request you would like to make",
@@ -179,6 +208,19 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
 
     public boolean isAllowUntrustedCertificates() {
         return allowUntrustedCertificates;
+    }
+
+    @Override
+    public @NotNull String getId() {
+        return id;
+    }
+
+    public int getPollingIntervalMillis() {
+        return pollingIntervalMillis;
+    }
+
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return maxPollingErrorsBeforeRemoval;
     }
 
     public static class HttpHeader {

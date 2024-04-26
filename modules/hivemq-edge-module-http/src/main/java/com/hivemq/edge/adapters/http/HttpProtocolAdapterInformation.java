@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.http;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -26,8 +25,7 @@ import java.util.List;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapterInformation 
-    extends AbstractProtocolAdapterInformation {
+public class HttpProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new HttpProtocolAdapterInformation();
 
@@ -55,8 +53,26 @@ public class HttpProtocolAdapterInformation
     }
 
     @Override
+    public @NotNull String getUrl() {
+        // TODO fix
+        return "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#" + getProtocolId();
+
+    }
+
+    @Override
     public String getVersion() {
-        return super.getVersion() + " (BETA)";
+        // TODO fix
+        return "super.getVersion()" + " (BETA)";
+    }
+
+    @Override
+    public @NotNull String getLogoUrl() {
+        return "/images/http-icon.png";
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HiveMQ";
     }
 
     @Override

@@ -159,5 +159,4 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
 
         return formattedAddress;
     }
-
 }

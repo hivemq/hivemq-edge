@@ -19,6 +19,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
@@ -238,11 +239,11 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                             if (execute) {
                                 runCount.incrementAndGet();
                                 currentThread.setName(originalName + " " + sampler.getAdapterId());
-                                CompletableFuture<?> sampleFuture = sampler.execute();
+                                CompletableFuture<? extends ProtocolAdapterDataSample> sampleFuture = sampler.execute();
                                 if (sampleFuture != null) {
                                     sampleFuture.get();
                                     if (log.isTraceEnabled()) {
-                                        log.trace("Sampler {} Successfully Invoked in {}ms",
+                                        log.trace("Sampler {} successfully invoked in {}ms",
                                                 sampler.getAdapterId(),
                                                 System.currentTimeMillis() - startedTimeMillis);
                                     }
@@ -315,7 +316,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                         log.debug("Application Error {} In Sampler {} -> {}",
                                 errorCountTotal,
                                 sampler.getAdapterId(),
-                                e.getMessage());
+                                e.getMessage(), e);
                     }
                 }
                 try {
