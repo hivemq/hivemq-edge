@@ -91,6 +91,7 @@ export const isValidPolicyConnection = (connection: Connection, nodes: Node[], e
       if (outgoer.id === connection.source) return true
       if (hasCycle(outgoer, visited)) return true
     }
+    return false
   }
 
   if (!source || !destination) {
