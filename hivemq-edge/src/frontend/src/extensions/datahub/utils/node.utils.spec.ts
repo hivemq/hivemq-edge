@@ -2,7 +2,7 @@ import { describe, expect } from 'vitest'
 import { DataHubNodeType, DataPolicyData, OperationData, SchemaType, StrategyType, ValidatorType } from '../types.ts'
 import { getNodeId, getNodePayload, isValidPolicyConnection } from './node.utils.ts'
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
-import { Node } from 'reactflow'
+import { Edge, Node } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 describe('getNodeId', () => {
@@ -70,7 +70,7 @@ describe('getNodePayload', () => {
 describe('isValidPolicyConnection', () => {
   it('should not be a valid connection with an unknown source', async () => {
     expect(
-      isValidPolicyConnection({ source: 'source', target: 'target', sourceHandle: null, targetHandle: null }, [])
+      isValidPolicyConnection({ source: 'source', target: 'target', sourceHandle: null, targetHandle: null }, [], [])
     ).toBeFalsy()
   })
 
@@ -82,9 +82,11 @@ describe('isValidPolicyConnection', () => {
       position: { x: 0, y: 0 },
     }
     expect(
-      isValidPolicyConnection({ source: 'node-id', target: 'target', sourceHandle: null, targetHandle: null }, [
-        MOCK_NODE_DATA_POLICY,
-      ])
+      isValidPolicyConnection(
+        { source: 'node-id', target: 'target', sourceHandle: null, targetHandle: null },
+        [MOCK_NODE_DATA_POLICY],
+        []
+      )
     ).toBeFalsy()
   })
 
@@ -97,9 +99,11 @@ describe('isValidPolicyConnection', () => {
       position: { x: 0, y: 0 },
     }
     expect(
-      isValidPolicyConnection({ source: 'node-id', target: 'target', sourceHandle: null, targetHandle: null }, [
-        MOCK_NODE_DATA_POLICY,
-      ])
+      isValidPolicyConnection(
+        { source: 'node-id', target: 'target', sourceHandle: null, targetHandle: null },
+        [MOCK_NODE_DATA_POLICY],
+        []
+      )
     ).toBeFalsy()
   })
 
@@ -120,10 +124,11 @@ describe('isValidPolicyConnection', () => {
       position: { x: 0, y: 0 },
     }
     expect(
-      isValidPolicyConnection({ source: 'node-id', target: 'node-operation', sourceHandle: null, targetHandle: null }, [
-        MOCK_NODE_DATA_POLICY,
-        MOCK_NODE_OPERATION,
-      ])
+      isValidPolicyConnection(
+        { source: 'node-id', target: 'node-operation', sourceHandle: null, targetHandle: null },
+        [MOCK_NODE_DATA_POLICY, MOCK_NODE_OPERATION],
+        []
+      )
     ).toBeTruthy()
   })
 
@@ -151,7 +156,8 @@ describe('isValidPolicyConnection', () => {
           sourceHandle: null,
           targetHandle: OperationData.Handle.SCHEMA,
         },
-        [MOCK_NODE_DATA_POLICY, MOCK_NODE_OPERATION]
+        [MOCK_NODE_DATA_POLICY, MOCK_NODE_OPERATION],
+        []
       )
     ).toBeTruthy()
 
@@ -163,7 +169,75 @@ describe('isValidPolicyConnection', () => {
           sourceHandle: null,
           targetHandle: DataPolicyData.Handle.ON_SUCCESS,
         },
-        [MOCK_NODE_DATA_POLICY, MOCK_NODE_OPERATION]
+        [MOCK_NODE_DATA_POLICY, MOCK_NODE_OPERATION],
+        []
+      )
+    ).toBeFalsy()
+  })
+
+  it('should not be a valid connection if self-referencing', async () => {
+    const MOCK_NODE_OPERATION: Node = {
+      id: 'node-operation',
+      type: DataHubNodeType.OPERATION,
+      data: {},
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+    expect(
+      isValidPolicyConnection(
+        {
+          source: 'node-operation',
+          target: 'node-operation',
+          sourceHandle: null,
+          targetHandle: null,
+        },
+        [MOCK_NODE_OPERATION],
+        []
+      )
+    ).toBeFalsy()
+  })
+
+  it('should not be a valid connection if creating a cycle', async () => {
+    const MOCK_NODE_OPERATION: Node = {
+      id: 'node-operation',
+      type: DataHubNodeType.OPERATION,
+      data: {},
+      ...MOCK_DEFAULT_NODE,
+      position: { x: 0, y: 0 },
+    }
+
+    const nodes: Node[] = [
+      MOCK_NODE_OPERATION,
+      { ...MOCK_NODE_OPERATION, id: 'node-operation-1' },
+      { ...MOCK_NODE_OPERATION, id: 'node-operation-2' },
+    ]
+    const edges: Edge[] = [
+      { id: '1', source: 'node-operation', target: 'node-operation-1', sourceHandle: null, targetHandle: null },
+      { id: '1', source: 'node-operation-1', target: 'node-operation-2', sourceHandle: null, targetHandle: null },
+    ]
+
+    expect(
+      isValidPolicyConnection(
+        {
+          source: 'node-operation-1',
+          target: 'node-operation',
+          sourceHandle: null,
+          targetHandle: null,
+        },
+        nodes,
+        edges
+      )
+    ).toBeFalsy()
+    expect(
+      isValidPolicyConnection(
+        {
+          source: 'node-operation-2',
+          target: 'node-operation',
+          sourceHandle: null,
+          targetHandle: null,
+        },
+        nodes,
+        edges
       )
     ).toBeFalsy()
   })
