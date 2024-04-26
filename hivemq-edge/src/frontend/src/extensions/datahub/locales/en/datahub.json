@@ -127,7 +127,9 @@
         "goPublish": "Go to Publish"
       },
       "group": {
-        "pipeline": "Pipeline",
+        "integration": {
+          "edge": "Edge Integration"
+        },
         "dataPolicy": "Data Policy",
         "behaviorPolicy": "Behavior Policy",
         "operation": "Operation"

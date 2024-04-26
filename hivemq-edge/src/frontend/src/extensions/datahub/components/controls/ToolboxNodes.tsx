@@ -23,9 +23,9 @@ export const ToolboxNodes: FC<DesignerToolBoxProps> = () => {
       aria-label={t('workspace.toolbox.aria-label') as string}
       backgroundColor="var(--chakra-colors-chakra-body-bg)"
     >
-      <ButtonGroup variant="outline" size="sm" aria-labelledby="group-pipeline">
+      <ButtonGroup variant="outline" size="sm" aria-labelledby="group-integrations">
         <VStack alignItems="flex-start">
-          <Text id="group-pipeline">{t('workspace.toolbox.group.pipeline')}</Text>
+          <Text id="group-integrations">{t('workspace.toolbox.group.integration.edge')}</Text>
           <HStack>
             <Tool nodeType={DataHubNodeType.TOPIC_FILTER} isDisabled={isDraftEmpty || !isEditEnabled} />
             <Tool nodeType={DataHubNodeType.CLIENT_FILTER} isDisabled={isDraftEmpty || !isEditEnabled} />
