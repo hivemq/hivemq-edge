@@ -151,6 +151,7 @@ const PolicyEditor: FC = () => {
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
           onConnect={onConnect}
+          connectionLineComponent={ConnectionLine}
           onInit={setReactFlowInstance}
           fitView
           snapToGrid
