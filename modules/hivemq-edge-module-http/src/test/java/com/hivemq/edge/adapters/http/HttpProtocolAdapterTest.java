@@ -1,6 +1,5 @@
 package com.hivemq.edge.adapters.http;
 
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.data.DataPoint;
@@ -32,7 +31,6 @@ import static org.mockito.Mockito.when;
 
 class HttpProtocolAdapterTest {
 
-    private final @NotNull MetricRegistry metricRegistry = new MetricRegistry();
     private final @NotNull HttpAdapterConfig httpAdapterConfig = new HttpAdapterConfig("adapterId");
     private final @NotNull ProtocolAdapterPublishService publishService = mock(ProtocolAdapterPublishService.class);
     private final @NotNull ModuleServices moduleServices = mock(ModuleServices.class);
@@ -42,13 +40,15 @@ class HttpProtocolAdapterTest {
 
     private @NotNull HttpProtocolAdapter httpProtocolAdapter;
 
-    private final @NotNull ProtocolAdapterInput protocolAdapterInput = mock();
+    @SuppressWarnings("unchecked")
+    private final @NotNull ProtocolAdapterInput<HttpAdapterConfig> protocolAdapterInput = mock();
 
 
     @BeforeEach
     void setUp() {
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
-
+        when(protocolAdapterInput.getConfig()).thenReturn(httpAdapterConfig);
+        when(protocolAdapterInput.getVersion()).thenReturn("someVersion");
         when(moduleServices.adapterPublishService()).thenReturn(publishService);
         when(moduleServices.eventService()).thenReturn(mock(EventService.class));
         //noinspection unchecked
@@ -59,17 +59,17 @@ class HttpProtocolAdapterTest {
         protocolAdapterPublishBuilder.withAdapter(httpProtocolAdapter);
         when(publishService.publish()).thenReturn(protocolAdapterPublishBuilder);
 
-        httpProtocolAdapter = new HttpProtocolAdapter(HttpProtocolAdapterInformation.INSTANCE,
-                httpAdapterConfig,
-                metricRegistry,
-                "someVersion",
-                protocolAdapterInput);
+        httpProtocolAdapter = new HttpProtocolAdapter(HttpProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
     }
 
     @Test
     void test_captureDataSample_expectedPayloadPresent() throws ExecutionException, InterruptedException {
         final AdapterSubscription subscription = new AdapterSubscriptionImpl("topic", 2, null);
-        final HttpData httpData = new HttpData(new AdapterSubscriptionImpl(), "http://localhost:8080", 200, "text/plain", new TestDataPointFactory());
+        final HttpData httpData = new HttpData(subscription,
+                "http://localhost:8080",
+                200,
+                "text/plain",
+                new TestDataPointFactory());
         httpData.addDataPoint(RESPONSE_DATA, "hello world");
 
         httpProtocolAdapter.poll().get();
@@ -82,8 +82,16 @@ class HttpProtocolAdapterTest {
     @Test
     void test_captureDataSample_errorPayloadFormat() throws ExecutionException, InterruptedException {
         final AdapterSubscription subscription = new AdapterSubscriptionImpl("topic", 2, null);
-        final HttpData httpData = new HttpData(new AdapterSubscriptionImpl(),"http://localhost:8080", 200, "text/plain", new TestDataPointFactory());
-        final HttpData payload = new HttpData(new AdapterSubscriptionImpl(),"http://localhost:8080", 404, "text/plain", new TestDataPointFactory());
+        final HttpData httpData = new HttpData(subscription,
+                "http://localhost:8080",
+                200,
+                "text/plain",
+                new TestDataPointFactory());
+        final HttpData payload = new HttpData(subscription,
+                "http://localhost:8080",
+                404,
+                "text/plain",
+                new TestDataPointFactory());
         httpData.addDataPoint(RESPONSE_DATA, payload);
 
         httpProtocolAdapter.poll().get();
@@ -102,11 +110,12 @@ class HttpProtocolAdapterTest {
         public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
             return new DataPoint() {
                 @Override
-                public Object getTagValue() {
+                public @NotNull Object getTagValue() {
                     return tagValue;
                 }
+
                 @Override
-                public String getTagName() {
+                public @NotNull String getTagName() {
                     return tagName;
                 }
             };

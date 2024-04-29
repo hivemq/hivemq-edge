@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.http;
 
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.PollingProtocolAdapter;
@@ -29,7 +28,6 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.edge.modules.api.events.model.Event;
-import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -66,7 +64,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull HttpAdapterConfig adapterConfig;
-    private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
@@ -80,14 +77,10 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
 
     public HttpProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull HttpAdapterConfig adapterConfig,
-            final @NotNull MetricRegistry metricRegistry,
-            final @NotNull String version,
             final @NotNull ProtocolAdapterInput<HttpAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
-        this.adapterConfig = adapterConfig;
-        this.metricRegistry = metricRegistry;
-        this.version = version;
+        this.adapterConfig = input.getConfig();
+        this.version = input.getVersion();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
         this.adapterFactories = input.adapterFactories();
@@ -231,7 +224,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         builder.timeout(Duration.ofSeconds(timeout));
         builder.setHeader(HttpConstants.USER_AGENT_HEADER, String.format(CLIENT_AGENT_PROPERTY_VALUE, version));
         if (config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()) {
-            config.getHttpHeaders().stream().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
+            config.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
         }
         HttpRequest request = builder.build();
         CompletableFuture<HttpResponse<String>> responseFuture =
@@ -259,7 +252,10 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                             log.debug("Invalid JSON data was [{}]", bodyData);
                         }
                         moduleServices.eventService()
-                                .fireEvent(eventBuilder(Event.SEVERITY.WARN).withMessage(String.format(
+                                .fireEvent(adapterFactories.eventBuilderFactory()
+                                        .create(adapterConfig.getId(), adapterInformation.getProtocolId())
+                                        .withSeverity(Event.SEVERITY.WARN)
+                                        .withMessage(String.format(
                                         "Http response on adapter '%s' could not be parsed as JSON data.",
                                         adapterConfig.getId())).build());
                         throw new RuntimeException("unable to parse JSON data from HTTP response");
@@ -347,13 +343,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private @NotNull EventBuilder eventBuilder(
-            final @NotNull Event.SEVERITY severity) {
-        return adapterFactories.eventBuilderFactory()
-                .create(adapterConfig.getId(), adapterInformation.getProtocolId())
-                .withSeverity(severity);
     }
 
 }

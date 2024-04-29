@@ -21,7 +21,6 @@ import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterUtils;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -30,6 +29,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -46,14 +49,15 @@ public class TestHttpAdapterConfig {
         File configFile = loadTestConfigFile(tempDir, "http-config-empty-header.xml");
         HiveMQConfigEntity configEntity = loadConfig(configFile);
         Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-        Assertions.assertNotNull(adapters.get("http"), "Adapter map should contain http adapter config");
-        Assertions.assertTrue(adapters.get("http") instanceof Map, "Adapter should be an instance of a List");
+        assertNotNull(adapters.get("http"), "Adapter map should contain http adapter config");
+        assertInstanceOf(Map.class, adapters.get("http"), "Adapter should be an instance of a List");
+        //noinspection rawtypes
         Map map = (Map) adapters.get("http");
         ObjectMapper mapper = new ObjectMapper();
         mapper = ProtocolAdapterUtils.createProtocolAdapterMapper(mapper);
         HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
         HttpAdapterConfig config = httpProtocolAdapterFactory.convertConfigObject(mapper, map);
-        Assertions.assertNull(config.getHttpHeaders(), "Header array should be null to match coercion");
+        assertNull(config.getHttpHeaders(), "Header array should be null to match coercion");
     }
 
     @Test
@@ -62,14 +66,15 @@ public class TestHttpAdapterConfig {
         File configFile = loadTestConfigFile(tempDir, "http-config-with-headers.xml");
         HiveMQConfigEntity configEntity = loadConfig(configFile);
         Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-        Assertions.assertNotNull(adapters.get("http"), "Adapter map should contain http adapter config");
-        Assertions.assertTrue(adapters.get("http") instanceof Map, "Adapter should be an instance of a List");
+        assertNotNull(adapters.get("http"), "Adapter map should contain http adapter config");
+        assertInstanceOf(Map.class, adapters.get("http"), "Adapter should be an instance of a List");
+        //noinspection rawtypes
         Map map = (Map) adapters.get("http");
         ObjectMapper mapper = new ObjectMapper();
         mapper = ProtocolAdapterUtils.createProtocolAdapterMapper(mapper);
         HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
         HttpAdapterConfig config = httpProtocolAdapterFactory.convertConfigObject(mapper, map);
-        Assertions.assertEquals(2, config.getHttpHeaders().size(), "Header array should contain 2 elements");
+        assertEquals(2, config.getHttpHeaders().size(), "Header array should contain 2 elements");
     }
 
     protected @NotNull HiveMQConfigEntity loadConfig(@NotNull final File configFile) {

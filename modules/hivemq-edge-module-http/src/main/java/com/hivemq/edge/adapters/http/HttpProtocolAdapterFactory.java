@@ -36,18 +36,23 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     }
 
     @Override
-    public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<HttpAdapterConfig> input) {
-        return new HttpProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry(), input.getVersion(), input
-        );
+    public @NotNull ProtocolAdapter createAdapter(
+            @NotNull final ProtocolAdapterInformation adapterInformation,
+            @NotNull final ProtocolAdapterInput<HttpAdapterConfig> input) {
+        return new HttpProtocolAdapter(adapterInformation, input);
     }
 
     @Override
-    public @NotNull HttpAdapterConfig convertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull Map<@NotNull String, Object> config) {
+    public @NotNull HttpAdapterConfig convertConfigObject(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<@NotNull String, Object> config) {
         return HttpConfigConverter.convertConfig(objectMapper, config);
     }
 
     @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
+    public Map<String, Object> unconvertConfigObject(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull CustomConfig config) {
         return HttpConfigConverter.unconvertConfig(objectMapper, config);
     }
 
