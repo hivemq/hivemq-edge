@@ -69,7 +69,7 @@ class HttpProtocolAdapterTest {
     @Test
     void test_captureDataSample_expectedPayloadPresent() throws ExecutionException, InterruptedException {
         final AdapterSubscription subscription = new AdapterSubscriptionImpl("topic", 2, null);
-        final HttpData httpData = new HttpData("http://localhost:8080", 200, "text/plain", new TestDataPointFactory());
+        final HttpData httpData = new HttpData(new AdapterSubscriptionImpl(), "http://localhost:8080", 200, "text/plain", new TestDataPointFactory());
         httpData.addDataPoint(RESPONSE_DATA, "hello world");
 
         httpProtocolAdapter.poll().get();
@@ -82,8 +82,8 @@ class HttpProtocolAdapterTest {
     @Test
     void test_captureDataSample_errorPayloadFormat() throws ExecutionException, InterruptedException {
         final AdapterSubscription subscription = new AdapterSubscriptionImpl("topic", 2, null);
-        final HttpData httpData = new HttpData("http://localhost:8080", 200, "text/plain", new TestDataPointFactory());
-        final HttpData payload = new HttpData("http://localhost:8080", 404, "text/plain", new TestDataPointFactory());
+        final HttpData httpData = new HttpData(new AdapterSubscriptionImpl(),"http://localhost:8080", 200, "text/plain", new TestDataPointFactory());
+        final HttpData payload = new HttpData(new AdapterSubscriptionImpl(),"http://localhost:8080", 404, "text/plain", new TestDataPointFactory());
         httpData.addDataPoint(RESPONSE_DATA, payload);
 
         httpProtocolAdapter.poll().get();

@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.AdapterSubscription;
-import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.edge.modules.config.impl.UserPropertyImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -89,12 +89,17 @@ public class AdapterConfigModelTest {
         return parent.get(nodeName) != null;
     }
 
-    static class AdapterConfiguration extends AbstractPollingProtocolAdapterConfig {
+    static class AdapterConfiguration implements CustomConfig {
 
         @JsonProperty("subscriptions")
         @ModuleConfigField(title = "Subscriptions",
                            description = "List of subscriptions for the simulation",
                            required = true)
         private @NotNull List<AdapterSubscription> subscriptions = new ArrayList<>();
+
+        @Override
+        public @NotNull String getId() {
+            return "id";
+        }
     }
 }

@@ -26,7 +26,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.AdapterSubscription;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,6 +35,8 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
 
 
 /**
@@ -110,7 +112,17 @@ public class SchemaNodeGeneratorTest {
     }
 
     @JsonPropertyOrder({"startIdx", "endIdx"})
-    static class TestOrderingConfig extends AbstractProtocolAdapterConfig {
+    static class TestOrderingConfig implements CustomConfig {
+
+        @JsonProperty(value = "id", required = true)
+        @ModuleConfigField(title = "Identifier",
+                           description = "Unique identifier for this protocol adapter",
+                           format = ModuleConfigField.FieldType.IDENTIFIER,
+                           required = true,
+                           stringPattern = ID_REGEX,
+                           stringMinLength = 1,
+                           stringMaxLength = 1024)
+        protected @NotNull String id;
 
         @JsonProperty(value = "startIdx")
         @ModuleConfigField(title = "Start Index")
@@ -119,9 +131,14 @@ public class SchemaNodeGeneratorTest {
         @JsonProperty(value = "endIdx")
         @ModuleConfigField(title = "End Index")
         int endIdx;
+
+        @Override
+        public @NotNull String getId() {
+            return id;
+        }
     }
 
-    static class TestNestedEntity extends AbstractProtocolAdapterConfig {
+    static class TestNestedEntity implements CustomConfig {
 
         @JsonProperty("subscriptions")
         @ModuleConfigField(title = "Subscriptions",
@@ -130,5 +147,20 @@ public class SchemaNodeGeneratorTest {
         })
         private @NotNull List<AdapterSubscription> subscriptions = new ArrayList<>();
 
+
+        @JsonProperty(value = "id", required = true)
+        @ModuleConfigField(title = "Identifier",
+                           description = "Unique identifier for this protocol adapter",
+                           format = ModuleConfigField.FieldType.IDENTIFIER,
+                           required = true,
+                           stringPattern = ID_REGEX,
+                           stringMinLength = 1,
+                           stringMaxLength = 1024)
+        protected @NotNull String id;
+
+        @Override
+        public @NotNull String getId() {
+            return id;
+        }
     }
 }
