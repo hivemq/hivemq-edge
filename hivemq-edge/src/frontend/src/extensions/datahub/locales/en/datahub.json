@@ -100,7 +100,8 @@
       "zoomIOut": "Zoom out",
       "fitView": "Fit to the canvas",
       "toggleInteractivity": "Lock the canvas",
-      "clear": "Clear the Designer"
+      "clear": "Clear the Designer",
+      "shortcuts": "Help using the Designer"
     },
     "toolbox": {
       "aria-label": "Policy controls",
@@ -291,6 +292,28 @@
     "elementNotDefined": {
       "title": "Error loading the node",
       "description": "The $t(datahub:workspace.nodes.type, { 'context': '{{nodeType}}' }) is not a valid element"
+    }
+  },
+  "shortcuts": {
+    "header": "Keyboard shortcuts",
+    "categories": {
+      "Designer": "In the Designer",
+      "Selected": "Selected Nodes"
+    },
+    "keys": {
+      "ESC": "Cancel the node selection and the copy",
+      "TAB": "Set the focus on the next node",
+      "ENTER": "Select the focused node",
+      "Meta+ENTER": "Add the focused node to the selection (or remove it if selected)",
+      "Meta+C_Selected": "Copy the selected nodes (and their connections)",
+      "Meta+V_Designer": "Create new nodes from the previous copy",
+      "ArrowLeft_Selected": "Move the nodes one grid space to the left",
+      "ArrowRight_Selected": "Move the nodes one grid space to the right",
+      "ArrowUp_Selected": "Move the nodes one grid space up",
+      "ArrowDown_Selected": "Move the nodes one grid space down",
+      "Backspace_Selected": "Delete the selected nodes",
+      "Shift+drag_Designer": "Select all the nodes in the area",
+      "Meta+click_Designer": "Add the clicked node to the selection (or remove if selected)"
     }
   }
 }

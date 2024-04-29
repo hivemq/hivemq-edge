@@ -13,6 +13,11 @@ import { RJSFSchema, UiSchema } from '@rjsf/utils'
 import { IChangeEvent } from '@rjsf/core'
 import { ProblemDetailsExtended } from '@/api/types/http-problem-details.ts'
 
+export interface HotKeyItem {
+  key: string
+  category: string
+}
+
 export interface PanelSpecs {
   schema: RJSFSchema
   uiSchema?: UiSchema

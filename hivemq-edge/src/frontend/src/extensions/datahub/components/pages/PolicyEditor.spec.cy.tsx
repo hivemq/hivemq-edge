@@ -32,7 +32,7 @@ describe('PolicyEditor', () => {
     cy.get('[role="toolbar"]').should('have.attr', 'aria-label', 'Workspace toolbar')
     cy.getByAriaLabel('Open the toolbox').should('be.visible')
     cy.getByTestId('rf__minimap').should('be.visible')
-    cy.getByAriaLabel('Canvas controls').find('button').should('have.length', 4)
+    cy.getByAriaLabel('Canvas controls').find('button').should('have.length', 5)
   })
 
   it('should be accessible', () => {
