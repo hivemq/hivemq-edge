@@ -13,7 +13,7 @@ describe('Toolbox', () => {
     cy.getByAriaLabel('Policy controls').find('[role="group"]').as('policyControlsGroups')
 
     cy.get('@policyControlsGroups').should('have.length', 4)
-    cy.get('@policyControlsGroups').eq(0).should('contain.text', 'Pipeline')
+    cy.get('@policyControlsGroups').eq(0).should('contain.text', 'Edge Integration')
     cy.get('@policyControlsGroups').eq(1).should('contain.text', 'Data Policy')
     cy.get('@policyControlsGroups').eq(2).should('contain.text', 'Behavior Policy')
     cy.get('@policyControlsGroups').eq(3).should('contain.text', 'Operation')

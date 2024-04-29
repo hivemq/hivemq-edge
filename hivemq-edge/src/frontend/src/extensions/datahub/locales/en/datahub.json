@@ -127,7 +127,9 @@
         "goPublish": "Go to Publish"
       },
       "group": {
-        "pipeline": "Pipeline",
+        "integration": {
+          "edge": "Edge Integration"
+        },
         "dataPolicy": "Data Policy",
         "behaviorPolicy": "Behavior Policy",
         "operation": "Operation"
@@ -157,7 +159,11 @@
       "validation_onSuccess": "onSuccess",
       "validation_onError": "onError",
       "behavior_serial.will": "onWill",
-      "behavior_serial.publish": "onPublish"
+      "behavior_serial.publish": "onPublish",
+      "operation_deserialiser": "deserializer",
+      "operation_serialiser": "serializer",
+      "operation_function": "functions",
+      "operation_schema": "schemas"
     },
     "panel": {
       "submit": "Submit"
