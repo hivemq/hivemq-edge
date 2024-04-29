@@ -2,9 +2,11 @@
 import { lazy } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 
-import WelcomePage from '@/modules/Welcome/WelcomePage.tsx'
 import LoginPage from '@/modules/Login/LoginPage.tsx'
+import Dashboard from '@/modules/Dashboard/Dashboard.tsx'
+import ErrorPage from '@/modules/App/components/ErrorPage.tsx'
 
+const WelcomePage = lazy(() => import('@/modules/Welcome/WelcomePage.tsx'))
 const BridgePage = lazy(() => import('@/modules/Bridges/BridgePage.tsx'))
 const BridgeEditor = lazy(() => import('@/modules/Bridges/components/panels/BridgeEditor.tsx'))
 const ProtocolAdapterPage = lazy(() => import('@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'))
@@ -15,13 +17,7 @@ const EdgeFlowPage = lazy(() => import('@/modules/Workspace/EdgeFlowPage.tsx'))
 const NodePanelController = lazy(() => import('@/modules/Workspace/components/controls/NodePanelController.tsx'))
 const EvenLogPage = lazy(() => import('@/modules/EventLog/EvenLogPage.tsx'))
 
-// const DataHubPage = lazy(() => import('@/extensions/datahub/components/DataHubPage.tsx'))
-// const PolicyTable = lazy(() => import('@/extensions/datahub/components/PolicyTable.tsx'))
-
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
-
-import Dashboard from '../Dashboard/Dashboard.tsx'
-import ErrorPage from './components/ErrorPage.tsx'
 
 export const routes = createBrowserRouter(
   [
@@ -89,17 +85,6 @@ export const routes = createBrowserRouter(
           ],
         },
         { ...dataHubRoutes },
-        // {
-        //   path: 'datahub/',
-        //   element: <DataHubPage />,
-        //   children: [
-        //     {
-        //       path: '',
-        //       index: true,
-        //       element: <PolicyTable />,
-        //     },
-        //   ],
-        // },
       ],
     },
     {

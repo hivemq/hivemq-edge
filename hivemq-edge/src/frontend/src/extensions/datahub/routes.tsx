@@ -1,9 +1,11 @@
+/* eslint-disable react-refresh/only-export-components */
+import { lazy } from 'react'
 import { RouteObject } from 'react-router-dom'
 
-import DataHubPage from './components/DataHubPage.tsx'
-import PropertyPanelController from './components/controls/PropertyPanelController.tsx'
-import DataHubListings from '@datahub/components/pages/DataHubListings.tsx'
-import PolicyEditorLoader from '@datahub/components/pages/PolicyEditorLoader.tsx'
+const DataHubPage = lazy(() => import('@/extensions/datahub/components/DataHubPage.tsx'))
+const PolicyEditorLoader = lazy(() => import('@datahub/components/pages/PolicyEditorLoader.tsx'))
+const DataHubListings = lazy(() => import('@datahub/components/pages/DataHubListings.tsx'))
+const PropertyPanelController = lazy(() => import('@datahub/components/controls/PropertyPanelController.tsx'))
 
 export const dataHubRoutes: RouteObject = {
   path: 'datahub/',

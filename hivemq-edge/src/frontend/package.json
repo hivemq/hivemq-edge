@@ -23,6 +23,7 @@
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
+    "bundle:size": "npx vite-bundle-visualizer",
     "preview": "vite preview"
   },
   "dependencies": {
