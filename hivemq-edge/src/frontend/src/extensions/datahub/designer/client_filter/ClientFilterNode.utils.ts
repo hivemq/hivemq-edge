@@ -38,7 +38,10 @@ export function checkValidityClients(
   }
 }
 
-export const loadClientFilter = (behaviorPolicy: BehaviorPolicy, behaviorPolicyNode: Node<BehaviorPolicyData>) => {
+export const loadClientFilter = (
+  behaviorPolicy: BehaviorPolicy,
+  behaviorPolicyNode: Node<BehaviorPolicyData>
+): (NodeAddChange | Connection)[] => {
   if (behaviorPolicyNode.id !== behaviorPolicy.id)
     throw new Error(
       i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.BEHAVIOR_POLICY }) as string
@@ -58,7 +61,7 @@ export const loadClientFilter = (behaviorPolicy: BehaviorPolicy, behaviorPolicyN
   }
 
   return [
-    { item: topicNode, type: 'add' } as NodeAddChange,
-    { source: topicNode.id, target: behaviorPolicyNode.id, sourceHandle: null, targetHandle: null } as Connection,
+    { item: topicNode, type: 'add' },
+    { source: topicNode.id, target: behaviorPolicyNode.id, sourceHandle: null, targetHandle: null },
   ]
 }

@@ -148,13 +148,13 @@ export const loadTransitions = (
     const pipelines = loadBehaviorPolicyPipelines(behaviorPolicyTransition, transitionNode, schemas, scripts)
 
     newNodes.push(
-      { item: transitionNode, type: 'add' } as NodeAddChange,
+      { item: transitionNode, type: 'add' },
       {
         source: behaviorPolicy.id,
         target: transitionNode.id,
         sourceHandle: null,
         targetHandle: null,
-      } as Connection,
+      },
       ...pipelines
     )
   }

@@ -7,7 +7,10 @@ import { getNodeId } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeType, DataPolicyData, TopicFilterData } from '@datahub/types.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
-export const loadTopicFilter = (policy: DataPolicy, dataPolicyNode: Node<DataPolicyData>) => {
+export const loadTopicFilter = (
+  policy: DataPolicy,
+  dataPolicyNode: Node<DataPolicyData>
+): (NodeAddChange | Connection)[] => {
   if (dataPolicyNode.id !== policy.id)
     throw new Error(
       i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
@@ -30,7 +33,7 @@ export const loadTopicFilter = (policy: DataPolicy, dataPolicyNode: Node<DataPol
   }
 
   return [
-    { item: topicNode, type: 'add' } as NodeAddChange,
-    { source: topicNode.id, target: dataPolicyNode.id, sourceHandle: null, targetHandle: null } as Connection,
+    { item: topicNode, type: 'add' },
+    { source: topicNode.id, target: dataPolicyNode.id, sourceHandle: null, targetHandle: null },
   ]
 }

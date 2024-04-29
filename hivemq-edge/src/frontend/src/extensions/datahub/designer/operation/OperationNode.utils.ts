@@ -378,10 +378,7 @@ export const loadPipeline = (
 
     if (!operationNode) throw new Error(i18n.t('datahub:error.loading.operation.unknown') as string)
     if (!Array.isArray(operationNode)) {
-      newNodes.push(
-        { item: operationNode, type: 'add' } as NodeAddChange,
-        { ...connect, target: operationNode.id } as Connection
-      )
+      newNodes.push({ item: operationNode, type: 'add' }, { ...connect, target: operationNode.id })
       connect = {
         source: operationNode.id,
         target: null,

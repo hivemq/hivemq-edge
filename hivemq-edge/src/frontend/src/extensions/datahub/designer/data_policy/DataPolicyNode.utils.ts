@@ -115,7 +115,7 @@ export const checkValidityDataPolicy = (
   }
 }
 
-export const loadDataPolicy = (policy: DataPolicy) => {
+export const loadDataPolicy = (policy: DataPolicy): NodeAddChange => {
   const position: XYPosition = {
     x: 0,
     y: 0,
@@ -128,5 +128,5 @@ export const loadDataPolicy = (policy: DataPolicy) => {
     data: {},
   }
 
-  return { item: dataPolicyNode, type: 'add' } as NodeAddChange
+  return { item: dataPolicyNode, type: 'add' }
 }

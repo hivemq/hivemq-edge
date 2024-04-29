@@ -59,7 +59,9 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
         if (nodeChange.item && !allIds.includes(nodeChange.item.id)) acc.push(nodeChange)
         return acc
       }, [])
-      const edgeConnects = allArtefactsLoaded.filter((element) => (element as Connection).source) as Connection[]
+      const edgeConnects = allArtefactsLoaded.filter(
+        (element): element is Connection => !!(element as Connection).source
+      )
 
       store.onNodesChange(nodeChanges)
       edgeConnects.map((connection) => store.onConnect(connection))
@@ -124,7 +126,9 @@ export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
         if (nodeChange.item && !allIds.includes(nodeChange.item.id)) acc.push(nodeChange)
         return acc
       }, [])
-      const edgeConnects = allArtefactsLoaded.filter((element) => (element as Connection).source) as Connection[]
+      const edgeConnects = allArtefactsLoaded.filter(
+        (element): element is Connection => !!(element as Connection).source
+      )
 
       store.onNodesChange(nodeChanges)
       edgeConnects.map((connection) => store.onConnect(connection))

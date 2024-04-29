@@ -91,13 +91,13 @@ export const loadValidators = (policy: DataPolicy, schemas: Schema[], dataPolicy
       },
     }
 
-    newNodes.push({ item: validatorNode, type: 'add' } as NodeAddChange)
+    newNodes.push({ item: validatorNode, type: 'add' })
     newNodes.push({
       source: validatorNode.id,
       target: dataPolicyNode.id,
       sourceHandle: null,
       targetHandle: DataPolicyData.Handle.VALIDATION,
-    } as Connection)
+    })
 
     for (const schemaRef of validatorArguments.schemas) {
       const schemaNodes = loadSchema(validatorNode, null, 0, schemaRef, schemas)

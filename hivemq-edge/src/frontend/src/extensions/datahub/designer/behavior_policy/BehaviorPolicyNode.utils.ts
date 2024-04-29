@@ -47,7 +47,7 @@ export function checkValidityBehaviorPolicy(
   }
 }
 
-export const loadBehaviorPolicy = (behaviorPolicy: BehaviorPolicy) => {
+export const loadBehaviorPolicy = (behaviorPolicy: BehaviorPolicy): NodeAddChange => {
   const model = enumFromStringValue(BehaviorPolicyType, behaviorPolicy.behavior.id)
   if (!model)
     throw new Error(
@@ -69,5 +69,5 @@ export const loadBehaviorPolicy = (behaviorPolicy: BehaviorPolicy) => {
     },
   }
 
-  return { item: behaviorPolicyNode, type: 'add' } as NodeAddChange
+  return { item: behaviorPolicyNode, type: 'add' }
 }

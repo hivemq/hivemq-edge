@@ -124,7 +124,7 @@ export function loadSchema(
   positionDeltaX: number,
   schemaRef: SchemaReference,
   schemas: Schema[]
-) {
+): (NodeAddChange | Connection)[] {
   const schema = schemas.find((schema) => schema.id === schemaRef.schemaId)
   if (!schema)
     throw new Error(i18n.t('datahub:error.loading.connection.notFound', { source: DataHubNodeType.SCHEMA }) as string)
@@ -148,13 +148,13 @@ export function loadSchema(
     }
 
     return [
-      { item: schemaNode, type: 'add' } as NodeAddChange,
+      { item: schemaNode, type: 'add' },
       {
         source: schemaNode.id,
         target: parentNode.id,
         sourceHandle: null,
         targetHandle: targetHandle,
-      } as Connection,
+      },
     ]
   }
 
@@ -181,13 +181,13 @@ export function loadSchema(
     }
 
     return [
-      { item: schemaNode, type: 'add' } as NodeAddChange,
+      { item: schemaNode, type: 'add' },
       {
         source: schemaNode.id,
         target: parentNode.id,
         sourceHandle: null,
         targetHandle: targetHandle,
-      } as Connection,
+      },
     ]
   }
 

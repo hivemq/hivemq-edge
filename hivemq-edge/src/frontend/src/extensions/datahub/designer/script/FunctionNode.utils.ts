@@ -74,13 +74,13 @@ export const loadScripts = (parentNode: Node<DataHubNodeData>, functions: Policy
     }
 
     newNodes.push(
-      { item: functionScriptNode, type: 'add' } as NodeAddChange,
+      { item: functionScriptNode, type: 'add' },
       {
         source: functionScriptNode.id,
         target: parentNode.id,
         sourceHandle: null,
         targetHandle: OperationData.Handle.FUNCTION,
-      } as Connection
+      }
     )
   }
   return newNodes
