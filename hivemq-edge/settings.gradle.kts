@@ -40,9 +40,6 @@ includeBuild("./src/frontend") {
     name = "hivemq-edge-frontend"
 }
 
-includeBuild("../hivemq-edge-adapter-lib") {
-}
-
 
 if (file("../../hivemq-edge-extension-sdk").exists()) {
     includeBuild("../../hivemq-edge-extension-sdk")

@@ -1,5 +1,0 @@
-**Motivation**
-
-Resolves #<issue>
-
-**Changes**

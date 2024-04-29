@@ -23,6 +23,8 @@ import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.PublishReturnCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -36,6 +38,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPollingSampler {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractSubscriptionSampler.class);
 
     private final long initialDelay;
     private final long period;
@@ -104,7 +108,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         Preconditions.checkNotNull(sample);
         Preconditions.checkNotNull(sample.getTopic());
         Preconditions.checkArgument(sample.getQos() <= 2 && sample.getQos() >= 0,
-                "QoS needs to be a valid Quality-Of-Service value (0,1,2)");
+                "QoS needs to be a valid QoS value (0,1,2)");
         try {
             final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
             List<AbstractProtocolAdapterJsonPayload> payloads = convertAdapterSampleToPublishes(sample);
@@ -128,16 +132,14 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                             */
                 }).exceptionally(throwable -> {
                     protocolAdapterMetricsHelper.incrementReadPublishFailure();
-                    //TODO log.warn("Error Publishing Adapter Payload", throwable);
+                    log.warn("Error publishing adapter payload", throwable);
                     return null;
                 });
                 publishFutures.add(publishFuture);
             }
             return CompletableFuture.allOf(publishFutures.build().toArray(new CompletableFuture[0]));
         } catch (Exception e) {
-
-            e.printStackTrace();
-
+            log.warn("Exception during polling of data for adapters '{}':", adapterId, e);
             return CompletableFuture.failedFuture(e);
         }
     }
@@ -264,7 +266,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     }
 
     @Override
-    public void setScheduledFuture(final @NotNull ScheduledFuture future) {
+    public void setScheduledFuture(final @NotNull ScheduledFuture<?> future) {
         this.future = future;
     }
 
@@ -272,11 +274,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     public int hashCode() {
         return Objects.hash(uuid);
     }
-
-
-
-
-
 
 
 }

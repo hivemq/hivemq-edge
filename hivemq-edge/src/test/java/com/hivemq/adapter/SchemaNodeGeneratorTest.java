@@ -44,7 +44,7 @@ import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
  */
 public class SchemaNodeGeneratorTest {
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final @NotNull ObjectMapper mapper = new ObjectMapper();
 
     @BeforeAll
     static void beforeStart(){
