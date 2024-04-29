@@ -37,7 +37,7 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<ADSAdapterConfig> input) {
-        return new ADSProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry());
+        return new ADSProtocolAdapter(adapterInformation, input);
     }
 
     @Override

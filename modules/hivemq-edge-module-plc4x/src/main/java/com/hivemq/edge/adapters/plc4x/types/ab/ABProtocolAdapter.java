@@ -15,13 +15,14 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.ab;
 
-import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.impl.Plc4xConnection;
 import com.hivemq.edge.adapters.plc4x.impl.Plc4xDataUtils;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -29,35 +30,34 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 public class ABProtocolAdapter extends AbstractPlc4xAdapter<ABAdapterConfig> {
 
     public ABProtocolAdapter(
-            final ProtocolAdapterInformation adapterInformation,
-            final ABAdapterConfig adapterConfig,
-            final MetricRegistry metricRegistry) {
-        super(adapterInformation, adapterConfig, metricRegistry);
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<ABAdapterConfig> input) {
+        super(adapterInformation, input);
     }
 
     @Override
-    protected String getProtocolHandler() {
+    protected @NotNull String getProtocolHandler() {
         return "ab-eth";
     }
 
     @Override
-    protected ReadType getReadType() {
+    protected @NotNull ReadType getReadType() {
         return ReadType.Read;
     }
 
 
-    protected Plc4xConnection<?> createConnection() throws Plc4xException {
+    protected @NotNull Plc4xConnection<?> createConnection() throws Plc4xException {
         return new Plc4xConnection<>(driverManager,
                 adapterConfig,
-                plc4xAdapterConfig -> Plc4xDataUtils.createQueryString(createQueryStringParams(
-                        plc4xAdapterConfig), true)) {
+                plc4xAdapterConfig -> Plc4xDataUtils.createQueryString(createQueryStringParams(plc4xAdapterConfig),
+                        true)) {
             @Override
-            protected String getProtocol() {
+            protected @NotNull String getProtocol() {
                 return getProtocolHandler();
             }
 
             @Override
-            protected String getTagAddressForSubscription(final Plc4xAdapterConfig.AdapterSubscription subscription) {
+            protected @NotNull String getTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull AdapterSubscriptionImpl subscription) {
                 return createTagAddressForSubscription(subscription);
             }
         };

@@ -54,7 +54,6 @@ dependencies {
 
     testImplementation("com.hivemq:hivemq-edge")
     testImplementation("com.hivemq:hivemq-edge-extension-sdk")
-    testImplementation("com.hivemq:hivemq-edge-adapter-lib")
     testImplementation("org.eclipse.milo:sdk-server:${property("milo.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")

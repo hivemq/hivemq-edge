@@ -18,12 +18,15 @@ package com.hivemq.edge.adapters.plc4x.impl;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
+import com.hivemq.edge.modules.adapters.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.DataPoint;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
+import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.adapters.model.impl.AbstractPollingPerSubscriptionAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -51,12 +54,17 @@ import java.util.concurrent.CompletableFuture;
  * @author Simon L Johnson
  */
 public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
-        extends AbstractPollingPerSubscriptionAdapter<T, ProtocolAdapterDataSample> {
+        implements PollingPerSubscriptionProtocolAdapter {
 
     protected static final String TAG_ADDRESS_TYPE_SEP = ":";
     private final Logger log = LoggerFactory.getLogger(getClass());
     protected final static @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
     private final @NotNull Object lock = new Object();
+    private final @NotNull ProtocolAdapterInformation adapterInformation;
+    protected final @NotNull T adapterConfig;
+    private final @NotNull MetricRegistry metricRegistry;
+    private final @NotNull ProtocolAdapterState protocolAdapterState;
+    protected final @NotNull AdapterFactories adapterFactories;
     protected volatile @Nullable Plc4xConnection connection;
     private final @NotNull Map<String, ProtocolAdapterDataSample> lastSamples = new HashMap<>(1);
 
@@ -67,9 +75,93 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
 
     public AbstractPlc4xAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull T adapterConfig,
-            final @NotNull MetricRegistry metricRegistry) {
-        super(adapterInformation, adapterConfig, metricRegistry);
+            final ProtocolAdapterInput<T> input) {
+        this.adapterInformation = adapterInformation;
+        this.adapterConfig = input.getConfig();
+        this.metricRegistry = input.getMetricRegistry();
+        this.protocolAdapterState = input.getProtocolAdapterState();
+        this.adapterFactories = input.adapterFactories();
+    }
+
+    @Override
+    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final AdapterSubscription adapterSubscription) {
+        if (connection.isConnected()) {
+            try {
+                CompletableFuture<? extends PlcReadResponse> request =
+                        connection.read((Plc4xAdapterConfig.AdapterSubscriptionImpl) adapterSubscription);
+                return request.thenApply(response -> processReadResponse((Plc4xAdapterConfig.AdapterSubscriptionImpl) adapterSubscription,
+                        response)).thenApply(this::captureDataSample);
+            } catch (Exception e) {
+                return CompletableFuture.failedFuture(e);
+            }
+        }
+        return CompletableFuture.completedFuture(new ProtocolAdapterDataSampleImpl<>(adapterSubscription,
+                adapterFactories.dataPointFactory())).thenApply(this::captureDataSample);
+    }
+
+    @Override
+    public @NotNull List<? extends AdapterSubscription> getSubscriptions() {
+        if (getReadType() == ReadType.Read) {
+            return adapterConfig.getSubscriptions();
+        } else {
+            return List.of();
+        }
+    }
+
+    @Override
+    public @NotNull String getId() {
+        return adapterConfig.getId();
+    }
+
+    @Override
+    public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
+            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+        CompletableFuture<Plc4xConnection<T>> startFuture = CompletableFuture.supplyAsync(this::initConnection);
+        startFuture.thenAccept(this::subscribeAllInternal);
+        return startFuture.thenApply(connection -> output);
+    }
+
+    @Override
+    public @NotNull CompletableFuture<Void> stop() {
+        if (connection != null) {
+            try {
+                //-- Disconnect client
+                connection.disconnect();
+                return CompletableFuture.completedFuture(null);
+            } catch (Exception e) {
+                if (log.isWarnEnabled()) {
+                    log.warn("Error disconnecting from PLC4X client", e);
+                }
+                protocolAdapterState.setErrorConnectionStatus(adapterConfig.getId(),
+                        adapterInformation.getProtocolId(),
+                        e,
+                        null);
+                return CompletableFuture.failedFuture(e);
+            } finally {
+                connection = null;
+            }
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        return adapterInformation;
+    }
+
+    @Override
+    public @NotNull ConnectionStatus getConnectionStatus() {
+        return protocolAdapterState.getConnectionStatus();
+    }
+
+    @Override
+    public @NotNull RuntimeStatus getRuntimeStatus() {
+        return protocolAdapterState.getRuntimeStatus();
+    }
+
+    @Override
+    public @Nullable String getErrorMessage() {
+        return null;
     }
 
 
@@ -82,7 +174,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                             log.trace("Creating new instance of Plc4x connector with {}.", adapterConfig);
                         }
                         connection = createConnection();
-                        setConnectionStatus(ConnectionStatus.CONNECTED);
+                        protocolAdapterState.setConnectionStatus(ConnectionStatus.CONNECTED);
                     } catch (Plc4xException e) {
                         throw new RuntimeException(e);
                     }
@@ -108,22 +200,15 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
             }
 
             @Override
-            protected @NotNull String getTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull AdapterSubscription subscription) {
+            protected @NotNull String getTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull AdapterSubscriptionImpl subscription) {
                 return createTagAddressForSubscription(subscription);
             }
         };
     }
 
-    @Override
-    protected CompletableFuture<ProtocolAdapterStartOutput> startInternal(final @NotNull ProtocolAdapterStartOutput output) {
-        CompletableFuture<Plc4xConnection<T>> startFuture = CompletableFuture.supplyAsync(this::initConnection);
-        startFuture.thenAccept(this::subscribeAllInternal);
-        return startFuture.thenApply(connection -> output);
-    }
-
     protected void subscribeAllInternal(@NotNull final Plc4xConnection<T> connection) throws RuntimeException {
         if (adapterConfig.getSubscriptions() != null) {
-            for (Plc4xAdapterConfig.AdapterSubscription subscription : adapterConfig.getSubscriptions()) {
+            for (Plc4xAdapterConfig.AdapterSubscriptionImpl subscription : adapterConfig.getSubscriptions()) {
                 try {
                     subscribeInternal(connection, subscription);
                 } catch (Plc4xException e) {
@@ -133,29 +218,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         }
     }
 
-    @Override
-    protected CompletableFuture<Void> stopInternal() {
-        if (connection != null) {
-            try {
-                //-- Disconnect client
-                connection.disconnect();
-                return CompletableFuture.completedFuture(null);
-            } catch (Exception e) {
-                if (log.isWarnEnabled()) {
-                    log.warn("Error disconnecting from PLC4X client", e);
-                }
-                setErrorConnectionStatus(e, null);
-                return CompletableFuture.failedFuture(e);
-            } finally {
-                connection = null;
-            }
-        }
-        return CompletableFuture.completedFuture(null);
-    }
-
     protected @NotNull CompletableFuture<?> subscribeInternal(
             final @NotNull Plc4xConnection<T> connection,
-            final @NotNull Plc4xAdapterConfig.AdapterSubscription subscription) throws Plc4xException {
+            final @NotNull Plc4xAdapterConfig.AdapterSubscriptionImpl subscription) throws Plc4xException {
         if (subscription != null) {
             switch (getReadType()) {
                 case Subscribe:
@@ -165,40 +230,18 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                     return connection.subscribe(subscription,
                             plcSubscriptionEvent -> processReadResponse(subscription, plcSubscriptionEvent));
                 case Read:
-                    if (log.isTraceEnabled()) {
-                        log.trace("Scheduling read of tag [{}] on connection.", subscription.getTagName());
-                    }
-                    startPolling(new SubscriptionSampler(this.adapterConfig, subscription));
-                    break;
+                    // NOOP, handled internally, see getSubscriptions();
             }
         }
         return CompletableFuture.completedFuture(null);
     }
 
-
-    @Override
-    protected @NotNull CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(
-            final T config, final AdapterSubscription adapterSubscription) {
-        if (connection.isConnected()) {
-            try {
-                CompletableFuture<? extends PlcReadResponse> request =
-                        connection.read((Plc4xAdapterConfig.AdapterSubscription) adapterSubscription);
-                return request.thenApply(response -> processReadResponse((Plc4xAdapterConfig.AdapterSubscription) adapterSubscription,
-                        response));
-            } catch (Exception e) {
-                return CompletableFuture.failedFuture(e);
-            }
-        }
-        return CompletableFuture.completedFuture(new ProtocolAdapterDataSampleImpl<>(adapterSubscription));
-    }
-
-
-    @Override
-    protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull ProtocolAdapterDataSample data) {
+    @NotNull
+    protected ProtocolAdapterDataSample captureDataSample(final @NotNull ProtocolAdapterDataSample data) {
         boolean publishData = true;
         if (adapterConfig.getPublishChangedDataOnly()) {
             ProtocolAdapterDataSample previousSample =
-                    lastSamples.put(((Plc4xAdapterConfig.AdapterSubscription) data.getSubscription()).getTagAddress(),
+                    lastSamples.put(((Plc4xAdapterConfig.AdapterSubscriptionImpl) data.getSubscription()).getTagAddress(),
                             data);
             if (previousSample != null) {
                 List<DataPoint> dataPoints = previousSample.getDataPoints();
@@ -206,9 +249,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
             }
         }
         if (publishData) {
-            return super.captureDataSample(data);
+            return data;
         }
-        return CompletableFuture.completedFuture(null);
+        return null;
     }
 
     /**
@@ -231,7 +274,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(@NotNull final Plc4xAdapterConfig.AdapterSubscription subscription) {
+    protected @NotNull String createTagAddressForSubscription(@NotNull final Plc4xAdapterConfig.AdapterSubscriptionImpl subscription) {
         return String.format("%s%s%s", subscription.getTagAddress(), TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
     }
 
@@ -259,7 +302,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     }
 
     protected @NotNull ProtocolAdapterDataSample processReadResponse(
-            final @NotNull Plc4xAdapterConfig.AdapterSubscription subscription,
+            final @NotNull Plc4xAdapterConfig.AdapterSubscriptionImpl subscription,
             final @NotNull PlcReadResponse readEvent) {
         //it is possible that the read response does not contain any values at all, leading to unexpected error states, especially with EIP adapter
         if (!(readEvent instanceof DefaultPlcReadResponse) ||
@@ -268,18 +311,19 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
             if (responseCode == PlcResponseCode.OK) {
                 if (getConnectionStatus() == ConnectionStatus.ERROR) {
                     //Error was transient
-                    setConnectionStatus(ConnectionStatus.CONNECTED);
+                    protocolAdapterState.setConnectionStatus(ConnectionStatus.CONNECTED);
                 }
                 return processPlcFieldData(subscription, Plc4xDataUtils.readDataFromReadResponse(readEvent));
             }
         }
-        return new ProtocolAdapterDataSampleImpl<>(subscription);
+        return new ProtocolAdapterDataSampleImpl<>(subscription, adapterFactories.dataPointFactory());
     }
 
     protected @NotNull ProtocolAdapterDataSample processPlcFieldData(
-            final @NotNull Plc4xAdapterConfig.AdapterSubscription subscription,
+            final @NotNull Plc4xAdapterConfig.AdapterSubscriptionImpl subscription,
             final @NotNull List<Pair<String, PlcValue>> l) {
-        ProtocolAdapterDataSample data = new ProtocolAdapterDataSampleImpl<>(subscription);
+        ProtocolAdapterDataSample data = new ProtocolAdapterDataSampleImpl<>(subscription,
+                adapterFactories.dataPointFactory());
         //-- For every tag value associated with the sample, write a data point to be published
         if (!l.isEmpty()) {
             l.forEach(pair -> data.addDataPoint(pair.getLeft(), convertTagValue(pair.getLeft(), pair.getValue())));

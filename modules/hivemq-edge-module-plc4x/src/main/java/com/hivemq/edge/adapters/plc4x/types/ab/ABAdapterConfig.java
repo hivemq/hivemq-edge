@@ -67,7 +67,7 @@ public class ABAdapterConfig extends Plc4xAdapterConfig {
 
     @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "destination", "qos"})
     @JsonIgnoreProperties({"dataType"})
-    public static class AdapterSubscription extends Plc4xAdapterConfig.AdapterSubscription {
+    public static class AdapterSubscription extends AdapterSubscriptionImpl {
         @JsonProperty("abDataType")
         @ModuleConfigField(title = "Data Type",
                            description = "The expected data type of the tag",

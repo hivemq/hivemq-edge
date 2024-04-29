@@ -34,7 +34,7 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<SimulationAdapterConfig> input) {
-        return new SimulationProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry());
+        return new SimulationProtocolAdapter(adapterInformation, input);
     }
 
     @Override

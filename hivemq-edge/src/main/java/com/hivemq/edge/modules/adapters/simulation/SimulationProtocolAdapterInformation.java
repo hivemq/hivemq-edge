@@ -16,12 +16,14 @@
 package com.hivemq.edge.modules.adapters.simulation;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
-public class SimulationProtocolAdapterInformation extends AbstractProtocolAdapterInformation {
+import java.util.List;
+
+public class SimulationProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new SimulationProtocolAdapterInformation();
 
@@ -49,8 +51,18 @@ public class SimulationProtocolAdapterInformation extends AbstractProtocolAdapte
     }
 
     @Override
+    public @NotNull String getVersion() {
+        return "TODO";
+    }
+
+    @Override
     public @NotNull String getLogoUrl() {
         return "/images/hivemq-icon.png";
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HiveMQ";
     }
 
     @Override
@@ -61,6 +73,11 @@ public class SimulationProtocolAdapterInformation extends AbstractProtocolAdapte
     @Override
     public ProtocolAdapterConstants.CATEGORY getCategory() {
         return ProtocolAdapterConstants.CATEGORY.SIMULATION;
+    }
+
+    @Override
+    public @Nullable List<ProtocolAdapterConstants.TAG> getTags() {
+        return List.of();
     }
 
     @Override

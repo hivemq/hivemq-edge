@@ -15,11 +15,11 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.eip;
 
-import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
+import com.hivemq.edge.adapters.plc4x.impl.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -37,29 +37,28 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
     static final String SLOT = "slot", BACKPLANE = "backplane";
 
     public EIPProtocolAdapter(
-            final ProtocolAdapterInformation adapterInformation,
-            final EIPAdapterConfig adapterConfig,
-            final MetricRegistry metricRegistry) {
-        super(adapterInformation, adapterConfig, metricRegistry);
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<EIPAdapterConfig> input) {
+        super(adapterInformation, input);
     }
 
     @Override
-    protected String getProtocolHandler() {
+    protected @NotNull String getProtocolHandler() {
         return "eip:tcp";
     }
 
     @Override
-    protected ReadType getReadType() {
+    protected @NotNull ReadType getReadType() {
         return ReadType.Read;
     }
 
     @Override
-    protected String createTagAddressForSubscription(final Plc4xAdapterConfig.AdapterSubscription subscription) {
+    protected @NotNull String createTagAddressForSubscription(final Plc4xAdapterConfig.AdapterSubscriptionImpl subscription) {
         return "%" + subscription.getTagAddress();
     }
 
     @Override
-    protected Map<String, String> createQueryStringParams(final @NotNull EIPAdapterConfig config) {
+    protected @NotNull Map<String, String> createQueryStringParams(final @NotNull EIPAdapterConfig config) {
         Map<String, String> map = new HashMap<>();
         map.put(BACKPLANE, nullSafe(config.getBackplane()));
         map.put(SLOT, nullSafe(config.getSlot()));
@@ -68,28 +67,28 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
     }
 
     @Override
-    protected CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(
-            final EIPAdapterConfig config, final AdapterSubscription adapterSubscription) {
+    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(final @NotNull AdapterSubscription adapterSubscription) {
         if (!(adapterSubscription instanceof EIPAdapterConfig.AdapterSubscription)) {
             throw new IllegalStateException("Subscription configuration is not of correct type Ethernet/IP");
         }
         if (connection.isConnected()) {
             try {
                 CompletableFuture<? extends PlcReadResponse> request =
-                        connection.read((Plc4xAdapterConfig.AdapterSubscription) adapterSubscription);
+                        connection.read((Plc4xAdapterConfig.AdapterSubscriptionImpl) adapterSubscription);
                 return request.thenApply(response -> (ProtocolAdapterDataSample) processReadResponse((EIPAdapterConfig.AdapterSubscription) adapterSubscription,
                         response)).exceptionally(throwable -> {
                     if (throwable instanceof InterruptedException ||
                             throwable.getCause() instanceof InterruptedException) {
-                        return new ProtocolAdapterDataSampleImpl<>(adapterSubscription);
+                        return new ProtocolAdapterDataSampleImpl<>(adapterSubscription, adapterFactories.dataPointFactory());
                     }
                     throw new RuntimeException(throwable);
-                });
+                }).thenApply(this::captureDataSample);
 
             } catch (Exception e) {
                 return CompletableFuture.failedFuture(e);
             }
         }
-        return CompletableFuture.completedFuture(new ProtocolAdapterDataSampleImpl<>(adapterSubscription));
+        return CompletableFuture.completedFuture(new ProtocolAdapterDataSampleImpl<>(adapterSubscription, adapterFactories.dataPointFactory()))
+                .thenApply(this::captureDataSample);
     }
 }

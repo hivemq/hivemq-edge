@@ -19,6 +19,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
@@ -82,28 +83,31 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
             LDATE_AND_TIME);
 
     private final Pattern SHORT_BLOCK_ADDRESS_PATTERN = Pattern.compile("^%DB\\d{1,7}:\\d{1,7}(\\.[0-7])*?:.*");
-    private final Pattern BLOCK_ADDRESS_PATTERN = Pattern.compile("^%DB\\d{1,7}\\.DB(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])*?:.*");
-    private final Pattern ADDRESS_PATTERN = Pattern.compile("^%.(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])?(?<shortOffset>(:\\d{1,7})?):(?<type>.*)");
+    private final Pattern BLOCK_ADDRESS_PATTERN =
+            Pattern.compile("^%DB\\d{1,7}\\.DB(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])*?:.*");
+    private final Pattern ADDRESS_PATTERN =
+            Pattern.compile("^%.(?<dataType>[XBWD]?)\\d{1,7}(\\.[0-7])?(?<shortOffset>(:\\d{1,7})?):(?<type>.*)");
 
     public S7ProtocolAdapter(
-            final ProtocolAdapterInformation adapterInformation,
-            final S7AdapterConfig adapterConfig,
-            final MetricRegistry metricRegistry) {
-        super(adapterInformation, adapterConfig, metricRegistry);
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull S7AdapterConfig adapterConfig,
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull ProtocolAdapterInput<S7AdapterConfig> input) {
+        super(adapterInformation, input);
     }
 
     @Override
-    protected String getProtocolHandler() {
+    protected @NotNull String getProtocolHandler() {
         return "s7";
     }
 
     @Override
-    protected AbstractPlc4xAdapter.ReadType getReadType() {
+    protected @NotNull AbstractPlc4xAdapter.ReadType getReadType() {
         return ReadType.Read;
     }
 
     @Override
-    protected Map<String, String> createQueryStringParams(final @NotNull S7AdapterConfig config) {
+    protected @NotNull Map<String, String> createQueryStringParams(final @NotNull S7AdapterConfig config) {
         Map<String, String> map = new HashMap<>();
         map.put(CONTROLLER_TYPE, nullSafe(config.getControllerType()));
         map.put(REMOTE_RACK, nullSafe(config.getRemoteRack()));
@@ -121,21 +125,22 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
     }
 
     @Override
-    protected String createTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull AdapterSubscription subscription) {
+    protected @NotNull String createTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull AdapterSubscriptionImpl subscription) {
         final String formattedAddress =
                 String.format("%s%s%s", subscription.getTagAddress(), ":", subscription.getDataType());
 
         if (SPECIAL_ADDRESS_SCHEME_TYPES.contains(subscription.getDataType())) {
             //correct Siemens` addressing scheme into a valid Plc4x addressing scheme (example replacement: %IW20 -> %IX20)
-            if(SHORT_BLOCK_ADDRESS_PATTERN.matcher(formattedAddress).matches()){
+            if (SHORT_BLOCK_ADDRESS_PATTERN.matcher(formattedAddress).matches()) {
                 return formattedAddress;
             }
             final Matcher blockMatcher = BLOCK_ADDRESS_PATTERN.matcher(formattedAddress);
-            if(blockMatcher.matches()){
-                final String correctedAddress = new StringBuilder(formattedAddress).replace(blockMatcher.start("dataType"),
-                        blockMatcher.end("dataType"),
-                        "X").toString();
-                if(log.isTraceEnabled()){
+            if (blockMatcher.matches()) {
+                final String correctedAddress =
+                        new StringBuilder(formattedAddress).replace(blockMatcher.start("dataType"),
+                                blockMatcher.end("dataType"),
+                                "X").toString();
+                if (log.isTraceEnabled()) {
                     log.trace("Correcting S7 tag address from '{}' to '{}' to improve compatibility.",
                             formattedAddress,
                             correctedAddress);
@@ -145,10 +150,11 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
             }
             final Matcher addressMatcher = ADDRESS_PATTERN.matcher(formattedAddress);
             if (addressMatcher.matches()) {
-                final String correctedAddress = new StringBuilder(formattedAddress).replace(addressMatcher.start("dataType"),
-                        addressMatcher.end("dataType"),
-                        "X").toString();
-                if(log.isTraceEnabled()) {
+                final String correctedAddress =
+                        new StringBuilder(formattedAddress).replace(addressMatcher.start("dataType"),
+                                addressMatcher.end("dataType"),
+                                "X").toString();
+                if (log.isTraceEnabled()) {
                     log.trace("Correcting S7 tag address from '{}' to '{}' to improve compatibility",
                             formattedAddress,
                             correctedAddress);

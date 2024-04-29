@@ -15,18 +15,56 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
+
 @JsonPropertyOrder({"minValue", "maxValue", "subscriptions"})
-public class SimulationAdapterConfig extends AbstractPollingProtocolAdapterConfig {
+public class SimulationAdapterConfig implements CustomConfig {
+
+    @JsonProperty(value = "id", required = true)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    protected @NotNull String id;
+
+
+    @JsonProperty("pollingIntervalMillis")
+    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
+    @ModuleConfigField(title = "Polling Interval [ms]",
+                       description = "Time in millisecond that this endpoint will be polled",
+                       numberMin = 1,
+                       required = true,
+                       defaultValue = "1000")
+    private int pollingIntervalMillis = DEFAULT_POLLING_INTERVAL; //1 second
+
+    @JsonProperty("maxPollingErrorsBeforeRemoval")
+    @ModuleConfigField(title = "Max. Polling Errors",
+                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
+                       defaultValue = "10")
+    private int maxPollingErrorsBeforeRemoval = DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL;
+
+    public int getPollingIntervalMillis() {
+        return pollingIntervalMillis;
+    }
+
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return maxPollingErrorsBeforeRemoval;
+    }
+
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
                        description = "List of subscriptions for the simulation",
@@ -51,11 +89,19 @@ public class SimulationAdapterConfig extends AbstractPollingProtocolAdapterConfi
     }
 
     public SimulationAdapterConfig(
-            final @NotNull String id,
-            final @NotNull List<AdapterSubscriptionImpl> adapterSubscriptions) {
+            final @NotNull String id, final @NotNull List<AdapterSubscriptionImpl> adapterSubscriptions) {
         this.id = id;
         this.adapterSubscriptions = adapterSubscriptions;
     }
+
+    public @NotNull String getId() {
+        return id;
+    }
+
+    public void setId(final @NotNull String id) {
+        this.id = id;
+    }
+
 
     public void setSubscriptions(List<AdapterSubscriptionImpl> adapterSubscriptions) {
         this.adapterSubscriptions = adapterSubscriptions;

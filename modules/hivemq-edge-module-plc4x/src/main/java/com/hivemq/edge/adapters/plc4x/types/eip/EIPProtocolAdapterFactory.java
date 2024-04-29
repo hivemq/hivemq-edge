@@ -36,17 +36,23 @@ public class EIPProtocolAdapterFactory implements ProtocolAdapterFactory<EIPAdap
     }
 
     @Override
-    public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<EIPAdapterConfig> input) {
-        return new EIPProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry());
+    public @NotNull ProtocolAdapter createAdapter(
+            @NotNull final ProtocolAdapterInformation adapterInformation,
+            @NotNull final ProtocolAdapterInput<EIPAdapterConfig> input) {
+        return new EIPProtocolAdapter(adapterInformation, input);
     }
 
     @Override
-    public @NotNull EIPAdapterConfig convertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull Map<@NotNull String, Object> config) {
+    public @NotNull EIPAdapterConfig convertConfigObject(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<@NotNull String, Object> config) {
         return EIPConfigConverter.convertConfig(objectMapper, config);
     }
 
     @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
+    public Map<String, Object> unconvertConfigObject(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull CustomConfig config) {
         return EIPConfigConverter.unconvertConfig(objectMapper, config);
     }
 

@@ -37,7 +37,7 @@ public class BacnetAdapterFactory implements ProtocolAdapterFactory<BacnetAdapte
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<BacnetAdapterConfig> input) {
-        return new BacnetProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry());
+        return new BacnetProtocolAdapter(adapterInformation, input);
     }
 
     @Override

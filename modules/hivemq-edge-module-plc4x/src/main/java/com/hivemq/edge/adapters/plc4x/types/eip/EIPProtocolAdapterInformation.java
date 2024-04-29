@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.plc4x.types.eip;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -26,8 +25,7 @@ import java.util.List;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class EIPProtocolAdapterInformation
-    extends AbstractProtocolAdapterInformation {
+public class EIPProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new EIPProtocolAdapterInformation();
 
@@ -55,13 +53,23 @@ public class EIPProtocolAdapterInformation
     }
 
     @Override
-    public String getVersion() {
-        return super.getVersion() + " (BETA)";
+    public @NotNull String getUrl() {
+        return "TODO";
     }
 
     @Override
-    public String getLogoUrl() {
+    public @NotNull String getVersion() {
+        return "TODO";
+    }
+
+    @Override
+    public @NotNull String getLogoUrl() {
         return "/images/eip-icon.png";
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HiveMQ";
     }
 
     @Override

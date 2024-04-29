@@ -16,24 +16,57 @@
 package com.hivemq.edge.modules.adapters.simulation;
 
 import com.codahale.metrics.MetricRegistry;
+import com.hivemq.edge.modules.adapters.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.adapters.model.impl.AbstractPollingPerSubscriptionAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAdapter<SimulationAdapterConfig, ProtocolAdapterDataSample> {
+public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocolAdapter {
+
+    private final @NotNull ProtocolAdapterInformation adapterInformation;
+    private final @NotNull SimulationAdapterConfig adapterConfig;
+    private final @NotNull MetricRegistry metricRegistry;
+    private final @NotNull ProtocolAdapterState protocolAdapterState;
 
     public SimulationProtocolAdapter(
             @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final SimulationAdapterConfig adapterConfig,
-            @NotNull final MetricRegistry metricRegistry) {
-        super(adapterInformation, adapterConfig, metricRegistry);
+            @NotNull final ProtocolAdapterInput<SimulationAdapterConfig> protocolAdapterInput) {
+        this.adapterInformation = adapterInformation;
+        this.adapterConfig = protocolAdapterInput.getConfig();
+        this.metricRegistry = protocolAdapterInput.getMetricRegistry();
+        protocolAdapterState = protocolAdapterInput.getProtocolAdapterState();
+    }
+
+    @Override
+    public @NotNull String getId() {
+        return adapterConfig.getId();
+    }
+
+    @Override
+    public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
+            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+        return CompletableFuture.completedFuture(output);
+    }
+
+    @Override
+    public @NotNull CompletableFuture<Void> stop() {
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        return adapterInformation;
     }
 
     @Override
@@ -42,34 +75,29 @@ public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAda
     }
 
     @Override
-    protected CompletableFuture<ProtocolAdapterStartOutput> startInternal( final @NotNull ProtocolAdapterStartOutput output) {
-        try {
-            if (adapterConfig.getSubscriptions() != null) {
-                for (AdapterSubscription adapterSubscription : adapterConfig.getSubscriptions()) {
-                    startPolling(new SubscriptionSampler(adapterConfig, adapterSubscription));
-                }
-            }
-            return CompletableFuture.completedFuture(output);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+    public @NotNull RuntimeStatus getRuntimeStatus() {
+        return protocolAdapterState.getRuntimeStatus();
     }
 
     @Override
-    protected CompletableFuture<Void> stopInternal() {
-        return CompletableFuture.completedFuture(null);
+    public @Nullable String getErrorMessage() {
+        //TODO
+        return null;
     }
 
     @Override
-    protected CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(
-            final SimulationAdapterConfig config,
-            final AdapterSubscription adapterSubscription) {
-        ProtocolAdapterDataSample dataSample =
-                new ProtocolAdapterDataSampleImpl(adapterSubscription);
+    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final AdapterSubscription adapterSubscription) {
+        ProtocolAdapterDataSample dataSample = new ProtocolAdapterDataSampleImpl(adapterSubscription);
 
-        dataSample.addDataPoint("sample", ThreadLocalRandom.current().nextDouble(
-                Math.min(config.getMinValue(), config.getMaxValue()),
-                Math.max(config.getMinValue() + 1, config.getMaxValue())));
+        dataSample.addDataPoint("sample",
+                ThreadLocalRandom.current()
+                        .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
+                                Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
         return CompletableFuture.completedFuture(dataSample);
+    }
+
+    @Override
+    public @NotNull List<? extends AdapterSubscription> getSubscriptions() {
+        return adapterConfig.getSubscriptions();
     }
 }

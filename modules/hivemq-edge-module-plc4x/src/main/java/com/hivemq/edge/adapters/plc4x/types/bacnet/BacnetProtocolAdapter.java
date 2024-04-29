@@ -15,9 +15,10 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.bacnet;
 
-import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -25,19 +26,18 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 public class BacnetProtocolAdapter extends AbstractPlc4xAdapter<BacnetAdapterConfig> {
 
     public BacnetProtocolAdapter(
-            final ProtocolAdapterInformation adapterInformation,
-            final BacnetAdapterConfig adapterConfig,
-            final MetricRegistry metricRegistry) {
-        super(adapterInformation, adapterConfig, metricRegistry);
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<BacnetAdapterConfig> input) {
+        super(adapterInformation, input);
     }
 
     @Override
-    protected String getProtocolHandler() {
+    protected @NotNull String getProtocolHandler() {
         return "bacnet";
     }
 
     @Override
-    protected ReadType getReadType() {
+    protected @NotNull ReadType getReadType() {
         return ReadType.Read;
     }
 }

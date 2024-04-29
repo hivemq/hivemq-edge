@@ -15,13 +15,17 @@
  */
 package com.hivemq.adapter;
 
-import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * @author Simon L Johnson
  */
-public class TestAdapterInformation extends AbstractProtocolAdapterInformation {
+public class TestAdapterInformation implements ProtocolAdapterInformation {
 
     public TestAdapterInformation() {
     }
@@ -46,7 +50,33 @@ public class TestAdapterInformation extends AbstractProtocolAdapterInformation {
         return "This is the test protocol information";
     }
 
-    class TestConfig extends AbstractProtocolAdapterConfig {
+    @Override
+    public @NotNull String getUrl() {
+        return "null";
+    }
 
+    @Override
+    public @NotNull String getVersion() {
+        return "version";
+    }
+
+    @Override
+    public @NotNull String getLogoUrl() {
+        return "null";
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HiveMQ";
+    }
+
+    @Override
+    public @Nullable ProtocolAdapterConstants.CATEGORY getCategory() {
+        return null;
+    }
+
+    @Override
+    public @Nullable List<ProtocolAdapterConstants.TAG> getTags() {
+        return null;
     }
 }

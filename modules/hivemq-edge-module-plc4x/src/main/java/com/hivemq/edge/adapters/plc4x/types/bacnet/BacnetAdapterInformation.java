@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.plc4x.types.bacnet;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -26,8 +25,7 @@ import java.util.List;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class BacnetAdapterInformation
-    extends AbstractProtocolAdapterInformation {
+public class BacnetAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new BacnetAdapterInformation();
 
@@ -55,8 +53,23 @@ public class BacnetAdapterInformation
     }
 
     @Override
+    public @NotNull String getUrl() {
+        return null;
+    }
+
+    @Override
     public String getVersion() {
-        return super.getVersion() + " (BETA)";
+        return "TODO";
+    }
+
+    @Override
+    public @NotNull String getLogoUrl() {
+        return null;
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HiveMQ";
     }
 
     @Override

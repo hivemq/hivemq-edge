@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.plc4x.types.ads;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -27,7 +26,7 @@ import java.util.List;
  * @author HiveMQ Adapter Generator
  */
 public class ADSProtocolAdapterInformation
-    extends AbstractProtocolAdapterInformation {
+    implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new ADSProtocolAdapterInformation();
 
@@ -55,6 +54,16 @@ public class ADSProtocolAdapterInformation
     }
 
     @Override
+    public @NotNull String getUrl() {
+        return "TODO";
+    }
+
+    @Override
+    public @NotNull String getVersion() {
+        return "TODO";
+    }
+
+    @Override
     public String getLogoUrl() {
         return "/images/beckhoff-icon.gif";
     }
@@ -62,6 +71,11 @@ public class ADSProtocolAdapterInformation
     @Override
     public @NotNull String getUrl() {
         return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#ads-adapter";
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HiveMQ";
     }
 
     @Override

@@ -36,17 +36,23 @@ public class ABProtocolAdapterFactory implements ProtocolAdapterFactory<ABAdapte
     }
 
     @Override
-    public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<ABAdapterConfig> input) {
-        return new ABProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry());
+    public @NotNull ProtocolAdapter createAdapter(
+            @NotNull final ProtocolAdapterInformation adapterInformation,
+            @NotNull final ProtocolAdapterInput<ABAdapterConfig> input) {
+        return new ABProtocolAdapter(adapterInformation, input);
     }
 
     @Override
-    public @NotNull ABAdapterConfig convertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull Map<@NotNull String, Object> config) {
+    public @NotNull ABAdapterConfig convertConfigObject(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<@NotNull String, Object> config) {
         return ABConfigConverter.convertConfig(objectMapper, config);
     }
 
     @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
+    public Map<String, Object> unconvertConfigObject(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull CustomConfig config) {
         return ABConfigConverter.unconvertConfig(objectMapper, config);
     }
 

@@ -60,7 +60,6 @@ configurations {
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
     testImplementation("com.hivemq:hivemq-edge-extension-sdk")
-    testImplementation("com.hivemq:hivemq-edge-adapter-lib")
 
     testImplementation("com.google.guava:guava:${property("guava.version")}")
     testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
