@@ -19,16 +19,21 @@ import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
+import com.hivemq.edge.modules.adapters.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.DataPoint;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
 import com.hivemq.edge.modules.adapters.model.NodeTree;
 import com.hivemq.edge.modules.adapters.model.NodeType;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterPollingSampler;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.adapters.model.impl.AbstractPollingPerSubscriptionAdapter;
+import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -39,28 +44,78 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
-public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter<ModbusAdapterConfig, ModBusData> {
+public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull Object lock = new Object();
+    private final @NotNull ProtocolAdapterInformation adapterInformation;
+    private final @NotNull ModbusAdapterConfig adapterConfig;
+    private final @NotNull MetricRegistry metricRegistry;
+    private final @NotNull String version;
+    private final @NotNull ProtocolAdapterState protocolAdapterState;
+    private final @NotNull ModuleServices moduleServices;
+    private final @NotNull AdapterFactories adapterFactories;
+
     private volatile @Nullable IModbusClient modbusClient;
-    private @Nullable Map<ModbusAdapterConfig.AdapterSubscription, ProtocolAdapterDataSample> lastSamples = new HashMap<>();
+    private @Nullable Map<ModbusAdapterConfig.AdapterSubscription, ProtocolAdapterDataSample> lastSamples =
+            new HashMap<>();
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ModbusAdapterConfig adapterConfig,
-            final @NotNull MetricRegistry metricRegistry) {
-        super(adapterInformation, adapterConfig, metricRegistry);
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull ProtocolAdapterInput<ModbusAdapterConfig> input) {
+        this.adapterInformation = adapterInformation;
+        this.adapterConfig = adapterConfig;
+        this.metricRegistry = metricRegistry;
+        this.version = input.getVersion();
+        this.protocolAdapterState = input.getProtocolAdapterState();
+        this.moduleServices = input.moduleServices();
+        this.adapterFactories = input.adapterFactories();
     }
 
     @Override
-    protected @NotNull CompletableFuture<ProtocolAdapterStartOutput> startInternal(final @NotNull ProtocolAdapterStartOutput output) {
-        CompletableFuture<IModbusClient> startFuture = CompletableFuture.supplyAsync(() -> initConnection());
-        startFuture.thenAccept(this::subscribeAllInternal);
+    public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
+            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+        CompletableFuture<IModbusClient> startFuture = CompletableFuture.supplyAsync(this::initConnection);
         return startFuture.thenApply(connection -> output);
     }
 
-    private IModbusClient initConnection() {
+    @Override
+    public @NotNull CompletableFuture<Void> stop() {
+        return CompletableFuture.completedFuture(null);
+    }
+
+    @Override
+    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final AdapterSubscription adapterSubscription) {
+
+        //-- If a previously linked job has terminally disconnected the client
+        //-- we need to ensure any orphaned jobs tidy themselves up properly
+        try {
+            if (modbusClient != null) {
+                if (!modbusClient.isConnected()) {
+                    modbusClient.connect()
+                            .thenRun(() -> protocolAdapterState.setConnectionStatus(ConnectionStatus.CONNECTED))
+                            .get();
+                }
+                return CompletableFuture.supplyAsync(() -> readRegisters(adapterSubscription))
+                        .thenApply(this::captureDataSample);
+            } else {
+                return CompletableFuture.failedFuture(new IllegalStateException("client not initialised"));
+            }
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    @Override
+    public @NotNull List<? extends AdapterSubscription> getSubscriptions() {
+        return adapterConfig.getSubscriptions().stream().filter(sub -> sub.getAddressRange() != null).collect(Collectors.toList());
+    }
+
+
+    private @NotNull IModbusClient initConnection() {
         if (modbusClient == null) {
             synchronized (lock) {
                 if (modbusClient == null) {
@@ -75,27 +130,10 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected @NotNull CompletableFuture<Void> stopInternal() {
-        return CompletableFuture.completedFuture(null);
+    public @NotNull String getId() {
+        return adapterConfig.getId();
     }
 
-    protected void subscribeAllInternal(@NotNull final IModbusClient client) throws RuntimeException {
-        if (adapterConfig.getSubscriptions() != null) {
-            for (ModbusAdapterConfig.AdapterSubscription subscription : adapterConfig.getSubscriptions()) {
-                subscribeInternal(client, subscription);
-            }
-        }
-    }
-
-    protected void subscribeInternal(
-            @NotNull final IModbusClient client, final @NotNull ModbusAdapterConfig.AdapterSubscription subscription) {
-        if (subscription != null) {
-            ModbusAdapterConfig.AddressRange registerAddressRange = subscription.getAddressRange();
-            if (registerAddressRange != null) {
-                startPolling(new SubscriptionSampler(this.adapterConfig, subscription));
-            }
-        }
-    }
 
     @Override
     public @NotNull CompletableFuture<Void> discoverValues(
@@ -118,7 +156,27 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
     }
 
     @Override
-    protected @NotNull CompletableFuture<?> captureDataSample(@NotNull final ProtocolAdapterDataSample data) {
+    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        return adapterInformation;
+    }
+
+    @Override
+    public @NotNull ConnectionStatus getConnectionStatus() {
+        return protocolAdapterState.getConnectionStatus();
+    }
+
+    @Override
+    public @NotNull RuntimeStatus getRuntimeStatus() {
+        return protocolAdapterState.getRuntimeStatus();
+    }
+
+    @Override
+    public @Nullable String getErrorMessage() {
+        //TODO
+        return null;
+    }
+
+    protected @Nullable ProtocolAdapterDataSample captureDataSample(@NotNull final ProtocolAdapterDataSample data) {
         boolean publishData = true;
         if (log.isTraceEnabled()) {
             log.trace("Captured ModBus data with {} data points.", data.getDataPoints().size());
@@ -149,13 +207,14 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
             if (log.isTraceEnabled()) {
                 log.trace("Publishing data with {} samples", data.getDataPoints().size());
             }
-            return super.captureDataSample(data);
+            return data;
         }
-        return CompletableFuture.completedFuture(null);
+        // TODO
+        return null;
     }
 
 
-    @Override
+    // TODO
     protected void onSamplerClosed(final @NotNull ProtocolAdapterPollingSampler sampler) {
         try {
             if (log.isTraceEnabled()) {
@@ -171,33 +230,14 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
         }
     }
 
-    @Override
-    protected @NotNull CompletableFuture onSamplerInvoked(
-            final @NotNull ModbusAdapterConfig config, final @NotNull AdapterSubscription adapterSubscription) {
-
-        //-- If a previously linked job has terminally disconnected the client
-        //-- we need to ensure any orphaned jobs tidy themselves up properly
-        try {
-            if (modbusClient != null) {
-                if (!modbusClient.isConnected()) {
-                    modbusClient.connect().thenRun(() -> setConnectionStatus(ConnectionStatus.CONNECTED)).get();
-                }
-                return CompletableFuture.supplyAsync(() -> readRegisters(adapterSubscription));
-            } else {
-                return CompletableFuture.failedFuture(new IllegalStateException("client not initialised"));
-            }
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
-    protected ModBusData readRegisters(@NotNull final AdapterSubscription sub) {
+    protected @NotNull ModBusData readRegisters(@NotNull final AdapterSubscription sub) {
         try {
             ModbusAdapterConfig.AdapterSubscription subscription = (ModbusAdapterConfig.AdapterSubscription) sub;
             ModbusAdapterConfig.AddressRange addressRange = subscription.getAddressRange();
             Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
                     addressRange.endIdx - addressRange.startIdx);
-            ModBusData data = new ModBusData(subscription, ModBusData.TYPE.HOLDING_REGISTERS);
+            ModBusData data = new ModBusData(subscription, ModBusData.TYPE.HOLDING_REGISTERS,
+                    adapterFactories.dataPointFactory());
             //add data point per register
             for (int i = 0; i < registers.length; i++) {
                 data.addDataPoint("register-" + (addressRange.startIdx + i), registers[i]);
@@ -208,7 +248,8 @@ public class ModbusProtocolAdapter extends AbstractPollingPerSubscriptionAdapter
         }
     }
 
-    private static void addAddresses(NodeTree tree, String parent, int startIdx, int count, int groupIdx) {
+    private static void addAddresses(
+            @NotNull NodeTree tree, @NotNull String parent, int startIdx, int count, int groupIdx) {
 
         String parentNode = parent;
         if (groupIdx < count) {

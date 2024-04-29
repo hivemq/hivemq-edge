@@ -10,6 +10,3 @@ pluginManagement {
     includeBuild("../../edge-plugins")
 
 }
-
-
-includeBuild("../../hivemq-edge-adapter-lib")

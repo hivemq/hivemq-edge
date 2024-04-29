@@ -27,6 +27,7 @@ import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.ModuleLoader;
+import com.hivemq.edge.modules.adapters.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.edge.modules.adapters.PollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
@@ -234,13 +235,28 @@ public class ProtocolAdapterManager {
         if (protocolAdapterWrapper.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STARTED) {
             startFuture = CompletableFuture.completedFuture(output);
         } else {
-            startFuture = protocolAdapterWrapper.start(new ProtocolAdapterStartInputImpl(protocolAdapterWrapper), output);
+            startFuture =
+                    protocolAdapterWrapper.start(new ProtocolAdapterStartInputImpl(protocolAdapterWrapper), output);
         }
         return startFuture.<Void>thenApply(input -> {
             if (!output.startedSuccessfully) {
                 handleStartupError(protocolAdapterWrapper, output);
             } else {
-                if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
+                if (protocolAdapterWrapper.getAdapter() instanceof PollingPerSubscriptionProtocolAdapter) {
+                    log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
+                    final PollingPerSubscriptionProtocolAdapter adapter =
+                            (PollingPerSubscriptionProtocolAdapter) protocolAdapterWrapper.getAdapter();
+                    adapter.getSubscriptions().forEach(adapterSubscription -> {
+                        final PerSubscriptionSampler sampler =
+                                new PerSubscriptionSampler(adapter,
+                                        protocolAdapterWrapper.getConfigObject(),
+                                        metricRegistry,
+                                        objectMapper,
+                                        moduleServices.adapterPublishService(),
+                                        adapterSubscription);
+                        protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
+                    });
+                } else if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
                     log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
                     final SubscriptionSampler sampler =
                             new SubscriptionSampler((PollingProtocolAdapter) protocolAdapterWrapper.getAdapter(),
@@ -252,7 +268,9 @@ public class ProtocolAdapterManager {
                 }
                 if (output.message != null) {
                     if (log.isTraceEnabled()) {
-                        log.trace("Protocol-adapter \"{}\" started: {}.", protocolAdapterWrapper.getId(), output.message);
+                        log.trace("Protocol-adapter \"{}\" started: {}.",
+                                protocolAdapterWrapper.getId(),
+                                output.message);
                     }
                     HiveMQEdgeRemoteEvent adapterCreatedEvent =
                             new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED);
@@ -354,10 +372,9 @@ public class ProtocolAdapterManager {
                     }
                     return true;
                 } finally {
-                    eventService.fireEvent(eventBuilder(EventImpl.SEVERITY.WARN,
-                            adapterInstance.get()).withMessage(String.format(
-                            "Adapter \"%s\" was deleted from the system permanently.",
-                            adapterInstance.get().getId())).build());
+                    eventService.fireEvent(eventBuilder(EventImpl.SEVERITY.WARN, adapterInstance.get()).withMessage(
+                            String.format("Adapter \"%s\" was deleted from the system permanently.",
+                                    adapterInstance.get().getId())).build());
                 }
             }
         }
@@ -370,9 +387,7 @@ public class ProtocolAdapterManager {
         if (adapterInstance.isPresent()) {
             ProtocolAdapterWrapper oldInstance = adapterInstance.get();
             deleteAdapter(oldInstance.getId());
-            addAdapter(oldInstance.getProtocolAdapterInformation().getProtocolId(),
-                    oldInstance.getId(),
-                    config);
+            addAdapter(oldInstance.getProtocolAdapterInformation().getProtocolId(), oldInstance.getId(), config);
             return true;
         }
         return false;
@@ -398,7 +413,6 @@ public class ProtocolAdapterManager {
     }
 
 
-
     public @NotNull Map<String, ProtocolAdapterWrapper> getProtocolAdapters() {
         return protocolAdapters;
     }
@@ -416,7 +430,8 @@ public class ProtocolAdapterManager {
 
 
             final ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper = new ProtocolAdapterMetricsHelperImpl(
-                    protocolAdapterFactory.getInformation().getProtocolId(), configObject.getId(),
+                    protocolAdapterFactory.getInformation().getProtocolId(),
+                    configObject.getId(),
                     metricRegistry);
 
 

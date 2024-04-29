@@ -316,7 +316,8 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                         log.debug("Application Error {} In Sampler {} -> {}",
                                 errorCountTotal,
                                 sampler.getAdapterId(),
-                                e.getMessage(), e);
+                                e.getMessage(),
+                                e);
                     }
                 }
                 try {

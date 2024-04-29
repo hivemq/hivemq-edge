@@ -16,14 +16,14 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.List;
 
 public class ModbusProtocolAdapterInformation
-        extends AbstractProtocolAdapterInformation {
+        implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new ModbusProtocolAdapterInformation();
 
@@ -53,6 +53,27 @@ public class ModbusProtocolAdapterInformation
     @Override
     public @NotNull String getUrl() {
         return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#modbus-tcp-adapter";
+    }
+
+    @Override
+    public @NotNull String getVersion() {
+        //TODO
+        return "TODO";
+    }
+
+    @Override
+    public @NotNull String getLogoUrl() {
+        return "/images/modbus-icon.png";
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HIVEMQ";
+    }
+
+    @Override
+    public @Nullable ProtocolAdapterConstants.CATEGORY getCategory() {
+        return ProtocolAdapterConstants.CATEGORY.INDUSTRIAL;
     }
 
     @Override

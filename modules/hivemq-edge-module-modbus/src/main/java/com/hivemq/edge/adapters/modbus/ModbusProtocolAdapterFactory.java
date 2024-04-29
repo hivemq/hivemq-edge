@@ -33,17 +33,26 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
     }
 
     @Override
-    public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<ModbusAdapterConfig> input) {
-        return new ModbusProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry());
+    public @NotNull ProtocolAdapter createAdapter(
+            @NotNull final ProtocolAdapterInformation adapterInformation,
+            @NotNull final ProtocolAdapterInput<ModbusAdapterConfig> input) {
+        return new ModbusProtocolAdapter(adapterInformation,
+                input.getConfig(),
+                input.getMetricRegistry(),
+                input);
     }
 
     @Override
-    public @NotNull ModbusAdapterConfig convertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull Map<@NotNull String, Object> config) {
+    public @NotNull ModbusAdapterConfig convertConfigObject(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<@NotNull String, Object> config) {
         return ModbusConfigConverter.convertConfig(objectMapper, config);
     }
 
     @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
+    public Map<String, Object> unconvertConfigObject(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull CustomConfig config) {
         return ModbusConfigConverter.unconvertConfig(objectMapper, config);
     }
 

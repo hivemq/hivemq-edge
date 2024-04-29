@@ -15,28 +15,99 @@
  */
 package com.hivemq.edge.adapters.modbus.model;
 
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.hivemq.edge.modules.adapters.data.DataPoint;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.edge.modules.adapters.factories.DataPointFactory;
 import com.hivemq.edge.modules.config.AdapterSubscription;
+import com.hivemq.edge.modules.config.UserProperty;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author Simon L Johnson
  */
-public class ModBusData extends ProtocolAdapterDataSampleImpl {
-
+public class ModBusData implements ProtocolAdapterDataSample {
     public enum TYPE {
         COILS,
         INPUT_REGISTERS,
         HOLDING_REGISTERS,
     }
 
-    private final TYPE type;
+    private final @NotNull TYPE type;
+    private final DataPointFactory dataPointFactory;
+    protected @NotNull Long timestamp = System.currentTimeMillis();
+    protected @NotNull AdapterSubscription adapterSubscription;
 
-    public ModBusData(AdapterSubscription adapterSubscription, final TYPE type) {
-        super(adapterSubscription);
+    //-- Handle multiple tags in the same sample
+    protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
+
+    public ModBusData(
+            final @NotNull AdapterSubscription adapterSubscription,
+            final @NotNull TYPE type,
+            final @NotNull DataPointFactory dataPointFactory) {
+        this.adapterSubscription = adapterSubscription;
         this.type = type;
+
+        this.dataPointFactory = dataPointFactory;
     }
 
-    public TYPE getType() {
+    public @NotNull TYPE getType() {
         return type;
+    }
+
+    @Override
+    @JsonIgnore
+    public @NotNull AdapterSubscription getSubscription() {
+        return adapterSubscription;
+    }
+
+    @Override
+    @JsonIgnore
+    public @Nullable String getTopic() {
+        return adapterSubscription.getDestination();
+    }
+
+    @Override
+    @JsonIgnore
+    public int getQos() {
+        return adapterSubscription.getQos();
+    }
+
+    @Override
+    @JsonIgnore
+    public @NotNull Long getTimestamp() {
+        return timestamp;
+    }
+
+    @Override
+    @JsonIgnore
+    public @NotNull List<UserProperty> getUserProperties() {
+        return adapterSubscription.getUserProperties();
+    }
+
+    @Override
+    public void setTimestamp(final @NotNull Long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    @Override
+    public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
+        dataPoints.add(dataPointFactory.create(tagName, tagValue));
+    }
+
+    @Override
+    public void setDataPoints(@NotNull List<DataPoint> list) {
+        this.dataPoints = list;
+    }
+
+    @Override
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public @NotNull List<DataPoint> getDataPoints() {
+        return dataPoints;
     }
 }

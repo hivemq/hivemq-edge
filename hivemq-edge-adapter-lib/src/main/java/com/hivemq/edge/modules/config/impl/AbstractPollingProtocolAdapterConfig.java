@@ -36,7 +36,6 @@ public class AbstractPollingProtocolAdapterConfig extends AbstractProtocolAdapte
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
                        description = "Max. errors polling the endpoint before the polling daemon is stopped",
-                       numberMin = 3,
                        defaultValue = "10")
     private int maxPollingErrorsBeforeRemoval = DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL;
 
