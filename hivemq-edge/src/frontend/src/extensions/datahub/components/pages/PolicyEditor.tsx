@@ -23,6 +23,7 @@ import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
 import ToolboxSelectionListener from '@datahub/components/controls/ToolboxSelectionListener.tsx'
 import { CopyPasteListener } from '@datahub/components/controls/CopyPasteListener.tsx'
 import CopyPasteStatus from '@datahub/components/controls/CopyPasteStatus.tsx'
+import ConnectionLine from '@datahub/components/nodes/ConnectionLine.tsx'
 
 export type OnConnectStartParams = {
   nodeId: string | null
