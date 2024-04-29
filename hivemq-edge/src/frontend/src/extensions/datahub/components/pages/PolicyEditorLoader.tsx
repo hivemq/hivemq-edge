@@ -64,7 +64,9 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
       )
 
       store.onNodesChange(nodeChanges)
-      edgeConnects.map((connection) => store.onConnect(connection))
+      for (const connection of edgeConnects) {
+        store.onConnect(connection)
+      }
       store.setStatus(DesignerStatus.LOADED, { name: dataPolicy.id })
     } catch (error) {
       let message
@@ -131,7 +133,9 @@ export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
       )
 
       store.onNodesChange(nodeChanges)
-      edgeConnects.map((connection) => store.onConnect(connection))
+      for (const connection of edgeConnects) {
+        store.onConnect(connection)
+      }
       store.setStatus(DesignerStatus.LOADED, { name: behaviorPolicy.id })
     } catch (error) {
       let message
