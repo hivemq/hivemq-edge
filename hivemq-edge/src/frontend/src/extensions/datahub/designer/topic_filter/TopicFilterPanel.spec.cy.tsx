@@ -1,24 +1,24 @@
 /// <reference types="cypress" />
 
 import { Button } from '@chakra-ui/react'
+import { Node } from 'reactflow'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
-import { DataHubNodeType } from '@datahub/types.ts'
-import { getNodePayload } from '@datahub/utils/node.utils.ts'
+import { DataHubNodeType, TopicFilterData } from '@datahub/types.ts'
 import { TopicFilterPanel } from './TopicFilterPanel.tsx'
+
+const MOCK_TOPIC_FILTER: Node<TopicFilterData> = {
+  id: '3',
+  type: DataHubNodeType.CLIENT_FILTER,
+  position: { x: 0, y: 0 },
+  data: { topics: ['root/test1', 'root/test2'] },
+}
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
   <MockStoreWrapper
     config={{
       initialState: {
-        nodes: [
-          {
-            id: '3',
-            type: DataHubNodeType.TOPIC_FILTER,
-            position: { x: 0, y: 0 },
-            data: getNodePayload(DataHubNodeType.TOPIC_FILTER),
-          },
-        ],
+        nodes: [MOCK_TOPIC_FILTER],
       },
     }}
   >
