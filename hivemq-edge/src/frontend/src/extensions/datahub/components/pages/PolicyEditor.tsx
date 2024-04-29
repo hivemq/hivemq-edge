@@ -106,7 +106,7 @@ const PolicyEditor: FC = () => {
           const id = getNodeId()
           const newNode: Node = {
             id,
-            position: reactFlowInstance?.screenToFlowPosition({
+            position: reactFlowInstance.screenToFlowPosition({
               x: (event as MouseEvent).clientX || (event as TouchEvent).touches[0].clientX,
               y: (event as MouseEvent).clientY || (event as TouchEvent).touches[0].clientY,
             }),
