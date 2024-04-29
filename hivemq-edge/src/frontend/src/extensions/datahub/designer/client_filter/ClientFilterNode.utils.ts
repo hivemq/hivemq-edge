@@ -1,17 +1,10 @@
-import { getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
+import { Connection, getIncomers, Node, NodeAddChange, XYPosition } from 'reactflow'
 
 import { getNodeId, isClientFilterNodeType } from '@datahub/utils/node.utils.ts'
 import { BehaviorPolicy } from '@/api/__generated__'
 import i18n from '@/config/i18n.config.ts'
 
-import {
-  BehaviorPolicyData,
-  ClientFilterData,
-  DataHubNodeType,
-  DryRunResults,
-  WorkspaceAction,
-  WorkspaceState,
-} from '@datahub/types.ts'
+import { BehaviorPolicyData, ClientFilterData, DataHubNodeType, DryRunResults, WorkspaceState } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
@@ -45,16 +38,17 @@ export function checkValidityClients(
   }
 }
 
-export const loadClientFilter = (behaviorPolicy: BehaviorPolicy, store: WorkspaceState & WorkspaceAction) => {
-  const { onNodesChange, onConnect } = store
-  const BehaviorPolicyNode = store.nodes.find((node) => node.id === behaviorPolicy.id)
-  if (!BehaviorPolicyNode)
+export const loadClientFilter = (
+  behaviorPolicy: BehaviorPolicy,
+  behaviorPolicyNode: Node<BehaviorPolicyData>
+): (NodeAddChange | Connection)[] => {
+  if (behaviorPolicyNode.id !== behaviorPolicy.id)
     throw new Error(
       i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.BEHAVIOR_POLICY }) as string
     )
   const position: XYPosition = {
-    x: BehaviorPolicyNode.position.x + CANVAS_POSITION.Client.x,
-    y: BehaviorPolicyNode.position.y + CANVAS_POSITION.Client.y,
+    x: behaviorPolicyNode.position.x + CANVAS_POSITION.Client.x,
+    y: behaviorPolicyNode.position.y + CANVAS_POSITION.Client.y,
   }
 
   const topicNode: Node<ClientFilterData> = {
@@ -66,6 +60,8 @@ export const loadClientFilter = (behaviorPolicy: BehaviorPolicy, store: Workspac
     },
   }
 
-  onNodesChange([{ item: topicNode, type: 'add' } as NodeAddChange])
-  onConnect({ source: topicNode.id, target: BehaviorPolicyNode.id, sourceHandle: null, targetHandle: null })
+  return [
+    { item: topicNode, type: 'add' },
+    { source: topicNode.id, target: behaviorPolicyNode.id, sourceHandle: null, targetHandle: null },
+  ]
 }

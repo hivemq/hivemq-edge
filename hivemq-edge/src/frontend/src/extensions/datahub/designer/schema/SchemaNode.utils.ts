@@ -1,4 +1,4 @@
-import { Node, NodeAddChange } from 'reactflow'
+import { Connection, Node, NodeAddChange } from 'reactflow'
 import { parse, util as protobufUtils } from 'protobufjs'
 import descriptor from 'protobufjs/ext/descriptor'
 
@@ -13,8 +13,6 @@ import {
   ResourceStatus,
   SchemaData,
   SchemaType,
-  WorkspaceAction,
-  WorkspaceState,
 } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
@@ -125,10 +123,8 @@ export function loadSchema(
   targetHandle: string | null,
   positionDeltaX: number,
   schemaRef: SchemaReference,
-  schemas: Schema[],
-  store: WorkspaceState & WorkspaceAction
-) {
-  const { onNodesChange, onConnect } = store
+  schemas: Schema[]
+): (NodeAddChange | Connection)[] {
   const schema = schemas.find((schema) => schema.id === schemaRef.schemaId)
   if (!schema)
     throw new Error(i18n.t('datahub:error.loading.connection.notFound', { source: DataHubNodeType.SCHEMA }) as string)
@@ -150,14 +146,19 @@ export function loadSchema(
         internalVersions: schema.version ? [schema.version] : undefined,
       },
     }
-    onNodesChange([{ item: schemaNode, type: 'add' } as NodeAddChange])
-    onConnect({
-      source: schemaNode.id,
-      target: parentNode.id,
-      sourceHandle: null,
-      targetHandle: targetHandle,
-    })
-  } else if (schema.type === SchemaType.PROTOBUF) {
+
+    return [
+      { item: schemaNode, type: 'add' },
+      {
+        source: schemaNode.id,
+        target: parentNode.id,
+        sourceHandle: null,
+        targetHandle: targetHandle,
+      },
+    ]
+  }
+
+  if (schema.type === SchemaType.PROTOBUF) {
     const encodedGraphBytes = new Uint8Array(protobufUtils.base64.length(schema.schemaDefinition))
     protobufUtils.base64.decode(schema.schemaDefinition, encodedGraphBytes, 0)
     const decodedMessage = descriptor.FileDescriptorSet.decode(encodedGraphBytes)
@@ -178,12 +179,17 @@ export function loadSchema(
         version: 1,
       },
     }
-    onNodesChange([{ item: schemaNode, type: 'add' } as NodeAddChange])
-    onConnect({
-      source: schemaNode.id,
-      target: parentNode.id,
-      sourceHandle: null,
-      targetHandle: targetHandle,
-    })
-  } else throw new Error(i18n.t('datahub:error.loading.schema.unknown', { type: schema.type }) as string)
+
+    return [
+      { item: schemaNode, type: 'add' },
+      {
+        source: schemaNode.id,
+        target: parentNode.id,
+        sourceHandle: null,
+        targetHandle: targetHandle,
+      },
+    ]
+  }
+
+  throw new Error(i18n.t('datahub:error.loading.schema.unknown', { type: schema.type }) as string)
 }

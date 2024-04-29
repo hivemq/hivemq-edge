@@ -1,17 +1,9 @@
-import { Node, NodeAddChange, XYPosition } from 'reactflow'
+import { Connection, Node, NodeAddChange, XYPosition } from 'reactflow'
 
 import { PolicyOperation, Script } from '@/api/__generated__'
 import i18n from '@/config/i18n.config.ts'
 
-import {
-  DataHubNodeData,
-  DataHubNodeType,
-  DryRunResults,
-  FunctionData,
-  OperationData,
-  WorkspaceAction,
-  WorkspaceState,
-} from '@datahub/types.ts'
+import { DataHubNodeData, DataHubNodeType, DryRunResults, FunctionData, OperationData } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 import {
@@ -48,14 +40,7 @@ export function checkValidityJSScript(scriptNode: Node<FunctionData>): DryRunRes
   return { data: script, node: scriptNode }
 }
 
-export const loadScripts = (
-  parentNode: Node<DataHubNodeData>,
-  functions: PolicyOperation[],
-  scripts: Script[],
-  store: WorkspaceState & WorkspaceAction
-) => {
-  const { onAddNodes, onConnect } = store
-
+export const loadScripts = (parentNode: Node<DataHubNodeData>, functions: PolicyOperation[], scripts: Script[]) => {
   const delta = ((Math.max(functions.length || 0, 1) - 1) * CANVAS_POSITION.Function.x) / 2
   const position: XYPosition = {
     x: parentNode.position.x - CANVAS_POSITION.Function.x - delta,
@@ -67,6 +52,7 @@ export const loadScripts = (
     return position
   }
 
+  const newNodes: (NodeAddChange | Connection)[] = []
   for (const fct of functions) {
     const [, functionName] = fct.functionId.split(':')
     const functionScript = scripts.find((script) => script.id === functionName)
@@ -86,12 +72,16 @@ export const loadScripts = (
         sourceCode: atob(functionScript.source),
       },
     }
-    onAddNodes([{ item: functionScriptNode, type: 'add' } as NodeAddChange])
-    onConnect({
-      source: functionScriptNode.id,
-      target: parentNode.id,
-      sourceHandle: null,
-      targetHandle: OperationData.Handle.FUNCTION,
-    })
+
+    newNodes.push(
+      { item: functionScriptNode, type: 'add' },
+      {
+        source: functionScriptNode.id,
+        target: parentNode.id,
+        sourceHandle: null,
+        targetHandle: OperationData.Handle.FUNCTION,
+      }
+    )
   }
+  return newNodes
 }

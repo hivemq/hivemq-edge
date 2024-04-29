@@ -1,7 +1,7 @@
 import { getIncomers, getOutgoers, Node, NodeAddChange, XYPosition } from 'reactflow'
 
 import { DataPolicy, DataPolicyValidator, PolicyOperation } from '@/api/__generated__'
-import { DataHubNodeType, DataPolicyData, DryRunResults, WorkspaceAction, WorkspaceState } from '@datahub/types.ts'
+import { DataHubNodeType, DataPolicyData, DryRunResults, WorkspaceState } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { isTopicFilterNodeType } from '@datahub/utils/node.utils.ts'
 
@@ -115,9 +115,7 @@ export const checkValidityDataPolicy = (
   }
 }
 
-export const loadDataPolicy = (policy: DataPolicy, store: WorkspaceState & WorkspaceAction) => {
-  const { onNodesChange } = store
-
+export const loadDataPolicy = (policy: DataPolicy): NodeAddChange => {
   const position: XYPosition = {
     x: 0,
     y: 0,
@@ -130,5 +128,5 @@ export const loadDataPolicy = (policy: DataPolicy, store: WorkspaceState & Works
     data: {},
   }
 
-  onNodesChange([{ item: dataPolicyNode, type: 'add' } as NodeAddChange])
+  return { item: dataPolicyNode, type: 'add' }
 }

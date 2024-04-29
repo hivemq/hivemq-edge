@@ -261,7 +261,7 @@
         "helper": "The unique name of this bridge",
         "error": {
           "required": "The name of the bridge is required",
-          "pattern": "Should only contain alpha-numeric characters with spaces and hyphens",
+          "pattern": "Should only contain alphanumeric characters with spaces and hyphens",
           "notUnique": "The name is already in use for another bridge"
         }
       },
@@ -304,7 +304,7 @@
       },
       "protocols": {
         "label": "TLS Protocols",
-        "helper": "Select the protocols. Leave emtpy to use the default protocols."
+        "helper": "Select the protocols. Leave empty to use the default protocols."
       },
       "keystorePath": {
         "label": "Key Store Path",
@@ -704,7 +704,7 @@
   },
   "modals": {
     "generics": {
-      "confirmation": "Are you sure? You can't undo this action afterwards."
+      "confirmation": "Are you sure? You can't undo this action afterward."
     },
     "StepperCancelDialog": {
       "header": "Delete Bridge"

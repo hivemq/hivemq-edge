@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { NodeAddChange, EdgeAddChange, Node, Edge, Rect } from 'reactflow'
+import { EdgeAddChange, Node, Edge, Rect } from 'reactflow'
 
 import { Group, IdStubs, NodeTypes, WorkspaceAction, WorkspaceState } from '../types.ts'
 import useWorkspaceStore from './useWorkspaceStore.ts'
@@ -29,8 +29,8 @@ describe('useWorkspaceStore', () => {
 
     act(() => {
       const { onNodesChange } = result.current
-      const item: Partial<Node> = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
-      onNodesChange([{ item, type: 'add' } as NodeAddChange])
+      const item: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+      onNodesChange([{ item, type: 'add' }])
     })
 
     expect(result.current.nodes).toHaveLength(1)
@@ -59,18 +59,18 @@ describe('useWorkspaceStore', () => {
 
     act(() => {
       const { onNodesChange, onEdgesChange } = result.current
-      const nodeEdge: Partial<Node> = { ...MOCK_NODE_EDGE, id: IdStubs.EDGE_NODE, position: { x: 0, y: 0 } }
-      const item1: Partial<Node> = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
-      const item2: Partial<Node> = { ...MOCK_NODE_BRIDGE, position: { x: 0, y: 0 } }
+      const nodeEdge: Node = { ...MOCK_NODE_EDGE, id: IdStubs.EDGE_NODE, position: { x: 0, y: 0 } }
+      const item1: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+      const item2: Node = { ...MOCK_NODE_BRIDGE, position: { x: 0, y: 0 } }
 
-      const item: Partial<Edge> = { id: '1-2', source: 'idAdapter', target: IdStubs.EDGE_NODE }
+      const item: Edge = { id: '1-2', source: 'idAdapter', target: IdStubs.EDGE_NODE }
 
       onNodesChange([
-        { item: nodeEdge, type: 'add' } as NodeAddChange,
-        { item: item1, type: 'add' } as NodeAddChange,
-        { item: item2, type: 'add' } as NodeAddChange,
+        { item: nodeEdge, type: 'add' },
+        { item: item1, type: 'add' },
+        { item: item2, type: 'add' },
       ])
-      onEdgesChange([{ item, type: 'add' } as EdgeAddChange])
+      onEdgesChange([{ item, type: 'add' }])
     })
     expect(result.current.nodes).toHaveLength(3)
     expect(result.current.edges).toHaveLength(1)

@@ -1,6 +1,6 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { NodeAddChange, EdgeAddChange, Node, Edge, NodeProps } from 'reactflow'
+import { EdgeAddChange, Node, Edge, NodeProps } from 'reactflow'
 
 import { DataHubNodeType, DataPolicyData, FunctionSpecs, WorkspaceAction, WorkspaceState } from '../types.ts'
 import useDataHubDraftStore from '@/extensions/datahub/hooks/useDataHubDraftStore.ts'
@@ -36,8 +36,8 @@ describe('useDataHubDraftStore', () => {
 
     act(() => {
       const { onNodesChange } = result.current
-      const item: Partial<Node> = { ...MOCK_NODE, position: { x: 0, y: 0 } }
-      onNodesChange([{ item, type: 'add' } as NodeAddChange])
+      const item: Node = { ...MOCK_NODE, position: { x: 0, y: 0 } }
+      onNodesChange([{ item, type: 'add' }])
     })
 
     expect(result.current.nodes).toHaveLength(1)
@@ -66,9 +66,12 @@ describe('useDataHubDraftStore', () => {
 
     act(() => {
       const { onNodesChange } = result.current
-      const item1: Partial<Node> = { ...MOCK_NODE, id: '1', position: { x: 0, y: 0 } }
-      const item2: Partial<Node> = { ...MOCK_NODE, id: '2', position: { x: 0, y: 0 } }
-      onNodesChange([{ item: item1, type: 'add' } as NodeAddChange, { item: item2, type: 'add' } as NodeAddChange])
+      const item1: Node = { ...MOCK_NODE, id: '1', position: { x: 0, y: 0 } }
+      const item2: Node = { ...MOCK_NODE, id: '2', position: { x: 0, y: 0 } }
+      onNodesChange([
+        { item: item1, type: 'add' },
+        { item: item2, type: 'add' },
+      ])
     })
 
     expect(result.current.nodes).toHaveLength(2)
@@ -90,8 +93,8 @@ describe('useDataHubDraftStore', () => {
 
     act(() => {
       const { onAddNodes } = result.current
-      const item1: Partial<Node> = { ...MOCK_NODE, position: { x: 0, y: 0 } }
-      onAddNodes([{ item: item1, type: 'add' } as NodeAddChange])
+      const item1: Node = { ...MOCK_NODE, position: { x: 0, y: 0 } }
+      onAddNodes([{ item: item1, type: 'add' }])
     })
 
     expect(result.current.nodes).toHaveLength(1)
@@ -99,8 +102,8 @@ describe('useDataHubDraftStore', () => {
 
     act(() => {
       const { onAddNodes } = result.current
-      const item1: Partial<Node> = { ...MOCK_NODE, position: { x: 0, y: 0 } }
-      onAddNodes([{ item: item1, type: 'add' } as NodeAddChange])
+      const item1: Node = { ...MOCK_NODE, position: { x: 0, y: 0 } }
+      onAddNodes([{ item: item1, type: 'add' }])
     })
 
     expect(result.current.nodes).toHaveLength(1)
@@ -108,8 +111,8 @@ describe('useDataHubDraftStore', () => {
 
     act(() => {
       const { onAddNodes } = result.current
-      const item1: Partial<Node> = { ...MOCK_NODE, id: '2', position: { x: 0, y: 0 } }
-      onAddNodes([{ item: item1, type: 'add' } as NodeAddChange])
+      const item1: Node = { ...MOCK_NODE, id: '2', position: { x: 0, y: 0 } }
+      onAddNodes([{ item: item1, type: 'add' }])
     })
 
     expect(result.current.nodes).toHaveLength(2)
@@ -156,8 +159,8 @@ describe('useDataHubDraftStore', () => {
 
     act(() => {
       const { onAddNodes } = result.current
-      const item1: Partial<Node> = { ...MOCK_NODE, position: { x: 0, y: 0 } }
-      onAddNodes([{ item: item1, type: 'add' } as NodeAddChange])
+      const item1: Node = { ...MOCK_NODE, position: { x: 0, y: 0 } }
+      onAddNodes([{ item: item1, type: 'add' }])
     })
 
     expect(result.current.nodes).toHaveLength(1)
