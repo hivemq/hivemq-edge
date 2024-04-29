@@ -34,7 +34,7 @@ export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit })
     if (hasDuplicate) {
       for (const [key, value] of duplicates) {
         for (const index of value) {
-          errors['topics']?.[index]?.addError(t(`the topic ${key} is already defined`))
+          errors['topics']?.[index]?.addError(t('error.validation.topicFilter.duplicate', { filter: key }))
         }
       }
     }
