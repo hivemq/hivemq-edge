@@ -10,20 +10,37 @@ const ShortcutRenderer: FC<ShortcutRendererProps> = ({ hotkeys, description }) =
   const listHotkeys = hotkeys.split(',')
   const shortcuts = listHotkeys.map((e) => e.split('+'))
 
+  const localiseKeyboard = (shortcut: string[]) => {
+    const [modifier, ...rest] = shortcut
+
+    if (modifier === 'Meta') {
+      const os = window.navigator.platform
+      if (os.startsWith('Mac')) {
+        return ['Command', ...rest]
+      } else {
+        return ['Ctrl', ...rest]
+      }
+    }
+    return shortcut
+  }
+
   return (
     <>
       <span role="term" aria-label={hotkeys}>
-        {shortcuts.map((shortcut, indexShortcut) => (
-          <Fragment key={`${shortcut}-${indexShortcut}`}>
-            {indexShortcut !== 0 && ' , '}
-            {shortcut.map((element, indexElement) => (
-              <chakra.span key={`$${shortcut}-${indexShortcut}-${indexElement}`} aria-hidden="true">
-                {indexElement !== 0 && ' + '}
-                <Kbd>{element}</Kbd>
-              </chakra.span>
-            ))}
-          </Fragment>
-        ))}
+        {shortcuts.map((shortcut, indexShortcut) => {
+          const localisedShortcut = localiseKeyboard(shortcut)
+          return (
+            <Fragment key={`${shortcut}-${indexShortcut}`}>
+              {indexShortcut !== 0 && ' , '}
+              {localisedShortcut.map((element, indexElement) => (
+                <chakra.span key={`$${shortcut}-${indexShortcut}-${indexElement}`} aria-hidden="true">
+                  {indexElement !== 0 && ' + '}
+                  <Kbd>{element}</Kbd>
+                </chakra.span>
+              ))}
+            </Fragment>
+          )
+        })}
       </span>
       {description && (
         <>

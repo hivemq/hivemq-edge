@@ -20,7 +20,7 @@ describe('ShortcutRenderer', () => {
   it('should render multiple shortcuts', () => {
     cy.mountWithProviders(<ShortcutRenderer hotkeys="CTRL+C,Meta+V,ESC" description="This is a description" />)
 
-    cy.get('[role="term"]').should('contain.text', 'CTRL + C , Meta + V , ESC')
+    cy.get('[role="term"]').should('contain.text', 'CTRL + C , Command + V , ESC')
     cy.get('kbd').should('have.length', 5)
   })
 
