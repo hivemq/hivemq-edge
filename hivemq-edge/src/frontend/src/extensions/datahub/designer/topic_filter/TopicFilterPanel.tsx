@@ -10,10 +10,17 @@ import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { validateDuplicates } from '@datahub/utils/rjsf.utils.ts'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/'
+import { useGetAllDataPolicies } from '@datahub/api/hooks/DataHubDataPoliciesService/useGetAllDataPolicies.tsx'
 
 export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
   const { t } = useTranslation('datahub')
+  const { isLoading, data } = useGetAllDataPolicies()
   const { nodes } = useDataHubDraftStore()
+
+  const listFilters = useMemo(() => {
+    if (isLoading || !data) return undefined
+    return data.items?.map((e) => e.matching.topicFilter)
+  }, [data, isLoading])
 
   const formData = useMemo(() => {
     const adapterNode = nodes.find((e) => e.id === selectedNode) as Node<TopicFilterData> | undefined
@@ -30,6 +37,11 @@ export const TopicFilterPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit })
           errors['topics']?.[index]?.addError(t(`the topic ${key} is already defined`))
         }
       }
+    }
+
+    for (const [index, value] of (formData?.['topics'] || []).entries()) {
+      if (listFilters?.includes(value))
+        errors['topics']?.[index]?.addError(t('error.validation.topicFilter.alreadyMatching', { filter: value }))
     }
 
     return errors
