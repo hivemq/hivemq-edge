@@ -164,3 +164,136 @@ export const isDataPolicyNodeType = (node: Node): node is Node<DataPolicyData> =
 
 export const isBehaviorPolicyNodeType = (node: Node): node is Node<BehaviorPolicyData> =>
   node.type === DataHubNodeType.BEHAVIOR_POLICY
+
+interface ValidDropConnection {
+  type: DataHubNodeType
+  handle: string | null
+  isSource: boolean
+}
+
+// TODO[NVL] Would a map object->Object make this process easier and more performant?
+export const getConnectedNodeFrom = (node?: string, handle?: string | null): ValidDropConnection | undefined => {
+  if (node === DataHubNodeType.TOPIC_FILTER) {
+    return {
+      type: DataHubNodeType.DATA_POLICY,
+      handle: DataPolicyData.Handle.TOPIC_FILTER,
+      isSource: false,
+    }
+  }
+  if (node === DataHubNodeType.CLIENT_FILTER) {
+    return {
+      type: DataHubNodeType.BEHAVIOR_POLICY,
+      handle: BehaviorPolicyData.Handle.CLIENT_FILTER,
+      isSource: false,
+    }
+  }
+  if (node === DataHubNodeType.DATA_POLICY && handle === DataPolicyData.Handle.TOPIC_FILTER) {
+    return {
+      type: DataHubNodeType.TOPIC_FILTER,
+      handle: null,
+      isSource: true,
+    }
+  }
+  if (node === DataHubNodeType.DATA_POLICY && handle === DataPolicyData.Handle.VALIDATION) {
+    return {
+      type: DataHubNodeType.VALIDATOR,
+      handle: null,
+      isSource: true,
+    }
+  }
+  if (
+    node === DataHubNodeType.DATA_POLICY &&
+    (handle === DataPolicyData.Handle.ON_SUCCESS || handle === DataPolicyData.Handle.ON_ERROR)
+  ) {
+    return {
+      type: DataHubNodeType.OPERATION,
+      handle: null,
+      isSource: false,
+    }
+  }
+  if (node === DataHubNodeType.VALIDATOR && handle === 'source') {
+    return {
+      type: DataHubNodeType.DATA_POLICY,
+      handle: DataPolicyData.Handle.VALIDATION,
+      isSource: false,
+    }
+  }
+  if (node === DataHubNodeType.VALIDATOR && handle === 'target') {
+    return {
+      type: DataHubNodeType.SCHEMA,
+      handle: null,
+      isSource: true,
+    }
+  }
+  if (node === DataHubNodeType.SCHEMA) {
+    // There are two possibilities: DataHubNodeType.VALIDATOR and DataHubNodeType.OPERATION (transform)
+    // We need some form of feedback
+    return undefined
+  }
+  if (node === DataHubNodeType.OPERATION && handle === OperationData.Handle.OUTPUT) {
+    return {
+      type: DataHubNodeType.OPERATION,
+      handle: OperationData.Handle.INPUT,
+      isSource: false,
+    }
+  }
+  if (node === DataHubNodeType.OPERATION && handle === OperationData.Handle.INPUT) {
+    return {
+      type: DataHubNodeType.OPERATION,
+      handle: OperationData.Handle.OUTPUT,
+      isSource: true,
+    }
+  }
+  if (
+    node === DataHubNodeType.OPERATION &&
+    (handle === OperationData.Handle.SCHEMA ||
+      handle === OperationData.Handle.SERIALISER ||
+      handle === OperationData.Handle.DESERIALISER)
+  ) {
+    return {
+      type: DataHubNodeType.SCHEMA,
+      handle: null,
+      isSource: true,
+    }
+  }
+  if (node === DataHubNodeType.OPERATION && handle === OperationData.Handle.FUNCTION) {
+    return {
+      type: DataHubNodeType.FUNCTION,
+      handle: null,
+      isSource: true,
+    }
+  }
+  if (node === DataHubNodeType.FUNCTION) {
+    // This is mapping to a specific data content of the OPERATION node. Not supported yet
+    return undefined
+  }
+  if (node === DataHubNodeType.BEHAVIOR_POLICY && handle === BehaviorPolicyData.Handle.CLIENT_FILTER) {
+    return {
+      type: DataHubNodeType.CLIENT_FILTER,
+      handle: null,
+      isSource: true,
+    }
+  }
+  if (node === DataHubNodeType.BEHAVIOR_POLICY && handle === BehaviorPolicyData.Handle.TRANSITIONS) {
+    return {
+      type: DataHubNodeType.TRANSITION,
+      handle: null,
+      isSource: false,
+    }
+  }
+  if (node === DataHubNodeType.TRANSITION && handle === TransitionData.Handle.BEHAVIOR_POLICY) {
+    return {
+      type: DataHubNodeType.BEHAVIOR_POLICY,
+      handle: BehaviorPolicyData.Handle.TRANSITIONS,
+      isSource: true,
+    }
+  }
+  if (node === DataHubNodeType.TRANSITION && handle === TransitionData.Handle.OPERATION) {
+    return {
+      type: DataHubNodeType.OPERATION,
+      handle: null,
+      isSource: false,
+    }
+  }
+  return undefined
+}
