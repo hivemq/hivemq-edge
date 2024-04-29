@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SuppressWarnings("NullabilityAnnotations")
 class OpcUaJsonPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
 
+
     private static Stream<Arguments> provideBaseTypes() {
         return Stream.of(Arguments.of("Boolean", Identifiers.Boolean, true, "true"),
                 Arguments.of("Byte", Identifiers.Byte, 0, "0"),

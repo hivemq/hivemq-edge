@@ -16,18 +16,27 @@
 package com.hivemq.edge.adapters.opcua.payload;
 
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.hivemq.api.model.core.Payload;
+import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
+import com.hivemq.edge.modules.adapters.factories.EventBuilderFactory;
+import com.hivemq.edge.modules.adapters.factories.PayloadFactory;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
-import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.model.EventBuilder;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;
@@ -58,9 +67,11 @@ abstract class AbstractOpcUaPayloadConverterTest {
     @RegisterExtension
     public final @NotNull EmbeddedOpcUaServerExtension opcUaServerExtension = new EmbeddedOpcUaServerExtension();
 
-    private ModuleServices moduleServices;
-    private ProtocolAdapterPublishService adapterPublishService;
-    private TestProtocolAdapterPublishBuilder adapterPublishBuilder;
+    private final @NotNull ModuleServices moduleServices = mock();
+    private final @NotNull ProtocolAdapterPublishService adapterPublishService = mock();
+    private final @NotNull TestProtocolAdapterPublishBuilder adapterPublishBuilder = new TestProtocolAdapterPublishBuilder();
+    private final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> protocolAdapterInput = mock();
+    private AdapterFactories adapterFactories = mock();
 
     @BeforeEach
     public void before() {
@@ -74,7 +85,8 @@ abstract class AbstractOpcUaPayloadConverterTest {
         final OpcUaAdapterConfig config =
                 new OpcUaAdapterConfig("test-" + UUID.randomUUID(), opcUaServerExtension.getServerUri());
         config.setSubscriptions(List.of(new OpcUaAdapterConfig.Subscription(subcribedNodeId, "topic")));
-        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, config, new MetricRegistry());
+        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, config, new MetricRegistry(),  "version",
+                protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = () -> moduleServices;
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
@@ -83,19 +95,38 @@ abstract class AbstractOpcUaPayloadConverterTest {
     }
 
     protected void setupMocks() {
-        moduleServices = mock(ModuleServices.class);
-        adapterPublishService = mock(ProtocolAdapterPublishService.class);
-        when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
-        adapterPublishBuilder = new TestProtocolAdapterPublishBuilder();
+        when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock()));
+        when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
+        when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
         when(adapterPublishService.publish()).thenReturn(adapterPublishBuilder);
-        when(moduleServices.eventService()).thenReturn(mock(EventService.class));
+        when(adapterFactories.eventBuilderFactory()).thenReturn(new EventBuilderFactory() {
+            @Override
+            public @NotNull EventBuilder create(final @NotNull String id, final @NotNull String protocolId) {
+                return new EventBuilderImpl();
+            }
+        });
+        when(adapterFactories.payloadFactory()).thenReturn(new PayloadFactory() {
+            @Override
+            public @NotNull Payload create(
+                    final Payload.@NotNull ContentType contentType,
+                    final @NotNull String content) {
+                return PayloadImpl.from(contentType, content);
+            }
+
+            @Override
+            public @NotNull Payload create(final @NotNull ObjectMapper mapper, final @NotNull Object data) {
+                return PayloadImpl.fromObject(mapper, data);
+            }
+        });
+        when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
+        when(moduleServices.eventService()).thenReturn(mock());
     }
 
     protected @NotNull PUBLISH expectAdapterPublish() {
         Awaitility.await()
                 .pollInterval(10, TimeUnit.MILLISECONDS)
                 .timeout(Duration.ofSeconds(5))
-                .until(() -> adapterPublishBuilder.getPublishes().size() > 0);
+                .until(() -> !adapterPublishBuilder.getPublishes().isEmpty());
         return adapterPublishBuilder.getPublishes().get(0);
     }
 

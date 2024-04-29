@@ -31,7 +31,7 @@ import static com.hivemq.edge.modules.adapters.ProtocolAdapterConstants.PROTOCOL
  *
  * @author Simon L Johnson
  */
-public class ProtocolAdapterMetricsHelper {
+public class ProtocolAdapterMetricsHelperImpl implements ProtocolAdapterMetricsHelper {
 
     private @NotNull String protocolAdapterType;
     private @NotNull String protocolAdapterId;
@@ -47,9 +47,9 @@ public class ProtocolAdapterMetricsHelper {
     protected Counter connectionSuccessCounter;
     protected Counter connectionFailedCounter;
 
-    public ProtocolAdapterMetricsHelper(final @NotNull String protocolAdapterType,
-                                        final @NotNull String protocolAdapterId,
-                                        final @NotNull MetricRegistry metricRegistry) {
+    public ProtocolAdapterMetricsHelperImpl(final @NotNull String protocolAdapterType,
+                                            final @NotNull String protocolAdapterId,
+                                            final @NotNull MetricRegistry metricRegistry) {
         Preconditions.checkNotNull(protocolAdapterType);
         Preconditions.checkNotNull(protocolAdapterId);
         Preconditions.checkNotNull(metricRegistry);
@@ -69,6 +69,7 @@ public class ProtocolAdapterMetricsHelper {
     /**
      * Use to indicate a read from the adapter has been successfully PUBLISHed
      */
+    @Override
     public void incrementReadPublishSuccess(){
         publishSuccessCounter.inc();
     }
@@ -76,6 +77,7 @@ public class ProtocolAdapterMetricsHelper {
     /**
      * Use to indicate a read from the adapter has failed
      */
+    @Override
     public void incrementReadPublishFailure(){
         publishFailedCounter.inc();
     }
@@ -84,6 +86,7 @@ public class ProtocolAdapterMetricsHelper {
     /**
      * Use to indicate a connection attempt to the device has failed
      */
+    @Override
     public void incrementConnectionFailure(){
         connectionFailedCounter.inc();
     }
@@ -91,6 +94,7 @@ public class ProtocolAdapterMetricsHelper {
     /**
      * Use to indicate a connection attempt to the device has succeeded
      */
+    @Override
     public void incrementConnectionSuccess(){
         connectionSuccessCounter.inc();
     }
@@ -99,6 +103,7 @@ public class ProtocolAdapterMetricsHelper {
      * Increment an arbitrary counter in the adapter instance namespace
      * @param metricName - the metric name to be incremented (inside) the adapter namespace
      */
+    @Override
     public void increment(final @NotNull String metricName){
         Preconditions.checkNotNull(metricName);
         metricRegistry.counter(createAdapterMetricsNamespace(metricName)).inc();
@@ -108,6 +113,7 @@ public class ProtocolAdapterMetricsHelper {
      * Will clear down all metrics in the registry created by this metrics helper.
      * NB: metrics created outside the context of this helper will not be touched.
      */
+    @Override
     public void clearAll(){
         Preconditions.checkNotNull(metricRegistry);
         synchronized (mutex){

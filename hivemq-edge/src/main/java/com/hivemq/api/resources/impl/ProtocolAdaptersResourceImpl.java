@@ -156,10 +156,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
-        return new Adapter(value.getAdapter().getId(),
+        return new Adapter(value.getId(),
                 value.getAdapterInformation().getProtocolId(),
                 configObject,
-                getStatusInternal(value.getAdapter().getId()));
+                getStatusInternal(value.getId()));
     }
 
     @Override
@@ -181,7 +181,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         try {
             Thread.currentThread()
                     .setContextClassLoader(adapterInstance.getAdapterFactory().getClass().getClassLoader());
-            adapterInstance.getAdapter().discoverValues(new ProtocolAdapterDiscoveryInput() {
+            adapterInstance.discoverValues(new ProtocolAdapterDiscoveryInput() {
                 @Override
                 public @Nullable String getRootNode() {
                     return rootNode;

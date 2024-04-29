@@ -95,8 +95,7 @@ public abstract class AbstractProtocolAdapter<T extends AbstractProtocolAdapterC
         Preconditions.checkNotNull(metricRegistry);
         this.adapterInformation = adapterInformation;
         this.adapterConfig = adapterConfig;
-        this.protocolAdapterMetricsHelper = new ProtocolAdapterMetricsHelper(adapterInformation.getProtocolId(),
-                adapterConfig.getId(), metricRegistry);
+        this.protocolAdapterMetricsHelper = null;
         this.objectMapper = new ObjectMapper();
     }
 

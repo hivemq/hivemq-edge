@@ -14,6 +14,7 @@ import com.hivemq.edge.modules.adapters.data.ProtocolAdapterMultiPublishJsonPayl
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload;
 import com.hivemq.edge.modules.adapters.data.TagSample;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelperImpl;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
@@ -69,7 +70,7 @@ public class SubscriptionSampler implements ProtocolAdapterPollingSampler {
         this.uuid = UUID.randomUUID();
         this.created = new Date();
         protocolAdapterMetricsHelper =
-                new ProtocolAdapterMetricsHelper(protocolAdapter.getProtocolAdapterInformation().getProtocolId(),
+                new ProtocolAdapterMetricsHelperImpl(protocolAdapter.getProtocolAdapterInformation().getProtocolId(),
                         protocolAdapter.getId(),
                         metricRegistry);
     }

@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.opcua;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
@@ -25,7 +25,20 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
+import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
+
+public class OpcUaAdapterConfig implements CustomConfig {
+
+
+    @JsonProperty(value = "id", required = true)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    protected @NotNull String id;
 
     @JsonProperty("uri")
     @ModuleConfigField(title = "OPC-UA Server URI",
@@ -61,6 +74,14 @@ public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
             final @NotNull String id, final @NotNull String uri) {
         this.id = id;
         this.uri = uri;
+    }
+
+    public @NotNull String getId() {
+        return id;
+    }
+
+    public void setId(final @NotNull String id) {
+        this.id = id;
     }
 
     public @NotNull String getUri() {
@@ -143,7 +164,7 @@ public class OpcUaAdapterConfig extends AbstractProtocolAdapterConfig {
                            description = "OPC UA publishing interval in milliseconds for this subscription on the server",
                            numberMin = 1,
                            defaultValue = "1000")
-        private int publishingInterval = DEFAULT_POLLING_INTERVAL; //1 second
+        private int publishingInterval = 1000; //1 second
 
         @JsonProperty("server-queue-size")
         @ModuleConfigField(title = "OPC UA server queue size",

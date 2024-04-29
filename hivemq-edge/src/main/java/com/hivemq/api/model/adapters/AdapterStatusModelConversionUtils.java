@@ -30,13 +30,12 @@ public class AdapterStatusModelConversionUtils {
 
     public static @NotNull Status getAdapterStatus(final ProtocolAdapterWrapper protocolAdapterWrapper){
         Preconditions.checkNotNull(protocolAdapterWrapper);
-        final ProtocolAdapter protocolAdapter = protocolAdapterWrapper.getAdapter();
         return new Status(
-                convertRuntimeStatus(protocolAdapter.getRuntimeStatus()),
-                convertConnectionStatus(protocolAdapter.getConnectionStatus()),
-                protocolAdapter.getId(), ApiConstants.ADAPTER_TYPE,
+                convertRuntimeStatus(protocolAdapterWrapper.getRuntimeStatus()),
+                convertConnectionStatus(protocolAdapterWrapper.getConnectionStatus()),
+                protocolAdapterWrapper.getId(), ApiConstants.ADAPTER_TYPE,
                 protocolAdapterWrapper.getTimeOfLastStartAttempt(), null,
-                protocolAdapter.getErrorMessage());
+                protocolAdapterWrapper.getErrorMessage());
     }
 
     public static @NotNull Status.CONNECTION_STATUS convertConnectionStatus(@NotNull final ProtocolAdapter.ConnectionStatus connectionStatus){

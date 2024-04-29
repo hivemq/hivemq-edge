@@ -16,19 +16,26 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
+import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.adapters.model.NodeType;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.adapters.model.impl.AbstractProtocolAdapter;
+import com.hivemq.edge.modules.api.adapters.ModuleServices;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.events.model.EventImpl;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
+import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
@@ -63,20 +70,45 @@ import java.util.function.BiConsumer;
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterConfig> {
+public class OpcUaProtocolAdapter implements ProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
+    private final @NotNull ProtocolAdapterInformation adapterInformation;
+    private final @NotNull OpcUaAdapterConfig adapterConfig;
+    private final @NotNull MetricRegistry metricRegistry;
+    private final @NotNull String version;
+    private final @NotNull ProtocolAdapterState protocolAdapterState;
+    private final @NotNull ModuleServices moduleServices;
+    private final @NotNull AdapterFactories adapterFactories;
+    private final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
     private @Nullable OpcUaClient opcUaClient;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap = new ConcurrentHashMap<>();
+    private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull OpcUaAdapterConfig adapterConfig,
-            final @NotNull MetricRegistry metricRegistry) {
-        super(adapterInformation, adapterConfig, metricRegistry);
+            final @NotNull MetricRegistry metricRegistry,
+            final @NotNull String version,
+            final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> input) {
+        this.adapterInformation = adapterInformation;
+        this.adapterConfig = adapterConfig;
+        this.metricRegistry = metricRegistry;
+        this.version = version;
+        this.protocolAdapterState = input.getProtocolAdapterState();
+        this.moduleServices = input.moduleServices();
+        this.adapterFactories = input.adapterFactories();
+        this.protocolAdapterMetricsHelper = input.getProtocolAdapterMetricsHelper();
+    }
+
+
+    @Override
+    public @NotNull String getId() {
+        return adapterConfig.getId();
     }
 
     @Override
-    protected @NotNull CompletableFuture<ProtocolAdapterStartOutput> startInternal(final @NotNull ProtocolAdapterStartOutput output) {
+    public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
+            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
         try {
             if (opcUaClient == null) {
                 createClient();
@@ -111,7 +143,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
     }
 
     @Override
-    protected @NotNull CompletableFuture<Void> stopInternal() {
+    public @NotNull CompletableFuture<Void> stop() {
         try {
             if (opcUaClient == null) {
                 return CompletableFuture.completedFuture(null);
@@ -119,7 +151,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
                 subscriptionMap.clear();
                 try {
                     return opcUaClient.disconnect().thenAccept(client -> {
-                        setConnectionStatus(ConnectionStatus.DISCONNECTED);
+                        protocolAdapterState.setConnectionStatus(ConnectionStatus.DISCONNECTED);
                     });
                 } finally {
                     opcUaClient = null;
@@ -129,6 +161,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
             return CompletableFuture.failedFuture(e);
         }
     }
+
 
     @Override
     public @NotNull CompletableFuture<Void> discoverValues(
@@ -161,6 +194,27 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
                             nodeType != null ? nodeType : NodeType.VALUE,
                             nodeType != null && nodeType == NodeType.VALUE);
         }, input.getDepth());
+    }
+
+    @Override
+    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        return adapterInformation;
+    }
+
+    @Override
+    public @NotNull ConnectionStatus getConnectionStatus() {
+        return protocolAdapterState.getConnectionStatus();
+    }
+
+    @Override
+    public @NotNull RuntimeStatus getRuntimeStatus() {
+        return protocolAdapterState.getRuntimeStatus();
+    }
+
+    @Override
+    public @Nullable String getErrorMessage() {
+        //TODO
+        return null;
     }
 
     @NotNull
@@ -196,7 +250,10 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
             resultFuture.complete(null);
             return null;
         }).exceptionally(throwable -> {
-            setErrorConnectionStatus(throwable);
+            protocolAdapterState.setErrorConnectionStatus(adapterConfig.getId(),
+                    adapterInformation.getProtocolId(),
+                    throwable,
+                    null);
             resultFuture.completeExceptionally(throwable);
             return null;
         });
@@ -215,21 +272,23 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
         //-- Seems to be not connection monitoring hook, use the session activity listener
         opcUaClient.addSessionActivityListener(new SessionActivityListener() {
             @Override
-            public void onSessionInactive(final UaSession session) {
-                setConnectionStatus(ConnectionStatus.DISCONNECTED);
+            public void onSessionInactive(final @NotNull UaSession session) {
+                protocolAdapterState.setConnectionStatus(ConnectionStatus.DISCONNECTED);
             }
+
             @Override
-            public void onSessionActive(final UaSession session) {
-                setConnectionStatus(ConnectionStatus.CONNECTED);
+            public void onSessionActive(final @NotNull UaSession session) {
+                protocolAdapterState.setConnectionStatus(ConnectionStatus.CONNECTED);
             }
         });
         opcUaClient.addFaultListener(serviceFault -> {
-            eventService.fireEvent(
-                    eventBuilder(EventImpl.SEVERITY.ERROR).
-                            withPayload(PayloadImpl.fromObject(objectMapper, serviceFault.getResponseHeader().getServiceResult())).
-                            withMessage("A Service Fault was Detected.").build());
+            moduleServices.eventService()
+                    .fireEvent(eventBuilder(Event.SEVERITY.ERROR).withPayload(adapterFactories.payloadFactory().create(objectMapper,
+                                    serviceFault.getResponseHeader().getServiceResult()))
+                            .withMessage("A Service Fault was Detected.")
+                            .build());
         });
-        setRuntimeStatus(RuntimeStatus.STARTED);
+        protocolAdapterState.setRuntimeStatus(RuntimeStatus.STARTED);
     }
 
     private @NotNull CompletableFuture<Void> subscribeToNode(final @NotNull OpcUaAdapterConfig.Subscription subscription) {
@@ -247,15 +306,15 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
                     .createSubscription(subscription.getPublishingInterval())
                     .thenAccept(new OpcUaSubscriptionConsumer(subscription,
                             readValueId,
-                            adapterPublishService,
-                            eventService,
+                            moduleServices.adapterPublishService(),
+                            moduleServices.eventService(),
                             resultFuture,
                             opcUaClient,
                             subscriptionMap,
                             protocolAdapterMetricsHelper,
-                            adapterConfig.getId()));
-
-
+                            adapterConfig.getId(),
+                            this,
+                            adapterFactories));
             return resultFuture;
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -340,6 +399,14 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
         }
 
         return CompletableFuture.allOf(childFutures.build().toArray(new CompletableFuture[]{}));
+    }
+
+
+    private @NotNull EventBuilder eventBuilder(
+            final @NotNull Event.SEVERITY severity) {
+        return adapterFactories.eventBuilderFactory()
+                .create(adapterConfig.getId(), adapterInformation.getProtocolId())
+                .withSeverity(severity);
     }
 
 }

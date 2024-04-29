@@ -43,9 +43,10 @@ repositories {
 
 dependencies {
     compileOnly("com.hivemq:hivemq-edge-extension-sdk")
-    compileOnly("com.hivemq:hivemq-edge-adapter-lib")
 
     runtimeOnly("com.google.guava:guava:${property("guava.version")}")
+    compileOnly("org.apache.commons:commons-lang3:${property("commons-lang.version")}")
+
     implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     implementation("org.eclipse.milo:sdk-client:${property("milo.version")}")
     implementation("org.eclipse.milo:dictionary-reader:${property("milo.version")}")

@@ -15,6 +15,8 @@
  */
 package com.hivemq.protocols;
 
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
@@ -22,11 +24,9 @@ import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
-/**
- * Wraps the protocol adapter instance, the factory that created it, the information of the adapter type and the configuration object that it was instantiated
- * with
- */
-public class ProtocolAdapterWrapper {
+import java.util.concurrent.CompletableFuture;
+
+public class ProtocolAdapterWrapper implements ProtocolAdapter{
 
     private final @NotNull ProtocolAdapter adapter;
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
@@ -45,12 +45,39 @@ public class ProtocolAdapterWrapper {
         this.configObject = configObject;
     }
 
-    protected void initStartAttempt(){
-        lastStartAttemptTime = System.currentTimeMillis();
+    public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
+            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+        initStartAttempt();
+        return adapter.start(input, output);
     }
 
-    public @NotNull ProtocolAdapter getAdapter() {
-        return adapter;
+
+    public @NotNull CompletableFuture<Void> stop() {
+        return adapter.stop();
+    }
+
+    @Override
+    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        return adapter.getProtocolAdapterInformation();
+    }
+
+    @Override
+    public @NotNull ConnectionStatus getConnectionStatus() {
+        return adapter.getConnectionStatus();
+    }
+
+    @Override
+    public @NotNull RuntimeStatus getRuntimeStatus() {
+        return adapter.getRuntimeStatus();
+    }
+
+    @Override
+    public @Nullable String getErrorMessage() {
+        return adapter.getErrorMessage();
+    }
+
+    protected void initStartAttempt(){
+        lastStartAttemptTime = System.currentTimeMillis();
     }
 
     public @NotNull ProtocolAdapterFactory<?> getAdapterFactory() {
@@ -67,5 +94,13 @@ public class ProtocolAdapterWrapper {
 
     public @NotNull Long getTimeOfLastStartAttempt() {
         return lastStartAttemptTime;
+    }
+
+    public @NotNull String getId() {
+        return adapter.getId();
+    }
+
+    public @NotNull ProtocolAdapter getAdapter() {
+        return adapter;
     }
 }

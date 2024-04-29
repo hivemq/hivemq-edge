@@ -17,6 +17,7 @@ package com.hivemq.adapter;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelperImpl;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,7 +33,7 @@ public class ProtocolMetricsHelperTest {
     void testMetricsAdapterWrapperUpdatesRegistry() {
 
         MetricRegistry registry = new MetricRegistry();
-        ProtocolAdapterMetricsHelper helper = new ProtocolAdapterMetricsHelper("test-adapter-name","test-adapter-id", registry);
+        ProtocolAdapterMetricsHelper helper = new ProtocolAdapterMetricsHelperImpl("test-adapter-name","test-adapter-id", registry);
 
         helper.incrementReadPublishSuccess();
         helper.incrementReadPublishFailure();
@@ -52,7 +53,7 @@ public class ProtocolMetricsHelperTest {
 
         //adapter helper creates 4 metrics
         ProtocolAdapterMetricsHelper helper1 =
-                new ProtocolAdapterMetricsHelper("tear-down-name1","test-adapter-id", registry);
+                new ProtocolAdapterMetricsHelperImpl("tear-down-name1","test-adapter-id", registry);
 
         //add an arbitrary fifth
         registry.counter(ARBITRARY_METRIC).inc();

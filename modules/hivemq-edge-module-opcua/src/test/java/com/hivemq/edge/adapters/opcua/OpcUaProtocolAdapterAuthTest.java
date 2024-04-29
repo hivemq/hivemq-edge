@@ -16,20 +16,21 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.codahale.metrics.MetricRegistry;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
 
-import static com.hivemq.edge.modules.api.adapters.ProtocolAdapter.*;
+import static com.hivemq.edge.modules.api.adapters.ProtocolAdapter.ConnectionStatus;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -39,12 +40,22 @@ class OpcUaProtocolAdapterAuthTest {
     @RegisterExtension
     public final @NotNull EmbeddedOpcUaServerExtension opcUaServerExtension = new EmbeddedOpcUaServerExtension();
 
+    private final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> protocolAdapterInput = mock(ProtocolAdapterInput.class);
+
+    @BeforeEach
+    void setUp() {
+        when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock()));
+    }
+
     @Test
     @Timeout(10)
     public void whenNoAuthAndNoSubscriptions_thenConnectSuccessfully() throws Exception {
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
-        final OpcUaProtocolAdapter protocolAdapter =
-                new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, config, new MetricRegistry());
+        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE,
+                config,
+                new MetricRegistry(),
+                "version",
+                protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
@@ -58,8 +69,11 @@ class OpcUaProtocolAdapterAuthTest {
     public void whenBasicAuthAndNoSubscriptions_thenConnectSuccessfully() throws Exception {
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
         config.setAuth(new OpcUaAdapterConfig.Auth(new OpcUaAdapterConfig.BasicAuth("testuser", "testpass"), null));
-        final OpcUaProtocolAdapter protocolAdapter =
-                new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, config, new MetricRegistry());
+        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE,
+                config,
+                new MetricRegistry(),
+                "version",
+                protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
@@ -75,8 +89,11 @@ class OpcUaProtocolAdapterAuthTest {
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
         config.setSecurity(new OpcUaAdapterConfig.Security(OpcUaAdapterConfig.SecPolicy.NONE));
         config.setTls(new OpcUaAdapterConfig.Tls(true, null, null));
-        final OpcUaProtocolAdapter protocolAdapter =
-                new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, config, new MetricRegistry());
+        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE,
+                config,
+                new MetricRegistry(),
+                "version",
+                protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
@@ -91,8 +108,11 @@ class OpcUaProtocolAdapterAuthTest {
 
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
         config.setAuth(new OpcUaAdapterConfig.Auth(null, new OpcUaAdapterConfig.X509Auth()));
-        final OpcUaProtocolAdapter protocolAdapter =
-                new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, config, new MetricRegistry());
+        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE,
+                config,
+                new MetricRegistry(),
+                "version",
+                protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);

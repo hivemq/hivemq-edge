@@ -16,18 +16,17 @@
 package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaStringPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
-import com.hivemq.edge.model.TypeIdentifierImpl;
+import com.hivemq.edge.adapters.opcua.util.EventUtils;
+import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
-import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.Event;
-import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.PublishReturnCode;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -51,7 +50,9 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
     private final @NotNull OpcUaClient opcUaClient;
     private final @NotNull NodeId nodeId;
     private final @NotNull ProtocolAdapterMetricsHelper metricsHelper;
-    private final EventService eventService;
+    private final @NotNull EventService eventService;
+    private final @NotNull OpcUaProtocolAdapter protocolAdapter;
+    private final @NotNull AdapterFactories adapterFactories;
     private final @NotNull String adapterId;
     private final @NotNull AtomicBoolean firstMessageReceived = new AtomicBoolean(false);
 
@@ -62,7 +63,9 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
             final @NotNull NodeId nodeId,
             final @NotNull ProtocolAdapterMetricsHelper metricsHelper,
             final @NotNull String adapterId,
-            final @NotNull EventService eventService) {
+            final @NotNull EventService eventService,
+            final @NotNull OpcUaProtocolAdapter protocolAdapter,
+            final @NotNull AdapterFactories adapterFactories) {
         this.subscription = subscription;
         this.adapterPublishService = adapterPublishService;
         this.opcUaClient = opcUaClient;
@@ -70,6 +73,8 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
         this.adapterId = adapterId;
         this.metricsHelper = metricsHelper;
         this.eventService = eventService;
+        this.protocolAdapter = protocolAdapter;
+        this.adapterFactories = adapterFactories;
     }
 
     @Override
@@ -78,6 +83,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
             final @NotNull byte[] convertedPayload = convertPayload(dataValue, OpcUaAdapterConfig.PayloadMode.JSON);
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
+                    .withAdapter(protocolAdapter)
                     .withTopic(subscription.getMqttTopic())
                     .withPayload(convertedPayload)
                     .withQoS(subscription.getQos())
@@ -102,12 +108,13 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
 
             if (firstMessageReceived.compareAndSet(false, true)) {
-                final Event event = new EventBuilderImpl().withTimestamp(System.currentTimeMillis())
-                        .withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER, adapterId))
-                        .withSeverity(EventImpl.SEVERITY.INFO)
+                final Event event = adapterFactories.eventBuilderFactory().create(adapterId, protocolAdapter.getId())
+
+                        .withTimestamp(System.currentTimeMillis())
+                        .withSeverity(Event.SEVERITY.INFO)
                         .withMessage(String.format("Adapter took first sample to be published to '%s'",
                                 subscription.getMqttTopic()))
-                        .withPayload(EventUtils.generateJsonPayload(convertedPayload))
+                        .withPayload(EventUtils.generateJsonPayload(convertedPayload, adapterFactories.payloadFactory()))
                         .build();
                 eventService.fireEvent(event);
             }
@@ -125,7 +132,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
         }
     }
 
-    private @NotNull byte[] convertPayload(
+    private @NotNull byte @NotNull [] convertPayload(
             DataValue dataValue, final @NotNull OpcUaAdapterConfig.PayloadMode payloadMode) {
         //null value, emtpy buffer
         if (dataValue.getValue().getValue() == null) {

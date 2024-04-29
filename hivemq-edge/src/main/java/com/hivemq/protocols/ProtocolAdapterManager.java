@@ -33,6 +33,8 @@ import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelperImpl;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
@@ -217,53 +219,52 @@ public class ProtocolAdapterManager {
         if (!adapterOptional.isPresent()) {
             return CompletableFuture.failedFuture(null);
         } else {
-            return stop(adapterOptional.get().getAdapter());
+            return stop(adapterOptional.get());
         }
     }
 
-    public CompletableFuture<Void> start(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
-        final ProtocolAdapter protocolAdapter = protocolAdapterWrapper.getAdapter();
+    // TODO perhaps move logic into wrapped adapter
+    public @NotNull CompletableFuture<Void> start(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
         if (log.isInfoEnabled()) {
-            log.info("Starting protocol-adapter \"{}\".", protocolAdapter.getId());
+            log.info("Starting protocol-adapter \"{}\".", protocolAdapterWrapper.getId());
         }
         CompletableFuture<ProtocolAdapterStartOutput> startFuture;
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
-        if (protocolAdapter.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STARTED) {
+        if (protocolAdapterWrapper.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STARTED) {
             startFuture = CompletableFuture.completedFuture(output);
         } else {
-            protocolAdapterWrapper.initStartAttempt();
-            startFuture = protocolAdapter.start(new ProtocolAdapterStartInputImpl(protocolAdapter), output);
+            startFuture = protocolAdapterWrapper.start(new ProtocolAdapterStartInputImpl(protocolAdapterWrapper), output);
         }
         return startFuture.<Void>thenApply(input -> {
             if (!output.startedSuccessfully) {
-                handleStartupError(protocolAdapter, output);
+                handleStartupError(protocolAdapterWrapper, output);
             } else {
-                if (protocolAdapter instanceof PollingProtocolAdapter) {
-                    log.info("Scheduling polling for adapter {}", protocolAdapter.getId());
+                if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
+                    log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
                     final SubscriptionSampler sampler =
-                            new SubscriptionSampler((PollingProtocolAdapter) protocolAdapter,
+                            new SubscriptionSampler((PollingProtocolAdapter) protocolAdapterWrapper.getAdapter(),
                                     protocolAdapterWrapper.getConfigObject(),
                                     metricRegistry,
                                     objectMapper,
                                     moduleServices.adapterPublishService());
-                    protocolAdapterPollingService.schedulePolling(protocolAdapter, sampler);
+                    protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
                 }
                 if (output.message != null) {
                     if (log.isTraceEnabled()) {
-                        log.trace("Protocol-adapter \"{}\" started: {}.", protocolAdapter.getId(), output.message);
+                        log.trace("Protocol-adapter \"{}\" started: {}.", protocolAdapterWrapper.getId(), output.message);
                     }
                     HiveMQEdgeRemoteEvent adapterCreatedEvent =
                             new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED);
                     adapterCreatedEvent.addUserData("adapterType",
-                            protocolAdapter.getProtocolAdapterInformation().getProtocolId());
+                            protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId());
                     remoteService.fireUsageEvent(adapterCreatedEvent);
                 }
             }
             return null;
         }).exceptionally(throwable -> {
             output.failStart(throwable, output.message);
-            handleStartupError(protocolAdapter, output);
+            handleStartupError(protocolAdapterWrapper, output);
             return null;
         });
     }
@@ -335,12 +336,12 @@ public class ProtocolAdapterManager {
             protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterInstance.get()
                     .getAdapterInformation()
                     .getProtocolId());
-            adapterInstance.get().getAdapter().stop();
+            adapterInstance.get().stop();
             if (protocolAdapters.remove(id) != null) {
                 try {
                     synchronized (lock) {
                         //ensure the instance releases any hard state
-                        adapterInstance.get().getAdapter().destroy();
+                        adapterInstance.get().destroy();
                         Map<String, Object> mainMap =
                                 configurationService.protocolAdapterConfigurationService().getAllConfigs();
                         List<Map> adapterList =
@@ -354,9 +355,9 @@ public class ProtocolAdapterManager {
                     return true;
                 } finally {
                     eventService.fireEvent(eventBuilder(EventImpl.SEVERITY.WARN,
-                            adapterInstance.get().getAdapter()).withMessage(String.format(
+                            adapterInstance.get()).withMessage(String.format(
                             "Adapter \"%s\" was deleted from the system permanently.",
-                            adapterInstance.get().getAdapter().getId())).build());
+                            adapterInstance.get().getId())).build());
                 }
             }
         }
@@ -368,9 +369,9 @@ public class ProtocolAdapterManager {
         Optional<ProtocolAdapterWrapper> adapterInstance = getAdapterById(adapterId);
         if (adapterInstance.isPresent()) {
             ProtocolAdapterWrapper oldInstance = adapterInstance.get();
-            deleteAdapter(oldInstance.getAdapter().getId());
-            addAdapter(oldInstance.getAdapter().getProtocolAdapterInformation().getProtocolId(),
-                    oldInstance.getAdapter().getId(),
+            deleteAdapter(oldInstance.getId());
+            addAdapter(oldInstance.getProtocolAdapterInformation().getProtocolId(),
+                    oldInstance.getId(),
                     config);
             return true;
         }
@@ -396,6 +397,8 @@ public class ProtocolAdapterManager {
                 .collect(Collectors.toMap(ProtocolAdapterInformation::getProtocolId, o -> o));
     }
 
+
+
     public @NotNull Map<String, ProtocolAdapterWrapper> getProtocolAdapters() {
         return protocolAdapters;
     }
@@ -410,24 +413,28 @@ public class ProtocolAdapterManager {
         try {
             Thread.currentThread().setContextClassLoader(protocolAdapterFactory.getClass().getClassLoader());
             final CustomConfig configObject = protocolAdapterFactory.convertConfigObject(objectMapper, config);
+
+
+            final ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper = new ProtocolAdapterMetricsHelperImpl(
+                    protocolAdapterFactory.getInformation().getProtocolId(), configObject.getId(),
+                    metricRegistry);
+
+
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(configObject,
                                     metricRegistry,
                                     version,
                                     new ProtocolAdapterStateImpl(moduleServices.eventService()),
-                                    moduleServices));
-
-            if (protocolAdapter instanceof PollingProtocolAdapter) {
-                // TODO
-            }
+                                    moduleServices,
+                                    protocolAdapterMetricsHelper));
 
 
             ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(protocolAdapter,
                     protocolAdapterFactory,
                     protocolAdapterFactory.getInformation(),
                     configObject);
-            protocolAdapters.put(wrapper.getAdapter().getId(), wrapper);
+            protocolAdapters.put(wrapper.getId(), wrapper);
             return wrapper;
 
         } finally {
@@ -477,18 +484,21 @@ public class ProtocolAdapterManager {
         private final @NotNull String version;
         private final @NotNull ProtocolAdapterState protocolAdapterState;
         private final @NotNull ModuleServices moduleServices;
+        private final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
 
         public ProtocolAdapterInputImpl(
                 final @NotNull T configObject,
                 final @NotNull MetricRegistry metricRegistry,
                 final @NotNull String version,
                 final @NotNull ProtocolAdapterState protocolAdapterState,
-                final @NotNull ModuleServices moduleServices) {
+                final @NotNull ModuleServices moduleServices,
+                final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper) {
             this.configObject = configObject;
             this.metricRegistry = metricRegistry;
             this.version = version;
             this.protocolAdapterState = protocolAdapterState;
             this.moduleServices = moduleServices;
+            this.protocolAdapterMetricsHelper = protocolAdapterMetricsHelper;
         }
 
         @NotNull
@@ -521,6 +531,13 @@ public class ProtocolAdapterManager {
         public @NotNull AdapterFactories adapterFactories() {
             return ADAPTER_FACTORIES;
         }
+
+        @Override
+        public @NotNull ProtocolAdapterMetricsHelper getProtocolAdapterMetricsHelper() {
+            return protocolAdapterMetricsHelper;
+        }
+
+
     }
 
     private static class ProtocolAdapterStartOutputImpl implements ProtocolAdapterStartOutput {

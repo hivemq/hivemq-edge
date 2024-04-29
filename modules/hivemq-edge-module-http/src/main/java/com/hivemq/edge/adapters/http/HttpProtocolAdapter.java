@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.http;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.adapters.http.model.HttpData;
-import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.modules.adapters.PollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
@@ -352,14 +351,9 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
 
     private @NotNull EventBuilder eventBuilder(
             final @NotNull Event.SEVERITY severity) {
-        EventBuilder builder = adapterFactories.eventBuilderFactory().create();
-        builder.withTimestamp(System.currentTimeMillis());
-        builder.withSource(adapterFactories.TypeIdentifierFactory()
-                .create(TypeIdentifier.TYPE.ADAPTER, adapterConfig.getId()));
-        builder.withAssociatedObject(adapterFactories.TypeIdentifierFactory()
-                .create(TypeIdentifier.TYPE.ADAPTER_TYPE, adapterInformation.getProtocolId()));
-        builder.withSeverity(severity);
-        return builder;
+        return adapterFactories.eventBuilderFactory()
+                .create(adapterConfig.getId(), adapterInformation.getProtocolId())
+                .withSeverity(severity);
     }
 
 }

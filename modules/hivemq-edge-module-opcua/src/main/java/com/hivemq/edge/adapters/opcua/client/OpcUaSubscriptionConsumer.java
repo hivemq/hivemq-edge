@@ -17,6 +17,8 @@ package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaException;
+import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
+import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
@@ -53,6 +55,8 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap;
     private final @NotNull ProtocolAdapterMetricsHelper metricsHelper;
     private final @NotNull String adapterId;
+    private final @NotNull OpcUaProtocolAdapter protocolAdapter;
+    private final @NotNull AdapterFactories adapterFactories;
 
     public OpcUaSubscriptionConsumer(
             final @NotNull OpcUaAdapterConfig.Subscription subscription,
@@ -63,7 +67,9 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
             final @NotNull OpcUaClient opcUaClient,
             final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap,
             final @NotNull ProtocolAdapterMetricsHelper metricsHelper,
-            final @NotNull String adapterId) {
+            final @NotNull String adapterId,
+            final @NotNull OpcUaProtocolAdapter protocolAdapter,
+            final @NotNull AdapterFactories adapterFactories) {
         this.subscription = subscription;
         this.readValueId = readValueId;
         this.adapterPublishService = adapterPublishService;
@@ -73,6 +79,8 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
         this.subscriptionMap = subscriptionMap;
         this.metricsHelper = metricsHelper;
         this.adapterId = adapterId;
+        this.protocolAdapter = protocolAdapter;
+        this.adapterFactories = adapterFactories;
     }
 
     @Override
@@ -98,7 +106,9 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
                         readValueId.getNodeId(),
                         metricsHelper,
                         adapterId,
-                        eventService));
+                        eventService,
+                        protocolAdapter,
+                        adapterFactories));
 
         uaSubscription.createMonitoredItems(TimestampsToReturn.Both, List.of(request), onItemCreated)
                 .thenAccept(items -> {
