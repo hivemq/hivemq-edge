@@ -75,9 +75,6 @@ public class ProtocolAdapterApiUtils {
 
 
         final String rawVersion = info.getVersion();
-        if (rawVersion == null) {
-            System.err.println("FUCK");
-        }
         final String version = rawVersion.replace("${edge-version}", versionProvider.getVersion());
 
         return new ProtocolAdapter(info.getProtocolId(),
