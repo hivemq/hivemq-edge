@@ -24,6 +24,7 @@ import ToolboxSelectionListener from '@datahub/components/controls/ToolboxSelect
 import { CopyPasteListener } from '@datahub/components/controls/CopyPasteListener.tsx'
 import CopyPasteStatus from '@datahub/components/controls/CopyPasteStatus.tsx'
 import ConnectionLine from '@datahub/components/nodes/ConnectionLine.tsx'
+import DeleteListener from '@datahub/components/controls/DeleteListener.tsx'
 
 export type OnConnectStartParams = {
   nodeId: string | null
@@ -167,6 +168,7 @@ const PolicyEditor: FC = () => {
         >
           <Box role="toolbar" aria-label={t('workspace.aria-label')} aria-controls="edge-workspace-canvas">
             <ToolboxSelectionListener />
+            <DeleteListener />
             <CopyPasteListener render={(copiedNodes) => <CopyPasteStatus nbCopied={copiedNodes.length} />} />
             <DesignerToolbox />
             <CanvasControls />
