@@ -137,7 +137,8 @@
       "draft": {
         "status_DRAFT": "Draft Policy",
         "status_LOADED": "{{ type }} {{ name }} - Loaded",
-        "status_MODIFIED": "{{ type }} {{ name }} - Modified"
+        "status_MODIFIED": "{{ type }} {{ name }} - Modified",
+        "status_READ_ONLY": "{{ type }} {{ name }} - Read-only"
       }
     },
     "nodes": {
@@ -239,6 +240,23 @@
           "highlight": "Show in designer",
           "config": "Open configuration"
         }
+      }
+    },
+    "deletion": {
+      "modal": {
+        "header_one": "Delete Element",
+        "header_other": "Delete Elements",
+        "message_EDGE_ONLY_one": "You will be deleting {{ count }} connection. The operation cannot be reversed.",
+        "message_EDGE_ONLY_other": "You will be deleting {{ count }} connections. The operation cannot be reversed.",
+        "message_MODE_ONLY_one": "You will be deleting {{ count }} node. The operation cannot be reversed.",
+        "message_MODE_ONLY_other": "You will be deleting {{ count }} nodes. The operation cannot be reversed.",
+        "message_BOTH": "You will be deleting {{ count }} nodes and connections. The operation cannot be reversed."
+      },
+      "guards": {
+        "message_one": "The selected element cannot be deleted because of some constraints",
+        "message_other": "The selected elements cannot be deleted because of some constraints",
+        "topicFilter": "Topic filter cannot be modified once published",
+        "policyNode": "Policy node cannot be deleted once published"
       }
     }
   },
