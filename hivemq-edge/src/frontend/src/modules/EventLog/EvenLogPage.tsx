@@ -24,7 +24,7 @@ const EvenLogPage: FC = () => {
   }
 
   return (
-    <PageContainer title={t('eventLog.title') as string} subtitle={t('eventLog.description') as string}>
+    <PageContainer title={t('eventLog.title')} subtitle={t('eventLog.description')}>
       <EventLogTable onOpen={handleEditorOpen} />
       {selectedEvent && <EventDrawer isOpen={isOpen} onClose={handleEditorOnClose} event={selectedEvent} />}
     </PageContainer>

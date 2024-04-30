@@ -25,7 +25,7 @@ const ProtocolAdapterPage: FC = () => {
   }
 
   return (
-    <PageContainer title={t('protocolAdapter.title') as string} subtitle={t('protocolAdapter.description') as string}>
+    <PageContainer title={t('protocolAdapter.title')} subtitle={t('protocolAdapter.description')}>
       <Tabs onChange={handleTabsChange} index={tabIndex} isLazy colorScheme="brand">
         <TabList>
           <Tab fontSize="lg" fontWeight="bold">

@@ -11,7 +11,7 @@ const EdgeFlowPage: FC = () => {
   const { t } = useTranslation()
 
   return (
-    <PageContainer title={t('welcome.title') as string} subtitle={t('welcome.description') as string}>
+    <PageContainer title={t('welcome.title')} subtitle={t('welcome.description')}>
       <EdgeFlowProvider>
         <ReactFlowWrapper />
         <WorkspaceOptionsDrawer />

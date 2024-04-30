@@ -38,8 +38,8 @@ const UnifiedNamespacePage: FC = () => {
 
   return (
     <PageContainer
-      title={t('unifiedNamespace.title') as string}
-      subtitle={t('unifiedNamespace.description') as string}
+      title={t('unifiedNamespace.title')}
+      subtitle={t('unifiedNamespace.description')}
       cta={
         <Flex height="100%" justifyContent="flex-end" alignItems="flex-end" pb={6}>
           <Button
@@ -57,7 +57,7 @@ const UnifiedNamespacePage: FC = () => {
         <Box mt="20%" mx="20%" alignItems="center">
           <ErrorMessage
             type={error?.message}
-            message={(error?.body as ProblemDetails)?.title || (t('unifiedNamespace.error.loading') as string)}
+            message={(error?.body as ProblemDetails)?.title || t('unifiedNamespace.error.loading')}
           />
         </Box>
       )}

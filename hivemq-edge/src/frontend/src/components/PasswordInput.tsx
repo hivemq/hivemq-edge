@@ -28,7 +28,7 @@ const PasswordInput: FC<InputProps> = ({ register, options, ...rest }) => {
           h="1.75rem"
           size="sm"
           onClick={handleClick}
-          aria-label={show ? (t('login.password.hide') as string) : (t('login.password.show') as string)}
+          aria-label={show ? t('login.password.hide') : t('login.password.show')}
         >
           {show ? <BiHide /> : <BiShow />}
         </Button>

@@ -45,8 +45,8 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
   const metrics = adapterIDs.map((x) => (x ? getDefaultMetricsFor(x) : [])).flat()
 
   const panelTitle = showConfig
-    ? (t('workspace.property.header', { context: selectedNode.type }) as string)
-    : (t('workspace.observability.header', { context: selectedNode.type }) as string)
+    ? t('workspace.property.header', { context: selectedNode.type })
+    : t('workspace.observability.header', { context: selectedNode.type })
 
   return (
     <Drawer isOpen={isOpen} placement="right" size="lg" onClose={onClose} variant="hivemq">

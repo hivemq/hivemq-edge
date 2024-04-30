@@ -26,7 +26,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
           {options.showTopics && <TopicsContainer topics={topics.remote} />}
 
           <HStack w="100%">
-            <Image boxSize="20px" objectFit="scale-down" src={logo} alt={t('workspace.node.bridge') as string} />
+            <Image boxSize="20px" objectFit="scale-down" src={logo} alt={t('workspace.node.bridge')} />
             <Text flex={1} data-testid="bridge-node-name">
               {bridge.id}
             </Text>

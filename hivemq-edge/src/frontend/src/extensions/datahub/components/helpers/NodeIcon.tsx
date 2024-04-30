@@ -34,7 +34,7 @@ const NodeIcon: FC<NodeIconProps> = ({ type }) => {
   const { t } = useTranslation('datahub')
 
   if (!type || !iconMapping[type]) {
-    return <Icon as={GrStatusUnknown} boxSize="24px" aria-label={t('workspace.nodes.type') as string} />
+    return <Icon as={GrStatusUnknown} boxSize="24px" aria-label={t('workspace.nodes.type')} />
   }
   return iconMapping[type](t('workspace.nodes.type', { context: type }))
 }

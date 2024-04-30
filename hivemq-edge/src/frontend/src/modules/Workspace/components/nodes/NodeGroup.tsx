@@ -67,7 +67,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
         position={Position.Top}
         role="toolbar"
         aria-controls={`node-group-${id}`}
-        aria-label={t('workspace.grouping.toolbar.aria-label', { id }) as string}
+        aria-label={t('workspace.grouping.toolbar.aria-label', { id })}
         style={{ display: 'flex', gap: '12px' }}
       >
         <ButtonGroup size="sm" isAttached variant="outline" colorScheme="gray">

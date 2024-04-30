@@ -24,7 +24,7 @@ const AdapterTypeSelector: FC<GenericPanelType<AdapterType>> = ({ form }) => {
       <FormLabel htmlFor="clientId">{t('protocolAdapter.type.label')}</FormLabel>
       <Select
         id="clientId"
-        placeholder={t('protocolAdapter.type.select') as string}
+        placeholder={t('protocolAdapter.type.select')}
         {...register('adapterType', {
           required: 'This field is required',
         })}

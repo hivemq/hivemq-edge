@@ -46,7 +46,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
         width: '25%',
         enableSorting: false,
         enableColumnFilter: false,
-        header: t('eventLog.table.header.id') as string,
+        header: t('eventLog.table.header.id'),
         cell: (info) => {
           return (
             <Skeleton isLoaded={!isLoading}>
@@ -72,11 +72,11 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
             <DateTimeRenderer date={DateTime.fromMillis(info.getValue() as number)} isApprox />
           </Skeleton>
         ),
-        header: t('eventLog.table.header.created') as string,
+        header: t('eventLog.table.header.created'),
       },
       {
         accessorKey: 'severity',
-        header: t('eventLog.table.header.severity') as string,
+        header: t('eventLog.table.header.severity'),
         sortingFn: (rowA, rowB) => compareSeverity(rowA.original.severity, rowB.original.severity),
         cell: (info) => (
           <Skeleton isLoaded={!isLoading}>
@@ -87,7 +87,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
       {
         accessorKey: 'source.identifier',
         sortType: 'alphanumeric',
-        header: t('eventLog.table.header.source') as string,
+        header: t('eventLog.table.header.source'),
         cell: (info) => (
           <Skeleton isLoaded={!isLoading}>
             <SourceLink source={info.row.original.source} type={info.row.original.associatedObject} />
@@ -96,7 +96,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
       },
       {
         accessorKey: 'message',
-        header: t('eventLog.table.header.message') as string,
+        header: t('eventLog.table.header.message'),
         enableColumnFilter: false,
         cell: (info) => {
           return (
@@ -114,7 +114,7 @@ const EventLogTable: FC<EventLogTableProps> = ({ onOpen, globalSourceFilter, var
       <Box mt="20%" mx="20%" alignItems="center">
         <ErrorMessage
           type={error?.message}
-          message={(error?.body as ProblemDetails)?.title || (t('eventLog.error.loading') as string)}
+          message={(error?.body as ProblemDetails)?.title || t('eventLog.error.loading')}
         />
       </Box>
     )

@@ -23,7 +23,7 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
         {
           icon: <WorkspaceIcon boxSize={4} />,
           href: '/edge-flow',
-          label: t('translation:navigation.gateway.routes.workspace') as string,
+          label: t('translation:navigation.gateway.routes.workspace'),
         },
       ]
     : []
@@ -35,33 +35,33 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
         {
           icon: <IoHomeOutline />,
           href: '/',
-          label: t('translation:navigation.gateway.routes.home') as string,
+          label: t('translation:navigation.gateway.routes.home'),
         },
         ...workspaceLink,
         {
           icon: <Icon as={PiBridgeThin} fontSize="20px" />,
           href: '/mqtt-bridges',
-          label: t('translation:navigation.gateway.routes.bridges') as string,
+          label: t('translation:navigation.gateway.routes.bridges'),
         },
         {
           icon: <PiPlugsConnectedFill />,
           href: '/protocol-adapters',
-          label: t('translation:navigation.gateway.routes.protocolAdapters') as string,
+          label: t('translation:navigation.gateway.routes.protocolAdapters'),
         },
         {
           icon: <MdOutlineEventNote />,
           href: '/event-logs',
-          label: t('translation:navigation.gateway.routes.eventLogs') as string,
+          label: t('translation:navigation.gateway.routes.eventLogs'),
         },
         {
           icon: <Icon as={MdPolicy} fontSize="16px" />,
           href: '/datahub',
-          label: t('datahub:navigation.mainPage') as string,
+          label: t('datahub:navigation.mainPage'),
         },
         {
           icon: <BsIntersect />,
           href: '/namespace',
-          label: t('translation:navigation.extensions.routes.namespace') as string,
+          label: t('translation:navigation.extensions.routes.namespace'),
         },
       ],
     },
@@ -73,19 +73,19 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
           // TODO[NVL] Change to a proper link when defined
           href: data?.resources?.items?.[0]?.url as string,
           isExternal: true,
-          label: t('translation:navigation.resources.routes.articles') as string,
+          label: t('translation:navigation.resources.routes.articles'),
         },
         {
           icon: <GoLinkExternal />,
           href: data?.gitHubLink?.url as string,
           isExternal: true,
-          label: t('translation:navigation.resources.routes.github') as string,
+          label: t('translation:navigation.resources.routes.github'),
         },
         {
           icon: <GoLinkExternal />,
           href: data?.documentationLink?.url as string,
           isExternal: true,
-          label: t('translation:navigation.resources.routes.help') as string,
+          label: t('translation:navigation.resources.routes.help'),
         },
       ],
     },

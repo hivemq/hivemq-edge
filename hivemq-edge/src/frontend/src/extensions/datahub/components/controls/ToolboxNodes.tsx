@@ -20,7 +20,7 @@ export const ToolboxNodes: FC<DesignerToolBoxProps> = () => {
       pb={2}
       gap={5}
       role="group"
-      aria-label={t('workspace.toolbox.aria-label') as string}
+      aria-label={t('workspace.toolbox.aria-label')}
       backgroundColor="var(--chakra-colors-chakra-body-bg)"
     >
       <ButtonGroup variant="outline" size="sm" aria-labelledby="group-integrations">

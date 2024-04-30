@@ -33,7 +33,7 @@ const PaginationButton: FC<IconButtonProps> = (props) => (
 const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
   const { t } = useTranslation()
   return (
-    <HStack as="nav" aria-label={t('components:pagination.ariaLabel') as string} gap={8} mt={4}>
+    <HStack as="nav" aria-label={t('components:pagination.ariaLabel')} gap={8} mt={4}>
       <ButtonGroup isAttached variant="ghost">
         <PaginationButton
           icon={<LuSkipBack />}

@@ -33,7 +33,7 @@ const NodeListener: FC<NodeProps<Listener>> = ({ selected, data }) => {
           },
         }}
       >
-        <Image src={getLogo()} alt={t('workspace.node.gateway') as string} boxSize="48px" />
+        <Image src={getLogo()} alt={t('workspace.node.gateway')} boxSize="48px" />
       </NodeWrapper>
       <Handle type="target" position={Position.Right} id="Listeners" isConnectable={false} />
     </>

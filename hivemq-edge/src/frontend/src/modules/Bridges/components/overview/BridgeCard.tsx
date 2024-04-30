@@ -63,7 +63,7 @@ const BridgeCard: FC<BridgeCardProps> = ({ isLoading, onNavigate, role, ...props
       <CardBody py={0}>
         <HStack>
           <Skeleton isLoaded={!isLoading}>
-            <Image boxSize="100px" src={BridgeLogo} alt={t('bridge.title') as string} />
+            <Image boxSize="100px" src={BridgeLogo} alt={t('bridge.title')} />
           </Skeleton>
           <Skeleton isLoaded={!isLoading}>
             <ConnectionSummary {...props} />

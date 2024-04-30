@@ -39,7 +39,7 @@ const SidePanel: FC = () => {
         overflow="auto"
       >
         <VStack p={4} mb={4}>
-          <Image src={colorMode === 'light' ? logo1 : logo2} alt={t('branding.company') as string} boxSize="100px" />
+          <Image src={colorMode === 'light' ? logo1 : logo2} alt={t('branding.company')} boxSize="100px" />
           {configuration && (
             <Text data-testid="edge-release" fontSize="xs" textAlign="center">
               [ {configuration.environment?.properties?.version} ]

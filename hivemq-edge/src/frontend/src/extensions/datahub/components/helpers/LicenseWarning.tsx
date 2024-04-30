@@ -10,7 +10,7 @@ const LicenseWarning: FC = () => {
   return (
     <Flex flexDirection="column" alignItems="center" gap={4} textAlign="center">
       <Circle size="335" bg="gray.100">
-        <Image objectFit="cover" src={AdapterEmptyLogo} alt={t('brand.extension') as string} />
+        <Image objectFit="cover" src={AdapterEmptyLogo} alt={t('brand.extension')} />
       </Circle>
 
       <Heading as="h2" size="md" color="gray.500">

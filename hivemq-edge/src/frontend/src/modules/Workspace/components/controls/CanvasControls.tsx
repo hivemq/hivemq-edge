@@ -35,26 +35,18 @@ const CanvasControls: FC<ControlProps> = ({ onInteractiveChange }) => {
   return (
     <Panel position="bottom-left">
       <ButtonGroup variant="outline" isAttached size="sm">
-        <IconButton icon={<FaPlus />} onClick={() => zoomIn()} aria-label={t('workspace.controls.zoomIn') as string} />
-        <IconButton
-          icon={<FaMinus />}
-          onClick={() => zoomOut()}
-          aria-label={t('workspace.controls.zoomIOut') as string}
-        />
-        <IconButton
-          icon={<LuBoxSelect />}
-          onClick={() => fitView()}
-          aria-label={t('workspace.controls.fitView') as string}
-        />
+        <IconButton icon={<FaPlus />} onClick={() => zoomIn()} aria-label={t('workspace.controls.zoomIn')} />
+        <IconButton icon={<FaMinus />} onClick={() => zoomOut()} aria-label={t('workspace.controls.zoomIOut')} />
+        <IconButton icon={<LuBoxSelect />} onClick={() => fitView()} aria-label={t('workspace.controls.fitView')} />
         <IconButton
           icon={isInteractive ? <FaLock /> : <FaLockOpen />}
           onClick={onToggleInteractivity}
-          aria-label={t('workspace.controls.toggleInteractivity') as string}
+          aria-label={t('workspace.controls.toggleInteractivity')}
         />
         <IconButton
           icon={<IoMdOptions />}
           onClick={() => optionDrawer.onOpen()}
-          aria-label={t('workspace.configuration.header') as string}
+          aria-label={t('workspace.configuration.header')}
         />
       </ButtonGroup>
     </Panel>

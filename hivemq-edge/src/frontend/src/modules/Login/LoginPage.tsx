@@ -34,7 +34,7 @@ const LoginPage: FC = () => {
           <Box flex={1} width="100%" display={{ base: 'none', md: 'inherit' }}>
             <Image
               src={colorMode === 'light' ? logoLight : logoDark}
-              alt={t('branding.appName') as string}
+              alt={t('branding.appName')}
               boxSize="50px"
               w="initial"
             />

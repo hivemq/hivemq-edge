@@ -56,7 +56,7 @@ const Sample: FC<SampleProps> = ({ metricName, chartTheme, onClose, canEdit = tr
           <Box flex={1}>
             <CloseButton
               data-testid="metrics-remove"
-              aria-label={t('metrics.command.remove.ariaLabel') as string}
+              aria-label={t('metrics.command.remove.ariaLabel')}
               size="sm"
               onClick={onClose}
             />

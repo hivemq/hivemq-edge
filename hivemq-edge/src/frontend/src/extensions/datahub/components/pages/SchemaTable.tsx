@@ -41,7 +41,7 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             <Text>{info.getValue<string>()}</Text>
           </Skeleton>
         ),
-        header: t('Listings.schema.header.id') as string,
+        header: t('Listings.schema.header.id'),
       },
       {
         accessorKey: 'type',
@@ -52,7 +52,7 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             </Skeleton>
           )
         },
-        header: t('Listings.schema.header.type') as string,
+        header: t('Listings.schema.header.type'),
       },
       {
         accessorKey: 'version',
@@ -63,7 +63,7 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             </Skeleton>
           )
         },
-        header: t('Listings.schema.header.version') as string,
+        header: t('Listings.schema.header.version'),
       },
       {
         accessorKey: 'createdAt',
@@ -74,11 +74,11 @@ const SchemaTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             <DateTimeRenderer date={DateTime.fromMillis(info.getValue() as number)} isApprox />
           </Skeleton>
         ),
-        header: t('Listings.schema.header.created') as string,
+        header: t('Listings.schema.header.created'),
       },
       {
         id: 'actions',
-        header: t('Listings.schema.header.actions') as string,
+        header: t('Listings.schema.header.actions'),
         sortingFn: undefined,
         cell: (info) => {
           return (

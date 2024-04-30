@@ -38,7 +38,7 @@ const ProtocolSelectorDrawer: FC<ProtocolSelectorDrawerProps> = ({ isOpen, onClo
     <>
       <Drawer closeOnOverlayClick={false} size="lg" isOpen={isOpen} placement="right" onClose={onClose}>
         <DrawerOverlay />
-        <DrawerContent aria-label={t('protocolAdapter.store.label') as string}>
+        <DrawerContent aria-label={t('protocolAdapter.store.label')}>
           <DrawerCloseButton />
           <DrawerHeader id="adapter-selector-header" borderBottomWidth="1px">
             {t('protocolAdapter.store.title.create')}

@@ -34,7 +34,7 @@ const PrefixInput = (prefix: string, placeholder: string, props: WidgetProps) =>
         <Input
           id={props.id}
           isRequired={props.required}
-          placeholder={t(placeholder) as string}
+          placeholder={t(placeholder)}
           value={props.value}
           onBlur={onBlur}
           onFocus={onFocus}

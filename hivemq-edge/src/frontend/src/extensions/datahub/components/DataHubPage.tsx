@@ -17,8 +17,8 @@ const DataHubPage: FC = () => {
 
   return (
     <PageContainer
-      title={t('page.title') as string}
-      subtitle={t('page.description') as string}
+      title={t('page.title')}
+      subtitle={t('page.description')}
       cta={
         isMainPage &&
         hasDataHub && (

@@ -67,10 +67,10 @@ export const Filter = <T,>({
         // value={{ value: columnFilterValue, label: columnFilterValue }}
         onChange={(item) => setFilterValue(item?.value)}
         options={sortedUniqueValues.map((value: string) => ({ value: value, label: value, group: 'DDD' }))}
-        placeholder={t('components:pagination.filter.placeholder', { size: getFacetedUniqueValues().size }) as string}
+        placeholder={t('components:pagination.filter.placeholder', { size: getFacetedUniqueValues().size })}
         noOptionsMessage={() => t('components:pagination.filter.noOptions')}
         formatCreateLabel={(e) => t('components:pagination.filter.create', { topic: e })}
-        aria-label={t('components:pagination.filter.label') as string}
+        aria-label={t('components:pagination.filter.label')}
         isClearable={true}
         isMulti={false}
         components={{

@@ -76,8 +76,8 @@ const AbstractTopicCreatableSelect = <T extends boolean>({
 
   return (
     <CreatableSelect<TopicOption, T, GroupBase<TopicOption>>
-      aria-label={t('topicCreate.label') as string}
-      placeholder={t('topicCreate.placeholder') as string}
+      aria-label={t('topicCreate.label')}
+      placeholder={t('topicCreate.placeholder')}
       noOptionsMessage={() => t('topicCreate.options.noOptionsMessage')}
       formatCreateLabel={(e) => t('topicCreate.options.createLabel', { topic: e })}
       isLoading={isLoading}

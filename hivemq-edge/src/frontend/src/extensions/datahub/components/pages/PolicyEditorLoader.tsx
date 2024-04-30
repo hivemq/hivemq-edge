@@ -85,9 +85,9 @@ export const DataPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
   }, [dataPolicy, schemas, scripts, t, toast])
 
   if (isDataPolicyLoading || isScriptLoading || isSchemaLoading) return <Spinner />
-  if (isDataPolicyError) return <ErrorMessage type={t('error.notDefined.title') as string} message={error?.message} />
-  if (isScriptError) return <ErrorMessage type={t('error.notDefined.title') as string} message={scriptError?.message} />
-  if (isSchemaError) return <ErrorMessage type={t('error.notDefined.title') as string} message={schemaError?.message} />
+  if (isDataPolicyError) return <ErrorMessage type={t('error.notDefined.title')} message={error?.message} />
+  if (isScriptError) return <ErrorMessage type={t('error.notDefined.title')} message={scriptError?.message} />
+  if (isSchemaError) return <ErrorMessage type={t('error.notDefined.title')} message={schemaError?.message} />
 
   return <PolicyEditor />
 }
@@ -154,9 +154,9 @@ export const BehaviorPolicyLoader: FC<PolicyLoaderProps> = ({ policyId }) => {
   }, [behaviorPolicy, schemas, scripts, t, toast])
 
   if (isPolicyLoading || isScriptLoading || isSchemaLoading) return <Spinner />
-  if (isPolicyError) return <ErrorMessage type={t('error.notDefined.title') as string} message={error?.message} />
-  if (isScriptError) return <ErrorMessage type={t('error.notDefined.title') as string} message={scriptError?.message} />
-  if (isSchemaError) return <ErrorMessage type={t('error.notDefined.title') as string} message={schemaError?.message} />
+  if (isPolicyError) return <ErrorMessage type={t('error.notDefined.title')} message={error?.message} />
+  if (isScriptError) return <ErrorMessage type={t('error.notDefined.title')} message={scriptError?.message} />
+  if (isSchemaError) return <ErrorMessage type={t('error.notDefined.title')} message={schemaError?.message} />
   return <PolicyEditor />
 }
 
@@ -165,23 +165,13 @@ const PolicyEditorLoader: FC = () => {
   const { policyType, policyId } = useParams()
 
   if (!policyType || !(policyType in PolicyType))
-    return (
-      <ErrorMessage
-        type={t('error.notDefined.title') as string}
-        message={t('error.notDefined.description') as string}
-      />
-    )
+    return <ErrorMessage type={t('error.notDefined.title')} message={t('error.notDefined.description')} />
 
   if (policyId) {
     if (policyType === PolicyType.DATA_POLICY) return <DataPolicyLoader policyId={policyId} />
     if (policyType === PolicyType.BEHAVIOR_POLICY) return <BehaviorPolicyLoader policyId={policyId} />
 
-    return (
-      <ErrorMessage
-        type={t('error.notDefined.title') as string}
-        message={t('error.notDefined.description') as string}
-      />
-    )
+    return <ErrorMessage type={t('error.notDefined.title')} message={t('error.notDefined.description')} />
   }
 
   return <PolicyEditor />

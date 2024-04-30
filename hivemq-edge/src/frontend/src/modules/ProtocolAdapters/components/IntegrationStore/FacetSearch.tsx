@@ -66,7 +66,7 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
       maxW="250px"
       minW="fit-content"
       role="region"
-      aria-label={t('protocolAdapter.facet.description') as string}
+      aria-label={t('protocolAdapter.facet.description')}
     >
       <FormControl role="search">
         <FormLabel>{t('protocolAdapter.facet.search.label')}</FormLabel>
@@ -76,7 +76,7 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
           </InputLeftElement>
           <Input
             id="facet-search-input"
-            placeholder={t('protocolAdapter.facet.search.placeholder') as string}
+            placeholder={t('protocolAdapter.facet.search.placeholder')}
             onChange={handleChangeSearch}
             value={facet?.search || ''}
             isDisabled={isLoading}
@@ -85,7 +85,7 @@ const FacetSearch: FC<SearchFilterAdaptersProps> = ({ items, isLoading, facet, o
             <CloseButton
               id="facet-search-clear"
               onClick={handleClearSearch}
-              aria-label={t('protocolAdapter.facet.search.clear') as string}
+              aria-label={t('protocolAdapter.facet.search.clear')}
             />
           </InputRightElement>
         </InputGroup>
