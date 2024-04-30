@@ -17,7 +17,7 @@ export const useUpdateDataPolicy = () => {
       return appClient.dataHubDataPolicies.updateDataPolicy(data.policyId, data.requestBody)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries([DATAHUB_QUERY_KEYS.DATA_POLICIES])
+      queryClient.invalidateQueries({ queryKey: [DATAHUB_QUERY_KEYS.DATA_POLICIES] })
     },
   })
 }

@@ -16,9 +16,10 @@ export const useUpdateBridge = () => {
     return appClient.bridges.updateBridge(name, requestBody)
   }
 
-  return useMutation<unknown, ApiError, UpdateBridgeProps>(updateBridge, {
+  return useMutation<unknown, ApiError, UpdateBridgeProps>({
+    mutationFn: updateBridge,
     onSuccess: () => {
-      queryClient.invalidateQueries([QUERY_KEYS.BRIDGES])
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BRIDGES] })
     },
   })
 }

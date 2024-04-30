@@ -12,7 +12,7 @@ export const useDeleteScript = () => {
       return appClient.dataHubScripts.deleteScript(scriptId)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries([DATAHUB_QUERY_KEYS.SCRIPTS])
+      queryClient.invalidateQueries({ queryKey: [DATAHUB_QUERY_KEYS.SCRIPTS] })
     },
   })
 }

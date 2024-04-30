@@ -6,8 +6,11 @@ import { QUERY_KEYS } from '@/api/utils.ts'
 export const useGetAdapterTypes = () => {
   const appClient = useHttpClient()
 
-  return useQuery<ProtocolAdaptersList, ApiError>([QUERY_KEYS.PROTOCOLS], async () => {
-    const adapterTypes = await appClient.protocolAdapters.getAdapterTypes()
-    return adapterTypes
+  return useQuery<ProtocolAdaptersList, ApiError>({
+    queryKey: [QUERY_KEYS.PROTOCOLS],
+    queryFn: async () => {
+      const adapterTypes = await appClient.protocolAdapters.getAdapterTypes()
+      return adapterTypes
+    },
   })
 }

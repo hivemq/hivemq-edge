@@ -12,9 +12,10 @@ export const useCreateBridge = () => {
     return appClient.bridges.addBridge(requestBody)
   }
 
-  return useMutation<unknown, ApiError, Bridge>(createBridge, {
+  return useMutation<unknown, ApiError, Bridge>({
+    mutationFn: createBridge,
     onSuccess: () => {
-      queryClient.invalidateQueries([QUERY_KEYS.BRIDGES])
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BRIDGES] })
     },
   })
 }

@@ -19,8 +19,11 @@ const getLocalConfig = (): CapabilityList | undefined => {
 export const useGetCapabilities = () => {
   const appClient = useHttpClient()
 
-  return useQuery<CapabilityList, ApiError>([QUERY_KEYS.FRONTEND_CAPABILITIES], async () => {
-    const item = await appClient.frontend.getCapabilities()
-    return getLocalConfig() || item
+  return useQuery<CapabilityList, ApiError>({
+    queryKey: [QUERY_KEYS.FRONTEND_CAPABILITIES],
+    queryFn: async () => {
+      const item = await appClient.frontend.getCapabilities()
+      return getLocalConfig() || item
+    },
   })
 }

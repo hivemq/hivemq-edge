@@ -16,9 +16,10 @@ export const useUpdateProtocolAdapter = () => {
     return appClient.protocolAdapters.updateAdapter(adapterId, requestBody)
   }
 
-  return useMutation<unknown, ApiError, UpdateBridgeProps>(updateProtocolAdapter, {
+  return useMutation<unknown, ApiError, UpdateBridgeProps>({
+    mutationFn: updateProtocolAdapter,
     onSuccess: () => {
-      queryClient.invalidateQueries([QUERY_KEYS.ADAPTERS])
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADAPTERS] })
     },
   })
 }

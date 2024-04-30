@@ -12,9 +12,10 @@ export const useDeleteBridge = () => {
     return appClient.bridges.removeBridge(name)
   }
 
-  return useMutation<string, ApiError, string>(deleteBridge, {
+  return useMutation<string, ApiError, string>({
+    mutationFn: deleteBridge,
     onSuccess: () => {
-      queryClient.invalidateQueries([QUERY_KEYS.BRIDGES])
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BRIDGES] })
     },
   })
 }

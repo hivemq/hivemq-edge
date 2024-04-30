@@ -141,7 +141,7 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
         onClose={handleEditorOnClose}
         onSubmit={handleEditorOnSubmit}
         onDelete={handleEditorOnDelete}
-        isSubmitting={createBridge.isLoading || updateBridge.isLoading}
+        isSubmitting={createBridge.isPending || updateBridge.isPending}
         error={createBridge.error || updateBridge.error}
       />
       {children}

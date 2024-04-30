@@ -158,7 +158,7 @@ export const ToolboxPublish: FC<DesignerToolBoxProps> = ({ onActiveStep }) => {
             leftIcon={<Icon as={MdPublishedWithChanges} boxSize="24px" />}
             onClick={handlePublish}
             isDisabled={!isValid || !isEditEnabled}
-            isLoading={createSchema.isLoading}
+            isLoading={createSchema.isPending}
           >
             {t('workspace.toolbar.policy.publish')}
           </Button>

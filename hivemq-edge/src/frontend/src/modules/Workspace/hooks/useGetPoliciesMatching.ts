@@ -26,7 +26,7 @@ export const useGetPoliciesMatching = (id: string) => {
     const { remote } = getBridgeTopics(bridge)
     const allTopics = remote.map((topic) => topic.topic)
 
-    return dataPolicies.items?.filter((policy) =>
+    return dataPolicies?.items?.filter((policy) =>
       allTopics.some((topic) => mqttTopicMatch(policy.matching.topicFilter, topic))
     )
   }
@@ -37,7 +37,7 @@ export const useGetPoliciesMatching = (id: string) => {
 
     const allTopics = discoverAdapterTopics(adapterProtocol, node.data.config)
 
-    return dataPolicies.items?.filter((policy) =>
+    return dataPolicies?.items?.filter((policy) =>
       allTopics.some((topic) => mqttTopicMatch(policy.matching.topicFilter, topic))
     )
   }

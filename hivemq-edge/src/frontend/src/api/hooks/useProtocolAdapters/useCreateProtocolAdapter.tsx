@@ -17,7 +17,8 @@ export const useCreateProtocolAdapter = () => {
     return appClient.protocolAdapters.addAdapter(adapterType, requestBody)
   }
 
-  return useMutation<unknown, ApiError, CreateProtocolAdapterProps>(createProtocolAdapter, {
+  return useMutation<unknown, ApiError, CreateProtocolAdapterProps>({
+    mutationFn: createProtocolAdapter,
     onMutate: (a) => {
       queryClient.setQueryData<StatusList>([QUERY_KEYS.ADAPTERS, QUERY_KEYS.CONNECTION_STATUS], (old) => {
         const optimisticUpdate: Status = {
@@ -31,7 +32,7 @@ export const useCreateProtocolAdapter = () => {
       })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries([QUERY_KEYS.ADAPTERS])
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADAPTERS] })
     },
   })
 }

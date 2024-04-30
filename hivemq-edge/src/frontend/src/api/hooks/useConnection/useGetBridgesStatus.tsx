@@ -6,18 +6,16 @@ import { QUERY_KEYS } from '@/api/utils.ts'
 export const useGetBridgesStatus = () => {
   const appClient = useHttpClient()
 
-  return useQuery(
-    [QUERY_KEYS.BRIDGES, QUERY_KEYS.CONNECTION_STATUS],
-    async () => {
+  return useQuery({
+    queryKey: [QUERY_KEYS.BRIDGES, QUERY_KEYS.CONNECTION_STATUS],
+    queryFn: async () => {
       const item = await appClient.bridges.getBridgesStatus()
       return item
     },
-    {
-      retry: 0,
-      refetchInterval: () => {
-        // return data ? 4 * 1000 : Math.max(Math.min(query.state.errorUpdateCount, 5 * 60), 4) * 1000
-        return config.httpClient.pollingRefetchInterval
-      },
-    }
-  )
+    retry: 0,
+    refetchInterval: () => {
+      // return data ? 4 * 1000 : Math.max(Math.min(query.state.errorUpdateCount, 5 * 60), 4) * 1000
+      return config.httpClient.pollingRefetchInterval
+    },
+  })
 }

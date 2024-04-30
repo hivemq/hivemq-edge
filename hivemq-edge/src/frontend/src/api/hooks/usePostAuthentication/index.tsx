@@ -11,5 +11,7 @@ export const usePostAuthentication = () => {
     return appClient.authentication.authenticate(credentials)
   }
 
-  return useMutation<ApiBearerToken, ApiError, UsernamePasswordCredentials>(['get.token'], postCredential)
+  return useMutation<ApiBearerToken, ApiError, UsernamePasswordCredentials>({
+    mutationFn: postCredential,
+  })
 }

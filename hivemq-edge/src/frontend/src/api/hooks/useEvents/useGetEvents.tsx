@@ -6,7 +6,10 @@ import { QUERY_KEYS } from '@/api/utils.ts'
 export const useGetEvents = () => {
   const appClient = useHttpClient()
 
-  return useQuery<EventList, ApiError>([QUERY_KEYS.EVENTS], async () => {
-    return await appClient.events.getEvents()
+  return useQuery<EventList, ApiError>({
+    queryKey: [QUERY_KEYS.EVENTS],
+    queryFn: async () => {
+      return await appClient.events.getEvents()
+    },
   })
 }
