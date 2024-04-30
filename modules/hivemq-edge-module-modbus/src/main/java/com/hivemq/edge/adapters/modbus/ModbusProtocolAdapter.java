@@ -162,12 +162,6 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
         return adapterInformation;
     }
 
-    @Override
-    public @Nullable String getErrorMessage() {
-        //TODO
-        return null;
-    }
-
     protected @Nullable ProtocolAdapterDataSample captureDataSample(@NotNull final ProtocolAdapterDataSample data) {
         boolean publishData = true;
         if (log.isTraceEnabled()) {

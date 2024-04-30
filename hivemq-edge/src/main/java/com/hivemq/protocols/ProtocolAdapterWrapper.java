@@ -73,9 +73,8 @@ public class ProtocolAdapterWrapper implements ProtocolAdapter{
         return protocolAdapterState.getRuntimeStatus();
     }
 
-    @Override
     public @Nullable String getErrorMessage() {
-        return adapter.getErrorMessage();
+        return protocolAdapterState.getLastErrorMessage();
     }
 
     protected void initStartAttempt(){

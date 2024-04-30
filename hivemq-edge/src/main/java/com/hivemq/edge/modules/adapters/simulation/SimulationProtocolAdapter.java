@@ -26,7 +26,6 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -74,12 +73,6 @@ public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocol
     @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapterInformation;
-    }
-
-    @Override
-    public @Nullable String getErrorMessage() {
-        //TODO
-        return null;
     }
 
     @Override

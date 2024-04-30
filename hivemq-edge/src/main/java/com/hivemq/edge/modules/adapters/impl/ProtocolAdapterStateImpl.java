@@ -15,11 +15,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     private final @NotNull EventService eventService;
-    protected @NotNull AtomicReference<RuntimeStatus> runtimeStatus =
-            new AtomicReference<>(RuntimeStatus.STOPPED);
+    protected @NotNull AtomicReference<RuntimeStatus> runtimeStatus = new AtomicReference<>(RuntimeStatus.STOPPED);
     protected @NotNull AtomicReference<ConnectionStatus> connectionStatus =
             new AtomicReference<>(ConnectionStatus.DISCONNECTED);
-    protected @Nullable String errorMessage;
+    protected @Nullable String lastErrorMessage;
 
     public ProtocolAdapterStateImpl(final @NotNull EventService eventService) {
         this.eventService = eventService;
@@ -63,7 +62,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
             @Nullable final Throwable throwable,
             @Nullable final String errorMessage,
             final boolean sendEvent) {
-        this.errorMessage = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
+        this.lastErrorMessage = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
         if (sendEvent) {
             eventService.fireEvent(eventBuilder(adapterId,
                     protocolId,
@@ -82,6 +81,10 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
         return this.runtimeStatus.get();
     }
 
+    @Override
+    public @Nullable String getLastErrorMessage() {
+        return lastErrorMessage;
+    }
 
     protected @NotNull EventBuilder eventBuilder(
             final @NotNull String adapterId,

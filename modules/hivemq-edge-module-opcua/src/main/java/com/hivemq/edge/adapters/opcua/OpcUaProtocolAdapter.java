@@ -204,12 +204,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         return adapterInformation;
     }
 
-    @Override
-    public @Nullable String getErrorMessage() {
-        //TODO
-        return null;
-    }
-
     @NotNull
     private OpcUaSubscriptionListener createSubscriptionListener() {
         return new OpcUaSubscriptionListener(protocolAdapterMetricsHelper, adapterConfig.getId(), (subscription) -> {

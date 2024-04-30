@@ -122,11 +122,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @Nullable String getErrorMessage() {
-        return null;
-    }
-
-    @Override
     public @NotNull CompletableFuture<ProtocolAdapterDataSample> poll() {
         if (httpClient != null) {
             final CompletableFuture<HttpData> dataFuture;

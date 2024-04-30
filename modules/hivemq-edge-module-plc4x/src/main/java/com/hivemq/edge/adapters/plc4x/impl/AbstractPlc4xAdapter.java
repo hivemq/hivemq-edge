@@ -151,12 +151,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         return adapterInformation;
     }
 
-    @Override
-    public @Nullable String getErrorMessage() {
-        return null;
-    }
-
-
     private @NotNull Plc4xConnection initConnection() {
         if (connection == null) {
             synchronized (lock) {
