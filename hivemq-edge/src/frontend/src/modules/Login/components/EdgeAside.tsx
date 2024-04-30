@@ -26,7 +26,7 @@ const EdgeAside: FC = () => {
           </Heading>
           <Image
             src={logo}
-            alt={'branding.appName' as string}
+            alt={t('branding.appName')}
             boxSize={{ base: '120px', md: '500px' }}
             display={{ base: 'inherit', md: 'none' }}
           />
