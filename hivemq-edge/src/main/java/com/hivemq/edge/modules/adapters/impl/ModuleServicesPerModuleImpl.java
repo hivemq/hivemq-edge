@@ -22,17 +22,18 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.concurrent.ScheduledExecutorService;
 
 public class ModuleServicesPerModuleImpl implements ModuleServices {
 
     private final @NotNull ModuleServicesImpl delegate;
-    private final @NotNull ProtocolAdapterPublishService adapterPublishService;
+    private final @NotNull ProtocolAdapterPublishServicePerAdapter adapterPublishService;
     private final @NotNull EventService eventService;
 
     public ModuleServicesPerModuleImpl(
-            final @NotNull ProtocolAdapter protocolAdapter,
+            final @Nullable ProtocolAdapter protocolAdapter,
             final @NotNull ModuleServicesImpl delegate,
             final @NotNull EventService eventService) {
         this.delegate = delegate;
@@ -61,6 +62,11 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
         return eventService;
     }
 
+    public void setAdapter(final @NotNull ProtocolAdapter protocolAdapter) {
+        this.adapterPublishService.setAdapter(protocolAdapter);
+    }
+
+
     private static class ProtocolAdapterPublishServicePerAdapter implements ProtocolAdapterPublishService {
 
         private final @NotNull ProtocolAdapterPublishService delegate;
@@ -68,11 +74,13 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
         public ProtocolAdapterPublishServicePerAdapter(
                 @NotNull final ProtocolAdapterPublishService delegate, @NotNull final ProtocolAdapter adapter) {
             this.delegate = delegate;
-            this.adapter = adapter;
         }
 
-        private final @NotNull ProtocolAdapter adapter;
+        private @NotNull ProtocolAdapter adapter;
 
+        public void setAdapter(final @NotNull ProtocolAdapter adapter) {
+            this.adapter = adapter;
+        }
 
         @Override
         public @NotNull ProtocolAdapterPublishBuilder publish() {

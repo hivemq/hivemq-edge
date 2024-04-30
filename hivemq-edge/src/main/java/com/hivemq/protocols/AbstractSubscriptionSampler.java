@@ -106,8 +106,12 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull ProtocolAdapterDataSample sample) {
         Preconditions.checkNotNull(sample);
-        Preconditions.checkNotNull(sample.getTopic());
-        Preconditions.checkArgument(sample.getQos() <= 2 && sample.getQos() >= 0,
+        final AdapterSubscription subscription = sample.getSubscription();
+        Preconditions.checkNotNull(subscription);
+        Preconditions.checkNotNull(subscription.getDestination());
+        Preconditions.checkNotNull(subscription.getQos());
+
+        Preconditions.checkArgument(subscription.getQos() <= 2 && subscription.getQos() >= 0,
                 "QoS needs to be a valid QoS value (0,1,2)");
         try {
             final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
@@ -115,8 +119,8 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             for (AbstractProtocolAdapterJsonPayload payload : payloads) {
                 byte[] json = convertToJson(payload);
                 final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
-                        .withTopic(sample.getTopic())
-                        .withQoS(sample.getQos())
+                        .withTopic(subscription.getDestination())
+                        .withQoS(subscription.getQos())
                         .withPayload(json)
                         .withAdapter(protocolAdapter);
                 final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
@@ -196,8 +200,9 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     protected @NotNull AbstractProtocolAdapterJsonPayload decoratePayloadMessage(
             ProtocolAdapterDataSample sample, @NotNull AbstractProtocolAdapterJsonPayload payload) {
-        if (sample.getUserProperties() != null && !sample.getUserProperties().isEmpty()) {
-            payload.setUserProperties(sample.getUserProperties());
+        sample.getSubscription().getUserProperties();
+        if (!sample.getSubscription().getUserProperties().isEmpty()) {
+            payload.setUserProperties(sample.getSubscription().getUserProperties());
         }
         return payload;
     }

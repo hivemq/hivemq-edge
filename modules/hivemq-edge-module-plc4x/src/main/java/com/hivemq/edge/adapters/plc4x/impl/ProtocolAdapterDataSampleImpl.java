@@ -22,9 +22,7 @@ import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.factories.DataPointFactory;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.edge.modules.config.CustomConfig;
-import com.hivemq.edge.modules.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -35,8 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Simon L Johnson
  */
-public class ProtocolAdapterDataSampleImpl<T extends CustomConfig>
-        implements ProtocolAdapterDataSample {
+public class ProtocolAdapterDataSampleImpl<T extends CustomConfig> implements ProtocolAdapterDataSample {
 
     protected @NotNull Long timestamp = System.currentTimeMillis();
     protected @NotNull AdapterSubscription adapterSubscription;
@@ -45,8 +42,8 @@ public class ProtocolAdapterDataSampleImpl<T extends CustomConfig>
     //-- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
-    public ProtocolAdapterDataSampleImpl(final @NotNull AdapterSubscription adapterSubscription,
-                                         final @NotNull DataPointFactory dataPointFactory) {
+    public ProtocolAdapterDataSampleImpl(
+            final @NotNull AdapterSubscription adapterSubscription, final @NotNull DataPointFactory dataPointFactory) {
         this.adapterSubscription = adapterSubscription;
         this.dataPointFactory = dataPointFactory;
     }
@@ -59,31 +56,8 @@ public class ProtocolAdapterDataSampleImpl<T extends CustomConfig>
 
     @Override
     @JsonIgnore
-    public @Nullable String getTopic() {
-        return adapterSubscription.getDestination();
-    }
-
-    @Override
-    @JsonIgnore
-    public int getQos() {
-        return adapterSubscription.getQos();
-    }
-
-    @Override
-    @JsonIgnore
     public @NotNull Long getTimestamp() {
         return timestamp;
-    }
-
-    @Override
-    @JsonIgnore
-    public @NotNull List<UserProperty> getUserProperties() {
-        return adapterSubscription.getUserProperties();
-    }
-
-    @Override
-    public void setTimestamp(final @NotNull Long timestamp) {
-        this.timestamp = timestamp;
     }
 
     @Override

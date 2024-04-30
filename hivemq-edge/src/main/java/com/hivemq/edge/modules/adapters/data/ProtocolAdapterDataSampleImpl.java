@@ -20,9 +20,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.edge.modules.config.CustomConfig;
-import com.hivemq.edge.modules.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -54,31 +52,8 @@ public class ProtocolAdapterDataSampleImpl<T extends CustomConfig>
 
     @Override
     @JsonIgnore
-    public @Nullable String getTopic() {
-        return adapterSubscription.getDestination();
-    }
-
-    @Override
-    @JsonIgnore
-    public int getQos() {
-        return adapterSubscription.getQos();
-    }
-
-    @Override
-    @JsonIgnore
     public @NotNull Long getTimestamp() {
         return timestamp;
-    }
-
-    @Override
-    @JsonIgnore
-    public @NotNull List<UserProperty> getUserProperties() {
-        return adapterSubscription.getUserProperties();
-    }
-
-    @Override
-    public void setTimestamp(final @NotNull Long timestamp) {
-        this.timestamp = timestamp;
     }
 
     @Override

@@ -247,13 +247,12 @@ public class ProtocolAdapterManager {
                     final PollingPerSubscriptionProtocolAdapter adapter =
                             (PollingPerSubscriptionProtocolAdapter) protocolAdapterWrapper.getAdapter();
                     adapter.getSubscriptions().forEach(adapterSubscription -> {
-                        final PerSubscriptionSampler sampler =
-                                new PerSubscriptionSampler(adapter,
-                                        protocolAdapterWrapper.getConfigObject(),
-                                        metricRegistry,
-                                        objectMapper,
-                                        moduleServices.adapterPublishService(),
-                                        adapterSubscription);
+                        final PerSubscriptionSampler sampler = new PerSubscriptionSampler(adapter,
+                                protocolAdapterWrapper.getConfigObject(),
+                                metricRegistry,
+                                objectMapper,
+                                moduleServices.adapterPublishService(),
+                                adapterSubscription);
                         protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
                     });
                 } else if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
@@ -437,14 +436,19 @@ public class ProtocolAdapterManager {
 
             final ProtocolAdapterStateImpl protocolAdapterState =
                     new ProtocolAdapterStateImpl(moduleServices.eventService());
+
+            final ModuleServicesPerModuleImpl moduleServicesPerModule =
+                    new ModuleServicesPerModuleImpl(null, moduleServices, eventService);
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(configObject,
                                     metricRegistry,
-                                    version, protocolAdapterState,
-                                    moduleServices,
+                                    version,
+                                    protocolAdapterState,
+                                    moduleServicesPerModule,
                                     protocolAdapterMetricsHelper));
-
+            // hen-egg problem. Rather solve this here as have not final fields in the adapter.
+            moduleServicesPerModule.setAdapter(protocolAdapter);
 
             ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(protocolAdapter,
                     protocolAdapterFactory,
