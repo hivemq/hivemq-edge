@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua.payload;
 
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.model.core.Payload;
@@ -69,9 +68,10 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
     private final @NotNull ModuleServices moduleServices = mock();
     private final @NotNull ProtocolAdapterPublishService adapterPublishService = mock();
-    private final @NotNull TestProtocolAdapterPublishBuilder adapterPublishBuilder = new TestProtocolAdapterPublishBuilder();
+    private final @NotNull TestProtocolAdapterPublishBuilder adapterPublishBuilder =
+            new TestProtocolAdapterPublishBuilder();
     private final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> protocolAdapterInput = mock();
-    private AdapterFactories adapterFactories = mock();
+    private final @NotNull AdapterFactories adapterFactories = mock();
 
     @BeforeEach
     public void before() {
@@ -85,8 +85,9 @@ abstract class AbstractOpcUaPayloadConverterTest {
         final OpcUaAdapterConfig config =
                 new OpcUaAdapterConfig("test-" + UUID.randomUUID(), opcUaServerExtension.getServerUri());
         config.setSubscriptions(List.of(new OpcUaAdapterConfig.Subscription(subcribedNodeId, "topic")));
-        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, config, new MetricRegistry(),  "version",
-                protocolAdapterInput);
+        when(protocolAdapterInput.getConfig()).thenReturn(config);
+        final OpcUaProtocolAdapter protocolAdapter =
+                new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = () -> moduleServices;
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
@@ -108,8 +109,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
         when(adapterFactories.payloadFactory()).thenReturn(new PayloadFactory() {
             @Override
             public @NotNull Payload create(
-                    final Payload.@NotNull ContentType contentType,
-                    final @NotNull String content) {
+                    final Payload.@NotNull ContentType contentType, final @NotNull String content) {
                 return PayloadImpl.from(contentType, content);
             }
 
@@ -180,8 +180,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
         @Override
         public @NotNull ProtocolAdapterPublishBuilder withContextInformation(
-                @NotNull final String key,
-                @NotNull final String value) {
+                @NotNull final String key, @NotNull final String value) {
             return this;
         }
 
@@ -194,7 +193,6 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
             return CompletableFuture.completedFuture(PublishReturnCode.DELIVERED);
         }
-
 
 
         public @NotNull List<PUBLISH> getPublishes() {

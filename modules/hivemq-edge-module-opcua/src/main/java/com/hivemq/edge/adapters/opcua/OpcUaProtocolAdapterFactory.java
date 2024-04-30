@@ -37,7 +37,7 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
     public @NotNull ProtocolAdapter createAdapter(
             @NotNull final ProtocolAdapterInformation adapterInformation,
             @NotNull final ProtocolAdapterInput<OpcUaAdapterConfig> input) {
-        return new OpcUaProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry(), input.getVersion(), input);
+        return new OpcUaProtocolAdapter(adapterInformation, input);
     }
 
     @Override

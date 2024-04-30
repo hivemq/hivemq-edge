@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.opcua.payload;
 
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
@@ -91,7 +91,7 @@ class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest 
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> serverValue, 999);
 
         final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId, PayloadMode.STRING);
-        assertEquals(ProtocolAdapter.ConnectionStatus.CONNECTED, protocolAdapter.getConnectionStatus());
+        assertEquals(ProtocolAdapterState.ConnectionStatus.CONNECTED, protocolAdapter.getProtocolAdapterState().getConnectionStatus());
 
         final PUBLISH publish = expectAdapterPublish();
         protocolAdapter.stop();

@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
@@ -29,7 +28,7 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
 
-import static com.hivemq.edge.modules.api.adapters.ProtocolAdapter.ConnectionStatus;
+import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -40,7 +39,7 @@ class OpcUaProtocolAdapterAuthTest {
     @RegisterExtension
     public final @NotNull EmbeddedOpcUaServerExtension opcUaServerExtension = new EmbeddedOpcUaServerExtension();
 
-    private final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> protocolAdapterInput = mock(ProtocolAdapterInput.class);
+    private final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> protocolAdapterInput = mock();
 
     @BeforeEach
     void setUp() {
@@ -51,17 +50,15 @@ class OpcUaProtocolAdapterAuthTest {
     @Timeout(10)
     public void whenNoAuthAndNoSubscriptions_thenConnectSuccessfully() throws Exception {
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
-        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE,
-                config,
-                new MetricRegistry(),
-                "version",
-                protocolAdapterInput);
+        when(protocolAdapterInput.getConfig()).thenReturn(config);
+        final OpcUaProtocolAdapter protocolAdapter =
+                new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
+        await().until(() -> CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
     }
 
     @Test
@@ -69,56 +66,51 @@ class OpcUaProtocolAdapterAuthTest {
     public void whenBasicAuthAndNoSubscriptions_thenConnectSuccessfully() throws Exception {
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
         config.setAuth(new OpcUaAdapterConfig.Auth(new OpcUaAdapterConfig.BasicAuth("testuser", "testpass"), null));
-        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE,
-                config,
-                new MetricRegistry(),
-                "version",
-                protocolAdapterInput);
+        when(protocolAdapterInput.getConfig()).thenReturn(config);
+        final OpcUaProtocolAdapter protocolAdapter =
+                new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
+        await().until(() -> CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
     }
 
     @Test
     @Timeout(10)
     public void whenTlsAndNoSubscriptions_thenConnectSuccessfully() throws Exception {
-
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
         config.setSecurity(new OpcUaAdapterConfig.Security(OpcUaAdapterConfig.SecPolicy.NONE));
         config.setTls(new OpcUaAdapterConfig.Tls(true, null, null));
-        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE,
-                config,
-                new MetricRegistry(),
-                "version",
-                protocolAdapterInput);
+        when(protocolAdapterInput.getConfig()).thenReturn(config);
+
+        final OpcUaProtocolAdapter protocolAdapter =
+                new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
+        await().until(() -> CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
     }
 
     @Test
     @Timeout(10)
     public void whenCertAuthAndNoSubscriptions_thenConnectSuccessfully() throws Exception {
-
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
         config.setAuth(new OpcUaAdapterConfig.Auth(null, new OpcUaAdapterConfig.X509Auth()));
-        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE,
-                config,
-                new MetricRegistry(),
-                "version",
-                protocolAdapterInput);
+        when(protocolAdapterInput.getConfig()).thenReturn(config);
+
+        final OpcUaProtocolAdapter protocolAdapter =
+                new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
         protocolAdapter.start(in, out).get();
 
-        await().until(() -> ConnectionStatus.CONNECTED == protocolAdapter.getConnectionStatus());
+        await().until(() -> CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
+
     }
 
     private static class TestProtocolAdapterStartInput implements ProtocolAdapterStartInput {

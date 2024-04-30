@@ -15,8 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
@@ -35,7 +35,6 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.edge.modules.api.events.model.Event;
-import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
@@ -77,8 +76,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaAdapterConfig adapterConfig;
-    private final @NotNull MetricRegistry metricRegistry;
-    private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull AdapterFactories adapterFactories;
@@ -89,14 +86,9 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull OpcUaAdapterConfig adapterConfig,
-            final @NotNull MetricRegistry metricRegistry,
-            final @NotNull String version,
             final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
-        this.adapterConfig = adapterConfig;
-        this.metricRegistry = metricRegistry;
-        this.version = version;
+        this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
         this.adapterFactories = input.adapterFactories();
@@ -195,7 +187,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                             requireNonNullElse(displayName, ""),
                             parent != null ? parent.getNodeId().toParseableString() : null,
                             nodeType != null ? nodeType : NodeType.VALUE,
-                            nodeType != null && nodeType == NodeType.VALUE);
+                            nodeType == NodeType.VALUE);
         }, input.getDepth());
     }
 
@@ -270,7 +262,10 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         });
         opcUaClient.addFaultListener(serviceFault -> {
             moduleServices.eventService()
-                    .fireEvent(eventBuilder(Event.SEVERITY.ERROR).withPayload(adapterFactories.payloadFactory().create(objectMapper,
+                    .fireEvent(adapterFactories.eventBuilderFactory()
+                            .create(adapterConfig.getId(), adapterInformation.getProtocolId())
+                            .withSeverity(Event.SEVERITY.ERROR)
+                            .withPayload(adapterFactories.payloadFactory().create(objectMapper,
                                     serviceFault.getResponseHeader().getServiceResult()))
                             .withMessage("A Service Fault was Detected.")
                             .build());
@@ -388,12 +383,8 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         return CompletableFuture.allOf(childFutures.build().toArray(new CompletableFuture[]{}));
     }
 
-
-    private @NotNull EventBuilder eventBuilder(
-            final @NotNull Event.SEVERITY severity) {
-        return adapterFactories.eventBuilderFactory()
-                .create(adapterConfig.getId(), adapterInformation.getProtocolId())
-                .withSeverity(severity);
+    @VisibleForTesting
+    public @NotNull ProtocolAdapterState getProtocolAdapterState() {
+        return protocolAdapterState;
     }
-
 }
