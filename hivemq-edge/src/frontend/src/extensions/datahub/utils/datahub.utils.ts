@@ -13,6 +13,8 @@ export const DATAHUB_HOTKEY = {
   COPY: 'Meta+C',
   PASTE: 'Meta+V',
   ESCAPE: 'ESC',
+  BACKSPACE: 'Backspace',
+  DELETE: 'Delete',
 }
 
 export const DATAHUB_HOTKEY_CONTEXT: HotKeyItem[] = [
