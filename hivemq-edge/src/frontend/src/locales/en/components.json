@@ -61,6 +61,15 @@
     "action_COPIED": "Copied!",
     "action_ERROR": "Error!"
   },
+  "PrivacyConsentBanner": {
+    "header": "Privacy Settings",
+    "body": "This web application uses third-party website tracking technologies to provide and continually improve our services. I agree and may revoke or change my consent at any time with effect for the future.",
+    "action": {
+      "moreInfo": "More information",
+      "optOut": "Deny",
+      "optIn": "Accept all"
+    }
+  },
   "rjsf": {
     "ArrayFieldItem": {
       "Buttons": {
