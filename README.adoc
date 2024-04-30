@@ -62,7 +62,6 @@ More Protocol adapters will be added to the project over time.
 * S7
 * ADS
 * HTTP
-* Allen-Bradley footnoteref:[tba]
 * and many more
 
 
