@@ -20,7 +20,7 @@ export const useGetAllBehaviorPolicies = ({
 }: GetAllBehaviorPoliciesProps) => {
   const appClient = useHttpClient()
   return useQuery<BehaviorPolicyList, ApiError>({
-    queryKey: [DATAHUB_QUERY_KEYS.BEHAVIOR_POLICIES],
+    queryKey: [DATAHUB_QUERY_KEYS.BEHAVIOR_POLICIES, fields, policyIds, clientIds, limit, cursor],
     queryFn: async () => {
       return appClient.dataHubBehaviorPolicies.getAllBehaviorPolicies(fields, policyIds, clientIds, limit, cursor)
     },
