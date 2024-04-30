@@ -24,7 +24,6 @@ import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.edge.modules.api.events.model.Event;
@@ -54,6 +53,8 @@ import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE;
+import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.ERROR;
+import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -95,7 +96,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
     public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
             @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
         try {
-            protocolAdapterState.setConnectionStatus(ProtocolAdapter.ConnectionStatus.STATELESS);
+            protocolAdapterState.setConnectionStatus(STATELESS);
             if (httpClient == null) {
                 synchronized (lock) {
                     if (httpClient == null) {
@@ -118,16 +119,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
     @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapterInformation;
-    }
-
-    @Override
-    public @NotNull ConnectionStatus getConnectionStatus() {
-        return protocolAdapterState.getConnectionStatus();
-    }
-
-    @Override
-    public @NotNull RuntimeStatus getRuntimeStatus() {
-        return protocolAdapterState.getRuntimeStatus();
     }
 
     @Override
@@ -157,8 +148,8 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                 boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) ||
                         !adapterConfig.isHttpPublishSuccessStatusCodeOnly();
                 protocolAdapterState.setConnectionStatus(isSuccessStatusCode(data.getHttpStatusCode()) ?
-                        ProtocolAdapter.ConnectionStatus.STATELESS :
-                        ProtocolAdapter.ConnectionStatus.ERROR);
+                        STATELESS :
+                        ERROR);
                 if (publishData) {
                     return data;
                 }

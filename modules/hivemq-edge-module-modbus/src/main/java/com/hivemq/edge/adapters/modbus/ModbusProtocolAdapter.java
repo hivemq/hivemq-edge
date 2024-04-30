@@ -46,6 +46,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+
 public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull Object lock = new Object();
@@ -96,7 +98,7 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
             if (modbusClient != null) {
                 if (!modbusClient.isConnected()) {
                     modbusClient.connect()
-                            .thenRun(() -> protocolAdapterState.setConnectionStatus(ConnectionStatus.CONNECTED))
+                            .thenRun(() -> protocolAdapterState.setConnectionStatus(CONNECTED))
                             .get();
                 }
                 return CompletableFuture.supplyAsync(() -> readRegisters(adapterSubscription))
@@ -158,16 +160,6 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
     @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapterInformation;
-    }
-
-    @Override
-    public @NotNull ConnectionStatus getConnectionStatus() {
-        return protocolAdapterState.getConnectionStatus();
-    }
-
-    @Override
-    public @NotNull RuntimeStatus getRuntimeStatus() {
-        return protocolAdapterState.getRuntimeStatus();
     }
 
     @Override

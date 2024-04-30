@@ -2,7 +2,6 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.model.TypeIdentifierImpl;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventUtils;
@@ -16,10 +15,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     private final @NotNull EventService eventService;
-    protected @NotNull AtomicReference<ProtocolAdapter.RuntimeStatus> runtimeStatus =
-            new AtomicReference<>(ProtocolAdapter.RuntimeStatus.STOPPED);
-    protected @NotNull AtomicReference<ProtocolAdapter.ConnectionStatus> connectionStatus =
-            new AtomicReference<>(ProtocolAdapter.ConnectionStatus.DISCONNECTED);
+    protected @NotNull AtomicReference<RuntimeStatus> runtimeStatus =
+            new AtomicReference<>(RuntimeStatus.STOPPED);
+    protected @NotNull AtomicReference<ConnectionStatus> connectionStatus =
+            new AtomicReference<>(ConnectionStatus.DISCONNECTED);
     protected @Nullable String errorMessage;
 
     public ProtocolAdapterStateImpl(final @NotNull EventService eventService) {
@@ -27,13 +26,13 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     }
 
     @Override
-    public boolean setConnectionStatus(@NotNull final ProtocolAdapter.ConnectionStatus connectionStatus) {
+    public boolean setConnectionStatus(@NotNull final ConnectionStatus connectionStatus) {
         Preconditions.checkNotNull(connectionStatus);
         return this.connectionStatus.getAndSet(connectionStatus) != connectionStatus;
     }
 
     @Override
-    public @NotNull ProtocolAdapter.ConnectionStatus getConnectionStatus() {
+    public @NotNull ConnectionStatus getConnectionStatus() {
         return connectionStatus.get();
     }
 
@@ -47,7 +46,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
             final @NotNull String protocolId,
             @Nullable final Throwable t,
             @Nullable final String errorMessage) {
-        boolean changed = setConnectionStatus(ProtocolAdapter.ConnectionStatus.ERROR);
+        boolean changed = setConnectionStatus(ConnectionStatus.ERROR);
         reportErrorMessage(adapterId, protocolId, t, errorMessage, changed);
     }
 
@@ -74,12 +73,12 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     }
 
     @Override
-    public void setRuntimeStatus(@NotNull final ProtocolAdapter.RuntimeStatus runtimeStatus) {
+    public void setRuntimeStatus(@NotNull final RuntimeStatus runtimeStatus) {
         this.runtimeStatus.set(runtimeStatus);
     }
 
     @Override
-    public @NotNull ProtocolAdapter.RuntimeStatus getRuntimeStatus() {
+    public @NotNull RuntimeStatus getRuntimeStatus() {
         return this.runtimeStatus.get();
     }
 

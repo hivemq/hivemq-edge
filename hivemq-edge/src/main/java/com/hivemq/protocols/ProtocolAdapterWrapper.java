@@ -20,6 +20,7 @@ import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -31,6 +32,7 @@ public class ProtocolAdapterWrapper implements ProtocolAdapter{
     private final @NotNull ProtocolAdapter adapter;
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
+    private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull CustomConfig configObject;
     protected @Nullable Long lastStartAttemptTime;
 
@@ -38,10 +40,12 @@ public class ProtocolAdapterWrapper implements ProtocolAdapter{
             final @NotNull ProtocolAdapter adapter,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull CustomConfig configObject) {
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
         this.adapterInformation = adapterInformation;
+        this.protocolAdapterState = protocolAdapterState;
         this.configObject = configObject;
     }
 
@@ -61,14 +65,12 @@ public class ProtocolAdapterWrapper implements ProtocolAdapter{
         return adapter.getProtocolAdapterInformation();
     }
 
-    @Override
-    public @NotNull ConnectionStatus getConnectionStatus() {
-        return adapter.getConnectionStatus();
+    public @NotNull ProtocolAdapterState.ConnectionStatus getConnectionStatus() {
+        return protocolAdapterState.getConnectionStatus();
     }
 
-    @Override
-    public @NotNull RuntimeStatus getRuntimeStatus() {
-        return adapter.getRuntimeStatus();
+    public @NotNull ProtocolAdapterState.RuntimeStatus getRuntimeStatus() {
+        return protocolAdapterState.getRuntimeStatus();
     }
 
     @Override

@@ -18,7 +18,7 @@ package com.hivemq.api.model.adapters;
 import com.google.common.base.Preconditions;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.status.Status;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 
@@ -38,7 +38,7 @@ public class AdapterStatusModelConversionUtils {
                 protocolAdapterWrapper.getErrorMessage());
     }
 
-    public static @NotNull Status.CONNECTION_STATUS convertConnectionStatus(@NotNull final ProtocolAdapter.ConnectionStatus connectionStatus){
+    public static @NotNull Status.CONNECTION_STATUS convertConnectionStatus(@NotNull final ProtocolAdapterState.ConnectionStatus connectionStatus){
         Preconditions.checkNotNull(connectionStatus);
         switch (connectionStatus){
             case DISCONNECTED:
@@ -55,7 +55,7 @@ public class AdapterStatusModelConversionUtils {
         }
     }
 
-    public static @NotNull Status.RUNTIME_STATUS convertRuntimeStatus(@NotNull final ProtocolAdapter.RuntimeStatus runtimeStatus){
+    public static @NotNull Status.RUNTIME_STATUS convertRuntimeStatus(@NotNull final ProtocolAdapterState.RuntimeStatus runtimeStatus){
         Preconditions.checkNotNull(runtimeStatus);
         switch (runtimeStatus){
             case STARTED:

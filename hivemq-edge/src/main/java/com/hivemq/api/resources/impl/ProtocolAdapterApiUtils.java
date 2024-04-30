@@ -75,6 +75,9 @@ public class ProtocolAdapterApiUtils {
 
 
         final String rawVersion = info.getVersion();
+        if (rawVersion == null) {
+            System.err.println("FUCK");
+        }
         final String version = rawVersion.replace("${edge-version}", versionProvider.getVersion());
 
         return new ProtocolAdapter(info.getProtocolId(),
@@ -101,8 +104,7 @@ public class ProtocolAdapterApiUtils {
      * @return The instance to be sent across the API
      */
     public static ProtocolAdapter convertModuleAdapterType(
-            final @NotNull Module module,
-            final @NotNull ConfigurationService configurationService) {
+            final @NotNull Module module, final @NotNull ConfigurationService configurationService) {
 
         Preconditions.checkNotNull(module);
         Preconditions.checkNotNull(configurationService);
@@ -130,8 +132,7 @@ public class ProtocolAdapterApiUtils {
     }
 
     public static String applyAbsoluteServerAddressInDeveloperMode(
-            @NotNull String logoUrl,
-            final @NotNull ConfigurationService configurationService) {
+            @NotNull String logoUrl, final @NotNull ConfigurationService configurationService) {
         Preconditions.checkNotNull(logoUrl);
         Preconditions.checkNotNull(configurationService);
         if (logoUrl != null && Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)) {

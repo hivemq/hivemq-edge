@@ -232,7 +232,7 @@ public class ProtocolAdapterManager {
         }
         CompletableFuture<ProtocolAdapterStartOutput> startFuture;
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
-        if (protocolAdapterWrapper.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STARTED) {
+        if (protocolAdapterWrapper.getRuntimeStatus() == ProtocolAdapterState.RuntimeStatus.STARTED) {
             startFuture = CompletableFuture.completedFuture(output);
         } else {
             startFuture =
@@ -287,7 +287,7 @@ public class ProtocolAdapterManager {
         });
     }
 
-    public CompletableFuture<Void> stop(final @NotNull ProtocolAdapter protocolAdapter) {
+    public CompletableFuture<Void> stop(final @NotNull ProtocolAdapterWrapper protocolAdapter) {
         Preconditions.checkNotNull(protocolAdapter);
         if (log.isInfoEnabled()) {
             log.info("Stopping protocol-adapter \"{}\".", protocolAdapter.getId());
@@ -299,7 +299,7 @@ public class ProtocolAdapterManager {
                     .forEach(protocolAdapterPollingService::stopPolling);
         }
 
-        if (protocolAdapter.getRuntimeStatus() == ProtocolAdapter.RuntimeStatus.STOPPED) {
+        if (protocolAdapter.getRuntimeStatus() == ProtocolAdapterState.RuntimeStatus.STOPPED) {
             stopFuture = CompletableFuture.completedFuture(null);
         } else {
             stopFuture = protocolAdapter.stop();
@@ -435,12 +435,13 @@ public class ProtocolAdapterManager {
                     metricRegistry);
 
 
+            final ProtocolAdapterStateImpl protocolAdapterState =
+                    new ProtocolAdapterStateImpl(moduleServices.eventService());
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(configObject,
                                     metricRegistry,
-                                    version,
-                                    new ProtocolAdapterStateImpl(moduleServices.eventService()),
+                                    version, protocolAdapterState,
                                     moduleServices,
                                     protocolAdapterMetricsHelper));
 
@@ -448,6 +449,7 @@ public class ProtocolAdapterManager {
             ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(protocolAdapter,
                     protocolAdapterFactory,
                     protocolAdapterFactory.getInformation(),
+                    protocolAdapterState,
                     configObject);
             protocolAdapters.put(wrapper.getId(), wrapper);
             return wrapper;

@@ -32,6 +32,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.STATELESS;
+import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.RuntimeStatus.STARTED;
+import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.RuntimeStatus.STOPPED;
+
 public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocolAdapter {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -45,7 +49,8 @@ public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocol
         this.adapterInformation = adapterInformation;
         this.adapterConfig = protocolAdapterInput.getConfig();
         this.metricRegistry = protocolAdapterInput.getMetricRegistry();
-        protocolAdapterState = protocolAdapterInput.getProtocolAdapterState();
+        this.protocolAdapterState = protocolAdapterInput.getProtocolAdapterState();
+        this.protocolAdapterState.setConnectionStatus(STATELESS);
     }
 
     @Override
@@ -56,29 +61,19 @@ public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocol
     @Override
     public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
             @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
-        protocolAdapterState.setRuntimeStatus(RuntimeStatus.STARTED);
+        protocolAdapterState.setRuntimeStatus(STARTED);
         return CompletableFuture.completedFuture(output);
     }
 
     @Override
     public @NotNull CompletableFuture<Void> stop() {
-        protocolAdapterState.setRuntimeStatus(RuntimeStatus.STOPPED);
+        protocolAdapterState.setRuntimeStatus(STOPPED);
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapterInformation;
-    }
-
-    @Override
-    public @NotNull ConnectionStatus getConnectionStatus() {
-        return ConnectionStatus.STATELESS;
-    }
-
-    @Override
-    public @NotNull RuntimeStatus getRuntimeStatus() {
-        return protocolAdapterState.getRuntimeStatus();
     }
 
     @Override

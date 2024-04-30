@@ -14,7 +14,12 @@ public class VersionProvider {
 
     @Inject
     public VersionProvider() {
-        version = ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Version");
+        final String versionFromManifest = ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Version");
+        if(versionFromManifest!=null) {
+            version = versionFromManifest;
+        } else {
+            version = "Development Snapshot";
+        }
     }
 
     public synchronized @NotNull String getVersion() {

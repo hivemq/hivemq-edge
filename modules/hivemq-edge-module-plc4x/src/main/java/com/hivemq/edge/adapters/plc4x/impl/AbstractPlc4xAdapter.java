@@ -46,6 +46,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+
 /**
  * Abstract PLC4X implementation. Exposes core abstractions of the underlying framework so instances can be exposes
  * using the consistent
@@ -150,16 +152,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     }
 
     @Override
-    public @NotNull ConnectionStatus getConnectionStatus() {
-        return protocolAdapterState.getConnectionStatus();
-    }
-
-    @Override
-    public @NotNull RuntimeStatus getRuntimeStatus() {
-        return protocolAdapterState.getRuntimeStatus();
-    }
-
-    @Override
     public @Nullable String getErrorMessage() {
         return null;
     }
@@ -174,7 +166,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                             log.trace("Creating new instance of Plc4x connector with {}.", adapterConfig);
                         }
                         connection = createConnection();
-                        protocolAdapterState.setConnectionStatus(ConnectionStatus.CONNECTED);
+                        protocolAdapterState.setConnectionStatus(CONNECTED);
                     } catch (Plc4xException e) {
                         throw new RuntimeException(e);
                     }
@@ -309,9 +301,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 ((DefaultPlcReadResponse) readEvent).getValues().containsKey(subscription.getTagName())) {
             PlcResponseCode responseCode = readEvent.getResponseCode(subscription.getTagName());
             if (responseCode == PlcResponseCode.OK) {
-                if (getConnectionStatus() == ConnectionStatus.ERROR) {
+                if (protocolAdapterState.getConnectionStatus() == ProtocolAdapterState.ConnectionStatus.ERROR) {
                     //Error was transient
-                    protocolAdapterState.setConnectionStatus(ConnectionStatus.CONNECTED);
+                    protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
                 }
                 return processPlcFieldData(subscription, Plc4xDataUtils.readDataFromReadResponse(readEvent));
             }
