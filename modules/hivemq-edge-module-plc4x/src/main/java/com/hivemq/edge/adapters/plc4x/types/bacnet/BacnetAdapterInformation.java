@@ -59,12 +59,12 @@ public class BacnetAdapterInformation implements ProtocolAdapterInformation {
 
     @Override
     public String getVersion() {
-        return "TODO";
+        return "${edge-version}";
     }
 
     @Override
     public @NotNull String getLogoUrl() {
-        return null;
+        return "/images/bacnet-icon.png" ;
     }
 
     @Override

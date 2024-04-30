@@ -57,8 +57,7 @@ public class ModbusProtocolAdapterInformation
 
     @Override
     public @NotNull String getVersion() {
-        //TODO
-        return "TODO";
+        return "${edge-version}";
     }
 
     @Override

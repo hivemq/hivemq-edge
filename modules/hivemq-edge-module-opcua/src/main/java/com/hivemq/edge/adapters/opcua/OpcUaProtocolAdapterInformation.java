@@ -54,11 +54,9 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
         return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#opc-ua-adapter";
     }
 
-
-    // TODO
     @Override
     public @NotNull String getVersion() {
-        return "TODO";
+        return "${edge-version}";
     }
 
     @Override

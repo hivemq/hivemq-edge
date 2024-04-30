@@ -59,7 +59,7 @@ public class ABProtocolAdapterInformation implements ProtocolAdapterInformation 
 
     @Override
     public String getVersion() {
-        return "TODO";
+        return "${edge-version}";
     }
 
     @Override

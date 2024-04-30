@@ -24,6 +24,7 @@ import com.hivemq.api.model.components.Module;
 import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
+import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
@@ -47,61 +48,72 @@ public class ProtocolAdapterApiUtils {
     /**
      * Convert between the internal system representation of a ProtocolAdapter type and its API based sibling.
      * This decoupling allows for flexibility when internal model changes would otherwise impact API support
+     *
      * @return The instance to be sent across the API
      */
-    public static ProtocolAdapter convertInstalledAdapterType(final @NotNull ObjectMapper objectMapper,
-                                                              final @NotNull ProtocolAdapterManager adapterManager,
-                                                              final @NotNull ProtocolAdapterInformation info,
-                                                              final @NotNull ConfigurationService configurationService){
+    public static ProtocolAdapter convertInstalledAdapterType(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull ProtocolAdapterManager adapterManager,
+            final @NotNull ProtocolAdapterInformation info,
+            final @NotNull ConfigurationService configurationService,
+            final @NotNull VersionProvider versionProvider) {
 
         Preconditions.checkNotNull(adapterManager);
         Preconditions.checkNotNull(info);
         Preconditions.checkNotNull(configurationService);
         String logoUrl = info.getLogoUrl();
-        if(logoUrl != null){
+        if (logoUrl != null) {
             logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
         }
 
 
-        final ProtocolAdapterFactory protocolAdapterFactory =
+        final ProtocolAdapterFactory<?> protocolAdapterFactory =
                 adapterManager.getProtocolAdapterFactory(info.getProtocolId());
         final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
                 new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterFactory.getConfigClass());
+
+
+        final String rawVersion = info.getVersion();
+        final String version = rawVersion.replace("${edge-version}", versionProvider.getVersion());
+
         return new ProtocolAdapter(info.getProtocolId(),
                 info.getProtocolName(),
                 info.getDisplayName(),
                 info.getDescription(),
                 info.getUrl(),
-                info.getVersion(),
+                version,
                 logoUrl,
                 null,
                 info.getAuthor(),
                 true,
                 getCapabilities(info),
                 info == null ? null : convertApiCategory(info.getCategory()),
-                info.getTags() == null ? null : info.getTags().stream().
-                        map(Enum::toString).collect(Collectors.toList()),
+                info.getTags() == null ?
+                        null :
+                        info.getTags().stream().map(Enum::toString).collect(Collectors.toList()),
                 protocolAdapterSchemaManager.generateSchemaNode());
     }
 
     /**
      * Convert between the internal system representation of a Module type and its API protocol adapter type.
+     *
      * @return The instance to be sent across the API
      */
-    public static ProtocolAdapter convertModuleAdapterType(final @NotNull Module module, final @NotNull ConfigurationService configurationService){
+    public static ProtocolAdapter convertModuleAdapterType(
+            final @NotNull Module module,
+            final @NotNull ConfigurationService configurationService) {
 
         Preconditions.checkNotNull(module);
         Preconditions.checkNotNull(configurationService);
         String logoUrl = module.getLogoUrl() == null ? null : module.getLogoUrl().getUrl();
         String documentationUrl = module.getDocumentationLink() == null ? null : module.getDocumentationLink().getUrl();
         String provisioningUrl = module.getProvisioningLink() == null ? null : module.getProvisioningLink().getUrl();
-        if(logoUrl != null){
+        if (logoUrl != null) {
             logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);
         }
-        return new ProtocolAdapter(
-                module.getId(),
+        return new ProtocolAdapter(module.getId(),
                 module.getId(),
                 module.getName(),
                 module.getDescription(),
@@ -117,13 +129,15 @@ public class ProtocolAdapterApiUtils {
                 null);
     }
 
-    public static String applyAbsoluteServerAddressInDeveloperMode(@NotNull String logoUrl, final @NotNull ConfigurationService configurationService){
+    public static String applyAbsoluteServerAddressInDeveloperMode(
+            @NotNull String logoUrl,
+            final @NotNull ConfigurationService configurationService) {
         Preconditions.checkNotNull(logoUrl);
         Preconditions.checkNotNull(configurationService);
-        if(logoUrl != null && Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)){
+        if (logoUrl != null && Boolean.getBoolean(HiveMQEdgeConstants.DEVELOPMENT_MODE)) {
             //-- when we're in developer mode, ensure we make the logo urls fully qualified
             //-- as the FE maybe being run from a different development server.
-            if(!logoUrl.startsWith(HttpConstants.HTTP)){
+            if (!logoUrl.startsWith(HttpConstants.HTTP)) {
                 logoUrl = ApiUtils.getWebContextRoot(configurationService.apiConfiguration(),
                         !logoUrl.startsWith(HttpConstants.SLASH)) + logoUrl;
             }
@@ -133,19 +147,20 @@ public class ProtocolAdapterApiUtils {
 
     /**
      * Obtain a list of supported capabilities of this adapter.
+     *
      * @param info
      * @return
      */
-    public static List<ProtocolAdapter.Capability> getCapabilities(final @NotNull ProtocolAdapterInformation info){
+    public static List<ProtocolAdapter.Capability> getCapabilities(final @NotNull ProtocolAdapterInformation info) {
         Preconditions.checkNotNull(info);
         ImmutableList.Builder builder = ImmutableList.<ProtocolAdapter.Capability>builder();
-        if(ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.READ)){
+        if (ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.READ)) {
             builder.add(ProtocolAdapter.Capability.READ);
         }
-        if(ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.WRITE)){
+        if (ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.WRITE)) {
             builder.add(ProtocolAdapter.Capability.WRITE);
         }
-        if(ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.DISCOVER)){
+        if (ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.DISCOVER)) {
             builder.add(ProtocolAdapter.Capability.DISCOVER);
         }
         return builder.build();
@@ -153,9 +168,10 @@ public class ProtocolAdapterApiUtils {
 
     /**
      * Convert category from internal enum to external API transport model.
+     *
      * @param category the category enum to convert
      */
-    public static ProtocolAdapterCategory convertApiCategory(ProtocolAdapterConstants.CATEGORY category){
+    public static ProtocolAdapterCategory convertApiCategory(ProtocolAdapterConstants.CATEGORY category) {
         return new ProtocolAdapterCategory(category.name(),
                 category.getDisplayName(),
                 category.getDescription(),

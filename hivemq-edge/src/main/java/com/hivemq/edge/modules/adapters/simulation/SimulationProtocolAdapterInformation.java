@@ -51,8 +51,13 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
     }
 
     @Override
+    public @NotNull String getUrl() {
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#simulation-adapter";
+    }
+
+    @Override
     public @NotNull String getVersion() {
-        return "TODO";
+        return "${edge-version}";
     }
 
     @Override

@@ -54,12 +54,12 @@ public class EIPProtocolAdapterInformation implements ProtocolAdapterInformation
 
     @Override
     public @NotNull String getUrl() {
-        return "TODO";
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#eip-adapter";
     }
 
     @Override
     public @NotNull String getVersion() {
-        return "TODO";
+        return "${edge-version}";
     }
 
     @Override

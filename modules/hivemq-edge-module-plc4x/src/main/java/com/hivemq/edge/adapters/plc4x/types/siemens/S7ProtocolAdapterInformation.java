@@ -54,12 +54,12 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
 
     @Override
     public @NotNull String getUrl() {
-        return null;
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter";
     }
 
     @Override
     public @NotNull String getVersion() {
-        return "TODO";
+        return "${edge-version}";
     }
 
     @Override

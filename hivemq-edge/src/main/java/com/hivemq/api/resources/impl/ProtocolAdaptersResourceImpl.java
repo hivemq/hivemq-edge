@@ -36,6 +36,7 @@ import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
+import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterDiscoveryOutputImpl;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
@@ -67,17 +68,20 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull ObjectMapper objectMapper;
+    private final @NotNull VersionProvider versionProvider;
 
     @Inject
     public ProtocolAdaptersResourceImpl(
             final @NotNull HiveMQEdgeRemoteService remoteService,
             final @NotNull ConfigurationService configurationService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
-            final @NotNull ObjectMapper objectMapper) {
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull VersionProvider versionProvider) {
         this.remoteService = remoteService;
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
+        this.versionProvider = versionProvider;
     }
 
     @Override
@@ -90,9 +94,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                         return ProtocolAdapterApiUtils.convertInstalledAdapterType(objectMapper,
                                 protocolAdapterManager,
                                 installedAdapter,
-                                configurationService);
+                                configurationService,
+                                versionProvider);
                     } catch (Throwable t) {
-                        if(logger.isWarnEnabled()){
+                        if (logger.isWarnEnabled()) {
                             logger.warn("Not able to properly load protocol adapter.", t);
                         }
                         return null;
@@ -229,7 +234,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             }
             return ApiErrorUtils.badRequest(errorMessages);
         }
-        if(logger.isDebugEnabled()){
+        if (logger.isDebugEnabled()) {
             logger.debug("Added protocol adapter of type {} with ID {}.", adapterType, adapter.getId());
         }
         return Response.ok().build();
@@ -241,7 +246,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Cannot update an adapter that does not exist");
         }
-        if(logger.isDebugEnabled()){
+        if (logger.isDebugEnabled()) {
             logger.debug("Updating adapter \"{}\".", adapterId);
         }
         protocolAdapterManager.updateAdapter(adapterId, adapter.getConfig());
@@ -254,7 +259,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
-        if(logger.isDebugEnabled()){
+        if (logger.isDebugEnabled()) {
             logger.debug("Deleting adapter \"{}\".", adapterId);
         }
         protocolAdapterManager.deleteAdapter(adapterId);
@@ -308,7 +313,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     protected Status getStatusInternal(final @NotNull String adapterId) {
         Optional<ProtocolAdapterWrapper> optionalAdapterInstance = protocolAdapterManager.getAdapterById(adapterId);
-        return optionalAdapterInstance.map(AdapterStatusModelConversionUtils::getAdapterStatus).orElseGet(() -> Status.unknown(Status.RUNTIME_STATUS.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
+        return optionalAdapterInstance.map(AdapterStatusModelConversionUtils::getAdapterStatus)
+                .orElseGet(() -> Status.unknown(Status.RUNTIME_STATUS.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
     }
 
     protected void validateAdapterSchema(
@@ -330,7 +336,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 protocolAdapterManager.getProtocolAdapterFactory(information.getProtocolId());
         final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
                 new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterFactory.getConfigClass());
-        ProtocolAdapterValidator validator = (objectMapper, config) -> protocolAdapterSchemaManager.validateObject(config);
+        ProtocolAdapterValidator validator =
+                (objectMapper, config) -> protocolAdapterSchemaManager.validateObject(config);
         final List<ProtocolAdapterValidationFailure> errors =
                 validator.validateConfiguration(objectMapper, adapter.getConfig());
         errors.forEach(e -> ApiErrorUtils.addValidationError(apiErrorMessages, e.getFieldName(), e.getMessage()));

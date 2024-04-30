@@ -57,7 +57,7 @@ public class TestAdapterInformation implements ProtocolAdapterInformation {
 
     @Override
     public @NotNull String getVersion() {
-        return "version";
+        return "${edge-version}";
     }
 
     @Override

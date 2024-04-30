@@ -54,15 +54,13 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @NotNull String getUrl() {
-        // TODO fix
-        return "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#" + getProtocolId();
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#http-adapter";
 
     }
 
     @Override
     public String getVersion() {
-        // TODO fix
-        return "super.getVersion()" + " (BETA)";
+        return "${edge-version} (BETA)";
     }
 
     @Override
