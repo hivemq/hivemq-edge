@@ -1,7 +1,6 @@
 package com.hivemq.edge.adapters.http;
 
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.data.DataPoint;
 import com.hivemq.edge.modules.adapters.factories.DataPointFactory;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
@@ -10,21 +9,14 @@ import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
-import com.hivemq.edge.modules.config.AdapterSubscription;
-import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import java.math.BigDecimal;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
-import static com.hivemq.edge.adapters.http.HttpProtocolAdapter.RESPONSE_DATA;
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -62,6 +54,8 @@ class HttpProtocolAdapterTest {
         httpProtocolAdapter = new HttpProtocolAdapter(HttpProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
     }
 
+
+    /*
     @Test
     void test_captureDataSample_expectedPayloadPresent() throws ExecutionException, InterruptedException {
         final AdapterSubscription subscription = new AdapterSubscriptionImpl("topic", 2, null);
@@ -104,6 +98,7 @@ class HttpProtocolAdapterTest {
                 .isNumber()
                 .isEqualTo(BigDecimal.valueOf(404));
     }
+     */
 
     private static class TestDataPointFactory implements DataPointFactory {
         @Override

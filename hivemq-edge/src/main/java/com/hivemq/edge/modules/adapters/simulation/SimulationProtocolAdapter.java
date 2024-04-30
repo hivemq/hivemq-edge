@@ -56,11 +56,13 @@ public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocol
     @Override
     public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
             @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+        protocolAdapterState.setRuntimeStatus(RuntimeStatus.STARTED);
         return CompletableFuture.completedFuture(output);
     }
 
     @Override
     public @NotNull CompletableFuture<Void> stop() {
+        protocolAdapterState.setRuntimeStatus(RuntimeStatus.STOPPED);
         return CompletableFuture.completedFuture(null);
     }
 
