@@ -161,6 +161,7 @@ const PolicyEditor: FC = () => {
           onDragOver={onDragOver}
           onDrop={onDrop}
           isValidConnection={checkValidity}
+          deleteKeyCode={[]}
 
           // onError={(id: string, message: string) => console.log('XXXXXX e', id, message)}
         >
