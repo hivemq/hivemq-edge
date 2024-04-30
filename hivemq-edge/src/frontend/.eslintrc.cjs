@@ -6,6 +6,7 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
     'plugin:cypress/recommended',
+    'plugin:@tanstack/eslint-plugin-query/recommended',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
