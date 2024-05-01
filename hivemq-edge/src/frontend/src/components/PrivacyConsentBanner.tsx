@@ -51,9 +51,9 @@ const PrivacyConsentBanner: FC = () => {
   return (
     <Drawer isOpen={isOpen} placement="bottom" onClose={() => undefined} initialFocusRef={cancelRef}>
       <DrawerOverlay />
-      <DrawerContent>
+      <DrawerContent aria-labelledby="privacy-header">
         <DrawerCloseButton onClick={handleIgnore} />
-        <DrawerHeader>{t('PrivacyConsentBanner.header')}</DrawerHeader>
+        <DrawerHeader id="privacy-header">{t('PrivacyConsentBanner.header')}</DrawerHeader>
 
         <DrawerBody>
           <Text>{t('PrivacyConsentBanner.body')}</Text>

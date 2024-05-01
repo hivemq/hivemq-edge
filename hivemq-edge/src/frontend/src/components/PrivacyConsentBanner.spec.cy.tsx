@@ -59,4 +59,11 @@ describe('PrivacyConsentBanner', () => {
     })
     cy.get('[role="dialog"]').should('not.exist')
   })
+
+  it('should be accessible', () => {
+    cy.injectAxe()
+    cy.mountWithProviders(<PrivacyConsentBanner />)
+    cy.checkAccessibility()
+    cy.percySnapshot('Component: PrivacyConsentBanner')
+  })
 })
