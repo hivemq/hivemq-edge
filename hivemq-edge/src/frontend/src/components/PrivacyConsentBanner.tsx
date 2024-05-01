@@ -53,7 +53,7 @@ const PrivacyConsentBanner: FC = () => {
       <DrawerOverlay />
       <DrawerContent aria-labelledby="privacy-header">
         <DrawerCloseButton onClick={handleIgnore} />
-        <DrawerHeader id="privacy-header">{t('PrivacyConsentBanner.header')}</DrawerHeader>
+        <DrawerHeader>{t('PrivacyConsentBanner.header')}</DrawerHeader>
 
         <DrawerBody>
           <Text>{t('PrivacyConsentBanner.body')}</Text>

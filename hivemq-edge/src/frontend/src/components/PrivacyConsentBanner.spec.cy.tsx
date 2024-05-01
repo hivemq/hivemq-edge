@@ -15,6 +15,7 @@ describe('PrivacyConsentBanner', () => {
       expect(localStorage['edge.privacy']).to.be.undefined
     })
 
+    cy.get('header').should('be.visible')
     cy.get('header').should('contain.text', 'Privacy Settings')
     cy.get('[role="dialog"]').should(
       'contain.text',
@@ -34,6 +35,7 @@ describe('PrivacyConsentBanner', () => {
       expect(localStorage['edge.privacy']).to.be.undefined
     })
 
+    cy.get('header').should('be.visible')
     cy.getByTestId('privacy-optOut').click()
 
     cy.getAllLocalStorage().then((sss) => {
@@ -51,6 +53,7 @@ describe('PrivacyConsentBanner', () => {
       expect(localStorage['edge.privacy']).to.be.undefined
     })
 
+    cy.get('header').should('be.visible')
     cy.getByTestId('privacy-optIn').click()
 
     cy.getAllLocalStorage().then((sss) => {
@@ -63,6 +66,7 @@ describe('PrivacyConsentBanner', () => {
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<PrivacyConsentBanner />)
+    cy.get('header').should('be.visible')
     cy.checkAccessibility()
     cy.percySnapshot('Component: PrivacyConsentBanner')
   })
