@@ -61,13 +61,15 @@ const PrivacyConsentBanner: FC = () => {
 
         <DrawerFooter justifyContent="space-between">
           <ButtonGroup>
-            <Link href="https://www.hivemq.com/legal/imprint/" isExternal>
+            <Link href="https://www.hivemq.com/legal/imprint/" isExternal data-testid="privacy-info">
               {t('PrivacyConsentBanner.action.moreInfo')} <ExternalLinkIcon ml={2} />
             </Link>
           </ButtonGroup>
           <ButtonGroup>
-            <Button onClick={handleOptOut}>{t('PrivacyConsentBanner.action.optOut')}</Button>
-            <Button variant="primary" onClick={handleOptIn} ref={cancelRef}>
+            <Button data-testid="privacy-optOut" onClick={handleOptOut}>
+              {t('PrivacyConsentBanner.action.optOut')}
+            </Button>
+            <Button data-testid="privacy-optIn" variant="primary" onClick={handleOptIn} ref={cancelRef}>
               {t('PrivacyConsentBanner.action.optIn')}
             </Button>
           </ButtonGroup>
