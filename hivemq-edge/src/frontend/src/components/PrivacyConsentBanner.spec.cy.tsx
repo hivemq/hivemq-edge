@@ -1,4 +1,18 @@
-import PrivacyConsentBanner from '@/components/PrivacyConsentBanner.tsx'
+import { FC, PropsWithChildren } from 'react'
+import { useLocalStorage } from '@uidotdev/usehooks'
+import { Text } from '@chakra-ui/react'
+
+import PrivacyConsentBanner, { PrivacySourceGranted } from '@/components/PrivacyConsentBanner.tsx'
+
+const Wrapper: FC<PropsWithChildren> = ({ children }) => {
+  const [localStorage] = useLocalStorage<PrivacySourceGranted | undefined>('edge.privacy', undefined)
+  return (
+    <>
+      <Text data-testid="stdout">{JSON.stringify(localStorage || { error: 'no content' })}</Text>
+      {children}
+    </>
+  )
+}
 
 describe('PrivacyConsentBanner', () => {
   beforeEach(() => {
@@ -8,7 +22,7 @@ describe('PrivacyConsentBanner', () => {
   })
 
   it('should render properly', () => {
-    cy.mountWithProviders(<PrivacyConsentBanner />)
+    cy.mountWithProviders(<PrivacyConsentBanner />, { wrapper: Wrapper })
 
     cy.getAllLocalStorage().then((sss) => {
       const localStorage = Object.values(sss)[0]
@@ -28,7 +42,7 @@ describe('PrivacyConsentBanner', () => {
   })
 
   it('should support opt out', () => {
-    cy.mountWithProviders(<PrivacyConsentBanner />)
+    cy.mountWithProviders(<PrivacyConsentBanner />, { wrapper: Wrapper })
 
     cy.getAllLocalStorage().then((sss) => {
       const localStorage = Object.values(sss)[0]
@@ -46,7 +60,7 @@ describe('PrivacyConsentBanner', () => {
   })
 
   it('should support opt in', () => {
-    cy.mountWithProviders(<PrivacyConsentBanner />)
+    cy.mountWithProviders(<PrivacyConsentBanner />, { wrapper: Wrapper })
 
     cy.getAllLocalStorage().then((sss) => {
       const localStorage = Object.values(sss)[0]
@@ -65,7 +79,7 @@ describe('PrivacyConsentBanner', () => {
 
   it('should be accessible', () => {
     cy.injectAxe()
-    cy.mountWithProviders(<PrivacyConsentBanner />)
+    cy.mountWithProviders(<PrivacyConsentBanner />, { wrapper: Wrapper })
     cy.get('header').should('be.visible')
     cy.checkAccessibility()
     cy.percySnapshot('Component: PrivacyConsentBanner')
