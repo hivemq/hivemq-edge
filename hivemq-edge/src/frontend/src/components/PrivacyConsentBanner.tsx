@@ -17,7 +17,7 @@ import {
 import { ExternalLinkIcon } from '@chakra-ui/icons'
 import { useLocalStorage } from '@uidotdev/usehooks'
 
-interface PrivacySourceGranted {
+export interface PrivacySourceGranted {
   heapAnalytics: boolean
   sentry: boolean
 }
@@ -29,8 +29,8 @@ const PrivacyConsentBanner: FC = () => {
   const [privacy, setPrivacy] = useLocalStorage<PrivacySourceGranted | undefined>('edge.privacy', undefined)
 
   useEffect(() => {
-    const headAppId = import.meta.env.VITE_MONITORING_HEAP
-    if (headAppId && !privacy) onOpen()
+    // const headAppId = import.meta.env.VITE_MONITORING_HEAP
+    if (!privacy) onOpen()
   }, [onOpen, privacy])
 
   const handleOptIn = () => {
