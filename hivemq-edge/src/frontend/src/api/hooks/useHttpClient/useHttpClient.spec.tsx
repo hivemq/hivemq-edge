@@ -1,5 +1,5 @@
 import { MemoryRouter } from 'react-router-dom'
-import { RequestHandler, rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { vi, expect, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 
@@ -34,10 +34,10 @@ vi.mock('@/modules/Auth/hooks/useAuth.ts', () => ({ useAuth: mockedMethod }))
 const successURL = '/my-successful-endpoint'
 const errorURL = '/my-error-endpoint'
 const reissueURL = '/my-reissue-endpoint'
-const handlers: RequestHandler[] = [
-  rest.get(`${config.apiBaseUrl}${successURL}`, (req, res, ctx) => {
+const handlers = [
+  http.get(`${config.apiBaseUrl}${successURL}`, ({ request }) => {
     let bodyContent = auth.HEADER_MISSING
-    const authHeader = req.headers.get('authorization') ?? null
+    const authHeader = request.headers.get('authorization') ?? null
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7, authHeader.length)
       if (token) {
@@ -45,32 +45,34 @@ const handlers: RequestHandler[] = [
       }
     }
 
-    return res(
-      ctx.status(200),
-      ctx.json({
+    return HttpResponse.json(
+      {
         bodyContent: bodyContent,
-      })
+      },
+      { status: 200 }
     )
   }),
 
-  rest.get(`${config.apiBaseUrl}${errorURL}`, (_, res, ctx) => {
-    return res(
-      ctx.status(401),
-      ctx.json({
+  http.get(`${config.apiBaseUrl}${errorURL}`, () => {
+    return HttpResponse.json(
+      {
         bodyContent: 'an error message',
-      })
+      },
+      { status: 401 }
     )
   }),
 
-  rest.get(`${config.apiBaseUrl}${reissueURL}`, (_, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.set({
-        'X-Bearer-Token-Reissue': 'a-new-token',
-      }),
-      ctx.json({
+  http.get(`${config.apiBaseUrl}${reissueURL}`, () => {
+    return HttpResponse.json(
+      {
         bodyContent: 'A new token has been added to the response',
-      })
+      },
+      {
+        status: 200,
+        headers: {
+          'X-Bearer-Token-Reissue': 'a-new-token',
+        },
+      }
     )
   }),
 ]
