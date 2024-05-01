@@ -114,7 +114,7 @@
     "eslint-plugin-react-refresh": "^0.3.4",
     "i18next-pseudo": "^2.2.1",
     "jsdom": "^22.0.0",
-    "msw": "^1.2.1",
+    "msw": "^2.2.14",
     "openapi-typescript-codegen": "^0.25.0",
     "prettier": "2.8.8",
     "sass": "^1.70.0",
