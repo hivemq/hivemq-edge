@@ -74,7 +74,7 @@ describe('DeleteListener', () => {
     cy.get('body').type('{backspace}')
     cy.get("[role='alertdialog']")
       .should('be.visible')
-      .should('contain.text', 'You will be deleting 1 node. The operation cannot be reversed.')
+      .should('contain.text', 'Are you sure you want to delete 1 node? The operation cannot be reversed.')
     cy.getByTestId('confirmation-submit').click()
     cy.get("[role='alertdialog']").should('not.exist')
   })
@@ -119,7 +119,10 @@ describe('DeleteListener', () => {
 
     cy.get('@confirm')
       .should('be.visible')
-      .should('contain.text', 'You will be deleting 3 nodes and connections. The operation cannot be reversed.')
+      .should(
+        'contain.text',
+        'Are you sure you want to delete 3 nodes and connections? The operation cannot be reversed.'
+      )
     cy.getByTestId('confirmation-submit').click()
     cy.get("[role='alertdialog']").should('not.exist')
     cy.get('td').then((w) => {

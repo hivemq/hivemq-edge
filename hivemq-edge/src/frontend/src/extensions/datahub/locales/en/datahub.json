@@ -246,11 +246,11 @@
       "modal": {
         "header_one": "Delete Element",
         "header_other": "Delete Elements",
-        "message_EDGE_ONLY_one": "You will be deleting {{ count }} connection. The operation cannot be reversed.",
-        "message_EDGE_ONLY_other": "You will be deleting {{ count }} connections. The operation cannot be reversed.",
-        "message_MODE_ONLY_one": "You will be deleting {{ count }} node. The operation cannot be reversed.",
-        "message_MODE_ONLY_other": "You will be deleting {{ count }} nodes. The operation cannot be reversed.",
-        "message_BOTH": "You will be deleting {{ count }} nodes and connections. The operation cannot be reversed."
+        "message_EDGE_ONLY_one": "Are you sure you want to delete {{ count }} connection? The operation cannot be reversed.",
+        "message_EDGE_ONLY_other": "Are you sure you want to delete {{ count }} connections? The operation cannot be reversed.",
+        "message_MODE_ONLY_one": "Are you sure you want to delete {{ count }} node? The operation cannot be reversed.",
+        "message_MODE_ONLY_other": "Are you sure you want to delete {{ count }} nodes? The operation cannot be reversed.",
+        "message_BOTH": "Are you sure you want to delete {{ count }} nodes and connections? The operation cannot be reversed."
       },
       "guards": {
         "message_one": "The selected element cannot be deleted because of some constraints",
