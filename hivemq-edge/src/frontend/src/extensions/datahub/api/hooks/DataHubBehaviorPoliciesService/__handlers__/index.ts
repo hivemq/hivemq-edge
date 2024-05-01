@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { type BehaviorPolicy, type BehaviorPolicyList } from '@/api/__generated__'
 import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
 
@@ -12,12 +12,12 @@ export const mockBehaviorPolicy: BehaviorPolicy = {
 }
 
 export const handlers = [
-  rest.get('*/data-hub/behavior-validation/policies', (_, res, ctx) => {
-    return res(
-      ctx.json<BehaviorPolicyList>({
+  http.get('*/data-hub/behavior-validation/policies', () => {
+    return HttpResponse.json<BehaviorPolicyList>(
+      {
         items: [mockBehaviorPolicy],
-      }),
-      ctx.status(200)
+      },
+      { status: 200 }
     )
   }),
 ]

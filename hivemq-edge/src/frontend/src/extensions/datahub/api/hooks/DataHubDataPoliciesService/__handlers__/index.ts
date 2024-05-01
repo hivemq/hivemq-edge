@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { DataPolicy, DataPolicyList } from '@/api/__generated__'
 import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
 
@@ -11,12 +11,12 @@ export const mockDataPolicy: DataPolicy = {
 }
 
 export const handlers = [
-  rest.get('*/data-hub/data-validation/policies', (_, res, ctx) => {
-    return res(
-      ctx.json<DataPolicyList>({
+  http.get('*/data-hub/data-validation/policies', () => {
+    return HttpResponse.json<DataPolicyList>(
+      {
         items: [mockDataPolicy],
-      }),
-      ctx.status(200)
+      },
+      { status: 200 }
     )
   }),
 ]

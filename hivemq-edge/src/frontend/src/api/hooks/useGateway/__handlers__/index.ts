@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { Listener, ListenerList } from '@/api/__generated__'
 
 export const mockMqttListener: Listener = {
@@ -11,12 +11,12 @@ export const mockMqttListener: Listener = {
 }
 
 export const handlers = [
-  rest.get('*/gateway/listeners', (_, res, ctx) => {
-    return res(
-      ctx.json<ListenerList>({
+  http.get('*/gateway/listeners', () => {
+    return HttpResponse.json<ListenerList>(
+      {
         items: [mockMqttListener],
-      }),
-      ctx.status(200)
+      },
+      { status: 200 }
     )
   }),
 ]

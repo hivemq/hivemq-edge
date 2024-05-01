@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 
 import { Script, type ScriptList } from '@/api/__generated__'
 import { MOCK_CREATED_AT } from '@/__test-utils__/mocks.ts'
@@ -28,12 +28,12 @@ export const mockScript: Script = {
 }
 
 export const handlers = [
-  rest.get('*/data-hub/scripts', (_, res, ctx) => {
-    return res(
-      ctx.json<ScriptList>({
+  http.get('*/data-hub/scripts', () => {
+    return HttpResponse.json<ScriptList>(
+      {
         items: [mockScript],
-      }),
-      ctx.status(200)
+      },
+      { status: 200 }
     )
   }),
 ]

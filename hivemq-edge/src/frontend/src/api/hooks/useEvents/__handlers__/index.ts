@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { Event, EventList, Payload, TypeIdentifier } from '@/api/__generated__'
 
 import { DateTime } from 'luxon'
@@ -59,7 +59,7 @@ export const mockEdgeEvent = (n = maxEvents): Event[] =>
   }))
 
 export const handlers = [
-  rest.get('**/management/events', (_, res, ctx) => {
-    return res(ctx.json<EventList>({ items: [...mockEdgeEvent()] }), ctx.status(200))
+  http.get('**/management/events', () => {
+    return HttpResponse.json<EventList>({ items: [...mockEdgeEvent()] }, { status: 200 })
   }),
 ]
