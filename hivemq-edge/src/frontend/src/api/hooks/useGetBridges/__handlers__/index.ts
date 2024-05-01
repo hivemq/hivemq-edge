@@ -42,23 +42,14 @@ export const handlers = [
   }),
 
   http.post('*/bridges', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return HttpResponse.json<any>({}, { status: 200 })
+    return HttpResponse.json({}, { status: 200 })
   }),
 
   http.delete('*/bridges/:bridgeId', () => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { bridgeId } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return HttpResponse.json<any>({}, { status: 200 })
+    return HttpResponse.json({}, { status: 200 })
   }),
 
   http.put('*/bridges/:bridgeId', () => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { bridgeId } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return HttpResponse.json<any>({}, { status: 200 })
+    return HttpResponse.json({}, { status: 200 })
   }),
 ]

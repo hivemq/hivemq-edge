@@ -17,10 +17,6 @@ export const handlers = [
   }),
 
   http.post('*/management/uns/isa95', () => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { adapterType } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return HttpResponse.json<any>({}, { status: 200 })
+    return HttpResponse.json({}, { status: 200 })
   }),
 ]

@@ -115,34 +115,18 @@ export const handlers = [
   }),
 
   http.post('**/protocol-adapters/adapters/:adapterType', () => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { adapterType } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return HttpResponse.json<any>({}, { status: 200 })
+    return HttpResponse.json({}, { status: 200 })
   }),
 
   http.delete('**/protocol-adapters/adapters/:adapterType', () => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { adapterType } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return HttpResponse.json<any>({}, { status: 200 })
+    return HttpResponse.json({}, { status: 200 })
   }),
 
   http.put('**/protocol-adapters/adapters/:adapterId/status', () => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { adapterType } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return HttpResponse.json<any>({}, { status: 200 })
+    return HttpResponse.json({}, { status: 200 })
   }),
 
   http.put('**/protocol-adapters/adapters/:adapterType', () => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { adapterType } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return HttpResponse.json<any>({}, { status: 200 })
+    return HttpResponse.json({}, { status: 200 })
   }),
 ]
