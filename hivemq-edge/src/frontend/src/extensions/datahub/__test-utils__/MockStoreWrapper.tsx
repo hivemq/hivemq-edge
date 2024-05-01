@@ -38,7 +38,8 @@ export const MockStoreWrapper: FC<MockStoreWrapperProps> = ({ config, children }
           type: 'add',
         }))
       )
-  }, [config, onAddEdges, onAddNodes])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return <>{children}</>
 }
