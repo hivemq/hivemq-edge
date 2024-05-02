@@ -14,12 +14,17 @@ import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
 import com.hivemq.protocols.ProtocolAdapterManager;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBootstrapService {
 
     private final @NotNull CompleteBootstrapService delegate;
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull ModulesAndExtensionsService modulesAndExtensionsService;
 
+    @Inject
     public AfterHiveMQStartBootstrapServiceImpl(
             final @NotNull CompleteBootstrapService delegate,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,

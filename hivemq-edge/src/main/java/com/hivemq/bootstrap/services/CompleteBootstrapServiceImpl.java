@@ -12,6 +12,10 @@ import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
 
     private final @NotNull Persistences persistences;
@@ -19,6 +23,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull HandlerService handlerService;
     private final @NotNull PersistenceBootstrapService delegate;
 
+    @Inject
     public CompleteBootstrapServiceImpl(
             final @NotNull PersistenceBootstrapService delegate,
             final @NotNull Persistences persistences,

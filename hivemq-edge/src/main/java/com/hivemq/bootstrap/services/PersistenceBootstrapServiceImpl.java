@@ -9,13 +9,18 @@ import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.core.PersistencesService;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class PersistenceBootstrapServiceImpl implements PersistenceBootstrapService {
 
     private final @NotNull GeneralBootstrapService delegate;
     private final @NotNull PersistencesService persistencesService;
     private final @NotNull HiveMQCapabilityService capabilityService;
 
-    private PersistenceBootstrapServiceImpl(
+    @Inject
+    public PersistenceBootstrapServiceImpl(
             final @NotNull GeneralBootstrapService delegate,
             final @NotNull PersistencesService persistencesService,
             final @NotNull HiveMQCapabilityService capabilityService) {

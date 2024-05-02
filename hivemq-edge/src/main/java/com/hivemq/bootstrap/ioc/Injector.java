@@ -20,7 +20,10 @@ import com.hivemq.HiveMQEdgeGateway;
 import com.hivemq.api.ioc.ApiModule;
 import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.bootstrap.netty.ioc.NettyModule;
+import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapService;
 import com.hivemq.bootstrap.services.CompleteBootstrapService;
+import com.hivemq.bootstrap.services.GeneralBootstrapService;
+import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.bridge.ioc.BridgeModule;
 import com.hivemq.common.executors.ioc.ExecutorsModule;
 import com.hivemq.common.shutdown.ShutdownHooks;
@@ -75,7 +78,8 @@ import java.util.Set;
         ModulesModule.class,
         UnsServiceModule.class,
         DataGovernanceModule.class,
-        RemoteServiceModule.class})
+        RemoteServiceModule.class,
+        BootstrapServicesModule.class})
 @Singleton
 public interface Injector {
 
@@ -102,6 +106,12 @@ public interface Injector {
     CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery();
 
     CompleteBootstrapService completeBootstrapService();
+
+    GeneralBootstrapService generalBootstrapService();
+
+    PersistenceBootstrapService persistenceBootstrapService();
+
+    AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService();
 
     ProtocolAdapterManager protocolAdapterManager();
 
@@ -155,8 +165,7 @@ public interface Injector {
         Builder commercialModuleDiscovery(CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery);
 
         @BindsInstance
-        Builder completeBootstrapService(CompleteBootstrapService completeBootstrapService);
-
+        Builder generalBootstrapService(GeneralBootstrapService generalBootstrapService);
 
         Injector build();
     }
