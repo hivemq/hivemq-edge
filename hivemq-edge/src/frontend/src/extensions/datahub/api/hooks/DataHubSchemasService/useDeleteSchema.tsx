@@ -12,7 +12,7 @@ export const useDeleteSchema = () => {
       return appClient.dataHubSchemas.deleteSchema(schemaId)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries([DATAHUB_QUERY_KEYS.SCHEMAS])
+      queryClient.invalidateQueries({ queryKey: [DATAHUB_QUERY_KEYS.SCHEMAS] })
     },
   })
 }

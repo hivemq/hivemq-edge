@@ -33,7 +33,7 @@ const UnifiedNamespaceEditor: FC<UnifiedNamespaceEditorProps> = () => {
   const { successToast, errorToast } = useEdgeToast()
 
   const { data } = useGetUnifiedNamespace()
-  const { isLoading: isUploading, mutateAsync } = useSetUnifiedNamespace()
+  const { isPending: isUploading, mutateAsync } = useSetUnifiedNamespace()
 
   useEffect(() => {
     onOpen()

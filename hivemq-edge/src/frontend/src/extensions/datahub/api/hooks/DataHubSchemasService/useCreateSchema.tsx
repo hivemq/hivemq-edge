@@ -12,7 +12,7 @@ export const useCreateSchema = () => {
       return appClient.dataHubSchemas.createSchema(requestBody)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries([DATAHUB_QUERY_KEYS.SCHEMAS])
+      queryClient.invalidateQueries({ queryKey: [DATAHUB_QUERY_KEYS.SCHEMAS] })
     },
   })
 }

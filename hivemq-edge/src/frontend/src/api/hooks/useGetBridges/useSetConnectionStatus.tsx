@@ -17,10 +17,11 @@ export const useSetConnectionStatus = () => {
     return appClient.bridges.transitionBridgeStatus(name, requestBody)
   }
 
-  return useMutation<StatusTransitionResult, ApiError, SetConnectionStatusProps>(setConnectionStatus, {
+  return useMutation<StatusTransitionResult, ApiError, SetConnectionStatusProps>({
+    mutationFn: setConnectionStatus,
     onSuccess: () => {
       // queryClient.invalidateQueries(['bridges', variables.name, QUERY_KEYS.CONNECTION_STATUS])
-      queryClient.invalidateQueries([QUERY_KEYS.BRIDGES])
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.BRIDGES] })
     },
   })
 }

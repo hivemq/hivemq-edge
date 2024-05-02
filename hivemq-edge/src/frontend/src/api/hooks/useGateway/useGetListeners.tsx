@@ -6,8 +6,8 @@ import { ApiError, ListenerList } from '@/api/__generated__'
 export const useGetListeners = () => {
   const appClient = useHttpClient()
 
-  return useQuery<ListenerList, ApiError>([QUERY_KEYS.LISTENERS], async () => {
-    const item = await appClient.gatewayEndpoint.getListeners()
-    return item
+  return useQuery<ListenerList, ApiError>({
+    queryKey: [QUERY_KEYS.LISTENERS],
+    queryFn: () => appClient.gatewayEndpoint.getListeners(),
   })
 }

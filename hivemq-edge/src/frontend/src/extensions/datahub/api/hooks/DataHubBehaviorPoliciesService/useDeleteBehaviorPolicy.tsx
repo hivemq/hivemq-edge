@@ -12,7 +12,7 @@ export const useDeleteBehaviorPolicy = () => {
       return appClient.dataHubBehaviorPolicies.deleteBehaviorPolicy(policyId)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries([DATAHUB_QUERY_KEYS.BEHAVIOR_POLICIES])
+      queryClient.invalidateQueries({ queryKey: [DATAHUB_QUERY_KEYS.BEHAVIOR_POLICIES] })
     },
   })
 }

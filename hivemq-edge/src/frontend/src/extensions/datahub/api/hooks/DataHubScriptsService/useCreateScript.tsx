@@ -12,7 +12,7 @@ export const useCreateScript = () => {
       return appClient.dataHubScripts.createScript(requestBody)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries([DATAHUB_QUERY_KEYS.SCRIPTS])
+      queryClient.invalidateQueries({ queryKey: [DATAHUB_QUERY_KEYS.SCRIPTS] })
     },
   })
 }

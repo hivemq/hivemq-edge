@@ -7,19 +7,12 @@ import config from '@/config'
 export const useGetSample = (metricName: string | undefined) => {
   const appClient = useHttpClient()
 
-  return useQuery<DataPoint, ApiError>(
-    [QUERY_KEYS.METRICS_SAMPLE, metricName],
-    async () => {
-      const dataPoint = await appClient.metrics.getSample(metricName as string)
-      return dataPoint
-    },
-    {
-      enabled: !!metricName,
-      retry: 0,
-      refetchInterval: () => {
-        // return data ? 4 * 1000 : Math.max(Math.min(query.state.errorUpdateCount, 5 * 60), 4) * 1000
-        return config.httpClient.pollingRefetchInterval * 2
-      },
-    }
-  )
+  return useQuery<DataPoint, ApiError>({
+    queryKey: [QUERY_KEYS.METRICS_SAMPLE, metricName],
+    queryFn: () => appClient.metrics.getSample(metricName as string),
+
+    enabled: !!metricName,
+    retry: 0,
+    refetchInterval: config.httpClient.pollingRefetchInterval,
+  })
 }

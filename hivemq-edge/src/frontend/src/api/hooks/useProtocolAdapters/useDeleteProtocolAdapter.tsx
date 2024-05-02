@@ -12,9 +12,10 @@ export const useDeleteProtocolAdapter = () => {
     return appClient.protocolAdapters.deleteAdapter(adapterId)
   }
 
-  return useMutation<string, ApiError, string>(deleteAdapter, {
+  return useMutation<string, ApiError, string>({
+    mutationFn: deleteAdapter,
     onSuccess: () => {
-      queryClient.invalidateQueries([QUERY_KEYS.ADAPTERS])
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.ADAPTERS] })
     },
   })
 }

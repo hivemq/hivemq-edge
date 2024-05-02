@@ -6,8 +6,11 @@ import { QUERY_KEYS } from '@/api/utils.ts'
 export const useListBridges = () => {
   const appClient = useHttpClient()
 
-  return useQuery<Bridge[] | undefined, ApiError>([QUERY_KEYS.BRIDGES], async () => {
-    const { items } = await appClient.bridges.getBridges()
-    return items
+  return useQuery<Bridge[] | undefined, ApiError>({
+    queryKey: [QUERY_KEYS.BRIDGES],
+    queryFn: async () => {
+      const { items } = await appClient.bridges.getBridges()
+      return items
+    },
   })
 }

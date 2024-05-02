@@ -6,8 +6,8 @@ import { ApiError, MetricList } from '@/api/__generated__'
 export const useGetMetrics = () => {
   const appClient = useHttpClient()
 
-  return useQuery<MetricList, ApiError>([QUERY_KEYS.METRICS], async () => {
-    const items = await appClient.metrics.getMetrics()
-    return items
+  return useQuery<MetricList, ApiError>({
+    queryKey: [QUERY_KEYS.METRICS],
+    queryFn: () => appClient.metrics.getMetrics(),
   })
 }

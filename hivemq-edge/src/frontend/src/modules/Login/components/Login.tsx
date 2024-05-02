@@ -31,7 +31,7 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
-  const { isLoading, isError, error, mutateAsync: submitCredentials } = usePostAuthentication()
+  const { isPending, isError, error, mutateAsync: submitCredentials } = usePostAuthentication()
   const {
     handleSubmit,
     register,
@@ -142,7 +142,7 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
             width="100%"
             mt="7em"
             type="submit"
-            isLoading={isLoading}
+            isLoading={isPending}
             variant="primary"
           >
             {t('translation:login.submit.label')}

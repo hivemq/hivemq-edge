@@ -6,8 +6,8 @@ import { ApiError, NotificationList } from '@/api/__generated__'
 export const useGetNotifications = () => {
   const appClient = useHttpClient()
 
-  return useQuery<NotificationList, ApiError>([QUERY_KEYS.FRONTEND_NOTIFICATION], async () => {
-    const item = await appClient.frontend.getNotifications()
-    return item
+  return useQuery<NotificationList, ApiError>({
+    queryKey: [QUERY_KEYS.FRONTEND_NOTIFICATION],
+    queryFn: () => appClient.frontend.getNotifications(),
   })
 }

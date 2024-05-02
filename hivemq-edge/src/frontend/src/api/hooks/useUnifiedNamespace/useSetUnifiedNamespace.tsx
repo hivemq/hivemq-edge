@@ -15,9 +15,10 @@ export const useSetUnifiedNamespace = () => {
     return appClient.uns.setIsa95(requestBody)
   }
 
-  return useMutation<unknown, ApiError, UpdateUnifiedNamespaceProps>(updateUnifiedNamespace, {
+  return useMutation<unknown, ApiError, UpdateUnifiedNamespaceProps>({
+    mutationFn: updateUnifiedNamespace,
     onSuccess: () => {
-      queryClient.invalidateQueries([QUERY_KEYS.UNIFIED_NAMESPACE])
+      queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.UNIFIED_NAMESPACE] })
     },
   })
 }

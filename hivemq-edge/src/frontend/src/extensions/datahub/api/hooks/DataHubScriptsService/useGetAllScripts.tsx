@@ -14,9 +14,7 @@ interface GetAllScriptsProps {
 export const useGetAllScripts = ({ fields, functionTypes, scriptIds, limit, cursor }: GetAllScriptsProps) => {
   const appClient = useHttpClient()
   return useQuery<ScriptList, ApiError>({
-    queryKey: [DATAHUB_QUERY_KEYS.SCRIPTS],
-    queryFn: async () => {
-      return appClient.dataHubScripts.getAllScripts(fields, functionTypes, scriptIds, limit, cursor)
-    },
+    queryKey: [DATAHUB_QUERY_KEYS.SCRIPTS, fields, functionTypes, scriptIds, limit, cursor],
+    queryFn: () => appClient.dataHubScripts.getAllScripts(fields, functionTypes, scriptIds, limit, cursor),
   })
 }

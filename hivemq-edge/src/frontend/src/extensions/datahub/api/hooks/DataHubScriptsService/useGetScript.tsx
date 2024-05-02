@@ -7,8 +7,6 @@ export const useGetScript = (scriptId: string, fields?: string) => {
   const appClient = useHttpClient()
   return useQuery<Script, ApiError>({
     queryKey: [DATAHUB_QUERY_KEYS.SCRIPTS, scriptId, fields],
-    queryFn: async () => {
-      return appClient.dataHubScripts.getScript(scriptId, fields)
-    },
+    queryFn: () => appClient.dataHubScripts.getScript(scriptId, fields),
   })
 }

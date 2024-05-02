@@ -17,7 +17,7 @@ export const useUpdateBehaviorPolicy = () => {
       return appClient.dataHubBehaviorPolicies.updateBehaviorPolicy(data.policyId, data.requestBody)
     },
     onSuccess: () => {
-      queryClient.invalidateQueries([DATAHUB_QUERY_KEYS.BEHAVIOR_POLICIES])
+      queryClient.invalidateQueries({ queryKey: [DATAHUB_QUERY_KEYS.BEHAVIOR_POLICIES] })
     },
   })
 }
