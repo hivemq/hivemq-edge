@@ -24,9 +24,11 @@ import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -34,8 +36,8 @@ import java.util.stream.Collectors;
  */
 public class ModulesAndExtensionsServiceImpl implements ModulesAndExtensionsService {
 
-    private @NotNull final HiveMQExtensions hiveMQExtensions;
-    private @NotNull final HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService;
+    private final @NotNull HiveMQExtensions hiveMQExtensions;
+    private final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService;
 
     @Inject
     public ModulesAndExtensionsServiceImpl(final @NotNull HiveMQExtensions hiveMQExtensions,
@@ -44,32 +46,29 @@ public class ModulesAndExtensionsServiceImpl implements ModulesAndExtensionsServ
         this.hiveMQEdgeRemoteConfigurationService = hiveMQEdgeRemoteConfigurationService;
     }
 
-    public List<Extension> getExtensions(){
+    public @NotNull List<Extension> getExtensions(){
 
         //-- Add discovered extensions
-        HashSet<Extension> extensions = new HashSet<>();
         List<Extension> availableExtensions = hiveMQEdgeRemoteConfigurationService.getConfiguration().getExtensions();
-        extensions.addAll(availableExtensions);
+        HashSet<Extension> extensions = new HashSet<>(availableExtensions);
 
         //-- Add installed extensions
         Map<String, HiveMQExtension> extensionsMap = hiveMQExtensions.getEnabledHiveMQExtensions();
-        extensions.addAll(extensionsMap.values().stream().map(e -> convertExtension(e)).collect(Collectors.toList()));
-        return extensions.stream().collect(Collectors.toList());
+        extensions.addAll(extensionsMap.values().stream().map(ModulesAndExtensionsServiceImpl::convertExtension).collect(Collectors.toList()));
+        return new ArrayList<>(extensions);
     }
 
-    public List<Module> getModules(){
-        HashSet<Module> modules = new HashSet<>();
+    public @NotNull List<Module> getModules(){
         List<Module> availableModules = hiveMQEdgeRemoteConfigurationService.getConfiguration().getModules();
-        modules.addAll(availableModules);
-        return modules.stream().collect(Collectors.toList());
+        HashSet<Module> modules = new HashSet<>(availableModules);
+        return new ArrayList<>(modules);
     }
 
     private static Extension convertExtension(HiveMQExtension extension){
         return new Extension(extension.getId(),
                 extension.getVersion(),
                 extension.getName(),
-                null,
-                extension.getAuthor(),
+                null, Objects.requireNonNullElse(extension.getAuthor(), "unknown"),
                 extension.getPriority(),
                 true,
                 null);

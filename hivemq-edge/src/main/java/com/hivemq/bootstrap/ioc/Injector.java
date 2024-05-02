@@ -20,6 +20,7 @@ import com.hivemq.HiveMQEdgeGateway;
 import com.hivemq.api.ioc.ApiModule;
 import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.bootstrap.netty.ioc.NettyModule;
+import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bridge.ioc.BridgeModule;
 import com.hivemq.common.executors.ioc.ExecutorsModule;
 import com.hivemq.common.shutdown.ShutdownHooks;
@@ -33,6 +34,7 @@ import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.ioc.ModulesModule;
 import com.hivemq.edge.modules.ioc.RemoteServiceModule;
+import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.extensions.core.PersistencesService;
 import com.hivemq.extensions.core.RestComponentsService;
@@ -45,6 +47,7 @@ import com.hivemq.mqttsn.ioc.MqttsnServiceModule;
 import com.hivemq.persistence.PersistenceStartup;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.ioc.PersistenceModule;
+import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.security.ioc.SecurityModule;
 import com.hivemq.throttling.ioc.ThrottlingModule;
 import com.hivemq.uns.ioc.UnsServiceModule;
@@ -96,6 +99,12 @@ public interface Injector {
 
     Services services();
 
+    CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery();
+
+    CompleteBootstrapService completeBootstrapService();
+
+    ProtocolAdapterManager protocolAdapterManager();
+
 //    UnsServiceModule uns();
 
 //    ExecutorsModule executors();
@@ -141,6 +150,13 @@ public interface Injector {
 
         @BindsInstance
         Builder hivemqId(HivemqId hivemqId);
+
+        @BindsInstance
+        Builder commercialModuleDiscovery(CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery);
+
+        @BindsInstance
+        Builder completeBootstrapService(CompleteBootstrapService completeBootstrapService);
+
 
         Injector build();
     }

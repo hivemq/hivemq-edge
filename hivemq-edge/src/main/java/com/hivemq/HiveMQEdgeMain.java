@@ -17,8 +17,12 @@ package com.hivemq;
 
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Preconditions;
 import com.hivemq.bootstrap.LoggingBootstrap;
 import com.hivemq.bootstrap.ioc.Injector;
+import com.hivemq.bootstrap.ioc.Persistences;
+import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapService;
+import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapServiceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.info.SystemInformationImpl;
@@ -137,7 +141,26 @@ public class HiveMQEdgeMain {
     }
 
     protected void afterStart() {
+        afterHiveMQStartBootstrap();
         //hook method
+    }
+
+    private void afterHiveMQStartBootstrap() {
+        Preconditions.checkNotNull(injector);
+        final Persistences persistences = injector.persistences();
+        Preconditions.checkNotNull(persistences);
+        Preconditions.checkNotNull(configService);
+
+        try {
+            final AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService =
+                    AfterHiveMQStartBootstrapServiceImpl.decorate(injector.completeBootstrapService(),
+                            injector.protocolAdapterManager(),
+                            injector.services().modulesAndExtensionsService());
+            injector.commercialModuleLoaderDiscovery().afterHiveMQStart(afterHiveMQStartBootstrapService);
+        } catch (Exception e) {
+            log.warn("Error on bootstraping persistences.", e);
+            throw new HiveMQEdgeStartupException(e);
+        }
     }
 
     public void start(final @Nullable EmbeddedExtension embeddedExtension)

@@ -14,7 +14,7 @@ public interface PersistenceBootstrapService extends GeneralBootstrapService {
     @NotNull HiveMQCapabilityService capabilityService();
 
 
-    static PersistenceBootstrapService decorate(
+     static PersistenceBootstrapService decorate(
             final @NotNull GeneralBootstrapService generalBootstrapService,
             final @NotNull PersistencesService persistencesService,
             final @NotNull HiveMQCapabilityService capabilityService) {

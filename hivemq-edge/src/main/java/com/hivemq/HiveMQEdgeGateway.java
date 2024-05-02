@@ -66,11 +66,13 @@ public class HiveMQEdgeGateway {
         try {
             extensionBootstrap.startExtensionSystem(embeddedExtension).get();
             bridgeService.updateBridges();
-            protocolAdapterManager.start();
+            protocolAdapterManager.start().get();
 
             final List<ListenerStartupInformation> startupInformation = nettyBootstrap.bootstrapServer().get();
             Checkpoints.checkpoint("listener-started");
             new StartupListenerVerifier(startupInformation).verifyAndPrint();
+
+
 
             ((AdminServiceImpl) adminService).hivemqStarted();
         } catch (Exception e) {

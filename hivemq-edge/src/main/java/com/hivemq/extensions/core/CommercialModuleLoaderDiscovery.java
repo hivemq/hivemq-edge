@@ -72,6 +72,18 @@ public class CommercialModuleLoaderDiscovery {
     }
 
 
+    public void afterHiveMQStart(final @NotNull CompleteBootstrapService completeBootstrapService) {
+        try {
+            for (ModuleLoaderMain instance : instances) {
+                instance.afterPersistenceBootstrap(completeBootstrapService);
+            }
+        } catch (Exception e) {
+            log.error("Error when completing bootstrap ", e);
+        }
+    }
+
+
+
 }
 
 
