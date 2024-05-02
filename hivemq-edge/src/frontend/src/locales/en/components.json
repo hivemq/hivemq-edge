@@ -60,5 +60,13 @@
     "action_READY": "Ready!",
     "action_COPIED": "Copied!",
     "action_ERROR": "Error!"
+  },
+  "rjsf": {
+    "ArrayFieldItem": {
+      "Buttons": {
+        "expanded_true": "Collapse Item",
+        "expanded_false": "Expand Item"
+      }
+    }
   }
 }
