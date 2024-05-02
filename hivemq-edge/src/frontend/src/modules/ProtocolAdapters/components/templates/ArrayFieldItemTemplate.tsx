@@ -30,15 +30,23 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
     registry,
   } = props
   const { t } = useTranslation('components')
+  const uiOptions = getUiOptions(uiSchema)
+  const collapsableItems: ArrayFieldItemCollapsableUISchema | undefined = useMemo(() => {
+    return uiOptions.collapsable as ArrayFieldItemCollapsableUISchema | undefined
+  }, [uiOptions.collapsable])
   const { isOpen, onToggle, getButtonProps, getDisclosureProps } = useDisclosure({
-    // This is a real hack but didn't find a better way of detecting a new item
-    defaultIsOpen: index === props.totalItems - 1 && children.props.formData.destination === undefined,
+    defaultIsOpen:
+      !collapsableItems ||
+      !collapsableItems?.titleKey ||
+      (index === props.totalItems - 1 && children.props.formData[collapsableItems?.titleKey] === undefined),
   })
   const name = useMemo<string>(() => {
-    const childrenFormData = children.props.formData.destination
+    const childrenFormData = collapsableItems?.titleKey
+      ? children.props.formData[collapsableItems?.titleKey]
+      : undefined
     if (childrenFormData) return `${children.props.name} - ${childrenFormData}`
     return children.props.name
-  }, [children.props.formData.destination, children.props.name])
+  }, [children.props.formData, children.props.name, collapsableItems?.titleKey])
 
   const { CopyButton, MoveDownButton, MoveUpButton, RemoveButton } = registry.templates.ButtonTemplates
   const onCopyClick = useMemo(() => onCopyIndexClick(index), [index, onCopyIndexClick])
@@ -47,7 +55,6 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
   const onArrowDownClick = useMemo(() => onReorderClick(index, index + 1), [index, onReorderClick])
 
   const renderCollapsed = () => {
-    const uiOptions = getUiOptions(uiSchema)
     const TitleFieldTemplate = getTemplate<'TitleFieldTemplate'>('TitleFieldTemplate', registry, uiOptions)
     return (
       <FormControl variant="hivemq">
@@ -67,14 +74,16 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
     <HStack flexDirection="row-reverse" alignItems="flex-start" py={1} role="listitem">
       {hasToolbar && (
         <VStack gap={6} role="toolbar">
-          <ButtonGroup>
-            <IconButton
-              icon={isOpen ? <LuPanelTopClose /> : <LuPanelTopOpen />}
-              onClick={onToggle}
-              {...getButtonProps()}
-              aria-label={t('rjsf.ArrayFieldItem.Buttons.expanded', { context: isOpen ? 'true' : 'false' })}
-            />
-          </ButtonGroup>
+          {collapsableItems && (
+            <ButtonGroup>
+              <IconButton
+                icon={isOpen ? <LuPanelTopClose /> : <LuPanelTopOpen />}
+                onClick={onToggle}
+                {...getButtonProps()}
+                aria-label={t('rjsf.ArrayFieldItem.Buttons.expanded', { context: isOpen ? 'true' : 'false' })}
+              />
+            </ButtonGroup>
+          )}
           {isOpen && (
             <ButtonGroup isAttached mb={1} orientation="vertical">
               {(hasMoveUp || hasMoveDown) && (
@@ -115,7 +124,7 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
       )}
 
       <Box w="100%" {...rest}>
-        {isOpen ? children : renderCollapsed()}
+        {!collapsableItems || isOpen ? children : renderCollapsed()}
       </Box>
     </HStack>
   )
