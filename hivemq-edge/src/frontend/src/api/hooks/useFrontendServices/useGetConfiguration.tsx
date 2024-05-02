@@ -8,9 +8,6 @@ export const useGetConfiguration = () => {
 
   return useQuery<GatewayConfiguration, ApiError>({
     queryKey: [QUERY_KEYS.FRONTEND_CONFIGURATION],
-    queryFn: async () => {
-      const item = await appClient.frontend.getConfiguration()
-      return item
-    },
+    queryFn: () => appClient.frontend.getConfiguration(),
   })
 }

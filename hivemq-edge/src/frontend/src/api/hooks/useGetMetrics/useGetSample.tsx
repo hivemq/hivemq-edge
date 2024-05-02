@@ -9,13 +9,10 @@ export const useGetSample = (metricName: string | undefined) => {
 
   return useQuery<DataPoint, ApiError>({
     queryKey: [QUERY_KEYS.METRICS_SAMPLE, metricName],
-    queryFn: async () => await appClient.metrics.getSample(metricName as string),
+    queryFn: () => appClient.metrics.getSample(metricName as string),
 
     enabled: !!metricName,
     retry: 0,
-    refetchInterval: () => {
-      // return data ? 4 * 1000 : Math.max(Math.min(query.state.errorUpdateCount, 5 * 60), 4) * 1000
-      return config.httpClient.pollingRefetchInterval * 2
-    },
+    refetchInterval: config.httpClient.pollingRefetchInterval,
   })
 }

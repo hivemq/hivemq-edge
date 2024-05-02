@@ -8,14 +8,8 @@ export const useGetBridgesStatus = () => {
 
   return useQuery({
     queryKey: [QUERY_KEYS.BRIDGES, QUERY_KEYS.CONNECTION_STATUS],
-    queryFn: async () => {
-      const item = await appClient.bridges.getBridgesStatus()
-      return item
-    },
+    queryFn: () => appClient.bridges.getBridgesStatus(),
     retry: 0,
-    refetchInterval: () => {
-      // return data ? 4 * 1000 : Math.max(Math.min(query.state.errorUpdateCount, 5 * 60), 4) * 1000
-      return config.httpClient.pollingRefetchInterval
-    },
+    refetchInterval: config.httpClient.pollingRefetchInterval,
   })
 }

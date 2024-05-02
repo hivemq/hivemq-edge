@@ -8,9 +8,6 @@ export const useGetProtocolAdapter = (id: string) => {
 
   return useQuery<Adapter>({
     queryKey: [QUERY_KEYS.ADAPTERS, id],
-    queryFn: async () => {
-      const adapter = await appClient.protocolAdapters.getAdapter(id)
-      return adapter
-    },
+    queryFn: () => appClient.protocolAdapters.getAdapter(id),
   })
 }

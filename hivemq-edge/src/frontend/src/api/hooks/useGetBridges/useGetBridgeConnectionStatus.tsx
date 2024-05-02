@@ -12,16 +12,10 @@ export const useGetBridgeConnectionStatus = (name: string | undefined) => {
 
   return useQuery({
     queryKey: [QUERY_KEYS.BRIDGES, name, QUERY_KEYS.CONNECTION_STATUS],
-    queryFn: async () => {
-      const item = await appClient.bridges.getBridgeStatus(name as string)
-      return item
-    },
+    queryFn: () => appClient.bridges.getBridgeStatus(name as string),
 
     enabled: name !== undefined,
     retry: 0,
-    refetchInterval: () => {
-      // return data ? 4 * 1000 : Math.max(Math.min(query.state.errorUpdateCount, 5 * 60), 4) * 1000
-      return config.httpClient.pollingRefetchInterval
-    },
+    refetchInterval: config.httpClient.pollingRefetchInterval,
   })
 }

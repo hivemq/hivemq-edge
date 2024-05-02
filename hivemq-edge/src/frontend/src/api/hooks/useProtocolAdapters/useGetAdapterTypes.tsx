@@ -8,9 +8,6 @@ export const useGetAdapterTypes = () => {
 
   return useQuery<ProtocolAdaptersList, ApiError>({
     queryKey: [QUERY_KEYS.PROTOCOLS],
-    queryFn: async () => {
-      const adapterTypes = await appClient.protocolAdapters.getAdapterTypes()
-      return adapterTypes
-    },
+    queryFn: () => appClient.protocolAdapters.getAdapterTypes(),
   })
 }

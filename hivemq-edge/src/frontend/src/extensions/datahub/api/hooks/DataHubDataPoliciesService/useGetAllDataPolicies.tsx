@@ -7,8 +7,6 @@ export const useGetAllDataPolicies = () => {
   const appClient = useHttpClient()
   return useQuery<DataPolicyList, ApiError>({
     queryKey: [DATAHUB_QUERY_KEYS.DATA_POLICIES],
-    queryFn: async () => {
-      return appClient.dataHubDataPolicies.getAllDataPolicies()
-    },
+    queryFn: () => appClient.dataHubDataPolicies.getAllDataPolicies(),
   })
 }

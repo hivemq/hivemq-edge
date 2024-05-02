@@ -19,12 +19,12 @@ export const useCreateProtocolAdapter = () => {
 
   return useMutation<unknown, ApiError, CreateProtocolAdapterProps>({
     mutationFn: createProtocolAdapter,
-    onMutate: (a) => {
+    onMutate: (createProtocolAdapter) => {
       queryClient.setQueryData<StatusList>([QUERY_KEYS.ADAPTERS, QUERY_KEYS.CONNECTION_STATUS], (old) => {
         const optimisticUpdate: Status = {
           connection: Status.connection.DISCONNECTED,
-          id: a.requestBody.id,
-          type: a.requestBody.type,
+          id: createProtocolAdapter.requestBody.id,
+          type: createProtocolAdapter.requestBody.type,
         }
         return {
           items: [...(old?.items || []), optimisticUpdate],

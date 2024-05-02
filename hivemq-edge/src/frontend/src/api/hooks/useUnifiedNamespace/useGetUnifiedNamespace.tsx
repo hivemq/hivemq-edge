@@ -8,9 +8,6 @@ export const useGetUnifiedNamespace = () => {
 
   return useQuery<ISA95ApiBean, ApiError>({
     queryKey: [QUERY_KEYS.UNIFIED_NAMESPACE],
-    queryFn: async () => {
-      const item = await appClient.uns.getIsa95()
-      return item
-    },
+    queryFn: () => appClient.uns.getIsa95(),
   })
 }

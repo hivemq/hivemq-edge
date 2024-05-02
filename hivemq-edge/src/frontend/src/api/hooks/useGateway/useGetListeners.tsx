@@ -8,9 +8,6 @@ export const useGetListeners = () => {
 
   return useQuery<ListenerList, ApiError>({
     queryKey: [QUERY_KEYS.LISTENERS],
-    queryFn: async () => {
-      const item = await appClient.gatewayEndpoint.getListeners()
-      return item
-    },
+    queryFn: () => appClient.gatewayEndpoint.getListeners(),
   })
 }

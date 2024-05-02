@@ -8,9 +8,6 @@ export const useGetMetrics = () => {
 
   return useQuery<MetricList, ApiError>({
     queryKey: [QUERY_KEYS.METRICS],
-    queryFn: async () => {
-      const items = await appClient.metrics.getMetrics()
-      return items
-    },
+    queryFn: () => appClient.metrics.getMetrics(),
   })
 }

@@ -8,8 +8,6 @@ export const useGetEvents = () => {
 
   return useQuery<EventList, ApiError>({
     queryKey: [QUERY_KEYS.EVENTS],
-    queryFn: async () => {
-      return await appClient.events.getEvents()
-    },
+    queryFn: () => appClient.events.getEvents(),
   })
 }

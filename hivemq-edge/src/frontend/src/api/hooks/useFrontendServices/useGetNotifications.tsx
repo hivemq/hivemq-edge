@@ -8,9 +8,6 @@ export const useGetNotifications = () => {
 
   return useQuery<NotificationList, ApiError>({
     queryKey: [QUERY_KEYS.FRONTEND_NOTIFICATION],
-    queryFn: async () => {
-      const item = await appClient.frontend.getNotifications()
-      return item
-    },
+    queryFn: () => appClient.frontend.getNotifications(),
   })
 }

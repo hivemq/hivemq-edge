@@ -7,8 +7,6 @@ export const useGetAllSchemas = () => {
   const appClient = useHttpClient()
   return useQuery<SchemaList, ApiError>({
     queryKey: [DATAHUB_QUERY_KEYS.SCHEMAS],
-    queryFn: async () => {
-      return appClient.dataHubSchemas.getAllSchemas()
-    },
+    queryFn: () => appClient.dataHubSchemas.getAllSchemas(),
   })
 }
