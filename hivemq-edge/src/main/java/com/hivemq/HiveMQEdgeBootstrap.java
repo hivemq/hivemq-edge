@@ -163,7 +163,6 @@ public class HiveMQEdgeBootstrap {
 
         try {
             commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(moduleLoader);
-            commercialModuleLoaderDiscovery.discoverModuleLoaderMainClasses();
             generalBootstrapService =
                     new GeneralBootstrapServiceImpl(shutdownHooks, metricRegistry, systemInformation, configService, hivemqId);
             commercialModuleLoaderDiscovery.generalBootstrap(generalBootstrapService);
