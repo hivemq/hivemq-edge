@@ -8,11 +8,8 @@ import com.hivemq.bootstrap.LoggingBootstrap;
 import com.hivemq.bootstrap.ioc.DaggerInjector;
 import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.bootstrap.ioc.Persistences;
-import com.hivemq.bootstrap.services.CompleteBootstrapService;
-import com.hivemq.bootstrap.services.CompleteBootstrapServiceImpl;
 import com.hivemq.bootstrap.services.GeneralBootstrapServiceImpl;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
-import com.hivemq.bootstrap.services.PersistenceBootstrapServiceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.HivemqId;
@@ -64,7 +61,6 @@ public class HiveMQEdgeBootstrap {
     private @Nullable GeneralBootstrapServiceImpl generalBootstrapService;
     private @Nullable PersistenceBootstrapService persistenceBootstrapService;
     private @Nullable Injector injector;
-    private CompleteBootstrapService completeBootstrapService;
 
     public HiveMQEdgeBootstrap(
             final @NotNull MetricRegistry metricRegistry,
@@ -153,7 +149,7 @@ public class HiveMQEdgeBootstrap {
                 .restComponentsHolder(genericAPIHolder)
                 .connectionPersistence(connectionPersistence)
                 .commercialModuleDiscovery(commercialModuleLoaderDiscovery)
-                .completeBootstrapService(completeBootstrapService)
+                .generalBootstrapService(generalBootstrapService)
                 .hivemqId(hivemqId)
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
@@ -182,9 +178,7 @@ public class HiveMQEdgeBootstrap {
         Preconditions.checkNotNull(commercialModuleLoaderDiscovery);
 
         try {
-            persistenceBootstrapService = PersistenceBootstrapServiceImpl.decorate(generalBootstrapService,
-                    persistencesService,
-                    capabilityService);
+            persistenceBootstrapService = injector.persistenceBootstrapService();
             commercialModuleLoaderDiscovery.persistenceBootstrap(persistenceBootstrapService);
         } catch (Exception e) {
             log.warn("Error on bootstrapping persistences.", e);
@@ -198,15 +192,9 @@ public class HiveMQEdgeBootstrap {
         Preconditions.checkNotNull(persistences);
         Preconditions.checkNotNull(configService);
         Preconditions.checkNotNull(commercialModuleLoaderDiscovery);
-        Preconditions.checkNotNull(persistenceBootstrapService);
 
         try {
-            completeBootstrapService = CompleteBootstrapServiceImpl.decorate(
-                    persistenceBootstrapService,
-                    persistences,
-                    restComponentsService,
-                    handlerService);
-            commercialModuleLoaderDiscovery.completeBootstrap(completeBootstrapService);
+            commercialModuleLoaderDiscovery.completeBootstrap(injector.completeBootstrapService());
         } catch (Exception e) {
             log.warn("Error on bootstraping persistences.", e);
             throw new HiveMQEdgeStartupException(e);

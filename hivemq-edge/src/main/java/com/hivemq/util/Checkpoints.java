@@ -48,6 +48,9 @@ public class Checkpoints {
     public static final @NotNull String CONTROL_PLANE_CONNECTION_ESTABLISHED =
             "control-plane-connection-established";
 
+    public static final @NotNull String CONTROL_PLANE_CONNECTION_HANDSHAKE_REISSUED =
+            "control-plane-connection-handshake-reissued";
+
 
     public static boolean enabled() {
         return enabled;
