@@ -15,31 +15,23 @@
  */
 package com.hivemq.configuration;
 
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
-@Singleton
 public class HivemqId {
 
-    private String hivemqId;
+    private final @NotNull String hivemqId;
 
-    @Inject
     public HivemqId() {
         hivemqId = generateId();
     }
 
-    public String get() {
+    public @NotNull String get() {
         return hivemqId;
     }
 
     //needs to be at least 5 characters long to provide acceptable uniqueness
-    public String generateId() {
+    public @NotNull String generateId() {
         return RandomStringUtils.randomAlphanumeric(5);
-    }
-
-    public void set(final String hivemqId) {
-        this.hivemqId = hivemqId;
     }
 }

@@ -50,6 +50,11 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     }
 
     @Override
+    public @NotNull String getHivemqId() {
+        return delegate.getHivemqId();
+    }
+
+    @Override
     public @NotNull PersistencesService persistenceService() {
         return delegate.persistenceService();
     }

@@ -45,6 +45,11 @@ public class PersistenceBootstrapServiceImpl implements PersistenceBootstrapServ
     }
 
     @Override
+    public @NotNull String getHivemqId() {
+        return delegate.getHivemqId();
+    }
+
+    @Override
     public @NotNull PersistencesService persistenceService() {
         return persistencesService;
     }
