@@ -6,6 +6,11 @@ import { LuPanelTopClose, LuPanelTopOpen } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 
+// TODO[NVL] Need a better handling of the custom UISchema property, for the Adapter SDK
+interface ArrayFieldItemCollapsableUISchema {
+  titleKey: string
+}
+
 // TODO[NVL] This is driven by subscription handling; use uiSchema to allow configuration for individual array property
 export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) => {
   const {
