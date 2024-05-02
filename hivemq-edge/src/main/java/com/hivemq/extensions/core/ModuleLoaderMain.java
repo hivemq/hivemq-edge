@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.core;
 
+import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapService;
 import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
@@ -26,6 +27,8 @@ public interface ModuleLoaderMain {
 
     void persistenceBootstrap(@NotNull PersistenceBootstrapService coreModuleService);
 
-
     void afterPersistenceBootstrap(@NotNull CompleteBootstrapService completeBootstrapService);
+
+    void afterHiveMQStart(@NotNull AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService);
+
 }

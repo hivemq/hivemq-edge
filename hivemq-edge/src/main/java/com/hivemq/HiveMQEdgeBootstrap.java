@@ -64,6 +64,7 @@ public class HiveMQEdgeBootstrap {
     private @Nullable GeneralBootstrapServiceImpl generalBootstrapService;
     private @Nullable PersistenceBootstrapService persistenceBootstrapService;
     private @Nullable Injector injector;
+    private CompleteBootstrapService completeBootstrapService;
 
     public HiveMQEdgeBootstrap(
             final @NotNull MetricRegistry metricRegistry,
@@ -151,6 +152,8 @@ public class HiveMQEdgeBootstrap {
                 .restComponentService(restComponentsService)
                 .restComponentsHolder(genericAPIHolder)
                 .connectionPersistence(connectionPersistence)
+                .commercialModuleDiscovery(commercialModuleLoaderDiscovery)
+                .completeBootstrapService(completeBootstrapService)
                 .hivemqId(hivemqId)
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
@@ -159,7 +162,7 @@ public class HiveMQEdgeBootstrap {
     private void bootstrapCoreComponents() {
         log.info("Integrating Core Modules");
         // configService is always set in caller
-        assert configService != null;
+        Preconditions.checkNotNull(configService);
 
         try {
             commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(moduleLoader);
@@ -198,7 +201,7 @@ public class HiveMQEdgeBootstrap {
         Preconditions.checkNotNull(persistenceBootstrapService);
 
         try {
-            final CompleteBootstrapService completeBootstrapService = CompleteBootstrapServiceImpl.decorate(
+            completeBootstrapService = CompleteBootstrapServiceImpl.decorate(
                     persistenceBootstrapService,
                     persistences,
                     restComponentsService,

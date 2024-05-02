@@ -17,6 +17,7 @@ package com.hivemq.bootstrap.ioc;
 
 import com.hivemq.bridge.BridgeService;
 import com.hivemq.edge.HiveMQCapabilityService;
+import com.hivemq.edge.ModulesAndExtensionsService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.core.HandlerService;
 import com.hivemq.persistence.SingleWriterService;
@@ -25,21 +26,24 @@ import javax.inject.Inject;
 
 public class Services {
 
-
     private final @NotNull HiveMQCapabilityService capabilityService;
     private final @NotNull BridgeService bridgeService;
     private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull HandlerService handlerService;
+    private final @NotNull ModulesAndExtensionsService modulesAndExtensionsService;
 
     @Inject
-    public Services(final @NotNull HiveMQCapabilityService capabilityService,
-                    final @NotNull BridgeService bridgeService,
-                    final @NotNull SingleWriterService singleWriterService,
-                    final @NotNull HandlerService handlerService) {
+    public Services(
+            final @NotNull HiveMQCapabilityService capabilityService,
+            final @NotNull BridgeService bridgeService,
+            final @NotNull SingleWriterService singleWriterService,
+            final @NotNull HandlerService handlerService,
+            final @NotNull ModulesAndExtensionsService modulesAndExtensionsService) {
         this.capabilityService = capabilityService;
         this.bridgeService = bridgeService;
         this.singleWriterService = singleWriterService;
         this.handlerService = handlerService;
+        this.modulesAndExtensionsService = modulesAndExtensionsService;
     }
 
     public @NotNull HiveMQCapabilityService capabilityService() {
@@ -56,5 +60,9 @@ public class Services {
 
     public @NotNull HandlerService handlerService() {
         return handlerService;
+    }
+
+    public @NotNull ModulesAndExtensionsService modulesAndExtensionsService() {
+        return modulesAndExtensionsService;
     }
 }
