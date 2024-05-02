@@ -53,8 +53,8 @@ public class GeneralBootstrapServiceImpl implements GeneralBootstrapService {
     }
 
     @Override
-    public @NotNull String getHivemqId() {
-        return hivemqId.get();
+    public @NotNull HivemqId getHivemqId() {
+        return hivemqId;
     }
 
 

@@ -48,9 +48,7 @@ public class HiveMQEdgeBootstrap {
     private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull SystemInformation systemInformation;
     private final @NotNull ModuleLoader moduleLoader;
-    private @Nullable ConfigurationService configService;
     private final @NotNull HivemqId hivemqId = new HivemqId();
-
     private final @NotNull PersistenceStartup persistenceStartup = new PersistenceStartup();
     private final @NotNull HandlerService handlerService = new HandlerService();
     private final @NotNull GenericAPIHolder genericAPIHolder = new GenericAPIHolder();
@@ -60,6 +58,8 @@ public class HiveMQEdgeBootstrap {
     private final @NotNull PersistencesService persistencesService = new PersistencesService(persistenceStartup);
     private final @NotNull RestComponentsService restComponentsService =
             new RestComponentsServiceImpl(genericAPIHolder);
+
+    private volatile @Nullable ConfigurationService configService;
     private @Nullable CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery;
     private @Nullable GeneralBootstrapServiceImpl generalBootstrapService;
     private @Nullable PersistenceBootstrapService persistenceBootstrapService;
@@ -121,16 +121,16 @@ public class HiveMQEdgeBootstrap {
     }
 
     private void awaitPersistenceStartup() {
-        Objects.requireNonNull(injector).persistences();
+        Preconditions.checkNotNull(configService);
+        Preconditions.checkNotNull(injector);
+        // ensure that persistences are built
+        injector.persistences();
+
         try {
             persistenceStartup.finish();
         } catch (InterruptedException e) {
             throw new HiveMQEdgeStartupException(e);
         }
-
-        // configService is always set in caller
-        assert configService != null;
-
         log.info("HiveMQ Edge starts with Persistence Mode: '{}'",
                 configService.persistenceConfigurationService().getMode());
     }
