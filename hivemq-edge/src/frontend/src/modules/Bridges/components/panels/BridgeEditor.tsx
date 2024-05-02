@@ -52,7 +52,7 @@ const BridgeEditor: FC<BridgeEditorProps> = ({ children }) => {
             title: t('bridge.toast.view.title'),
             description: t('bridge.toast.view.error'),
           },
-          new Error(t('bridge.toast.view.noLongerExist', { id: bridgeId }) as string)
+          new Error(t('bridge.toast.view.noLongerExist', { id: bridgeId }))
         )
         navigate('/mqtt-bridges', { replace: true })
       }

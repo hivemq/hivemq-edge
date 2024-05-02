@@ -40,7 +40,7 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             <Text>{info.getValue<string>()}</Text>
           </Skeleton>
         ),
-        header: t('Listings.script.header.id') as string,
+        header: t('Listings.script.header.id'),
       },
       {
         accessorKey: 'functionType',
@@ -51,7 +51,7 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             </Skeleton>
           )
         },
-        header: t('Listings.script.header.functionType') as string,
+        header: t('Listings.script.header.functionType'),
       },
       {
         accessorKey: 'version',
@@ -62,7 +62,7 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             </Skeleton>
           )
         },
-        header: t('Listings.script.header.version') as string,
+        header: t('Listings.script.header.version'),
       },
       {
         accessorKey: 'description',
@@ -73,7 +73,7 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             </Skeleton>
           )
         },
-        header: t('Listings.script.header.description') as string,
+        header: t('Listings.script.header.description'),
       },
       {
         accessorKey: 'createdAt',
@@ -84,11 +84,11 @@ const ScriptTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             <DateTimeRenderer date={DateTime.fromMillis(info.getValue() as number)} isApprox />
           </Skeleton>
         ),
-        header: t('Listings.script.header.created') as string,
+        header: t('Listings.script.header.created'),
       },
       {
         id: 'actions',
-        header: t('Listings.script.header.actions') as string,
+        header: t('Listings.script.header.actions'),
         sortingFn: undefined,
         cell: (info) => {
           return (

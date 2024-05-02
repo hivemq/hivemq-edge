@@ -10,7 +10,7 @@ const NodeEdge: FC<NodeProps> = () => {
 
   return (
     <>
-      <Image data-testid="edge-node" src={logo} alt={t('workspace.node.edge') as string} boxSize="96px" />
+      <Image data-testid="edge-node" src={logo} alt={t('workspace.node.edge')} boxSize="96px" />
       <Handle type="target" position={Position.Bottom} id="Bottom" isConnectable={false} style={{ bottom: '1px' }} />
       <Handle type="target" position={Position.Top} id="Top" isConnectable={false} style={{ top: '1px' }} />
       <Handle

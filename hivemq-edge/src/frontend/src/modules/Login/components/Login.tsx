@@ -48,13 +48,13 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
   const verifyCredential = (e: ApiBearerToken) => {
     if (!e.token)
       setError('root.ApiError', {
-        type: t('login.error.tokenType') as string,
-        message: t('login.error.tokenInvalid') as string,
+        type: t('login.error.tokenType'),
+        message: t('login.error.tokenInvalid'),
       })
     else if (!parseJWT(e.token))
       setError('root.ApiError', {
-        type: t('login.error.tokenType') as string,
-        message: t('login.error.tokenExpired') as string,
+        type: t('login.error.tokenType'),
+        message: t('login.error.tokenExpired'),
       })
     else
       auth.login({ token: e.token }, () => {
@@ -115,10 +115,10 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
             <Input
               autoFocus
               id="username"
-              placeholder={t('translation:login.username.placeholder') as string}
+              placeholder={t('translation:login.username.placeholder')}
               autoComplete="username"
               {...register('userName', {
-                required: t('translation:login.username.error.required') as string,
+                required: t('translation:login.username.error.required'),
               })}
             />
             <FormErrorMessage>{errors.userName && errors.userName.message}</FormErrorMessage>
@@ -128,11 +128,11 @@ const Login: FC<{ first?: FirstUseInformation; preLoadError?: ApiError | null }>
             <PasswordInput
               id="password"
               name="password"
-              placeholder={t('translation:login.password.placeholder') as string}
+              placeholder={t('translation:login.password.placeholder')}
               autoComplete="current-password"
               register={register}
               options={{
-                required: t('translation:login.password.error.required') as string,
+                required: t('translation:login.password.error.required'),
               }}
             />
             <FormErrorMessage>{errors.password && errors.password.message}</FormErrorMessage>

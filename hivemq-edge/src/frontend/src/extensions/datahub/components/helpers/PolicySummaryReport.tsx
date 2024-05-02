@@ -35,7 +35,7 @@ const PolicySummaryReport: FC<PolicySummaryReportProps> = ({ status, onOpenPubli
           <ConditionalWrapper
             condition={status === PolicyDryRunStatus.SUCCESS}
             wrapper={(children) => (
-              <Link aria-label={t('workspace.toolbox.navigation.goPublish') as string} onClick={onOpenPublish}>
+              <Link aria-label={t('workspace.toolbox.navigation.goPublish')} onClick={onOpenPublish}>
                 {children}
               </Link>
             )}

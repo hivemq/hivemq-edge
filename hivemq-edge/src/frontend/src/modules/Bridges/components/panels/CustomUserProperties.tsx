@@ -51,7 +51,7 @@ const CustomUserProperties: FC<CustomUserPropertiesProps> = ({ form, subscriptio
                           id={`${type}.${subscriptionIndex}.customUserProperties.${index}.key`}
                           type="text"
                           size="sm"
-                          placeholder={t('bridge.options.id.placeholder') as string}
+                          placeholder={t('bridge.options.id.placeholder')}
                         />
                       )}
                       control={form.control}
@@ -71,7 +71,7 @@ const CustomUserProperties: FC<CustomUserPropertiesProps> = ({ form, subscriptio
                           id={`${type}.${subscriptionIndex}.customUserProperties.${index}.value`}
                           type="text"
                           size="sm"
-                          placeholder={t('bridge.options.id.placeholder') as string}
+                          placeholder={t('bridge.options.id.placeholder')}
                         />
                       )}
                       control={form.control}

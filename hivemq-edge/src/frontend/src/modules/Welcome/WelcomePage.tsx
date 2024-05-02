@@ -14,7 +14,7 @@ const WelcomePage: FC = () => {
   const { colorMode } = useColorMode()
 
   return (
-    <PageContainer title={t('welcome.title') as string} subtitle={t('welcome.description') as string}>
+    <PageContainer title={t('welcome.title')} subtitle={t('welcome.description')}>
       <Flex flexDirection="column">
         <Flex flexDirection={{ base: 'column', lg: 'row' }}>
           <Onboarding tasks={content} flex={1} />
@@ -22,7 +22,7 @@ const WelcomePage: FC = () => {
             <Image
               boxSize={400}
               src={ReactLogo}
-              alt={t('branding.appName') as string}
+              alt={t('branding.appName')}
               backgroundColor={colorMode === 'light' ? undefined : 'lightslategrey'}
               p={4}
             />

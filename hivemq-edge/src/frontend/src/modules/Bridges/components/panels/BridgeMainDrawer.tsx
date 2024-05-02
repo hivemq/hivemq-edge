@@ -72,7 +72,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
         onClose={onClose}
       >
         <DrawerOverlay />
-        <DrawerContent aria-label={t('bridge.drawer.label') as string}>
+        <DrawerContent aria-label={t('bridge.drawer.label')}>
           <DrawerCloseButton />
           <DrawerHeader id="bridge-form-header" borderBottomWidth="1px">
             {isNewBridge ? t('bridge.drawer.title.create') : t('bridge.drawer.title.update')}

@@ -29,7 +29,7 @@ const Bridges: FC = () => {
       <Box mt="20%" mx="20%" alignItems="center">
         <ErrorMessage
           type={error?.message}
-          message={(error?.body as ProblemDetails)?.title || (t('bridge.error.loading') as string)}
+          message={(error?.body as ProblemDetails)?.title || t('bridge.error.loading')}
         />
       </Box>
     )
@@ -47,7 +47,7 @@ const Bridges: FC = () => {
       <WarningMessage
         image={BridgeEmptyLogo}
         prompt={t('bridge.noDataWarning.description')}
-        title={t('bridge.noDataWarning.title') as string}
+        title={t('bridge.noDataWarning.title')}
         alt={t('bridge.title')}
         mt={10}
       />
@@ -60,7 +60,7 @@ const Bridges: FC = () => {
       templateColumns={{ base: 'repeat(1, 1fr)', lg: 'repeat(2, 1fr)', '2xl': 'repeat(3, 1fr)' }}
       gap={6}
       role="list"
-      aria-label={t('bridge.list') as string}
+      aria-label={t('bridge.list')}
     >
       {data?.map((bridge, i) => (
         <BridgeCard key={`${bridge.id}-${i}`} {...bridge} onNavigate={handleNavigate} role="listitem" />

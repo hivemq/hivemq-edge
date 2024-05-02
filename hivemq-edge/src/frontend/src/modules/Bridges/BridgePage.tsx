@@ -16,8 +16,8 @@ const BridgePage: FC = () => {
 
   return (
     <PageContainer
-      title={t('bridge.title') as string}
-      subtitle={t('bridge.description') as string}
+      title={t('bridge.title')}
+      subtitle={t('bridge.description')}
       cta={
         <Flex height="100%" justifyContent="flex-end" alignItems="flex-end" pb={6}>
           <Button

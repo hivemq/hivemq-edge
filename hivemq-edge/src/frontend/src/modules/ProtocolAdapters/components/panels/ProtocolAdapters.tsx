@@ -99,7 +99,7 @@ const ProtocolAdapters: FC = () => {
     return [
       {
         accessorKey: 'id',
-        header: t('protocolAdapter.table.header.name') as string,
+        header: t('protocolAdapter.table.header.name'),
         cell: (info) => {
           return <Skeleton isLoaded={!isLoading}>{info.row.original.id}</Skeleton>
         },
@@ -114,7 +114,7 @@ const ProtocolAdapters: FC = () => {
             </Skeleton>
           )
         },
-        header: t('protocolAdapter.table.header.type') as string,
+        header: t('protocolAdapter.table.header.type'),
       },
       {
         accessorFn: (row) => row.status?.connection,
@@ -134,11 +134,11 @@ const ProtocolAdapters: FC = () => {
             <DateTimeRenderer date={DateTime.fromISO(info.getValue() as string)} isApprox />
           </Skeleton>
         ),
-        header: t('protocolAdapter.table.header.lastStarted') as string,
+        header: t('protocolAdapter.table.header.lastStarted'),
       },
       {
         id: 'actions',
-        header: t('protocolAdapter.table.header.actions') as string,
+        header: t('protocolAdapter.table.header.actions'),
         sortingFn: undefined,
         cell: (info) => {
           const { id, type } = info.row.original
@@ -201,7 +201,7 @@ const ProtocolAdapters: FC = () => {
       <Box mt="20%" mx="20%" alignItems="center">
         <ErrorMessage
           type={errorAllAdapters ? errorAllAdapters.message : error?.message}
-          message={(error?.body as ProblemDetails)?.title || (t('protocolAdapter.error.loading') as string)}
+          message={(error?.body as ProblemDetails)?.title || t('protocolAdapter.error.loading')}
         />
       </Box>
     )
@@ -211,7 +211,7 @@ const ProtocolAdapters: FC = () => {
     return (
       <WarningMessage
         image={AdapterEmptyLogo}
-        title={t('protocolAdapter.noDataWarning.title') as string}
+        title={t('protocolAdapter.noDataWarning.title')}
         prompt={t('protocolAdapter.noDataWarning.description')}
         alt={t('protocolAdapter.title')}
         mt={10}

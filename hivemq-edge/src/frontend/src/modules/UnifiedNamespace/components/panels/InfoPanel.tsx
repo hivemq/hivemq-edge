@@ -27,12 +27,12 @@ const InfoPanel: FC = () => {
           as={RouterLink}
           to={config.documentation.namespace}
           target="hivemq:docs"
-          aria-label={t('unifiedNamespace.container.info.link') as string}
+          aria-label={t('unifiedNamespace.container.info.link')}
           leftIcon={<GoLinkExternal />}
           data-testid="namespace-info-documentation"
           size="lg"
         >
-          {t('unifiedNamespace.container.info.link') as string}
+          {t('unifiedNamespace.container.info.link')}
         </Button>
       </CardFooter>
     </Card>

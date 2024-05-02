@@ -75,7 +75,7 @@ const Onboarding: FC<OnboardingProps> = ({ tasks, ...props }) => {
           ))}
         {!!error && (
           <Card flex={1} m={1}>
-            <ErrorMessage type={error?.message} message={t('welcome.onboarding.errorLoading') as string} />
+            <ErrorMessage type={error?.message} message={t('welcome.onboarding.errorLoading')} />
           </Card>
         )}
       </SimpleGrid>

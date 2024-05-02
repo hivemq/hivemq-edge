@@ -48,7 +48,7 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
           title: t('protocolAdapter.toast.view.title'),
           description: t('protocolAdapter.toast.view.error'),
         },
-        new Error(t('protocolAdapter.toast.view.noLongerExist', { id: adapterId }) as string)
+        new Error(t('protocolAdapter.toast.view.noLongerExist', { id: adapterId }))
       )
       navigate('/protocol-adapters', { replace: true })
       return

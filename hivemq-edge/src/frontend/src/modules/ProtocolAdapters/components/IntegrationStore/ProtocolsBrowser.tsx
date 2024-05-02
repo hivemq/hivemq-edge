@@ -43,7 +43,7 @@ const ProtocolsBrowser: FC<ProtocolsBrowserProps> = ({ items, facet, onCreate, i
       spacing={4}
       gap={6}
       role="list"
-      aria-label={t('protocolAdapter.list') as string}
+      aria-label={t('protocolAdapter.list')}
     >
       {filteredAdapters?.map((e) => (
         <Card key={e.id} minW="300px" role="listitem" aria-labelledby={`adapter-${e.id}`}>

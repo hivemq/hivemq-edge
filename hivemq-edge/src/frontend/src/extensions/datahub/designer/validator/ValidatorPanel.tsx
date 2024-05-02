@@ -22,8 +22,8 @@ export const ValidatorPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
   if (!data)
     return (
       <ErrorMessage
-        type={t('error.elementNotDefined.title') as string}
-        message={t('error.elementNotDefined.description', { nodeType: DataHubNodeType.VALIDATOR }) as string}
+        type={t('error.elementNotDefined.title')}
+        message={t('error.elementNotDefined.description', { nodeType: DataHubNodeType.VALIDATOR })}
       />
     )
 

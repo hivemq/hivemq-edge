@@ -55,7 +55,7 @@ const DateTimeRangeSelector: FC<DateTimeRangeSelectorProps> = ({ min, max, setFi
       noOptionsMessage={() => t('DateTimeRangeSelector.noOptionsMessage')}
       placeholder={t('DateTimeRangeSelector.placeholder')}
       formatCreateLabel={(e) => t('DateTimeRangeSelector.formatCreateLabel', { date: e })}
-      aria-label={t('DateTimeRangeSelector.ariaLabel') as string}
+      aria-label={t('DateTimeRangeSelector.ariaLabel')}
       isClearable={true}
       isMulti={false}
       components={{

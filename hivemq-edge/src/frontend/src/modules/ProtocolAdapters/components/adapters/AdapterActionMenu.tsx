@@ -28,7 +28,7 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEd
         // Cannot have tooltip because of the popup menu
         as={IconButton}
         icon={<ChevronDownIcon />}
-        aria-label={t('protocolAdapter.table.actions.label') as string}
+        aria-label={t('protocolAdapter.table.actions.label')}
       />
       <MenuList>
         <ConnectionController type={DeviceTypes.ADAPTER} id={id} status={status} variant="menuItem" />

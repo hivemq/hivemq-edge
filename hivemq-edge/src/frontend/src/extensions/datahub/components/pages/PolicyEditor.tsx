@@ -164,7 +164,7 @@ const PolicyEditor: FC = () => {
 
           // onError={(id: string, message: string) => console.log('XXXXXX e', id, message)}
         >
-          <Box role="toolbar" aria-label={t('workspace.aria-label') as string} aria-controls="edge-workspace-canvas">
+          <Box role="toolbar" aria-label={t('workspace.aria-label')} aria-controls="edge-workspace-canvas">
             <ToolboxSelectionListener />
             <CopyPasteListener render={(copiedNodes) => <CopyPasteStatus nbCopied={copiedNodes.length} />} />
             <DesignerToolbox />

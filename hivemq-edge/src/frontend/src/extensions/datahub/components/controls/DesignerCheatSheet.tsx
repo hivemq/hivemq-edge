@@ -44,7 +44,7 @@ const DesignerCheatSheet: FC = () => {
       <IconButton
         icon={<LuBadgeHelp />}
         onClick={onOpen}
-        aria-label={t('workspace.controls.shortcuts') as string}
+        aria-label={t('workspace.controls.shortcuts')}
         data-testid="canvas-control-help"
       />
       <Modal isOpen={isOpen} onClose={onClose} size="2xl" isCentered motionPreset="scale" scrollBehavior="inside">
@@ -67,7 +67,7 @@ const DesignerCheatSheet: FC = () => {
                         <ListItem key={`${group}-${item.key}`}>
                           <ShortcutRenderer
                             hotkeys={item.key}
-                            description={t(`shortcuts.keys.${item.key}`, { context: item.category }) as string}
+                            description={t(`shortcuts.keys.${item.key}`, { context: item.category })}
                           />
                         </ListItem>
                       ))}

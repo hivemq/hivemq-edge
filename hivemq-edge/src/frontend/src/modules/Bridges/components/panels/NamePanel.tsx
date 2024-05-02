@@ -25,14 +25,14 @@ const NamePanel: FC<BridgePanelType> = ({ form, isNewBridge = false }) => {
         id="name"
         type="text"
         autoComplete="name"
-        placeholder={t('bridge.options.id.placeholder') as string}
+        placeholder={t('bridge.options.id.placeholder')}
         {...register('id', {
           ...getRulesForProperty($Bridge.properties.id),
           validate: {
             notUnique: (value) => {
               if (!isNewBridge) return true
               const isIncluded = data?.map((e) => e.id).includes(value)
-              return !isIncluded || (t('bridge.options.id.error.notUnique') as string)
+              return !isIncluded || t('bridge.options.id.error.notUnique')
             },
           },
         })}

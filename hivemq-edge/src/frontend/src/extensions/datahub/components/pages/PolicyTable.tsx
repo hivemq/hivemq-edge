@@ -97,7 +97,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             </Skeleton>
           )
         },
-        header: t('Listings.policy.header.type') as string,
+        header: t('Listings.policy.header.type'),
       },
       {
         accessorKey: 'matching',
@@ -111,7 +111,7 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             </Skeleton>
           )
         },
-        header: t('Listings.policy.header.matching') as string,
+        header: t('Listings.policy.header.matching'),
       },
       {
         accessorKey: 'createdAt',
@@ -122,11 +122,11 @@ const PolicyTable: FC<DataHubTableProps> = ({ onDeleteItem }) => {
             <DateTimeRenderer date={DateTime.fromMillis(info.getValue() as number)} isApprox />
           </Skeleton>
         ),
-        header: t('Listings.policy.header.created') as string,
+        header: t('Listings.policy.header.created'),
       },
       {
         id: 'actions',
-        header: t('Listings.policy.header.actions') as string,
+        header: t('Listings.policy.header.actions'),
         sortingFn: undefined,
         cell: (info) => {
           return (

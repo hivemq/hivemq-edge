@@ -60,11 +60,7 @@ const ReactFlowWrapper = () => {
       nodesConnectable={false}
       deleteKeyCode={null}
     >
-      <Box
-        role="toolbar"
-        aria-label={t('workspace.controls.aria-label') as string}
-        aria-controls="edge-workspace-canvas"
-      >
+      <Box role="toolbar" aria-label={t('workspace.controls.aria-label')} aria-controls="edge-workspace-canvas">
         <GroupNodesControl />
         <SelectionListener />
         <StatusListener />

@@ -40,7 +40,7 @@ export const ColorPicker = forwardRef<ColorPickerProps, 'div'>(
             isDisabled={isDisabled}
             data-testid="colorPicker-trigger"
             data-color-scheme={selectedColorScheme}
-            aria-label={t('ColorPicker.trigger', { scheme: selectedColorScheme }) as string}
+            aria-label={t('ColorPicker.trigger', { scheme: selectedColorScheme })}
             bg={`${selectedColorScheme}.500`}
             _hover={{ bg: `${selectedColorScheme}.500` }}
             _active={{ bg: `${selectedColorScheme}.700` }}
@@ -85,7 +85,7 @@ export const ColorPicker = forwardRef<ColorPickerProps, 'div'>(
                       key={`color-picker-${color}-${index}`}
                       data-testid={`colorPicker-selector-${index}`}
                       data-color-scheme={color}
-                      aria-label={t('ColorPicker.option', { scheme: color }) as string}
+                      aria-label={t('ColorPicker.option', { scheme: color })}
                       onClick={() => {
                         setSelectedColorScheme(color)
                         onChange(color)

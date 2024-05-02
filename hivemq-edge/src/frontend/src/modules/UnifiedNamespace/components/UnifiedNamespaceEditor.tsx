@@ -70,10 +70,10 @@ const UnifiedNamespaceEditor: FC<UnifiedNamespaceEditorProps> = () => {
   return (
     <Drawer closeOnOverlayClick={false} size="lg" isOpen={isOpen} placement="right" onClose={handleEditorOnClose}>
       <DrawerOverlay />
-      <DrawerContent aria-label={t('bridge.drawer.label') as string}>
+      <DrawerContent aria-label={t('bridge.drawer.label')}>
         <DrawerCloseButton />
         <DrawerHeader id="bridge-form-header" borderBottomWidth="1px">
-          {t('unifiedNamespace.title') as string}
+          {t('unifiedNamespace.title')}
         </DrawerHeader>
 
         <DrawerBody>

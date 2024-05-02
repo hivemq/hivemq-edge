@@ -46,7 +46,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
   return (
     <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} variant="hivemq">
       <DrawerOverlay />
-      <DrawerContent aria-label={t('workspace.property.header', { context: selectedNode.type }) as string}>
+      <DrawerContent aria-label={t('workspace.property.header', { context: selectedNode.type })}>
         <DrawerCloseButton />
         <DrawerHeader>
           <Text> {t('workspace.property.header', { context: selectedNode.type })}</Text>

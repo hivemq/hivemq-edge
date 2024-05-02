@@ -53,7 +53,7 @@ const ProtocolIntegrationStore: FC = () => {
       <Box mt="20%" mx="20%" alignItems="center">
         <ErrorMessage
           type={error?.message}
-          message={(error?.body as ProblemDetails)?.title || (t('protocolAdapter.error.loading') as string)}
+          message={(error?.body as ProblemDetails)?.title || t('protocolAdapter.error.loading')}
         />
       </Box>
     )
@@ -63,7 +63,7 @@ const ProtocolIntegrationStore: FC = () => {
     return (
       <WarningMessage
         image={AdapterEmptyLogo}
-        title={t('protocolAdapter.noTypeWarning.title') as string}
+        title={t('protocolAdapter.noTypeWarning.title')}
         prompt={t('protocolAdapter.noDataWarning.description')}
         alt={t('protocolAdapter.title')}
         mt={10}

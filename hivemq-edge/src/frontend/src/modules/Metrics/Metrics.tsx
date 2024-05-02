@@ -109,7 +109,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
         spacing={4}
         templateColumns="repeat(auto-fill, minmax(200px, 1fr))"
         role="list"
-        aria-label={t('metrics.charts.list') as string}
+        aria-label={t('metrics.charts.list')}
       >
         {metrics.map((e) => {
           const { id } = extractMetricInfo(e.metrics)
