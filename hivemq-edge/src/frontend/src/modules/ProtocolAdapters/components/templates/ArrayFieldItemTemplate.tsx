@@ -6,7 +6,7 @@ import { LuPanelTopClose, LuPanelTopOpen } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 
-// TODO[NVL] This is NOT a good approach to add a "role"; submit a PR!
+// TODO[NVL] This is driven by subscription handling; use uiSchema to allow configuration for individual array property
 export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) => {
   const {
     children,
@@ -33,7 +33,7 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
     const childrenFormData = children.props.formData.destination
     if (childrenFormData) return `${children.props.name} - ${childrenFormData}`
     return children.props.name
-  }, [])
+  }, [children.props.formData.destination, children.props.name])
 
   const { CopyButton, MoveDownButton, MoveUpButton, RemoveButton } = registry.templates.ButtonTemplates
   const onCopyClick = useMemo(() => onCopyIndexClick(index), [index, onCopyIndexClick])
@@ -59,15 +59,8 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
   const { hidden, ...rest } = getDisclosureProps()
 
   return (
-    <HStack
-      flexDirection="row-reverse"
-      alignItems="flex-start"
-      py={1}
-      // TODO[NVL] This is NOT a good approach to add a "role"; submit a PR!
-      role="listitem"
-    >
+    <HStack flexDirection="row-reverse" alignItems="flex-start" py={1} role="listitem">
       {hasToolbar && (
-        // TODO[NVL] This is NOT a good approach to add a "role"; submit a PR!
         <VStack gap={6} role="toolbar">
           <ButtonGroup>
             <IconButton
