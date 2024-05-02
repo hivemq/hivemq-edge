@@ -15,6 +15,7 @@
  */
 package com.hivemq.extensions.core;
 
+import com.google.common.collect.ImmutableList;
 import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
@@ -23,39 +24,28 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class CommercialModuleLoaderDiscovery {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(CommercialModuleLoaderDiscovery.class);
-    private final @NotNull ModuleLoader moduleLoader;
-    private final List<ModuleLoaderMain> instances = new ArrayList<>();
+    private final @NotNull ImmutableList<ModuleLoaderMain> instances;
 
     public CommercialModuleLoaderDiscovery(
             final @NotNull ModuleLoader moduleLoader) {
-        this.moduleLoader = moduleLoader;
-    }
-
-    public void discoverModuleLoaderMainClasses() {
         moduleLoader.loadModules();
-        final List<Class<? extends ModuleLoaderMain>> implementations =
-                moduleLoader.findImplementations(ModuleLoaderMain.class);
-
-        implementations.forEach(impl -> {
+        final ImmutableList.Builder<ModuleLoaderMain> builder = ImmutableList.builder();
+        moduleLoader.findImplementations(ModuleLoaderMain.class).forEach(impl -> {
             try {
-                this.instances.add(impl.getDeclaredConstructor().newInstance());
+                builder.add(impl.getDeclaredConstructor().newInstance());
             } catch (Exception e) {
                 log.error("Error when instancing '{}':", impl, e);
             }
         });
+        this.instances = builder.build();
     }
 
     public void generalBootstrap(final @NotNull GeneralBootstrapService generalBootstrapService) {
         try {
-            for (ModuleLoaderMain instance : instances) {
-                instance.generalBootstrap(generalBootstrapService);
-            }
+            instances.forEach(instance -> instance.generalBootstrap(generalBootstrapService));
         } catch (Exception e) {
             log.error("Error when bootstrapping general information", e);
         }
