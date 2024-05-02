@@ -30,17 +30,17 @@ import java.util.UUID;
  */
 public interface ProtocolAdapterPollingService {
 
-    void schedulePolling(@NotNull ProtocolAdapter adapter, @NotNull ProtocolAdapterPollingSampler input);
+    void schedulePolling(@NotNull ProtocolAdapter adapter, @NotNull ProtocolAdapterPollingSampler<?> input);
 
-    Optional<ProtocolAdapterPollingSampler> getPollingJob(@NotNull UUID id);
+    @NotNull Optional<ProtocolAdapterPollingSampler<?>> getPollingJob(@NotNull UUID id);
 
-    List<ProtocolAdapterPollingSampler> getActiveProcesses();
+    @NotNull List<ProtocolAdapterPollingSampler<?>> getActiveProcesses();
 
-    List<ProtocolAdapterPollingSampler> getPollingJobsForAdapter(@NotNull String adapterId);
+    @NotNull List<ProtocolAdapterPollingSampler<?>> getPollingJobsForAdapter(@NotNull String adapterId);
 
-    int currentErrorCount(@NotNull ProtocolAdapterPollingSampler pollingJob);
+    int currentErrorCount(@NotNull ProtocolAdapterPollingSampler<?> pollingJob);
 
-    void stopPolling(@NotNull ProtocolAdapterPollingSampler pollingJob);
+    void stopPolling(@NotNull ProtocolAdapterPollingSampler<?> pollingJob);
 
     void stopPollingForAdapterInstance(@NotNull ProtocolAdapter adapter);
 
