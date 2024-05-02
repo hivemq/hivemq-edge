@@ -25,7 +25,10 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
     registry,
   } = props
   const { t } = useTranslation('components')
-  const { isOpen, onToggle, getButtonProps, getDisclosureProps } = useDisclosure({ defaultIsOpen: false })
+  const { isOpen, onToggle, getButtonProps, getDisclosureProps } = useDisclosure({
+    // This is a real hack but didn't find a better way of detecting a new item
+    defaultIsOpen: index === props.totalItems - 1 && children.props.formData.destination === undefined,
+  })
   const name = useMemo<string>(() => {
     const childrenFormData = children.props.formData.destination
     if (childrenFormData) return `${children.props.name} - ${childrenFormData}`
