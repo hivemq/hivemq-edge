@@ -14,6 +14,8 @@ import static com.hivemq.metrics.HiveMQMetrics.PROTOCOL_ADAPTER_PREFIX;
 public class ProtocolAdapterMetrics {
 
     private final @NotNull MetricRegistry metricRegistry;
+    // we use this AtomicInteger in order to have a gauge for the current amount of adapters to
+    // be consistent with the other metrics
     private final AtomicInteger currentAdapters = new AtomicInteger();
 
     @Inject
