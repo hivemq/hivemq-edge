@@ -23,6 +23,7 @@ import com.hivemq.bootstrap.netty.ioc.NettyModule;
 import com.hivemq.bridge.ioc.BridgeModule;
 import com.hivemq.common.executors.ioc.ExecutorsModule;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.ioc.ConfigurationModule;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -137,6 +138,9 @@ public interface Injector {
 
         @BindsInstance
         Builder connectionPersistence(ConnectionPersistence connectionPersistence);
+
+        @BindsInstance
+        Builder hivemqId(HivemqId hivemqId);
 
         Injector build();
     }

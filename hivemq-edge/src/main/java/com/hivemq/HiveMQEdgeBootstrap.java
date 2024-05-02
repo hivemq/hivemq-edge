@@ -15,6 +15,7 @@ import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapServiceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.ConfigurationBootstrap;
+import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
@@ -48,6 +49,7 @@ public class HiveMQEdgeBootstrap {
     private final @NotNull SystemInformation systemInformation;
     private final @NotNull ModuleLoader moduleLoader;
     private @Nullable ConfigurationService configService;
+    private final @NotNull HivemqId hivemqId = new HivemqId();
 
     private final @NotNull PersistenceStartup persistenceStartup = new PersistenceStartup();
     private final @NotNull HandlerService handlerService = new HandlerService();
@@ -149,6 +151,7 @@ public class HiveMQEdgeBootstrap {
                 .restComponentService(restComponentsService)
                 .restComponentsHolder(genericAPIHolder)
                 .connectionPersistence(connectionPersistence)
+                .hivemqId(hivemqId)
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
     }
@@ -158,12 +161,11 @@ public class HiveMQEdgeBootstrap {
         // configService is always set in caller
         assert configService != null;
 
-
         try {
             commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(moduleLoader);
             commercialModuleLoaderDiscovery.discoverModuleLoaderMainClasses();
             generalBootstrapService =
-                    new GeneralBootstrapServiceImpl(shutdownHooks, metricRegistry, systemInformation, configService);
+                    new GeneralBootstrapServiceImpl(shutdownHooks, metricRegistry, systemInformation, configService, hivemqId);
             commercialModuleLoaderDiscovery.generalBootstrap(generalBootstrapService);
         } catch (Exception e) {
             log.warn("Error on loading the commercial module loader.", e);

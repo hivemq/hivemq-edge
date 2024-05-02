@@ -16,4 +16,6 @@ public interface GeneralBootstrapService {
     @NotNull ShutdownHooks shutdownHooks();
 
     @NotNull ConfigurationService configurationService();
+
+    @NotNull String getHivemqId();
 }
