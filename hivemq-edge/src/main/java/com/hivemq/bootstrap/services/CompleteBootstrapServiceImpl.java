@@ -3,6 +3,7 @@ package com.hivemq.bootstrap.services;
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.bootstrap.ioc.Persistences;
 import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
@@ -50,7 +51,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     }
 
     @Override
-    public @NotNull String getHivemqId() {
+    public @NotNull HivemqId getHivemqId() {
         return delegate.getHivemqId();
     }
 

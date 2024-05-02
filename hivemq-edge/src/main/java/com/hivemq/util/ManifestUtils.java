@@ -36,13 +36,20 @@ public class ManifestUtils {
             final URL resource = getResource(clazz, "META-INF/MANIFEST.MF");
 
             if (resource == null) {
-                return null;
+                return "Development Version";
             }
 
             final Manifest manifest = new Manifest(resource.openStream());
             // do stuff with it
             final Attributes attributes = manifest.getMainAttributes();
-            return attributes.getValue(name);
+            final String value = attributes.getValue(name);
+            if (value == null) {
+                return "Development Version";
+            } else {
+                return value;
+            }
+
+
         } catch (final IOException e) {
             return null;
         }

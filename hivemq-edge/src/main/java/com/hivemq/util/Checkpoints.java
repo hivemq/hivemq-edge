@@ -43,6 +43,12 @@ public class Checkpoints {
     private static boolean enabled;
     private static boolean debug;
 
+
+    // checkpoint for the moment when the connection to the control plane is established
+    public static final @NotNull String CONTROL_PLANE_CONNECTION_ESTABLISHED =
+            "control-plane-connection-established";
+
+
     public static boolean enabled() {
         return enabled;
     }
