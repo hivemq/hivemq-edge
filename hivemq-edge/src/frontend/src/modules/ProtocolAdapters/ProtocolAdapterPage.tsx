@@ -18,9 +18,11 @@ const ProtocolAdapterPage: FC = () => {
   const isReturningUser = useMemo(() => {
     return configuration?.firstUseInformation?.firstUse !== true
   }, [configuration?.firstUseInformation?.firstUse])
-  const [tabIndex, setTabIndex] = useState(
-    isReturningUser ? ProtocolAdapterTabIndex.adapters : ProtocolAdapterTabIndex.protocols
-  )
+  const [tabIndex, setTabIndex] = useState(0)
+
+  useEffect(() => {
+    setTabIndex(isReturningUser ? ProtocolAdapterTabIndex.adapters : ProtocolAdapterTabIndex.protocols)
+  }, [isReturningUser])
 
   useEffect(() => {
     if ((state as AdapterNavigateState)?.protocolAdapterTabIndex) {
