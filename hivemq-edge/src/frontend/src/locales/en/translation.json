@@ -319,7 +319,7 @@
         "helper": "Select the Trust Store path"
       },
       "truststorePassword": {
-        "label": "Truth Store Password",
+        "label": "Trust Store Password",
         "helper": "Select the Trust Store password"
       },
       "privateKeyPassword": {
