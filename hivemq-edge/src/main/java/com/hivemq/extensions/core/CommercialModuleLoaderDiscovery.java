@@ -16,6 +16,7 @@
 package com.hivemq.extensions.core;
 
 import com.google.common.collect.ImmutableList;
+import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapService;
 import com.hivemq.bootstrap.services.CompleteBootstrapService;
 import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
@@ -72,10 +73,10 @@ public class CommercialModuleLoaderDiscovery {
     }
 
 
-    public void afterHiveMQStart(final @NotNull CompleteBootstrapService completeBootstrapService) {
+    public void afterHiveMQStart(final @NotNull AfterHiveMQStartBootstrapService afterHiveMQStartBootstrapService) {
         try {
             for (ModuleLoaderMain instance : instances) {
-                instance.afterPersistenceBootstrap(completeBootstrapService);
+                instance.afterHiveMQStart(afterHiveMQStartBootstrapService);
             }
         } catch (Exception e) {
             log.error("Error when completing bootstrap ", e);
