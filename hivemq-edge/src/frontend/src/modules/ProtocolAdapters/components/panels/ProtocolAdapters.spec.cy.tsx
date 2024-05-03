@@ -17,11 +17,10 @@ describe('ProtocolAdapters', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ProtocolAdapters />)
 
-    cy.wait('@getAdapters').then(() => {
-      cy.get('tbody').find('tr').should('have.length', 1)
-      cy.get('tbody').find('tr').find('td').eq(0).should('contain.text', MOCK_ADAPTER_ID)
-      cy.checkAccessibility()
-      cy.percySnapshot('Component: ProtocolAdapters')
-    })
+    cy.wait('@getAdapters')
+    cy.get('tbody').find('tr').should('have.length', 1)
+    cy.get('tbody').find('tr').find('td').eq(0).should('contain.text', MOCK_ADAPTER_ID)
+    cy.checkAccessibility()
+    cy.percySnapshot('Component: ProtocolAdapters')
   })
 })
