@@ -7,13 +7,13 @@ import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__hand
 describe('ProtocolAdapterPage', () => {
   beforeEach(() => {
     cy.viewport(800, 900)
-    cy.intercept('api/v1/management/protocol-adapters/status', { statusCode: 404 }).as('getStatus')
+    cy.intercept('api/v1/management/protocol-adapters/status', { statusCode: 404 })
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocols')
     cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
   })
 
   it('should render adapters for returning users', () => {
-    cy.intercept('api/v1/frontend/configuration', mockGatewayConfiguration).as('getConfig')
+    cy.intercept('api/v1/frontend/configuration', mockGatewayConfiguration)
     cy.mountWithProviders(<ProtocolAdapterPage />)
 
     cy.get("[role='tab']").eq(1).should('have.attr', 'aria-selected', 'true')
@@ -24,7 +24,7 @@ describe('ProtocolAdapterPage', () => {
       ...mockGatewayConfiguration,
       firstUseInformation: { ...mockGatewayConfiguration, firstUse: true },
     }
-    cy.intercept('api/v1/frontend/configuration', newUser).as('getConfig')
+    cy.intercept('api/v1/frontend/configuration', newUser)
     cy.mountWithProviders(<ProtocolAdapterPage />)
 
     cy.get("[role='tab']").eq(1).should('have.attr', 'aria-selected', 'true')
