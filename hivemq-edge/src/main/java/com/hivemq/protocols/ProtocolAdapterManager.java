@@ -241,29 +241,7 @@ public class ProtocolAdapterManager {
             if (!output.startedSuccessfully) {
                 handleStartupError(protocolAdapterWrapper, output);
             } else {
-                if (protocolAdapterWrapper.getAdapter() instanceof PollingPerSubscriptionProtocolAdapter) {
-                    log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
-                    final PollingPerSubscriptionProtocolAdapter adapter =
-                            (PollingPerSubscriptionProtocolAdapter) protocolAdapterWrapper.getAdapter();
-                    adapter.getSubscriptions().forEach(adapterSubscription -> {
-                        final PerSubscriptionSampler sampler = new PerSubscriptionSampler(adapter,
-                                protocolAdapterWrapper.getConfigObject(),
-                                metricRegistry,
-                                objectMapper,
-                                moduleServices.adapterPublishService(),
-                                adapterSubscription);
-                        protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
-                    });
-                } else if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
-                    log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
-                    final SubscriptionSampler sampler =
-                            new SubscriptionSampler((PollingProtocolAdapter) protocolAdapterWrapper.getAdapter(),
-                                    protocolAdapterWrapper.getConfigObject(),
-                                    metricRegistry,
-                                    objectMapper,
-                                    moduleServices.adapterPublishService());
-                    protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
-                }
+                schedulePolling(protocolAdapterWrapper);
                 if (output.message != null) {
                     if (log.isTraceEnabled()) {
                         log.trace("Protocol-adapter \"{}\" started: {}.",
@@ -283,6 +261,32 @@ public class ProtocolAdapterManager {
             handleStartupError(protocolAdapterWrapper, output);
             return null;
         });
+    }
+
+    private void schedulePolling(@NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
+        if (protocolAdapterWrapper.getAdapter() instanceof PollingPerSubscriptionProtocolAdapter) {
+            log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
+            final PollingPerSubscriptionProtocolAdapter adapter =
+                    (PollingPerSubscriptionProtocolAdapter) protocolAdapterWrapper.getAdapter();
+            adapter.getSubscriptions().forEach(adapterSubscription -> {
+                final PerSubscriptionSampler sampler = new PerSubscriptionSampler(adapter,
+                        protocolAdapterWrapper.getConfigObject(),
+                        metricRegistry,
+                        objectMapper,
+                        moduleServices.adapterPublishService(),
+                        adapterSubscription);
+                protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
+            });
+        } else if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
+            log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
+            final SubscriptionSampler sampler =
+                    new SubscriptionSampler((PollingProtocolAdapter) protocolAdapterWrapper.getAdapter(),
+                            protocolAdapterWrapper.getConfigObject(),
+                            metricRegistry,
+                            objectMapper,
+                            moduleServices.adapterPublishService());
+            protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
+        }
     }
 
     public CompletableFuture<Void> stop(final @NotNull ProtocolAdapterWrapper protocolAdapter) {
