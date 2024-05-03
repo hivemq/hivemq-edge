@@ -18,11 +18,19 @@ package com.hivemq.api.resources.impl;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.model.capabilities.CapabilityList;
-import com.hivemq.api.model.components.*;
+import com.hivemq.api.model.components.EnvironmentProperties;
+import com.hivemq.api.model.components.ExtensionList;
+import com.hivemq.api.model.components.GatewayConfiguration;
+import com.hivemq.api.model.components.Link;
+import com.hivemq.api.model.components.LinkList;
+import com.hivemq.api.model.components.ModuleList;
+import com.hivemq.api.model.components.Notification;
+import com.hivemq.api.model.components.NotificationList;
 import com.hivemq.api.model.firstuse.FirstUseInformation;
 import com.hivemq.api.resources.FrontendApi;
 import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.api.utils.LoremIpsum;
+import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQCapabilityService;
@@ -50,6 +58,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
     private final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService;
     private final @NotNull HiveMQCapabilityService capabilityService;
     private final @NotNull SystemInformation systemInformation;
+    private final @NotNull HivemqId hivemqId;
 
     @Inject
     public FrontendResourceImpl(
@@ -58,13 +67,15 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
             final @NotNull ModulesAndExtensionsService modulesAndExtensionsService,
             final @NotNull HiveMQEdgeRemoteService hiveMQEdgeRemoteConfigurationService,
             final @NotNull HiveMQCapabilityService capabilityService,
-            final @NotNull SystemInformation systemInformation) {
+            final @NotNull SystemInformation systemInformation,
+            final @NotNull HivemqId hivemqId) {
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.modulesAndExtensionsService = modulesAndExtensionsService;
         this.hiveMQEdgeRemoteConfigurationService = hiveMQEdgeRemoteConfigurationService;
         this.capabilityService = capabilityService;
         this.systemInformation = systemInformation;
+        this.hivemqId = hivemqId;
     }
 
     @Override
@@ -78,7 +89,9 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
                 getDashboardCTAs(),
                 getResources(),
                 getModules(),
-                getExtensions());
+                getExtensions(),
+                hivemqId.get(),
+                true);
         return Response.ok(configuration).build();
     }
 
@@ -189,7 +202,6 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
                 String.valueOf(configurationService.gatewayConfiguration().isConfigurationExportEnabled()));
         return new EnvironmentProperties(env);
     }
-
 
 
 }
