@@ -91,7 +91,7 @@ public class FrontendResourceImpl extends AbstractApi implements FrontendApi {
                 getModules(),
                 getExtensions(),
                 hivemqId.get(),
-                true);
+                configurationService.usageTrackingConfiguration().isUsageTrackingEnabled());
         return Response.ok(configuration).build();
     }
 
