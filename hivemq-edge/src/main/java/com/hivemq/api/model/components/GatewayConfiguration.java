@@ -17,7 +17,6 @@ package com.hivemq.api.model.components;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.api.model.capabilities.CapabilityList;
 import com.hivemq.api.model.firstuse.FirstUseInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -29,39 +28,47 @@ public class GatewayConfiguration {
 
     @JsonProperty("environment")
     @Schema(description = "A map of properties relating to the installation", nullable = true)
-    private EnvironmentProperties environment;
+    private @NotNull EnvironmentProperties environment;
 
     @JsonProperty("cloudLink")
     @Schema(description = "A referral link to HiveMQ Cloud")
-    private Link cloudLink;
+    private @NotNull Link cloudLink;
 
     @JsonProperty("gitHubLink")
     @Schema(description = "A link to the GitHub Project")
-    private Link gitHubLink;
+    private @NotNull Link gitHubLink;
 
     @JsonProperty("documentationLink")
     @Schema(description = "A link to the documentation Project")
-    private Link documentationLink;
+    private @NotNull Link documentationLink;
 
     @JsonProperty("firstUseInformation")
     @Schema(description = "Information relating to the firstuse experience")
-    private FirstUseInformation firstUseInformation;
+    private @NotNull FirstUseInformation firstUseInformation;
 
     @JsonProperty("ctas")
     @Schema(description = "The calls main to action")
-    private LinkList ctas;
+    private @NotNull LinkList ctas;
 
     @JsonProperty("resources")
     @Schema(description = "A list of resources to render")
-    private LinkList resources;
+    private @NotNull LinkList resources;
 
     @JsonProperty("modules")
     @Schema(description = "The modules available for installation")
-    private ModuleList modules;
+    private @NotNull ModuleList modules;
 
     @JsonProperty("extensions")
     @Schema(description = "The extensions available for installation")
-    private ExtensionList extensions;
+    private @NotNull ExtensionList extensions;
+
+    @JsonProperty("hivemqId")
+    @Schema(description = "The current id of hivemq edge. Changes at restart.")
+    private @NotNull String hivemqId;
+
+    @JsonProperty("trackingAllowed")
+    @Schema(description = "Is the tracking of user actions allowed.")
+    private boolean trackingAllowed;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public GatewayConfiguration(
@@ -73,7 +80,9 @@ public class GatewayConfiguration {
             @JsonProperty("ctas") final @NotNull LinkList ctas,
             @JsonProperty("resources") final @NotNull LinkList resources,
             @JsonProperty("modules") final @NotNull ModuleList modules,
-            @JsonProperty("extensions") final @NotNull ExtensionList extensions) {
+            @JsonProperty("extensions") final @NotNull ExtensionList extensions,
+            @JsonProperty("hivemqId") final @NotNull String hivemqId,
+            @JsonProperty("trackingAllowed")final boolean trackingAllowed) {
         this.environment = environment;
         this.cloudLink = cloudLink;
         this.gitHubLink = gitHubLink;
@@ -83,41 +92,43 @@ public class GatewayConfiguration {
         this.resources = resources;
         this.modules = modules;
         this.extensions = extensions;
+        this.hivemqId = hivemqId;
+        this.trackingAllowed = trackingAllowed;
     }
 
-    public EnvironmentProperties getEnvironment() {
+    public @NotNull EnvironmentProperties getEnvironment() {
         return environment;
     }
 
-    public Link getCloudLink() {
+    public @NotNull Link getCloudLink() {
         return cloudLink;
     }
 
-    public Link getGitHubLink() {
+    public @NotNull Link getGitHubLink() {
         return gitHubLink;
     }
 
-    public Link getDocumentationLink() {
+    public @NotNull Link getDocumentationLink() {
         return documentationLink;
     }
 
-    public FirstUseInformation getFirstUseInformation() {
+    public @NotNull FirstUseInformation getFirstUseInformation() {
         return firstUseInformation;
     }
 
-    public LinkList getCtas() {
+    public @NotNull LinkList getCtas() {
         return ctas;
     }
 
-    public LinkList getResources() {
+    public @NotNull LinkList getResources() {
         return resources;
     }
 
-    public ModuleList getModules() {
+    public @NotNull ModuleList getModules() {
         return modules;
     }
 
-    public ExtensionList getExtensions() {
+    public @NotNull ExtensionList getExtensions() {
         return extensions;
     }
 }
