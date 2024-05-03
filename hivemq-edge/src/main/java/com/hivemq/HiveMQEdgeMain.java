@@ -158,7 +158,7 @@ public class HiveMQEdgeMain {
                             injector.services().modulesAndExtensionsService());
             injector.commercialModuleLoaderDiscovery().afterHiveMQStart(afterHiveMQStartBootstrapService);
         } catch (Exception e) {
-            log.warn("Error on bootstraping persistences.", e);
+            log.warn("Error on bootstrapping modules:", e);
             throw new HiveMQEdgeStartupException(e);
         }
     }
