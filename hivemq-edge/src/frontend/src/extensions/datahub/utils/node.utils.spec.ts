@@ -25,13 +25,13 @@ describe('getNodePayload', () => {
     {
       type: DataHubNodeType.TOPIC_FILTER,
       expected: {
-        topics: ['root/test1', 'root/test2'],
+        topics: ['topic/example/1'],
       },
     },
     {
       type: DataHubNodeType.CLIENT_FILTER,
       expected: {
-        clients: ['client10', 'client20', 'client30'],
+        clients: ['client/example/1'],
       },
     },
     {

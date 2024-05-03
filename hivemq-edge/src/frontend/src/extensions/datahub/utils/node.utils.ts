@@ -27,12 +27,12 @@ export const getNodeId = (stub = 'node') => `${stub}_${uuidv4()}`
 export const getNodePayload = (type: string): DataHubNodeData => {
   if (type === DataHubNodeType.TOPIC_FILTER) {
     return {
-      topics: ['root/test1', 'root/test2'],
+      topics: ['topic/example/1'],
     } as TopicFilterData
   }
   if (type === DataHubNodeType.CLIENT_FILTER) {
     return {
-      clients: ['client10', 'client20', 'client30'],
+      clients: ['client/example/1'],
     } as ClientFilterData
   }
 
