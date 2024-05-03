@@ -97,7 +97,6 @@ public class ProtocolAdapterManager {
             final @NotNull EventService eventService,
             final @NotNull VersionProvider versionProvider,
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
-            final @NotNull VersionProvider versionProvider,
             final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;

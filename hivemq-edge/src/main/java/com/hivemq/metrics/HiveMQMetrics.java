@@ -18,6 +18,8 @@ package com.hivemq.metrics;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 
+import static com.hivemq.edge.modules.adapters.ProtocolAdapterConstants.PROTOCOL_ADAPTER_PREFIX;
+
 /**
  * This class holds a constant {@link HiveMQMetric} for every metric which is provided by HiveMQ
  */

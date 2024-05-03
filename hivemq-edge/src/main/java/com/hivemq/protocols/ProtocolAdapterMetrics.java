@@ -7,8 +7,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hivemq.edge.modules.adapters.ProtocolAdapterConstants.PROTOCOL_ADAPTER_PREFIX;
 import static com.hivemq.metrics.HiveMQMetrics.ADAPTERS_CURRENT;
-import static com.hivemq.metrics.HiveMQMetrics.PROTOCOL_ADAPTER_PREFIX;
 
 @Singleton
 public class ProtocolAdapterMetrics {
