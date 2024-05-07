@@ -75,4 +75,31 @@ describe('AdapterInstanceDrawer', () => {
     cy.checkAccessibility()
     cy.percySnapshot('Component: AdapterInstanceDrawer')
   })
+
+  describe.only('Custom Templates', () => {
+    it('should render expandable array items', () => {
+      cy.mountWithProviders(
+        <AdapterInstanceDrawer
+          adapterType={mockProtocolAdapter.id}
+          isNewAdapter={true}
+          isOpen={true}
+          isSubmitting={false}
+          onSubmit={cy.stub()}
+          onClose={cy.stub()}
+        />
+      )
+
+      cy.get("[role='tab']").eq(1).as('subscription')
+      cy.get('@subscription').should('have.text', 'Subscription')
+      cy.get('@subscription').click()
+      cy.get('button').contains('Add Item').click()
+
+      cy.get('[role="listitem"]').eq(0).as('firstItem')
+      cy.get('@firstItem').find('h5').should('have.text', 'Subscriptions')
+      cy.get('@firstItem').find('label').eq(0).should('contain.text', 'Destination Topic')
+      cy.get('@firstItem').find('button[aria-label="Collapse Item"]').click()
+      cy.get('@firstItem').find('h5').should('have.text', 'subscriptions-0')
+      cy.get('@firstItem').find('label').should('not.exist')
+    })
+  })
 })
