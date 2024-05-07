@@ -230,6 +230,9 @@ public class BridgeMqttClient {
                 .send();
 
         connectFuture.handleAsync((mqtt5ConnAck, throwable) -> {
+            if(stopped.get()){
+                return null;
+            }
 
             if (throwable != null) {
                 log.error("Not able to connect bridge {}", bridge.getId(), throwable);
