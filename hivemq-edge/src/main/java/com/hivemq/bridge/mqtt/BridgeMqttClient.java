@@ -215,7 +215,7 @@ public class BridgeMqttClient {
     }
 
     public @NotNull ListenableFuture<Void> start() {
-
+        log.debug("Starting bridge '{}'", bridge.getId());
         final SettableFuture<Void> resultFuture = SettableFuture.create();
         stopped.set(false);
 
