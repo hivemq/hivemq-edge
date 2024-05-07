@@ -4,7 +4,7 @@ import { expect } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { MOCK_ADAPTER_OPC_UA, MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
@@ -68,14 +68,25 @@ const customHandlers = (
   adapters?: Array<Adapter> | undefined,
   bridges?: Array<Bridge> | undefined
 ) => [
-  rest.get('**/protocol-adapters/types', (_, res, ctx) => {
-    return types ? res(ctx.json<ProtocolAdaptersList>({ items: types }), ctx.status(200)) : res(ctx.status(500))
+  http.get('**/protocol-adapters/types', () => {
+    return types
+      ? HttpResponse.json<ProtocolAdaptersList>({ items: types }, { status: 200 })
+      : new HttpResponse(null, { status: 500 })
   }),
-  rest.get('**/protocol-adapters/adapters', (_, res, ctx) => {
-    return adapters ? res(ctx.json<AdaptersList>({ items: adapters }), ctx.status(200)) : res(ctx.status(500))
+
+  http.get('**/protocol-adapters/adapters', () => {
+    return adapters
+      ? HttpResponse.json<AdaptersList>({ items: adapters }, { status: 200 })
+      : new HttpResponse(null, {
+          status: 500,
+        })
   }),
-  rest.get('**/management/bridges', (_, res, ctx) => {
-    return bridges ? res(ctx.json<BridgeList>({ items: bridges }), ctx.status(200)) : res(ctx.status(500))
+  http.get('**/management/bridges', () => {
+    return bridges
+      ? HttpResponse.json<BridgeList>({ items: bridges }, { status: 200 })
+      : new HttpResponse(null, {
+          status: 500,
+        })
   }),
 ]
 
@@ -98,7 +109,7 @@ describe('useGetEdgeTopics', () => {
 
   it("should return bridge's topics", async () => {
     server.use(...customHandlers([], [], [mockBridge]))
-    server.printHandlers()
+    server.listHandlers()
 
     const { result } = renderHook(() => useGetEdgeTopics(), { wrapper })
     await waitFor(() => {
@@ -114,7 +125,7 @@ describe('useGetEdgeTopics', () => {
 
   it("should return bridge's topics for publishing and subscribing", async () => {
     server.use(...customHandlers([], [], [mockBridge]))
-    server.printHandlers()
+    server.listHandlers()
 
     const { result } = renderHook(() => useGetEdgeTopics({ publishOnly: false }), { wrapper })
     await waitFor(() => {
@@ -136,7 +147,7 @@ describe('useGetEdgeTopics', () => {
         [mockBridge]
       )
     )
-    server.printHandlers()
+    server.listHandlers()
 
     const { result } = renderHook(() => useGetEdgeTopics(), { wrapper })
     await waitFor(() => {

@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { RJSFSchema } from '@rjsf/utils'
 
 import { type Schema, SchemaList } from '@/api/__generated__'
@@ -34,12 +34,12 @@ export const mockSchemaTempHumidity: Schema = {
 }
 
 export const handlers = [
-  rest.get('*/data-hub/schemas', (_, res, ctx) => {
-    return res(
-      ctx.json<SchemaList>({
+  http.get('*/data-hub/schemas', () => {
+    return HttpResponse.json<SchemaList>(
+      {
         items: [mockSchemaTempHumidity],
-      }),
-      ctx.status(200)
+      },
+      { status: 200 }
     )
   }),
 ]

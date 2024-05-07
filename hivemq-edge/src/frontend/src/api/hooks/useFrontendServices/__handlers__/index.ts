@@ -1,5 +1,5 @@
 import { Capability, CapabilityList, GatewayConfiguration, Notification, NotificationList } from '@/api/__generated__'
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 
 const lorem =
   'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren,'
@@ -135,15 +135,15 @@ export const MOCK_CAPABILITIES: CapabilityList = {
 }
 
 export const handlers = [
-  rest.get('**/frontend/configuration', (_, res, ctx) => {
-    return res(ctx.json<GatewayConfiguration>(mockGatewayConfiguration), ctx.status(200))
+  http.get('**/frontend/configuration', () => {
+    return HttpResponse.json<GatewayConfiguration>(mockGatewayConfiguration, { status: 200 })
   }),
 
-  rest.get('**/frontend/notifications', (_, res, ctx) => {
-    return res(ctx.json<NotificationList>({ items: MOCK_NOTIFICATIONS }), ctx.status(200))
+  http.get('**/frontend/notifications', () => {
+    return HttpResponse.json<NotificationList>({ items: MOCK_NOTIFICATIONS }, { status: 200 })
   }),
 
-  rest.get('**/frontend/capabilities', (_, res, ctx) => {
-    return res(ctx.json<CapabilityList>(MOCK_CAPABILITIES), ctx.status(200))
+  http.get('**/frontend/capabilities', () => {
+    return HttpResponse.json<CapabilityList>(MOCK_CAPABILITIES, { status: 200 })
   }),
 ]

@@ -1,7 +1,7 @@
-import { ApiBearerToken, UsernamePasswordCredentials } from '../../../__generated__'
+import { ApiBearerToken, UsernamePasswordCredentials } from '@/api/__generated__'
 // @ts-ignore an import is not working
 import { CyHttpMessages } from 'cypress/types/net-stubbing'
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 
 const TOKEN =
   'eyJraWQiOiIwMDAwMSIsImFsZyI6IlJTMjU2In0.' +
@@ -26,13 +26,12 @@ export const mockAuthApi = (credentials: UsernamePasswordCredentials) => {
 }
 
 export const handlers = [
-  rest.post('*/auth/authenticate', (_, res, ctx) => {
-    return res(
-      ctx.json<ApiBearerToken>({
+  http.post('*/auth/authenticate', () => {
+    return HttpResponse.json<ApiBearerToken>(
+      {
         token: TOKEN,
-      }),
-
-      ctx.status(200)
+      },
+      { status: 200 }
     )
   }),
 ]

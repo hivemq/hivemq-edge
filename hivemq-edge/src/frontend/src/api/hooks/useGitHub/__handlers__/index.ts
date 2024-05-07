@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { GitHubReleases } from '../types.ts'
 
 export const MOCK_GITHUB_RELEASE: GitHubReleases = {
@@ -6,7 +6,7 @@ export const MOCK_GITHUB_RELEASE: GitHubReleases = {
   html_url: 'http://localhost.com',
 }
 export const handlers = [
-  rest.get('https://api.github.com/repos/hivemq/hivemq-edge/releases', (_, res, ctx) => {
-    return res(ctx.json<GitHubReleases[]>([MOCK_GITHUB_RELEASE]), ctx.status(200))
+  http.get('https://api.github.com/repos/hivemq/hivemq-edge/releases', () => {
+    return HttpResponse.json<GitHubReleases[]>([MOCK_GITHUB_RELEASE], { status: 200 })
   }),
 ]

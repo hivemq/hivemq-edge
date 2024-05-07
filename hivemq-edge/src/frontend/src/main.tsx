@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import MainApp from './modules/App/MainApp.tsx'
 import { handlers } from './__test-utils__/msw/handlers.ts'
-import { setupWorker } from 'msw'
+import { setupWorker } from 'msw/browser'
 
 import './config/i18n.config'
 
@@ -11,8 +11,7 @@ if (import.meta.env.MODE === 'development') {
 
   if (import.meta.env.VITE_FLAG_MOCK_SERVER === 'true') {
     const worker = setupWorker(...handlers)
-    worker.start({ onUnhandledRequest: 'bypass' })
-    worker.printHandlers()
+    worker.start({ onUnhandledRequest: 'bypass' }).then(() => worker.listHandlers())
   }
 }
 

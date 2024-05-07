@@ -1,4 +1,4 @@
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { Status, StatusList } from '@/api/__generated__'
 import { MOCK_ADAPTER_ID, MOCK_BRIDGE_ID } from '@/__test-utils__/mocks.ts'
 
@@ -15,21 +15,21 @@ export const mockAdapterConnectionStatus: Status = {
 }
 
 export const handlers = [
-  rest.get('*/management/bridges/status', (_, res, ctx) => {
-    return res(
-      ctx.json<StatusList>({
+  http.get('*/management/bridges/status', () => {
+    return HttpResponse.json<StatusList>(
+      {
         items: [mockBridgeConnectionStatus],
-      }),
-      ctx.status(200)
+      },
+      { status: 200 }
     )
   }),
 
-  rest.get('*/management/protocol-adapters/status', (_, res, ctx) => {
-    return res(
-      ctx.json<StatusList>({
+  http.get('*/management/protocol-adapters/status', () => {
+    return HttpResponse.json<StatusList>(
+      {
         items: [mockBridgeConnectionStatus],
-      }),
-      ctx.status(200)
+      },
+      { status: 200 }
     )
   }),
 ]

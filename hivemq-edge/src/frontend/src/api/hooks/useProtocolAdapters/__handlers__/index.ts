@@ -1,5 +1,5 @@
 import { Adapter, AdaptersList, JsonNode, ProtocolAdapter, ProtocolAdaptersList, Status } from '@/api/__generated__'
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
@@ -100,49 +100,33 @@ export const mockAdapter: Adapter = {
 }
 
 export const handlers = [
-  rest.get('**/protocol-adapters/types', (_, res, ctx) => {
-    return res(ctx.json<ProtocolAdaptersList>({ items: [mockProtocolAdapter] }), ctx.status(200))
+  http.get('**/protocol-adapters/types', () => {
+    return HttpResponse.json<ProtocolAdaptersList>({ items: [mockProtocolAdapter] }, { status: 200 })
   }),
 
-  rest.get('**/protocol-adapters/adapters', (_, res, ctx) => {
-    return res(ctx.json<AdaptersList>({ items: [mockAdapter] }), ctx.status(200))
+  http.get('**/protocol-adapters/adapters', () => {
+    return HttpResponse.json<AdaptersList>({ items: [mockAdapter] }, { status: 200 })
   }),
 
-  rest.get('**/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
+  http.get('**/protocol-adapters/adapters/:adapterType', () => {
     // @ts-ignore
     const { adapterType } = req.params
-    return res(ctx.json<Adapter>({ ...mockAdapter, id: adapterType }), ctx.status(200))
+    return HttpResponse.json<Adapter>({ ...mockAdapter, id: adapterType }, { status: 200 })
   }),
 
-  rest.post('**/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { adapterType } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return res(ctx.json<any>({}), ctx.status(200))
+  http.post('**/protocol-adapters/adapters/:adapterType', () => {
+    return HttpResponse.json({}, { status: 200 })
   }),
 
-  rest.delete('**/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { adapterType } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return res(ctx.json<any>({}), ctx.status(200))
+  http.delete('**/protocol-adapters/adapters/:adapterType', () => {
+    return HttpResponse.json({}, { status: 200 })
   }),
 
-  rest.put('**/protocol-adapters/adapters/:adapterId/status', (_, res, ctx) => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { adapterType } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return res(ctx.json<any>({}), ctx.status(200))
+  http.put('**/protocol-adapters/adapters/:adapterId/status', () => {
+    return HttpResponse.json({}, { status: 200 })
   }),
 
-  rest.put('**/protocol-adapters/adapters/:adapterType', (_, res, ctx) => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { adapterType } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return res(ctx.json<any>({}), ctx.status(200))
+  http.put('**/protocol-adapters/adapters/:adapterType', () => {
+    return HttpResponse.json({}, { status: 200 })
   }),
 ]

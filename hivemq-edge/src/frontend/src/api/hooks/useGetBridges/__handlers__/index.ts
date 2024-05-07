@@ -1,5 +1,5 @@
 import { Bridge, BridgeList, Status } from '@/api/__generated__'
-import { rest } from 'msw'
+import { http, HttpResponse } from 'msw'
 import { MOCK_TOPIC_ALL, MOCK_TOPIC_BRIDGE_DESTINATION, MOCK_TOPIC_REF1 } from '@/__test-utils__/react-flow/topics.ts'
 
 export const mockBridgeId = 'bridge-id-01'
@@ -32,33 +32,24 @@ export const mockBridge: Bridge = {
 }
 
 export const handlers = [
-  rest.get('*/bridges', (_, res, ctx) => {
-    return res(ctx.json<BridgeList>({ items: [mockBridge] }), ctx.status(200))
+  http.get('*/bridges', () => {
+    return HttpResponse.json<BridgeList>({ items: [mockBridge] }, { status: 200 })
   }),
 
-  rest.get('*/bridges/:bridgeId', (req, res, ctx) => {
-    const { bridgeId } = req.params
-    return res(ctx.json<Bridge>({ ...mockBridge, id: bridgeId as string }), ctx.status(200))
+  http.get('*/bridges/:bridgeId', ({ params }) => {
+    const { bridgeId } = params
+    return HttpResponse.json<Bridge>({ ...mockBridge, id: bridgeId as string }, { status: 200 })
   }),
 
-  rest.post('*/bridges', (_, res, ctx) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return res(ctx.json<any>({}), ctx.status(200))
+  http.post('*/bridges', () => {
+    return HttpResponse.json({}, { status: 200 })
   }),
 
-  rest.delete('*/bridges/:bridgeId', (req, res, ctx) => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { bridgeId } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return res(ctx.json<any>({}), ctx.status(200))
+  http.delete('*/bridges/:bridgeId', () => {
+    return HttpResponse.json({}, { status: 200 })
   }),
 
-  rest.put('*/bridges/:bridgeId', (req, res, ctx) => {
-    // @ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { bridgeId } = req.params
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return res(ctx.json<any>({}), ctx.status(200))
+  http.put('*/bridges/:bridgeId', () => {
+    return HttpResponse.json({}, { status: 200 })
   }),
 ]
