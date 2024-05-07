@@ -17,7 +17,7 @@ describe('AdapterInstanceDrawer', () => {
         adapterType={mockProtocolAdapter.id}
         isOpen={true}
         isSubmitting={false}
-        onSubmit={cy.stub().as('onSubmit')}
+        onSubmit={cy.stub()}
         onClose={cy.stub().as('onClose')}
       />
     )
@@ -34,7 +34,7 @@ describe('AdapterInstanceDrawer', () => {
         isOpen={true}
         isSubmitting={false}
         onSubmit={cy.stub().as('onSubmit')}
-        onClose={cy.stub().as('onClose')}
+        onClose={cy.stub()}
       />
     )
     cy.get('button[type="submit"]').click({ force: true })
@@ -49,7 +49,7 @@ describe('AdapterInstanceDrawer', () => {
         isOpen={true}
         isSubmitting={false}
         onSubmit={cy.stub().as('onSubmit')}
-        onClose={cy.stub().as('onClose')}
+        onClose={cy.stub()}
       />
     )
 
@@ -68,8 +68,8 @@ describe('AdapterInstanceDrawer', () => {
         isNewAdapter={true}
         isOpen={true}
         isSubmitting={false}
-        onSubmit={cy.stub().as('onSubmit')}
-        onClose={cy.stub().as('onClose')}
+        onSubmit={cy.stub()}
+        onClose={cy.stub()}
       />
     )
     cy.checkAccessibility()
