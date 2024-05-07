@@ -59,8 +59,9 @@ More Protocol adapters will be added to the project over time.
 
 * OPC UA
 * Modbus
-* S7
-* ADS
+* Siemens S7
+* Beckhoff ADS
+* Allen-Bradley Ethernet/IP
 * HTTP
 * and many more
 
