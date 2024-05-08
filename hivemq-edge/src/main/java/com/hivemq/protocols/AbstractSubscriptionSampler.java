@@ -14,10 +14,14 @@ import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload
 import com.hivemq.edge.modules.adapters.data.TagSample;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelperImpl;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.EventUtils;
+import com.hivemq.edge.modules.api.events.model.EventBuilder;
+import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -35,6 +39,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPollingSampler {
@@ -45,6 +51,8 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     private final long period;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
+    private final @NotNull EventService eventService;
+    private final @NotNull Supplier<EventBuilder> eventBuilderSupplier;
     private final @NotNull TimeUnit unit;
     private final int maxErrorsBeforeRemoval;
     protected @NotNull AtomicBoolean closed = new AtomicBoolean(false);
@@ -52,16 +60,19 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     private final @NotNull UUID uuid;
     private final @NotNull Date created;
     private @Nullable ScheduledFuture<?> future;
-    protected final @NotNull ProtocolAdapter protocolAdapter;
+    protected final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapter;
     private final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
     private final @NotNull CustomConfig customConfig;
+    private final @NotNull AtomicInteger publishCount = new AtomicInteger(0);
 
     public AbstractSubscriptionSampler(
-            final @NotNull ProtocolAdapter protocolAdapter,
+            final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapter,
             final @NotNull CustomConfig customConfig,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterPublishService adapterPublishService) {
+            final @NotNull ProtocolAdapterPublishService adapterPublishService,
+            final @NotNull EventService eventService,
+            final @NotNull Supplier<EventBuilder> eventBuilderSupplier) {
         this.protocolAdapter = protocolAdapter;
         this.customConfig = customConfig;
         this.adapterId = protocolAdapter.getId();
@@ -69,6 +80,8 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         this.period = Math.max(customConfig.getPollingIntervalMillis(), 10);
         this.objectMapper = objectMapper;
         this.adapterPublishService = adapterPublishService;
+        this.eventService = eventService;
+        this.eventBuilderSupplier = eventBuilderSupplier;
         this.unit = TimeUnit.MILLISECONDS;
         this.maxErrorsBeforeRemoval = customConfig.getMaxPollingErrorsBeforeRemoval();
         this.uuid = UUID.randomUUID();
@@ -98,6 +111,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             boolean continuing) {
         // TODO
         // protocolAdapter.setErrorConnectionStatus(exception, null);
+        protocolAdapter.setErrorConnectionStatus(exception, null);
         if (!continuing) {
             protocolAdapter.stop();
         }
@@ -126,14 +140,14 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                 final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
                 publishFuture.thenAccept(publishReturnCode -> {
                     protocolAdapterMetricsHelper.incrementReadPublishSuccess();
-                    //TODO
-                            /*
-                            if(publishCount.incrementAndGet() == 1){
-                                eventService.fireEvent(eventBuilder(EventImpl.SEVERITY.INFO).
-                                        withMessage(String.format("Adapter took first sample to be published to '%s'", sample.getTopic())).
-                                        withPayload(EventUtils.generateJsonPayload(json)).build());
-                            }
-                            */
+                    if (publishCount.incrementAndGet() == 1) {
+                        eventService.fireEvent(eventBuilderSupplier.get()
+                                .withSeverity(EventImpl.SEVERITY.INFO)
+                                .withMessage(String.format("Adapter took first sample to be published to '%s'",
+                                        sample.getSubscription().getDestination()))
+                                .withPayload(EventUtils.generateJsonPayload(json))
+                                .build());
+                    }
                 }).exceptionally(throwable -> {
                     protocolAdapterMetricsHelper.incrementReadPublishFailure();
                     log.warn("Error publishing adapter payload", throwable);
@@ -207,6 +221,10 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         return payload;
     }
 
+    @Override
+    public @NotNull ProtocolAdapter getAdapter() {
+        return protocolAdapter;
+    }
 
     @Override
     public long getInitialDelay() {

@@ -197,13 +197,13 @@ public class ProtocolAdapterManager {
         }
     }
 
-    public ProtocolAdapterFactory getProtocolAdapterFactory(final @NotNull String protocolAdapterType) {
+    public @NotNull ProtocolAdapterFactory getProtocolAdapterFactory(final @NotNull String protocolAdapterType) {
         Preconditions.checkNotNull(protocolAdapterType);
         final ProtocolAdapterFactory<?> protocolAdapterFactory = factoryMap.get(protocolAdapterType);
         return protocolAdapterFactory;
     }
 
-    public CompletableFuture<Void> start(final @NotNull String protocolAdapterId) {
+    public @NotNull CompletableFuture<Void> start(final @NotNull String protocolAdapterId) {
         Preconditions.checkNotNull(protocolAdapterId);
         Optional<ProtocolAdapterWrapper> adapterOptional = getAdapterById(protocolAdapterId);
         if (!adapterOptional.isPresent()) {
@@ -213,7 +213,7 @@ public class ProtocolAdapterManager {
         }
     }
 
-    public CompletableFuture<Void> stop(final @NotNull String protocolAdapterId) {
+    public @NotNull CompletableFuture<Void> stop(final @NotNull String protocolAdapterId) {
         Preconditions.checkNotNull(protocolAdapterId);
         Optional<ProtocolAdapterWrapper> adapterOptional = getAdapterById(protocolAdapterId);
         if (!adapterOptional.isPresent()) {
@@ -268,28 +268,35 @@ public class ProtocolAdapterManager {
             log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
             final PollingPerSubscriptionProtocolAdapter adapter =
                     (PollingPerSubscriptionProtocolAdapter) protocolAdapterWrapper.getAdapter();
+
             adapter.getSubscriptions().forEach(adapterSubscription -> {
-                final PerSubscriptionSampler sampler = new PerSubscriptionSampler(adapter,
+                //noinspection unchecked this is safe as we literally make a check on the adapter class before
+                final PerSubscriptionSampler sampler = new PerSubscriptionSampler(protocolAdapterWrapper,
                         protocolAdapterWrapper.getConfigObject(),
                         metricRegistry,
                         objectMapper,
                         moduleServices.adapterPublishService(),
-                        adapterSubscription);
+                        adapterSubscription,
+                        eventService,
+                        () -> eventBuilder(adapter));
                 protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
             });
         } else if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
             log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
-            final SubscriptionSampler sampler =
-                    new SubscriptionSampler((PollingProtocolAdapter) protocolAdapterWrapper.getAdapter(),
-                            protocolAdapterWrapper.getConfigObject(),
-                            metricRegistry,
-                            objectMapper,
-                            moduleServices.adapterPublishService());
+            final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
+            //noinspection unchecked this is safe as we literally make a check on the adapter class before
+            final SubscriptionSampler sampler = new SubscriptionSampler(protocolAdapterWrapper,
+                    protocolAdapterWrapper.getConfigObject(),
+                    metricRegistry,
+                    objectMapper,
+                    moduleServices.adapterPublishService(),
+                    eventService,
+                    ()->eventBuilder(adapter));
             protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
         }
     }
 
-    public CompletableFuture<Void> stop(final @NotNull ProtocolAdapterWrapper protocolAdapter) {
+    public @NotNull CompletableFuture<Void> stop(final @NotNull ProtocolAdapterWrapper protocolAdapter) {
         Preconditions.checkNotNull(protocolAdapter);
         if (log.isInfoEnabled()) {
             log.info("Stopping protocol-adapter \"{}\".", protocolAdapter.getId());
@@ -324,7 +331,8 @@ public class ProtocolAdapterManager {
             final @NotNull ProtocolAdapter protocolAdapter, @NotNull final ProtocolAdapterStartOutputImpl output) {
         if (log.isWarnEnabled()) {
             log.warn("Protocol-adapter \"{}\" could not be started, reason: {}",
-                    protocolAdapter.getId(), output.message,
+                    protocolAdapter.getId(),
+                    output.message,
                     output.getThrowable());
         }
         HiveMQEdgeRemoteEvent adapterCreatedEvent =
@@ -333,7 +341,7 @@ public class ProtocolAdapterManager {
         remoteService.fireUsageEvent(adapterCreatedEvent);
     }
 
-    public synchronized CompletableFuture<Void> addAdapter(
+    public synchronized @NotNull CompletableFuture<Void> addAdapter(
             final @NotNull String adapterType,
             final @NotNull String adapterId,
             final @NotNull Map<String, Object> config) {
@@ -349,7 +357,7 @@ public class ProtocolAdapterManager {
         return addAdapterAndStartInRuntime(adapterType, config);
     }
 
-    public boolean deleteAdapter(final String id) {
+    public boolean deleteAdapter(final @NotNull String id) {
         Preconditions.checkNotNull(id);
         Optional<ProtocolAdapterWrapper> adapterInstance = getAdapterById(id);
         if (adapterInstance.isPresent()) {
@@ -395,13 +403,13 @@ public class ProtocolAdapterManager {
         return false;
     }
 
-    public Optional<ProtocolAdapterWrapper> getAdapterById(final String id) {
+    public @NotNull Optional<ProtocolAdapterWrapper> getAdapterById(final @NotNull String id) {
         Preconditions.checkNotNull(id);
         Map<String, ProtocolAdapterWrapper> adapters = getProtocolAdapters();
         return Optional.ofNullable(adapters.get(id));
     }
 
-    public Optional<ProtocolAdapterInformation> getAdapterTypeById(final String typeId) {
+    public @NotNull Optional<ProtocolAdapterInformation> getAdapterTypeById(final @NotNull String typeId) {
         Preconditions.checkNotNull(typeId);
         ProtocolAdapterInformation information = getAllAvailableAdapterTypes().get(typeId);
         return Optional.ofNullable(information);
@@ -481,7 +489,7 @@ public class ProtocolAdapterManager {
         }
     }
 
-    protected List<Map> getAdapterListForType(final String adapterType) {
+    protected @NotNull List<Map> getAdapterListForType(final @NotNull String adapterType) {
 
         Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
         List<Map> adapterList = null;
@@ -579,7 +587,7 @@ public class ProtocolAdapterManager {
             this.message = errorMessage;
         }
 
-        public Throwable getThrowable() {
+        public @NotNull Throwable getThrowable() {
             return throwable;
         }
 
@@ -606,7 +614,7 @@ public class ProtocolAdapterManager {
         }
     }
 
-    protected EventBuilder eventBuilder(
+    protected @NotNull EventBuilder eventBuilder(
             final @NotNull EventImpl.SEVERITY severity, final @NotNull ProtocolAdapter adapter) {
         Preconditions.checkNotNull(severity);
         Preconditions.checkNotNull(adapter);
@@ -614,6 +622,14 @@ public class ProtocolAdapterManager {
         builder.withTimestamp(System.currentTimeMillis());
         builder.withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER, adapter.getId()));
         builder.withSeverity(severity);
+        return builder;
+    }
+
+    protected @NotNull EventBuilder eventBuilder(final @NotNull ProtocolAdapter adapter) {
+        Preconditions.checkNotNull(adapter);
+        EventBuilder builder = new EventBuilderImpl();
+        builder.withTimestamp(System.currentTimeMillis());
+        builder.withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER, adapter.getId()));
         return builder;
     }
 }

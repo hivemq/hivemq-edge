@@ -27,10 +27,8 @@ import com.hivemq.edge.modules.adapters.model.NodeType;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
 import com.hivemq.edge.modules.config.AdapterSubscription;
@@ -39,11 +37,11 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
@@ -52,13 +50,11 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ModbusAdapterConfig adapterConfig;
-    private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull ModuleServices moduleServices;
     private final @NotNull AdapterFactories adapterFactories;
 
     private volatile @Nullable IModbusClient modbusClient;
-    private @Nullable Map<ModbusAdapterConfig.AdapterSubscription, ProtocolAdapterDataSample> lastSamples =
+    private final @Nullable Map<ModbusAdapterConfig.AdapterSubscription, ProtocolAdapterDataSample> lastSamples =
             new HashMap<>();
 
     public ModbusProtocolAdapter(
@@ -67,9 +63,7 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
             final @NotNull ProtocolAdapterInput<ModbusAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = adapterConfig;
-        this.version = input.getVersion();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.moduleServices = input.moduleServices();
         this.adapterFactories = input.adapterFactories();
     }
 
@@ -109,7 +103,7 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
 
     @Override
     public @NotNull List<? extends AdapterSubscription> getSubscriptions() {
-        return adapterConfig.getSubscriptions().stream().filter(sub -> sub.getAddressRange() != null).collect(Collectors.toList());
+        return new ArrayList<>(adapterConfig.getSubscriptions());
     }
 
 
@@ -196,8 +190,8 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
     }
 
 
-    // TODO
-    protected void onSamplerClosed(final @NotNull ProtocolAdapterPollingSampler sampler) {
+    @Override
+    public void onSamplerClosed() {
         try {
             if (log.isTraceEnabled()) {
                 log.trace("Sampler was closed by framework, disconnect Modbus device.");

@@ -19,9 +19,11 @@ import com.google.common.base.Preconditions;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.edge.modules.adapters.PollingPerSubscriptionProtocolAdapter;
+import com.hivemq.edge.modules.adapters.PollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
@@ -125,12 +127,12 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     }
 
 
-    public Optional<ProtocolAdapterPollingSampler> getPollingJob(final @NotNull UUID id) {
+    public @NotNull Optional<ProtocolAdapterPollingSampler> getPollingJob(final @NotNull UUID id) {
         Preconditions.checkNotNull(id);
         return activePollers.keySet().stream().filter(p -> p.getId().equals(id)).findAny();
     }
 
-    public List<ProtocolAdapterPollingSampler> getPollingJobsForAdapter(final @NotNull String adapterId) {
+    public @NotNull List<ProtocolAdapterPollingSampler> getPollingJobsForAdapter(final @NotNull String adapterId) {
         Preconditions.checkNotNull(adapterId);
         return activePollers.keySet()
                 .stream()
@@ -162,21 +164,27 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     }
                 }
             }
+            final ProtocolAdapter protocolAdapter = sampler.getAdapter();
+            if (protocolAdapter instanceof PollingProtocolAdapter) {
+                ((PollingProtocolAdapter) protocolAdapter).onSamplerClosed();
+            } else if (protocolAdapter instanceof PollingPerSubscriptionProtocolAdapter) {
+                ((PollingPerSubscriptionProtocolAdapter) protocolAdapter).onSamplerClosed();
+            }
         }
     }
 
     @Override
-    public List<ProtocolAdapterPollingSampler> getActiveProcesses() {
+    public @NotNull List<ProtocolAdapterPollingSampler> getActiveProcesses() {
         return List.copyOf(activePollers.keySet());
     }
 
     @Override
-    public int currentErrorCount(final ProtocolAdapterPollingSampler pollingJob) {
+    public int currentErrorCount(final @NotNull ProtocolAdapterPollingSampler pollingJob) {
         return activePollers.get(pollingJob).applicationErrorCount.get();
     }
 
     public void stopAllPolling() {
-        activePollers.keySet().stream().forEach(this::stopPolling);
+        activePollers.keySet().forEach(this::stopPolling);
     }
 
     private static long getBackoff(int errorCount, long max, boolean addFuzziness) {

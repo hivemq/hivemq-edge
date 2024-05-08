@@ -17,7 +17,6 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
@@ -50,11 +49,6 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
     @Override
     public @NotNull ScheduledExecutorService scheduledExecutorService() {
         return delegate.scheduledExecutorService();
-    }
-
-    @Override
-    public @NotNull ProtocolAdapterPollingService protocolAdapterPollingService() {
-        return delegate.protocolAdapterPollingService();
     }
 
     @Override

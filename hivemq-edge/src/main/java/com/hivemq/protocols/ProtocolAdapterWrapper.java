@@ -27,9 +27,9 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
-public class ProtocolAdapterWrapper implements ProtocolAdapter{
+public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements ProtocolAdapter {
 
-    private final @NotNull ProtocolAdapter adapter;
+    private final @NotNull T adapter;
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -37,7 +37,7 @@ public class ProtocolAdapterWrapper implements ProtocolAdapter{
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
-            final @NotNull ProtocolAdapter adapter,
+            final @NotNull T adapter,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterState protocolAdapterState,
@@ -77,7 +77,7 @@ public class ProtocolAdapterWrapper implements ProtocolAdapter{
         return protocolAdapterState.getLastErrorMessage();
     }
 
-    protected void initStartAttempt(){
+    protected void initStartAttempt() {
         lastStartAttemptTime = System.currentTimeMillis();
     }
 
@@ -101,7 +101,14 @@ public class ProtocolAdapterWrapper implements ProtocolAdapter{
         return adapter.getId();
     }
 
-    public @NotNull ProtocolAdapter getAdapter() {
+    public @NotNull T getAdapter() {
         return adapter;
+    }
+
+    public void setErrorConnectionStatus(final @NotNull Throwable exception, final @NotNull String errorMessage) {
+        protocolAdapterState.setErrorConnectionStatus(adapter.getId(),
+                adapter.getProtocolAdapterInformation().getProtocolId(),
+                exception,
+                errorMessage);
     }
 }

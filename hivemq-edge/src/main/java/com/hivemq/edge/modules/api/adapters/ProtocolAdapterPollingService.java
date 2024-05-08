@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.modules.api.adapters;
 
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterPollingSampler;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;

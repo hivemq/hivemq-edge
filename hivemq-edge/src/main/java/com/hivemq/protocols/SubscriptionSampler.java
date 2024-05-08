@@ -5,11 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.modules.adapters.PollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 public class SubscriptionSampler extends AbstractSubscriptionSampler {
 
@@ -19,13 +22,16 @@ public class SubscriptionSampler extends AbstractSubscriptionSampler {
 
 
     public SubscriptionSampler(
-            final @NotNull PollingProtocolAdapter protocolAdapter,
+            final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> adapterProtocolAdapterWrapper,
             final @NotNull CustomConfig customConfig,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterPublishService adapterPublishService) {
-        super(protocolAdapter, customConfig, metricRegistry, objectMapper, adapterPublishService);
-        this.protocolAdapter = protocolAdapter;
+            final @NotNull ProtocolAdapterPublishService adapterPublishService,
+            final @NotNull EventService eventService,
+            final @NotNull Supplier<EventBuilder> eventBuilderSupplier) {
+        super(adapterProtocolAdapterWrapper, customConfig, metricRegistry, objectMapper, adapterPublishService, eventService,
+                eventBuilderSupplier);
+        this.protocolAdapter = adapterProtocolAdapterWrapper.getAdapter();
     }
 
     @Override
