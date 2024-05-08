@@ -76,7 +76,7 @@ describe('AdapterInstanceDrawer', () => {
     cy.percySnapshot('Component: AdapterInstanceDrawer')
   })
 
-  describe.only('Custom Templates', () => {
+  describe('Custom Templates', () => {
     it('should render expandable array items', () => {
       cy.mountWithProviders(
         <AdapterInstanceDrawer
