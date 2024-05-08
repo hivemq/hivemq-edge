@@ -19,6 +19,7 @@ import './workaround-cypress-10-0-2-process-issue.ts'
 import 'cypress-axe'
 import 'cypress-each'
 import '@percy/cypress'
+import 'cypress-real-events'
 import './commands'
 
 import { mount, MountOptions, MountReturn } from 'cypress/react18'

@@ -72,6 +72,9 @@ describe('SubscriptionsPanel', () => {
     // force validation to trigger error messages.
     cy.getByTestId(`form-submit`).click()
 
+    cy.getByTestId(`${MOCK_TYPE}.0.filters`).realPress('Tab') // switch the focus for a11y testing
+    cy.getByTestId(`${MOCK_TYPE}.0.destination`).realPress('Tab') // switch the focus for a11y testing
+
     cy.getByTestId(`${MOCK_TYPE}.0.filters`).find('label').should('have.attr', 'data-invalid')
     cy.getByTestId(`${MOCK_TYPE}.0.destination`).find('label').should('have.attr', 'data-invalid')
   })

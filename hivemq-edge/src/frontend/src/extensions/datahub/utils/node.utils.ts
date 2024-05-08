@@ -1,6 +1,7 @@
 import { Connection, Edge, getOutgoers, Node } from 'reactflow'
 import { v4 as uuidv4 } from 'uuid'
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
+import i18n from '@/config/i18n.config.ts'
 
 import {
   BehaviorPolicyData,
@@ -8,6 +9,7 @@ import {
   DataHubNodeData,
   DataHubNodeType,
   DataPolicyData,
+  DesignerStatus,
   FunctionData,
   OperationData,
   PolicyDryRunStatus,
@@ -296,4 +298,33 @@ export const getConnectedNodeFrom = (node?: string, handle?: string | null): Val
     }
   }
   return undefined
+}
+
+export const canDeleteNode = (node: Node, status?: DesignerStatus): { delete: boolean; error?: string | null } => {
+  if (status === DesignerStatus.DRAFT) {
+    return { delete: true }
+  }
+  if (isTopicFilterNodeType(node)) {
+    return { delete: false, error: i18n.t('datahub:workspace.deletion.guards.topicFilter') }
+  }
+  if (isBehaviorPolicyNodeType(node) || isDataPolicyNodeType(node)) {
+    return { delete: false, error: i18n.t('datahub:workspace.deletion.guards.policyNode') }
+  }
+  return { delete: true }
+}
+
+export const canDeleteEdge = (
+  edge: Edge,
+  nodes?: Node[],
+  status?: DesignerStatus
+): { delete: boolean; error?: string | null } => {
+  if (status === DesignerStatus.DRAFT) return { delete: true }
+
+  if (nodes) {
+    const source = nodes.find((node) => node.id === edge.source)
+    const target = nodes.find((node) => node.id === edge.target)
+    if (source && target && isDataPolicyNodeType(target) && isTopicFilterNodeType(source))
+      return { delete: false, error: i18n.t('datahub:workspace.deletion.guards.topicFilter') }
+  }
+  return { delete: true }
 }

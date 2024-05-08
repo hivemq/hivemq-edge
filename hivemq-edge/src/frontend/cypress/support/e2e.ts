@@ -16,6 +16,7 @@
 import 'cypress-axe'
 import 'cypress-each'
 import '@percy/cypress'
+import 'cypress-real-events'
 
 import './commands'
 

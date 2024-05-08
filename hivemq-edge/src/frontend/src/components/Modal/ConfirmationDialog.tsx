@@ -35,10 +35,11 @@ const ConfirmationDialog: FC<ConfirmationDialogProps> = ({ isOpen, onClose, head
           <AlertDialogBody>{message}</AlertDialogBody>
 
           <AlertDialogFooter>
-            <Button ref={cancelRef as LegacyRef<HTMLButtonElement>} onClick={onClose}>
+            <Button ref={cancelRef as LegacyRef<HTMLButtonElement>} onClick={onClose} data-testid="confirmation-cancel">
               {t('action.cancel')}
             </Button>
             <Button
+              data-testid="confirmation-submit"
               onClick={() => {
                 onClose()
                 onSubmit?.()
