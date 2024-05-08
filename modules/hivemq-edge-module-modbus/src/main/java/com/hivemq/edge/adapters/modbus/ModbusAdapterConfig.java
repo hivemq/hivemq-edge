@@ -190,11 +190,13 @@ public class ModbusAdapterConfig implements CustomConfig {
                 @JsonProperty("destination") @Nullable final String destination,
                 @JsonProperty("qos") final int qos,
                 @JsonProperty("addressRange") @NotNull final AddressRange addressRange,
-                @JsonProperty("userProperties") @NotNull List<UserProperty> userProperties) {
+                @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {
             this.destination = destination;
             this.qos = qos;
             this.addressRange = addressRange;
-            this.userProperties = userProperties;
+            if (userProperties != null) {
+                this.userProperties = userProperties;
+            }
         }
 
         public @NotNull AddressRange getAddressRange() {
