@@ -185,7 +185,6 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
             }
             return data;
         }
-        // TODO
         return null;
     }
 

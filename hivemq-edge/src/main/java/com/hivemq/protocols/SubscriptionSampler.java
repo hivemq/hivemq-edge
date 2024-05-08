@@ -6,13 +6,11 @@ import com.hivemq.edge.modules.adapters.PollingProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
-import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
 public class SubscriptionSampler extends AbstractSubscriptionSampler {
 
@@ -20,22 +18,24 @@ public class SubscriptionSampler extends AbstractSubscriptionSampler {
 
     protected final @NotNull PollingProtocolAdapter protocolAdapter;
 
-
     public SubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> adapterProtocolAdapterWrapper,
             final @NotNull CustomConfig customConfig,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull EventService eventService,
-            final @NotNull Supplier<EventBuilder> eventBuilderSupplier) {
-        super(adapterProtocolAdapterWrapper, customConfig, metricRegistry, objectMapper, adapterPublishService, eventService,
-                eventBuilderSupplier);
+            final @NotNull EventService eventService) {
+        super(adapterProtocolAdapterWrapper,
+                customConfig,
+                metricRegistry,
+                objectMapper,
+                adapterPublishService,
+                eventService);
         this.protocolAdapter = adapterProtocolAdapterWrapper.getAdapter();
     }
 
     @Override
-    public CompletableFuture<? extends ProtocolAdapterDataSample> execute() {
+    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> execute() {
         if (Thread.currentThread().isInterrupted()) {
             return CompletableFuture.failedFuture(new InterruptedException());
         }

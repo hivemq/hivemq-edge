@@ -105,7 +105,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements Protoc
         return adapter;
     }
 
-    public void setErrorConnectionStatus(final @NotNull Throwable exception, final @NotNull String errorMessage) {
+    public void setErrorConnectionStatus(final @NotNull Throwable exception, final @Nullable String errorMessage) {
         protocolAdapterState.setErrorConnectionStatus(adapter.getId(),
                 adapter.getProtocolAdapterInformation().getProtocolId(),
                 exception,
