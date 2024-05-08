@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Map;
@@ -27,7 +27,7 @@ public class S7ConfigConverter {
         return objectMapper.convertValue(config, S7AdapterConfig.class);
     }
 
-    public static @NotNull Map<String, Object> unconvertConfig(final ObjectMapper objectMapper, final @NotNull CustomConfig config) {
+    public static @NotNull Map<String, Object> unconvertConfig(final ObjectMapper objectMapper, final @NotNull ProtocolAdapterConfig config) {
         return objectMapper.convertValue(config, Map.class);
     }
 }

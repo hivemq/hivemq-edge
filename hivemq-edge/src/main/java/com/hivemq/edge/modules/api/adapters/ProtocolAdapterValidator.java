@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-present HiveMQ GmbH
+ * Copyright 2019-present HiveMQ GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.plc4x.types.eip;
+package com.hivemq.edge.modules.api.adapters;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-import java.util.Map;
+import java.util.List;
 
-public class EIPConfigConverter {
+/**
+ * An object that handles the validation of the configuration bean, ensuring compliance with the requirement
+ * schema
+ *
+ * @author Simon L Johnson
+ */
+public interface ProtocolAdapterValidator {
 
-    public static @NotNull EIPAdapterConfig convertConfig(final ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        return objectMapper.convertValue(config, EIPAdapterConfig.class);
-    }
+    @NotNull List<ProtocolAdapterValidationFailure> validateConfiguration(@NotNull ObjectMapper objectMapper, @NotNull Object config);
 
-    public static @NotNull Map<String, Object> unconvertConfig(final ObjectMapper objectMapper, final @NotNull ProtocolAdapterConfig config) {
-        return objectMapper.convertValue(config, Map.class);
-    }
 }

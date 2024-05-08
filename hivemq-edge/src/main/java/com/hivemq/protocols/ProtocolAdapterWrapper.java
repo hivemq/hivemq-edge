@@ -21,7 +21,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -33,7 +33,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements Protoc
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull CustomConfig configObject;
+    private final @NotNull ProtocolAdapterConfig configObject;
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
@@ -41,7 +41,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements Protoc
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterState protocolAdapterState,
-            final @NotNull CustomConfig configObject) {
+            final @NotNull ProtocolAdapterConfig configObject) {
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
         this.adapterInformation = adapterInformation;
@@ -89,7 +89,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements Protoc
         return adapterInformation;
     }
 
-    public @NotNull CustomConfig getConfigObject() {
+    public @NotNull ProtocolAdapterConfig getConfigObject() {
         return configObject;
     }
 

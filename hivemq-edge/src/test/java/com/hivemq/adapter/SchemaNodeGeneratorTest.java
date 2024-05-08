@@ -26,7 +26,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.AdapterSubscription;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,8 +35,6 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
-import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
 
 
 /**
@@ -112,7 +110,7 @@ public class SchemaNodeGeneratorTest {
     }
 
     @JsonPropertyOrder({"startIdx", "endIdx"})
-    static class TestOrderingConfig implements CustomConfig {
+    static class TestOrderingConfig implements ProtocolAdapterConfig {
 
         @JsonProperty(value = "id", required = true)
         @ModuleConfigField(title = "Identifier",
@@ -138,7 +136,7 @@ public class SchemaNodeGeneratorTest {
         }
     }
 
-    static class TestNestedEntity implements CustomConfig {
+    static class TestNestedEntity implements ProtocolAdapterConfig {
 
         @JsonProperty("subscriptions")
         @ModuleConfigField(title = "Subscriptions",

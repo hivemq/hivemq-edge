@@ -1,55 +1,60 @@
 package com.hivemq.edge.modules.api.events.model;
 
-import com.hivemq.api.model.core.Payload;
+import com.google.common.base.Preconditions;
 import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.model.TypeIdentifierImpl;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 public class EventBuilderImpl implements EventBuilder {
-    private EventImpl.SEVERITY severity;
-    private String message;
-    private Payload payload;
-    private Long timestamp;
-    private TypeIdentifier associatedObject;
-    private TypeIdentifier source;
+    private @Nullable EventImpl.SEVERITY severity;
+    private @Nullable String message;
+    private @Nullable Payload payload;
+    private @Nullable Long timestamp;
+    private @Nullable TypeIdentifier associatedObject;
+    private @Nullable TypeIdentifier source;
 
     @Override
-    public EventBuilder withSeverity(final EventImpl.SEVERITY severity) {
+    public @NotNull EventBuilder withSeverity(final EventImpl.@NotNull SEVERITY severity) {
         this.severity = severity;
         return this;
     }
 
     @Override
-    public EventBuilder withMessage(final String message) {
+    public @NotNull EventBuilder withMessage(final @NotNull String message) {
         this.message = message;
         return this;
     }
 
     @Override
-    public EventBuilder withPayload(final Payload payload) {
+    public @NotNull EventBuilder withPayload(final @NotNull Payload payload) {
         this.payload = payload;
         return this;
     }
 
     @Override
-    public EventBuilder withTimestamp(final Long timestamp) {
+    public @NotNull EventBuilder withTimestamp(final @NotNull Long timestamp) {
         this.timestamp = timestamp;
         return this;
     }
 
     @Override
-    public EventBuilder withAssociatedObject(final TypeIdentifier associatedObject) {
+    public @NotNull EventBuilder withAssociatedObject(final @NotNull TypeIdentifier associatedObject) {
         this.associatedObject = associatedObject;
         return this;
     }
 
     @Override
-    public EventBuilder withSource(final TypeIdentifier source) {
+    public @NotNull EventBuilder withSource(final @NotNull TypeIdentifier source) {
         this.source = source;
         return this;
     }
 
     @Override
-    public Event build() {
+    public @NotNull Event build() {
+        Preconditions.checkNotNull(severity);
+        Preconditions.checkNotNull(message);
+
         return new EventImpl(TypeIdentifierImpl.generate(TypeIdentifier.TYPE.EVENT),
                 severity,
                 message,

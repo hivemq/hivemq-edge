@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.edge.modules.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -27,7 +27,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Plc4xAdapterConfig implements CustomConfig {
+public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
 
     @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",

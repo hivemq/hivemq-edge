@@ -15,10 +15,15 @@
  */
 package com.hivemq.protocols;
 
+import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.cfg.CoercionAction;
 import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
+import com.fasterxml.jackson.databind.module.SimpleAbstractTypeResolver;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.LogicalType;
+import com.hivemq.edge.modules.config.UserProperty;
+import com.hivemq.edge.modules.config.impl.UserPropertyImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
@@ -32,6 +37,14 @@ public class ProtocolAdapterUtils {
                 setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
         copyObjectMapper.coercionConfigFor(LogicalType.Collection).
                 setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsNull);
+
+
+        SimpleModule module = new SimpleModule("UserPropertyModule", Version.unknownVersion());
+        SimpleAbstractTypeResolver resolver = new SimpleAbstractTypeResolver();
+        resolver.addMapping(UserProperty.class, UserPropertyImpl.class);
+        module.setAbstractTypes(resolver);
+        copyObjectMapper.registerModule(module);
+
         return copyObjectMapper;
     }
 }

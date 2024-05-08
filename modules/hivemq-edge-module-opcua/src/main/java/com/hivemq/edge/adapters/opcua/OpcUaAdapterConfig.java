@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.opcua;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
@@ -25,7 +25,7 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OpcUaAdapterConfig implements CustomConfig {
+public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
 
 
     @JsonProperty(value = "id", required = true)

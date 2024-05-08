@@ -15,8 +15,8 @@
  */
 package com.hivemq.edge.modules.api.events;
 
-import com.hivemq.api.model.core.Payload;
 import com.hivemq.api.model.core.PayloadImpl;
+import com.hivemq.edge.modules.api.events.model.Payload;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 

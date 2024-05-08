@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.edge.modules.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 
-public class ModbusAdapterConfig implements CustomConfig {
+public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
     @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",
@@ -260,7 +260,7 @@ public class ModbusAdapterConfig implements CustomConfig {
         @ModuleConfigField(title = "Start Index",
                            description = "The Starting Index (Incl.) of the Address Range",
                            numberMin = 0,
-                           numberMax = CustomConfig.PORT_MAX,
+                           numberMax = ProtocolAdapterConfig.PORT_MAX,
                            defaultValue = "0")
         public int startIdx;
 
@@ -268,7 +268,7 @@ public class ModbusAdapterConfig implements CustomConfig {
         @ModuleConfigField(title = "End Index",
                            description = "The Finishing Index (Excl.) of the Address Range",
                            numberMin = 1,
-                           numberMax = CustomConfig.PORT_MAX,
+                           numberMax = ProtocolAdapterConfig.PORT_MAX,
                            defaultValue = "1")
         public int endIdx;
 

@@ -32,7 +32,7 @@ import com.github.victools.jsonschema.generator.SchemaVersion;
 import com.github.victools.jsonschema.module.jackson.JacksonModule;
 import com.github.victools.jsonschema.module.jackson.JacksonOption;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -43,7 +43,7 @@ public class CustomConfigSchemaGenerator {
 
     public static final String ENUM_NAMES_ATTRIBUTE = "enumNames";
 
-    public @NotNull JsonNode generateJsonSchema(final @NotNull Class<? extends CustomConfig> clazz) {
+    public @NotNull JsonNode generateJsonSchema(final @NotNull Class<? extends ProtocolAdapterConfig> clazz) {
         SchemaGeneratorConfigBuilder configBuilder =
                 new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_2020_12, OptionPreset.PLAIN_JSON).
                     with(new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED,

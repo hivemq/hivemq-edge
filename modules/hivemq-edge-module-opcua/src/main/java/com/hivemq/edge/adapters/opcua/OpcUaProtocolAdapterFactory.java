@@ -21,7 +21,7 @@ import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Map;
@@ -48,7 +48,7 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
 
     @Override
     public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper,
-                                                     final @NotNull CustomConfig config) {
+                                                     final @NotNull ProtocolAdapterConfig config) {
         return OpcUaConfigConverter.unconvertConfig(objectMapper, config);
     }
 

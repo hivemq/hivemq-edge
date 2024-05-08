@@ -16,7 +16,7 @@
 package com.hivemq.edge.modules.adapters.simulation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Map;
@@ -27,7 +27,7 @@ public class SimulationConfigConverter {
         return objectMapper.convertValue(config, SimulationAdapterConfig.class);
     }
 
-    public static @NotNull Map<String, Object> unconvertConfig(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
+    public static @NotNull Map<String, Object> unconvertConfig(final @NotNull ObjectMapper objectMapper, final @NotNull ProtocolAdapterConfig config) {
         return objectMapper.convertValue(config, Map.class);
     }
 }

@@ -7,7 +7,7 @@ import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.config.AdapterSubscription;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
@@ -19,14 +19,13 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
 
     public PerSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper<PollingPerSubscriptionProtocolAdapter> protocolAdapter,
-            final @NotNull CustomConfig customConfig,
+            final @NotNull ProtocolAdapterConfig protocolAdapterConfig,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull AdapterSubscription adapterSubscription,
             final @NotNull EventService eventService) {
-        super(protocolAdapter,
-                customConfig,
+        super(protocolAdapter, protocolAdapterConfig,
                 metricRegistry,
                 objectMapper,
                 adapterPublishService,

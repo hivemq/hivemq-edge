@@ -16,12 +16,8 @@
 package com.hivemq.edge.adapters.opcua.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.cfg.CoercionAction;
-import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
-import com.fasterxml.jackson.databind.type.LogicalType;
-import com.google.common.collect.ObjectArrays;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Map;
@@ -32,7 +28,7 @@ public class OpcUaConfigConverter {
         return objectMapper.convertValue(config, OpcUaAdapterConfig.class);
     }
 
-    public static @NotNull Map<String, Object> unconvertConfig(final @NotNull ObjectMapper objectMapper, final @NotNull CustomConfig config) {
+    public static @NotNull Map<String, Object> unconvertConfig(final @NotNull ObjectMapper objectMapper, final @NotNull ProtocolAdapterConfig config) {
         return objectMapper.convertValue(config, Map.class);
     }
 }

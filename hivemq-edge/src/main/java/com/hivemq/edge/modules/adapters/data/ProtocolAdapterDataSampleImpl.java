@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.modules.config.AdapterSubscription;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Simon L Johnson
  */
-public class ProtocolAdapterDataSampleImpl<T extends CustomConfig>
+public class ProtocolAdapterDataSampleImpl<T extends ProtocolAdapterConfig>
         implements ProtocolAdapterDataSample {
 
     protected @NotNull Long timestamp = System.currentTimeMillis();

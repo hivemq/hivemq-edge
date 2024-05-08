@@ -21,7 +21,7 @@ import com.google.common.base.Preconditions;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailureImpl;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.networknt.schema.JsonSchema;
@@ -40,14 +40,14 @@ import java.util.stream.Collectors;
  * @author Simon L Johnson
  */
 public class ProtocolAdapterSchemaManager {
-    private final @NotNull Class<? extends CustomConfig> configBean;
+    private final @NotNull Class<? extends ProtocolAdapterConfig> configBean;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull CustomConfigSchemaGenerator customConfigSchemaGenerator;
     private @Nullable JsonNode schemaNode;
     private @Nullable JsonSchema schema;
 
     public ProtocolAdapterSchemaManager(@NotNull final ObjectMapper objectMapper,
-                                            @NotNull final Class<? extends CustomConfig> configBean) {
+                                            @NotNull final Class<? extends ProtocolAdapterConfig> configBean) {
         this.objectMapper = objectMapper;
         this.configBean = configBean;
         this.customConfigSchemaGenerator = new CustomConfigSchemaGenerator();

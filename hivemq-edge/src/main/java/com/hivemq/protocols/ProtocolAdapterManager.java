@@ -52,7 +52,7 @@ import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
@@ -452,7 +452,7 @@ public class ProtocolAdapterManager {
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(protocolAdapterFactory.getClass().getClassLoader());
-            final CustomConfig configObject = protocolAdapterFactory.convertConfigObject(objectMapper, config);
+            final ProtocolAdapterConfig configObject = protocolAdapterFactory.convertConfigObject(objectMapper, config);
 
 
             final ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper = new ProtocolAdapterMetricsHelperImpl(
@@ -525,7 +525,7 @@ public class ProtocolAdapterManager {
     }
 
 
-    public static class ProtocolAdapterInputImpl<T extends CustomConfig> implements ProtocolAdapterInput<T> {
+    public static class ProtocolAdapterInputImpl<T extends ProtocolAdapterConfig> implements ProtocolAdapterInput<T> {
         public static final AdapterFactoriesImpl ADAPTER_FACTORIES = new AdapterFactoriesImpl();
         private final @NotNull T configObject;
         private final @NotNull String version;

@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -38,7 +38,7 @@ import java.util.List;
         "assertResponseIsJson",
         "httpPublishSuccessStatusCodeOnly",
         "httpHeaders"})
-public class HttpAdapterConfig implements CustomConfig {
+public class HttpAdapterConfig implements ProtocolAdapterConfig {
 
     public static final @NotNull String HTML_MIME_TYPE = "text/html";
     public static final @NotNull  String PLAIN_MIME_TYPE = "text/plain";

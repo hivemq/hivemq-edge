@@ -25,7 +25,7 @@ import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.edge.modules.config.AdapterSubscription;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.PublishReturnCode;
@@ -66,20 +66,20 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     public AbstractSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapter,
-            final @NotNull CustomConfig customConfig,
+            final @NotNull ProtocolAdapterConfig protocolAdapterConfig,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService) {
         this.protocolAdapter = protocolAdapter;
         this.adapterId = protocolAdapter.getId();
-        this.initialDelay = Math.max(customConfig.getPollingIntervalMillis(), 100);
-        this.period = Math.max(customConfig.getPollingIntervalMillis(), 10);
+        this.initialDelay = Math.max(protocolAdapterConfig.getPollingIntervalMillis(), 100);
+        this.period = Math.max(protocolAdapterConfig.getPollingIntervalMillis(), 10);
         this.objectMapper = objectMapper;
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
         this.unit = TimeUnit.MILLISECONDS;
-        this.maxErrorsBeforeRemoval = customConfig.getMaxPollingErrorsBeforeRemoval();
+        this.maxErrorsBeforeRemoval = protocolAdapterConfig.getMaxPollingErrorsBeforeRemoval();
         this.uuid = UUID.randomUUID();
         this.created = new Date();
         protocolAdapterMetricsHelper =

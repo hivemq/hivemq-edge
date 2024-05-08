@@ -17,7 +17,6 @@ package com.hivemq.edge.adapters.opcua.payload;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import com.hivemq.api.model.core.Payload;
 import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
@@ -36,6 +35,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import com.hivemq.edge.modules.api.events.model.Payload;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;

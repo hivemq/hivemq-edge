@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Map;
@@ -29,7 +29,7 @@ public class ModbusConfigConverter {
     }
 
     public static @NotNull Map<String, Object> unconvertConfig(final @NotNull ObjectMapper objectMapper,
-                                                               final @NotNull CustomConfig config) {
+                                                               final @NotNull ProtocolAdapterConfig config) {
         //noinspection unchecked
         return objectMapper.convertValue(config, Map.class);
     }
