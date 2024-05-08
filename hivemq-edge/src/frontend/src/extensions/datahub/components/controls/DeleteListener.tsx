@@ -24,7 +24,7 @@ const DeleteListener: FC = () => {
     return { selectedNodes, selectedEdges }
   }, [edges, nodes])
 
-  const nbDeleteItems = useMemo(() => {
+  const SelectedElementsCount = useMemo(() => {
     const { selectedNodes, selectedEdges } = selectedElements
     return selectedNodes.length + selectedEdges.length
   }, [selectedElements])
@@ -42,7 +42,7 @@ const DeleteListener: FC = () => {
     const canDeleteEdges = selectedEdges.map((edge) => canDeleteEdge(edge, nodes))
 
     const allElements = [...canDeleteNodes, ...canDeleteEdges]
-    const canDeleteElements = allElements.every((e) => Boolean(e.delete))
+    const canDeleteElements = allElements.every((element) => Boolean(element.delete))
     if (canDeleteElements) {
       return onOpen()
     }
@@ -57,11 +57,11 @@ const DeleteListener: FC = () => {
       toast({
         ...dataHubToastOption,
         id: DATAHUB_TOAST_ID,
-        title: t('workspace.deletion.modal.header', { count: nbDeleteItems }),
+        title: t('workspace.deletion.modal.header', { count: SelectedElementsCount }),
         status: 'error',
         description: (
           <VStack alignItems="flex-start">
-            <Text>{t('workspace.deletion.guards.message', { count: nbDeleteItems })}</Text>
+            <Text>{t('workspace.deletion.guards.message', { count: SelectedElementsCount })}</Text>
             <UnorderedList>
               {allErrors.map((error, index) => (
                 <ListItem key={`toto-${index}`}>{error}</ListItem>
@@ -74,8 +74,8 @@ const DeleteListener: FC = () => {
 
   const handleConfirmOnSubmit = () => {
     const { selectedNodes, selectedEdges } = selectedElements
-    onEdgesChange(selectedEdges.map<EdgeRemoveChange>((e) => ({ id: e.id, type: 'remove' })))
-    onNodesChange(selectedNodes.map<NodeRemoveChange>((e) => ({ id: e.id, type: 'remove' })))
+    onEdgesChange(selectedEdges.map<EdgeRemoveChange>((edge) => ({ id: edge.id, type: 'remove' })))
+    onNodesChange(selectedNodes.map<NodeRemoveChange>((node) => ({ id: node.id, type: 'remove' })))
     setStatus(DesignerStatus.MODIFIED)
   }
 
@@ -86,9 +86,9 @@ const DeleteListener: FC = () => {
       onSubmit={handleConfirmOnSubmit}
       message={t('workspace.deletion.modal.message', {
         context: deleteContext,
-        count: nbDeleteItems,
+        count: SelectedElementsCount,
       })}
-      header={t('workspace.deletion.modal.header', { count: nbDeleteItems })}
+      header={t('workspace.deletion.modal.header', { count: SelectedElementsCount })}
     />
   )
 }
