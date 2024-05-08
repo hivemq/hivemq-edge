@@ -241,6 +241,7 @@ public class ProtocolAdapterManager {
                 handleStartupError(protocolAdapterWrapper, output);
             } else {
                 schedulePolling(protocolAdapterWrapper);
+                protocolAdapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
                 if (output.message != null) {
                     if (log.isTraceEnabled()) {
                         log.trace("Protocol-adapter \"{}\" started: {}.",
@@ -300,7 +301,8 @@ public class ProtocolAdapterManager {
         }
         CompletableFuture<Void> stopFuture;
 
-        if (protocolAdapter instanceof PollingProtocolAdapter) {
+        if (protocolAdapter instanceof PollingProtocolAdapter ||
+                protocolAdapter instanceof PollingPerSubscriptionProtocolAdapter) {
             protocolAdapterPollingService.getPollingJobsForAdapter(protocolAdapter.getId())
                     .forEach(protocolAdapterPollingService::stopPolling);
         }
@@ -314,6 +316,7 @@ public class ProtocolAdapterManager {
             if (log.isTraceEnabled()) {
                 log.trace("Protocol-adapter \"{}\" stopped.", protocolAdapter.getId());
             }
+            protocolAdapter.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
             return null;
         }).exceptionally(throwable -> {
             if (log.isWarnEnabled()) {

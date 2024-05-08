@@ -111,4 +111,8 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements Protoc
                 exception,
                 errorMessage);
     }
+
+    public void setRuntimeStatus(final @NotNull ProtocolAdapterState.RuntimeStatus runtimeStatus) {
+        protocolAdapterState.setRuntimeStatus(runtimeStatus);
+    }
 }

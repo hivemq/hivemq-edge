@@ -76,6 +76,15 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
 
     @Override
     public @NotNull CompletableFuture<Void> stop() {
+        try {
+            if (modbusClient != null) {
+                modbusClient.disconnect();
+            }
+        } catch (Exception e) {
+            if (log.isWarnEnabled()) {
+                log.warn("Error encountered closing connection to Modbus device.", e);
+            }
+        }
         return CompletableFuture.completedFuture(null);
     }
 
@@ -87,9 +96,7 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
         try {
             if (modbusClient != null) {
                 if (!modbusClient.isConnected()) {
-                    modbusClient.connect()
-                            .thenRun(() -> protocolAdapterState.setConnectionStatus(CONNECTED))
-                            .get();
+                    modbusClient.connect().thenRun(() -> protocolAdapterState.setConnectionStatus(CONNECTED)).get();
                 }
                 return CompletableFuture.supplyAsync(() -> readRegisters(adapterSubscription))
                         .thenApply(this::captureDataSample);
@@ -211,7 +218,8 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
             ModbusAdapterConfig.AddressRange addressRange = subscription.getAddressRange();
             Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
                     addressRange.endIdx - addressRange.startIdx);
-            ModBusData data = new ModBusData(subscription, ModBusData.TYPE.HOLDING_REGISTERS,
+            ModBusData data = new ModBusData(subscription,
+                    ModBusData.TYPE.HOLDING_REGISTERS,
                     adapterFactories.dataPointFactory());
             //add data point per register
             for (int i = 0; i < registers.length; i++) {

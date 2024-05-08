@@ -68,7 +68,6 @@ import java.util.function.BiConsumer;
 
 import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
-import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.RuntimeStatus.STARTED;
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
@@ -270,7 +269,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                             .withMessage("A Service Fault was Detected.")
                             .build());
         });
-        protocolAdapterState.setRuntimeStatus(STARTED);
     }
 
     private @NotNull CompletableFuture<Void> subscribeToNode(final @NotNull OpcUaAdapterConfig.Subscription subscription) {

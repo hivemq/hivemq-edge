@@ -31,8 +31,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.STATELESS;
-import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.RuntimeStatus.STARTED;
-import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.RuntimeStatus.STOPPED;
 
 public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocolAdapter {
 
@@ -57,13 +55,11 @@ public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocol
     @Override
     public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
-        protocolAdapterState.setRuntimeStatus(STARTED);
         return CompletableFuture.completedFuture(output);
     }
 
     @Override
     public @NotNull CompletableFuture<Void> stop() {
-        protocolAdapterState.setRuntimeStatus(STOPPED);
         return CompletableFuture.completedFuture(null);
     }
 
