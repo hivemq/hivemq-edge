@@ -16,7 +16,6 @@ import {
 } from '@chakra-ui/react'
 import { ExternalLinkIcon } from '@chakra-ui/icons'
 import { useLocalStorage } from '@uidotdev/usehooks'
-import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 
 export interface PrivacySourceGranted {
   heapAnalytics: boolean
@@ -31,7 +30,6 @@ declare global {
 
 const PrivacyConsentBanner: FC = () => {
   const { t } = useTranslation('components')
-  const { data } = useGetConfiguration()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const cancelRef = useRef<HTMLButtonElement>(null)
   const [privacy, setPrivacy] = useLocalStorage<PrivacySourceGranted | undefined>('edge.privacy', undefined)
