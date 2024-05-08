@@ -20,6 +20,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
+import java.util.EnumSet;
 import java.util.List;
 
 /**
@@ -79,8 +80,8 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
     }
 
     @Override
-    public byte getCapabilities() {
-        return ProtocolAdapterCapability.READ;
+    public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
+        return EnumSet.of(ProtocolAdapterCapability.READ);
     }
 
     @Override

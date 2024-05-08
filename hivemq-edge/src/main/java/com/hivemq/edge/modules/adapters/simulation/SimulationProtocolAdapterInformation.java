@@ -21,6 +21,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
+import java.util.EnumSet;
 import java.util.List;
 
 public class SimulationProtocolAdapterInformation implements ProtocolAdapterInformation {
@@ -86,8 +87,8 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
     }
 
     @Override
-    public byte getCapabilities() {
-        return ProtocolAdapterCapability.READ;
+    public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
+        return EnumSet.of(ProtocolAdapterCapability.READ);
     }
 
 }

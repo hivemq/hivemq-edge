@@ -177,8 +177,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
 
         final ProtocolAdapterWrapper adapterInstance = instance.get();
-        if (!ProtocolAdapterCapability.supportsCapability(adapterInstance.getAdapterInformation(),
-                ProtocolAdapterCapability.DISCOVER)) {
+        if (!adapterInstance.getAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.DISCOVER)) {
             return ApiErrorUtils.badRequest("Adapter does not support discovery");
         }
         final ProtocolAdapterDiscoveryOutputImpl output = new ProtocolAdapterDiscoveryOutputImpl();

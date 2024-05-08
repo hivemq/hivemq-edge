@@ -17,7 +17,6 @@ package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdapterCategory;
 import com.hivemq.api.model.components.Module;
@@ -34,7 +33,8 @@ import com.hivemq.http.HttpConstants;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -95,6 +95,14 @@ public class ProtocolAdapterApiUtils {
                 protocolAdapterSchemaManager.generateSchemaNode());
     }
 
+    private static @NotNull Set<ProtocolAdapter.Capability> getCapabilities(final @NotNull ProtocolAdapterInformation info) {
+        Set<ProtocolAdapter.Capability> capabilities = new HashSet<>();
+        for (final ProtocolAdapterCapability capability : info.getCapabilities()) {
+            capabilities.add(ProtocolAdapter.Capability.from(capability));
+        }
+        return capabilities;
+    }
+
     /**
      * Convert between the internal system representation of a Module type and its API protocol adapter type.
      *
@@ -122,7 +130,7 @@ public class ProtocolAdapterApiUtils {
                 provisioningUrl,
                 module.getAuthor(),
                 false,
-                List.of(),
+                Set.of(),
                 null,
                 null,
                 null);
@@ -141,27 +149,6 @@ public class ProtocolAdapterApiUtils {
             }
         }
         return logoUrl;
-    }
-
-    /**
-     * Obtain a list of supported capabilities of this adapter.
-     *
-     * @param info
-     * @return
-     */
-    public static List<ProtocolAdapter.Capability> getCapabilities(final @NotNull ProtocolAdapterInformation info) {
-        Preconditions.checkNotNull(info);
-        ImmutableList.Builder builder = ImmutableList.<ProtocolAdapter.Capability>builder();
-        if (ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.READ)) {
-            builder.add(ProtocolAdapter.Capability.READ);
-        }
-        if (ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.WRITE)) {
-            builder.add(ProtocolAdapter.Capability.WRITE);
-        }
-        if (ProtocolAdapterCapability.supportsCapability(info, ProtocolAdapterCapability.DISCOVER)) {
-            builder.add(ProtocolAdapter.Capability.DISCOVER);
-        }
-        return builder.build();
     }
 
     /**
