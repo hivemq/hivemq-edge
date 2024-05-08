@@ -2,11 +2,11 @@ import { useState } from 'react'
 import axios, { AxiosError } from 'axios'
 import { useNavigate } from 'react-router-dom'
 
+import config from '@/config'
+
 import { BaseHttpRequest, CancelablePromise, HiveMqClient, OpenAPIConfig } from '@/api/__generated__'
 import { ApiRequestOptions } from '@/api/__generated__/core/ApiRequestOptions.ts'
 import { request as __request } from '@/api/__generated__/core/request.ts'
-
-import config from '@/config'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 
 const axiosInstance = axios.create()
@@ -64,6 +64,18 @@ export const useHttpClient = () => {
       },
       AxiosHttpRequestWithInterceptors
     )
+  }
+
+  return client
+}
+
+export const useSimpleHttpClient = () => {
+  const [client] = useState<HiveMqClient>(createInstance)
+
+  function createInstance() {
+    return new HiveMqClient({
+      BASE: config.apiBaseUrl,
+    })
   }
 
   return client
