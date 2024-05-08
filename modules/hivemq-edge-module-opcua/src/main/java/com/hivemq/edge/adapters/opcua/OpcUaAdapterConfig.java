@@ -25,8 +25,6 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
-
 public class OpcUaAdapterConfig implements CustomConfig {
 
 

@@ -26,8 +26,6 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
-
 @JsonPropertyOrder({"minValue", "maxValue", "subscriptions"})
 public class SimulationAdapterConfig implements CustomConfig {
 

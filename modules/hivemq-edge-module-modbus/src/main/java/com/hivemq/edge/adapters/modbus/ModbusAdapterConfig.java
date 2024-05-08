@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
 
 public class ModbusAdapterConfig implements CustomConfig {
 

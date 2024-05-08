@@ -26,7 +26,6 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
 
 @JsonPropertyOrder({
         "url",

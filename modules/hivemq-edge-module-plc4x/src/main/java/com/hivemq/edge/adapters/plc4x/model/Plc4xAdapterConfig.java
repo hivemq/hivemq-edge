@@ -27,8 +27,6 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
-
 public class Plc4xAdapterConfig implements CustomConfig {
 
     @JsonProperty(value = "id", required = true)

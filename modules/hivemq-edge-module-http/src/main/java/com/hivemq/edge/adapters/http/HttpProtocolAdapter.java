@@ -51,7 +51,6 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE;
 import static com.hivemq.edge.adapters.http.HttpAdapterConfig.JSON_MIME_TYPE;
 import static com.hivemq.edge.adapters.http.HttpAdapterConfig.PLAIN_MIME_TYPE;
 import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.ERROR;
@@ -213,7 +212,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         timeout = timeout == null ? HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS : timeout;
         timeout = Math.max(timeout, HttpAdapterConstants.MAX_TIMEOUT_SECONDS);
         builder.timeout(Duration.ofSeconds(timeout));
-        builder.setHeader(USER_AGENT_HEADER, String.format(CLIENT_AGENT_PROPERTY_VALUE, version));
+        builder.setHeader(USER_AGENT_HEADER, String.format( "HiveMQ-Edge; %s", version));
         if (config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()) {
             config.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
         }
