@@ -36,7 +36,7 @@ import java.util.function.Consumer;
 public abstract class Plc4xConnection<T extends Plc4xAdapterConfig> {
 
     private static final Logger log = LoggerFactory.getLogger(Plc4xConnection.class);
-    private static int MAX_UINT16 = 65535;
+    private static final int MAX_UINT16 = 65535;
 
     private final Object lock = new Object();
     protected final @NotNull PlcDriverManager plcDriverManager;
