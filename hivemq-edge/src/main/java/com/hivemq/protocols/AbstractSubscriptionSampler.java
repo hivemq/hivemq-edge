@@ -135,7 +135,8 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                     if (publishCount.incrementAndGet() == 1) {
                         eventService.fireEvent(eventBuilder()
                                 .withSeverity(EventImpl.SEVERITY.INFO)
-                                .withMessage(String.format("Adapter took first sample to be published to '%s'",
+                                .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
+                                        adapterId,
                                         sample.getSubscription().getDestination()))
                                 .withPayload(EventUtils.generateJsonPayload(json))
                                 .build());

@@ -36,12 +36,13 @@ import java.util.stream.Stream;
 /**
  * Simple rolling list implementation optimized for fast writes but slow reads as requires sort on read. (Handled
  * out of lock).
+ *
  * @author Simon L Johnson
  */
 @Singleton
 public class InMemoryEventImpl implements EventStore {
-    private @NotNull RollingList<Event> inMemoryEventList;
-    private volatile ReadWriteLock lock = new ReentrantReadWriteLock();
+    private final @NotNull RollingList<Event> inMemoryEventList;
+    private final @NotNull ReadWriteLock lock = new ReentrantReadWriteLock();
 
     @Inject
     public InMemoryEventImpl() {
@@ -64,7 +65,7 @@ public class InMemoryEventImpl implements EventStore {
     }
 
     @Override
-    public @NotNull List<Event> readEvents(@Nullable Long since, @Nullable Integer limit){
+    public @NotNull List<Event> readEvents(@Nullable Long since, @Nullable Integer limit) {
         Lock readLock = lock.writeLock();
         List<Event> events;
         try {
@@ -73,11 +74,11 @@ public class InMemoryEventImpl implements EventStore {
         } finally {
             readLock.unlock();
         }
-        Stream<Event> stream  = events.stream().sorted(Comparator.comparing(Event::getTimestamp).reversed());
-        if(since != null){
+        Stream<Event> stream = events.stream().sorted(Comparator.comparing(Event::getTimestamp).reversed());
+        if (since != null) {
             stream = stream.filter(event -> since < event.getTimestamp());
         }
-        if(limit != null){
+        if (limit != null) {
             stream = stream.limit(limit);
         }
         return stream.collect(Collectors.toUnmodifiableList());

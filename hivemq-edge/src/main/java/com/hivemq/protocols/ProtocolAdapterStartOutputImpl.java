@@ -18,7 +18,7 @@ public class ProtocolAdapterStartOutputImpl implements ProtocolAdapterStartOutpu
     }
 
     @Override
-    public void failStart(@NotNull Throwable t, @Nullable final String errorMessage) {
+    public void failStart(final @NotNull Throwable t, final @Nullable String errorMessage) {
         startedSuccessfully = false;
         this.throwable = t;
         this.message = errorMessage;
