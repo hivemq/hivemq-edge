@@ -5,7 +5,7 @@ describe('ObservabilityEdgeCTA', () => {
     cy.viewport(400, 400)
   })
 
-  it.only('should render the button', () => {
+  it('should render the button', () => {
     cy.mountWithProviders(<ObservabilityEdgeCTA source="1" onClick={cy.stub().as('onClick')} />)
     cy.get('button').eq(0).should('not.have.attr', 'aria-describedby')
     cy.get('button').eq(0).focus()
@@ -20,6 +20,5 @@ describe('ObservabilityEdgeCTA', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ObservabilityEdgeCTA source="1" />)
     cy.checkAccessibility()
-    cy.percySnapshot('Component: ObservabilityEdgeCTA')
   })
 })

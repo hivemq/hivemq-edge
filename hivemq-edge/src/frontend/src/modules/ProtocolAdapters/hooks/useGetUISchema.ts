@@ -108,6 +108,10 @@ const useGetUiSchema = (isNewAdapter = true) => {
     subscriptions: {
       items: {
         'ui:order': ['node', 'holding-registers', 'mqtt-topic', 'destination', 'qos', '*'],
+        'ui:collapsable': {
+          // TODO[NVL] This must be a property of the JSON Schema, will be extracted from formData. Figure out how to check
+          titleKey: 'destination',
+        },
       },
     },
     auth: {
