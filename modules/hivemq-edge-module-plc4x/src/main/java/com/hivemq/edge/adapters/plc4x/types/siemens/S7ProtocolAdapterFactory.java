@@ -37,7 +37,7 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<S7AdapterConfig> input) {
-        return new S7ProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry(), input);
+        return new S7ProtocolAdapter(adapterInformation, input);
     }
 
     @Override

@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
@@ -53,7 +52,6 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ModbusAdapterConfig adapterConfig;
-    private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull String version;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
@@ -66,11 +64,9 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ModbusAdapterConfig adapterConfig,
-            final @NotNull MetricRegistry metricRegistry,
             final @NotNull ProtocolAdapterInput<ModbusAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = adapterConfig;
-        this.metricRegistry = metricRegistry;
         this.version = input.getVersion();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();

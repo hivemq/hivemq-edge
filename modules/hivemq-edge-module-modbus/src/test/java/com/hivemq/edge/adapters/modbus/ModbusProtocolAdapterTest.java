@@ -1,6 +1,5 @@
 package com.hivemq.edge.adapters.modbus;
 
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
@@ -30,10 +29,9 @@ import static org.mockito.Mockito.when;
 
 class ModbusProtocolAdapterTest {
 
-    private final @NotNull MetricRegistry metricRegistry = new MetricRegistry();
     private final @NotNull ModbusAdapterConfig adapterConfig = new ModbusAdapterConfig("adapterId");
     private final @NotNull ModbusProtocolAdapter adapter =
-            new ModbusProtocolAdapter(ModbusProtocolAdapterInformation.INSTANCE, adapterConfig, metricRegistry, mock());
+            new ModbusProtocolAdapter(ModbusProtocolAdapterInformation.INSTANCE, adapterConfig, mock());
     private final @NotNull ProtocolAdapterPublishService publishService = mock(ProtocolAdapterPublishService.class);
     private final @NotNull ModuleServices moduleServices = mock(ModuleServices.class);
     private final @NotNull ProtocolAdapterPublishBuilderImpl.SendCallback sendCallback =

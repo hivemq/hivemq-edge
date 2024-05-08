@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
-import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
@@ -97,15 +96,7 @@ public class S7ProtocolAdapterTest {
 
         public TestS7ProtocolAdapter(final @NotNull ProtocolAdapterInput protocolAdapterInput) {
             super(S7ProtocolAdapterInformation.INSTANCE,
-                    getS7AdapterConfig(),
-                    new MetricRegistry(),
                     protocolAdapterInput);
-        }
-
-        private static S7AdapterConfig getS7AdapterConfig() {
-            final S7AdapterConfig s7AdapterConfig = new S7AdapterConfig();
-            s7AdapterConfig.setId("id");
-            return s7AdapterConfig;
         }
 
         @Override

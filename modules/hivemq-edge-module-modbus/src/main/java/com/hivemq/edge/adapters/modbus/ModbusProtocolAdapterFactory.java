@@ -38,7 +38,6 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
             @NotNull final ProtocolAdapterInput<ModbusAdapterConfig> input) {
         return new ModbusProtocolAdapter(adapterInformation,
                 input.getConfig(),
-                input.getMetricRegistry(),
                 input);
     }
 

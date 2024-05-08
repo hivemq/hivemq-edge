@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
-import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;
@@ -90,8 +89,6 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
 
     public S7ProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull S7AdapterConfig adapterConfig,
-            final @NotNull MetricRegistry metricRegistry,
             final @NotNull ProtocolAdapterInput<S7AdapterConfig> input) {
         super(adapterInformation, input);
     }

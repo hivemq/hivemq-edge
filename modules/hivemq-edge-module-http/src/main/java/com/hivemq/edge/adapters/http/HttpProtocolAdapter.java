@@ -30,7 +30,6 @@ import com.hivemq.edge.modules.api.events.model.Event;
 import com.hivemq.edge.modules.config.AdapterSubscription;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.http.HttpConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,6 +52,8 @@ import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.edge.HiveMQEdgeConstants.CLIENT_AGENT_PROPERTY_VALUE;
+import static com.hivemq.edge.adapters.http.HttpAdapterConfig.JSON_MIME_TYPE;
+import static com.hivemq.edge.adapters.http.HttpAdapterConfig.PLAIN_MIME_TYPE;
 import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.ERROR;
 import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
@@ -62,6 +63,10 @@ import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.Connecti
 public class HttpProtocolAdapter implements PollingProtocolAdapter {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
+
+    private static final @NotNull String CONTENT_TYPE_HEADER = "Content-Type";
+    private static final @NotNull String BASE64_ENCODED_VALUE = "data:%s;base64,%s";
+    private static final @NotNull String USER_AGENT_HEADER = "User-Agent";
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull HttpAdapterConfig adapterConfig;
@@ -184,14 +189,14 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
     protected @NotNull CompletableFuture<HttpData> httpPut(@NotNull final HttpAdapterConfig config) {
         HttpRequest.Builder builder =
                 HttpRequest.newBuilder().PUT(HttpRequest.BodyPublishers.ofString(config.getHttpRequestBody()));
-        builder.header(HttpConstants.CONTENT_TYPE_HEADER, config.getHttpRequestBodyContentType().getContentType());
+        builder.header(CONTENT_TYPE_HEADER, config.getHttpRequestBodyContentType().getContentType());
         return executeInternal(config, builder);
     }
 
     protected @NotNull CompletableFuture<HttpData> httpPost(@NotNull final HttpAdapterConfig config) {
         HttpRequest.Builder builder =
                 HttpRequest.newBuilder().POST(HttpRequest.BodyPublishers.ofString(config.getHttpRequestBody()));
-        builder.header(HttpConstants.CONTENT_TYPE_HEADER, config.getHttpRequestBodyContentType().getContentType());
+        builder.header(CONTENT_TYPE_HEADER, config.getHttpRequestBodyContentType().getContentType());
         return executeInternal(config, builder);
     }
 
@@ -208,7 +213,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         timeout = timeout == null ? HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS : timeout;
         timeout = Math.max(timeout, HttpAdapterConstants.MAX_TIMEOUT_SECONDS);
         builder.timeout(Duration.ofSeconds(timeout));
-        builder.setHeader(HttpConstants.USER_AGENT_HEADER, String.format(CLIENT_AGENT_PROPERTY_VALUE, version));
+        builder.setHeader(USER_AGENT_HEADER, String.format(CLIENT_AGENT_PROPERTY_VALUE, version));
         if (config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()) {
             config.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
         }
@@ -227,10 +232,9 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
             //-- if the content type is json, then apply the JSON to the output data,
             //-- else encode using base64 (as we dont know what the content is).
             if (bodyData != null) {
-                responseContentType = response.headers().firstValue(HttpConstants.CONTENT_TYPE_HEADER).orElse(null);
-                responseContentType =
-                        config.isAssertResponseIsJson() ? HttpConstants.JSON_MIME_TYPE : responseContentType;
-                if (HttpConstants.JSON_MIME_TYPE.equals(responseContentType)) {
+                responseContentType = response.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null);
+                responseContentType = config.isAssertResponseIsJson() ? JSON_MIME_TYPE : responseContentType;
+                if (JSON_MIME_TYPE.equals(responseContentType)) {
                     try {
                         payloadData = objectMapper.readTree(bodyData);
                     } catch (Exception e) {
@@ -242,16 +246,17 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                                         .create(adapterConfig.getId(), adapterInformation.getProtocolId())
                                         .withSeverity(Event.SEVERITY.WARN)
                                         .withMessage(String.format(
-                                        "Http response on adapter '%s' could not be parsed as JSON data.",
-                                        adapterConfig.getId())).build());
+                                                "Http response on adapter '%s' could not be parsed as JSON data.",
+                                                adapterConfig.getId()))
+                                        .build());
                         throw new RuntimeException("unable to parse JSON data from HTTP response");
                     }
                 } else {
                     if (responseContentType == null) {
-                        responseContentType = HttpConstants.PLAIN_MIME_TYPE;
+                        responseContentType = PLAIN_MIME_TYPE;
                     }
                     String base64 = Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
-                    payloadData = String.format(HttpConstants.BASE64_ENCODED_VALUE, responseContentType, base64);
+                    payloadData = String.format(BASE64_ENCODED_VALUE, responseContentType, base64);
                 }
             }
         }

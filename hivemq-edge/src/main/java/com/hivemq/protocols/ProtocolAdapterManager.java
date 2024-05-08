@@ -532,11 +532,6 @@ public class ProtocolAdapterManager {
         }
 
         @Override
-        public @NotNull MetricRegistry getMetricRegistry() {
-            return metricRegistry;
-        }
-
-        @Override
         public @NotNull String getVersion() {
             return version;
         }

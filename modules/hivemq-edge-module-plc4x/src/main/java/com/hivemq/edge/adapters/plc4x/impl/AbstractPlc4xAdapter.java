@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
-import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.modules.adapters.PollingPerSubscriptionProtocolAdapter;
@@ -64,7 +63,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull T adapterConfig;
-    private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
     protected volatile @Nullable Plc4xConnection connection;
@@ -80,7 +78,6 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
             final ProtocolAdapterInput<T> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
-        this.metricRegistry = input.getMetricRegistry();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
     }

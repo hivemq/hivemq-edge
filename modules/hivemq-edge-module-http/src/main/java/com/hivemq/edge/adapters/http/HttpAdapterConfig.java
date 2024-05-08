@@ -22,7 +22,6 @@ import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.http.HttpConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +41,12 @@ import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
         "httpHeaders"})
 public class HttpAdapterConfig implements CustomConfig {
 
+    public static final @NotNull String HTML_MIME_TYPE = "text/html";
+    public static final @NotNull  String PLAIN_MIME_TYPE = "text/plain";
+    public static final @NotNull String JSON_MIME_TYPE = "application/json";
+    public static final String XML_MIME_TYPE = "application/xml";
+    public static final String YAML_MIME_TYPE = "application/yaml";
+
     public enum HttpMethod {
         GET,
         POST,
@@ -49,19 +54,19 @@ public class HttpAdapterConfig implements CustomConfig {
     }
 
     public enum HttpContentType {
-        JSON(HttpConstants.JSON_MIME_TYPE),
-        PLAIN(HttpConstants.PLAIN_MIME_TYPE),
-        HTML(HttpConstants.HTML_MIME_TYPE),
-        XML("application/xml"),
-        YAML("application/yaml");
+        JSON(JSON_MIME_TYPE),
+        PLAIN(PLAIN_MIME_TYPE),
+        HTML(HTML_MIME_TYPE),
+        XML(XML_MIME_TYPE),
+        YAML(YAML_MIME_TYPE);
 
-        HttpContentType(String contentType) {
+        HttpContentType(final @NotNull String contentType) {
             this.contentType = contentType;
         }
 
-        final String contentType;
+        final @NotNull String contentType;
 
-        public String getContentType() {
+        public @NotNull String getContentType() {
             return contentType;
         }
     }
@@ -182,15 +187,15 @@ public class HttpAdapterConfig implements CustomConfig {
         return httpHeaders;
     }
 
-    public HttpContentType getHttpRequestBodyContentType() {
+    public @NotNull HttpContentType getHttpRequestBodyContentType() {
         return httpRequestBodyContentType;
     }
 
-    public String getHttpRequestBody() {
+    public @NotNull String getHttpRequestBody() {
         return httpRequestBody;
     }
 
-    public Integer getHttpConnectTimeout() {
+    public @NotNull Integer getHttpConnectTimeout() {
         return httpConnectTimeout;
     }
 
@@ -198,7 +203,7 @@ public class HttpAdapterConfig implements CustomConfig {
         return url;
     }
 
-    public String getDestination() {
+    public @NotNull String getDestination() {
         return destination;
     }
 
@@ -227,11 +232,11 @@ public class HttpAdapterConfig implements CustomConfig {
 
         @JsonProperty("name")
         @ModuleConfigField(title = "Http Header Name", description = "The name of the HTTP header")
-        private String name;
+        private @NotNull String name;
 
         @JsonProperty("value")
         @ModuleConfigField(title = "Http Header Value", description = "The value of the HTTP header")
-        private String value;
+        private @NotNull String value;
 
         public HttpHeader() {
         }

@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
-import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.modules.adapters.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
@@ -39,15 +38,13 @@ public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocol
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull SimulationAdapterConfig adapterConfig;
-    private final @NotNull MetricRegistry metricRegistry;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
 
     public SimulationProtocolAdapter(
-            @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<SimulationAdapterConfig> protocolAdapterInput) {
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<SimulationAdapterConfig> protocolAdapterInput) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = protocolAdapterInput.getConfig();
-        this.metricRegistry = protocolAdapterInput.getMetricRegistry();
         this.protocolAdapterState = protocolAdapterInput.getProtocolAdapterState();
         this.protocolAdapterState.setConnectionStatus(STATELESS);
     }
@@ -59,7 +56,7 @@ public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocol
 
     @Override
     public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
-            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         protocolAdapterState.setRuntimeStatus(STARTED);
         return CompletableFuture.completedFuture(output);
     }
@@ -76,7 +73,7 @@ public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocol
     }
 
     @Override
-    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final AdapterSubscription adapterSubscription) {
+    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(final @NotNull AdapterSubscription adapterSubscription) {
         ProtocolAdapterDataSample dataSample = new ProtocolAdapterDataSampleImpl(adapterSubscription);
 
         dataSample.addDataPoint("sample",
