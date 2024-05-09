@@ -18,7 +18,15 @@ export type GatewayConfiguration = {
     extensions?: ExtensionList;
     firstUseInformation?: FirstUseInformation;
     gitHubLink?: Link;
+    /**
+     * The current id of hivemq edge. Changes at restart.
+     */
+    hivemqId?: string;
     modules?: ModuleList;
     resources?: LinkList;
+    /**
+     * Is the tracking of user actions allowed.
+     */
+    trackingAllowed?: boolean;
 };
 

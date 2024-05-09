@@ -25,11 +25,19 @@ export const $GatewayConfiguration = {
         gitHubLink: {
             type: 'Link',
         },
+        hivemqId: {
+            type: 'string',
+            description: `The current id of hivemq edge. Changes at restart.`,
+        },
         modules: {
             type: 'ModuleList',
         },
         resources: {
             type: 'LinkList',
+        },
+        trackingAllowed: {
+            type: 'boolean',
+            description: `Is the tracking of user actions allowed.`,
         },
     },
 } as const;
