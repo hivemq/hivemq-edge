@@ -85,7 +85,7 @@ describe('checkValidityPolicyValidator', () => {
           ],
           strategy: 'ANY_OF',
         },
-        type: 'schema',
+        type: 'SCHEMA',
       })
     )
     expect(error).toBeUndefined()
