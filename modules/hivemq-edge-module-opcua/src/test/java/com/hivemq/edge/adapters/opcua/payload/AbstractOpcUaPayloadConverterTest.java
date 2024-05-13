@@ -91,7 +91,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
         final ProtocolAdapterStartInput in = () -> moduleServices;
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
-        protocolAdapter.start(in, out).get();
+        protocolAdapter.start(in, out);
         return protocolAdapter;
     }
 

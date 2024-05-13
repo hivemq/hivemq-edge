@@ -4,35 +4,35 @@ import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
+import java.util.concurrent.CompletableFuture;
+
 public class ProtocolAdapterStartOutputImpl implements ProtocolAdapterStartOutput {
 
-    //default: all good
-    boolean startedSuccessfully = true;
-    @Nullable String message = null;
-    @Nullable Throwable throwable;
+    private @Nullable volatile String message = null;
+    private @Nullable volatile Throwable throwable = null;
+    private final @NotNull CompletableFuture<Boolean> startFuture = new CompletableFuture<>();
 
     @Override
-    public void startedSuccessfully(@NotNull final String message) {
-        startedSuccessfully = true;
-        this.message = message;
+    public void startedSuccessfully() {
+        this.startFuture.complete(true);
     }
 
     @Override
     public void failStart(final @NotNull Throwable t, final @Nullable String errorMessage) {
-        startedSuccessfully = false;
         this.throwable = t;
         this.message = errorMessage;
+        this.startFuture.complete(false);
     }
 
     public @Nullable Throwable getThrowable() {
         return throwable;
     }
 
-    public boolean isStartedSuccessfully() {
-        return startedSuccessfully;
-    }
-
     public @Nullable String getMessage() {
         return message;
+    }
+
+    public @NotNull CompletableFuture<Boolean> getStartFuture() {
+        return startFuture;
     }
 }

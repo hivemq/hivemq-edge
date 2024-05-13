@@ -46,7 +46,7 @@ public class ABProtocolAdapter extends AbstractPlc4xAdapter<ABAdapterConfig> {
     }
 
 
-    protected @NotNull Plc4xConnection<?> createConnection() throws Plc4xException {
+    protected @NotNull Plc4xConnection<ABAdapterConfig> createConnection() throws Plc4xException {
         return new Plc4xConnection<>(driverManager,
                 adapterConfig,
                 plc4xAdapterConfig -> Plc4xDataUtils.createQueryString(createQueryStringParams(plc4xAdapterConfig),
@@ -62,18 +62,6 @@ public class ABProtocolAdapter extends AbstractPlc4xAdapter<ABAdapterConfig> {
             }
         };
     }
-
-    @Override
-    public int getPollingIntervalMillis() {
-        return adapterConfig.getPollingIntervalMillis();
-    }
-
-    @Override
-    public int getMaxPollingErrorsBeforeRemoval() {
-        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
-    }
-
-
         /*
     The connection string looks as follows: ab-eth://<ip-address>/<station>
     The field address: N<file>:<offset></bitnumber>:<datatype>[<numberofbytes>]. The following data types are available at the moment: SINBLEBIT (requires bitnumber to be set), WORD (2 byte integer), DWORD (4 byte integer), INTEGER (returns the number of bytes requested as an array, for other data types <numberofbytes> will be ignored).

@@ -97,7 +97,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
+    public void start(
             @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
         try {
             protocolAdapterState.setConnectionStatus(STATELESS);
@@ -108,9 +108,9 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                     }
                 }
             }
-            return CompletableFuture.completedFuture(output);
+            output.startedSuccessfully();
         } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+            output.failStart(e, "Unable to start http protocol adapter.");
         }
     }
 

@@ -56,7 +56,7 @@ class OpcUaProtocolAdapterAuthTest {
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
-        protocolAdapter.start(in, out).get();
+        protocolAdapter.start(in, out);
 
         await().until(() -> CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
     }
@@ -72,7 +72,7 @@ class OpcUaProtocolAdapterAuthTest {
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
-        protocolAdapter.start(in, out).get();
+        protocolAdapter.start(in, out);
 
         await().until(() -> CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
     }
@@ -90,7 +90,7 @@ class OpcUaProtocolAdapterAuthTest {
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
-        protocolAdapter.start(in, out).get();
+        protocolAdapter.start(in, out);
 
         await().until(() -> CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
     }
@@ -107,7 +107,7 @@ class OpcUaProtocolAdapterAuthTest {
 
         final ProtocolAdapterStartInput in = new TestProtocolAdapterStartInput();
         final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
-        protocolAdapter.start(in, out).get();
+        protocolAdapter.start(in, out);
 
         await().until(() -> CONNECTED == protocolAdapter.getProtocolAdapterState().getConnectionStatus());
 

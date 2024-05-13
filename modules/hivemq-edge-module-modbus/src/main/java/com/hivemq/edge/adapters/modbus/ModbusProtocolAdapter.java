@@ -68,10 +68,15 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
     }
 
     @Override
-    public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
+    public void start(
             @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
-        CompletableFuture<IModbusClient> startFuture = CompletableFuture.supplyAsync(this::initConnection);
-        return startFuture.thenApply(connection -> output);
+        try {
+            initConnection();
+            output.startedSuccessfully();
+        } catch(Exception e){
+            output.failStart(e, "Exception during setup of Modbus client.");
+        }
+
     }
 
     @Override

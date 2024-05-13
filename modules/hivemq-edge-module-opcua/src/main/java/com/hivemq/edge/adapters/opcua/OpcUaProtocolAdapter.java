@@ -101,38 +101,30 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     }
 
     @Override
-    public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
+    public void start(
             @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
         try {
             if (opcUaClient == null) {
                 createClient();
             }
-            final CompletableFuture<ProtocolAdapterStartOutput> resultFuture = new CompletableFuture<>();
-
             opcUaClient.connect().thenAccept(uaClient -> {
                 opcUaClient.getSubscriptionManager().addSubscriptionListener(createSubscriptionListener());
                 createAllSubscriptions().whenComplete((unused, throwable) -> {
                     if (throwable == null) {
-                        resultFuture.complete(output);
+                        output.startedSuccessfully();
                     } else {
                         output.failStart(throwable, throwable.getMessage());
-                        resultFuture.completeExceptionally(throwable);
                     }
                 });
-
             }).exceptionally(throwable -> {
                 log.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
                 stop();
                 output.failStart(throwable, throwable.getMessage());
-                resultFuture.completeExceptionally(throwable);
                 return null;
             });
-
-            return resultFuture;
-
         } catch (Exception e) {
             log.error("Not able to start OPC-UA client for server {}", adapterConfig.getUri(), e);
-            return CompletableFuture.failedFuture(e);
+            output.failStart(e, "Not able to start OPC-UA client for server " + adapterConfig.getUri());
         }
     }
 
@@ -264,8 +256,8 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                     .fireEvent(adapterFactories.eventBuilderFactory()
                             .create(adapterConfig.getId(), adapterInformation.getProtocolId())
                             .withSeverity(Event.SEVERITY.ERROR)
-                            .withPayload(adapterFactories.payloadFactory().create(objectMapper,
-                                    serviceFault.getResponseHeader().getServiceResult()))
+                            .withPayload(adapterFactories.payloadFactory()
+                                    .create(objectMapper, serviceFault.getResponseHeader().getServiceResult()))
                             .withMessage("A Service Fault was Detected.")
                             .build());
         });
@@ -290,7 +282,8 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                             moduleServices.eventService(),
                             resultFuture,
                             opcUaClient,
-                            subscriptionMap, protocolAdapterMetricsService,
+                            subscriptionMap,
+                            protocolAdapterMetricsService,
                             adapterConfig.getId(),
                             this,
                             adapterFactories));

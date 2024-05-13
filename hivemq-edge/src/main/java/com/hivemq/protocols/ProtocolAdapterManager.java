@@ -41,7 +41,6 @@ import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
 import com.hivemq.edge.modules.adapters.services.ModuleServices;
 import com.hivemq.edge.modules.adapters.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
@@ -230,17 +229,18 @@ public class ProtocolAdapterManager {
         if (log.isInfoEnabled()) {
             log.info("Starting protocol-adapter '{}'.", protocolAdapterWrapper.getId());
         }
-        CompletableFuture<ProtocolAdapterStartOutput> startFuture;
+        CompletableFuture<Boolean> startFuture;
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
         if (protocolAdapterWrapper.getRuntimeStatus() == ProtocolAdapterState.RuntimeStatus.STARTED) {
-            startFuture = CompletableFuture.completedFuture(output);
+            startFuture = CompletableFuture.completedFuture(true);
         } else {
-            startFuture = protocolAdapterWrapper.start(new ProtocolAdapterStartInputImpl(moduleServices,
+            protocolAdapterWrapper.start(new ProtocolAdapterStartInputImpl(moduleServices,
                     protocolAdapterWrapper,
                     eventService), output);
+            startFuture = output.getStartFuture();
         }
-        return startFuture.<Void>thenApply(input -> {
-            if (!output.startedSuccessfully) {
+        return startFuture.<Void>thenApply(startedSuccessfuly -> {
+            if (!startedSuccessfuly) {
                 handleStartupError(protocolAdapterWrapper, output);
             } else {
                 schedulePolling(protocolAdapterWrapper);
@@ -248,22 +248,20 @@ public class ProtocolAdapterManager {
                 eventService.fireEvent(eventBuilder(Event.SEVERITY.INFO,
                         protocolAdapterWrapper).withMessage(String.format("Adapter '%s' started OK.",
                         protocolAdapterWrapper.getId())).build());
-                if (output.message != null) {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Protocol-adapter '{}' started: {}.",
-                                protocolAdapterWrapper.getId(),
-                                output.message);
-                    }
-                    HiveMQEdgeRemoteEvent adapterCreatedEvent =
-                            new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED);
-                    adapterCreatedEvent.addUserData("adapterType",
-                            protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId());
-                    remoteService.fireUsageEvent(adapterCreatedEvent);
+
+                if (log.isTraceEnabled()) {
+                    log.trace("Protocol-adapter '{}' started.", protocolAdapterWrapper.getId());
                 }
+                HiveMQEdgeRemoteEvent adapterCreatedEvent =
+                        new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED);
+                adapterCreatedEvent.addUserData("adapterType",
+                        protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId());
+                remoteService.fireUsageEvent(adapterCreatedEvent);
+
             }
             return null;
         }).exceptionally(throwable -> {
-            output.failStart(throwable, output.message);
+            output.failStart(throwable, output.getMessage());
             handleStartupError(protocolAdapterWrapper, output);
             return null;
         });
@@ -344,12 +342,13 @@ public class ProtocolAdapterManager {
         if (log.isWarnEnabled()) {
             log.warn("Protocol-adapter '{}' could not be started, reason: {}",
                     protocolAdapter.getId(),
-                    output.message,
+                    output.getMessage(),
                     output.getThrowable());
         }
         eventService.fireEvent(eventBuilder(Event.SEVERITY.CRITICAL,
                 protocolAdapter).withPayload(EventUtils.generateErrorPayload(output.getThrowable()))
-                .withMessage("Error starting adapter '" + protocolAdapter.getId() + "'.").build());
+                .withMessage("Error starting adapter '" + protocolAdapter.getId() + "'.")
+                .build());
         HiveMQEdgeRemoteEvent adapterCreatedEvent =
                 new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_ERROR);
         adapterCreatedEvent.addUserData("adapterType", protocolAdapter.getProtocolAdapterInformation().getProtocolId());
@@ -470,7 +469,8 @@ public class ProtocolAdapterManager {
                             new ProtocolAdapterInputImpl(configObject,
                                     version,
                                     protocolAdapterState,
-                                    moduleServicesPerModule, protocolAdapterMetricsService));
+                                    moduleServicesPerModule,
+                                    protocolAdapterMetricsService));
             // hen-egg problem. Rather solve this here as have not final fields in the adapter.
             moduleServicesPerModule.setAdapter(protocolAdapter);
 

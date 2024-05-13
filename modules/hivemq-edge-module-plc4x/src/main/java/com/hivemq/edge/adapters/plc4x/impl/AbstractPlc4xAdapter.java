@@ -65,7 +65,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     protected final @NotNull T adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
-    protected volatile @Nullable Plc4xConnection connection;
+    protected volatile @Nullable Plc4xConnection<T> connection;
     private final @NotNull Map<String, ProtocolAdapterDataSample> lastSamples = new HashMap<>(1);
 
     public enum ReadType {
@@ -74,8 +74,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     }
 
     public AbstractPlc4xAdapter(
-            final @NotNull ProtocolAdapterInformation adapterInformation,
-            final ProtocolAdapterInput<T> input) {
+            final @NotNull ProtocolAdapterInformation adapterInformation, final ProtocolAdapterInput<T> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
@@ -84,7 +83,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
 
     @Override
     public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final AdapterSubscription adapterSubscription) {
-        if (connection.isConnected()) {
+        if (connection != null && connection.isConnected()) {
             try {
                 CompletableFuture<? extends PlcReadResponse> request =
                         connection.read((Plc4xAdapterConfig.AdapterSubscriptionImpl) adapterSubscription);
@@ -113,11 +112,15 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     }
 
     @Override
-    public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
+    public void start(
             @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
-        CompletableFuture<Plc4xConnection<T>> startFuture = CompletableFuture.supplyAsync(this::initConnection);
-        startFuture.thenAccept(this::subscribeAllInternal);
-        return startFuture.thenApply(connection -> output);
+        try {
+            initConnection();
+            subscribeAllInternal(connection);
+            output.startedSuccessfully();
+        } catch (Exception e) {
+            output.failStart(e, null);
+        }
     }
 
     @Override
@@ -148,7 +151,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         return adapterInformation;
     }
 
-    private @NotNull Plc4xConnection initConnection() {
+    private void initConnection() {
         if (connection == null) {
             synchronized (lock) {
                 if (connection == null) {
@@ -164,10 +167,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 }
             }
         }
-        return connection;
     }
 
-    protected @NotNull Plc4xConnection<?> createConnection() throws Plc4xException {
+    protected @NotNull Plc4xConnection<T> createConnection() throws Plc4xException {
         return new Plc4xConnection<>(driverManager,
                 adapterConfig,
                 plc4xAdapterConfig -> Plc4xDataUtils.createQueryString(createQueryStringParams(plc4xAdapterConfig),
@@ -305,8 +307,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     protected @NotNull ProtocolAdapterDataSample processPlcFieldData(
             final @NotNull Plc4xAdapterConfig.AdapterSubscriptionImpl subscription,
             final @NotNull List<Pair<String, PlcValue>> l) {
-        ProtocolAdapterDataSample data = new ProtocolAdapterDataSampleImpl<>(subscription,
-                adapterFactories.dataPointFactory());
+        ProtocolAdapterDataSample data =
+                new ProtocolAdapterDataSampleImpl<>(subscription, adapterFactories.dataPointFactory());
         //-- For every tag value associated with the sample, write a data point to be published
         if (!l.isEmpty()) {
             l.forEach(pair -> data.addDataPoint(pair.getLeft(), convertTagValue(pair.getLeft(), pair.getValue())));

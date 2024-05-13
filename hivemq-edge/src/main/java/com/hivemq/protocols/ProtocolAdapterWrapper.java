@@ -49,10 +49,10 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements Protoc
         this.configObject = configObject;
     }
 
-    public @NotNull CompletableFuture<ProtocolAdapterStartOutput> start(
+    public void start(
             @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
         initStartAttempt();
-        return adapter.start(input, output);
+        adapter.start(input, output);
     }
 
 
