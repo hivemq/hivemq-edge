@@ -18,10 +18,10 @@ package com.hivemq.edge.impl.events;
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.modules.api.events.EventListener;
 import com.hivemq.edge.modules.api.events.EventStore;
-import com.hivemq.edge.modules.events.EventService;
-import com.hivemq.edge.modules.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.extension.sdk.api.events.EventService;
+import com.hivemq.extension.sdk.api.events.model.Event;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

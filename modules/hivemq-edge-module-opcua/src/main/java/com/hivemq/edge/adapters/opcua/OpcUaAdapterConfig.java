@@ -16,8 +16,8 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
+import com.hivemq.extension.sdk.api.adapters.annotations.ModuleConfigField;
+import com.hivemq.extension.sdk.api.adapters.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;

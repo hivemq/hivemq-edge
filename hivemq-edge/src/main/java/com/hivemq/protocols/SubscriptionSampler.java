@@ -2,11 +2,11 @@ package com.hivemq.protocols;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.edge.modules.adapters.PollingProtocolAdapter;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.adapters.services.ProtocolAdapterPublishService;
-import com.hivemq.edge.modules.events.EventService;
+import com.hivemq.extension.sdk.api.adapters.PollingProtocolAdapter;
+import com.hivemq.extension.sdk.api.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.extension.sdk.api.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.events.EventService;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;

@@ -1,6 +1,6 @@
 package com.hivemq.edge.adapters.modbus.util;
 
-import com.hivemq.edge.modules.adapters.data.DataPoint;
+import com.hivemq.extension.sdk.api.adapters.data.DataPoint;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;

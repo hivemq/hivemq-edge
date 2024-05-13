@@ -17,7 +17,7 @@ package com.hivemq.api.model.adapters;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterCapability;
+import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterCapability;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;

@@ -44,9 +44,9 @@ public class AdapterModelConverterTest {
     void testCategoriesConvertToTransportModel() {
 
         ProtocolAdapterCategory apiCategory =
-                ProtocolAdapterApiUtils.convertApiCategory(com.hivemq.edge.modules.adapters.ProtocolAdapterCategory.INDUSTRIAL);
+                ProtocolAdapterApiUtils.convertApiCategory(com.hivemq.extension.sdk.api.adapters.ProtocolAdapterCategory.INDUSTRIAL);
 
-        assertEquals(com.hivemq.edge.modules.adapters.ProtocolAdapterCategory.INDUSTRIAL.name(), apiCategory.getName());
+        assertEquals(com.hivemq.extension.sdk.api.adapters.ProtocolAdapterCategory.INDUSTRIAL.name(), apiCategory.getName());
         assertNotNull(apiCategory.getDisplayName(), "Category Display Name should not be null");
         assertNotNull(apiCategory.getDescription(), "Category Description should not be null");
         assertNull(apiCategory.getImage(), "Category Image should be null");

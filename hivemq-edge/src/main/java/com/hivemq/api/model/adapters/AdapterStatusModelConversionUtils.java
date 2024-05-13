@@ -18,7 +18,7 @@ package com.hivemq.api.model.adapters;
 import com.google.common.base.Preconditions;
 import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.status.Status;
-import com.hivemq.edge.modules.adapters.state.ProtocolAdapterState;
+import com.hivemq.extension.sdk.api.adapters.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 

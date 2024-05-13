@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.opcua.payload;
 
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
-import com.hivemq.edge.modules.adapters.state.ProtocolAdapterState;
+import com.hivemq.extension.sdk.api.adapters.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.eclipse.milo.opcua.stack.core.Identifiers;

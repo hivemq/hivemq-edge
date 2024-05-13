@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.hivemq.datagov.DataGovernanceService;
+import com.hivemq.extension.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.services.InternalPublishServiceImpl;
@@ -41,8 +42,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
-import static com.hivemq.mqtt.PublishReturnCode.FAILED;
-import static com.hivemq.mqtt.PublishReturnCode.NO_MATCHING_SUBSCRIBERS;
+import static com.hivemq.extension.sdk.api.mqtt.PublishReturnCode.FAILED;
+import static com.hivemq.extension.sdk.api.mqtt.PublishReturnCode.NO_MATCHING_SUBSCRIBERS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;

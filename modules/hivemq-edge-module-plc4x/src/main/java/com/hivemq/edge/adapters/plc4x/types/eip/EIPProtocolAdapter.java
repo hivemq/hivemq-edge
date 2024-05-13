@@ -18,10 +18,10 @@ package com.hivemq.edge.adapters.plc4x.types.eip;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.impl.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.adapters.config.AdapterSubscription;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
+import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.extension.sdk.api.adapters.config.AdapterSubscription;
+import com.hivemq.extension.sdk.api.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterInput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.apache.plc4x.java.api.messages.PlcReadResponse;
 

@@ -1,5 +1,6 @@
 package com.hivemq.edge.modules.adapters.data;
 
+import com.hivemq.extension.sdk.api.adapters.data.DataPoint;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 

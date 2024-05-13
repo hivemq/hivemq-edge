@@ -1,16 +1,16 @@
 package com.hivemq.edge.adapters.http;
 
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.edge.modules.adapters.data.DataPoint;
-import com.hivemq.edge.modules.adapters.factories.DataPointFactory;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
-import com.hivemq.edge.modules.adapters.services.ModuleServices;
-import com.hivemq.edge.modules.adapters.services.ProtocolAdapterPublishService;
-import com.hivemq.edge.modules.events.EventService;
+import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.extension.sdk.api.adapters.data.DataPoint;
+import com.hivemq.extension.sdk.api.adapters.factories.DataPointFactory;
+import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterInput;
+import com.hivemq.extension.sdk.api.adapters.services.ModuleServices;
+import com.hivemq.extension.sdk.api.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.PublishReturnCode;
+import com.hivemq.extension.sdk.api.events.EventService;
+import com.hivemq.extension.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.ArgumentCaptor;

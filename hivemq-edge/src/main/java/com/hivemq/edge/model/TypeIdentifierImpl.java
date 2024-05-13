@@ -17,9 +17,9 @@ package com.hivemq.edge.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
-import com.hivemq.edge.modules.events.model.TypeIdentifier;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.extension.sdk.api.events.model.TypeIdentifier;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Objects;

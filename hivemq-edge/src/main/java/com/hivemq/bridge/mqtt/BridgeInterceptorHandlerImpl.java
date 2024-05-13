@@ -30,6 +30,7 @@ import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishOutboundInte
 import com.hivemq.extension.sdk.api.interceptor.bridge.BridgePublishOutboundInterceptorProvider;
 import com.hivemq.extension.sdk.api.interceptor.bridge.parameter.BridgeInboundProviderInput;
 import com.hivemq.extension.sdk.api.interceptor.bridge.parameter.BridgeOutboundProviderInput;
+import com.hivemq.extension.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.extensions.HiveMQExtension;
 import com.hivemq.extensions.HiveMQExtensions;
 import com.hivemq.extensions.executor.PluginOutPutAsyncer;
@@ -48,7 +49,6 @@ import com.hivemq.extensions.packets.publish.ModifiableOutboundPublishImpl;
 import com.hivemq.extensions.packets.publish.ModifiablePublishPacketImpl;
 import com.hivemq.extensions.packets.publish.PublishPacketImpl;
 import com.hivemq.extensions.services.interceptor.Interceptors;
-import com.hivemq.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;

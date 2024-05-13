@@ -4,16 +4,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
-import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
-import com.hivemq.edge.modules.adapters.factories.AdapterSubscriptionFactory;
-import com.hivemq.edge.modules.adapters.factories.DataPointFactory;
-import com.hivemq.edge.modules.adapters.factories.EventBuilderFactory;
-import com.hivemq.edge.modules.adapters.factories.PayloadFactory;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
-import com.hivemq.edge.modules.events.model.Payload;
-import com.hivemq.edge.modules.events.model.TypeIdentifier;
+import com.hivemq.extension.sdk.api.adapters.factories.AdapterFactories;
+import com.hivemq.extension.sdk.api.adapters.factories.AdapterSubscriptionFactory;
+import com.hivemq.extension.sdk.api.adapters.factories.DataPointFactory;
+import com.hivemq.extension.sdk.api.adapters.factories.EventBuilderFactory;
+import com.hivemq.extension.sdk.api.adapters.factories.PayloadFactory;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.events.model.Payload;
+import com.hivemq.extension.sdk.api.events.model.TypeIdentifier;
 
 public class AdapterFactoriesImpl implements AdapterFactories {
 

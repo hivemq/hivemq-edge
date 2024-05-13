@@ -2,15 +2,15 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.edge.model.TypeIdentifierImpl;
-import com.hivemq.edge.modules.adapters.state.ProtocolAdapterState;
 import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
-import com.hivemq.edge.modules.events.EventService;
-import com.hivemq.edge.modules.events.model.EventBuilder;
-import com.hivemq.edge.modules.events.model.TypeIdentifier;
+import com.hivemq.extension.sdk.api.adapters.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.extension.sdk.api.events.EventService;
+import com.hivemq.extension.sdk.api.events.model.EventBuilder;
+import com.hivemq.extension.sdk.api.events.model.TypeIdentifier;
 
 import java.util.concurrent.atomic.AtomicReference;
 

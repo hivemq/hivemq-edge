@@ -17,9 +17,9 @@ package com.hivemq.edge.impl.events;
 
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.events.EventStore;
-import com.hivemq.edge.modules.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.extension.sdk.api.events.model.Event;
 import com.hivemq.util.RollingList;
 
 import javax.inject.Inject;

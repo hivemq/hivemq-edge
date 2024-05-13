@@ -18,8 +18,8 @@ package com.hivemq.edge.impl.events.impl;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
-import com.hivemq.edge.modules.events.model.Event;
-import com.hivemq.edge.modules.events.model.EventBuilder;
+import com.hivemq.extension.sdk.api.events.model.Event;
+import com.hivemq.extension.sdk.api.events.model.EventBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 

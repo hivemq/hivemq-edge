@@ -16,19 +16,19 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.adapters.services.ModuleServices;
-import com.hivemq.edge.modules.events.EventService;
+import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterInput;
+import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterStartInput;
+import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterStartOutput;
+import com.hivemq.extension.sdk.api.adapters.services.ModuleServices;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.events.EventService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
 
-import static com.hivemq.edge.modules.adapters.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.extension.sdk.api.adapters.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

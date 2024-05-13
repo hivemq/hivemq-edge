@@ -1,8 +1,8 @@
 package com.hivemq.edge.modules.config.impl;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.adapters.config.UserProperty;
+import com.hivemq.extension.sdk.api.adapters.annotations.ModuleConfigField;
+import com.hivemq.extension.sdk.api.adapters.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 

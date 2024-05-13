@@ -17,7 +17,7 @@ package com.hivemq.adapter;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
-import com.hivemq.edge.modules.adapters.services.ProtocolAdapterMetricsService;
+import com.hivemq.extension.sdk.api.adapters.services.ProtocolAdapterMetricsService;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
