@@ -34,7 +34,7 @@ describe('PrivacyConsentBanner', () => {
     cy.get('header').should('contain.text', 'Privacy Settings')
     cy.get('[role="dialog"]').should(
       'contain.text',
-      'This web application uses third-party website tracking technologies'
+      'This web application uses third-party tracking technologies to continually improve our services.'
     )
 
     cy.getByTestId('privacy-info').should('have.attr', 'href', 'https://github.com/hivemq/hivemq-edge')
