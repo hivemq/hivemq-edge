@@ -45,7 +45,7 @@ describe('ValidatorPanel', () => {
       .find("[role='listbox']")
       .find("[role='option']")
       .eq(0)
-      .should('contain.text', 'schema')
+      .should('contain.text', 'SCHEMA')
     cy.get('label#root_type-label + div').click()
 
     // second select

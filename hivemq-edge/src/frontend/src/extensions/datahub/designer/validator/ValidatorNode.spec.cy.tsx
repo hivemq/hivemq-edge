@@ -25,7 +25,7 @@ describe('ValidatorNode', () => {
     cy.mountWithProviders(mockReactFlow(<ValidatorNode {...MOCK_NODE_VALIDATOR} selected={true} />))
     cy.getByTestId(`node-title`).should('contain.text', 'Policy Validator')
     cy.getByTestId(`node-model`).find('p').should('have.length', 2)
-    cy.getByTestId(`node-model`).find('p').eq(0).should('contain.text', 'schema')
+    cy.getByTestId(`node-model`).find('p').eq(0).should('contain.text', 'SCHEMA')
     cy.getByTestId(`node-model`).find('p').eq(1).should('contain.text', 'ALL_OF')
 
     // TODO[NVL] Create a PageObject and generalise the selectors
