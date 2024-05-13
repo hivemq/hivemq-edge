@@ -283,7 +283,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     if (!continuing) {
                         if (log.isInfoEnabled()) {
                             log.warn(
-                                    "Detected Bad System Process {} In Sampler {} - Terminating Process to Maintain Health ({}ms Runtime)",
+                                    "Detected bad system process {} in sampler {} - terminating process to maintain health ({}ms runtime)",
                                     errorCountTotal,
                                     sampler.getAdapterId(),
                                     System.currentTimeMillis() - startedTimeMillis);
