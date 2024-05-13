@@ -9,6 +9,7 @@ interface IHeap {
   appid: string
   userId: string
   identity: string | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   config: any
   // added to cover the load function
   load: (id: string) => void
