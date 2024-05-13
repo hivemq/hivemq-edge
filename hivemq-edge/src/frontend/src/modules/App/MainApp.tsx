@@ -8,10 +8,10 @@ import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/700.css'
 
 import queryClient from '@/api/queryClient.ts'
-import PrivacyConsentBanner from '@/components/PrivacyConsentBanner.tsx'
 import { routes } from '@/modules/App/routes.tsx'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 import themeHiveMQ from '@/modules/Theme/themeHiveMQ.ts'
+import PrivacyConsentBanner from '@/modules/Trackers/PrivacyConsentBanner.tsx'
 
 const MainApp: FC = () => {
   return (
