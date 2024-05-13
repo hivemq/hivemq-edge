@@ -1,4 +1,5 @@
 import { Edge, Node } from 'reactflow'
+import { DataPolicyValidator } from '@/api/__generated__'
 import {
   BehaviorPolicyData,
   BehaviorPolicyType,
@@ -13,7 +14,6 @@ import {
   TransitionData,
   TransitionType,
   ValidatorData,
-  ValidatorType,
 } from '@/extensions/datahub/types.ts'
 import { styleDefaultEdge } from '@/extensions/datahub/utils/edge.utils.ts'
 
@@ -48,7 +48,7 @@ export const MOCK_INITIAL_POLICY = () => {
     id: '4',
     data: {
       strategy: StrategyType.ANY_OF,
-      type: ValidatorType.SCHEMA,
+      type: DataPolicyValidator.type.SCHEMA,
       schemas: [{ version: '1', schemaId: 'first mock schema' }],
     },
     type: DataHubNodeType.VALIDATOR,

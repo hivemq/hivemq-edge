@@ -2,6 +2,7 @@ import { expect } from 'vitest'
 import { Node } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
+import { DataPolicyValidator } from '@/api/__generated__'
 import {
   DataHubNodeType,
   DataPolicyData,
@@ -9,7 +10,6 @@ import {
   SchemaType,
   StrategyType,
   ValidatorData,
-  ValidatorType,
   WorkspaceState,
 } from '@datahub/types.ts'
 import {
@@ -21,7 +21,7 @@ const MOCK_NODE_VALIDATOR: Node<ValidatorData> = {
   id: 'node-id',
   type: DataHubNodeType.VALIDATOR,
   data: {
-    type: ValidatorType.SCHEMA,
+    type: DataPolicyValidator.type.SCHEMA,
     strategy: StrategyType.ANY_OF,
     schemas: [],
   },
