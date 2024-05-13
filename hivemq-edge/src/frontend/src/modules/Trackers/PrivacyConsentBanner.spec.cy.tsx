@@ -37,7 +37,7 @@ describe('PrivacyConsentBanner', () => {
       'This web application uses third-party website tracking technologies'
     )
 
-    cy.getByTestId('privacy-info').should('have.attr', 'href', 'https://www.hivemq.com/legal/imprint/')
+    cy.getByTestId('privacy-info').should('have.attr', 'href', 'https://github.com/hivemq/hivemq-edge')
     cy.getByTestId('privacy-optOut').should('contain.text', 'Deny')
     cy.getByTestId('privacy-optIn').should('contain.text', 'Accept all')
   })
