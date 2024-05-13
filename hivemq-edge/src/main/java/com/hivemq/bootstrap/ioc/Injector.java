@@ -34,7 +34,7 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.datagov.ioc.DataGovernanceModule;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.modules.ModuleLoader;
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
+import com.hivemq.edge.modules.adapters.services.ModuleServices;
 import com.hivemq.edge.modules.ioc.ModulesModule;
 import com.hivemq.edge.modules.ioc.RemoteServiceModule;
 import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;

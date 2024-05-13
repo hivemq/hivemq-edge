@@ -15,8 +15,9 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterCategory;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterTag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -71,12 +72,12 @@ public class ModbusProtocolAdapterInformation
     }
 
     @Override
-    public @Nullable ProtocolAdapterConstants.CATEGORY getCategory() {
-        return ProtocolAdapterConstants.CATEGORY.INDUSTRIAL;
+    public @Nullable ProtocolAdapterCategory getCategory() {
+        return ProtocolAdapterCategory.INDUSTRIAL;
     }
 
     @Override
-    public List<ProtocolAdapterConstants.TAG> getTags() {
-        return List.of(ProtocolAdapterConstants.TAG.TCP);
+    public List<ProtocolAdapterTag> getTags() {
+        return List.of(ProtocolAdapterTag.TCP);
     }
 }

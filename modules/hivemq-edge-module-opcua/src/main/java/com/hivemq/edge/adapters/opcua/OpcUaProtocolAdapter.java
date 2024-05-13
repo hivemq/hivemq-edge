@@ -22,19 +22,19 @@ import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
+import com.hivemq.edge.modules.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.discovery.NodeType;
+import com.hivemq.edge.modules.adapters.discovery.ProtocolAdapterDiscoveryInput;
+import com.hivemq.edge.modules.adapters.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
-import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
-import com.hivemq.edge.modules.adapters.model.NodeType;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
-import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.adapters.services.ModuleServices;
+import com.hivemq.edge.modules.adapters.state.ProtocolAdapterState;
+import com.hivemq.edge.modules.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
@@ -66,8 +66,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
-import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.CONNECTED;
-import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
+import static com.hivemq.edge.modules.adapters.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.edge.modules.adapters.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
@@ -78,7 +78,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull AdapterFactories adapterFactories;
-    private final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
+    private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private @Nullable OpcUaClient opcUaClient;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap = new ConcurrentHashMap<>();
     private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
@@ -91,7 +91,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
         this.adapterFactories = input.adapterFactories();
-        this.protocolAdapterMetricsHelper = input.getProtocolAdapterMetricsHelper();
+        this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
     }
 
 
@@ -197,7 +197,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
 
     @NotNull
     private OpcUaSubscriptionListener createSubscriptionListener() {
-        return new OpcUaSubscriptionListener(protocolAdapterMetricsHelper, adapterConfig.getId(), (subscription) -> {
+        return new OpcUaSubscriptionListener(protocolAdapterMetricsService, adapterConfig.getId(), (subscription) -> {
             //re-create a subscription on failure
             final OpcUaAdapterConfig.Subscription subscriptionConfig =
                     subscriptionMap.get(subscription.getSubscriptionId());
@@ -290,8 +290,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                             moduleServices.eventService(),
                             resultFuture,
                             opcUaClient,
-                            subscriptionMap,
-                            protocolAdapterMetricsHelper,
+                            subscriptionMap, protocolAdapterMetricsService,
                             adapterConfig.getId(),
                             this,
                             adapterFactories));

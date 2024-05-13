@@ -18,16 +18,16 @@ package com.hivemq.edge.adapters.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.modules.adapters.PollingProtocolAdapter;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.config.AdapterSubscription;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
-import com.hivemq.edge.modules.api.events.model.Event;
-import com.hivemq.edge.modules.config.AdapterSubscription;
+import com.hivemq.edge.modules.adapters.services.ModuleServices;
+import com.hivemq.edge.modules.adapters.state.ProtocolAdapterState;
+import com.hivemq.edge.modules.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Logger;
@@ -53,8 +53,8 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.edge.adapters.http.HttpAdapterConfig.JSON_MIME_TYPE;
 import static com.hivemq.edge.adapters.http.HttpAdapterConfig.PLAIN_MIME_TYPE;
-import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.ERROR;
-import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.STATELESS;
+import static com.hivemq.edge.modules.adapters.state.ProtocolAdapterState.ConnectionStatus.ERROR;
+import static com.hivemq.edge.modules.adapters.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
 /**
  * @author HiveMQ Adapter Generator

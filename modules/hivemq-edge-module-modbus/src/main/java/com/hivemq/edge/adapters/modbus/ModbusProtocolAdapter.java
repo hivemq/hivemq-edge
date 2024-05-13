@@ -19,19 +19,19 @@ import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.PollingPerSubscriptionProtocolAdapter;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.config.AdapterSubscription;
 import com.hivemq.edge.modules.adapters.data.DataPoint;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.edge.modules.adapters.discovery.NodeTree;
+import com.hivemq.edge.modules.adapters.discovery.NodeType;
+import com.hivemq.edge.modules.adapters.discovery.ProtocolAdapterDiscoveryInput;
+import com.hivemq.edge.modules.adapters.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
-import com.hivemq.edge.modules.adapters.model.NodeTree;
-import com.hivemq.edge.modules.adapters.model.NodeType;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
-import com.hivemq.edge.modules.config.AdapterSubscription;
+import com.hivemq.edge.modules.adapters.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Logger;
@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hivemq.edge.modules.api.adapters.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.edge.modules.adapters.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
 public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);

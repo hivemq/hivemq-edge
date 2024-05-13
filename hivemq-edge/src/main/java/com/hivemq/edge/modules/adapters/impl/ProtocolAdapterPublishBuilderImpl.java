@@ -17,8 +17,8 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.edge.modules.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.PublishReturnCode;

@@ -15,9 +15,10 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.ab;
 
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterCapability;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterCategory;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterTag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.EnumSet;
@@ -74,15 +75,15 @@ public class ABProtocolAdapterInformation implements ProtocolAdapterInformation 
     }
 
     @Override
-    public ProtocolAdapterConstants.CATEGORY getCategory() {
-        return ProtocolAdapterConstants.CATEGORY.INDUSTRIAL;
+    public ProtocolAdapterCategory getCategory() {
+        return ProtocolAdapterCategory.INDUSTRIAL;
     }
 
     @Override
-    public List<ProtocolAdapterConstants.TAG> getTags() {
-        return List.of(ProtocolAdapterConstants.TAG.TCP,
-                ProtocolAdapterConstants.TAG.AUTOMATION,
-                ProtocolAdapterConstants.TAG.FACTORY);
+    public List<ProtocolAdapterTag> getTags() {
+        return List.of(ProtocolAdapterTag.TCP,
+                ProtocolAdapterTag.AUTOMATION,
+                ProtocolAdapterTag.FACTORY);
     }
 
     @Override

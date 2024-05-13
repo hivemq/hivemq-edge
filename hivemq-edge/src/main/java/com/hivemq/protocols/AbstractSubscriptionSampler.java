@@ -6,26 +6,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.edge.model.TypeIdentifierImpl;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
+import com.hivemq.edge.modules.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.edge.modules.adapters.config.AdapterSubscription;
+import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
 import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
 import com.hivemq.edge.modules.adapters.data.DataPoint;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterMultiPublishJsonPayload;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload;
 import com.hivemq.edge.modules.adapters.data.TagSample;
-import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
-import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelperImpl;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.adapters.exceptions.ProtocolAdapterException;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsService;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
+import com.hivemq.edge.modules.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
-import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventUtils;
-import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
-import com.hivemq.edge.modules.config.AdapterSubscription;
-import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
+import com.hivemq.edge.modules.events.EventService;
+import com.hivemq.edge.modules.events.model.EventBuilder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.PublishReturnCode;
@@ -61,7 +61,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     private final @NotNull Date created;
     private @Nullable ScheduledFuture<?> future;
     protected final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapter;
-    private final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
+    private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull AtomicInteger publishCount = new AtomicInteger(0);
 
     public AbstractSubscriptionSampler(
@@ -82,8 +82,8 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         this.maxErrorsBeforeRemoval = protocolAdapterConfig.getMaxPollingErrorsBeforeRemoval();
         this.uuid = UUID.randomUUID();
         this.created = new Date();
-        protocolAdapterMetricsHelper =
-                new ProtocolAdapterMetricsHelperImpl(protocolAdapter.getProtocolAdapterInformation().getProtocolId(),
+        protocolAdapterMetricsService =
+                new ProtocolAdapterMetricsServiceImpl(protocolAdapter.getProtocolAdapterInformation().getProtocolId(),
                         protocolAdapter.getId(),
                         metricRegistry);
     }
@@ -131,7 +131,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                         .withAdapter(protocolAdapter);
                 final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
                 publishFuture.thenAccept(publishReturnCode -> {
-                    protocolAdapterMetricsHelper.incrementReadPublishSuccess();
+                    protocolAdapterMetricsService.incrementReadPublishSuccess();
                     if (publishCount.incrementAndGet() == 1) {
                         eventService.fireEvent(eventBuilder()
                                 .withSeverity(EventImpl.SEVERITY.INFO)
@@ -142,7 +142,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                                 .build());
                     }
                 }).exceptionally(throwable -> {
-                    protocolAdapterMetricsHelper.incrementReadPublishFailure();
+                    protocolAdapterMetricsService.incrementReadPublishFailure();
                     log.warn("Error publishing adapter payload", throwable);
                     return null;
                 });

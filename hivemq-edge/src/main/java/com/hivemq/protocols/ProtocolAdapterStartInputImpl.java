@@ -1,11 +1,11 @@
 package com.hivemq.protocols;
 
+import com.hivemq.edge.modules.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.adapters.services.ModuleServices;
+import com.hivemq.edge.modules.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 class ProtocolAdapterStartInputImpl implements ProtocolAdapterStartInput {

@@ -29,30 +29,30 @@ import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.edge.modules.adapters.PollingProtocolAdapter;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
+import com.hivemq.edge.modules.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
+import com.hivemq.edge.modules.adapters.exceptions.ProtocolAdapterException;
 import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
+import com.hivemq.edge.modules.adapters.factories.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
-import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
-import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelperImpl;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsService;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
+import com.hivemq.edge.modules.adapters.services.ModuleServices;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.state.ProtocolAdapterState;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterState;
-import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventUtils;
-import com.hivemq.edge.modules.api.events.model.Event;
-import com.hivemq.edge.modules.api.events.model.EventBuilder;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
-import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
+import com.hivemq.edge.modules.events.EventService;
+import com.hivemq.edge.modules.events.model.Event;
+import com.hivemq.edge.modules.events.model.EventBuilder;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
@@ -455,7 +455,7 @@ public class ProtocolAdapterManager {
             final ProtocolAdapterConfig configObject = protocolAdapterFactory.convertConfigObject(objectMapper, config);
 
 
-            final ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper = new ProtocolAdapterMetricsHelperImpl(
+            final ProtocolAdapterMetricsService protocolAdapterMetricsService = new ProtocolAdapterMetricsServiceImpl(
                     protocolAdapterFactory.getInformation().getProtocolId(),
                     configObject.getId(),
                     metricRegistry);
@@ -471,8 +471,7 @@ public class ProtocolAdapterManager {
                             new ProtocolAdapterInputImpl(configObject,
                                     version,
                                     protocolAdapterState,
-                                    moduleServicesPerModule,
-                                    protocolAdapterMetricsHelper));
+                                    moduleServicesPerModule, protocolAdapterMetricsService));
             // hen-egg problem. Rather solve this here as have not final fields in the adapter.
             moduleServicesPerModule.setAdapter(protocolAdapter);
 
@@ -531,19 +530,19 @@ public class ProtocolAdapterManager {
         private final @NotNull String version;
         private final @NotNull ProtocolAdapterState protocolAdapterState;
         private final @NotNull ModuleServices moduleServices;
-        private final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
+        private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
 
         public ProtocolAdapterInputImpl(
                 final @NotNull T configObject,
                 final @NotNull String version,
                 final @NotNull ProtocolAdapterState protocolAdapterState,
                 final @NotNull ModuleServices moduleServices,
-                final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper) {
+                final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService) {
             this.configObject = configObject;
             this.version = version;
             this.protocolAdapterState = protocolAdapterState;
             this.moduleServices = moduleServices;
-            this.protocolAdapterMetricsHelper = protocolAdapterMetricsHelper;
+            this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         }
 
         @NotNull
@@ -573,8 +572,8 @@ public class ProtocolAdapterManager {
         }
 
         @Override
-        public @NotNull ProtocolAdapterMetricsHelper getProtocolAdapterMetricsHelper() {
-            return protocolAdapterMetricsHelper;
+        public @NotNull ProtocolAdapterMetricsService getProtocolAdapterMetricsHelper() {
+            return protocolAdapterMetricsService;
         }
     }
 

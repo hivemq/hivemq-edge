@@ -28,8 +28,7 @@ import com.hivemq.datagov.DataGovernanceService;
 import com.hivemq.datagov.impl.DataGovernanceContextImpl;
 import com.hivemq.datagov.model.DataGovernanceData;
 import com.hivemq.datagov.model.impl.DataGovernanceDataImpl;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.adapters.ProtocolAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.async.TimeoutFallback;
 import com.hivemq.extension.sdk.api.client.parameter.ServerInformation;
@@ -68,6 +67,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ProtocolAdapterInterceptorHandler {
 
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterInterceptorHandler.class);
+
+    public static final @NotNull String ADAPTER_NAME_TOKEN = "adapter.name";
+    public static final @NotNull String ADAPTER_PROTOCOL_ID_TOKEN = "adapter.id";
+    public static final @NotNull String ADAPTER_INSTANCE_ID_TOKEN = "adapter.instance.id";
 
     private final @NotNull DataGovernanceService dataGovernanceService;
     private final @NotNull Interceptors interceptors;
@@ -176,7 +179,7 @@ public class ProtocolAdapterInterceptorHandler {
         final ListenableFuture<HandlerResult> handlerFuture = adapterHandling.apply(publish, protocolAdapter);
         return Futures.transformAsync(handlerFuture, handlerResult -> {
             final PUBLISH modifiedPublish = handlerResult.getModifiedPublish();
-            if (handlerResult.isPreventPublish() || modifiedPublish == null ) {
+            if (handlerResult.isPreventPublish() || modifiedPublish == null) {
                 return Futures.immediateFuture(PublishReturnCode.FAILED);
             } else {
                 final DataGovernanceData data2 =
@@ -202,11 +205,9 @@ public class ProtocolAdapterInterceptorHandler {
     protected static Map<String, String> populateAdapterContextReplacements(final @NotNull ProtocolAdapter protocolAdapter) {
 
         return ImmutableMap.<String, String>builder()
-                .put(ProtocolAdapterConstants.ADAPTER_NAME_TOKEN,
-                        protocolAdapter.getProtocolAdapterInformation().getDisplayName())
-                .put(ProtocolAdapterConstants.ADAPTER_PROTOCOL_ID_TOKEN,
-                        protocolAdapter.getProtocolAdapterInformation().getProtocolId())
-                .put(ProtocolAdapterConstants.ADAPTER_INSTANCE_ID_TOKEN, protocolAdapter.getId())
+                .put(ADAPTER_NAME_TOKEN, protocolAdapter.getProtocolAdapterInformation().getDisplayName())
+                .put(ADAPTER_PROTOCOL_ID_TOKEN, protocolAdapter.getProtocolAdapterInformation().getProtocolId())
+                .put(ADAPTER_INSTANCE_ID_TOKEN, protocolAdapter.getId())
                 .build();
     }
 

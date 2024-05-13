@@ -15,9 +15,10 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterCapability;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterCategory;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterTag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -77,12 +78,12 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
     }
 
     @Override
-    public ProtocolAdapterConstants.CATEGORY getCategory() {
-        return ProtocolAdapterConstants.CATEGORY.SIMULATION;
+    public ProtocolAdapterCategory getCategory() {
+        return ProtocolAdapterCategory.SIMULATION;
     }
 
     @Override
-    public @Nullable List<ProtocolAdapterConstants.TAG> getTags() {
+    public @Nullable List<ProtocolAdapterTag> getTags() {
         return List.of();
     }
 

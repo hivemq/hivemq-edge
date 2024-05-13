@@ -24,10 +24,9 @@ import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.VersionProvider;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterCapability;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.factories.ProtocolAdapterFactory;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.protocols.ProtocolAdapterManager;
@@ -156,7 +155,7 @@ public class ProtocolAdapterApiUtils {
      *
      * @param category the category enum to convert
      */
-    public static ProtocolAdapterCategory convertApiCategory(ProtocolAdapterConstants.CATEGORY category) {
+    public static ProtocolAdapterCategory convertApiCategory(com.hivemq.edge.modules.adapters.ProtocolAdapterCategory category) {
         return new ProtocolAdapterCategory(category.name(),
                 category.getDisplayName(),
                 category.getDescription(),

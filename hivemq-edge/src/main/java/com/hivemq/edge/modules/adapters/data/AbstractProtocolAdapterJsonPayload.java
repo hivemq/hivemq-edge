@@ -16,7 +16,7 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hivemq.edge.modules.config.UserProperty;
+import com.hivemq.edge.modules.adapters.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.List;

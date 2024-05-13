@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager;
@@ -26,15 +26,15 @@ import java.util.function.Consumer;
 
 public class OpcUaSubscriptionListener implements UaSubscriptionManager.SubscriptionListener {
 
-    private final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper;
+    private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull String adapterId;
     private final @NotNull Consumer<UaSubscription> recreateSubscriptionsCallback;
 
     public OpcUaSubscriptionListener(
-            final @NotNull ProtocolAdapterMetricsHelper protocolAdapterMetricsHelper,
+            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull String adapterId,
             final @NotNull Consumer<UaSubscription> recreateSubscriptionsCallback) {
-        this.protocolAdapterMetricsHelper = protocolAdapterMetricsHelper;
+        this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapterId = adapterId;
         this.recreateSubscriptionsCallback = recreateSubscriptionsCallback;
     }
@@ -42,13 +42,13 @@ public class OpcUaSubscriptionListener implements UaSubscriptionManager.Subscrip
     @Override
     public void onKeepAlive(final @NotNull UaSubscription subscription, final @NotNull DateTime publishTime) {
         UaSubscriptionManager.SubscriptionListener.super.onKeepAlive(subscription, publishTime);
-        protocolAdapterMetricsHelper.increment("subscription.keepalive.count");
+        protocolAdapterMetricsService.increment("subscription.keepalive.count");
     }
 
     @Override
     public void onSubscriptionTransferFailed(
             final @NotNull UaSubscription subscription, final @NotNull StatusCode statusCode) {
-        protocolAdapterMetricsHelper.increment("subscription.transfer.failed.count");
+        protocolAdapterMetricsService.increment("subscription.transfer.failed.count");
         recreateSubscriptionsCallback.accept(subscription);
     }
 }

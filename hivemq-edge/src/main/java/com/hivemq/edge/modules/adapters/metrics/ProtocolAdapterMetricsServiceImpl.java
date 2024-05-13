@@ -23,7 +23,6 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hivemq.edge.modules.adapters.ProtocolAdapterConstants.PROTOCOL_ADAPTER_PREFIX;
 
 /**
  * Ensures the adapters use consistent namespaces for the metrics so they can be derived
@@ -31,46 +30,47 @@ import static com.hivemq.edge.modules.adapters.ProtocolAdapterConstants.PROTOCOL
  *
  * @author Simon L Johnson
  */
-public class ProtocolAdapterMetricsHelperImpl implements ProtocolAdapterMetricsHelper {
+public class ProtocolAdapterMetricsServiceImpl implements ProtocolAdapterMetricsService {
 
-    private @NotNull String protocolAdapterType;
-    private @NotNull String protocolAdapterId;
-    private @NotNull MetricRegistry metricRegistry;
+    private static final @NotNull String SUCCESS_COUNT = "success.count";
+    private static final @NotNull String FAILED_COUNT = "failed.count";
+
     private final @NotNull Set<String> metricNames = new HashSet<>();
-    private final Object mutex = new Object();
-    static final String SUCCESS_COUNT = "success.count";
-    static final String FAILED_COUNT = "failed.count";
-    static final String PERIOD = ".";
+    private final @NotNull MetricRegistry metricRegistry;
 
-    protected Counter publishSuccessCounter;
-    protected Counter publishFailedCounter;
-    protected Counter connectionSuccessCounter;
-    protected Counter connectionFailedCounter;
+    private final @NotNull String protocolAdapterType;
+    private final @NotNull String protocolAdapterId;
+    private final @NotNull Counter publishSuccessCounter;
+    private final @NotNull Counter publishFailedCounter;
+    private final @NotNull Counter connectionSuccessCounter;
+    private final @NotNull Counter connectionFailedCounter;
 
-    public ProtocolAdapterMetricsHelperImpl(final @NotNull String protocolAdapterType,
-                                            final @NotNull String protocolAdapterId,
-                                            final @NotNull MetricRegistry metricRegistry) {
+    public ProtocolAdapterMetricsServiceImpl(
+            final @NotNull String protocolAdapterType,
+            final @NotNull String protocolAdapterId,
+            final @NotNull MetricRegistry metricRegistry) {
         Preconditions.checkNotNull(protocolAdapterType);
         Preconditions.checkNotNull(protocolAdapterId);
         Preconditions.checkNotNull(metricRegistry);
         this.protocolAdapterType = protocolAdapterType;
         this.protocolAdapterId = protocolAdapterId;
         this.metricRegistry = metricRegistry;
-        initRegistry();
+        this.publishSuccessCounter =
+                metricRegistry.counter(createAdapterMetricsNamespace("read.publish." + SUCCESS_COUNT));
+        this.publishFailedCounter =
+                metricRegistry.counter(createAdapterMetricsNamespace("read.publish." + FAILED_COUNT));
+        this.connectionSuccessCounter =
+                metricRegistry.counter(createAdapterMetricsNamespace("connection." + SUCCESS_COUNT));
+        this.connectionFailedCounter =
+                metricRegistry.counter(createAdapterMetricsNamespace("connection." + FAILED_COUNT));
     }
 
-    protected void initRegistry(){
-        publishSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish." + SUCCESS_COUNT));
-        publishFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("read.publish." + FAILED_COUNT) );
-        connectionSuccessCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection." + SUCCESS_COUNT));
-        connectionFailedCounter = metricRegistry.counter(createAdapterMetricsNamespace("connection." + FAILED_COUNT));
-    }
 
     /**
      * Use to indicate a read from the adapter has been successfully PUBLISHed
      */
     @Override
-    public void incrementReadPublishSuccess(){
+    public void incrementReadPublishSuccess() {
         publishSuccessCounter.inc();
     }
 
@@ -78,7 +78,7 @@ public class ProtocolAdapterMetricsHelperImpl implements ProtocolAdapterMetricsH
      * Use to indicate a read from the adapter has failed
      */
     @Override
-    public void incrementReadPublishFailure(){
+    public void incrementReadPublishFailure() {
         publishFailedCounter.inc();
     }
 
@@ -87,7 +87,7 @@ public class ProtocolAdapterMetricsHelperImpl implements ProtocolAdapterMetricsH
      * Use to indicate a connection attempt to the device has failed
      */
     @Override
-    public void incrementConnectionFailure(){
+    public void incrementConnectionFailure() {
         connectionFailedCounter.inc();
     }
 
@@ -95,16 +95,17 @@ public class ProtocolAdapterMetricsHelperImpl implements ProtocolAdapterMetricsH
      * Use to indicate a connection attempt to the device has succeeded
      */
     @Override
-    public void incrementConnectionSuccess(){
+    public void incrementConnectionSuccess() {
         connectionSuccessCounter.inc();
     }
 
     /**
      * Increment an arbitrary counter in the adapter instance namespace
+     *
      * @param metricName - the metric name to be incremented (inside) the adapter namespace
      */
     @Override
-    public void increment(final @NotNull String metricName){
+    public void increment(final @NotNull String metricName) {
         Preconditions.checkNotNull(metricName);
         metricRegistry.counter(createAdapterMetricsNamespace(metricName)).inc();
     }
@@ -114,34 +115,25 @@ public class ProtocolAdapterMetricsHelperImpl implements ProtocolAdapterMetricsH
      * NB: metrics created outside the context of this helper will not be touched.
      */
     @Override
-    public void clearAll(){
+    public synchronized void clearAll() {
         Preconditions.checkNotNull(metricRegistry);
-        synchronized (mutex){
-            metricNames.forEach(metricRegistry::remove);
-            metricNames.clear();
-        }
+        metricNames.forEach(metricRegistry::remove);
+        metricNames.clear();
     }
 
     /**
      * Create a deterministic prefix for use in the metrics registry.
-     *
+     * <p>
      * Example format of the namespace:
      * com.hivemq.edge.protocol-adapters.[test-type].[test-id].[suffix](.) with optional trailing period
+     *
      * @param suffix - the suffix to append to the namespace
      * @return a namespace string for use in the metrics registry
      */
-    protected String createAdapterMetricsNamespace(@NotNull final String suffix){
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(PROTOCOL_ADAPTER_PREFIX);
-        stringBuilder.append(protocolAdapterType);
-        stringBuilder.append(PERIOD);
-        stringBuilder.append(protocolAdapterId);
-        stringBuilder.append(PERIOD);
-        stringBuilder.append(suffix);
-        String metricName = stringBuilder.toString();
-        synchronized (mutex){
-            metricNames.add(metricName);
-        }
+    protected synchronized @NotNull String createAdapterMetricsNamespace(@NotNull final String suffix) {
+        final String metricName =
+                PROTOCOL_ADAPTER_PREFIX + protocolAdapterType + "." + protocolAdapterId + "." + suffix;
+        metricNames.add(metricName);
         return metricName;
     }
 }

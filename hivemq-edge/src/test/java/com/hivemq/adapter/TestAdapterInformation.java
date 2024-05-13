@@ -15,8 +15,9 @@
  */
 package com.hivemq.adapter;
 
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterCategory;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterTag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -71,12 +72,12 @@ public class TestAdapterInformation implements ProtocolAdapterInformation {
     }
 
     @Override
-    public @Nullable ProtocolAdapterConstants.CATEGORY getCategory() {
+    public @Nullable ProtocolAdapterCategory getCategory() {
         return null;
     }
 
     @Override
-    public @Nullable List<ProtocolAdapterConstants.TAG> getTags() {
+    public @Nullable List<ProtocolAdapterTag> getTags() {
         return null;
     }
 }

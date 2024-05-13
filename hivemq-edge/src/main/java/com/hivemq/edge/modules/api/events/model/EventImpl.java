@@ -19,7 +19,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.api.json.TimestampToDateConverter;
-import com.hivemq.edge.model.TypeIdentifier;
+import com.hivemq.edge.modules.events.model.Event;
+import com.hivemq.edge.modules.events.model.Payload;
+import com.hivemq.edge.modules.events.model.TypeIdentifier;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -128,7 +130,7 @@ public class EventImpl implements Event {
     }
 
     @Override
-    public TypeIdentifier getIdentifier() {
+    public @NotNull TypeIdentifier getIdentifier() {
         return identifier;
     }
 

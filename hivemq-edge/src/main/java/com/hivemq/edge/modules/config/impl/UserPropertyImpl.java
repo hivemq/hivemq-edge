@@ -2,7 +2,7 @@ package com.hivemq.edge.modules.config.impl;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.UserProperty;
+import com.hivemq.edge.modules.adapters.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 public class UserPropertyImpl implements UserProperty {

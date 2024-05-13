@@ -17,11 +17,11 @@ package com.hivemq.edge.adapters.opcua;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.adapters.opcua.client.OpcUaConfigConverter;
+import com.hivemq.edge.modules.adapters.ProtocolAdapter;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterInformation;
+import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
+import com.hivemq.edge.modules.adapters.factories.ProtocolAdapterFactory;
 import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Map;

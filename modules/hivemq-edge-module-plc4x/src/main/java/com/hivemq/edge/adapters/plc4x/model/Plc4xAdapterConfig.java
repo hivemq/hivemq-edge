@@ -19,8 +19,9 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
-import com.hivemq.edge.modules.config.UserProperty;
+import com.hivemq.edge.modules.adapters.config.AdapterSubscription;
+import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
+import com.hivemq.edge.modules.adapters.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -117,7 +118,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "destination", "qos"})
-    public static class AdapterSubscriptionImpl implements com.hivemq.edge.modules.config.AdapterSubscription {
+    public static class AdapterSubscriptionImpl implements AdapterSubscription {
 
         @JsonProperty(value = "tagName", required = true)
         @ModuleConfigField(title = "Tag Name",
@@ -191,7 +192,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
                                    "MQTT Message Per Device Tag",
                                    "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
                            defaultValue = "MQTTMessagePerTag")
-        protected @NotNull com.hivemq.edge.modules.config.AdapterSubscription.MessageHandlingOptions messageHandlingOptions = com.hivemq.edge.modules.config.AdapterSubscription.MessageHandlingOptions.MQTTMessagePerTag;
+        protected @NotNull AdapterSubscription.MessageHandlingOptions messageHandlingOptions = AdapterSubscription.MessageHandlingOptions.MQTTMessagePerTag;
 
         @JsonProperty(value = "includeTimestamp")
         @ModuleConfigField(title = "Include Sample Timestamp In Publish?",

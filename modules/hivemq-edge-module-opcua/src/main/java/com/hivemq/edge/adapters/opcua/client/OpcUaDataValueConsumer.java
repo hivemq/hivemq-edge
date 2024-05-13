@@ -21,12 +21,12 @@ import com.hivemq.edge.adapters.opcua.payload.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaStringPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
 import com.hivemq.edge.adapters.opcua.util.EventUtils;
+import com.hivemq.edge.modules.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
-import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
-import com.hivemq.edge.modules.api.events.EventService;
-import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsService;
+import com.hivemq.edge.modules.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.events.EventService;
+import com.hivemq.edge.modules.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.PublishReturnCode;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
@@ -49,7 +49,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull OpcUaClient opcUaClient;
     private final @NotNull NodeId nodeId;
-    private final @NotNull ProtocolAdapterMetricsHelper metricsHelper;
+    private final @NotNull ProtocolAdapterMetricsService metricsHelper;
     private final @NotNull EventService eventService;
     private final @NotNull OpcUaProtocolAdapter protocolAdapter;
     private final @NotNull AdapterFactories adapterFactories;
@@ -61,7 +61,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull OpcUaClient opcUaClient,
             final @NotNull NodeId nodeId,
-            final @NotNull ProtocolAdapterMetricsHelper metricsHelper,
+            final @NotNull ProtocolAdapterMetricsService metricsHelper,
             final @NotNull String adapterId,
             final @NotNull EventService eventService,
             final @NotNull OpcUaProtocolAdapter protocolAdapter,

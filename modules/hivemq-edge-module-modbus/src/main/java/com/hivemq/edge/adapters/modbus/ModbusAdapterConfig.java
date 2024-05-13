@@ -20,8 +20,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.ProtocolAdapterConfig;
-import com.hivemq.edge.modules.config.UserProperty;
+import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
+import com.hivemq.edge.modules.adapters.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -134,7 +134,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         return timeout;
     }
 
-    public static class AdapterSubscription implements com.hivemq.edge.modules.config.AdapterSubscription {
+    public static class AdapterSubscription implements com.hivemq.edge.modules.adapters.config.AdapterSubscription {
         @JsonProperty(value = "destination", required = true)
         @ModuleConfigField(title = "Destination Topic",
                            description = "The topic to publish data on",

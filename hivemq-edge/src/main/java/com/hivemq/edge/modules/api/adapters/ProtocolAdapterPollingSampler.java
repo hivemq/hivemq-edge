@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.api.adapters;
 
+import com.hivemq.edge.modules.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;

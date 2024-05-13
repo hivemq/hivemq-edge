@@ -18,7 +18,7 @@ package com.hivemq.api.model.events;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.ItemsResponse;
-import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;

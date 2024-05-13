@@ -24,7 +24,6 @@ import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.edge.HiveMQEdgeConstants;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -45,9 +44,9 @@ public class AdapterModelConverterTest {
     void testCategoriesConvertToTransportModel() {
 
         ProtocolAdapterCategory apiCategory =
-                ProtocolAdapterApiUtils.convertApiCategory(ProtocolAdapterConstants.CATEGORY.INDUSTRIAL);
+                ProtocolAdapterApiUtils.convertApiCategory(com.hivemq.edge.modules.adapters.ProtocolAdapterCategory.INDUSTRIAL);
 
-        assertEquals(ProtocolAdapterConstants.CATEGORY.INDUSTRIAL.name(), apiCategory.getName());
+        assertEquals(com.hivemq.edge.modules.adapters.ProtocolAdapterCategory.INDUSTRIAL.name(), apiCategory.getName());
         assertNotNull(apiCategory.getDisplayName(), "Category Display Name should not be null");
         assertNotNull(apiCategory.getDescription(), "Category Description should not be null");
         assertNull(apiCategory.getImage(), "Category Image should be null");

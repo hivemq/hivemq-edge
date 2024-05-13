@@ -21,7 +21,7 @@ import com.hivemq.bridge.mqtt.BridgeInterceptorHandler;
 import com.hivemq.bridge.mqtt.BridgeMqttClient;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
-import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.edge.modules.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.inject.Inject;

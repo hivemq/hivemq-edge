@@ -1,8 +1,11 @@
 package com.hivemq.edge.modules.api.events.model;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.edge.model.TypeIdentifier;
 import com.hivemq.edge.model.TypeIdentifierImpl;
+import com.hivemq.edge.modules.events.model.Event;
+import com.hivemq.edge.modules.events.model.EventBuilder;
+import com.hivemq.edge.modules.events.model.Payload;
+import com.hivemq.edge.modules.events.model.TypeIdentifier;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 

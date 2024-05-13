@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.modules.api.events;
 
-import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**
