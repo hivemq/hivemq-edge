@@ -23,7 +23,7 @@ import com.hivemq.edge.adapters.opcua.util.Bytes;
 import com.hivemq.edge.adapters.opcua.util.EventUtils;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
-import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsService;
+import com.hivemq.edge.modules.adapters.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.events.EventService;
 import com.hivemq.edge.modules.events.model.Event;

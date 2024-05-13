@@ -19,7 +19,7 @@ import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaException;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.modules.adapters.factories.AdapterFactories;
-import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsService;
+import com.hivemq.edge.modules.adapters.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;

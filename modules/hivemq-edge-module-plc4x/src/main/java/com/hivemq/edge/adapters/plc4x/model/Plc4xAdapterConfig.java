@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
 import com.hivemq.edge.modules.adapters.config.AdapterSubscription;
+import com.hivemq.edge.modules.adapters.config.MessageHandlingOptions;
 import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
 import com.hivemq.edge.modules.adapters.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -192,7 +193,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
                                    "MQTT Message Per Device Tag",
                                    "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
                            defaultValue = "MQTTMessagePerTag")
-        protected @NotNull AdapterSubscription.MessageHandlingOptions messageHandlingOptions = AdapterSubscription.MessageHandlingOptions.MQTTMessagePerTag;
+        protected @NotNull MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
 
         @JsonProperty(value = "includeTimestamp")
         @ModuleConfigField(title = "Include Sample Timestamp In Publish?",

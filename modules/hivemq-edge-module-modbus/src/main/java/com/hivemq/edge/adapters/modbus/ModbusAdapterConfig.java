@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
+import com.hivemq.edge.modules.adapters.config.MessageHandlingOptions;
 import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
 import com.hivemq.edge.modules.adapters.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;

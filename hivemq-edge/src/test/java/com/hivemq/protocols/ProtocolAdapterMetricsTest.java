@@ -4,7 +4,7 @@ import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import org.junit.jupiter.api.Test;
 
-import static com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsService.PROTOCOL_ADAPTER_PREFIX;
+import static com.hivemq.edge.modules.adapters.services.ProtocolAdapterMetricsService.PROTOCOL_ADAPTER_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 

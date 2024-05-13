@@ -9,6 +9,7 @@ import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.adapters.config.AdapterSubscription;
+import com.hivemq.edge.modules.adapters.config.MessageHandlingOptions;
 import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
 import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
 import com.hivemq.edge.modules.adapters.data.DataPoint;
@@ -17,8 +18,8 @@ import com.hivemq.edge.modules.adapters.data.ProtocolAdapterMultiPublishJsonPayl
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload;
 import com.hivemq.edge.modules.adapters.data.TagSample;
 import com.hivemq.edge.modules.adapters.exceptions.ProtocolAdapterException;
-import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
+import com.hivemq.edge.modules.adapters.services.ProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.events.EventUtils;
@@ -172,7 +173,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         Long timestamp = data.getSubscription().getIncludeTimestamp() ? data.getTimestamp() : null;
         if (data.getDataPoints().size() > 1 &&
                 data.getSubscription().getMessageHandlingOptions() ==
-                        AdapterSubscription.MessageHandlingOptions.MQTTMessagePerSubscription) {
+                        MessageHandlingOptions.MQTTMessagePerSubscription) {
             //-- Put all derived samples into a single MQTT message
             AbstractProtocolAdapterJsonPayload payload = createMultiPublishPayload(timestamp,
                     data.getDataPoints(),

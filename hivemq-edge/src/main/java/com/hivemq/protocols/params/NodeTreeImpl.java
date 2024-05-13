@@ -128,7 +128,7 @@ public class NodeTreeImpl implements NodeTree {
             return selectable;
         }
 
-        public String toString(int indent) {
+        public @NotNull String toString(int indent) {
             StringBuilder result = new StringBuilder(String.format("%s | %s | %s \n", id, name, description));
 
             for (ObjectNode child : children) {
