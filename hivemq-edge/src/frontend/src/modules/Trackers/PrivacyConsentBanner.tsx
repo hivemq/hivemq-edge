@@ -73,7 +73,7 @@ const PrivacyConsentBanner: FC = () => {
 
         <DrawerFooter justifyContent="space-between">
           <ButtonGroup>
-            <Link href="https://www.hivemq.com/legal/imprint/" isExternal data-testid="privacy-info">
+            <Link href="https://github.com/hivemq/hivemq-edge" isExternal data-testid="privacy-info">
               {t('PrivacyConsentBanner.action.moreInfo')} <ExternalLinkIcon ml={2} />
             </Link>
           </ButtonGroup>
