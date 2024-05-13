@@ -33,13 +33,13 @@ public class TypeIdentifierImpl implements TypeIdentifier {
     @JsonProperty("type")
     @Schema(description = "The type of the associated object/entity",
             required = true)
-    private final @NotNull TYPE type;
+    private final @NotNull TypeIdentifier.Type type;
 
     @JsonProperty("identifier")
     @Schema(description = "The identifier associated with the object, a combination of type and identifier is used to uniquely identify an object in the system")
     private final @NotNull String identifier;
 
-    public TypeIdentifierImpl(@NotNull @JsonProperty("type") final TYPE type,
+    public TypeIdentifierImpl(@NotNull @JsonProperty("type") final TypeIdentifier.Type type,
                               @NotNull @JsonProperty("identifier") final String identifier) {
         Preconditions.checkNotNull(type);
         Preconditions.checkNotNull(identifier);
@@ -48,7 +48,7 @@ public class TypeIdentifierImpl implements TypeIdentifier {
     }
 
     @Override
-    public @NotNull TYPE getType() {
+    public @NotNull TypeIdentifier.Type getType() {
         return type;
     }
 
@@ -80,7 +80,7 @@ public class TypeIdentifierImpl implements TypeIdentifier {
     }
 
 
-    public static TypeIdentifier create(@NotNull TypeIdentifierImpl.TYPE type, @NotNull String identifier) {
+    public static TypeIdentifier create(@NotNull TypeIdentifier.Type type, @NotNull String identifier) {
         Preconditions.checkNotNull(type);
         Preconditions.checkNotNull(identifier);
         return new TypeIdentifierImpl(type, identifier);
@@ -90,7 +90,7 @@ public class TypeIdentifierImpl implements TypeIdentifier {
      * Generate a globally unique type identifier in the namespace supplied
      * @return The generated ID
      */
-    public static TypeIdentifier generate(final @NotNull TYPE type){
+    public static TypeIdentifier generate(final @NotNull TypeIdentifier.Type type){
         Preconditions.checkNotNull(type);
         return new TypeIdentifierImpl(type, UUID.randomUUID().toString());
     }

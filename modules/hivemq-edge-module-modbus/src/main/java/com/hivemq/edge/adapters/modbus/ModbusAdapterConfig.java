@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Objects;
 
 
+@SuppressWarnings("FieldCanBeLocal")
 public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
     @JsonProperty(value = "id", required = true)
@@ -50,13 +51,13 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
                        numberMin = 1,
                        required = true,
                        defaultValue = "1000")
-    private int pollingIntervalMillis = DEFAULT_POLLING_INTERVAL; //1 second
+    private int pollingIntervalMillis = 1000; //1 second
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
                        description = "Max. errors polling the endpoint before the polling daemon is stopped",
                        defaultValue = "10")
-    private int maxPollingErrorsBeforeRemoval = DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL;
+    private int maxPollingErrorsBeforeRemoval = 10;
 
     @JsonProperty("port")
     @ModuleConfigField(title = "Port",
@@ -80,7 +81,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
                        numberMax = 15000,
                        defaultValue = "5000",
                        required = true)
-    private @NotNull int timeout = 5000;
+    private int timeout = 5000;
 
     @JsonProperty("publishChangedDataOnly")
     @ModuleConfigField(title = "Only publish data items that have changed since last poll",
@@ -234,7 +235,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(final @Nullable Object o) {
             if (this == o) {
                 return true;
             }
@@ -274,16 +275,14 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         public int endIdx;
 
         @Override
-        public String toString() {
-            final StringBuilder sb = new StringBuilder("AddressRange{");
-            sb.append("from=").append(startIdx);
-            sb.append(", to=").append(endIdx);
-            sb.append('}');
-            return sb.toString();
+        public @Nullable String toString() {
+            return "AddressRange{" + "from=" + startIdx +
+                    ", to=" + endIdx +
+                    '}';
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(final @Nullable Object o) {
             if (this == o) {
                 return true;
             }

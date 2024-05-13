@@ -49,7 +49,7 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
     }
 
     @Override
-    public Map<String, Object> unconvertConfigObject(
+    public @NotNull Map<String, Object> unconvertConfigObject(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterConfig config) {
         return ModbusConfigConverter.unconvertConfig(objectMapper, config);

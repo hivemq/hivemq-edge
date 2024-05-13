@@ -64,4 +64,13 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig> {
         return map;
     }
 
+    @Override
+    public int getPollingIntervalMillis() {
+        return adapterConfig.getPollingIntervalMillis();
+    }
+
+    @Override
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+    }
 }

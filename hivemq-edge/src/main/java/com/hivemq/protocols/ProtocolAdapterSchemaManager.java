@@ -46,22 +46,23 @@ public class ProtocolAdapterSchemaManager {
     private @Nullable JsonNode schemaNode;
     private @Nullable JsonSchema schema;
 
-    public ProtocolAdapterSchemaManager(@NotNull final ObjectMapper objectMapper,
-                                            @NotNull final Class<? extends ProtocolAdapterConfig> configBean) {
+    public ProtocolAdapterSchemaManager(
+            @NotNull final ObjectMapper objectMapper,
+            @NotNull final Class<? extends ProtocolAdapterConfig> configBean) {
         this.objectMapper = objectMapper;
         this.configBean = configBean;
         this.customConfigSchemaGenerator = new CustomConfigSchemaGenerator();
     }
 
-    public synchronized JsonNode generateSchemaNode(){
-        if(schemaNode == null){
+    public synchronized @NotNull JsonNode generateSchemaNode() {
+        if (schemaNode == null) {
             schemaNode = customConfigSchemaGenerator.generateJsonSchema(configBean);
         }
         return schemaNode;
     }
 
-    public synchronized JsonSchema generateSchema(){
-        if(schema == null){
+    public synchronized @NotNull JsonSchema generateSchema() {
+        if (schema == null) {
             JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
             schema = factory.getSchema(generateSchemaNode());
             schema.initializeValidators();
@@ -69,27 +70,29 @@ public class ProtocolAdapterSchemaManager {
         return schema;
     }
 
-    public List<ProtocolAdapterValidationFailure> validateJsonDocument(@NotNull final byte[] jsonDocument) throws IOException {
+    public @NotNull List<ProtocolAdapterValidationFailure> validateJsonDocument(final byte @NotNull [] jsonDocument)
+            throws IOException {
         JsonSchema schema = generateSchema();
         Preconditions.checkNotNull(jsonDocument);
         JsonNode node = objectMapper.readTree(jsonDocument);
-        return schema.validate(node).stream().
-                map(ProtocolAdapterSchemaManager::convertMessage).
-                collect(Collectors.toList());
+        return schema.validate(node)
+                .stream()
+                .map(ProtocolAdapterSchemaManager::convertMessage)
+                .collect(Collectors.toList());
     }
 
     public @NotNull List<ProtocolAdapterValidationFailure> validateObject(@NotNull final Object o) {
         Preconditions.checkNotNull(o);
         JsonNode node;
-        if(o instanceof JsonNode){
+        if (o instanceof JsonNode) {
             node = (JsonNode) o;
-        }
-        else {
+        } else {
             node = objectMapper.valueToTree(o);
         }
-        return generateSchema().validate(node).stream().
-                map(ProtocolAdapterSchemaManager::convertMessage).
-                collect(Collectors.toList());
+        return generateSchema().validate(node)
+                .stream()
+                .map(ProtocolAdapterSchemaManager::convertMessage)
+                .collect(Collectors.toList());
     }
 
 

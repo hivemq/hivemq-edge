@@ -3,7 +3,6 @@ package com.hivemq.protocols;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.modules.adapters.PollingProtocolAdapter;
-import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.events.EventService;
@@ -20,12 +19,13 @@ public class SubscriptionSampler extends AbstractSubscriptionSampler {
 
     public SubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> adapterProtocolAdapterWrapper,
-            final @NotNull ProtocolAdapterConfig protocolAdapterConfig,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService) {
-        super(adapterProtocolAdapterWrapper, protocolAdapterConfig,
+        super(adapterProtocolAdapterWrapper,
+                adapterProtocolAdapterWrapper.getAdapter().getPollingIntervalMillis(),
+                adapterProtocolAdapterWrapper.getAdapter().getPollingIntervalMillis(),
                 metricRegistry,
                 objectMapper,
                 adapterPublishService,

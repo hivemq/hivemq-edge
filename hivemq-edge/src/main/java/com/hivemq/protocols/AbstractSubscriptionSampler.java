@@ -10,7 +10,6 @@ import com.hivemq.edge.modules.adapters.ProtocolAdapter;
 import com.hivemq.edge.modules.adapters.ProtocolAdapterPublishBuilder;
 import com.hivemq.edge.modules.adapters.config.AdapterSubscription;
 import com.hivemq.edge.modules.adapters.config.MessageHandlingOptions;
-import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
 import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
 import com.hivemq.edge.modules.adapters.data.DataPoint;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
@@ -27,6 +26,7 @@ import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.edge.modules.events.EventService;
 import com.hivemq.edge.modules.events.model.EventBuilder;
+import com.hivemq.edge.modules.events.model.TypeIdentifier;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.PublishReturnCode;
@@ -51,39 +51,43 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     private final long initialDelay;
     private final long period;
+    private final int maxErrorsBeforeRemoval;
+
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull EventService eventService;
     private final @NotNull TimeUnit unit;
-    private final int maxErrorsBeforeRemoval;
-    protected @NotNull AtomicBoolean closed = new AtomicBoolean(false);
     private final @NotNull String adapterId;
     private final @NotNull UUID uuid;
     private final @NotNull Date created;
-    private @Nullable ScheduledFuture<?> future;
-    protected final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapter;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull AtomicInteger publishCount = new AtomicInteger(0);
 
+    private volatile @Nullable ScheduledFuture<?> future;
+
+    protected final @NotNull AtomicBoolean closed = new AtomicBoolean(false);
+    protected final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapter;
+
     public AbstractSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapter,
-            final @NotNull ProtocolAdapterConfig protocolAdapterConfig,
+            final long protocolPollingIntervalMillis,
+            final int maxPollingErrorsBeforeRemoval,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService) {
         this.protocolAdapter = protocolAdapter;
         this.adapterId = protocolAdapter.getId();
-        this.initialDelay = Math.max(protocolAdapterConfig.getPollingIntervalMillis(), 100);
-        this.period = Math.max(protocolAdapterConfig.getPollingIntervalMillis(), 10);
+        this.initialDelay = Math.max(protocolPollingIntervalMillis, 100);
+        this.period = Math.max(protocolPollingIntervalMillis, 10);
         this.objectMapper = objectMapper;
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
         this.unit = TimeUnit.MILLISECONDS;
-        this.maxErrorsBeforeRemoval = protocolAdapterConfig.getMaxPollingErrorsBeforeRemoval();
+        this.maxErrorsBeforeRemoval = maxPollingErrorsBeforeRemoval;
         this.uuid = UUID.randomUUID();
         this.created = new Date();
-        protocolAdapterMetricsService =
+        this.protocolAdapterMetricsService =
                 new ProtocolAdapterMetricsServiceImpl(protocolAdapter.getProtocolAdapterInformation().getProtocolId(),
                         protocolAdapter.getId(),
                         metricRegistry);
@@ -219,8 +223,8 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         Preconditions.checkNotNull(protocolAdapter);
         EventBuilder builder = new EventBuilderImpl();
         builder.withTimestamp(System.currentTimeMillis());
-        builder.withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER, protocolAdapter.getId()));
-        builder.withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER_TYPE, protocolAdapter.getProtocolAdapterInformation().getProtocolId()));
+        builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER, protocolAdapter.getId()));
+        builder.withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER_TYPE, protocolAdapter.getProtocolAdapterInformation().getProtocolId()));
         return builder;
     }
 

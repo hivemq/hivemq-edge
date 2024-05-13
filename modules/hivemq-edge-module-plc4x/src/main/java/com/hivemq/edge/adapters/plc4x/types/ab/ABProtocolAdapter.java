@@ -63,6 +63,16 @@ public class ABProtocolAdapter extends AbstractPlc4xAdapter<ABAdapterConfig> {
         };
     }
 
+    @Override
+    public int getPollingIntervalMillis() {
+        return adapterConfig.getPollingIntervalMillis();
+    }
+
+    @Override
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+    }
+
 
         /*
     The connection string looks as follows: ab-eth://<ip-address>/<station>

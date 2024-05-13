@@ -313,4 +313,14 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         }
         return data;
     }
+
+    @Override
+    public int getPollingIntervalMillis() {
+        return adapterConfig.getPollingIntervalMillis();
+    }
+
+    @Override
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+    }
 }

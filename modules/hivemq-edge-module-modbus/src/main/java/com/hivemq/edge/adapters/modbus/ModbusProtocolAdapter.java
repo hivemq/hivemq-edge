@@ -113,6 +113,16 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
         return new ArrayList<>(adapterConfig.getSubscriptions());
     }
 
+    @Override
+    public int getPollingIntervalMillis() {
+        return adapterConfig.getPollingIntervalMillis();
+    }
+
+    @Override
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+    }
+
 
     private @NotNull IModbusClient initConnection() {
         if (modbusClient == null) {

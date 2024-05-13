@@ -94,7 +94,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        description = "Max. errors polling the endpoint before the polling daemon is stopped",
                        numberMin = 3,
                        defaultValue = "10")
-    private int maxPollingErrorsBeforeRemoval = DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL;
+    private int maxPollingErrorsBeforeRemoval = 10;
 
     @JsonProperty("url")
     @ModuleConfigField(title = "URL", description = "The url of the http request you would like to make",

@@ -53,6 +53,7 @@ import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.edge.modules.events.EventService;
 import com.hivemq.edge.modules.events.model.Event;
 import com.hivemq.edge.modules.events.model.EventBuilder;
+import com.hivemq.edge.modules.events.model.TypeIdentifier;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
@@ -277,7 +278,6 @@ public class ProtocolAdapterManager {
             adapter.getSubscriptions().forEach(adapterSubscription -> {
                 //noinspection unchecked this is safe as we literally make a check on the adapter class before
                 final PerSubscriptionSampler sampler = new PerSubscriptionSampler(protocolAdapterWrapper,
-                        protocolAdapterWrapper.getConfigObject(),
                         metricRegistry,
                         objectMapper,
                         moduleServices.adapterPublishService(),
@@ -290,7 +290,6 @@ public class ProtocolAdapterManager {
             final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
             //noinspection unchecked this is safe as we literally make a check on the adapter class before
             final SubscriptionSampler sampler = new SubscriptionSampler(protocolAdapterWrapper,
-                    protocolAdapterWrapper.getConfigObject(),
                     metricRegistry,
                     objectMapper,
                     moduleServices.adapterPublishService(),
@@ -583,8 +582,8 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(adapter);
         EventBuilder builder = new EventBuilderImpl();
         builder.withTimestamp(System.currentTimeMillis());
-        builder.withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER, adapter.getId()));
-        builder.withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER_TYPE,
+        builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER, adapter.getId()));
+        builder.withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER_TYPE,
                 adapter.getProtocolAdapterInformation().getProtocolId()));
         builder.withSeverity(severity);
         return builder;

@@ -58,7 +58,7 @@ public class EventBuilderImpl implements EventBuilder {
         Preconditions.checkNotNull(severity);
         Preconditions.checkNotNull(message);
 
-        return new EventImpl(TypeIdentifierImpl.generate(TypeIdentifier.TYPE.EVENT),
+        return new EventImpl(TypeIdentifierImpl.generate(TypeIdentifier.Type.EVENT),
                 severity,
                 message,
                 payload,

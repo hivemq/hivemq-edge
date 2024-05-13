@@ -71,7 +71,6 @@ public class NodeTreeImpl implements NodeTree {
         @JsonProperty("id")
         private final @NotNull String id;
 
-
         @JsonProperty("name")
         private final @NotNull String name;
 

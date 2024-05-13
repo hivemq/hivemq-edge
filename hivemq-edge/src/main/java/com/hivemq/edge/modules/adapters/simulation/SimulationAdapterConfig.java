@@ -47,13 +47,13 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
                        numberMin = 1,
                        required = true,
                        defaultValue = "1000")
-    private int pollingIntervalMillis = DEFAULT_POLLING_INTERVAL; //1 second
+    private int pollingIntervalMillis = 1000; //1 second
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
                        description = "Max. errors polling the endpoint before the polling daemon is stopped",
                        defaultValue = "10")
-    private int maxPollingErrorsBeforeRemoval = DEFAULT_MAX_POLLING_ERROR_BEFORE_REMOVAL;
+    private int maxPollingErrorsBeforeRemoval = 10;
 
     public int getPollingIntervalMillis() {
         return pollingIntervalMillis;

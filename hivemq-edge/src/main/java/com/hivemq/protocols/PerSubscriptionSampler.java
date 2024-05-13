@@ -4,7 +4,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.modules.adapters.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.edge.modules.adapters.config.AdapterSubscription;
-import com.hivemq.edge.modules.adapters.config.ProtocolAdapterConfig;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
 import com.hivemq.edge.modules.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.events.EventService;
@@ -19,13 +18,14 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
 
     public PerSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper<PollingPerSubscriptionProtocolAdapter> protocolAdapter,
-            final @NotNull ProtocolAdapterConfig protocolAdapterConfig,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull AdapterSubscription adapterSubscription,
             final @NotNull EventService eventService) {
-        super(protocolAdapter, protocolAdapterConfig,
+        super(protocolAdapter,
+                protocolAdapter.getAdapter().getPollingIntervalMillis(),
+                protocolAdapter.getAdapter().getPollingIntervalMillis(),
                 metricRegistry,
                 objectMapper,
                 adapterPublishService,

@@ -342,7 +342,7 @@ public class BridgeMqttClient {
     protected @NotNull EventBuilder eventBuilder(final @NotNull EventImpl.SEVERITY severity) {
         EventBuilder builder = new EventBuilderImpl();
         builder.withTimestamp(System.currentTimeMillis());
-        builder.withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.BRIDGE, bridge.getId()));
+        builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.BRIDGE, bridge.getId()));
         builder.withSeverity(severity);
         return builder;
     }
@@ -352,7 +352,7 @@ public class BridgeMqttClient {
      *
      * @return The generated ID
      */
-    static TypeIdentifier generate(@NotNull TypeIdentifierImpl.TYPE type) {
+    static TypeIdentifier generate(@NotNull TypeIdentifier.Type type) {
         Preconditions.checkNotNull(type);
         return new TypeIdentifierImpl(type, UUID.randomUUID().toString());
     }

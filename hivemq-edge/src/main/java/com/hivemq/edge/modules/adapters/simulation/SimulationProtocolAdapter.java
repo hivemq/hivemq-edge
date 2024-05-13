@@ -83,4 +83,14 @@ public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocol
     public @NotNull List<? extends AdapterSubscription> getSubscriptions() {
         return adapterConfig.getSubscriptions();
     }
+
+    @Override
+    public int getPollingIntervalMillis() {
+        return adapterConfig.getPollingIntervalMillis();
+    }
+
+    @Override
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+    }
 }

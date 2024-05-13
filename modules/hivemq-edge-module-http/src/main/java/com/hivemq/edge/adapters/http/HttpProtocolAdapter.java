@@ -158,9 +158,15 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         return CompletableFuture.failedFuture(new RuntimeException("No response was created."));
     }
 
+    @Override
+    public int getPollingIntervalMillis() {
+        return adapterConfig.getPollingIntervalMillis();
+    }
 
-    // duplicated should likely go to Edge via a interface
-
+    @Override
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+    }
 
     protected void initializeHttpRequest(@NotNull final HttpAdapterConfig config) {
         if (HttpUtils.validHttpOrHttpsUrl(config.getUrl())) {

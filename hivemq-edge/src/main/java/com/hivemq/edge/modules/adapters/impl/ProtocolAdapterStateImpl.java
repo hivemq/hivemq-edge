@@ -8,6 +8,7 @@ import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.edge.modules.events.EventService;
 import com.hivemq.edge.modules.events.model.EventBuilder;
+import com.hivemq.edge.modules.events.model.TypeIdentifier;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -92,8 +93,8 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
             final @NotNull EventImpl.SEVERITY severity) {
         EventBuilder builder = new EventBuilderImpl();
         builder.withTimestamp(System.currentTimeMillis());
-        builder.withSource(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER, adapterId));
-        builder.withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifierImpl.TYPE.ADAPTER_TYPE, protocolId));
+        builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER, adapterId));
+        builder.withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER_TYPE, protocolId));
         builder.withSeverity(severity);
         return builder;
     }
