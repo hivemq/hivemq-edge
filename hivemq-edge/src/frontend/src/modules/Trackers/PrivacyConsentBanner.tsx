@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useRef } from 'react'
+import { FC, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Button,
@@ -16,48 +16,43 @@ import {
 } from '@chakra-ui/react'
 import { ExternalLinkIcon } from '@chakra-ui/icons'
 import { useLocalStorage } from '@uidotdev/usehooks'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
 
 export interface PrivacySourceGranted {
   heapAnalytics: boolean
   sentry: boolean
 }
 
-declare global {
-  interface Window {
-    heap: { load: (id: string) => void }
-  }
-}
-
 const PrivacyConsentBanner: FC = () => {
   const { t } = useTranslation('components')
+  const { data } = useGetConfiguration()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const cancelRef = useRef<HTMLButtonElement>(null)
   const [privacy, setPrivacy] = useLocalStorage<PrivacySourceGranted | undefined>('edge.privacy', undefined)
 
-  const initHeap = useCallback(() => {
-    if (!window.heap) return
-    if (privacy?.sentry) {
-      window.heap.load(import.meta.env.VITE_MONITORING_HEAP)
-    } else {
-      window.heap.load = () => undefined
-    }
-  }, [privacy?.sentry])
+  useEffect(() => {
+    if (!data?.trackingAllowed) return
+    if (!privacy) onOpen()
+  }, [data?.trackingAllowed, onOpen, privacy])
 
   useEffect(() => {
-    // TODO[#410] Need backend
-    //if (!data?.trackingAllowed) return
-    if (!privacy) onOpen()
-    initHeap()
-  }, [initHeap, onOpen, privacy])
+    if (!window.heap) return
+    if (privacy?.sentry && window.heap.load) {
+      window.heap.load(import.meta.env.VITE_MONITORING_HEAP)
+      window.heap.addUserProperties({ hivemqId: data?.hivemqId, version: data?.environment?.properties?.version })
+    }
+  }, [data?.environment?.properties?.version, data?.hivemqId, privacy?.sentry])
 
   const handleOptIn = () => {
     setPrivacy({ heapAnalytics: true, sentry: true })
     onClose()
+    window.location.reload()
   }
 
   const handleOptOut = () => {
     setPrivacy({ heapAnalytics: false, sentry: false })
     onClose()
+    window.location.reload()
   }
 
   const handleIgnore = () => {
