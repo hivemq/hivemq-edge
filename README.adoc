@@ -194,16 +194,12 @@ There are two ways you can opt-out before installation and running:
 
 - modify the Edge configuration via the `config.xml` (the `usage-tracking` property allows corporate-wide consent)
 
-[source]
+[#dissable-tracking]
+.Example configuration to disable usage tracking
+[source,xml]
 ----
-<hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="config.xsd">
-    <mqtt-listeners>
-        <tcp-listener>
-            <port>1883</port>
-            <bind-address>0.0.0.0</bind-address>
-        </tcp-listener>
-    </mqtt-listeners>
+<?xml version="1.0"?>
+<hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <usage-tracking>
         <enabled>false</enabled>
     </usage-tracking>
