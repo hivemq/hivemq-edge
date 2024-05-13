@@ -100,6 +100,8 @@ export const mockGatewayConfiguration: GatewayConfiguration = {
       },
     ],
   },
+  hivemqId: 'my-current-installation-id',
+  trackingAllowed: true,
 }
 
 export const MOCK_NOTIFICATIONS: Array<Notification> = [
