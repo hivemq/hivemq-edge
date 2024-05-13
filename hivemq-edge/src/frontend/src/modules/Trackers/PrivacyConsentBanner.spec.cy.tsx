@@ -1,8 +1,8 @@
 import { FC, PropsWithChildren } from 'react'
 import { useLocalStorage } from '@uidotdev/usehooks'
 import { Text } from '@chakra-ui/react'
-
-import PrivacyConsentBanner, { PrivacySourceGranted } from '@/components/PrivacyConsentBanner.tsx'
+import PrivacyConsentBanner, { PrivacySourceGranted } from '@/modules/Trackers/PrivacyConsentBanner.tsx'
+import { mockGatewayConfiguration } from '@/api/hooks/useFrontendServices/__handlers__'
 
 const Wrapper: FC<PropsWithChildren> = ({ children }) => {
   const [localStorage] = useLocalStorage<PrivacySourceGranted | undefined>('edge.privacy', undefined)
@@ -19,6 +19,7 @@ describe('PrivacyConsentBanner', () => {
     // run these tests as if in a desktop
     // browser with a 720p monitor
     cy.viewport(800, 250)
+    cy.intercept('/api/v1/frontend/configuration', mockGatewayConfiguration)
   })
 
   it('should render properly', () => {
