@@ -291,7 +291,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     } else {
                         if (log.isDebugEnabled()) {
                             log.debug(
-                                    "Detected Bad System Process {} In Sampler {} - Interrupted Process to Maintain Health ({}ms Runtime)",
+                                    "Detected bad system process {} in sampler {} - interrupted process to maintain health ({}ms runtime)",
                                     errorCountTotal,
                                     sampler.getAdapterId(),
                                     System.currentTimeMillis() - startedTimeMillis);
