@@ -31,7 +31,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Instant;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,12 +92,13 @@ class OpcUaJsonPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
 
     private void checkJsonAdapter(
             @NotNull String name, @NotNull NodeId typeId, @NotNull Object value, @NotNull String jsonValue)
-            throws InterruptedException, ExecutionException {
+            throws Exception {
         final String nodeId =
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> value, 999);
 
         final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId, PayloadMode.JSON);
-        assertEquals(ProtocolAdapterState.ConnectionStatus.CONNECTED, protocolAdapter.getProtocolAdapterState().getConnectionStatus());
+        assertEquals(ProtocolAdapterState.ConnectionStatus.CONNECTED,
+                protocolAdapter.getProtocolAdapterState().getConnectionStatus());
 
         final PUBLISH publish = expectAdapterPublish();
         protocolAdapter.stop();

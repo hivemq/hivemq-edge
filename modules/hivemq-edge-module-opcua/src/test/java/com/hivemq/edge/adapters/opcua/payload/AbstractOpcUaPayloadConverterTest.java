@@ -37,6 +37,7 @@ import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.events.model.EventBuilder;
 import com.hivemq.edge.modules.events.model.Payload;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
@@ -53,7 +54,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
@@ -80,8 +80,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
     @NotNull
     protected OpcUaProtocolAdapter createAndStartAdapter(
-            final @NotNull String subcribedNodeId, final PayloadMode payloadMode)
-            throws InterruptedException, ExecutionException {
+            final @NotNull String subcribedNodeId, final PayloadMode payloadMode) throws Exception {
         final OpcUaAdapterConfig config =
                 new OpcUaAdapterConfig("test-" + UUID.randomUUID(), opcUaServerExtension.getServerUri());
         config.setSubscriptions(List.of(new OpcUaAdapterConfig.Subscription(subcribedNodeId, "topic")));
@@ -90,8 +89,20 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = () -> moduleServices;
-        final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
+        CompletableFuture<Void> startFuture = new CompletableFuture<>();
+        final ProtocolAdapterStartOutput out = new ProtocolAdapterStartOutput() {
+            @Override
+            public void startedSuccessfully() {
+                startFuture.complete(null);
+            }
+
+            @Override
+            public void failStart(@NotNull final Throwable t, @Nullable final String errorMessage) {
+                startFuture.completeExceptionally(t);
+            }
+        };
         protocolAdapter.start(in, out);
+        startFuture.get();
         return protocolAdapter;
     }
 
