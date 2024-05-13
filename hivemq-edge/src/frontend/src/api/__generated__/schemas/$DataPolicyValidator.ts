@@ -14,8 +14,7 @@ export const $DataPolicyValidator = {
             isRequired: true,
         },
         type: {
-            type: 'string',
-            description: `The type of the validator.`,
+            type: 'Enum',
             isRequired: true,
         },
     },
