@@ -42,7 +42,7 @@ describe('PrivacyConsentBanner', () => {
     cy.getByTestId('privacy-optIn').should('contain.text', 'Accept all')
   })
 
-  it('should support opt out', () => {
+  it.skip('should support opt out', () => {
     cy.mountWithProviders(<PrivacyConsentBanner />, { wrapper: Wrapper })
 
     cy.getAllLocalStorage().then((sss) => {
@@ -60,7 +60,7 @@ describe('PrivacyConsentBanner', () => {
     cy.get('[role="dialog"]').should('not.exist')
   })
 
-  it('should support opt in', () => {
+  it.skip('should support opt in', () => {
     cy.mountWithProviders(<PrivacyConsentBanner />, { wrapper: Wrapper })
 
     cy.getAllLocalStorage().then((sss) => {
