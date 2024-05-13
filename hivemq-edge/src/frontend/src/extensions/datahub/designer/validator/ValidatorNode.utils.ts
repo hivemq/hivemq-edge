@@ -12,7 +12,6 @@ import {
   ResourceStatus,
   SchemaArguments,
   ValidatorData,
-  ValidatorType,
   WorkspaceState,
 } from '@datahub/types.ts'
 import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
@@ -79,14 +78,19 @@ export const loadValidators = (policy: DataPolicy, schemas: Schema[], dataPolicy
   for (const validator of policy.validation?.validators || []) {
     const validatorArguments = validator.arguments as SchemaArguments
 
+    const type = enumFromStringValue(DataPolicyValidator.type, validator.type.toUpperCase())
+    if (!type)
+      throw new Error(
+        i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
+      )
+
     const validatorNode: Node<ValidatorData> = {
       id: getNodeId(),
       type: DataHubNodeType.VALIDATOR,
       position,
       data: {
         strategy: validatorArguments.strategy,
-        // @ts-ignore force undefined
-        type: enumFromStringValue(ValidatorType, validator.type),
+        type,
         schemas: validatorArguments.schemas,
       },
     }
