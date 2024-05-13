@@ -39,7 +39,7 @@ describe('ValidatorPanel', () => {
 
     // first select
     cy.get('label#root_type-label').should('contain.text', 'Validator Type')
-    cy.get('label#root_type-label + div').should('contain.text', 'schema')
+    cy.get('label#root_type-label + div').should('contain.text', 'SCHEMA')
     cy.get('label#root_type-label + div').click()
     cy.get('label#root_type-label + div')
       .find("[role='listbox']")
