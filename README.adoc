@@ -179,3 +179,21 @@ If you want to contribute to HiveMQ Edge, see the link:CONTRIBUTING.adoc[contrib
 
 HiveMQ Edge is licensed under the `APACHE LICENSE, VERSION 2.0`.
 A copy of the license can be found link:LICENSE[here].
+
+== Privacy settings
+
+HiveMQ Edge uses a limited number of tracking technologies within the web application. These technologies enable us to analyse usage behavior within the Edge product, in order to measure and improve performance.
+
+The following technologies are currently configured:
+
+- https://www.heap.io/[Heap Analytics], check their information regarding the data collected https://help.heap.io/getting-started/how-heap-works/autocaptured-data/[by the auto-capture configuration]
+
+A consent form will be displayed in the browser at first usage. Opt-in or pot-out will be recorded into the local storage of the browser and the tracker activated - or not - accordingly.
+
+There are two ways you can opt-out before installation and running:
+
+- modify the Edge internal configuration (the `trackingAllowed` property allows corporate-wide consent)#
+- modify the frontend configuration (the `VITE_MONITORING_?????` properties in the `./.env` file contains HiveMQ unique application id required to activate the different trackers).
+
+Note that you can also change the `VITE_MONITORING_?????` values to your own account(s) if you use any. It will allow you to collect behaviour on your own infrastructure
+
