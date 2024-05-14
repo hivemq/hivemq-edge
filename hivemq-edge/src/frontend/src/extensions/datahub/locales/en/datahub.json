@@ -273,6 +273,10 @@
       "dataPolicy": {
         "notLoading": "Cannot load the existing policies for checking ids",
         "notUnique": "The id is already in use by another data policy"
+      },
+      "behaviourPolicy": {
+        "notLoading": "Cannot load the existing policies for checking ids",
+        "notUnique": "The id is already in use by another behaviour policy"
       }
     },
     "loading": {

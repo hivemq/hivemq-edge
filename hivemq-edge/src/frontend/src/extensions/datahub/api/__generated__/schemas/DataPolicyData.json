@@ -4,7 +4,7 @@
   "properties": {
     "id": {
       "title": "id",
-      "description": "The unique id for the data policy",
+      "description": "The unique id of this data policy",
       "type": "string",
       "pattern": "^([a-zA-Z_0-9-_])*$"
     }
