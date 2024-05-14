@@ -119,10 +119,6 @@ export const loadTransitions = (
   scripts: Script[],
   behaviorPolicyNode: Node<BehaviorPolicyData>
 ) => {
-  if (behaviorPolicyNode.id !== behaviorPolicy.id)
-    throw new Error(
-      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.BEHAVIOR_POLICY }) as string
-    )
   const model = enumFromStringValue(BehaviorPolicyType, behaviorPolicy.behavior.id)
   if (!model) throw new Error(i18n.t('datahub:error.loading.behavior.noModel') as string)
 
@@ -150,7 +146,7 @@ export const loadTransitions = (
     newNodes.push(
       { item: transitionNode, type: 'add' },
       {
-        source: behaviorPolicy.id,
+        source: behaviorPolicyNode.id,
         target: transitionNode.id,
         sourceHandle: null,
         targetHandle: null,
