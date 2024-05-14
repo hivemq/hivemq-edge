@@ -71,6 +71,11 @@ public class HttpProtocolAdapterInformation
     }
 
     @Override
+    public @NotNull String getUrl() {
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#http-adapter";
+    }
+
+    @Override
     public List<ProtocolAdapterConstants.TAG> getTags() {
         return List.of(ProtocolAdapterConstants.TAG.INTERNET,
                 ProtocolAdapterConstants.TAG.TCP,

@@ -50,7 +50,7 @@ public class OpcUaProtocolAdapterInformation
 
     @Override
     public @NotNull String getUrl() {
-        return "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#opc-ua-adapter";
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#opc-ua-adapter";
     }
 
     @Override
