@@ -41,7 +41,6 @@ describe('DataPolicyPanel', () => {
   it('should render the fields for the panel', () => {
     const onSubmit = cy.stub().as('onSubmit')
 
-    // eslint-disable-next-line react/jsx-no-undef
     cy.mountWithProviders(<DataPolicyPanel selectedNode="3" onFormSubmit={onSubmit} />, { wrapper })
 
     cy.get('label#root_id-label').should('contain.text', 'id')
