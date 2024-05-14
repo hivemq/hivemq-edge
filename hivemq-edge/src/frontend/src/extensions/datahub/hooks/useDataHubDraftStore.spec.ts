@@ -204,7 +204,7 @@ describe('useDataHubDraftStore', () => {
       const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
         id: 'node-id',
         type: DataHubNodeType.SCHEMA,
-        data: {},
+        data: { id: 'my-policy-id' },
         ...MOCK_DEFAULT_NODE,
         position: { x: 0, y: 0 },
       }
@@ -217,7 +217,7 @@ describe('useDataHubDraftStore', () => {
       const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
         id: 'node-id',
         type: DataHubNodeType.DATA_POLICY,
-        data: {},
+        data: { id: 'my-other-policy-id' },
         ...MOCK_DEFAULT_NODE,
         position: { x: 0, y: 0 },
       }

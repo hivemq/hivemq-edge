@@ -40,7 +40,7 @@ export const MOCK_INITIAL_POLICY = () => {
 
   const dataPolicyNode: Node<DataPolicyData> = {
     id: '3',
-    data: {},
+    data: { id: 'my-policy-id' },
     type: DataHubNodeType.DATA_POLICY,
     position: { x: 345, y: 105 },
   }

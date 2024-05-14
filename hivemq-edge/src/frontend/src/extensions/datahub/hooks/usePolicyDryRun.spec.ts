@@ -16,14 +16,14 @@ describe('onlyNonNullResources', () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: {},
+      data: { id: 'my-policy-id' },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
     const MOCK_NODE_TEST: Node<DataPolicyData> = {
       id: 'node-test',
       type: DataHubNodeType.DATA_POLICY,
-      data: {},
+      data: { id: 'my-other-policy-id' },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -42,7 +42,7 @@ describe('usePolicyDryRun', () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: {},
+      data: { id: 'my-policy-id' },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
