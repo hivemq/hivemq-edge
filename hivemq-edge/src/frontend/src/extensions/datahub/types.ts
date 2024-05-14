@@ -125,6 +125,7 @@ export interface ClientFilterData extends DataHubNodeData {
 }
 
 export interface DataPolicyData extends DataHubNodeData {
+  id: string
   core?: DataPolicy
 }
 
