@@ -6,7 +6,7 @@ export const MOCK_PROTOCOL_SIMULATION: ProtocolAdapter = {
   protocol: 'Simulation',
   name: 'Simulated Edge Device',
   description: 'Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.',
-  url: 'https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#simulation',
+  url: 'https://docs.hivemq.com/hivemq-edge/index.html',
   version: 'Development Snapshot',
   logoUrl: 'http://localhost:8080/images/hivemq-icon.png',
   author: 'HiveMQ',
