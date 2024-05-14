@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
-import com.hivemq.adapter.sdk.api.adapters.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.params.NodeTreeImpl;
 

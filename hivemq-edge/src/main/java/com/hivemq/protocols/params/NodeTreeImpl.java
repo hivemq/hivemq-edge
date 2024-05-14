@@ -16,8 +16,8 @@
 package com.hivemq.protocols.params;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.adapter.sdk.api.adapters.discovery.NodeTree;
-import com.hivemq.adapter.sdk.api.adapters.discovery.NodeType;
+import com.hivemq.adapter.sdk.api.discovery.NodeTree;
+import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 

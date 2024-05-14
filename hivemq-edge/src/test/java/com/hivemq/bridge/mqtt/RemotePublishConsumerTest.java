@@ -18,7 +18,7 @@ package com.hivemq.bridge.mqtt;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.config.RemoteSubscription;

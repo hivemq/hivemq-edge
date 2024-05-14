@@ -17,9 +17,9 @@ package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterCapability;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.adapters.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdapterCategory;
 import com.hivemq.api.model.components.Module;
@@ -155,7 +155,7 @@ public class ProtocolAdapterApiUtils {
      *
      * @param category the category enum to convert
      */
-    public static ProtocolAdapterCategory convertApiCategory(com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterCategory category) {
+    public static ProtocolAdapterCategory convertApiCategory(com.hivemq.adapter.sdk.api.ProtocolAdapterCategory category) {
         return new ProtocolAdapterCategory(category.name(),
                 category.getDisplayName(),
                 category.getDescription(),

@@ -22,7 +22,7 @@ import com.google.common.util.concurrent.JdkFutureAdapters;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.datagov.DataGovernanceContext;
 import com.hivemq.datagov.DataGovernanceService;
 import com.hivemq.datagov.model.DataGovernancePolicy;

@@ -1,13 +1,13 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.adapter.sdk.api.adapters.data.DataPoint;
-import com.hivemq.adapter.sdk.api.adapters.factories.DataPointFactory;
-import com.hivemq.adapter.sdk.api.adapters.services.ModuleServices;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;

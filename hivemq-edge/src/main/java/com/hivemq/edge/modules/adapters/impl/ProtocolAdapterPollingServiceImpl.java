@@ -16,10 +16,10 @@
 package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.adapter.sdk.api.adapters.PollingPerSubscriptionProtocolAdapter;
-import com.hivemq.adapter.sdk.api.adapters.PollingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.adapter.sdk.api.PollingPerSubscriptionProtocolAdapter;
+import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;

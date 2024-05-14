@@ -18,7 +18,7 @@ package com.hivemq.configuration.writer;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.adapters.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;

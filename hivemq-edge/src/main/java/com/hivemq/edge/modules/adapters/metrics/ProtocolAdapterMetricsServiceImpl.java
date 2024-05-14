@@ -18,7 +18,7 @@ package com.hivemq.edge.modules.adapters.metrics;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.HashSet;

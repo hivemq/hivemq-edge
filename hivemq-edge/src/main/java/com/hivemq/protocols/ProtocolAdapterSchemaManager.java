@@ -18,7 +18,7 @@ package com.hivemq.protocols;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.hivemq.adapter.sdk.api.adapters.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailureImpl;

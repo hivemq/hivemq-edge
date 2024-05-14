@@ -1,13 +1,13 @@
 package com.hivemq.edge.modules.adapters.impl.factories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.adapters.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.adapters.factories.AdapterSubscriptionFactory;
-import com.hivemq.adapter.sdk.api.adapters.factories.DataPointFactory;
-import com.hivemq.adapter.sdk.api.adapters.factories.EventBuilderFactory;
-import com.hivemq.adapter.sdk.api.adapters.factories.PayloadFactory;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.AdapterSubscriptionFactory;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import com.hivemq.adapter.sdk.api.factories.EventBuilderFactory;
+import com.hivemq.adapter.sdk.api.factories.PayloadFactory;
 import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;

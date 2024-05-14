@@ -16,7 +16,7 @@
 package com.hivemq.bridge.mqtt;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;

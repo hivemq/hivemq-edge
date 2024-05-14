@@ -15,13 +15,13 @@
  */
 package com.hivemq.protocols;
 
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.adapters.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.adapters.factories.ProtocolAdapterFactory;
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartInput;
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.adapter.sdk.api.adapters.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 

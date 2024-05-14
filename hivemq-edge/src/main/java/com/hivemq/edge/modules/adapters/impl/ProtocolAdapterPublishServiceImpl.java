@@ -17,9 +17,9 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
-import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;

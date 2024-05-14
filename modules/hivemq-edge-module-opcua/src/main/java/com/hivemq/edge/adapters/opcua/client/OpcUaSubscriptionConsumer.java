@@ -15,10 +15,10 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.hivemq.adapter.sdk.api.adapters.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaException;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;

@@ -18,10 +18,10 @@ package com.hivemq.edge.modules.adapters.data;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.base.Preconditions;
-import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.adapter.sdk.api.adapters.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.adapters.data.DataPoint;
-import com.hivemq.adapter.sdk.api.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;

@@ -18,8 +18,8 @@ package com.hivemq.edge.modules.adapters.simulation;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.hivemq.adapter.sdk.api.adapters.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.adapters.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 

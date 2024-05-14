@@ -2,11 +2,11 @@ package com.hivemq.protocols;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.adapters.PollingPerSubscriptionProtocolAdapter;
-import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.adapter.sdk.api.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.PollingPerSubscriptionProtocolAdapter;
+import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;

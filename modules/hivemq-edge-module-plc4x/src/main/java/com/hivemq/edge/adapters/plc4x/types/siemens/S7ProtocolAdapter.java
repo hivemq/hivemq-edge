@@ -15,8 +15,8 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;

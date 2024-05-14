@@ -1,6 +1,6 @@
 package com.hivemq.protocols;
 
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 

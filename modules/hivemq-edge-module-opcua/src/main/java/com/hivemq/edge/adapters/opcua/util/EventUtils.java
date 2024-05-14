@@ -15,8 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua.util;
 
-import com.hivemq.adapter.sdk.api.adapters.factories.PayloadFactory;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
+import com.hivemq.adapter.sdk.api.factories.PayloadFactory;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.apache.commons.lang3.exception.ExceptionUtils;

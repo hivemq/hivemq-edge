@@ -15,10 +15,10 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.eip;
 
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.adapter.sdk.api.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.impl.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;

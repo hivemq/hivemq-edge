@@ -16,17 +16,17 @@
 package com.hivemq.edge.adapters.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.adapters.PollingProtocolAdapter;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.adapter.sdk.api.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.adapter.sdk.api.adapters.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartInput;
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.adapter.sdk.api.adapters.services.ModuleServices;
-import com.hivemq.adapter.sdk.api.adapters.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -51,8 +51,8 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hivemq.adapter.sdk.api.adapters.state.ProtocolAdapterState.ConnectionStatus.ERROR;
-import static com.hivemq.adapter.sdk.api.adapters.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConfig.JSON_MIME_TYPE;
 import static com.hivemq.edge.adapters.http.HttpAdapterConfig.PLAIN_MIME_TYPE;
 

@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager;

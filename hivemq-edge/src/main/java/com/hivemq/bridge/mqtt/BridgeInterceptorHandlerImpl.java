@@ -19,7 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;

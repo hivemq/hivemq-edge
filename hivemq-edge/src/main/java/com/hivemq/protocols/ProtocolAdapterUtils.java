@@ -22,7 +22,7 @@ import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
 import com.fasterxml.jackson.databind.module.SimpleAbstractTypeResolver;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.LogicalType;
-import com.hivemq.adapter.sdk.api.adapters.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.edge.modules.config.impl.UserPropertyImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 

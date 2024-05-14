@@ -5,19 +5,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.adapter.sdk.api.adapters.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.adapters.data.DataPoint;
-import com.hivemq.adapter.sdk.api.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.adapter.sdk.api.adapters.exceptions.ProtocolAdapterException;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
+import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
-import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
+import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterMultiPublishJsonPayload;
@@ -134,7 +134,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                         .withQoS(subscription.getQos())
                         .withPayload(json)
                         .withAdapter(protocolAdapter);
-                final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
+                final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
                 publishFuture.thenAccept(publishReturnCode -> {
                     protocolAdapterMetricsService.incrementReadPublishSuccess();
                     if (publishCount.incrementAndGet() == 1) {

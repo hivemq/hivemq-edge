@@ -19,10 +19,10 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.hivemq.adapter.sdk.api.adapters.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.adapters.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.adapters.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.adapters.config.UserProperty;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -136,7 +136,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         return timeout;
     }
 
-    public static class AdapterSubscription implements com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription {
+    public static class AdapterSubscription implements com.hivemq.adapter.sdk.api.config.AdapterSubscription {
         @JsonProperty(value = "destination", required = true)
         @ModuleConfigField(title = "Destination Topic",
                            description = "The topic to publish data on",

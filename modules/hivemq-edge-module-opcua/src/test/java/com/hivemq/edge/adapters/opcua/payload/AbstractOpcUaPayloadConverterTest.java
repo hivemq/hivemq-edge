@@ -17,19 +17,19 @@ package com.hivemq.edge.adapters.opcua.payload;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.adapter.sdk.api.adapters.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.adapters.factories.EventBuilderFactory;
-import com.hivemq.adapter.sdk.api.adapters.factories.PayloadFactory;
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartInput;
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.adapter.sdk.api.adapters.services.ModuleServices;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
-import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.factories.EventBuilderFactory;
+import com.hivemq.adapter.sdk.api.factories.PayloadFactory;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
@@ -196,13 +196,13 @@ abstract class AbstractOpcUaPayloadConverterTest {
         }
 
         @Override
-        public @NotNull CompletableFuture<PublishReturnCode> send() {
+        public @NotNull CompletableFuture<ProtocolPublishResult> send() {
 
             publishes.add(builder.withHivemqId("hivemqId")
                     .withUserProperties(Mqtt5UserProperties.of(userProperties.build()))
                     .build());
 
-            return CompletableFuture.completedFuture(PublishReturnCode.DELIVERED);
+            return CompletableFuture.completedFuture(ProtocolPublishResult.DELIVERED);
         }
 
 

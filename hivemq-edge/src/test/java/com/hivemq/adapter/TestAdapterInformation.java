@@ -15,9 +15,9 @@
  */
 package com.hivemq.adapter;
 
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterCategory;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterTag;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 

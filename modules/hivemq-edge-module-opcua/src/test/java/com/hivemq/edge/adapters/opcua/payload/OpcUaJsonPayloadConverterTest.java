@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.payload;
 
-import com.hivemq.adapter.sdk.api.adapters.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;

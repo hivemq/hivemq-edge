@@ -24,7 +24,7 @@ import com.digitalpetri.modbus.responses.ModbusResponse;
 import com.digitalpetri.modbus.responses.ReadCoilsResponse;
 import com.digitalpetri.modbus.responses.ReadHoldingRegistersResponse;
 import com.digitalpetri.modbus.responses.ReadInputRegistersResponse;
-import com.hivemq.adapter.sdk.api.adapters.exceptions.ProtocolAdapterException;
+import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.edge.adapters.modbus.IModbusClient;
 import com.hivemq.edge.adapters.modbus.ModbusAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;

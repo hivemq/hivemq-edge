@@ -17,10 +17,10 @@ package com.hivemq.edge.adapters.modbus.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.adapter.sdk.api.adapters.data.DataPoint;
-import com.hivemq.adapter.sdk.api.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.adapter.sdk.api.adapters.factories.DataPointFactory;
+import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;

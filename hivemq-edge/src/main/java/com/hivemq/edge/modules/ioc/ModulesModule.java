@@ -15,9 +15,9 @@
  */
 package com.hivemq.edge.modules.ioc;
 
-import com.hivemq.adapter.sdk.api.adapters.services.ModuleServices;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;

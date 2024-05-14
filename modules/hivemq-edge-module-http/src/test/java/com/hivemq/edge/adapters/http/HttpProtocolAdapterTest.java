@@ -1,14 +1,14 @@
 package com.hivemq.edge.adapters.http;
 
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.adapter.sdk.api.adapters.data.DataPoint;
-import com.hivemq.adapter.sdk.api.adapters.factories.DataPointFactory;
-import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.adapters.services.ModuleServices;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;

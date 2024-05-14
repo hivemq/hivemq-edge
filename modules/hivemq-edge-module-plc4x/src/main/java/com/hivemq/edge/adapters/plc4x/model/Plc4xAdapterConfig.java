@@ -18,11 +18,11 @@ package com.hivemq.edge.adapters.plc4x.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.hivemq.adapter.sdk.api.adapters.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.adapter.sdk.api.adapters.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.adapters.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.adapters.config.UserProperty;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 

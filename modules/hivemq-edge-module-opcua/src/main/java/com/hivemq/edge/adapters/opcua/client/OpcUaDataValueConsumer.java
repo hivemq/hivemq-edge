@@ -15,13 +15,13 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.adapter.sdk.api.adapters.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterMetricsService;
-import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
-import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaJsonPayloadConverter;
@@ -117,7 +117,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
                         .build();
                 eventService.fireEvent(event);
             }
-            final CompletableFuture<PublishReturnCode> publishFuture = publishBuilder.send();
+            final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
 
             publishFuture.thenAccept(publishReturnCode -> {
                 metricsHelper.incrementReadPublishSuccess();

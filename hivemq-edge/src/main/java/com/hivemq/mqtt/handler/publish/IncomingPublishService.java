@@ -18,7 +18,7 @@ package com.hivemq.mqtt.handler.publish;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.service.MqttConfigurationService;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
