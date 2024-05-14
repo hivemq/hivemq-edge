@@ -17,11 +17,11 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapter;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.extension.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;

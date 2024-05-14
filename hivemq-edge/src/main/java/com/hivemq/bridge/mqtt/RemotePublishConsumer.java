@@ -17,6 +17,7 @@ package com.hivemq.bridge.mqtt;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.bridge.BridgeConstants;
 import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.MqttBridge;
@@ -27,7 +28,6 @@ import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
 import com.hivemq.common.topic.TopicFilterProcessor;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;

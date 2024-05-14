@@ -15,9 +15,9 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.bacnet;
 
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterInput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 /**

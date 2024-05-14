@@ -15,22 +15,22 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
+import com.hivemq.adapter.sdk.api.adapters.PollingPerSubscriptionProtocolAdapter;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.adapters.state.ProtocolAdapterState;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
-import com.hivemq.extension.sdk.api.adapters.PollingPerSubscriptionProtocolAdapter;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.extension.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.extension.sdk.api.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterInput;
-import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterStartInput;
-import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.extension.sdk.api.adapters.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static com.hivemq.extension.sdk.api.adapters.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
+import static com.hivemq.adapter.sdk.api.adapters.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
 public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocolAdapter {
 

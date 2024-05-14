@@ -18,12 +18,12 @@ package com.hivemq.edge.modules.api.events.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.events.model.Payload;
+import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.api.json.TimestampToDateConverter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.extension.sdk.api.events.model.Event;
-import com.hivemq.extension.sdk.api.events.model.Payload;
-import com.hivemq.extension.sdk.api.events.model.TypeIdentifier;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Objects;

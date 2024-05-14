@@ -15,18 +15,18 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
+import com.hivemq.adapter.sdk.api.adapters.PollingPerSubscriptionProtocolAdapter;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.adapters.data.DataPoint;
+import com.hivemq.adapter.sdk.api.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.adapter.sdk.api.adapters.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.adapters.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
-import com.hivemq.extension.sdk.api.adapters.PollingPerSubscriptionProtocolAdapter;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.extension.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.extension.sdk.api.adapters.data.DataPoint;
-import com.hivemq.extension.sdk.api.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.extension.sdk.api.adapters.factories.AdapterFactories;
-import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterInput;
-import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterStartInput;
-import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.extension.sdk.api.adapters.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.apache.commons.lang3.tuple.Pair;
@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hivemq.extension.sdk.api.adapters.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.adapters.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
 /**
  * Abstract PLC4X implementation. Exposes core abstractions of the underlying framework so instances can be exposes

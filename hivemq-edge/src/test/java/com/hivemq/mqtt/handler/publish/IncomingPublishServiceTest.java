@@ -17,6 +17,7 @@
 package com.hivemq.mqtt.handler.publish;
 
 import com.google.common.util.concurrent.Futures;
+import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.codec.encoder.mqtt5.Mqtt5PayloadFormatIndicator;
 import com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults;
@@ -26,7 +27,6 @@ import com.hivemq.configuration.service.impl.MqttConfigurationServiceImpl;
 import com.hivemq.configuration.service.impl.RestrictionsConfigurationServiceImpl;
 import com.hivemq.datagov.DataGovernanceService;
 import com.hivemq.extension.sdk.api.auth.parameter.TopicPermission;
-import com.hivemq.extension.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.extension.sdk.api.packets.publish.AckReasonCode;
 import com.hivemq.extensions.handler.tasks.PublishAuthorizerResult;
 import com.hivemq.extensions.packets.general.ModifiableDefaultPermissionsImpl;

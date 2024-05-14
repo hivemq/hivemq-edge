@@ -15,20 +15,20 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.adapters.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaStringPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
 import com.hivemq.edge.adapters.opcua.util.EventUtils;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.extension.sdk.api.adapters.factories.AdapterFactories;
-import com.hivemq.extension.sdk.api.adapters.services.ProtocolAdapterMetricsService;
-import com.hivemq.extension.sdk.api.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.events.EventService;
-import com.hivemq.extension.sdk.api.events.model.Event;
-import com.hivemq.extension.sdk.api.mqtt.PublishReturnCode;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;

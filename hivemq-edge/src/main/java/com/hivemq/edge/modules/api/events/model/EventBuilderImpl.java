@@ -1,13 +1,13 @@
 package com.hivemq.edge.modules.api.events.model;
 
 import com.google.common.base.Preconditions;
+import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
+import com.hivemq.adapter.sdk.api.events.model.Payload;
+import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.extension.sdk.api.events.model.Event;
-import com.hivemq.extension.sdk.api.events.model.EventBuilder;
-import com.hivemq.extension.sdk.api.events.model.Payload;
-import com.hivemq.extension.sdk.api.events.model.TypeIdentifier;
 
 public class EventBuilderImpl implements EventBuilder {
     private @Nullable EventImpl.SEVERITY severity;

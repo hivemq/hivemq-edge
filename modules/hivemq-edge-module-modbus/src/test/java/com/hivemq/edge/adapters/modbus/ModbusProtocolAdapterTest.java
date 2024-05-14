@@ -1,19 +1,19 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.google.common.collect.ImmutableMap;
+import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.adapters.data.DataPoint;
+import com.hivemq.adapter.sdk.api.adapters.factories.DataPointFactory;
+import com.hivemq.adapter.sdk.api.adapters.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
 import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
-import com.hivemq.extension.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.extension.sdk.api.adapters.data.DataPoint;
-import com.hivemq.extension.sdk.api.adapters.factories.DataPointFactory;
-import com.hivemq.extension.sdk.api.adapters.services.ModuleServices;
-import com.hivemq.extension.sdk.api.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.events.EventService;
-import com.hivemq.extension.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

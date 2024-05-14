@@ -17,6 +17,9 @@ package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterCapability;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.adapters.factories.ProtocolAdapterFactory;
 import com.hivemq.api.model.adapters.ProtocolAdapter;
 import com.hivemq.api.model.adapters.ProtocolAdapterCategory;
 import com.hivemq.api.model.components.Module;
@@ -24,9 +27,6 @@ import com.hivemq.api.utils.ApiUtils;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.VersionProvider;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterCapability;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.extension.sdk.api.adapters.factories.ProtocolAdapterFactory;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.HttpConstants;
 import com.hivemq.protocols.ProtocolAdapterManager;
@@ -155,7 +155,7 @@ public class ProtocolAdapterApiUtils {
      *
      * @param category the category enum to convert
      */
-    public static ProtocolAdapterCategory convertApiCategory(com.hivemq.extension.sdk.api.adapters.ProtocolAdapterCategory category) {
+    public static ProtocolAdapterCategory convertApiCategory(com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterCategory category) {
         return new ProtocolAdapterCategory(category.name(),
                 category.getDisplayName(),
                 category.getDescription(),

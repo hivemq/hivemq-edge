@@ -18,8 +18,8 @@ package com.hivemq.api.model.core;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.events.model.Payload;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**

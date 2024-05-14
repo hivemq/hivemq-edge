@@ -15,10 +15,10 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.eip;
 
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterCapability;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterCategory;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterTag;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterCapability;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterCategory;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterTag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.EnumSet;

@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.modules.api.adapters;
 
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterPublishBuilder;
 
 public interface ProtocolAdapterPublishService {
 

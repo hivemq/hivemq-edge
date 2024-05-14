@@ -15,8 +15,8 @@
  */
 package com.hivemq.edge.modules.api.events;
 
+import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.events.model.Event;
 
 /**
  * @author Simon L Johnson

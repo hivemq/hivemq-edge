@@ -15,23 +15,23 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
+import com.hivemq.adapter.sdk.api.adapters.PollingPerSubscriptionProtocolAdapter;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.adapters.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.adapters.data.DataPoint;
+import com.hivemq.adapter.sdk.api.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.adapter.sdk.api.adapters.discovery.NodeTree;
+import com.hivemq.adapter.sdk.api.adapters.discovery.NodeType;
+import com.hivemq.adapter.sdk.api.adapters.discovery.ProtocolAdapterDiscoveryInput;
+import com.hivemq.adapter.sdk.api.adapters.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.adapters.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.adapters.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
-import com.hivemq.extension.sdk.api.adapters.PollingPerSubscriptionProtocolAdapter;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.extension.sdk.api.adapters.config.AdapterSubscription;
-import com.hivemq.extension.sdk.api.adapters.data.DataPoint;
-import com.hivemq.extension.sdk.api.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.extension.sdk.api.adapters.discovery.NodeTree;
-import com.hivemq.extension.sdk.api.adapters.discovery.NodeType;
-import com.hivemq.extension.sdk.api.adapters.discovery.ProtocolAdapterDiscoveryInput;
-import com.hivemq.extension.sdk.api.adapters.discovery.ProtocolAdapterDiscoveryOutput;
-import com.hivemq.extension.sdk.api.adapters.factories.AdapterFactories;
-import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterInput;
-import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterStartInput;
-import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.extension.sdk.api.adapters.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Logger;
@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hivemq.extension.sdk.api.adapters.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.adapters.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
 public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);

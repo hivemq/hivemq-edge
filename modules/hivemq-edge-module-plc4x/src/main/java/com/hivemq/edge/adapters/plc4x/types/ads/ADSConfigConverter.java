@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.plc4x.types.ads;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.extension.sdk.api.adapters.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.adapters.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Map;

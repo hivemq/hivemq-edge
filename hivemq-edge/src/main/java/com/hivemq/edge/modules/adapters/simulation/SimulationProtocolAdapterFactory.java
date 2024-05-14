@@ -16,11 +16,11 @@
 package com.hivemq.edge.modules.adapters.simulation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapter;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.extension.sdk.api.adapters.config.ProtocolAdapterConfig;
-import com.hivemq.extension.sdk.api.adapters.factories.ProtocolAdapterFactory;
-import com.hivemq.extension.sdk.api.adapters.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.adapters.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.adapters.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.adapters.model.ProtocolAdapterInput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.Map;

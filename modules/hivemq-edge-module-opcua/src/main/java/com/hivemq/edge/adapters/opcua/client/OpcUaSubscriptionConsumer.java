@@ -15,15 +15,15 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
+import com.hivemq.adapter.sdk.api.adapters.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaException;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
-import com.hivemq.extension.sdk.api.adapters.factories.AdapterFactories;
-import com.hivemq.extension.sdk.api.adapters.services.ProtocolAdapterMetricsService;
-import com.hivemq.extension.sdk.api.adapters.services.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.extension.sdk.api.events.EventService;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;

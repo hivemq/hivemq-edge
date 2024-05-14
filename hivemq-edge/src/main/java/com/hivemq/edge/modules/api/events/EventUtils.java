@@ -15,9 +15,9 @@
  */
 package com.hivemq.edge.modules.api.events;
 
+import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.extension.sdk.api.events.model.Payload;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.nio.charset.StandardCharsets;

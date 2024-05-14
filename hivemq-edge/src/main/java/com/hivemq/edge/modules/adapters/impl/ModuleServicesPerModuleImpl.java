@@ -15,13 +15,13 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapter;
-import com.hivemq.extension.sdk.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.extension.sdk.api.adapters.services.ModuleServices;
-import com.hivemq.extension.sdk.api.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.adapters.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.adapters.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.extension.sdk.api.events.EventService;
 
 import java.util.concurrent.ScheduledExecutorService;
 

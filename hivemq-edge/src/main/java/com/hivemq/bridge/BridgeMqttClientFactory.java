@@ -16,13 +16,13 @@
 package com.hivemq.bridge;
 
 import com.codahale.metrics.MetricRegistry;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.mqtt.BridgeInterceptorHandler;
 import com.hivemq.bridge.mqtt.BridgeMqttClient;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.events.EventService;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

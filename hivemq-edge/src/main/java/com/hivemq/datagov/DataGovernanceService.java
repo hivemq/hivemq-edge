@@ -16,9 +16,9 @@
 package com.hivemq.datagov;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.hivemq.adapter.sdk.api.mqtt.PublishReturnCode;
 import com.hivemq.datagov.model.DataGovernanceResult;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.mqtt.PublishReturnCode;
 
 public interface DataGovernanceService {
 
