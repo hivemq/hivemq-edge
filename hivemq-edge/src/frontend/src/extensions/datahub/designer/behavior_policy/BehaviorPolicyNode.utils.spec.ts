@@ -34,7 +34,7 @@ describe('checkValidityModel', () => {
     const MOCK_NODE_BEHAVIOR_POLICY: Node<BehaviorPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.BEHAVIOR_POLICY,
-      data: { model: BehaviorPolicyType.PUBLISH_DUPLICATE },
+      data: { id: 'my-policy-id', model: BehaviorPolicyType.PUBLISH_DUPLICATE },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }

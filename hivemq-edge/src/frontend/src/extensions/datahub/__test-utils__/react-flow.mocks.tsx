@@ -78,7 +78,7 @@ export const MOCK_INITIAL_POLICY = () => {
 
   const behaviorPolicyNode: Node<BehaviorPolicyData> = {
     id: '7',
-    data: { model: BehaviorPolicyType.MQTT_EVENT },
+    data: { id: 'my-policy-id', model: BehaviorPolicyType.MQTT_EVENT },
     type: DataHubNodeType.BEHAVIOR_POLICY,
     position: { x: 345, y: 195 },
   }

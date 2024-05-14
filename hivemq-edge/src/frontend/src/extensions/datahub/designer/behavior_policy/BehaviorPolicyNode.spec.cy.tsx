@@ -11,7 +11,7 @@ import { BehaviorPolicyNode } from '@datahub/designer/behavior_policy/BehaviorPo
 const MOCK_NODE_BEHAVIOR_POLICY: NodeProps<BehaviorPolicyData> = {
   id: 'node-id',
   type: DataHubNodeType.BEHAVIOR_POLICY,
-  data: { model: BehaviorPolicyType.MQTT_EVENT },
+  data: { id: 'my-policy-id', model: BehaviorPolicyType.MQTT_EVENT },
   ...MOCK_DEFAULT_NODE,
 }
 
