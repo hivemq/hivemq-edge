@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": {
+      "title": "id",
+      "description": "The unique id for the data policy",
+      "type": "string",
+      "pattern": "^([a-zA-Z_0-9-_])*$"
+    }
+  }
+}
