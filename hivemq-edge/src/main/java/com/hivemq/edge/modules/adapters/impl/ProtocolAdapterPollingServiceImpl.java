@@ -16,7 +16,6 @@
 package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.base.Preconditions;
-import com.hivemq.adapter.sdk.api.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
@@ -167,8 +166,6 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
             final ProtocolAdapter protocolAdapter = sampler.getAdapter();
             if (protocolAdapter instanceof PollingProtocolAdapter) {
                 ((PollingProtocolAdapter) protocolAdapter).onSamplerClosed();
-            } else if (protocolAdapter instanceof PollingPerSubscriptionProtocolAdapter) {
-                ((PollingPerSubscriptionProtocolAdapter) protocolAdapter).onSamplerClosed();
             }
         }
     }

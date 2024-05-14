@@ -49,6 +49,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
@@ -73,6 +74,8 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull AdapterFactories adapterFactories;
+    // The http adapter only supports a single endpont to be polled from
+    private final @NotNull PollingContext pollingContext;
 
     private volatile @Nullable HttpClient httpClient = null;
     protected @NotNull
@@ -89,6 +92,8 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
         this.adapterFactories = input.adapterFactories();
+        pollingContext = adapterFactories.adapterSubscriptionFactory()
+                .create(adapterConfig.getDestination(), adapterConfig.getQos(), null);
     }
 
     @Override
@@ -125,8 +130,9 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         return adapterInformation;
     }
 
+
     @Override
-    public @NotNull CompletableFuture<ProtocolAdapterDataSample> poll() {
+    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final PollingContext pollingContext) {
         if (httpClient != null) {
             final CompletableFuture<HttpData> dataFuture;
             switch (adapterConfig.getHttpRequestMethod()) {
@@ -156,6 +162,11 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
             });
         }
         return CompletableFuture.failedFuture(new RuntimeException("No response was created."));
+    }
+
+    @Override
+    public @NotNull List<? extends PollingContext> getSubscriptions() {
+        return List.of(pollingContext);
     }
 
     @Override
@@ -218,7 +229,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         timeout = timeout == null ? HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS : timeout;
         timeout = Math.max(timeout, HttpAdapterConstants.MAX_TIMEOUT_SECONDS);
         builder.timeout(Duration.ofSeconds(timeout));
-        builder.setHeader(USER_AGENT_HEADER, String.format( "HiveMQ-Edge; %s", version));
+        builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
         if (config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()) {
             config.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
         }
@@ -265,8 +276,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                 }
             }
         }
-        final PollingContext pollingContext =
-                adapterFactories.adapterSubscriptionFactory().create(config.getDestination(), config.getQos(), null);
 
         HttpData data = new HttpData(pollingContext,
                 adapterConfig.getUrl(),

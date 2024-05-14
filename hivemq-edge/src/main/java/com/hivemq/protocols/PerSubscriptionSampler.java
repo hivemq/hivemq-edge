@@ -2,7 +2,7 @@ package com.hivemq.protocols;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.PollingPerSubscriptionProtocolAdapter;
+import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -13,11 +13,11 @@ import java.util.concurrent.CompletableFuture;
 
 public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
 
-    private final @NotNull PollingPerSubscriptionProtocolAdapter perSubscriptionProtocolAdapter;
+    private final @NotNull PollingProtocolAdapter perSubscriptionProtocolAdapter;
     private final @NotNull PollingContext pollingContext;
 
     public PerSubscriptionSampler(
-            final @NotNull ProtocolAdapterWrapper<PollingPerSubscriptionProtocolAdapter> protocolAdapter,
+            final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> protocolAdapter,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,

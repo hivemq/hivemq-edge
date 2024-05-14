@@ -21,7 +21,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hivemq.adapter.sdk.api.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -268,10 +267,10 @@ public class ProtocolAdapterManager {
     }
 
     private void schedulePolling(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
-        if (protocolAdapterWrapper.getAdapter() instanceof PollingPerSubscriptionProtocolAdapter) {
+        if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
             log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
-            final PollingPerSubscriptionProtocolAdapter adapter =
-                    (PollingPerSubscriptionProtocolAdapter) protocolAdapterWrapper.getAdapter();
+            final PollingProtocolAdapter adapter =
+                    (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
 
             adapter.getSubscriptions().forEach(adapterSubscription -> {
                 //noinspection unchecked this is safe as we literally make a check on the adapter class before
@@ -283,16 +282,6 @@ public class ProtocolAdapterManager {
                         eventService);
                 protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
             });
-        } else if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
-            log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
-            final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
-            //noinspection unchecked this is safe as we literally make a check on the adapter class before
-            final SubscriptionSampler sampler = new SubscriptionSampler(protocolAdapterWrapper,
-                    metricRegistry,
-                    objectMapper,
-                    moduleServices.adapterPublishService(),
-                    eventService);
-            protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
         }
     }
 
@@ -303,8 +292,7 @@ public class ProtocolAdapterManager {
         }
         CompletableFuture<Void> stopFuture;
 
-        if (protocolAdapter instanceof PollingProtocolAdapter ||
-                protocolAdapter instanceof PollingPerSubscriptionProtocolAdapter) {
+        if (protocolAdapter instanceof PollingProtocolAdapter) {
             protocolAdapterPollingService.getPollingJobsForAdapter(protocolAdapter.getId())
                     .forEach(protocolAdapterPollingService::stopPolling);
         }

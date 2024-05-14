@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
-import com.hivemq.adapter.sdk.api.PollingPerSubscriptionProtocolAdapter;
+import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -55,7 +55,7 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
  * @author Simon L Johnson
  */
 public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
-        implements PollingPerSubscriptionProtocolAdapter {
+        implements PollingProtocolAdapter {
 
     protected static final String TAG_ADDRESS_TYPE_SEP = ":";
     private final Logger log = LoggerFactory.getLogger(getClass());

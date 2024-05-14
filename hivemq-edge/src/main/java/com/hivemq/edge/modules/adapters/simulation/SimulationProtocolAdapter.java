@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
-import com.hivemq.adapter.sdk.api.PollingPerSubscriptionProtocolAdapter;
+import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
@@ -32,7 +32,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
-public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocolAdapter {
+public class SimulationProtocolAdapter implements PollingProtocolAdapter {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull SimulationAdapterConfig adapterConfig;
