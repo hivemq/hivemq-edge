@@ -269,6 +269,10 @@
       "topicFilter": {
         "duplicate": "The topic filter {{ filter }} is already defined",
         "alreadyMatching": "A policy is already matching the topic filter {{ filter }}"
+      },
+      "dataPolicy": {
+        "notLoading": "Cannot load the existing policies for checking ids",
+        "notUnique": "The id is already in use by another data policy"
       }
     },
     "loading": {
