@@ -250,11 +250,6 @@ export const loadDataPolicyPipelines = (
   scripts: Script[],
   dataPolicyNode: Node<DataPolicyData>
 ) => {
-  if (dataPolicyNode.id !== policy.id)
-    throw new Error(
-      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
-    )
-
   const newNodes: (NodeAddChange | Connection)[] = []
 
   if (policy.onSuccess && policy.onSuccess.pipeline) {
