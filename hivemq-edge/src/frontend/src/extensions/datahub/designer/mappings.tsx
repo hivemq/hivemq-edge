@@ -21,6 +21,7 @@ import { BehaviorPolicyNode } from '@datahub/designer/behavior_policy/BehaviorPo
 import { TransitionNode } from '@datahub/designer/transition/TransitionNode.tsx'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+import { DataPolicyPanel } from '@datahub/designer/data_policy/DataPolicyPanel.tsx'
 
 /**
  * Used in the side panel editor to render the content of the selected node
@@ -29,6 +30,7 @@ export const DefaultEditor: Record<string, FC<PanelProps>> = {
   [DataHubNodeType.INTERNAL]: () => <LoaderSpinner />,
   [DataHubNodeType.TOPIC_FILTER]: TopicFilterPanel,
   [DataHubNodeType.CLIENT_FILTER]: ClientFilterPanel,
+  [DataHubNodeType.DATA_POLICY]: DataPolicyPanel,
   [DataHubNodeType.VALIDATOR]: ValidatorPanel,
   [DataHubNodeType.SCHEMA]: SchemaPanel,
   [DataHubNodeType.BEHAVIOR_POLICY]: BehaviorPolicyPanel,
