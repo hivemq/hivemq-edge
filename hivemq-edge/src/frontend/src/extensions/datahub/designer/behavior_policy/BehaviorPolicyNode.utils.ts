@@ -6,6 +6,7 @@ import i18n from '@/config/i18n.config.ts'
 
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 import { BehaviorPolicyData, BehaviorPolicyType, DataHubNodeType, DryRunResults } from '@datahub/types.ts'
+import { getNodeId } from '@datahub/utils/node.utils.ts'
 
 export function checkValidityModel(behaviorPolicy: Node<BehaviorPolicyData>): DryRunResults<BehaviorPolicyBehavior> {
   if (!behaviorPolicy.data.model) {
@@ -26,17 +27,16 @@ export function checkValidityModel(behaviorPolicy: Node<BehaviorPolicyData>): Dr
 // TODO[NVL] Need to find a better way of testing this one
 /* istanbul ignore next -- @preserve */
 export function checkValidityBehaviorPolicy(
-  node: Node<BehaviorPolicyData>,
+  behaviourPolicyNode: Node<BehaviorPolicyData>,
   client: DryRunResults<string, never>,
   model: DryRunResults<BehaviorPolicyBehavior, never>,
   transitions: DryRunResults<BehaviorPolicyOnTransition, never>[]
 ): DryRunResults<BehaviorPolicy, unknown> {
   return {
-    node: node,
+    node: behaviourPolicyNode,
     data: {
       behavior: model.data as BehaviorPolicyBehavior,
-      // TODO[19466] Id should be user-facing; Need to fix before merging!
-      id: node.id,
+      id: behaviourPolicyNode.data.id,
       matching: { clientIdRegex: client.data as string },
       onTransitions: transitions.length
         ? transitions.map((transition) => {
@@ -60,10 +60,11 @@ export const loadBehaviorPolicy = (behaviorPolicy: BehaviorPolicy): NodeAddChang
   }
 
   const behaviorPolicyNode: Node<BehaviorPolicyData> = {
-    id: behaviorPolicy.id,
+    id: getNodeId(),
     type: DataHubNodeType.BEHAVIOR_POLICY,
     position,
     data: {
+      id: behaviorPolicy.id,
       model: model,
       arguments: behaviorPolicy.behavior.arguments,
     },
