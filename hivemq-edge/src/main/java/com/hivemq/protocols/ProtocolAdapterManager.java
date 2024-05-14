@@ -28,7 +28,6 @@ import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
-import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -40,7 +39,6 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
 import com.hivemq.edge.model.HiveMQEdgeRemoteEvent;
-import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesPerModuleImpl;
@@ -50,7 +48,6 @@ import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImp
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.EventUtils;
-import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -269,8 +266,7 @@ public class ProtocolAdapterManager {
     private void schedulePolling(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
             log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
-            final PollingProtocolAdapter adapter =
-                    (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
+            final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
 
             adapter.getSubscriptions().forEach(adapterSubscription -> {
                 //noinspection unchecked this is safe as we literally make a check on the adapter class before
@@ -568,12 +564,7 @@ public class ProtocolAdapterManager {
             final @NotNull EventImpl.SEVERITY severity, final @NotNull ProtocolAdapter adapter) {
         Preconditions.checkNotNull(severity);
         Preconditions.checkNotNull(adapter);
-        EventBuilder builder = new EventBuilderImpl();
-        builder.withTimestamp(System.currentTimeMillis());
-        builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER, adapter.getId()));
-        builder.withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER_TYPE,
-                adapter.getProtocolAdapterInformation().getProtocolId()));
-        builder.withSeverity(severity);
-        return builder;
+        return eventService.adapterEvent(adapter.getId(), adapter.getProtocolAdapterInformation().getProtocolId())
+                .withSeverity(severity);
     }
 }

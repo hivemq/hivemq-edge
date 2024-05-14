@@ -54,7 +54,6 @@ import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.EventUtils;
-import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
@@ -92,8 +91,8 @@ public class BridgeMqttClient {
     private final @NotNull PerBridgeMetrics perBridgeMetrics;
     private final @NotNull EventService eventService;
     private final @NotNull MetricRegistry metricRegistry;
-    private final AtomicBoolean connected = new AtomicBoolean(false);
-    private final AtomicBoolean stopped = new AtomicBoolean(false);
+    private final @NotNull AtomicBoolean connected = new AtomicBoolean(false);
+    private final @NotNull AtomicBoolean stopped = new AtomicBoolean(false);
     private final @NotNull List<MqttForwarder> forwarders = Collections.synchronizedList(new ArrayList<>());
 
     public BridgeMqttClient(
@@ -130,15 +129,16 @@ public class BridgeMqttClient {
             forwarders.forEach(MqttForwarder::drainQueue);
         });
 
-        builder.addConnectedListener(context -> eventService.fireEvent(eventBuilder(EventImpl.SEVERITY.INFO).withMessage(
-                String.format("Bridge '%s' connected", getBridge().getId())).build()));
+        builder.addConnectedListener(context -> eventBuilder(EventImpl.SEVERITY.INFO).withMessage(String.format(
+                "Bridge '%s' connected",
+                getBridge().getId())).fire());
 
         //-- Fire a system event for the various logging layers
-        builder.addDisconnectedListener(context -> eventService.fireEvent(eventBuilder(context.getCause() == null ?
+        builder.addDisconnectedListener(context -> eventBuilder(context.getCause() == null ?
                 EventImpl.SEVERITY.INFO :
                 EventImpl.SEVERITY.ERROR).withMessage(String.format("Bridge '%s' disconnected", getBridge().getId()))
                 .withPayload(EventUtils.generateErrorPayload(context.getCause()))
-                .build()));
+                .fire());
 
         builder.addDisconnectedListener(context -> {
             final Throwable cause = context.getCause();
@@ -235,7 +235,7 @@ public class BridgeMqttClient {
                 .send();
 
         connectFuture.handleAsync((mqtt5ConnAck, throwable) -> {
-            if(stopped.get()){
+            if (stopped.get()) {
                 return null;
             }
 
@@ -340,7 +340,8 @@ public class BridgeMqttClient {
     }
 
     protected @NotNull EventBuilder eventBuilder(final @NotNull EventImpl.SEVERITY severity) {
-        EventBuilder builder = new EventBuilderImpl();
+
+        EventBuilder builder = eventService.bridgeEvent();
         builder.withTimestamp(System.currentTimeMillis());
         builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.BRIDGE, bridge.getId()));
         builder.withSeverity(severity);

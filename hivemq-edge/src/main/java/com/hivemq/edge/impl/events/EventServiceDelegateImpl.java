@@ -18,8 +18,12 @@ package com.hivemq.edge.impl.events;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
+import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
+import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.EventListener;
 import com.hivemq.edge.modules.api.events.EventStore;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -43,9 +47,10 @@ public class EventServiceDelegateImpl implements EventService {
     private ExecutorService executorService;
 
     @Inject
-    public EventServiceDelegateImpl(final @NotNull EventStore eventStore,
-                                    final @Nullable Set<EventListener> eventListeners,
-                                    final @NotNull ExecutorService executorService) {
+    public EventServiceDelegateImpl(
+            final @NotNull EventStore eventStore,
+            final @Nullable Set<EventListener> eventListeners,
+            final @NotNull ExecutorService executorService) {
         Preconditions.checkNotNull(eventStore);
         Preconditions.checkNotNull(executorService);
         this.eventStore = eventStore;
@@ -62,6 +67,17 @@ public class EventServiceDelegateImpl implements EventService {
         }
     }
 
+    public @NotNull EventBuilder adapterEvent(final @NotNull String adapterId, final @NotNull String protocolId) {
+        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis())
+                .withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER, adapterId))
+                .withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER_TYPE, protocolId));
+    }
+
+    @Override
+    public @NotNull EventBuilder bridgeEvent() {
+        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis());
+    }
+
     @Override
     public List<Event> readEvents(final @Nullable Long sinceTimestamp, final @Nullable Integer limit) {
         return eventStore.readEvents(sinceTimestamp, limit);
@@ -69,9 +85,8 @@ public class EventServiceDelegateImpl implements EventService {
 
     private void notifyEventListeners(final @NotNull Event event) {
         Preconditions.checkNotNull(event);
-        if(!eventListeners.isEmpty()){
-            eventListeners.forEach(l ->
-                    executorService.submit(() -> l.eventFired(event)));
+        if (!eventListeners.isEmpty()) {
+            eventListeners.forEach(l -> executorService.submit(() -> l.eventFired(event)));
         }
     }
 }

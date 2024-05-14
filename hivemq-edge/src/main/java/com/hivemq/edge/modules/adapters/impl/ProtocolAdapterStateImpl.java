@@ -2,12 +2,8 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
-import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.EventUtils;
-import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -65,10 +61,11 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
             final boolean sendEvent) {
         this.lastErrorMessage = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
         if (sendEvent) {
-            eventService.fireEvent(eventBuilder(adapterId,
-                    protocolId,
-                    EventImpl.SEVERITY.ERROR).withMessage(String.format("Adapter '%s' encountered an error.",
-                    adapterId)).withPayload(EventUtils.generateErrorPayload(throwable)).build());
+            eventService.adapterEvent(adapterId, protocolId)
+                    .withSeverity(EventImpl.SEVERITY.ERROR)
+                    .withMessage(String.format("Adapter '%s' encountered an error.", adapterId))
+                    .withPayload(EventUtils.generateErrorPayload(throwable))
+                    .fire();
         }
     }
 
@@ -86,18 +83,5 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     public @Nullable String getLastErrorMessage() {
         return lastErrorMessage;
     }
-
-    protected @NotNull EventBuilder eventBuilder(
-            final @NotNull String adapterId,
-            final @NotNull String protocolId,
-            final @NotNull EventImpl.SEVERITY severity) {
-        EventBuilder builder = new EventBuilderImpl();
-        builder.withTimestamp(System.currentTimeMillis());
-        builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER, adapterId));
-        builder.withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER_TYPE, protocolId));
-        builder.withSeverity(severity);
-        return builder;
-    }
-
 
 }

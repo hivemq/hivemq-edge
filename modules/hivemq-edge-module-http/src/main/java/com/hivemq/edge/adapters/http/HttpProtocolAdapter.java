@@ -258,13 +258,12 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                             log.debug("Invalid JSON data was [{}]", bodyData);
                         }
                         moduleServices.eventService()
-                                .fireEvent(adapterFactories.eventBuilderFactory()
-                                        .create(adapterConfig.getId(), adapterInformation.getProtocolId())
+                                .adapterEvent(adapterConfig.getId(), adapterInformation.getProtocolId())
                                         .withSeverity(Event.SEVERITY.WARN)
                                         .withMessage(String.format(
                                                 "Http response on adapter '%s' could not be parsed as JSON data.",
                                                 adapterConfig.getId()))
-                                        .build());
+                                        .fire();
                         throw new RuntimeException("unable to parse JSON data from HTTP response");
                     }
                 } else {

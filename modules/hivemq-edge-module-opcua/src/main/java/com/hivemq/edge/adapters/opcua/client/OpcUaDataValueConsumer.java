@@ -107,15 +107,14 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
 
             if (firstMessageReceived.compareAndSet(false, true)) {
-                final Event event = adapterFactories.eventBuilderFactory().create(adapterId, protocolAdapter.getId())
-                        .withTimestamp(System.currentTimeMillis())
+                eventService.adapterEvent(adapterId, protocolAdapter.getId())
                         .withSeverity(Event.SEVERITY.INFO)
                         .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
                                 adapterId,
                                 subscription.getMqttTopic()))
                         .withPayload(EventUtils.generateJsonPayload(convertedPayload, adapterFactories.payloadFactory()))
-                        .build();
-                eventService.fireEvent(event);
+                        .fire();
+
             }
             final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
 

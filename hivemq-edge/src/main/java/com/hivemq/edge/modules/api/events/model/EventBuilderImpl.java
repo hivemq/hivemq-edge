@@ -9,6 +9,8 @@ import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
+import java.util.function.Consumer;
+
 public class EventBuilderImpl implements EventBuilder {
     private @Nullable EventImpl.SEVERITY severity;
     private @Nullable String message;
@@ -16,6 +18,12 @@ public class EventBuilderImpl implements EventBuilder {
     private @Nullable Long timestamp;
     private @Nullable TypeIdentifier associatedObject;
     private @Nullable TypeIdentifier source;
+    private final @NotNull Consumer<Event> fireConsumer;
+
+    public EventBuilderImpl(@NotNull Consumer<Event> fireConsumer) {
+        this.fireConsumer = fireConsumer;
+    }
+
 
     @Override
     public @NotNull EventBuilder withSeverity(final EventImpl.@NotNull SEVERITY severity) {
@@ -65,5 +73,10 @@ public class EventBuilderImpl implements EventBuilder {
                 timestamp,
                 associatedObject,
                 source);
+    }
+
+    @Override
+    public void fire() {
+
     }
 }
