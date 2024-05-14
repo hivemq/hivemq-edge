@@ -273,7 +273,7 @@
     },
     "loading": {
       "connection": {
-        "notFound": "Cannot find the $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) node"
+        "notFound": "Cannot find the $t(datahub:workspace.nodes.type, { 'context': '{{ type }}' }) node"
       },
       "schema": {
         "unknown": "Cannot identify the type of the SCHEMA - {{ type }}"

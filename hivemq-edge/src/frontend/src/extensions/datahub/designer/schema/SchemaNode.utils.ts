@@ -127,7 +127,7 @@ export function loadSchema(
 ): (NodeAddChange | Connection)[] {
   const schema = schemas.find((schema) => schema.id === schemaRef.schemaId)
   if (!schema)
-    throw new Error(i18n.t('datahub:error.loading.connection.notFound', { source: DataHubNodeType.SCHEMA }) as string)
+    throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.SCHEMA }) as string)
 
   if (schema.type === SchemaType.JSON) {
     const schemaNode: Node<SchemaData> = {
