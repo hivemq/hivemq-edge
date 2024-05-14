@@ -4,6 +4,6 @@
 /* eslint-disable */
 
 /**
- * JSONSchema in the 'https://json-schema.org/draft/2020-12/schema' format, which describes the configuration requirements for the adapter.
+ * The arguments of the fsm derived from the behavior policy.
  */
 export type JsonNode = Record<string, any>;

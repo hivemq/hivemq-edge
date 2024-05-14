@@ -7,4 +7,6 @@ export const DATAHUB_QUERY_KEYS = {
   CLIENT_STATE: 'datahub.client_states',
   BACKUP_RESTORE: 'datahub.backup_restores',
   TRACE_RECORDING: 'datahub.trace_recordings',
+  BEHAVIOR_FSM_MODEL: 'dataHub.behavior-fsm-model',
+  FUNCTIONS: 'dataHub.functions',
 }

@@ -5,13 +5,14 @@ import { NodeProps } from 'reactflow'
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import { DataHubNodeType, StrategyType, ValidatorData, ValidatorType } from '@datahub/types.ts'
+import { DataPolicyValidator } from '@/api/__generated__'
+import { DataHubNodeType, StrategyType, ValidatorData } from '@datahub/types.ts'
 import { ValidatorNode } from './ValidatorNode.tsx'
 
 const MOCK_NODE_VALIDATOR: NodeProps<ValidatorData> = {
   id: 'node-id',
   type: DataHubNodeType.VALIDATOR,
-  data: { type: ValidatorType.SCHEMA, strategy: StrategyType.ALL_OF, schemas: [] },
+  data: { type: DataPolicyValidator.type.SCHEMA, strategy: StrategyType.ALL_OF, schemas: [] },
   ...MOCK_DEFAULT_NODE,
 }
 
@@ -24,7 +25,7 @@ describe('ValidatorNode', () => {
     cy.mountWithProviders(mockReactFlow(<ValidatorNode {...MOCK_NODE_VALIDATOR} selected={true} />))
     cy.getByTestId(`node-title`).should('contain.text', 'Policy Validator')
     cy.getByTestId(`node-model`).find('p').should('have.length', 2)
-    cy.getByTestId(`node-model`).find('p').eq(0).should('contain.text', 'schema')
+    cy.getByTestId(`node-model`).find('p').eq(0).should('contain.text', 'SCHEMA')
     cy.getByTestId(`node-model`).find('p').eq(1).should('contain.text', 'ALL_OF')
 
     // TODO[NVL] Create a PageObject and generalise the selectors

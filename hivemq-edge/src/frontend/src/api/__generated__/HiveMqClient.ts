@@ -11,8 +11,11 @@ import { AuthenticationEndpointService } from './services/AuthenticationEndpoint
 import { BridgesService } from './services/BridgesService';
 import { DataHubBehaviorPoliciesService } from './services/DataHubBehaviorPoliciesService';
 import { DataHubDataPoliciesService } from './services/DataHubDataPoliciesService';
+import { DataHubFsmService } from './services/DataHubFsmService';
+import { DataHubFunctionsService } from './services/DataHubFunctionsService';
 import { DataHubSchemasService } from './services/DataHubSchemasService';
 import { DataHubScriptsService } from './services/DataHubScriptsService';
+import { DataHubStateService } from './services/DataHubStateService';
 import { DefaultService } from './services/DefaultService';
 import { EventsService } from './services/EventsService';
 import { FrontendService } from './services/FrontendService';
@@ -31,8 +34,11 @@ export class HiveMqClient {
     public readonly bridges: BridgesService;
     public readonly dataHubBehaviorPolicies: DataHubBehaviorPoliciesService;
     public readonly dataHubDataPolicies: DataHubDataPoliciesService;
+    public readonly dataHubFsm: DataHubFsmService;
+    public readonly dataHubFunctions: DataHubFunctionsService;
     public readonly dataHubSchemas: DataHubSchemasService;
     public readonly dataHubScripts: DataHubScriptsService;
+    public readonly dataHubState: DataHubStateService;
     public readonly default: DefaultService;
     public readonly events: EventsService;
     public readonly frontend: FrontendService;
@@ -62,8 +68,11 @@ export class HiveMqClient {
         this.bridges = new BridgesService(this.request);
         this.dataHubBehaviorPolicies = new DataHubBehaviorPoliciesService(this.request);
         this.dataHubDataPolicies = new DataHubDataPoliciesService(this.request);
+        this.dataHubFsm = new DataHubFsmService(this.request);
+        this.dataHubFunctions = new DataHubFunctionsService(this.request);
         this.dataHubSchemas = new DataHubSchemasService(this.request);
         this.dataHubScripts = new DataHubScriptsService(this.request);
+        this.dataHubState = new DataHubStateService(this.request);
         this.default = new DefaultService(this.request);
         this.events = new EventsService(this.request);
         this.frontend = new FrontendService(this.request);
