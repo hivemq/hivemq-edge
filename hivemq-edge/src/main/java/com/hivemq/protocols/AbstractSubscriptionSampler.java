@@ -8,8 +8,8 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
-import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -118,7 +118,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull ProtocolAdapterDataSample sample) {
         Preconditions.checkNotNull(sample);
-        final AdapterSubscription subscription = sample.getSubscription();
+        final PublishingConfig subscription = sample.getSubscription();
         Preconditions.checkNotNull(subscription);
         Preconditions.checkNotNull(subscription.getDestination());
 

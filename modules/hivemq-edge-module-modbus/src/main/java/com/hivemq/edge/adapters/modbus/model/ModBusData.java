@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.modbus.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
@@ -39,16 +39,16 @@ public class ModBusData implements ProtocolAdapterDataSample {
     private final @NotNull TYPE type;
     private final DataPointFactory dataPointFactory;
     protected @NotNull Long timestamp = System.currentTimeMillis();
-    protected @NotNull AdapterSubscription adapterSubscription;
+    protected @NotNull PublishingConfig publishingConfig;
 
     //-- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
     public ModBusData(
-            final @NotNull AdapterSubscription adapterSubscription,
+            final @NotNull PublishingConfig publishingConfig,
             final @NotNull TYPE type,
             final @NotNull DataPointFactory dataPointFactory) {
-        this.adapterSubscription = adapterSubscription;
+        this.publishingConfig = publishingConfig;
         this.type = type;
 
         this.dataPointFactory = dataPointFactory;
@@ -60,8 +60,8 @@ public class ModBusData implements ProtocolAdapterDataSample {
 
     @Override
     @JsonIgnore
-    public @NotNull AdapterSubscription getSubscription() {
-        return adapterSubscription;
+    public @NotNull PublishingConfig getSubscription() {
+        return publishingConfig;
     }
 
     @Override

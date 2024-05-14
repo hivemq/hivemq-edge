@@ -19,9 +19,9 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -81,7 +81,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
                        description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<? extends AdapterSubscriptionImpl> subscriptions = new ArrayList<>();
+    private @NotNull List<? extends PublishingConfigImpl> subscriptions = new ArrayList<>();
 
     public Plc4xAdapterConfig() {
     }
@@ -106,7 +106,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
         return publishChangedDataOnly;
     }
 
-    public @NotNull List<? extends AdapterSubscriptionImpl> getSubscriptions() {
+    public @NotNull List<? extends PublishingConfigImpl> getSubscriptions() {
         return subscriptions;
     }
 
@@ -119,7 +119,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "destination", "qos"})
-    public static class AdapterSubscriptionImpl implements AdapterSubscription {
+    public static class PublishingConfigImpl implements PublishingConfig {
 
         @JsonProperty(value = "tagName", required = true)
         @ModuleConfigField(title = "Tag Name",

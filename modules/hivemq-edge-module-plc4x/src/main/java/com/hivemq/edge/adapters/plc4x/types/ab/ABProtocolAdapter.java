@@ -57,7 +57,7 @@ public class ABProtocolAdapter extends AbstractPlc4xAdapter<ABAdapterConfig> {
             }
 
             @Override
-            protected @NotNull String getTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull AdapterSubscriptionImpl subscription) {
+            protected @NotNull String getTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull PublishingConfigImpl subscription) {
                 return createTagAddressForSubscription(subscription);
             }
         };

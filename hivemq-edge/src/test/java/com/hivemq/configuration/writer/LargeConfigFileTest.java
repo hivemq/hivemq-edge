@@ -24,7 +24,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.modules.adapters.simulation.SimulationAdapterConfig;
 import com.hivemq.edge.modules.adapters.simulation.SimulationConfigConverter;
-import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
+import com.hivemq.edge.modules.config.impl.PublishingConfigImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.junit.Assert;
@@ -62,10 +62,10 @@ public class LargeConfigFileTest extends AbstractConfigWriterTest {
         start = printTimer("Initial Read", System.out, start);
 
         SimulationAdapterConfig config = readConfig(mapper, entity.getProtocolAdapterConfig());
-        List<AdapterSubscriptionImpl> subscriptions  = config.getSubscriptions();
+        List<PublishingConfigImpl> subscriptions  = config.getSubscriptions();
 
         for (int i = 0; i < 100000; i++){
-            subscriptions.add(new AdapterSubscriptionImpl("foo" + i, 1, null));
+            subscriptions.add(new PublishingConfigImpl("foo" + i, 1, null));
         }
 
         start = printTimer("Population", System.out, start);

@@ -3,8 +3,8 @@ package com.hivemq.edge.modules.config.impl;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -12,7 +12,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AdapterSubscriptionImpl implements AdapterSubscription {
+public class PublishingConfigImpl implements PublishingConfig {
 
     @JsonProperty(value = "destination", required = true)
     @ModuleConfigField(title = "Destination Topic",
@@ -57,11 +57,11 @@ public class AdapterSubscriptionImpl implements AdapterSubscription {
                        arrayMaxItems = 10)
     private @NotNull List<UserProperty> userProperties = new ArrayList<>();
 
-    public AdapterSubscriptionImpl() {
+    public PublishingConfigImpl() {
     }
 
     @JsonCreator
-    public AdapterSubscriptionImpl(
+    public PublishingConfigImpl(
             @JsonProperty("destination") @Nullable final String destination,
             @JsonProperty("qos") final int qos,
             @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {

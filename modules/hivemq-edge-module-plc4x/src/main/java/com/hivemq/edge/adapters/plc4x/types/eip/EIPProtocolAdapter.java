@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.plc4x.types.eip;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
@@ -53,7 +53,7 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
     }
 
     @Override
-    protected @NotNull String createTagAddressForSubscription(final Plc4xAdapterConfig.AdapterSubscriptionImpl subscription) {
+    protected @NotNull String createTagAddressForSubscription(final Plc4xAdapterConfig.PublishingConfigImpl subscription) {
         return "%" + subscription.getTagAddress();
     }
 
@@ -67,19 +67,19 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
     }
 
     @Override
-    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(final @NotNull AdapterSubscription adapterSubscription) {
-        if (!(adapterSubscription instanceof EIPAdapterConfig.AdapterSubscription)) {
+    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(final @NotNull PublishingConfig publishingConfig) {
+        if (!(publishingConfig instanceof EIPAdapterConfig.EIPPublishingConfigImpl)) {
             throw new IllegalStateException("Subscription configuration is not of correct type Ethernet/IP");
         }
         if (connection.isConnected()) {
             try {
                 CompletableFuture<? extends PlcReadResponse> request =
-                        connection.read((Plc4xAdapterConfig.AdapterSubscriptionImpl) adapterSubscription);
-                return request.thenApply(response -> (ProtocolAdapterDataSample) processReadResponse((EIPAdapterConfig.AdapterSubscription) adapterSubscription,
+                        connection.read((Plc4xAdapterConfig.PublishingConfigImpl) publishingConfig);
+                return request.thenApply(response -> (ProtocolAdapterDataSample) processReadResponse((EIPAdapterConfig.EIPPublishingConfigImpl) publishingConfig,
                         response)).exceptionally(throwable -> {
                     if (throwable instanceof InterruptedException ||
                             throwable.getCause() instanceof InterruptedException) {
-                        return new ProtocolAdapterDataSampleImpl<>(adapterSubscription, adapterFactories.dataPointFactory());
+                        return new ProtocolAdapterDataSampleImpl<>(publishingConfig, adapterFactories.dataPointFactory());
                     }
                     throw new RuntimeException(throwable);
                 }).thenApply(this::captureDataSample);
@@ -88,7 +88,7 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
                 return CompletableFuture.failedFuture(e);
             }
         }
-        return CompletableFuture.completedFuture(new ProtocolAdapterDataSampleImpl<>(adapterSubscription, adapterFactories.dataPointFactory()))
+        return CompletableFuture.completedFuture(new ProtocolAdapterDataSampleImpl<>(publishingConfig, adapterFactories.dataPointFactory()))
                 .thenApply(this::captureDataSample);
     }
 }

@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -91,7 +92,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions", description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<AdapterSubscription> subscriptions = new ArrayList<>();
+    private @NotNull List<PublishingConfigImpl> subscriptions = new ArrayList<>();
 
     public ModbusAdapterConfig() {
     }
@@ -128,7 +129,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         return host;
     }
 
-    public @NotNull List<AdapterSubscription> getSubscriptions() {
+    public @NotNull List<PublishingConfigImpl> getSubscriptions() {
         return subscriptions;
     }
 
@@ -136,7 +137,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         return timeout;
     }
 
-    public static class AdapterSubscription implements com.hivemq.adapter.sdk.api.config.AdapterSubscription {
+    public static class PublishingConfigImpl implements PublishingConfig {
         @JsonProperty(value = "destination", required = true)
         @ModuleConfigField(title = "Destination Topic",
                            description = "The topic to publish data on",
@@ -187,7 +188,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         private @NotNull AddressRange addressRange;
 
         @JsonCreator
-        public AdapterSubscription(
+        public PublishingConfigImpl(
                 @JsonProperty("destination") @Nullable final String destination,
                 @JsonProperty("qos") final int qos,
                 @JsonProperty("addressRange") @NotNull final AddressRange addressRange,
@@ -239,10 +240,10 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof AdapterSubscription)) {
+            if (!(o instanceof PublishingConfigImpl)) {
                 return false;
             }
-            AdapterSubscription that = (AdapterSubscription) o;
+            PublishingConfigImpl that = (PublishingConfigImpl) o;
             return Objects.equals(addressRange, that.addressRange);
         }
 

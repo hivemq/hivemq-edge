@@ -24,9 +24,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
+import com.hivemq.adapter.sdk.api.config.PublishingConfig;
+import com.hivemq.edge.modules.config.impl.PublishingConfigImpl;
 import com.hivemq.edge.modules.config.impl.UserPropertyImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -58,7 +58,7 @@ public class AdapterConfigModelTest {
 
         AdapterConfiguration entity = new AdapterConfiguration();
         entity.subscriptions = new ArrayList<>();
-        entity.subscriptions.add(new AdapterSubscriptionImpl("some/path",1,List.of(new UserPropertyImpl("propertyName", "propertyValue"))));
+        entity.subscriptions.add(new PublishingConfigImpl("some/path",1,List.of(new UserPropertyImpl("propertyName", "propertyValue"))));
         String marhslaled = mapper.writeValueAsString(entity);
         System.err.println(marhslaled);
 
@@ -95,7 +95,7 @@ public class AdapterConfigModelTest {
         @ModuleConfigField(title = "Subscriptions",
                            description = "List of subscriptions for the simulation",
                            required = true)
-        private @NotNull List<AdapterSubscription> subscriptions = new ArrayList<>();
+        private @NotNull List<PublishingConfig> subscriptions = new ArrayList<>();
 
         @Override
         public @NotNull String getId() {

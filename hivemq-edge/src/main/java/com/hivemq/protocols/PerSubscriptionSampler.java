@@ -3,7 +3,7 @@ package com.hivemq.protocols;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.PollingPerSubscriptionProtocolAdapter;
-import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
@@ -14,14 +14,14 @@ import java.util.concurrent.CompletableFuture;
 public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
 
     private final @NotNull PollingPerSubscriptionProtocolAdapter perSubscriptionProtocolAdapter;
-    private final @NotNull AdapterSubscription adapterSubscription;
+    private final @NotNull PublishingConfig publishingConfig;
 
     public PerSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper<PollingPerSubscriptionProtocolAdapter> protocolAdapter,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull AdapterSubscription adapterSubscription,
+            final @NotNull PublishingConfig publishingConfig,
             final @NotNull EventService eventService) {
         super(protocolAdapter,
                 protocolAdapter.getAdapter().getPollingIntervalMillis(),
@@ -31,7 +31,7 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
                 adapterPublishService,
                 eventService);
         this.perSubscriptionProtocolAdapter = protocolAdapter.getAdapter();
-        this.adapterSubscription = adapterSubscription;
+        this.publishingConfig = publishingConfig;
     }
 
 
@@ -41,7 +41,7 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
             return CompletableFuture.failedFuture(new InterruptedException());
         }
         CompletableFuture<? extends ProtocolAdapterDataSample> future =
-                perSubscriptionProtocolAdapter.poll(adapterSubscription);
+                perSubscriptionProtocolAdapter.poll(publishingConfig);
         future.thenApply(this::captureDataSample);
         return future;
     }

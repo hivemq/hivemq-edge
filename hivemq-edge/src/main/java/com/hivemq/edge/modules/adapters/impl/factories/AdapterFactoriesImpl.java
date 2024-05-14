@@ -12,14 +12,14 @@ import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
-import com.hivemq.edge.modules.config.impl.AdapterSubscriptionImpl;
+import com.hivemq.edge.modules.config.impl.PublishingConfigImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 public class AdapterFactoriesImpl implements AdapterFactories {
 
     @Override
     public @NotNull AdapterSubscriptionFactory adapterSubscriptionFactory() {
-        return AdapterSubscriptionImpl::new;
+        return PublishingConfigImpl::new;
 
     }
 

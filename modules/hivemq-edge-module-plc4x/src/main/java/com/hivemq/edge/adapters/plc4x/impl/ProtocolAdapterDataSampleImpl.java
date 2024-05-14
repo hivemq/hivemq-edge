@@ -17,8 +17,8 @@ package com.hivemq.edge.adapters.plc4x.impl;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
@@ -36,22 +36,22 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ProtocolAdapterDataSampleImpl<T extends ProtocolAdapterConfig> implements ProtocolAdapterDataSample {
 
     protected @NotNull Long timestamp = System.currentTimeMillis();
-    protected @NotNull AdapterSubscription adapterSubscription;
+    protected @NotNull PublishingConfig publishingConfig;
     private final @NotNull DataPointFactory dataPointFactory;
 
     //-- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
     public ProtocolAdapterDataSampleImpl(
-            final @NotNull AdapterSubscription adapterSubscription, final @NotNull DataPointFactory dataPointFactory) {
-        this.adapterSubscription = adapterSubscription;
+            final @NotNull PublishingConfig publishingConfig, final @NotNull DataPointFactory dataPointFactory) {
+        this.publishingConfig = publishingConfig;
         this.dataPointFactory = dataPointFactory;
     }
 
     @Override
     @JsonIgnore
-    public @NotNull AdapterSubscription getSubscription() {
-        return adapterSubscription;
+    public @NotNull PublishingConfig getSubscription() {
+        return publishingConfig;
     }
 
     @Override

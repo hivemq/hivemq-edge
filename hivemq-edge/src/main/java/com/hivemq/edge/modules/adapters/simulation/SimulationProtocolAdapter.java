@@ -17,7 +17,7 @@ package com.hivemq.edge.modules.adapters.simulation;
 
 import com.hivemq.adapter.sdk.api.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -69,8 +69,8 @@ public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocol
     }
 
     @Override
-    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(final @NotNull AdapterSubscription adapterSubscription) {
-        ProtocolAdapterDataSample dataSample = new ProtocolAdapterDataSampleImpl(adapterSubscription);
+    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(final @NotNull PublishingConfig publishingConfig) {
+        ProtocolAdapterDataSample dataSample = new ProtocolAdapterDataSampleImpl(publishingConfig);
 
         dataSample.addDataPoint("sample",
                 ThreadLocalRandom.current()
@@ -80,7 +80,7 @@ public class SimulationProtocolAdapter implements PollingPerSubscriptionProtocol
     }
 
     @Override
-    public @NotNull List<? extends AdapterSubscription> getSubscriptions() {
+    public @NotNull List<? extends PublishingConfig> getSubscriptions() {
         return adapterConfig.getSubscriptions();
     }
 

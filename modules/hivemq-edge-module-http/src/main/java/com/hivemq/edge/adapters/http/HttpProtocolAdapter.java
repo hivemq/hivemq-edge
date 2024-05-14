@@ -18,7 +18,7 @@ package com.hivemq.edge.adapters.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.AdapterSubscription;
+import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -265,10 +265,10 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                 }
             }
         }
-        final AdapterSubscription adapterSubscription =
+        final PublishingConfig publishingConfig =
                 adapterFactories.adapterSubscriptionFactory().create(config.getDestination(), config.getQos(), null);
 
-        HttpData data = new HttpData(adapterSubscription,
+        HttpData data = new HttpData(publishingConfig,
                 adapterConfig.getUrl(),
                 response.statusCode(),
                 responseContentType,
@@ -278,7 +278,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         } else {
             //When the body is empty, just include the metadata
             data.addDataPoint(RESPONSE_DATA,
-                    new HttpData(adapterSubscription,
+                    new HttpData(publishingConfig,
                             adapterConfig.getUrl(),
                             response.statusCode(),
                             responseContentType,
