@@ -19,4 +19,7 @@ export const handlers = [
       { status: 200 }
     )
   }),
+  http.get('*/data-hub/data-validation/policies/:policy', () => {
+    return HttpResponse.json<DataPolicy>(mockDataPolicy, { status: 200 })
+  }),
 ]
