@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.modbus;
 
 import com.hivemq.adapter.sdk.api.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PublishingConfig;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
@@ -54,7 +54,7 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
     private final @NotNull AdapterFactories adapterFactories;
 
     private volatile @Nullable IModbusClient modbusClient;
-    private final @Nullable Map<ModbusAdapterConfig.PublishingConfigImpl, ProtocolAdapterDataSample> lastSamples =
+    private final @Nullable Map<ModbusAdapterConfig.PollingContextImpl, ProtocolAdapterDataSample> lastSamples =
             new HashMap<>();
 
     public ModbusProtocolAdapter(
@@ -94,7 +94,7 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
     }
 
     @Override
-    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final PublishingConfig publishingConfig) {
+    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final PollingContext pollingContext) {
 
         //-- If a previously linked job has terminally disconnected the client
         //-- we need to ensure any orphaned jobs tidy themselves up properly
@@ -103,7 +103,7 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
                 if (!modbusClient.isConnected()) {
                     modbusClient.connect().thenRun(() -> protocolAdapterState.setConnectionStatus(CONNECTED)).get();
                 }
-                return CompletableFuture.supplyAsync(() -> readRegisters(publishingConfig))
+                return CompletableFuture.supplyAsync(() -> readRegisters(pollingContext))
                         .thenApply(this::captureDataSample);
             } else {
                 return CompletableFuture.failedFuture(new IllegalStateException("client not initialised"));
@@ -114,7 +114,7 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
     }
 
     @Override
-    public @NotNull List<? extends PublishingConfig> getSubscriptions() {
+    public @NotNull List<? extends PollingContext> getSubscriptions() {
         return new ArrayList<>(adapterConfig.getSubscriptions());
     }
 
@@ -180,8 +180,8 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
             log.trace("Captured ModBus data with {} data points.", data.getDataPoints().size());
         }
         if (adapterConfig.getPublishChangedDataOnly()) {
-            ModbusAdapterConfig.PublishingConfigImpl subscription =
-                    (ModbusAdapterConfig.PublishingConfigImpl) data.getSubscription();
+            ModbusAdapterConfig.PollingContextImpl subscription =
+                    (ModbusAdapterConfig.PollingContextImpl) data.getSubscription();
             ModBusData previousSample = (ModBusData) lastSamples.put(subscription, data);
             if (previousSample != null) {
                 List<DataPoint> previousSampleDataPoints = previousSample.getDataPoints();
@@ -227,9 +227,9 @@ public class ModbusProtocolAdapter implements PollingPerSubscriptionProtocolAdap
         }
     }
 
-    protected @NotNull ModBusData readRegisters(@NotNull final PublishingConfig sub) {
+    protected @NotNull ModBusData readRegisters(@NotNull final PollingContext sub) {
         try {
-            ModbusAdapterConfig.PublishingConfigImpl subscription = (ModbusAdapterConfig.PublishingConfigImpl) sub;
+            ModbusAdapterConfig.PollingContextImpl subscription = (ModbusAdapterConfig.PollingContextImpl) sub;
             ModbusAdapterConfig.AddressRange addressRange = subscription.getAddressRange();
             Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
                     addressRange.endIdx - addressRange.startIdx);

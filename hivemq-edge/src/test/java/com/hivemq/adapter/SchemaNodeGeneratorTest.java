@@ -24,8 +24,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -143,7 +143,7 @@ public class SchemaNodeGeneratorTest {
                            description = "Map your sensor data to MQTT Topics", customAttributes = {
                 @ModuleConfigField.CustomAttribute(name = "testAttributeName", value = "testAttributeValue")
         })
-        private @NotNull List<PublishingConfig> subscriptions = new ArrayList<>();
+        private @NotNull List<PollingContext> subscriptions = new ArrayList<>();
 
 
         @JsonProperty(value = "id", required = true)

@@ -122,7 +122,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
     }
 
     @Override
-    protected @NotNull String createTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull PublishingConfigImpl subscription) {
+    protected @NotNull String createTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull PollingContextImpl subscription) {
         final String formattedAddress =
                 String.format("%s%s%s", subscription.getTagAddress(), ":", subscription.getDataType());
 

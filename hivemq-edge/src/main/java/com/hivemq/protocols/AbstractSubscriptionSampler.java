@@ -9,7 +9,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.PublishingConfig;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -118,9 +118,9 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull ProtocolAdapterDataSample sample) {
         Preconditions.checkNotNull(sample);
-        final PublishingConfig subscription = sample.getSubscription();
+        final PollingContext subscription = sample.getSubscription();
         Preconditions.checkNotNull(subscription);
-        Preconditions.checkNotNull(subscription.getDestination());
+        Preconditions.checkNotNull(subscription.getMqttTopic());
 
         Preconditions.checkArgument(subscription.getQos() <= 2 && subscription.getQos() >= 0,
                 "QoS needs to be a valid QoS value (0,1,2)");
@@ -130,7 +130,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             for (AbstractProtocolAdapterJsonPayload payload : payloads) {
                 byte[] json = convertToJson(payload);
                 final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
-                        .withTopic(subscription.getDestination())
+                        .withTopic(subscription.getMqttTopic())
                         .withQoS(subscription.getQos())
                         .withPayload(json)
                         .withAdapter(protocolAdapter);
@@ -142,7 +142,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                                 .withSeverity(EventImpl.SEVERITY.INFO)
                                 .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
                                         adapterId,
-                                        sample.getSubscription().getDestination()))
+                                        sample.getSubscription().getMqttTopic()))
                                 .withPayload(EventUtils.generateJsonPayload(json))
                                 .build());
                     }

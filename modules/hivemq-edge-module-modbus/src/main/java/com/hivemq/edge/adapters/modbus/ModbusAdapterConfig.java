@@ -21,8 +21,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -92,7 +92,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions", description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<PublishingConfigImpl> subscriptions = new ArrayList<>();
+    private @NotNull List<PollingContextImpl> subscriptions = new ArrayList<>();
 
     public ModbusAdapterConfig() {
     }
@@ -129,7 +129,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         return host;
     }
 
-    public @NotNull List<PublishingConfigImpl> getSubscriptions() {
+    public @NotNull List<PollingContextImpl> getSubscriptions() {
         return subscriptions;
     }
 
@@ -137,7 +137,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         return timeout;
     }
 
-    public static class PublishingConfigImpl implements PublishingConfig {
+    public static class PollingContextImpl implements PollingContext {
         @JsonProperty(value = "destination", required = true)
         @ModuleConfigField(title = "Destination Topic",
                            description = "The topic to publish data on",
@@ -188,7 +188,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         private @NotNull AddressRange addressRange;
 
         @JsonCreator
-        public PublishingConfigImpl(
+        public PollingContextImpl(
                 @JsonProperty("destination") @Nullable final String destination,
                 @JsonProperty("qos") final int qos,
                 @JsonProperty("addressRange") @NotNull final AddressRange addressRange,
@@ -206,7 +206,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         }
 
         @Override
-        public @Nullable String getDestination() {
+        public @Nullable String getMqttTopic() {
             return destination;
         }
 
@@ -240,10 +240,10 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof PublishingConfigImpl)) {
+            if (!(o instanceof PollingContextImpl)) {
                 return false;
             }
-            PublishingConfigImpl that = (PublishingConfigImpl) o;
+            PollingContextImpl that = (PollingContextImpl) o;
             return Objects.equals(addressRange, that.addressRange);
         }
 

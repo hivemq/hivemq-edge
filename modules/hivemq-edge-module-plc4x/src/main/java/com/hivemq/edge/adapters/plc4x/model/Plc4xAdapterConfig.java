@@ -20,8 +20,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.config.PublishingConfig;
 import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -81,7 +81,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
                        description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<? extends PublishingConfigImpl> subscriptions = new ArrayList<>();
+    private @NotNull List<? extends PollingContextImpl> subscriptions = new ArrayList<>();
 
     public Plc4xAdapterConfig() {
     }
@@ -106,7 +106,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
         return publishChangedDataOnly;
     }
 
-    public @NotNull List<? extends PublishingConfigImpl> getSubscriptions() {
+    public @NotNull List<? extends PollingContextImpl> getSubscriptions() {
         return subscriptions;
     }
 
@@ -119,7 +119,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "destination", "qos"})
-    public static class PublishingConfigImpl implements PublishingConfig {
+    public static class PollingContextImpl implements PollingContext {
 
         @JsonProperty(value = "tagName", required = true)
         @ModuleConfigField(title = "Tag Name",
@@ -227,7 +227,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
         }
 
         @Override
-        public @Nullable String getDestination() {
+        public @Nullable String getMqttTopic() {
             return destination;
         }
 

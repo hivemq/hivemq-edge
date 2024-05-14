@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.plc4x.impl;
 
 import com.hivemq.adapter.sdk.api.PollingPerSubscriptionProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PublishingConfig;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -82,23 +82,23 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     }
 
     @Override
-    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final PublishingConfig publishingConfig) {
+    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final PollingContext pollingContext) {
         if (connection != null && connection.isConnected()) {
             try {
                 CompletableFuture<? extends PlcReadResponse> request =
-                        connection.read((Plc4xAdapterConfig.PublishingConfigImpl) publishingConfig);
-                return request.thenApply(response -> processReadResponse((Plc4xAdapterConfig.PublishingConfigImpl) publishingConfig,
+                        connection.read((Plc4xAdapterConfig.PollingContextImpl) pollingContext);
+                return request.thenApply(response -> processReadResponse((Plc4xAdapterConfig.PollingContextImpl) pollingContext,
                         response)).thenApply(this::captureDataSample);
             } catch (Exception e) {
                 return CompletableFuture.failedFuture(e);
             }
         }
-        return CompletableFuture.completedFuture(new ProtocolAdapterDataSampleImpl<>(publishingConfig,
+        return CompletableFuture.completedFuture(new ProtocolAdapterDataSampleImpl<>(pollingContext,
                 adapterFactories.dataPointFactory())).thenApply(this::captureDataSample);
     }
 
     @Override
-    public @NotNull List<? extends PublishingConfig> getSubscriptions() {
+    public @NotNull List<? extends PollingContext> getSubscriptions() {
         if (getReadType() == ReadType.Read) {
             return adapterConfig.getSubscriptions();
         } else {
@@ -185,7 +185,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
             }
 
             @Override
-            protected @NotNull String getTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull PublishingConfigImpl subscription) {
+            protected @NotNull String getTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull PollingContextImpl subscription) {
                 return createTagAddressForSubscription(subscription);
             }
         };
@@ -193,7 +193,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
 
     protected void subscribeAllInternal(@NotNull final Plc4xConnection<T> connection) throws RuntimeException {
         if (adapterConfig.getSubscriptions() != null) {
-            for (Plc4xAdapterConfig.PublishingConfigImpl subscription : adapterConfig.getSubscriptions()) {
+            for (Plc4xAdapterConfig.PollingContextImpl subscription : adapterConfig.getSubscriptions()) {
                 try {
                     subscribeInternal(connection, subscription);
                 } catch (Plc4xException e) {
@@ -205,7 +205,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
 
     protected @NotNull CompletableFuture<?> subscribeInternal(
             final @NotNull Plc4xConnection<T> connection,
-            final @NotNull Plc4xAdapterConfig.PublishingConfigImpl subscription) throws Plc4xException {
+            final @NotNull Plc4xAdapterConfig.PollingContextImpl subscription) throws Plc4xException {
         if (subscription != null) {
             switch (getReadType()) {
                 case Subscribe:
@@ -226,7 +226,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         boolean publishData = true;
         if (adapterConfig.getPublishChangedDataOnly()) {
             ProtocolAdapterDataSample previousSample =
-                    lastSamples.put(((Plc4xAdapterConfig.PublishingConfigImpl) data.getSubscription()).getTagAddress(),
+                    lastSamples.put(((Plc4xAdapterConfig.PollingContextImpl) data.getSubscription()).getTagAddress(),
                             data);
             if (previousSample != null) {
                 List<DataPoint> dataPoints = previousSample.getDataPoints();
@@ -259,7 +259,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(@NotNull final Plc4xAdapterConfig.PublishingConfigImpl subscription) {
+    protected @NotNull String createTagAddressForSubscription(@NotNull final Plc4xAdapterConfig.PollingContextImpl subscription) {
         return String.format("%s%s%s", subscription.getTagAddress(), TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
     }
 
@@ -287,7 +287,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     }
 
     protected @NotNull ProtocolAdapterDataSample processReadResponse(
-            final @NotNull Plc4xAdapterConfig.PublishingConfigImpl subscription,
+            final @NotNull Plc4xAdapterConfig.PollingContextImpl subscription,
             final @NotNull PlcReadResponse readEvent) {
         //it is possible that the read response does not contain any values at all, leading to unexpected error states, especially with EIP adapter
         if (!(readEvent instanceof DefaultPlcReadResponse) ||
@@ -305,7 +305,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     }
 
     protected @NotNull ProtocolAdapterDataSample processPlcFieldData(
-            final @NotNull Plc4xAdapterConfig.PublishingConfigImpl subscription,
+            final @NotNull Plc4xAdapterConfig.PollingContextImpl subscription,
             final @NotNull List<Pair<String, PlcValue>> l) {
         ProtocolAdapterDataSample data =
                 new ProtocolAdapterDataSampleImpl<>(subscription, adapterFactories.dataPointFactory());

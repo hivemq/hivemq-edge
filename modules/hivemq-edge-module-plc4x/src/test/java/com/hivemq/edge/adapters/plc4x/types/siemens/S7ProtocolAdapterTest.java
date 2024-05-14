@@ -100,12 +100,12 @@ public class S7ProtocolAdapterTest {
         }
 
         @Override
-        public @NotNull String createTagAddressForSubscription(final @NotNull Plc4xAdapterConfig.PublishingConfigImpl subscription) {
+        public @NotNull String createTagAddressForSubscription(final @NotNull Plc4xAdapterConfig.PollingContextImpl subscription) {
             return super.createTagAddressForSubscription(subscription);
         }
     }
 
-    private static class S7TestSub extends Plc4xAdapterConfig.PublishingConfigImpl {
+    private static class S7TestSub extends Plc4xAdapterConfig.PollingContextImpl {
 
         private final String address;
         private final Plc4xDataType.DATA_TYPE type;

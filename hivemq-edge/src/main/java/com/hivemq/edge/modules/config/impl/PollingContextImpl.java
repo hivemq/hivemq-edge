@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.PublishingConfig;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -12,7 +12,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PublishingConfigImpl implements PublishingConfig {
+public class PollingContextImpl implements PollingContext {
 
     @JsonProperty(value = "destination", required = true)
     @ModuleConfigField(title = "Destination Topic",
@@ -57,11 +57,11 @@ public class PublishingConfigImpl implements PublishingConfig {
                        arrayMaxItems = 10)
     private @NotNull List<UserProperty> userProperties = new ArrayList<>();
 
-    public PublishingConfigImpl() {
+    public PollingContextImpl() {
     }
 
     @JsonCreator
-    public PublishingConfigImpl(
+    public PollingContextImpl(
             @JsonProperty("destination") @Nullable final String destination,
             @JsonProperty("qos") final int qos,
             @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {
@@ -73,7 +73,7 @@ public class PublishingConfigImpl implements PublishingConfig {
     }
 
     @Override
-    public @Nullable String getDestination() {
+    public @Nullable String getMqttTopic() {
         return destination;
     }
 

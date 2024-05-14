@@ -1,7 +1,7 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.adapter.sdk.api.config.PublishingConfig;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
@@ -12,7 +12,7 @@ import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
-import com.hivemq.edge.modules.config.impl.PublishingConfigImpl;
+import com.hivemq.edge.modules.config.impl.PollingContextImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.junit.jupiter.api.Assertions;
@@ -80,9 +80,9 @@ class ModbusProtocolAdapterTest {
     }
 
     protected static ModBusData createSampleData(final int registerCount){
-        final PublishingConfig publishingConfig =
-                new PublishingConfigImpl("topic", 2, List.of());
-        final ModBusData data = new ModBusData(publishingConfig, ModBusData.TYPE.INPUT_REGISTERS, new DataPointFactory() {
+        final PollingContext pollingContext =
+                new PollingContextImpl("topic", 2, List.of());
+        final ModBusData data = new ModBusData(pollingContext, ModBusData.TYPE.INPUT_REGISTERS, new DataPointFactory() {
             @Override
             public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
                 return new DataPointImpl(tagName, tagValue);

@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.http.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hivemq.adapter.sdk.api.config.PublishingConfig;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
@@ -36,19 +36,19 @@ public class HttpData implements ProtocolAdapterDataSample {
     private final String contentType;
     private int httpStatusCode;
     private final @NotNull DataPointFactory dataPointFactory;
-    protected @NotNull PublishingConfig publishingConfig;
+    protected @NotNull PollingContext pollingContext;
 
     //-- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
     private @NotNull Long timestamp = System.currentTimeMillis();
 
     public HttpData(
-            final @NotNull PublishingConfig publishingConfig,
+            final @NotNull PollingContext pollingContext,
             final @NotNull String requestUrl,
             final int httpStatusCode,
             final @NotNull String contentType,
             final @NotNull DataPointFactory dataPointFactory) {
-        this.publishingConfig = publishingConfig;
+        this.pollingContext = pollingContext;
         this.requestUrl = requestUrl;
         this.contentType = contentType;
         this.httpStatusCode = httpStatusCode;
@@ -70,8 +70,8 @@ public class HttpData implements ProtocolAdapterDataSample {
 
     @Override
     @JsonIgnore
-    public @NotNull PublishingConfig getSubscription() {
-        return publishingConfig;
+    public @NotNull PollingContext getSubscription() {
+        return pollingContext;
     }
 
     @Override

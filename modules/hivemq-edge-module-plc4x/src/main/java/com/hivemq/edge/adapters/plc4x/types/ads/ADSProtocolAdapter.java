@@ -49,7 +49,7 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig> {
     }
 
     @Override
-    protected @NotNull String createTagAddressForSubscription(final Plc4xAdapterConfig.PublishingConfigImpl subscription) {
+    protected @NotNull String createTagAddressForSubscription(final Plc4xAdapterConfig.PollingContextImpl subscription) {
         return subscription.getTagAddress();
     }
 
