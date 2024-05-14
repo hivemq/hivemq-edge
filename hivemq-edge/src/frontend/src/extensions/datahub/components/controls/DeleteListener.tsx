@@ -76,7 +76,7 @@ const DeleteListener: FC = () => {
     const { selectedNodes, selectedEdges } = selectedElements
     onEdgesChange(selectedEdges.map<EdgeRemoveChange>((edge) => ({ id: edge.id, type: 'remove' })))
     onNodesChange(selectedNodes.map<NodeRemoveChange>((node) => ({ id: node.id, type: 'remove' })))
-    setStatus(DesignerStatus.MODIFIED)
+    setStatus(status === DesignerStatus.DRAFT ? DesignerStatus.DRAFT : DesignerStatus.MODIFIED)
   }
 
   return (
