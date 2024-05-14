@@ -53,7 +53,7 @@ public class ModbusProtocolAdapterInformation
 
     @Override
     public @NotNull String getUrl() {
-        return "https://github.com/hivemq/hivemq-edge/wiki/Protocol-adapters#modbus-tcp-adapter";
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#modbus-tcp-adapter";
     }
 
     @Override

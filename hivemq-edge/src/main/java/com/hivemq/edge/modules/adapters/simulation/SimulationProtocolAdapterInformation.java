@@ -22,8 +22,7 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
 import com.hivemq.edge.modules.config.CustomConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-public class SimulationProtocolAdapterInformation
-        extends AbstractProtocolAdapterInformation {
+public class SimulationProtocolAdapterInformation extends AbstractProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new SimulationProtocolAdapterInformation();
 
@@ -53,6 +52,11 @@ public class SimulationProtocolAdapterInformation
     @Override
     public @NotNull String getLogoUrl() {
         return "/images/hivemq-icon.png";
+    }
+
+    @Override
+    public @NotNull String getUrl() {
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html";
     }
 
     @Override

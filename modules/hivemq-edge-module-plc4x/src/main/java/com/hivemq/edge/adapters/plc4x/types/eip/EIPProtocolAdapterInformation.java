@@ -70,6 +70,11 @@ public class EIPProtocolAdapterInformation
     }
 
     @Override
+    public @NotNull String getUrl() {
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#eip-adapter";
+    }
+
+    @Override
     public List<ProtocolAdapterConstants.TAG> getTags() {
         return List.of(ProtocolAdapterConstants.TAG.TCP,
                 ProtocolAdapterConstants.TAG.AUTOMATION,

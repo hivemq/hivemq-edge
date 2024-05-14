@@ -60,6 +60,11 @@ public class ADSProtocolAdapterInformation
     }
 
     @Override
+    public @NotNull String getUrl() {
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#ads-adapter";
+    }
+
+    @Override
     public ProtocolAdapterConstants.CATEGORY getCategory() {
         return ProtocolAdapterConstants.CATEGORY.INDUSTRIAL;
     }

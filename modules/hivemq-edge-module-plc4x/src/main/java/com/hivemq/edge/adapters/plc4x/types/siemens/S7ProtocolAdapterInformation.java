@@ -59,6 +59,11 @@ public class S7ProtocolAdapterInformation extends AbstractProtocolAdapterInforma
     }
 
     @Override
+    public @NotNull String getUrl() {
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter";
+    }
+
+    @Override
     public List<ProtocolAdapterConstants.TAG> getTags() {
         return List.of(ProtocolAdapterConstants.TAG.TCP,
                 ProtocolAdapterConstants.TAG.AUTOMATION,
