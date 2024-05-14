@@ -273,8 +273,14 @@
     }
   },
   "type": "object",
-  "required": ["model"],
+  "required": ["id", "model"],
   "properties": {
+    "id": {
+      "title": "id",
+      "description": "The unique id of this behaviour policy",
+      "type": "string",
+      "pattern": "^([a-zA-Z_0-9-_])*$"
+    },
     "model": {
       "title": "Behavior Model",
       "default": "Mqtt.events",
