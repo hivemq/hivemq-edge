@@ -111,6 +111,8 @@ dependencies {
     //HiveMQ
     api("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
     api("com.hivemq:hivemq-edge-extension-sdk:${property("hivemq-edge-extension-sdk.version")}")
+    api("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
+
 
     // netty
     implementation("io.netty:netty-buffer:${property("netty.version")}")

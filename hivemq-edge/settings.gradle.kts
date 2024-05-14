@@ -58,3 +58,20 @@ if (file("../../hivemq-edge-extension-sdk").exists()) {
     )
 }
 
+if (file("../../hivemq-edge-adapter-sdk").exists()) {
+    includeBuild("../../hivemq-edge-adapter-sdk")
+} else {
+    logger.warn(
+        """
+        ######################################################################################################
+        You can not use the latest changes of or modify the hivemq-edge-adapter-sdk.
+        Please checkout the hivemq-edge-adapter-sdk repository next to the hivemq-edge repository.
+        Execute the following command from your project directory:
+        git clone https://github.com/hivemq/hivemq-edge-adapter-sdk.git ../hivemq-edge-adapter-sdk
+        You can also clone your fork:
+        git clone https://github.com/<replace-with-your-fork>/hivemq-edge-adapter-sdk.git ../hivemq-edge-adapter-sdk
+        ######################################################################################################
+        """.trimIndent()
+    )
+}
+
