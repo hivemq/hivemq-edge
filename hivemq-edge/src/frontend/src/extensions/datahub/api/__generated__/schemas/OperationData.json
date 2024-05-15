@@ -169,7 +169,14 @@
       }
     },
     "functionId": {
+      "required": ["id"],
       "properties": {
+        "id": {
+          "title": "id",
+          "description": "The unique id of this pipeline operation",
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,1023}$"
+        },
         "functionId": {
           "title": "Function",
           "description": "You can use two categories of functions in your policies. Non-terminal functions allow further operations in the pipeline to be executed,\n                          while terminal functions end further operations in the pipeline",
