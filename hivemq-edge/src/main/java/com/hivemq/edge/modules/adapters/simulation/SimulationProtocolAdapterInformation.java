@@ -73,11 +73,6 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
     }
 
     @Override
-    public @NotNull String getUrl() {
-        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html";
-    }
-
-    @Override
     public ProtocolAdapterCategory getCategory() {
         return ProtocolAdapterCategory.SIMULATION;
     }

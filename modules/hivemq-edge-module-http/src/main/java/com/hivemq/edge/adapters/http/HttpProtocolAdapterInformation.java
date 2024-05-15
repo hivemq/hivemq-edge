@@ -86,11 +86,6 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
     }
 
     @Override
-    public @NotNull String getUrl() {
-        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#http-adapter";
-    }
-
-    @Override
     public List<ProtocolAdapterTag> getTags() {
         return List.of(ProtocolAdapterTag.INTERNET,
                 ProtocolAdapterTag.TCP,
