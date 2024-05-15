@@ -6,7 +6,7 @@
       "title": "id",
       "description": "The unique id of this data policy",
       "type": "string",
-      "pattern": "^([a-zA-Z_0-9-_])*$"
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,1023}$"
     }
   }
 }
