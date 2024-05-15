@@ -2,11 +2,12 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -64,7 +65,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
             eventService.adapterEvent(adapterId, protocolId)
                     .withSeverity(EventImpl.SEVERITY.ERROR)
                     .withMessage(String.format("Adapter '%s' encountered an error.", adapterId))
-                    .withPayload(EventUtils.generateErrorPayload(throwable))
+                    .withPayload(Payload.ContentType.PLAIN_TEXT, ExceptionUtils.getStackTrace(throwable))
                     .fire();
         }
     }

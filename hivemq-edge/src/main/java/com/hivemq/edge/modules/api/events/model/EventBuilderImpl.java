@@ -1,10 +1,12 @@
 package com.hivemq.edge.modules.api.events.model;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
+import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -38,8 +40,16 @@ public class EventBuilderImpl implements EventBuilder {
     }
 
     @Override
-    public @NotNull EventBuilder withPayload(final @NotNull Payload payload) {
-        this.payload = payload;
+    public @NotNull EventBuilder withPayload(
+            final Payload.@NotNull ContentType contentType,
+            final @NotNull String content) {
+        this.payload = PayloadImpl.from(contentType, content);
+        return this;
+    }
+
+    @Override
+    public @NotNull EventBuilder withPayload(final @NotNull ObjectMapper mapper, final @NotNull Object data) {
+        this.payload = PayloadImpl.fromObject(mapper, data);
         return this;
     }
 

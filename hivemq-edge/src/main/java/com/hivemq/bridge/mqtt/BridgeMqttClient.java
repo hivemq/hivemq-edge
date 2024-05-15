@@ -24,6 +24,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
+import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.bridge.MqttForwarder;
 import com.hivemq.bridge.config.BridgeTls;
@@ -53,11 +54,11 @@ import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.HiveMQEdgeConstants;
 import com.hivemq.edge.model.TypeIdentifierImpl;
-import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
 import com.hivemq.util.StoreTypeUtil;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -137,7 +138,7 @@ public class BridgeMqttClient {
         builder.addDisconnectedListener(context -> eventBuilder(context.getCause() == null ?
                 EventImpl.SEVERITY.INFO :
                 EventImpl.SEVERITY.ERROR).withMessage(String.format("Bridge '%s' disconnected", getBridge().getId()))
-                .withPayload(EventUtils.generateErrorPayload(context.getCause()))
+                .withPayload(Payload.ContentType.PLAIN_TEXT, ExceptionUtils.getStackTrace(context.getCause()))
                 .fire());
 
         builder.addDisconnectedListener(context -> {

@@ -13,6 +13,7 @@ import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
@@ -22,13 +23,13 @@ import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload
 import com.hivemq.edge.modules.adapters.data.TagSample;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
-import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -94,7 +95,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     @Override
     public void error(@NotNull final Throwable t, final boolean continuing) {
-        onSamplerError( t, continuing);
+        onSamplerError(t, continuing);
     }
 
     /**
@@ -103,8 +104,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
      * the cause of the error.
      */
     protected void onSamplerError(
-            final @NotNull Throwable exception,
-            boolean continuing) {
+            final @NotNull Throwable exception, boolean continuing) {
         protocolAdapter.setErrorConnectionStatus(exception, null);
         if (!continuing) {
             protocolAdapter.stop();
@@ -140,7 +140,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                                 .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
                                         adapterId,
                                         sample.getSubscription().getMqttTopic()))
-                                .withPayload(EventUtils.generateJsonPayload(json))
+                                .withPayload(Payload.ContentType.JSON, new String(json, StandardCharsets.UTF_8))
                                 .fire();
                     }
                 }).exceptionally(throwable -> {
@@ -292,7 +292,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     public int hashCode() {
         return Objects.hash(uuid);
     }
-
 
 
 }
