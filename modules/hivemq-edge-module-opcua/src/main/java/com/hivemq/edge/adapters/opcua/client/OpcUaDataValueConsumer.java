@@ -19,6 +19,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
@@ -27,7 +28,6 @@ import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaStringPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
-import com.hivemq.edge.adapters.opcua.util.EventUtils;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
@@ -36,6 +36,7 @@ import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -112,7 +113,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
                         .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
                                 adapterId,
                                 subscription.getMqttTopic()))
-                        .withPayload(EventUtils.generateJsonPayload(convertedPayload, adapterFactories.payloadFactory()))
+                        .withPayload(Payload.ContentType.JSON, new String(convertedPayload, StandardCharsets.UTF_8))
                         .fire();
 
             }

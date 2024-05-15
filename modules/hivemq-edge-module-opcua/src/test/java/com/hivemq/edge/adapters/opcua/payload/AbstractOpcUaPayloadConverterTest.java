@@ -15,22 +15,17 @@
  */
 package com.hivemq.edge.adapters.opcua.payload;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
-import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
-import com.hivemq.adapter.sdk.api.events.model.Payload;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
-import com.hivemq.adapter.sdk.api.factories.EventBuilderFactory;
-import com.hivemq.adapter.sdk.api.factories.PayloadFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.api.model.core.PayloadImpl;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
@@ -57,6 +52,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -72,10 +68,19 @@ abstract class AbstractOpcUaPayloadConverterTest {
             new TestProtocolAdapterPublishBuilder();
     private final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> protocolAdapterInput = mock();
     private final @NotNull AdapterFactories adapterFactories = mock();
+    private final @NotNull EventService eventService = mock();
+
+
 
     @BeforeEach
     public void before() {
-        setupMocks();
+        when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock()));
+        when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
+        when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
+        when(adapterPublishService.publish()).thenReturn(adapterPublishBuilder);
+        when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
+        when(eventService.adapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event->{}));
+        when(moduleServices.eventService()).thenReturn(eventService);
     }
 
     @NotNull
@@ -104,33 +109,6 @@ abstract class AbstractOpcUaPayloadConverterTest {
         protocolAdapter.start(in, out);
         startFuture.get();
         return protocolAdapter;
-    }
-
-    protected void setupMocks() {
-        when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock()));
-        when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
-        when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
-        when(adapterPublishService.publish()).thenReturn(adapterPublishBuilder);
-        when(adapterFactories.eventBuilderFactory()).thenReturn(new EventBuilderFactory() {
-            @Override
-            public @NotNull EventBuilder create(final @NotNull String id, final @NotNull String protocolId) {
-                return new EventBuilderImpl();
-            }
-        });
-        when(adapterFactories.payloadFactory()).thenReturn(new PayloadFactory() {
-            @Override
-            public @NotNull Payload create(
-                    final Payload.@NotNull ContentType contentType, final @NotNull String content) {
-                return PayloadImpl.from(contentType, content);
-            }
-
-            @Override
-            public @NotNull Payload create(final @NotNull ObjectMapper mapper, final @NotNull Object data) {
-                return PayloadImpl.fromObject(mapper, data);
-            }
-        });
-        when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
-        when(moduleServices.eventService()).thenReturn(mock());
     }
 
     protected @NotNull PUBLISH expectAdapterPublish() {

@@ -255,8 +255,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
             moduleServices.eventService()
                     .adapterEvent(adapterConfig.getId(), adapterInformation.getProtocolId())
                             .withSeverity(Event.SEVERITY.ERROR)
-                            .withPayload(adapterFactories.payloadFactory()
-                                    .create(objectMapper, serviceFault.getResponseHeader().getServiceResult()))
+                            .withPayload(objectMapper, serviceFault.getResponseHeader().getServiceResult())
                             .withMessage("A Service Fault was Detected.")
                             .fire();
         });
