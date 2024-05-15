@@ -111,7 +111,7 @@ describe('checkValidityTransitions', () => {
             x: 1275,
             y: 225,
           },
-          data: {},
+          data: { id: 'my-operation-id1' },
           width: 233,
           height: 56,
         },
@@ -123,6 +123,7 @@ describe('checkValidityTransitions', () => {
             y: 275,
           },
           data: {
+            id: 'my-operation-id2',
             functionId: 'my-function',
             formData: {
               level: 'DEBUG',

@@ -22,9 +22,7 @@ describe('checkValidityTransformFunction', () => {
     const MOCK_NODE_OPERATION: Node<OperationData> = {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
-      data: {
-        functionId: 'Javascript',
-      },
+      data: { id: 'my-operation-id', functionId: 'Javascript' },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -56,6 +54,7 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'DataHub.transform',
         formData: {
           transform: ['the_function'],
@@ -115,6 +114,7 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'DataHub.transform',
         formData: {
           transform: ['the_function'],
@@ -186,6 +186,7 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'DataHub.transform',
         formData: {
           transform: ['the_function'],
@@ -264,6 +265,7 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'DataHub.transform',
         formData: {
           transform: ['the_function'],
@@ -431,6 +433,7 @@ describe('processOperations', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: undefined,
       },
       ...MOCK_DEFAULT_NODE,
@@ -458,6 +461,7 @@ describe('processOperations', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'DataHub.transform',
         formData: {
           transform: ['the_function'],
@@ -492,6 +496,7 @@ describe('processOperations', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'System.log',
         formData: {
           level: 'DEBUG',
