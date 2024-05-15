@@ -23,7 +23,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
+import com.hivemq.edge.modules.adapters.data.SimulationDataSampleImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
@@ -70,7 +70,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(final @NotNull PollingContext pollingContext) {
-        ProtocolAdapterDataSample dataSample = new ProtocolAdapterDataSampleImpl(pollingContext);
+        ProtocolAdapterDataSample dataSample = new SimulationDataSampleImpl(pollingContext);
 
         dataSample.addDataPoint("sample",
                 ThreadLocalRandom.current()

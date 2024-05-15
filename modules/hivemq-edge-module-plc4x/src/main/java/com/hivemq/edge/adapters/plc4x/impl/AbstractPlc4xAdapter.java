@@ -93,7 +93,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 return CompletableFuture.failedFuture(e);
             }
         }
-        return CompletableFuture.completedFuture(new ProtocolAdapterDataSampleImpl<>(pollingContext,
+        return CompletableFuture.completedFuture(new Plc4xDataSample<>(pollingContext,
                 adapterFactories.dataPointFactory())).thenApply(this::captureDataSample);
     }
 
@@ -301,14 +301,14 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 return processPlcFieldData(subscription, Plc4xDataUtils.readDataFromReadResponse(readEvent));
             }
         }
-        return new ProtocolAdapterDataSampleImpl<>(subscription, adapterFactories.dataPointFactory());
+        return new Plc4xDataSample<>(subscription, adapterFactories.dataPointFactory());
     }
 
     protected @NotNull ProtocolAdapterDataSample processPlcFieldData(
             final @NotNull Plc4xAdapterConfig.PollingContextImpl subscription,
             final @NotNull List<Pair<String, PlcValue>> l) {
         ProtocolAdapterDataSample data =
-                new ProtocolAdapterDataSampleImpl<>(subscription, adapterFactories.dataPointFactory());
+                new Plc4xDataSample<>(subscription, adapterFactories.dataPointFactory());
         //-- For every tag value associated with the sample, write a data point to be published
         if (!l.isEmpty()) {
             l.forEach(pair -> data.addDataPoint(pair.getLeft(), convertTagValue(pair.getLeft(), pair.getValue())));

@@ -20,7 +20,7 @@ import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
-import com.hivemq.edge.adapters.plc4x.impl.ProtocolAdapterDataSampleImpl;
+import com.hivemq.edge.adapters.plc4x.impl.Plc4xDataSample;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.apache.plc4x.java.api.messages.PlcReadResponse;
@@ -79,7 +79,7 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
                         response)).exceptionally(throwable -> {
                     if (throwable instanceof InterruptedException ||
                             throwable.getCause() instanceof InterruptedException) {
-                        return new ProtocolAdapterDataSampleImpl<>(pollingContext, adapterFactories.dataPointFactory());
+                        return new Plc4xDataSample<>(pollingContext, adapterFactories.dataPointFactory());
                     }
                     throw new RuntimeException(throwable);
                 }).thenApply(this::captureDataSample);
@@ -88,7 +88,7 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
                 return CompletableFuture.failedFuture(e);
             }
         }
-        return CompletableFuture.completedFuture(new ProtocolAdapterDataSampleImpl<>(pollingContext, adapterFactories.dataPointFactory()))
+        return CompletableFuture.completedFuture(new Plc4xDataSample<>(pollingContext, adapterFactories.dataPointFactory()))
                 .thenApply(this::captureDataSample);
     }
 }

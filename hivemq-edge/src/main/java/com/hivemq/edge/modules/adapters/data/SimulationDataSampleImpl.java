@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.plc4x.impl;
+package com.hivemq.edge.modules.adapters.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
-import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
@@ -33,19 +33,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Simon L Johnson
  */
-public class ProtocolAdapterDataSampleImpl<T extends ProtocolAdapterConfig> implements ProtocolAdapterDataSample {
+public class SimulationDataSampleImpl<T extends ProtocolAdapterConfig>
+        implements ProtocolAdapterDataSample {
 
     protected @NotNull Long timestamp = System.currentTimeMillis();
     protected @NotNull PollingContext pollingContext;
-    private final @NotNull DataPointFactory dataPointFactory;
 
     //-- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
-    public ProtocolAdapterDataSampleImpl(
-            final @NotNull PollingContext pollingContext, final @NotNull DataPointFactory dataPointFactory) {
+    public SimulationDataSampleImpl(final @NotNull PollingContext pollingContext) {
         this.pollingContext = pollingContext;
-        this.dataPointFactory = dataPointFactory;
     }
 
     @Override
@@ -62,7 +60,9 @@ public class ProtocolAdapterDataSampleImpl<T extends ProtocolAdapterConfig> impl
 
     @Override
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
-        dataPoints.add(dataPointFactory.create(tagName, tagValue));
+        Preconditions.checkNotNull(tagName);
+        Preconditions.checkNotNull(tagValue);
+        dataPoints.add(new DataPointImpl(tagName, tagValue));
     }
 
     @Override
