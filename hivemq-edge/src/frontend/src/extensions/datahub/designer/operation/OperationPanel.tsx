@@ -32,15 +32,14 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
   }, [edges, nodes, selectedNode])
 
   const onFixFormSubmit = useCallback(
-    (data: IChangeEvent<OperationData>) => {
-      const initData = data
+    (initData: IChangeEvent<OperationData>) => {
       const { formData } = initData
       if (formData) {
-        const { functionId } = formData
+        const { id, functionId } = formData
         const functionSpecs = functions.find((e) => e.functionId === functionId)
         if (functionSpecs) {
           const { metadata } = functionSpecs
-          initData.formData = { ...initData.formData, metadata }
+          initData.formData = { id, ...initData.formData, metadata }
         }
       }
       onFormSubmit?.(initData)
