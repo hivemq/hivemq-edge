@@ -64,14 +64,14 @@ export const MOCK_INITIAL_POLICY = () => {
 
   const operationNode1: Node<OperationData> = {
     id: '6',
-    data: { functionId: '< not set >', metadata: { hasArguments: true } },
+    data: { id: 'my-operation-id1', functionId: '< not set >', metadata: { hasArguments: true } },
     type: DataHubNodeType.OPERATION,
     position: { x: 945, y: 105 },
   }
 
   const operationNode2: Node<OperationData> = {
     id: '6b',
-    data: { functionId: '< not set >', metadata: { isTerminal: true } },
+    data: { id: 'my-operation-id2', functionId: '< not set >', metadata: { isTerminal: true } },
     type: DataHubNodeType.OPERATION,
     position: { x: 1215, y: 105 },
   }

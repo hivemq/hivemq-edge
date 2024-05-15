@@ -231,6 +231,7 @@ export interface PolicyOperationArguments {
 }
 
 export interface OperationData extends DataHubNodeData {
+  id: string
   functionId?: string
   metadata?: FunctionDefinition
   formData?: Record<string, string | number | string[]>
