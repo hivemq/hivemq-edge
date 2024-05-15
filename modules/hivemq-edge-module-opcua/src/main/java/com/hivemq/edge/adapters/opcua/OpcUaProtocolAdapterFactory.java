@@ -15,16 +15,11 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.opcua.client.OpcUaConfigConverter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.Map;
 
 public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUaAdapterConfig> {
 
@@ -38,18 +33,6 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
             @NotNull final ProtocolAdapterInformation adapterInformation,
             @NotNull final ProtocolAdapterInput<OpcUaAdapterConfig> input) {
         return new OpcUaProtocolAdapter(adapterInformation, input);
-    }
-
-    @Override
-    public @NotNull OpcUaAdapterConfig convertConfigObject(final @NotNull ObjectMapper objectMapper,
-                                                           final @NotNull Map<@NotNull String, Object> config) {
-        return OpcUaConfigConverter.convertConfig(objectMapper, config);
-    }
-
-    @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper,
-                                                     final @NotNull ProtocolAdapterConfig config) {
-        return OpcUaConfigConverter.unconvertConfig(objectMapper, config);
     }
 
     @Override

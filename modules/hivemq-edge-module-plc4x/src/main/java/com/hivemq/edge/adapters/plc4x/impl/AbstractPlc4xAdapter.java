@@ -226,7 +226,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
         boolean publishData = true;
         if (adapterConfig.getPublishChangedDataOnly()) {
             ProtocolAdapterDataSample previousSample =
-                    lastSamples.put(((Plc4xAdapterConfig.PollingContextImpl) data.getSubscription()).getTagAddress(),
+                    lastSamples.put(((Plc4xAdapterConfig.PollingContextImpl) data.getPollingContext()).getTagAddress(),
                             data);
             if (previousSample != null) {
                 List<DataPoint> dataPoints = previousSample.getDataPoints();

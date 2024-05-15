@@ -15,15 +15,11 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.Map;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -40,15 +36,6 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
         return new S7ProtocolAdapter(adapterInformation, input);
     }
 
-    @Override
-    public @NotNull S7AdapterConfig convertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull Map<@NotNull String, Object> config) {
-        return S7ConfigConverter.convertConfig(objectMapper, config);
-    }
-
-    @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull ProtocolAdapterConfig config) {
-        return S7ConfigConverter.unconvertConfig(objectMapper, config);
-    }
 
     @Override
     public @NotNull Class<S7AdapterConfig> getConfigClass() {

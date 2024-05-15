@@ -50,7 +50,7 @@ public class ProtocolAdapterDataSampleImpl<T extends ProtocolAdapterConfig> impl
 
     @Override
     @JsonIgnore
-    public @NotNull PollingContext getSubscription() {
+    public @NotNull PollingContext getPollingContext() {
         return pollingContext;
     }
 

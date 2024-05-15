@@ -70,7 +70,7 @@ public class HttpData implements ProtocolAdapterDataSample {
 
     @Override
     @JsonIgnore
-    public @NotNull PollingContext getSubscription() {
+    public @NotNull PollingContext getPollingContext() {
         return pollingContext;
     }
 

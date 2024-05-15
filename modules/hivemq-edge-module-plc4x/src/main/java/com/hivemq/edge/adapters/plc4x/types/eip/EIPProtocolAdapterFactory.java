@@ -15,15 +15,11 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.eip;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.Map;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -40,20 +36,6 @@ public class EIPProtocolAdapterFactory implements ProtocolAdapterFactory<EIPAdap
             @NotNull final ProtocolAdapterInformation adapterInformation,
             @NotNull final ProtocolAdapterInput<EIPAdapterConfig> input) {
         return new EIPProtocolAdapter(adapterInformation, input);
-    }
-
-    @Override
-    public @NotNull EIPAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<@NotNull String, Object> config) {
-        return EIPConfigConverter.convertConfig(objectMapper, config);
-    }
-
-    @Override
-    public Map<String, Object> unconvertConfigObject(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterConfig config) {
-        return EIPConfigConverter.unconvertConfig(objectMapper, config);
     }
 
     @Override

@@ -181,7 +181,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
         }
         if (adapterConfig.getPublishChangedDataOnly()) {
             ModbusAdapterConfig.PollingContextImpl subscription =
-                    (ModbusAdapterConfig.PollingContextImpl) data.getSubscription();
+                    (ModbusAdapterConfig.PollingContextImpl) data.getPollingContext();
             ModBusData previousSample = (ModBusData) lastSamples.put(subscription, data);
             if (previousSample != null) {
                 List<DataPoint> previousSampleDataPoints = previousSample.getDataPoints();

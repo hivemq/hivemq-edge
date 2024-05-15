@@ -15,15 +15,11 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.Map;
 
 public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<ModbusAdapterConfig> {
 
@@ -39,20 +35,6 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
         return new ModbusProtocolAdapter(adapterInformation,
                 input.getConfig(),
                 input);
-    }
-
-    @Override
-    public @NotNull ModbusAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<@NotNull String, Object> config) {
-        return ModbusConfigConverter.convertConfig(objectMapper, config);
-    }
-
-    @Override
-    public @NotNull Map<String, Object> unconvertConfigObject(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterConfig config) {
-        return ModbusConfigConverter.unconvertConfig(objectMapper, config);
     }
 
     @Override

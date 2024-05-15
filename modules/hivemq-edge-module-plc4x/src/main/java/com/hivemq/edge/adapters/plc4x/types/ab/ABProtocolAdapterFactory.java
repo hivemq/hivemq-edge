@@ -15,15 +15,11 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.ab;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.Map;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -42,19 +38,6 @@ public class ABProtocolAdapterFactory implements ProtocolAdapterFactory<ABAdapte
         return new ABProtocolAdapter(adapterInformation, input);
     }
 
-    @Override
-    public @NotNull ABAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<@NotNull String, Object> config) {
-        return ABConfigConverter.convertConfig(objectMapper, config);
-    }
-
-    @Override
-    public Map<String, Object> unconvertConfigObject(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull ProtocolAdapterConfig config) {
-        return ABConfigConverter.unconvertConfig(objectMapper, config);
-    }
 
     @Override
     public @NotNull Class<ABAdapterConfig> getConfigClass() {

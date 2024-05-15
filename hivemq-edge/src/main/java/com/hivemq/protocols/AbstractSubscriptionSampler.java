@@ -114,7 +114,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull ProtocolAdapterDataSample sample) {
         Preconditions.checkNotNull(sample);
-        final PollingContext subscription = sample.getSubscription();
+        final PollingContext subscription = sample.getPollingContext();
         Preconditions.checkNotNull(subscription);
         Preconditions.checkNotNull(subscription.getMqttTopic());
 
@@ -139,7 +139,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                                 .withTimestamp(System.currentTimeMillis())
                                 .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
                                         adapterId,
-                                        sample.getSubscription().getMqttTopic()))
+                                        sample.getPollingContext().getMqttTopic()))
                                 .withPayload(Payload.ContentType.JSON, new String(json, StandardCharsets.UTF_8))
                                 .fire();
                     }
@@ -171,21 +171,21 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         Preconditions.checkNotNull(data);
         List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
         //-- Only include the timestamp if the settings say so
-        Long timestamp = data.getSubscription().getIncludeTimestamp() ? data.getTimestamp() : null;
+        Long timestamp = data.getPollingContext().getIncludeTimestamp() ? data.getTimestamp() : null;
         if (data.getDataPoints().size() > 1 &&
-                data.getSubscription().getMessageHandlingOptions() ==
+                data.getPollingContext().getMessageHandlingOptions() ==
                         MessageHandlingOptions.MQTTMessagePerSubscription) {
             //-- Put all derived samples into a single MQTT message
             AbstractProtocolAdapterJsonPayload payload = createMultiPublishPayload(timestamp,
                     data.getDataPoints(),
-                    data.getSubscription().getIncludeTagNames());
+                    data.getPollingContext().getIncludeTagNames());
             decoratePayloadMessage(data, payload);
             list.add(payload);
         } else {
             //-- Put all derived samples into individual publish messages
             data.getDataPoints()
                     .stream()
-                    .map(dp -> createPublishPayload(timestamp, dp, data.getSubscription().getIncludeTagNames()))
+                    .map(dp -> createPublishPayload(timestamp, dp, data.getPollingContext().getIncludeTagNames()))
                     .map(pp -> decoratePayloadMessage(data, pp))
                     .forEach(list::add);
         }
@@ -209,9 +209,9 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     protected @NotNull AbstractProtocolAdapterJsonPayload decoratePayloadMessage(
             ProtocolAdapterDataSample sample, @NotNull AbstractProtocolAdapterJsonPayload payload) {
-        sample.getSubscription().getUserProperties();
-        if (!sample.getSubscription().getUserProperties().isEmpty()) {
-            payload.setUserProperties(sample.getSubscription().getUserProperties());
+        sample.getPollingContext().getUserProperties();
+        if (!sample.getPollingContext().getUserProperties().isEmpty()) {
+            payload.setUserProperties(sample.getPollingContext().getUserProperties());
         }
         return payload;
     }
