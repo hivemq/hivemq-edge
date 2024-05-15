@@ -71,7 +71,6 @@ public class EventBuilderImpl implements EventBuilder {
         return this;
     }
 
-    @Override
     public @NotNull Event build() {
         Preconditions.checkNotNull(severity);
         Preconditions.checkNotNull(message);

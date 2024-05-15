@@ -218,7 +218,6 @@ public class ProtocolAdapterManager {
                         "'not found.")));
     }
 
-    // TODO perhaps move logic into wrapped adapter
     public @NotNull CompletableFuture<Void> start(final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapterWrapper) {
         Preconditions.checkNotNull(protocolAdapterWrapper);
         if (log.isInfoEnabled()) {

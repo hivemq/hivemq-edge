@@ -42,14 +42,14 @@ import java.util.concurrent.ExecutorService;
 @Singleton
 public class EventServiceDelegateImpl implements EventService {
 
-    private Set<EventListener> eventListeners;
-    private EventStore eventStore;
-    private ExecutorService executorService;
+    private final @NotNull Set<EventListener> eventListeners;
+    private final @NotNull EventStore eventStore;
+    private final @NotNull ExecutorService executorService;
 
     @Inject
     public EventServiceDelegateImpl(
             final @NotNull EventStore eventStore,
-            final @Nullable Set<EventListener> eventListeners,
+            final @NotNull Set<EventListener> eventListeners,
             final @NotNull ExecutorService executorService) {
         Preconditions.checkNotNull(eventStore);
         Preconditions.checkNotNull(executorService);
@@ -58,8 +58,7 @@ public class EventServiceDelegateImpl implements EventService {
         this.executorService = executorService;
     }
 
-    @Override
-    public void fireEvent(final Event event) {
+    public void fireEvent(final @NotNull Event event) {
         try {
             eventStore.storeEvent(event);
         } finally {
