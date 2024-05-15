@@ -15,11 +15,9 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
@@ -28,6 +26,9 @@ import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.polling.PollingInput;
+import com.hivemq.adapter.sdk.api.polling.PollingOutput;
+import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
@@ -54,8 +55,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull AdapterFactories adapterFactories;
 
     private volatile @Nullable IModbusClient modbusClient;
-    private final @Nullable Map<ModbusAdapterConfig.PollingContextImpl, ProtocolAdapterDataSample> lastSamples =
-            new HashMap<>();
+    private final @NotNull Map<ModbusAdapterConfig.PollingContextImpl, List<DataPoint>> lastSamples = new HashMap<>();
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -73,7 +73,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
         try {
             initConnection();
             output.startedSuccessfully();
-        } catch(Exception e){
+        } catch (Exception e) {
             output.failStart(e, "Exception during setup of Modbus client.");
         }
 
@@ -94,7 +94,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final PollingContext pollingContext) {
+    public void poll(
+            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
 
         //-- If a previously linked job has terminally disconnected the client
         //-- we need to ensure any orphaned jobs tidy themselves up properly
@@ -103,13 +104,19 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
                 if (!modbusClient.isConnected()) {
                     modbusClient.connect().thenRun(() -> protocolAdapterState.setConnectionStatus(CONNECTED)).get();
                 }
-                return CompletableFuture.supplyAsync(() -> readRegisters(pollingContext))
-                        .thenApply(this::captureDataSample);
+                CompletableFuture.supplyAsync(() -> readRegisters(pollingInput.getPollingContext()))
+                        .whenComplete((modbusdata, throwable) -> {
+                            if (throwable != null) {
+                                pollingOutput.fail(throwable);
+                            } else {
+                                this.captureDataSample(modbusdata, pollingOutput);
+                            }
+                        });
             } else {
-                return CompletableFuture.failedFuture(new IllegalStateException("client not initialised"));
+                pollingOutput.fail(new IllegalStateException("client not initialised"));
             }
         } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
+            pollingOutput.fail(e);
         }
     }
 
@@ -174,40 +181,38 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
         return adapterInformation;
     }
 
-    protected @Nullable ProtocolAdapterDataSample captureDataSample(@NotNull final ProtocolAdapterDataSample data) {
-        boolean publishData = true;
+    protected void captureDataSample(final @NotNull ModBusData modBusData, @NotNull final PollingOutput pollingOutput) {
         if (log.isTraceEnabled()) {
-            log.trace("Captured ModBus data with {} data points.", data.getDataPoints().size());
+            log.trace("Captured ModBus data with {} data points.", modBusData.getDataPoints().size());
         }
-        if (adapterConfig.getPublishChangedDataOnly()) {
-            ModbusAdapterConfig.PollingContextImpl subscription =
-                    (ModbusAdapterConfig.PollingContextImpl) data.getPollingContext();
-            ModBusData previousSample = (ModBusData) lastSamples.put(subscription, data);
-            if (previousSample != null) {
-                List<DataPoint> previousSampleDataPoints = previousSample.getDataPoints();
-                List<DataPoint> currentSamplePoints = data.getDataPoints();
-                List<DataPoint> delta =
-                        AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
-                if (log.isTraceEnabled()) {
-                    log.trace("Calculating change data old {} samples, new {} sample, delta {}",
-                            previousSampleDataPoints.size(),
-                            currentSamplePoints.size(),
-                            delta.size());
-                }
-                if (!delta.isEmpty()) {
-                    data.setDataPoints(delta);
-                } else {
-                    publishData = false;
-                }
-            }
-        }
-        if (publishData) {
+        if (!adapterConfig.getPublishChangedDataOnly()) {
+            modBusData.getDataPoints().forEach(pollingOutput::addDataPoint);
             if (log.isTraceEnabled()) {
-                log.trace("Publishing data with {} samples", data.getDataPoints().size());
+                log.trace("Publishing data with {} samples", modBusData.getDataPoints().size());
             }
-            return data;
+        } else {
+            calculateDelta(modBusData, pollingOutput);
         }
-        return null;
+        pollingOutput.finish();
+    }
+
+    private void calculateDelta(@NotNull ModBusData modBusData, @NotNull PollingOutput pollingOutput) {
+        ModbusAdapterConfig.PollingContextImpl subscription =
+                (ModbusAdapterConfig.PollingContextImpl) modBusData.getPollingContext();
+
+        List<DataPoint> previousSampleDataPoints = lastSamples.put(subscription, modBusData.getDataPoints());
+        List<DataPoint> currentSamplePoints = modBusData.getDataPoints();
+        List<DataPoint> delta = AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
+        if (log.isTraceEnabled()) {
+            log.trace("Calculating change data old {} samples, new {} sample, delta {}",
+                    previousSampleDataPoints != null ? previousSampleDataPoints.size() : 0,
+                    currentSamplePoints.size(),
+                    delta.size());
+        }
+        delta.forEach(pollingOutput::addDataPoint);
+        if (log.isTraceEnabled() && !delta.isEmpty()) {
+            log.trace("Publishing data with {} samples", delta.size());
+        }
     }
 
 
@@ -233,9 +238,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
             ModbusAdapterConfig.AddressRange addressRange = subscription.getAddressRange();
             Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
                     addressRange.endIdx - addressRange.startIdx);
-            ModBusData data = new ModBusData(subscription,
-                    ModBusData.TYPE.HOLDING_REGISTERS,
-                    adapterFactories.dataPointFactory());
+            ModBusData data = new ModBusData(subscription, adapterFactories.dataPointFactory());
             //add data point per register
             for (int i = 0; i < registers.length; i++) {
                 data.addDataPoint("register-" + (addressRange.startIdx + i), registers[i]);

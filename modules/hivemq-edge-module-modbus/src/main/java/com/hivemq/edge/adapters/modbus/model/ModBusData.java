@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
@@ -29,16 +28,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * @author Simon L Johnson
  */
-public class ModBusData implements ProtocolAdapterDataSample {
+public class ModBusData  {
     public enum TYPE {
         COILS,
         INPUT_REGISTERS,
         HOLDING_REGISTERS,
     }
 
-    private final @NotNull TYPE type;
     private final DataPointFactory dataPointFactory;
-    protected @NotNull Long timestamp = System.currentTimeMillis();
     protected @NotNull PollingContext pollingContext;
 
     //-- Handle multiple tags in the same sample
@@ -46,41 +43,22 @@ public class ModBusData implements ProtocolAdapterDataSample {
 
     public ModBusData(
             final @NotNull PollingContext pollingContext,
-            final @NotNull TYPE type,
             final @NotNull DataPointFactory dataPointFactory) {
         this.pollingContext = pollingContext;
-        this.type = type;
-
         this.dataPointFactory = dataPointFactory;
     }
 
-    public @NotNull TYPE getType() {
-        return type;
-    }
 
-    @Override
     @JsonIgnore
     public @NotNull PollingContext getPollingContext() {
         return pollingContext;
     }
 
-    @Override
-    @JsonIgnore
-    public @NotNull Long getTimestamp() {
-        return timestamp;
-    }
-
-    @Override
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
         dataPoints.add(dataPointFactory.create(tagName, tagValue));
     }
 
-    @Override
-    public void setDataPoints(@NotNull List<DataPoint> list) {
-        this.dataPoints = list;
-    }
 
-    @Override
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public @NotNull List<DataPoint> getDataPoints() {
         return dataPoints;

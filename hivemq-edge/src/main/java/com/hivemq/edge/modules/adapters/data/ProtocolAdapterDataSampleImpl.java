@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -33,8 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Simon L Johnson
  */
-public class SimulationDataSampleImpl<T extends ProtocolAdapterConfig>
-        implements ProtocolAdapterDataSample {
+public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample {
 
     protected @NotNull Long timestamp = System.currentTimeMillis();
     protected @NotNull PollingContext pollingContext;
@@ -42,8 +40,8 @@ public class SimulationDataSampleImpl<T extends ProtocolAdapterConfig>
     //-- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
-    public SimulationDataSampleImpl(final @NotNull PollingContext pollingContext) {
-        this.pollingContext = pollingContext;
+    public ProtocolAdapterDataSampleImpl() {
+
     }
 
     @Override
@@ -63,6 +61,11 @@ public class SimulationDataSampleImpl<T extends ProtocolAdapterConfig>
         Preconditions.checkNotNull(tagName);
         Preconditions.checkNotNull(tagValue);
         dataPoints.add(new DataPointImpl(tagName, tagValue));
+    }
+
+    @Override
+    public void addDataPoint(@NotNull final DataPoint dataPoint) {
+        dataPoints.add(dataPoint);
     }
 
     @Override

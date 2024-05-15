@@ -82,7 +82,7 @@ class ModbusProtocolAdapterTest {
     protected static ModBusData createSampleData(final int registerCount){
         final PollingContext pollingContext =
                 new PollingContextImpl("topic", 2, List.of());
-        final ModBusData data = new ModBusData(pollingContext, ModBusData.TYPE.INPUT_REGISTERS, new DataPointFactory() {
+        final ModBusData data = new ModBusData(pollingContext,  new DataPointFactory() {
             @Override
             public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
                 return new DataPointImpl(tagName, tagValue);

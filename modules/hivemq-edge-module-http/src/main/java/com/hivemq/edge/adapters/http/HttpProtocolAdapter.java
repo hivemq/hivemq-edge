@@ -16,15 +16,17 @@
 package com.hivemq.edge.adapters.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.polling.PollingInput;
+import com.hivemq.adapter.sdk.api.polling.PollingOutput;
+import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.http.model.HttpData;
@@ -132,36 +134,46 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
 
 
     @Override
-    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final PollingContext pollingContext) {
-        if (httpClient != null) {
-            final CompletableFuture<HttpData> dataFuture;
-            switch (adapterConfig.getHttpRequestMethod()) {
-                case GET:
-                    dataFuture = httpGet(adapterConfig);
-                    break;
-                case POST:
-                    dataFuture = httpPost(adapterConfig);
-                    break;
-                case PUT:
-                    dataFuture = httpPut(adapterConfig);
-                    break;
-                default:
-                    throw new IllegalStateException("Unexpected value: " + adapterConfig.getHttpRequestMethod());
-            }
+    public void poll(
+            @NotNull final PollingInput pollingInput, @NotNull final PollingOutput pollingOutput) {
 
-            return dataFuture.thenApply((data) -> {
-                boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) ||
-                        !adapterConfig.isHttpPublishSuccessStatusCodeOnly();
-                protocolAdapterState.setConnectionStatus(isSuccessStatusCode(data.getHttpStatusCode()) ?
-                        STATELESS :
-                        ERROR);
-                if (publishData) {
-                    return data;
-                }
-                return null;
-            });
+        if (httpClient == null) {
+            pollingOutput.fail(new RuntimeException("No response was created, because the client is null."));
+            return;
         }
-        return CompletableFuture.failedFuture(new RuntimeException("No response was created."));
+
+        final CompletableFuture<HttpData> dataFuture;
+        switch (adapterConfig.getHttpRequestMethod()) {
+            case GET:
+                dataFuture = httpGet(adapterConfig);
+                break;
+            case POST:
+                dataFuture = httpPost(adapterConfig);
+                break;
+            case PUT:
+                dataFuture = httpPut(adapterConfig);
+                break;
+            default:
+                pollingOutput.fail(new IllegalStateException("Unexpected value: " +
+                        adapterConfig.getHttpRequestMethod()));
+                return;
+        }
+
+        dataFuture.whenComplete((data, throwable) -> {
+            if (throwable != null) {
+                pollingOutput.fail(throwable);
+                return;
+            }
+            boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) ||
+                    !adapterConfig.isHttpPublishSuccessStatusCodeOnly();
+            protocolAdapterState.setConnectionStatus(isSuccessStatusCode(data.getHttpStatusCode()) ? STATELESS : ERROR);
+            if (publishData) {
+                for (DataPoint dataPoint : data.getDataPoints()) {
+                    pollingOutput.addDataPoint(dataPoint);
+                }
+            }
+            pollingOutput.finish();
+        });
     }
 
     @Override
@@ -259,11 +271,11 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                         }
                         moduleServices.eventService()
                                 .adapterEvent(adapterConfig.getId(), adapterInformation.getProtocolId())
-                                        .withSeverity(Event.SEVERITY.WARN)
-                                        .withMessage(String.format(
-                                                "Http response on adapter '%s' could not be parsed as JSON data.",
-                                                adapterConfig.getId()))
-                                        .fire();
+                                .withSeverity(Event.SEVERITY.WARN)
+                                .withMessage(String.format(
+                                        "Http response on adapter '%s' could not be parsed as JSON data.",
+                                        adapterConfig.getId()))
+                                .fire();
                         throw new RuntimeException("unable to parse JSON data from HTTP response");
                     }
                 } else {

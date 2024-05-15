@@ -19,15 +19,14 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.polling.PollingInput;
+import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
-import com.hivemq.edge.adapters.plc4x.impl.Plc4xDataSample;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import org.apache.plc4x.java.api.messages.PlcReadResponse;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -67,28 +66,21 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
     }
 
     @Override
-    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(final @NotNull PollingContext pollingContext) {
+    public void poll(
+            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+        final PollingContext pollingContext = pollingInput.getPollingContext();
         if (!(pollingContext instanceof EIPAdapterConfig.EIPPollingContextImpl)) {
-            throw new IllegalStateException("Subscription configuration is not of correct type Ethernet/IP");
+            pollingOutput.fail(new IllegalStateException("Subscription configuration is not of correct type Ethernet/IP"));
+            return;
         }
         if (connection.isConnected()) {
-            try {
-                CompletableFuture<? extends PlcReadResponse> request =
-                        connection.read((Plc4xAdapterConfig.PollingContextImpl) pollingContext);
-                return request.thenApply(response -> (ProtocolAdapterDataSample) processReadResponse((EIPAdapterConfig.EIPPollingContextImpl) pollingContext,
-                        response)).exceptionally(throwable -> {
-                    if (throwable instanceof InterruptedException ||
-                            throwable.getCause() instanceof InterruptedException) {
-                        return new Plc4xDataSample<>(pollingContext, adapterFactories.dataPointFactory());
-                    }
-                    throw new RuntimeException(throwable);
-                }).thenApply(this::captureDataSample);
-
-            } catch (Exception e) {
-                return CompletableFuture.failedFuture(e);
-            }
+            connection.read((Plc4xAdapterConfig.PollingContextImpl) pollingContext)
+                    .thenApply(response -> (ProtocolAdapterDataSample) processReadResponse((EIPAdapterConfig.EIPPollingContextImpl) pollingContext,
+                            response))
+                    .thenApply(data -> captureDataSample(data, pollingContext))
+                    .whenComplete((sample, t) -> handleDataAndExceptions(sample, t, pollingOutput));
+        } else {
+            pollingOutput.fail(new IllegalStateException("EIP Adapter is not connected."));
         }
-        return CompletableFuture.completedFuture(new Plc4xDataSample<>(pollingContext, adapterFactories.dataPointFactory()))
-                .thenApply(this::captureDataSample);
     }
 }

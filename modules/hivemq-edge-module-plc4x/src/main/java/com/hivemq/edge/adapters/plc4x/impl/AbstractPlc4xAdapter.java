@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
-import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -24,6 +23,9 @@ import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.polling.PollingInput;
+import com.hivemq.adapter.sdk.api.polling.PollingOutput;
+import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
@@ -54,8 +56,7 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
  *
  * @author Simon L Johnson
  */
-public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
-        implements PollingProtocolAdapter {
+public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig> implements PollingProtocolAdapter {
 
     protected static final String TAG_ADDRESS_TYPE_SEP = ":";
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -82,19 +83,28 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     }
 
     @Override
-    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(@NotNull final PollingContext pollingContext) {
+    public void poll(final @NotNull PollingInput pollingInput, @NotNull final PollingOutput pollingOutput) {
         if (connection != null && connection.isConnected()) {
-            try {
-                CompletableFuture<? extends PlcReadResponse> request =
-                        connection.read((Plc4xAdapterConfig.PollingContextImpl) pollingContext);
-                return request.thenApply(response -> processReadResponse((Plc4xAdapterConfig.PollingContextImpl) pollingContext,
-                        response)).thenApply(this::captureDataSample);
-            } catch (Exception e) {
-                return CompletableFuture.failedFuture(e);
-            }
+            connection.read((Plc4xAdapterConfig.PollingContextImpl) pollingInput.getPollingContext())
+                    .thenApply(response -> processReadResponse((Plc4xAdapterConfig.PollingContextImpl) pollingInput.getPollingContext(),
+                            response))
+                    .thenApply(data -> captureDataSample(data, pollingInput.getPollingContext()))
+                    .whenComplete((sample, t) -> handleDataAndExceptions(sample, t, pollingOutput));
         }
-        return CompletableFuture.completedFuture(new Plc4xDataSample<>(pollingContext,
-                adapterFactories.dataPointFactory())).thenApply(this::captureDataSample);
+    }
+
+    protected void handleDataAndExceptions(
+            final @NotNull ProtocolAdapterDataSample dataSample,
+            final @Nullable Throwable throwable,
+            final @NotNull PollingOutput pollingOutput) {
+        if (throwable != null) {
+            pollingOutput.fail(throwable);
+        } else {
+            for (DataPoint dataPoint : dataSample.getDataPoints()) {
+                pollingOutput.addDataPoint(dataPoint);
+            }
+            pollingOutput.finish();
+        }
     }
 
     @Override
@@ -222,12 +232,12 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
     }
 
     @NotNull
-    protected ProtocolAdapterDataSample captureDataSample(final @NotNull ProtocolAdapterDataSample data) {
+    protected ProtocolAdapterDataSample captureDataSample(
+            final @NotNull ProtocolAdapterDataSample data, final @NotNull PollingContext pollingContext) {
         boolean publishData = true;
         if (adapterConfig.getPublishChangedDataOnly()) {
             ProtocolAdapterDataSample previousSample =
-                    lastSamples.put(((Plc4xAdapterConfig.PollingContextImpl) data.getPollingContext()).getTagAddress(),
-                            data);
+                    lastSamples.put(((Plc4xAdapterConfig.PollingContextImpl) pollingContext).getTagAddress(), data);
             if (previousSample != null) {
                 List<DataPoint> dataPoints = previousSample.getDataPoints();
                 publishData = !dataPoints.equals(data.getDataPoints());
@@ -301,14 +311,13 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig>
                 return processPlcFieldData(subscription, Plc4xDataUtils.readDataFromReadResponse(readEvent));
             }
         }
-        return new Plc4xDataSample<>(subscription, adapterFactories.dataPointFactory());
+        return new Plc4xDataSample<>(adapterFactories.dataPointFactory());
     }
 
     protected @NotNull ProtocolAdapterDataSample processPlcFieldData(
             final @NotNull Plc4xAdapterConfig.PollingContextImpl subscription,
             final @NotNull List<Pair<String, PlcValue>> l) {
-        ProtocolAdapterDataSample data =
-                new Plc4xDataSample<>(subscription, adapterFactories.dataPointFactory());
+        ProtocolAdapterDataSample data = new Plc4xDataSample<>(adapterFactories.dataPointFactory());
         //-- For every tag value associated with the sample, write a data point to be published
         if (!l.isEmpty()) {
             l.forEach(pair -> data.addDataPoint(pair.getLeft(), convertTagValue(pair.getLeft(), pair.getValue())));

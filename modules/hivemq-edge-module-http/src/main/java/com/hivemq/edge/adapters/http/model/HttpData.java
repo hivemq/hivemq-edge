@@ -86,6 +86,11 @@ public class HttpData implements ProtocolAdapterDataSample {
     }
 
     @Override
+    public void addDataPoint(@NotNull final DataPoint dataPoint) {
+        dataPoints.add(dataPoint);
+    }
+
+    @Override
     public void setDataPoints(@NotNull List<DataPoint> list) {
         this.dataPoints = list;
     }

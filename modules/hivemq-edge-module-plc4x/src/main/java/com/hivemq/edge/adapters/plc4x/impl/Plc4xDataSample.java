@@ -42,9 +42,7 @@ public class Plc4xDataSample<T extends ProtocolAdapterConfig> implements Protoco
     //-- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
-    public Plc4xDataSample(
-            final @NotNull PollingContext pollingContext, final @NotNull DataPointFactory dataPointFactory) {
-        this.pollingContext = pollingContext;
+    public Plc4xDataSample(final @NotNull DataPointFactory dataPointFactory) {
         this.dataPointFactory = dataPointFactory;
     }
 
@@ -63,6 +61,11 @@ public class Plc4xDataSample<T extends ProtocolAdapterConfig> implements Protoco
     @Override
     public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
         dataPoints.add(dataPointFactory.create(tagName, tagValue));
+    }
+
+    @Override
+    public void addDataPoint(@NotNull final DataPoint dataPoint) {
+        dataPoints.add(dataPoint);
     }
 
     @Override

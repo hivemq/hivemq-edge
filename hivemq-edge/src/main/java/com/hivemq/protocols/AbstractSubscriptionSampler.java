@@ -91,7 +91,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     }
 
     @Override
-    public abstract @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> execute();
+    public abstract @NotNull CompletableFuture<PollingOutputImpl.PollingResult> execute();
 
     @Override
     public void error(@NotNull final Throwable t, final boolean continuing) {
@@ -112,22 +112,22 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     }
 
 
-    protected @NotNull CompletableFuture<?> captureDataSample(final @NotNull ProtocolAdapterDataSample sample) {
+    protected @NotNull CompletableFuture<?> captureDataSample(
+            final @NotNull ProtocolAdapterDataSample sample, final @NotNull PollingContext pollingContext) {
         Preconditions.checkNotNull(sample);
-        final PollingContext subscription = sample.getPollingContext();
-        Preconditions.checkNotNull(subscription);
-        Preconditions.checkNotNull(subscription.getMqttTopic());
+        Preconditions.checkNotNull(pollingContext);
+        Preconditions.checkNotNull(pollingContext.getMqttTopic());
 
-        Preconditions.checkArgument(subscription.getQos() <= 2 && subscription.getQos() >= 0,
+        Preconditions.checkArgument(pollingContext.getQos() <= 2 && pollingContext.getQos() >= 0,
                 "QoS needs to be a valid QoS value (0,1,2)");
         try {
             final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
-            List<AbstractProtocolAdapterJsonPayload> payloads = convertAdapterSampleToPublishes(sample);
+            List<AbstractProtocolAdapterJsonPayload> payloads = convertAdapterSampleToPublishes(sample, pollingContext);
             for (AbstractProtocolAdapterJsonPayload payload : payloads) {
                 byte[] json = convertToJson(payload);
                 final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
-                        .withTopic(subscription.getMqttTopic())
-                        .withQoS(subscription.getQos())
+                        .withTopic(pollingContext.getMqttTopic())
+                        .withQoS(pollingContext.getQos())
                         .withPayload(json)
                         .withAdapter(protocolAdapter);
                 final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
@@ -139,7 +139,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                                 .withTimestamp(System.currentTimeMillis())
                                 .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
                                         adapterId,
-                                        sample.getPollingContext().getMqttTopic()))
+                                        pollingContext.getMqttTopic()))
                                 .withPayload(Payload.ContentType.JSON, new String(json, StandardCharsets.UTF_8))
                                 .fire();
                     }
@@ -167,26 +167,25 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         }
     }
 
-    public @NotNull List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(final @NotNull ProtocolAdapterDataSample data) {
+    public @NotNull List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(
+            final @NotNull ProtocolAdapterDataSample data, final @NotNull PollingContext pollingContext) {
         Preconditions.checkNotNull(data);
         List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
         //-- Only include the timestamp if the settings say so
-        Long timestamp = data.getPollingContext().getIncludeTimestamp() ? data.getTimestamp() : null;
+        Long timestamp = pollingContext.getIncludeTimestamp() ? data.getTimestamp() : null;
         if (data.getDataPoints().size() > 1 &&
-                data.getPollingContext().getMessageHandlingOptions() ==
-                        MessageHandlingOptions.MQTTMessagePerSubscription) {
+                pollingContext.getMessageHandlingOptions() == MessageHandlingOptions.MQTTMessagePerSubscription) {
             //-- Put all derived samples into a single MQTT message
-            AbstractProtocolAdapterJsonPayload payload = createMultiPublishPayload(timestamp,
-                    data.getDataPoints(),
-                    data.getPollingContext().getIncludeTagNames());
-            decoratePayloadMessage(data, payload);
+            AbstractProtocolAdapterJsonPayload payload =
+                    createMultiPublishPayload(timestamp, data.getDataPoints(), pollingContext.getIncludeTagNames());
+            decoratePayloadMessage(payload, pollingContext);
             list.add(payload);
         } else {
             //-- Put all derived samples into individual publish messages
             data.getDataPoints()
                     .stream()
-                    .map(dp -> createPublishPayload(timestamp, dp, data.getPollingContext().getIncludeTagNames()))
-                    .map(pp -> decoratePayloadMessage(data, pp))
+                    .map(dp -> createPublishPayload(timestamp, dp, pollingContext.getIncludeTagNames()))
+                    .map(pp -> decoratePayloadMessage(pp, pollingContext))
                     .forEach(list::add);
         }
         return list;
@@ -208,10 +207,10 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     }
 
     protected @NotNull AbstractProtocolAdapterJsonPayload decoratePayloadMessage(
-            ProtocolAdapterDataSample sample, @NotNull AbstractProtocolAdapterJsonPayload payload) {
-        sample.getPollingContext().getUserProperties();
-        if (!sample.getPollingContext().getUserProperties().isEmpty()) {
-            payload.setUserProperties(sample.getPollingContext().getUserProperties());
+            final @NotNull AbstractProtocolAdapterJsonPayload payload,
+            final @NotNull PollingContext pollingContext) {
+        if (!pollingContext.getUserProperties().isEmpty()) {
+            payload.setUserProperties(pollingContext.getUserProperties());
         }
         return payload;
     }

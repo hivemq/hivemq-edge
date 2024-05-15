@@ -2,11 +2,11 @@ package com.hivemq.protocols;
 
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
@@ -36,14 +36,26 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
 
 
     @Override
-    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> execute() {
+    public @NotNull CompletableFuture<PollingOutputImpl.PollingResult> execute() {
         if (Thread.currentThread().isInterrupted()) {
             return CompletableFuture.failedFuture(new InterruptedException());
         }
-        CompletableFuture<? extends ProtocolAdapterDataSample> future =
-                perSubscriptionProtocolAdapter.poll(pollingContext);
-        future.thenApply(this::captureDataSample);
-        return future;
+        final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
+        try {
+            perSubscriptionProtocolAdapter.poll(new PollingInputImpl(pollingContext), pollingOutput);
+        }catch (Throwable t){
+            pollingOutput.fail(t);
+            throw t;
+        }
+        final CompletableFuture<PollingOutputImpl.PollingResult> outputFuture = pollingOutput.getOutputFuture();
+        outputFuture.thenAccept(pollingResult -> {
+            if (pollingResult == PollingOutputImpl.PollingResult.SUCCESS) {
+                this.captureDataSample(pollingOutput.getDataSample(), pollingContext);
+            } else if (pollingResult == PollingOutputImpl.PollingResult.FAILURE) {
+                // TODO LOG
+            }
+        });
+        return outputFuture;
     }
 
 

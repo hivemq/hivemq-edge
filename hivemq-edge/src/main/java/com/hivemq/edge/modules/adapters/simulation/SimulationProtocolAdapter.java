@@ -15,15 +15,15 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
-import com.hivemq.adapter.sdk.api.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.polling.PollingInput;
+import com.hivemq.adapter.sdk.api.polling.PollingOutput;
+import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.edge.modules.adapters.data.SimulationDataSampleImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
@@ -69,14 +69,13 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @NotNull CompletableFuture<? extends ProtocolAdapterDataSample> poll(final @NotNull PollingContext pollingContext) {
-        ProtocolAdapterDataSample dataSample = new SimulationDataSampleImpl(pollingContext);
-
-        dataSample.addDataPoint("sample",
+    public void poll(
+            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+        pollingOutput.addDataPoint("sample",
                 ThreadLocalRandom.current()
                         .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
                                 Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
-        return CompletableFuture.completedFuture(dataSample);
+        pollingOutput.finish();
     }
 
     @Override
