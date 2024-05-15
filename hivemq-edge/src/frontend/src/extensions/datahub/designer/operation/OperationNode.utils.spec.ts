@@ -522,7 +522,7 @@ describe('processOperations', () => {
         message: 'test the message',
       },
       functionId: 'System.log',
-      id: 'node-id',
+      id: 'my-operation-id',
     })
     expect(error).toBeUndefined()
   })

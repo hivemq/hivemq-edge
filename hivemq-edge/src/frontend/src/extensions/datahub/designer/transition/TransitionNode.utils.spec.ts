@@ -182,7 +182,7 @@ describe('checkValidityTransitions', () => {
               message: 'the message',
             },
             functionId: 'my-function',
-            id: 'node_8c4b',
+            id: 'my-operation-id2',
           },
         ],
       },
