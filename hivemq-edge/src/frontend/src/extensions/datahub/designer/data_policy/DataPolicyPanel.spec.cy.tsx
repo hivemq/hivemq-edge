@@ -44,7 +44,7 @@ describe('DataPolicyPanel', () => {
     cy.mountWithProviders(<DataPolicyPanel selectedNode="3" onFormSubmit={onSubmit} />, { wrapper })
 
     cy.get('label#root_id-label').should('contain.text', 'id')
-    cy.get('#root_id').type('123')
+    cy.get('#root_id').type('a123')
 
     cy.get("button[type='submit']").click()
     cy.get('@onSubmit')
@@ -53,7 +53,7 @@ describe('DataPolicyPanel', () => {
       .should('deep.include', {
         status: 'submitted',
         formData: {
-          id: '123',
+          id: 'a123',
         },
       })
   })

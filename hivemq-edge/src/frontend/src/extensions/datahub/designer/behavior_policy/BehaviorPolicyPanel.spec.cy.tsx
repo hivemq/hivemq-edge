@@ -43,7 +43,7 @@ describe('BehaviorPolicyPanel', () => {
 
     cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={onSubmit} />, { wrapper })
 
-    cy.get('#root_id').type('123')
+    cy.get('#root_id').type('a123')
 
     cy.get('label#root_model-label').should('contain.text', 'Behavior Model')
     cy.get('label#root_model-label + div').should('contain.text', 'Mqtt.events')
@@ -73,7 +73,7 @@ describe('BehaviorPolicyPanel', () => {
       .should('deep.include', {
         status: 'submitted',
         formData: {
-          id: '123',
+          id: 'a123',
           model: 'Publish.quota',
           arguments: {
             minPublishes: 0,
