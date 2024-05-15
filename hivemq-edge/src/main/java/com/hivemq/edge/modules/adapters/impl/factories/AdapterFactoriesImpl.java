@@ -10,7 +10,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 public class AdapterFactoriesImpl implements AdapterFactories {
 
     @Override
-    public @NotNull PollingContextFactory adapterSubscriptionFactory() {
+    public @NotNull PollingContextFactory pollingContextFactory() {
         return PollingContextImpl::new;
     }
 

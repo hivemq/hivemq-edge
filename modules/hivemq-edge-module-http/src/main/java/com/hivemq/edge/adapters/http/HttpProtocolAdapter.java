@@ -92,7 +92,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
         this.adapterFactories = input.adapterFactories();
-        this.pollingContext = adapterFactories.adapterSubscriptionFactory()
+        this.pollingContext = adapterFactories.pollingContextFactory()
                 .create(adapterConfig.getDestination(), adapterConfig.getQos(), null);
     }
 
