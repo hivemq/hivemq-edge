@@ -77,6 +77,6 @@ public class EventBuilderImpl implements EventBuilder {
 
     @Override
     public void fire() {
-
+        fireConsumer.accept(build());
     }
 }

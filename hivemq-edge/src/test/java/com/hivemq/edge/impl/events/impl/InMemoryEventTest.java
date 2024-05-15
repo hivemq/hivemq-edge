@@ -130,9 +130,9 @@ public class InMemoryEventTest {
     private static void fill(InMemoryEventImpl impl, int count){
         int initialSize = impl.readEvents(null, null).size();
         for (int i = 0; i < count; i++){
-            EventBuilder builder = new EventBuilderImpl().withMessage((initialSize + i) + "").
+            EventBuilder builder = new EventBuilderImpl(event -> {}).withMessage((initialSize + i) + "").
                     withSeverity(EventImpl.SEVERITY.INFO).withTimestamp(System.currentTimeMillis());
-            impl.storeEvent(builder.build());
+            impl.storeEvent(builder. build());
             try {
                 Thread.sleep(1);
             } catch(Exception e){}

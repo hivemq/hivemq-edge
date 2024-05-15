@@ -47,7 +47,6 @@ import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
-import com.hivemq.edge.modules.api.events.EventUtils;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
@@ -241,9 +240,11 @@ public class ProtocolAdapterManager {
             } else {
                 schedulePolling(protocolAdapterWrapper);
                 protocolAdapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
-                eventService.fireEvent(eventBuilder(Event.SEVERITY.INFO,
-                        protocolAdapterWrapper).withMessage(String.format("Adapter '%s' started OK.",
-                        protocolAdapterWrapper.getId())).build());
+                eventService.adapterEvent(protocolAdapterWrapper.getId(),
+                                protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId())
+                        .withSeverity(Event.SEVERITY.INFO)
+                        .withMessage(String.format("Adapter '%s' started OK.", protocolAdapterWrapper.getId()))
+                        .fire();
 
                 if (log.isTraceEnabled()) {
                     log.trace("Protocol-adapter '{}' started.", protocolAdapterWrapper.getId());
@@ -303,19 +304,22 @@ public class ProtocolAdapterManager {
                 log.trace("Protocol-adapter '{}' stopped.", protocolAdapter.getId());
             }
             protocolAdapter.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-            eventService.fireEvent(eventBuilder(Event.SEVERITY.INFO, protocolAdapter).withMessage(String.format(
-                    "Adapter '%s' stopped OK.",
-                    protocolAdapter.getId())).build());
+            eventService.adapterEvent(protocolAdapter.getId(),
+                            protocolAdapter.getProtocolAdapterInformation().getProtocolId())
+                    .withSeverity(Event.SEVERITY.INFO)
+                    .withMessage(String.format("Adapter '%s' stopped OK.", protocolAdapter.getId()))
+                    .fire();
+
             return null;
         }).exceptionally(throwable -> {
             if (log.isWarnEnabled()) {
                 log.warn("Protocol-adapter '{}' was unable to stop cleanly", protocolAdapter.getId(), throwable);
             }
-            eventService.fireEvent(eventBuilder(Event.SEVERITY.CRITICAL,
-                    protocolAdapter).withPayload(EventUtils.generateErrorPayload(throwable))
+            eventService.adapterEvent(protocolAdapter.getId(),
+                            protocolAdapter.getProtocolAdapterInformation().getProtocolId())
+                    .withSeverity(Event.SEVERITY.CRITICAL)
                     .withMessage("Error stopping adapter '" + protocolAdapter.getId() + "'.")
-                    .build());
-
+                    .fire();
             return null;
         });
         return stopFuture;
@@ -329,10 +333,12 @@ public class ProtocolAdapterManager {
                     output.getMessage(),
                     output.getThrowable());
         }
-        eventService.fireEvent(eventBuilder(Event.SEVERITY.CRITICAL,
-                protocolAdapter).withPayload(EventUtils.generateErrorPayload(output.getThrowable()))
+        eventService.adapterEvent(protocolAdapter.getId(),
+                        protocolAdapter.getProtocolAdapterInformation().getProtocolId())
+                .withSeverity(Event.SEVERITY.CRITICAL)
                 .withMessage("Error starting adapter '" + protocolAdapter.getId() + "'.")
-                .build());
+                .fire();
+
         HiveMQEdgeRemoteEvent adapterCreatedEvent =
                 new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_ERROR);
         adapterCreatedEvent.addUserData("adapterType", protocolAdapter.getProtocolAdapterInformation().getProtocolId());
@@ -380,9 +386,13 @@ public class ProtocolAdapterManager {
                     }
                     return true;
                 } finally {
-                    eventService.fireEvent(eventBuilder(EventImpl.SEVERITY.WARN, adapterInstance.get()).withMessage(
-                            String.format("Adapter '%s' was deleted from the system permanently.",
-                                    adapterInstance.get().getId())).build());
+                    final String adapterId = adapterInstance.get().getId();
+                    eventService.adapterEvent(adapterId,
+                                    adapterInstance.get().getProtocolAdapterInformation().getProtocolId())
+                            .withSeverity(Event.SEVERITY.WARN)
+                            .withMessage(String.format("Adapter '%s' was deleted from the system permanently.", adapterId))
+                            .fire();
+
                 }
             }
         }
