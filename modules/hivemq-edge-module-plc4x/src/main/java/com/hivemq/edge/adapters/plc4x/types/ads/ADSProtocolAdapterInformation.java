@@ -66,7 +66,7 @@ public class ADSProtocolAdapterInformation
     }
 
     @Override
-    public String getLogoUrl() {
+    public @NotNull String getLogoUrl() {
         return "/images/beckhoff-icon.gif";
     }
 

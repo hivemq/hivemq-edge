@@ -61,7 +61,7 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
     }
 
     @Override
-    public String getVersion() {
+    public @NotNull String getVersion() {
         return "${edge-version} (BETA)";
     }
 

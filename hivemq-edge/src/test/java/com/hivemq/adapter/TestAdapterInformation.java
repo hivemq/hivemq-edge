@@ -32,22 +32,22 @@ public class TestAdapterInformation implements ProtocolAdapterInformation {
     }
 
     @Override
-    public String getProtocolName() {
+    public @NotNull String getProtocolName() {
         return "TestProtocol";
     }
 
     @Override
-    public String getProtocolId() {
+    public @NotNull String getProtocolId() {
         return "test-adapter-information";
     }
 
     @Override
-    public String getDisplayName() {
+    public @NotNull String getDisplayName() {
         return "Test Adapter Information";
     }
 
     @Override
-    public String getDescription() {
+    public @NotNull String getDescription() {
         return "This is the test protocol information";
     }
 
