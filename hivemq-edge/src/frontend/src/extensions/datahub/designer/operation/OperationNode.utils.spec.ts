@@ -22,9 +22,7 @@ describe('checkValidityTransformFunction', () => {
     const MOCK_NODE_OPERATION: Node<OperationData> = {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
-      data: {
-        functionId: 'Javascript',
-      },
+      data: { id: 'my-operation-id', functionId: 'Javascript' },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -56,6 +54,7 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'DataHub.transform',
         formData: {
           transform: ['the_function'],
@@ -115,6 +114,7 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'DataHub.transform',
         formData: {
           transform: ['the_function'],
@@ -186,6 +186,7 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'DataHub.transform',
         formData: {
           transform: ['the_function'],
@@ -264,6 +265,7 @@ describe('checkValidityTransformFunction', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'DataHub.transform',
         formData: {
           transform: ['the_function'],
@@ -384,7 +386,7 @@ describe('checkValidityPipeline', () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: {},
+      data: { id: 'my-policy-id' },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -403,7 +405,7 @@ describe('checkValidityPipeline', () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: {},
+      data: { id: 'my-policy-id' },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -431,6 +433,7 @@ describe('processOperations', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: undefined,
       },
       ...MOCK_DEFAULT_NODE,
@@ -458,6 +461,7 @@ describe('processOperations', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'DataHub.transform',
         formData: {
           transform: ['the_function'],
@@ -492,6 +496,7 @@ describe('processOperations', () => {
       id: 'node-id',
       type: DataHubNodeType.OPERATION,
       data: {
+        id: 'my-operation-id',
         functionId: 'System.log',
         formData: {
           level: 'DEBUG',
@@ -517,7 +522,7 @@ describe('processOperations', () => {
         message: 'test the message',
       },
       functionId: 'System.log',
-      id: 'node-id',
+      id: 'my-operation-id',
     })
     expect(error).toBeUndefined()
   })

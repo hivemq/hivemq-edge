@@ -54,7 +54,7 @@ export const ObjectFieldTemplate = <
       <Tabs>
         <TabList>
           {tabs.map((e) => {
-            const filteredProps = properties.filter((p) => e.properties.includes(p.name))
+            const filteredProps = properties.filter((property) => e.properties.includes(property.name))
             if (!filteredProps.length) return null
             return (
               <Tab fontSize="md" key={e.id}>
@@ -66,7 +66,7 @@ export const ObjectFieldTemplate = <
 
         <TabPanels>
           {tabs.map((e) => {
-            const filteredProps = properties.filter((p) => e.properties.includes(p.name))
+            const filteredProps = properties.filter((property) => e.properties.includes(property.name))
             if (!filteredProps.length) return null
             return (
               <TabPanel key={e.id} p={0} pt="1px" mb={6}>
@@ -82,7 +82,7 @@ export const ObjectFieldTemplate = <
           })}
         </TabPanels>
         {properties
-          .filter((e) => !allGrouped.includes(e.name))
+          .filter((property) => !allGrouped.includes(property.name))
           .map((prop) => (
             <Box _first={{ marginTop: '24px' }} _notLast={{ marginBottom: '24px' }} key={prop.content.key}>
               {prop.content}

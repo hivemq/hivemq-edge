@@ -125,6 +125,7 @@ export interface ClientFilterData extends DataHubNodeData {
 }
 
 export interface DataPolicyData extends DataHubNodeData {
+  id: string
   core?: DataPolicy
 }
 
@@ -230,6 +231,7 @@ export interface PolicyOperationArguments {
 }
 
 export interface OperationData extends DataHubNodeData {
+  id: string
   functionId?: string
   metadata?: FunctionDefinition
   formData?: Record<string, string | number | string[]>
@@ -272,6 +274,7 @@ export enum BehaviorPolicyType {
 }
 
 export interface BehaviorPolicyData extends DataHubNodeData {
+  id: string
   model: BehaviorPolicyType
   arguments?: Record<string, string | number>
   core?: BehaviorPolicy

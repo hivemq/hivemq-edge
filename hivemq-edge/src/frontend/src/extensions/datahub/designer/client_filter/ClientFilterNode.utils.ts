@@ -2,7 +2,6 @@ import { Connection, getIncomers, Node, NodeAddChange, XYPosition } from 'reactf
 
 import { getNodeId, isClientFilterNodeType } from '@datahub/utils/node.utils.ts'
 import { BehaviorPolicy } from '@/api/__generated__'
-import i18n from '@/config/i18n.config.ts'
 
 import { BehaviorPolicyData, ClientFilterData, DataHubNodeType, DryRunResults, WorkspaceState } from '@datahub/types.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
@@ -42,10 +41,6 @@ export const loadClientFilter = (
   behaviorPolicy: BehaviorPolicy,
   behaviorPolicyNode: Node<BehaviorPolicyData>
 ): (NodeAddChange | Connection)[] => {
-  if (behaviorPolicyNode.id !== behaviorPolicy.id)
-    throw new Error(
-      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.BEHAVIOR_POLICY }) as string
-    )
   const position: XYPosition = {
     x: behaviorPolicyNode.position.x + CANVAS_POSITION.Client.x,
     y: behaviorPolicyNode.position.y + CANVAS_POSITION.Client.y,

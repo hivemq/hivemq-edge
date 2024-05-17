@@ -1,4 +1,4 @@
-import { Connection, Edge, getOutgoers, Node } from 'reactflow'
+import { Connection, Edge, getIncomers, getOutgoers, Node } from 'reactflow'
 import { v4 as uuidv4 } from 'uuid'
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
 import i18n from '@/config/i18n.config.ts'
@@ -328,3 +328,24 @@ export const canDeleteEdge = (
   }
   return { delete: true }
 }
+
+export const getAllParents = (node: Node, nodes: Node[], edges: Edge[], visited = new Set<Node>()): Set<Node> => {
+  if (visited.has(node)) return visited
+  visited.add(node)
+  for (const incomer of getIncomers(node, nodes, edges)) {
+    getAllParents(incomer, nodes, edges, visited)
+  }
+  return visited
+}
+
+export const reduceIdsFrom =
+  <T>(type: DataHubNodeType, exclude?: string) =>
+  (acc: string[], node: Node) => {
+    if (node.type === type) {
+      const { id, data } = node satisfies Node<T>
+      if (data.id && id !== exclude) {
+        acc.push(data.id)
+      }
+    }
+    return acc
+  }

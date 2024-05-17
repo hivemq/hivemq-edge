@@ -11,7 +11,7 @@ import { DataPolicyNode } from './DataPolicyNode.tsx'
 const MOCK_NODE_DATA_POLICY: NodeProps<DataPolicyData> = {
   id: 'node-id',
   type: DataHubNodeType.DATA_POLICY,
-  data: {},
+  data: { id: 'my-policy-id' },
   ...MOCK_DEFAULT_NODE,
 }
 

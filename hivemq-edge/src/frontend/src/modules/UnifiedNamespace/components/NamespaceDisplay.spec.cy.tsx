@@ -13,7 +13,7 @@ describe('NamespaceDisplay', () => {
     {
       test: 'with site omitted',
       namespace: { ...MOCK_NAMESPACE, site: undefined },
-      breadcrumb: MOCK_BREADCRUMB.filter((e) => e !== 'Site'),
+      breadcrumb: MOCK_BREADCRUMB.filter((crumb) => crumb !== 'Site'),
     },
   ]
   it.each(selectors)(
@@ -21,9 +21,9 @@ describe('NamespaceDisplay', () => {
     (selector) => {
       cy.mountWithProviders(<NamespaceDisplay namespace={selector.namespace} />)
 
-      cy.get('nav').get('ol').children().should('have.length', selector.breadcrumb.length)
+      cy.get('nav').find('ol').children().should('have.length', selector.breadcrumb.length)
       cy.get('nav')
-        .get('ol')
+        .find('ol')
         .children()
         .each((e, index) => {
           cy.wrap(e).should('contain.text', selector.breadcrumb[index])
@@ -33,7 +33,7 @@ describe('NamespaceDisplay', () => {
 
   it('should render properly an empty breadcrumb with an empty namespace', () => {
     cy.mountWithProviders(<NamespaceDisplay namespace={{}} />)
-    cy.get('nav').get('ol').children().should('have.length', 0)
+    cy.get('nav').find('ol').children().should('have.length', 0)
   })
 
   it('should be accessible', () => {

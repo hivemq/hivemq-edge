@@ -89,7 +89,7 @@ const useDataHubDraftStore = create<WorkspaceState & WorkspaceStatus & Workspace
       onAddFunctions: (changes: FunctionSpecs[]) => {
         set({ functions: [...get().functions, ...changes] })
       },
-      onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>) => {
+      onSerializePolicy: (node: Node<DataPolicyData | BehaviorPolicyData>): string | undefined => {
         if (node.type !== DataHubNodeType.BEHAVIOR_POLICY && node.type !== DataHubNodeType.DATA_POLICY) return undefined
         return undefined
       },

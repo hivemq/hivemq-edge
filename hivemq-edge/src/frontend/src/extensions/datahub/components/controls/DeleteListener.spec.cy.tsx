@@ -33,12 +33,12 @@ const getWrapperWith = (initNodes: Node[], initEdges?: Edge[]) => {
               <Tr>
                 <Th>nodes</Th>
                 <Td>{nodes.length}</Td>
-                <Td>{nodes.filter((e) => e.selected).length}</Td>
+                <Td>{nodes.filter((node) => node.selected).length}</Td>
               </Tr>
               <Tr>
                 <Th>edges</Th>
                 <Td>{edges.length}</Td>
-                <Td>{edges.filter((e) => e.selected).length}</Td>
+                <Td>{edges.filter((edge) => edge.selected).length}</Td>
               </Tr>
             </Tbody>
           </Table>

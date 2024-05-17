@@ -64,11 +64,6 @@ export function checkValidityPolicyValidators(
 }
 
 export const loadValidators = (policy: DataPolicy, schemas: Schema[], dataPolicyNode: Node<DataPolicyData>) => {
-  if (dataPolicyNode.id !== policy.id)
-    throw new Error(
-      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
-    )
-
   const position: XYPosition = {
     x: dataPolicyNode.position.x + CANVAS_POSITION.Validator.x,
     y: dataPolicyNode.position.y + CANVAS_POSITION.Validator.y,

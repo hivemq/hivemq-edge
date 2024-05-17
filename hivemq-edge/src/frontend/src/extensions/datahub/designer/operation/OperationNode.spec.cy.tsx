@@ -11,7 +11,7 @@ import { OperationNode } from './OperationNode.tsx'
 const MOCK_NODE_OPERATION: NodeProps<OperationData> = {
   id: 'node-id',
   type: DataHubNodeType.OPERATION,
-  data: {},
+  data: { id: 'my-operation-id' },
   ...MOCK_DEFAULT_NODE,
 }
 
@@ -49,7 +49,7 @@ describe('OperationNode', () => {
   it('should render properly with arguments', () => {
     const data: NodeProps<OperationData> = {
       ...MOCK_NODE_OPERATION,
-      data: { functionId: 'DataHub.transform', metadata: { hasArguments: true } },
+      data: { id: 'my-operation-id', functionId: 'DataHub.transform', metadata: { hasArguments: true } },
     }
     cy.mountWithProviders(mockReactFlow(<OperationNode {...data} selected={true} />))
     cy.getByTestId(`node-title`).should('contain.text', 'Operation')
@@ -70,7 +70,7 @@ describe('OperationNode', () => {
   it('should render properly with terminal', () => {
     const data: NodeProps<OperationData> = {
       ...MOCK_NODE_OPERATION,
-      data: { functionId: 'test', metadata: { isTerminal: true } },
+      data: { id: 'my-operation-id', functionId: 'test', metadata: { isTerminal: true } },
     }
     cy.mountWithProviders(mockReactFlow(<OperationNode {...data} selected={true} />))
     cy.getByTestId(`node-title`).should('contain.text', 'Operation')

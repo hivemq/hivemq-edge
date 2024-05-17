@@ -15,7 +15,7 @@ describe('checkValidityClients', () => {
   const MOCK_NODE_BEHAVIOR_POLICY: Node<BehaviorPolicyData> = {
     id: 'node-id',
     type: DataHubNodeType.BEHAVIOR_POLICY,
-    data: { model: BehaviorPolicyType.MQTT_EVENT },
+    data: { id: 'my-policy-id', model: BehaviorPolicyType.MQTT_EVENT },
     ...MOCK_DEFAULT_NODE,
     position: { x: 0, y: 0 },
   }

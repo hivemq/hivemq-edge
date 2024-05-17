@@ -4,7 +4,13 @@ import { Edge, Node } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 import { DataPolicyValidator } from '@/api/__generated__'
 import { MOCK_JSONSCHEMA_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
-import { getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
+import {
+  getAllParents,
+  getNodeId,
+  getNodePayload,
+  isValidPolicyConnection,
+  reduceIdsFrom,
+} from '@datahub/utils/node.utils.ts'
 import { DataHubNodeType, DataPolicyData, OperationData, SchemaType, StrategyType } from '@datahub/types.ts'
 
 describe('getNodeId', () => {
@@ -113,7 +119,7 @@ describe('isValidPolicyConnection', () => {
     const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
       id: 'node-id',
       type: DataHubNodeType.DATA_POLICY,
-      data: {},
+      data: { id: 'my-policy-id' },
       ...MOCK_DEFAULT_NODE,
       position: { x: 0, y: 0 },
     }
@@ -242,5 +248,92 @@ describe('isValidPolicyConnection', () => {
         edges
       )
     ).toBeFalsy()
+  })
+})
+
+describe('getAllParents', () => {
+  it('should be', async () => {
+    const node: Node = {
+      id: '3',
+      data: {},
+      position: { x: 0, y: 0 },
+    }
+
+    const branch: Node[] = [
+      {
+        id: '1',
+        data: {},
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: '2',
+        data: {},
+        position: { x: 0, y: 0 },
+      },
+      node,
+    ]
+
+    const nodes: Node[] = [
+      ...branch,
+      {
+        id: '4',
+        data: {},
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: '5',
+        data: {},
+        position: { x: 0, y: 0 },
+      },
+    ]
+
+    const edges: Edge[] = [
+      { id: '1', source: '1', target: '2', sourceHandle: null, targetHandle: null },
+      { id: '2', source: '2', target: '3', sourceHandle: null, targetHandle: null },
+      { id: '3', source: '3', target: '5', sourceHandle: null, targetHandle: null },
+    ]
+
+    const expected = [...branch].reverse()
+    expect(Array.from(getAllParents(node, nodes, edges))).toEqual(expected)
+  })
+})
+
+describe('reduceIdsFrom', () => {
+  it('should be', async () => {
+    const allNodes: Node[] = [
+      {
+        id: 'node-id',
+        data: { id: 'first-id' },
+        type: DataHubNodeType.DATA_POLICY,
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: 'node-id',
+        data: {},
+        type: DataHubNodeType.DATA_POLICY,
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: 'node-id',
+        data: { id: 'second-id' },
+        type: DataHubNodeType.OPERATION,
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: 'excluded-node-id',
+        data: { id: 'third-id' },
+        type: DataHubNodeType.DATA_POLICY,
+        position: { x: 0, y: 0 },
+      },
+    ]
+
+    expect(allNodes.reduce(reduceIdsFrom<DataPolicyData>(DataHubNodeType.DATA_POLICY), [])).toEqual([
+      'first-id',
+      'third-id',
+    ])
+    expect(allNodes.reduce(reduceIdsFrom(DataHubNodeType.TRANSITION), [])).toEqual([])
+    expect(allNodes.reduce(reduceIdsFrom<DataPolicyData>(DataHubNodeType.DATA_POLICY, 'excluded-node-id'), [])).toEqual(
+      ['first-id']
+    )
   })
 })

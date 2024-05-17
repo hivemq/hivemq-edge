@@ -3,9 +3,10 @@
 import { Button } from '@chakra-ui/react'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
+import { mockBehaviorPolicy } from '@datahub/api/hooks/DataHubBehaviorPoliciesService/__handlers__'
+import { BehaviorPolicyPanel } from '@datahub/designer/behavior_policy/BehaviorPolicyPanel.tsx'
 import { DataHubNodeType } from '@datahub/types.ts'
 import { getNodePayload } from '@datahub/utils/node.utils.ts'
-import { BehaviorPolicyPanel } from './BehaviorPolicyPanel.tsx'
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => (
   <MockStoreWrapper
@@ -32,12 +33,17 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
 describe('BehaviorPolicyPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
+    cy.intercept('/api/v1/data-hub/behavior-validation/policies', {
+      items: [mockBehaviorPolicy],
+    })
   })
 
-  it('should render the fields for a Validator', () => {
+  it('should render the fields for the panel', () => {
     const onSubmit = cy.stub().as('onSubmit')
 
     cy.mountWithProviders(<BehaviorPolicyPanel selectedNode="3" onFormSubmit={onSubmit} />, { wrapper })
+
+    cy.get('#root_id').type('a123')
 
     cy.get('label#root_model-label').should('contain.text', 'Behavior Model')
     cy.get('label#root_model-label + div').should('contain.text', 'Mqtt.events')
@@ -55,10 +61,10 @@ describe('BehaviorPolicyPanel', () => {
     cy.get('label#root_model-label + div').find("[role='listbox']").find("[role='option']").eq(0).click()
 
     cy.get('h2').eq(0).should('contain.text', 'Publish')
-    cy.get('label#field-\\:r7\\:-label').should('contain.text', 'minPublishes')
-    cy.get('label#field-\\:r7\\:-label + div > input').should('have.value', '0')
-    cy.get('label#field-\\:r9\\:-label').should('contain.text', 'maxPublishes')
-    cy.get('label#field-\\:r9\\:-label + div > input').should('have.value', '-1')
+    cy.get('label#field-\\:r9\\:-label').should('contain.text', 'minPublishes')
+    cy.get('label#field-\\:r9\\:-label + div > input').should('have.value', '0')
+    cy.get('label#field-\\:rb\\:-label').should('contain.text', 'maxPublishes')
+    cy.get('label#field-\\:rb\\:-label + div > input').should('have.value', '-1')
 
     cy.get("button[type='submit']").click()
     cy.get('@onSubmit')
@@ -67,6 +73,7 @@ describe('BehaviorPolicyPanel', () => {
       .should('deep.include', {
         status: 'submitted',
         formData: {
+          id: 'a123',
           model: 'Publish.quota',
           arguments: {
             minPublishes: 0,

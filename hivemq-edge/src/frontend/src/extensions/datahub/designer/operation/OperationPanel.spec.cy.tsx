@@ -37,6 +37,9 @@ describe('OperationPanel', () => {
   it('should render the fields for a Validator', () => {
     cy.mountWithProviders(<OperationPanel selectedNode="3" />, { wrapper })
 
+    cy.get('label#root_id-label').should('contain.text', 'id')
+    cy.get('#root_id').type('a123')
+
     // first select
     cy.get('label#root_functionId-label').should('contain.text', 'Function')
     cy.get('label#root_functionId-label + div').should('contain.text', '')

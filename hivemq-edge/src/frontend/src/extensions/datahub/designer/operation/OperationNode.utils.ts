@@ -29,7 +29,7 @@ import {
 } from '@datahub/designer/script/FunctionNode.utils.ts'
 import { checkValiditySchema, loadSchema } from '@datahub/designer/schema/SchemaNode.utils.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
-import { isFunctionNodeType, isSchemaNodeType } from '@datahub/utils/node.utils.ts'
+import { getNodeId, isFunctionNodeType, isSchemaNodeType } from '@datahub/utils/node.utils.ts'
 import { getActiveTransition } from '@datahub/designer/transition/TransitionNode.utils.ts'
 import { CANVAS_POSITION } from '@datahub/designer/checks.utils.ts'
 
@@ -186,7 +186,7 @@ export const processOperations =
         functionId: node.data.functionId,
         arguments: node.data.formData || {},
         // TODO[19466] Id should be user-facing; Need to fix before merging!
-        id: node.id,
+        id: node.data.id,
       }
       acc.push({ node: node, data: operation })
     }
@@ -250,11 +250,6 @@ export const loadDataPolicyPipelines = (
   scripts: Script[],
   dataPolicyNode: Node<DataPolicyData>
 ) => {
-  if (dataPolicyNode.id !== policy.id)
-    throw new Error(
-      i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
-    )
-
   const newNodes: (NodeAddChange | Connection)[] = []
 
   if (policy.onSuccess && policy.onSuccess.pipeline) {
@@ -329,10 +324,11 @@ export const loadPipeline = (
           const [deserializer, ...functions] = operationNode as PolicyOperation[]
 
           operationNode = {
-            id: policyOperation.id,
+            id: getNodeId(),
             type: DataHubNodeType.OPERATION,
             position: { ...shiftPositionRight() },
             data: {
+              id: policyOperation.id,
               functionId: OperationData.Function.DATAHUB_TRANSFORM,
               metadata: {
                 isTerminal: false,
@@ -366,10 +362,11 @@ export const loadPipeline = (
       default:
         if (operationNode) throw new Error(i18n.t('datahub:error.loading.operation.unknown') as string)
         operationNode = {
-          id: policyOperation.id,
+          id: getNodeId(),
           type: DataHubNodeType.OPERATION,
           position: { ...shiftPositionRight() },
           data: {
+            id: policyOperation.id,
             functionId: policyOperation.functionId,
             formData: policyOperation.arguments,
           },

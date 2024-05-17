@@ -17,9 +17,7 @@ import { checkValidityTransitions } from '@datahub/designer/transition/Transitio
 const MOCK_NODE_BEHAVIOR: Node<BehaviorPolicyData> = {
   id: 'node-id',
   type: DataHubNodeType.BEHAVIOR_POLICY,
-  data: {
-    model: BehaviorPolicyType.MQTT_EVENT,
-  },
+  data: { id: 'my-policy-id', model: BehaviorPolicyType.MQTT_EVENT },
   ...MOCK_DEFAULT_NODE,
   position: { x: 0, y: 0 },
 }
@@ -113,7 +111,7 @@ describe('checkValidityTransitions', () => {
             x: 1275,
             y: 225,
           },
-          data: {},
+          data: { id: 'my-operation-id1' },
           width: 233,
           height: 56,
         },
@@ -125,6 +123,7 @@ describe('checkValidityTransitions', () => {
             y: 275,
           },
           data: {
+            id: 'my-operation-id2',
             functionId: 'my-function',
             formData: {
               level: 'DEBUG',
@@ -183,7 +182,7 @@ describe('checkValidityTransitions', () => {
               message: 'the message',
             },
             functionId: 'my-function',
-            id: 'node_8c4b',
+            id: 'my-operation-id2',
           },
         ],
       },

@@ -269,11 +269,23 @@
       "topicFilter": {
         "duplicate": "The topic filter {{ filter }} is already defined",
         "alreadyMatching": "A policy is already matching the topic filter {{ filter }}"
+      },
+      "dataPolicy": {
+        "notLoading": "Cannot load the existing policies for checking ids",
+        "notUnique": "The id is already in use by another data policy"
+      },
+      "behaviourPolicy": {
+        "notLoading": "Cannot load the existing policies for checking ids",
+        "notUnique": "The id is already in use by another behavior policy"
+      },
+      "operation": {
+        "notLoading": "Cannot load the existing operations for checking ids",
+        "notUnique": "The id is already in use by a prior operation in the pipeline"
       }
     },
     "loading": {
       "connection": {
-        "notFound": "Cannot find the $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) node"
+        "notFound": "Cannot find the $t(datahub:workspace.nodes.type, { 'context': '{{ type }}' }) node"
       },
       "schema": {
         "unknown": "Cannot identify the type of the SCHEMA - {{ type }}"

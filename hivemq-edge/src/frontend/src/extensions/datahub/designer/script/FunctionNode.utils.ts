@@ -57,9 +57,7 @@ export const loadScripts = (parentNode: Node<DataHubNodeData>, functions: Policy
     const [, functionName] = fct.functionId.split(':')
     const functionScript = scripts.find((script) => script.id === functionName)
     if (!functionScript)
-      throw new Error(
-        i18n.t('datahub:error.loading.connection.notFound', { source: DataHubNodeType.FUNCTION }) as string
-      )
+      throw new Error(i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.FUNCTION }) as string)
 
     const functionScriptNode: Node<FunctionData> = {
       id: functionScript.id,

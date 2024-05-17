@@ -1,16 +1,20 @@
 import { FC, useCallback, useMemo } from 'react'
 import { getIncomers, Node } from 'reactflow'
-import { Card, CardBody } from '@chakra-ui/react'
 import { IChangeEvent } from '@rjsf/core'
+import { CustomValidator } from '@rjsf/utils'
+import { useTranslation } from 'react-i18next'
 
-import { OperationData, PanelProps } from '@datahub/types.ts'
-import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { Card, CardBody } from '@chakra-ui/react'
+
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData.ts'
-import { isFunctionNodeType } from '@datahub/utils/node.utils.ts'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { getAllParents, isFunctionNodeType, reduceIdsFrom } from '@datahub/utils/node.utils.ts'
+import { DataHubNodeType, DataPolicyData, OperationData, PanelProps } from '@datahub/types.ts'
 
 export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
+  const { t } = useTranslation('datahub')
   const { nodes, edges, functions } = useDataHubDraftStore()
 
   const formData = useMemo(() => {
@@ -31,22 +35,35 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
     return adapterNode?.data
   }, [edges, nodes, selectedNode])
 
+  const pipelineIds = useMemo(() => {
+    const operationNode = nodes.find((e) => e.id === selectedNode) as Node<OperationData> | undefined
+    if (!operationNode?.data) return null
+
+    const set = getAllParents(operationNode, nodes, edges)
+    return Array.from(set).reduce<string[]>(reduceIdsFrom<OperationData>(DataHubNodeType.OPERATION, selectedNode), [])
+  }, [edges, nodes, selectedNode])
+
   const onFixFormSubmit = useCallback(
-    (data: IChangeEvent<OperationData>) => {
-      const initData = data
+    (initData: IChangeEvent<OperationData>) => {
       const { formData } = initData
       if (formData) {
-        const { functionId } = formData
+        const { id, functionId } = formData
         const functionSpecs = functions.find((e) => e.functionId === functionId)
         if (functionSpecs) {
           const { metadata } = functionSpecs
-          initData.formData = { ...initData.formData, metadata }
+          initData.formData = { id, ...initData.formData, metadata }
         }
       }
       onFormSubmit?.(initData)
     },
     [functions, onFormSubmit]
   )
+
+  const customValidate: CustomValidator<DataPolicyData> = (formData, errors) => {
+    const isIdNotUnique = Boolean(pipelineIds?.find((id) => id === formData?.id))
+    if (isIdNotUnique) errors['id']?.addError(t('error.validation.operation.notUnique'))
+    return errors
+  }
 
   return (
     <Card>
@@ -58,6 +75,7 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
           widgets={datahubRJSFWidgets}
           noHtml5Validate={true}
           onSubmit={onFixFormSubmit}
+          customValidate={customValidate}
         />
       </CardBody>
     </Card>

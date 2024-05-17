@@ -15,7 +15,7 @@ export const SkipNotification: FC<SkipNotificationProps> = ({ id }) => {
     if (e.target.checked) {
       setSkip((old) => [...old, id])
     } else {
-      setSkip((old) => old.filter((e) => e != id))
+      setSkip((old) => old.filter((key) => key != id))
     }
   }
   return (
