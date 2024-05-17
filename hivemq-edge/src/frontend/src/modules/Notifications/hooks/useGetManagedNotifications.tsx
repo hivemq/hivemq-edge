@@ -35,14 +35,17 @@ export const useGetManagedNotifications = () => {
 
     if (notification?.items && notification.items.length > 0) {
       const toasts: UseToastOptions[] = notification.items
-        .filter((e) => !readNotifications.includes(e.title as string) && !skip.includes(e.title as string))
-        .map((e) => ({
+        .filter(
+          (notification) =>
+            !readNotifications.includes(notification.title as string) && !skip.includes(notification.title as string)
+        )
+        .map((notification) => ({
           ...defaults,
-          id: e.title,
-          status: e.level ? 'warning' : 'info',
-          title: <Text>{e.title}</Text>,
-          description: <Text>{e.description}</Text>,
-          onCloseComplete: () => handleReadNotification(e.title as string),
+          id: notification.title,
+          status: notification.level ? 'warning' : 'info',
+          title: <Text>{notification.title}</Text>,
+          description: <Text>{notification.description}</Text>,
+          onCloseComplete: () => handleReadNotification(notification.title as string),
         }))
       list.push(...toasts)
     }

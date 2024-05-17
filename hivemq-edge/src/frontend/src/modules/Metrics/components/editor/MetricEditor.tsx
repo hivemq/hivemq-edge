@@ -42,13 +42,13 @@ const MetricEditor: FC<MetricEditorProps> = ({ onSubmit, filter, selectedMetrics
     const groupedMetrics = filter
       .map((adapter) => {
         const metrics: MetricNameOption[] = items
-          .filter((e) => e.name && e.name.includes(adapter))
-          .map((e) => {
-            const { device, suffix } = extractMetricInfo(e.name as string)
+          .filter((metric) => metric.name && metric.name.includes(adapter))
+          .map((metric) => {
+            const { device, suffix } = extractMetricInfo(metric.name as string)
             return {
               label: t(`metrics.${device}.${suffix}`),
-              value: e.name as string,
-              isDisabled: selectedMetrics?.includes(e.name as string),
+              value: metric.name as string,
+              isDisabled: selectedMetrics?.includes(metric.name as string),
             }
           })
           .sort((a, b) => a.label.localeCompare(b.label))

@@ -13,7 +13,7 @@ const getLocalConfig = (): CapabilityList | undefined => {
   console.log('%c[HiveMQ Edge] Capability override: %s', 'color:#ffc000;font-weight:bold;', config)
 
   const capabilities = config.split(',')
-  return { items: MOCK_CAPABILITIES.items?.filter((e) => capabilities.includes(e.id as string)) }
+  return { items: MOCK_CAPABILITIES.items?.filter((capability) => capabilities.includes(capability.id as string)) }
 }
 
 export const useGetCapabilities = () => {

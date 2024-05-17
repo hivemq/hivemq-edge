@@ -13,7 +13,7 @@ describe('NamespaceDisplay', () => {
     {
       test: 'with site omitted',
       namespace: { ...MOCK_NAMESPACE, site: undefined },
-      breadcrumb: MOCK_BREADCRUMB.filter((e) => e !== 'Site'),
+      breadcrumb: MOCK_BREADCRUMB.filter((crumb) => crumb !== 'Site'),
     },
   ]
   it.each(selectors)(

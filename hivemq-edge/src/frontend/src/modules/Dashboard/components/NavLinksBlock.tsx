@@ -13,7 +13,7 @@ const NavLinksBlock: FC<NavLinksBlockType> = ({ title, items }) => {
       <Box pb={2} pt={2}>
         <List spacing={0}>
           {items
-            .filter((e) => !e.isDisabled)
+            .filter((navLink) => !navLink.isDisabled)
             .map((item) => (
               <ListItem key={item.label}>
                 <NavLink link={item} />

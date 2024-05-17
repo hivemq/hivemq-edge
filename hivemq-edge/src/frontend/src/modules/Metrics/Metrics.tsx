@@ -50,7 +50,7 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
 
   // TODO[NVL] Should go to some kind of reusable routine, with verification
   const colorKeys = Object.keys(colors)
-  const chartTheme = defaultColorSchemes.filter((c) => colorKeys.includes(c))
+  const chartTheme = defaultColorSchemes.filter((color) => colorKeys.includes(color))
 
   const handleCreateMetrics = (value: MetricDefinition) => {
     const { selectedTopic, selectedChart } = value

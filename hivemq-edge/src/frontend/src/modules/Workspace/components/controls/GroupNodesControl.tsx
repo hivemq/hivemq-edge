@@ -20,7 +20,9 @@ const GroupNodesControl: FC = () => {
   useOnSelectionChange({
     onChange: ({ nodes }) => {
       if (nodes.length >= 2)
-        setCurrentSelection(() => nodes.filter((e) => e.type === NodeTypes.ADAPTER_NODE && e.parentNode === undefined))
+        setCurrentSelection(() =>
+          nodes.filter((node) => node.type === NodeTypes.ADAPTER_NODE && node.parentNode === undefined)
+        )
       else setCurrentSelection([])
     },
   })
