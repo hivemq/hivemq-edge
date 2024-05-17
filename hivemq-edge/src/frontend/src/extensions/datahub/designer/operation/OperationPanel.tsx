@@ -10,7 +10,7 @@ import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaFo
 import { datahubRJSFWidgets } from '@datahub/designer/datahubRJSFWidgets.tsx'
 import { MOCK_OPERATION_SCHEMA } from '@datahub/designer/operation/OperationData.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-import { isFunctionNodeType } from '@datahub/utils/node.utils.ts'
+import { getAllParents, isFunctionNodeType, reduceIdsFrom } from '@datahub/utils/node.utils.ts'
 import { DataHubNodeType, DataPolicyData, OperationData, PanelProps } from '@datahub/types.ts'
 
 export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
@@ -39,25 +39,8 @@ export const OperationPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =
     const operationNode = nodes.find((e) => e.id === selectedNode) as Node<OperationData> | undefined
     if (!operationNode?.data) return null
 
-    const getAllParents = (node: Node, visited = new Set<Node>()): Set<Node> => {
-      if (visited.has(node)) return visited
-      visited.add(node)
-      for (const incomer of getIncomers(node, nodes, edges)) {
-        getAllParents(incomer, visited)
-      }
-      return visited
-    }
-
-    const set = getAllParents(operationNode)
-    return Array.from(set).reduce<string[]>((acc, node) => {
-      if (node.type === DataHubNodeType.OPERATION) {
-        const { id, data } = node satisfies Node<OperationData>
-        if (data.id && id !== selectedNode) {
-          acc.push(data.id)
-        }
-      }
-      return acc
-    }, [])
+    const set = getAllParents(operationNode, nodes, edges)
+    return Array.from(set).reduce<string[]>(reduceIdsFrom<OperationData>(DataHubNodeType.OPERATION, selectedNode), [])
   }, [edges, nodes, selectedNode])
 
   const onFixFormSubmit = useCallback(
