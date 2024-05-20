@@ -33,6 +33,7 @@ export const MessageInterpolationTextArea = (props: WidgetProps) => {
         id={props.id}
         labelId={`${props.id}-label`}
         isRequired={props.required}
+        readonly={props.readonly}
         placeholder={t('workspace.function.message.placeholder')}
         value={props.value}
         onChange={onChange}

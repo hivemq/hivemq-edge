@@ -16,6 +16,7 @@ interface EditorProps {
   id: string
   labelId: string
   isRequired?: boolean
+  readonly?: boolean
   placeholder?: string
   value: string | undefined
   onChange?: (value: string) => void
@@ -32,6 +33,7 @@ export const Editor: FC<EditorProps> = ({
   id,
   labelId,
   isRequired,
+  readonly,
   onChange,
   value,
   placeholder,
@@ -61,6 +63,7 @@ export const Editor: FC<EditorProps> = ({
     injectCSS: false,
   })
 
+  editor?.setEditable(!readonly)
   const focus = () => editor?.chain().focus()
 
   if (!editor) {
@@ -78,6 +81,7 @@ export const Editor: FC<EditorProps> = ({
       borderColor={isInvalid ? 'red.500' : 'gray.200'}
       boxShadow={isInvalid ? 'invalidInput' : 'none'}
       sx={{
+        opacity: readonly ? '0.4' : undefined,
         '.mention': {
           backgroundColor: bgMention,
           color: colorMention,
