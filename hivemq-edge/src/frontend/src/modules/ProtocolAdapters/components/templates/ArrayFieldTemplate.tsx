@@ -2,8 +2,8 @@ import { FC } from 'react'
 import { ArrayFieldTemplateProps } from '@rjsf/utils'
 import { Box, Grid, GridItem } from '@chakra-ui/react'
 import { getTemplate, getUiOptions, ArrayFieldTemplateItemType } from '@rjsf/utils'
+import AddButton from '@/modules/ProtocolAdapters/components/templates/__internals/AddButton.tsx'
 
-// TODO[NVL] This is NOT a good approach to add a "role"; submit a PR!
 export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps> = (props) => {
   const { canAdd, disabled, idSchema, uiSchema, items, onAddClick, readonly, registry, required, schema, title } = props
   const uiOptions = getUiOptions(uiSchema)
@@ -14,10 +14,7 @@ export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps> = (props) => {
   )
   const ArrayFieldItemTemplate = getTemplate<'ArrayFieldItemTemplate'>('ArrayFieldItemTemplate', registry, uiOptions)
   const ArrayFieldTitleTemplate = getTemplate<'ArrayFieldTitleTemplate'>('ArrayFieldTitleTemplate', registry, uiOptions)
-  // Button templates are not overridden in the uiSchema
-  const {
-    ButtonTemplates: { AddButton },
-  } = registry.templates
+
   return (
     <Box>
       <ArrayFieldTitleTemplate
