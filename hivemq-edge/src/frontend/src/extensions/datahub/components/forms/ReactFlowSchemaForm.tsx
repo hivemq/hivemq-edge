@@ -18,6 +18,9 @@ import validator from '@rjsf/validator-ajv8'
 import { Alert, AlertTitle, Box, Divider, FormControl, Heading, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
 import { WarningIcon } from '@chakra-ui/icons'
 
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { DesignerStatus } from '@datahub/types.ts'
+
 // overriding the heading definition
 function TitleFieldTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>({
   id,
@@ -153,8 +156,11 @@ export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' |
   props
 ) => {
   const { uiSchema, ...rest } = props
+  const { status } = useDataHubDraftStore()
+
   return (
     <Form
+      readonly={status === DesignerStatus.LOADED}
       id="datahub-node-form"
       showErrorList="bottom"
       templates={{
