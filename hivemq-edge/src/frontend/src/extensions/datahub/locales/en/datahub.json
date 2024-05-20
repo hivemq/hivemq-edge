@@ -101,6 +101,7 @@
       "fitView": "Fit to the canvas",
       "toggleInteractivity": "Lock the canvas",
       "clear": "Clear the Designer",
+      "edit": "Edit the policy",
       "shortcuts": "Help using the Designer"
     },
     "toolbox": {
