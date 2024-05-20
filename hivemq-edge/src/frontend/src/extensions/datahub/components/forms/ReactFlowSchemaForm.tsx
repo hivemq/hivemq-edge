@@ -18,8 +18,8 @@ import validator from '@rjsf/validator-ajv8'
 import { Alert, AlertTitle, Box, Divider, FormControl, Heading, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
 import { WarningIcon } from '@chakra-ui/icons'
 
-import { ArrayFieldItemTemplate } from '@/modules/ProtocolAdapters/components/templates/ArrayFieldItemTemplate.tsx'
-import { ArrayFieldTemplate } from '@/modules/ProtocolAdapters/components/templates/ArrayFieldTemplate.tsx'
+import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
+import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { DesignerStatus } from '@datahub/types.ts'
 

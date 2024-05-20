@@ -24,12 +24,11 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
-
-import { FieldTemplate } from '../templates/FieldTemplate.tsx'
-import { ObjectFieldTemplate } from '../templates/ObjectFieldTemplate.tsx'
-import { BaseInputTemplate } from '../templates/BaseInputTemplate.tsx'
-import { ArrayFieldTemplate } from '../templates/ArrayFieldTemplate.tsx'
-import { ArrayFieldItemTemplate } from '../templates/ArrayFieldItemTemplate.tsx'
+import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'
+import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
+import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
+import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
+import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
 import useGetUiSchema from '../../hooks/useGetUISchema.ts'
 import { customFormatsValidator, customValidate } from '../../utils/validation-utils.ts'
 import { RJSFValidationError } from '@rjsf/utils/src/types.ts'

@@ -1,7 +1,7 @@
 import { FormContextType, IconButtonProps, RJSFSchema, StrictRJSFSchema, TranslatableString } from '@rjsf/utils'
 import { ArrowUpIcon, ArrowDownIcon, CopyIcon, DeleteIcon } from '@chakra-ui/icons'
 
-import ChakraIconButton from '@/modules/ProtocolAdapters/components/templates/__internals/ChakraIconButton.tsx'
+import ChakraIconButton from '@/components/rjsf/__internals/ChakraIconButton.tsx'
 
 /**
  * TODO[rjsf-team/react-jsonschema-form/issues/3839] Bug with disabled in buttons

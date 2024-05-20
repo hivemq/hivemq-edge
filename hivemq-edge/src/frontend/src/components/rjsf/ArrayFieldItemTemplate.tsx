@@ -5,12 +5,7 @@ import { Box, ButtonGroup, FormControl, HStack, useDisclosure, VStack } from '@c
 import { LuPanelTopClose, LuPanelTopOpen } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
-import {
-  CopyButton,
-  MoveDownButton,
-  MoveUpButton,
-  RemoveButton,
-} from '@/modules/ProtocolAdapters/components/templates/__internals/IconButton.tsx'
+import { CopyButton, MoveDownButton, MoveUpButton, RemoveButton } from '@/components/rjsf/__internals/IconButton.tsx'
 
 // TODO[NVL] Need a better handling of the custom UISchema property, for the Adapter SDK
 interface ArrayFieldItemCollapsableUISchema {
