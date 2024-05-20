@@ -159,6 +159,7 @@ export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' |
 ) => {
   const { uiSchema, ...rest } = props
   const { status } = useDataHubDraftStore()
+  const isEditable = status !== DesignerStatus.LOADED
 
   return (
     <Form
@@ -174,6 +175,8 @@ export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' |
         TitleFieldTemplate,
       }}
       validator={validator}
+      // TODO[NVL] Not sure we want to hide the validation when readonly
+      noValidate={!isEditable}
       uiSchema={{
         ...uiSchema,
         'ui:submitButtonOptions': {

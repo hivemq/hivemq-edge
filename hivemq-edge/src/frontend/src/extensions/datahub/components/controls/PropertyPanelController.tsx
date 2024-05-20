@@ -25,15 +25,16 @@ import { LuConstruction } from 'react-icons/lu'
 import { DefaultEditor } from '@datahub/designer/mappings.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { NodeIcon } from '@datahub/components/helpers'
+import { DesignerStatus } from '@datahub/types.ts'
 
 const PropertyPanelController = () => {
   const { t } = useTranslation('datahub')
-  const { onUpdateNodes } = useDataHubDraftStore()
-
   const { type, nodeId } = useParams()
   const { state } = useLocation()
   const navigate = useNavigate()
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const { status, onUpdateNodes } = useDataHubDraftStore()
+  const isEditable = status !== DesignerStatus.LOADED
 
   useEffect(() => {
     if (type && nodeId) {
@@ -95,7 +96,7 @@ const PropertyPanelController = () => {
         <DrawerFooter borderTopWidth="1px">
           {isEditorValid && (
             <Flex flexGrow={1} justifyContent="flex-end">
-              <Button variant="primary" type="submit" form="datahub-node-form">
+              <Button variant="primary" type="submit" form="datahub-node-form" isDisabled={!isEditable}>
                 {t('workspace.panel.submit')}
               </Button>
             </Flex>

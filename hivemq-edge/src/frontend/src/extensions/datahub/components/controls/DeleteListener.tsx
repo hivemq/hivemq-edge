@@ -5,7 +5,6 @@ import { NodeRemoveChange, EdgeRemoveChange, getConnectedEdges } from 'reactflow
 import { ListItem, Text, UnorderedList, useDisclosure, useToast, VStack } from '@chakra-ui/react'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
-
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { DesignerStatus } from '@datahub/types.ts'
 import { DATAHUB_HOTKEY } from '@datahub/utils/datahub.utils.ts'
@@ -37,6 +36,9 @@ const DeleteListener: FC = () => {
   }, [selectedElements])
 
   useHotkeys([DATAHUB_HOTKEY.BACKSPACE, DATAHUB_HOTKEY.DELETE], () => {
+    const isEditable = status !== DesignerStatus.LOADED
+    if (!isEditable) return
+
     const { selectedNodes, selectedEdges } = selectedElements
     const canDeleteNodes = selectedNodes.map((node) => canDeleteNode(node, status))
     const canDeleteEdges = selectedEdges.map((edge) => canDeleteEdge(edge, nodes))
@@ -53,6 +55,7 @@ const DeleteListener: FC = () => {
       }
       return acc
     }, [])
+
     if (!toast.isActive(DATAHUB_TOAST_ID))
       toast({
         ...dataHubToastOption,
