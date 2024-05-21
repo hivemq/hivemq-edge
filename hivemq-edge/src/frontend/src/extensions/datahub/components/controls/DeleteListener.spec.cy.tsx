@@ -6,8 +6,9 @@ import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 
 import DeleteListener from '@datahub/components/controls/DeleteListener.tsx'
+import { DesignerStatus } from '@datahub/types.ts'
 
-const getWrapperWith = (initNodes: Node[], initEdges?: Edge[]) => {
+const getWrapperWith = (initNodes: Node[], initEdges?: Edge[], status?: DesignerStatus) => {
   const Wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
     const { nodes, edges } = useDataHubDraftStore()
     return (
@@ -16,6 +17,7 @@ const getWrapperWith = (initNodes: Node[], initEdges?: Edge[]) => {
           initialState: {
             nodes: initNodes,
             edges: initEdges,
+            status: status,
           },
         }}
       >
@@ -131,5 +133,26 @@ describe('DeleteListener', () => {
       cy.wrap(w[2]).should('contain.text', 0)
       cy.wrap(w[3]).should('contain.text', 0)
     })
+  })
+
+  it.only('should not delete if the designer is readonly', () => {
+    cy.mountWithProviders(<DeleteListener />, {
+      wrapper: getWrapperWith(
+        [
+          {
+            id: '1',
+            position: { x: 0, y: 0 },
+            data: undefined,
+            selected: true,
+          },
+        ],
+        [],
+        DesignerStatus.LOADED
+      ),
+    })
+
+    cy.get("[role='alertdialog']").should('not.exist')
+    cy.get('body').type('{backspace}')
+    cy.get("[role='alertdialog']").should('not.exist')
   })
 })
