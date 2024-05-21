@@ -95,7 +95,7 @@ const PolicyEditor: FC = () => {
         edgeConnectStart.current = { ...params, type: nodeFound.type }
       }
     },
-    [nodes]
+    [isEditable, nodes]
   )
 
   const onConnectEnd = useCallback(

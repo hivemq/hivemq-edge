@@ -11,11 +11,11 @@ import { AddIcon } from '@chakra-ui/icons'
  * @see https://github.com/rjsf-team/react-jsonschema-form/issues/3839
  * @see https://github.com/rjsf-team/react-jsonschema-form/blob/main/packages/chakra-ui/src/AddButton/AddButton.tsx
  */
-export default function AddButton<T = never, S extends StrictRJSFSchema = RJSFSchema, F extends FormContextType = any>({
-  uiSchema,
-  registry,
-  ...props
-}: IconButtonProps<T, S, F>) {
+export default function AddButton<
+  T = never,
+  S extends StrictRJSFSchema = RJSFSchema,
+  F extends FormContextType = never
+>({ uiSchema, registry, ...props }: IconButtonProps<T, S, F>) {
   const { translateString } = registry
   const { disabled, ...rest } = props
   return (
