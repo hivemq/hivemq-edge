@@ -18,7 +18,11 @@ const CopyPasteStatus: FC<CopyPasteStatusProps> = ({ nbCopied }) => {
   return (
     <Panel position="bottom-center">
       <Tag size="lg" variant="subtle" userSelect="none" data-testid="edit-status">
-        <TagLeftIcon boxSize="18px" as={isEditable ? PiPencilSimpleLineFill : PiPencilSimpleSlashFill} />
+        <TagLeftIcon
+          boxSize="18px"
+          as={isEditable ? PiPencilSimpleLineFill : PiPencilSimpleSlashFill}
+          data-readonly={!isEditable}
+        />
       </Tag>
       <Tag size="lg" variant="subtle" userSelect="none" data-testid="copy-paste-status">
         <TagLeftIcon boxSize="12px" as={nbCopied ? LuCopyCheck : LuCopy} />
