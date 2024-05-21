@@ -1,13 +1,16 @@
 import { FC, useEffect } from 'react'
 
 import useDataHubDraftStore from '../hooks/useDataHubDraftStore.ts'
-import { PolicyCheckState, WorkspaceState } from '../types.ts'
+import { PolicyCheckState, WorkspaceState, WorkspaceStatus } from '../types.ts'
 import { usePolicyChecksStore } from '@datahub/hooks/usePolicyChecksStore.ts'
 import { ReactFlowProvider } from 'reactflow'
 
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>
 interface MockStoreWrapperConfig {
-  initialState?: Optional<WorkspaceState, 'nodes' | 'edges' | 'functions'>
+  initialState?: Optional<
+    WorkspaceState & WorkspaceStatus,
+    'nodes' | 'edges' | 'functions' | 'status' | 'name' | 'type'
+  >
 }
 
 interface MockStoreWrapperProps {
@@ -16,7 +19,7 @@ interface MockStoreWrapperProps {
 }
 
 export const MockStoreWrapper: FC<MockStoreWrapperProps> = ({ config, children }) => {
-  const { onAddNodes, onAddEdges, reset } = useDataHubDraftStore()
+  const { onAddNodes, onAddEdges, reset, setStatus } = useDataHubDraftStore()
 
   useEffect(() => {
     reset()
@@ -38,6 +41,9 @@ export const MockStoreWrapper: FC<MockStoreWrapperProps> = ({ config, children }
           type: 'add',
         }))
       )
+    if (initialState?.status) {
+      setStatus(initialState?.status)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
