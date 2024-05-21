@@ -5,6 +5,9 @@ import { Tag } from '@chakra-ui/react'
 import { getConnectedNodeFrom } from '@datahub/utils/node.utils.ts'
 import { NodeIcon } from '@datahub/components/helpers'
 
+const ICON_SIZE = 50
+const ICON_OFFSET = 20
+
 const ConnectionLine: FC<ConnectionLineComponentProps> = ({
   fromHandle,
   fromNode,
@@ -33,7 +36,12 @@ const ConnectionLine: FC<ConnectionLineComponentProps> = ({
     <g>
       <path fill="none" stroke="grey" strokeWidth={1.5} className="animated" d={d} />
       {props.connectionStatus === null && (
-        <foreignObject x={toX} y={toY - 20} width="50px" height="50px">
+        <foreignObject
+          x={toX - (props.fromPosition === 'left' ? ICON_SIZE : 0)}
+          y={toY - ICON_OFFSET}
+          width={`${ICON_SIZE}px`}
+          height={`${ICON_SIZE}px`}
+        >
           <Tag size="lg" colorScheme="gray" borderRadius="full" variant="outline">
             <NodeIcon type={droppedNode?.type} />
           </Tag>
