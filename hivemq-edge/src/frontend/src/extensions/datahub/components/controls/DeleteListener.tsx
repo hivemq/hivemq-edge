@@ -35,8 +35,9 @@ const DeleteListener: FC = () => {
     return 'BOTH'
   }, [selectedElements])
 
+  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
+
   useHotkeys([DATAHUB_HOTKEY.BACKSPACE, DATAHUB_HOTKEY.DELETE], () => {
-    const isEditable = status !== DesignerStatus.LOADED
     if (!isEditable) return
 
     const { selectedNodes, selectedEdges } = selectedElements

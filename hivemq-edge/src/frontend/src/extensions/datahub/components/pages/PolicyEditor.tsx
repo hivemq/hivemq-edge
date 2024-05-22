@@ -44,7 +44,7 @@ const PolicyEditor: FC = () => {
   const edgeConnectStart = useRef<OnConnectStartParamsNode | undefined>(undefined)
   const nodeTypes = useMemo(() => CustomNodeTypes, [])
 
-  const isEditable = status !== DesignerStatus.LOADED
+  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
 
   const checkValidity = useCallback(
     (connection: Connection) => isValidPolicyConnection(connection, nodes, edges),

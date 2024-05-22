@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 import { Panel } from 'reactflow'
 import { Tag, TagLabel, TagLeftIcon } from '@chakra-ui/react'
 import { LuCopy, LuCopyCheck } from 'react-icons/lu'
@@ -13,7 +13,7 @@ interface CopyPasteStatusProps {
 
 const CopyPasteStatus: FC<CopyPasteStatusProps> = ({ nbCopied }) => {
   const { status } = useDataHubDraftStore()
-  const isEditable = status !== DesignerStatus.LOADED
+  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
 
   return (
     <Panel position="bottom-center">

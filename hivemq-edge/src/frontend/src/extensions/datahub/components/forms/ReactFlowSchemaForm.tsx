@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 import Form from '@rjsf/chakra-ui'
 import { FormProps } from '@rjsf/core'
 import {
@@ -159,7 +159,7 @@ export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' |
 ) => {
   const { uiSchema, ...rest } = props
   const { status } = useDataHubDraftStore()
-  const isEditable = status !== DesignerStatus.LOADED
+  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
 
   return (
     <Form

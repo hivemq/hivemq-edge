@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { IChangeEvent } from '@rjsf/core'
@@ -34,7 +34,7 @@ const PropertyPanelController = () => {
   const navigate = useNavigate()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { status, onUpdateNodes } = useDataHubDraftStore()
-  const isEditable = status !== DesignerStatus.LOADED
+  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
 
   useEffect(() => {
     if (type && nodeId) {

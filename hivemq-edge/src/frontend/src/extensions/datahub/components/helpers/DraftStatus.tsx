@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ButtonGroup, HStack, Icon, Text } from '@chakra-ui/react'
@@ -15,7 +15,7 @@ const DraftStatus: FC = () => {
   const { status, name, type, reset, setStatus } = useDataHubDraftStore()
   const navigate = useNavigate()
 
-  const isEditable = status !== DesignerStatus.LOADED
+  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
 
   function onHandleClear() {
     reset()
