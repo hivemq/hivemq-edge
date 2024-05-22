@@ -75,8 +75,8 @@ abstract class AbstractOpcUaPayloadConverterTest {
     @BeforeEach
     public void before() {
         when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
-                configObject.getId(),
-                protocolAdapterFactory.getInformation().getProtocolId()));
+                "id",
+               "protocolId"));
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
         when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
         when(adapterPublishService.createPublish()).thenReturn(adapterPublishBuilder);

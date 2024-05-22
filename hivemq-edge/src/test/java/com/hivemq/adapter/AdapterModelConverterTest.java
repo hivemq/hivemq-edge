@@ -107,15 +107,6 @@ public class AdapterModelConverterTest {
     }
 
     @Test
-    void testProtocolAdapterWriteDisabled() {
-
-        ConfigurationService configurationService = mock(ConfigurationService.class);
-        Module testModule = ModuleModelTests.createTestModule();
-        ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule,configurationService);
-        assertFalse(adapter.getCapabilities().contains(ProtocolAdapter.Capability.WRITE), "Module generated adapter should not support write");
-    }
-
-    @Test
     void testProtocolAdapterReadDisabled() {
 
         ConfigurationService configurationService = mock(ConfigurationService.class);

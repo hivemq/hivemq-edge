@@ -36,6 +36,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
+
 
 /**
  * @author Simon L Johnson

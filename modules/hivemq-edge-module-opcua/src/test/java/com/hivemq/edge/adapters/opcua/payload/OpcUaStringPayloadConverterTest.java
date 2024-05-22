@@ -15,11 +15,13 @@
  */
 package com.hivemq.edge.adapters.opcua.payload;
 
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import com.hivemq.protocols.ProtocolAdapterStopOutputImpl;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -94,7 +96,7 @@ class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest 
                 protocolAdapter.getProtocolAdapterState().getConnectionStatus());
 
         final PUBLISH publish = expectAdapterPublish();
-        protocolAdapter.stop();
+        protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
         assertThat(new String(publish.getPayload())).contains(expectedValue);
     }
 
