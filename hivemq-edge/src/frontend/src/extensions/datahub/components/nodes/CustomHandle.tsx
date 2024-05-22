@@ -1,9 +1,11 @@
 import { CSSProperties, FC, HTMLAttributes, useMemo } from 'react'
-import { getConnectedEdges, Handle, HandleProps, useNodeId } from 'reactflow'
+import { Handle, HandleProps, useNodeId } from 'reactflow'
 
 import useDataHubDraftStore from '../../hooks/useDataHubDraftStore.ts'
+import { isNodeHandleConnectable } from '@datahub/utils/node.utils.ts'
 
-interface CustomHandleProps extends Omit<HandleProps & Omit<HTMLAttributes<HTMLDivElement>, 'id'>, 'isConnectable'> {
+interface CustomHandleProps
+  extends Omit<HandleProps & Pick<HTMLAttributes<HTMLDivElement>, 'style' | 'className'>, 'isConnectable'> {
   isConnectable?: boolean | number
 }
 
@@ -12,22 +14,10 @@ export const CustomHandle: FC<CustomHandleProps> = (props) => {
   const nodeId = useNodeId()
 
   const isHandleConnectable = useMemo(() => {
-    if (typeof props.isConnectable === 'number') {
-      const node = nodes.find((node) => node.id === nodeId)
-      if (node) {
-        const connectedEdges = getConnectedEdges([node], edges)
-
-        const toHandle = connectedEdges.filter((edge) => {
-          const otherEnd = props.type === 'source' ? edge.sourceHandle : edge.targetHandle
-          return otherEnd === props.id
-        })
-
-        return toHandle.length < props.isConnectable
-      }
-      return false
-    }
-    return true
-  }, [edges, nodeId, nodes, props.id, props.isConnectable, props.type])
+    const node = nodes.find((node) => node.id === nodeId)
+    if (!node) return false
+    return isNodeHandleConnectable(props, node, edges)
+  }, [nodes.length, props, edges, nodeId])
 
   let transform: CSSProperties = {
     width: '12px',

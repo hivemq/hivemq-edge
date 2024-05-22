@@ -1,4 +1,4 @@
-import { Connection, Edge, getIncomers, getOutgoers, Node } from 'reactflow'
+import { Connection, Edge, getConnectedEdges, getIncomers, getOutgoers, HandleProps, Node } from 'reactflow'
 import { v4 as uuidv4 } from 'uuid'
 import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
 import i18n from '@/config/i18n.config.ts'
@@ -349,3 +349,20 @@ export const reduceIdsFrom =
     }
     return acc
   }
+
+interface ConnectableHandleProps extends Pick<HandleProps, 'id' | 'type'> {
+  isConnectable?: boolean | number
+}
+
+export const isNodeHandleConnectable = (props: ConnectableHandleProps, node: Node, edges: Edge[]) => {
+  if (typeof props.isConnectable === 'number') {
+    const connectedEdges = getConnectedEdges([node], edges)
+    const toHandle = connectedEdges.filter((edge) => {
+      return props.type === 'source'
+        ? edge.source === node.id && edge.sourceHandle === props.id
+        : edge.target === node.id && edge.targetHandle === props.id
+    })
+    return toHandle.length < props.isConnectable
+  }
+  return props.isConnectable
+}
