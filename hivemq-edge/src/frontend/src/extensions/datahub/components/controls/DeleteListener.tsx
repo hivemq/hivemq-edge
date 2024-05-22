@@ -1,7 +1,7 @@
 import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useHotkeys } from 'react-hotkeys-hook'
-import { NodeRemoveChange, EdgeRemoveChange } from 'reactflow'
+import { NodeRemoveChange, EdgeRemoveChange, getConnectedEdges } from 'reactflow'
 import { ListItem, Text, UnorderedList, useDisclosure, useToast, VStack } from '@chakra-ui/react'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
@@ -74,7 +74,10 @@ const DeleteListener: FC = () => {
 
   const handleConfirmOnSubmit = () => {
     const { selectedNodes, selectedEdges } = selectedElements
-    onEdgesChange(selectedEdges.map<EdgeRemoveChange>((edge) => ({ id: edge.id, type: 'remove' })))
+    const allConnectedEdges = getConnectedEdges(selectedNodes, edges)
+    onEdgesChange(
+      [...selectedEdges, ...allConnectedEdges].map<EdgeRemoveChange>((edge) => ({ id: edge.id, type: 'remove' }))
+    )
     onNodesChange(selectedNodes.map<NodeRemoveChange>((node) => ({ id: node.id, type: 'remove' })))
     setStatus(status === DesignerStatus.DRAFT ? DesignerStatus.DRAFT : DesignerStatus.MODIFIED)
   }

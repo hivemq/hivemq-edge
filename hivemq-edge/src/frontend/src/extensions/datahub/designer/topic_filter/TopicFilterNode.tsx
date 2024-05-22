@@ -30,6 +30,7 @@ export const TopicFilterNode: FC<NodeProps<TopicFilterData>> = (props) => {
       {data.topics?.map((t, index) => (
         <CustomHandle
           type="source"
+          isConnectable={1}
           position={Position.Right}
           id={`${t}-${index}`}
           key={`${id}-${t}-${index}`}

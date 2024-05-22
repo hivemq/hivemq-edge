@@ -54,13 +54,7 @@ export const OperationNode: FC<NodeProps<OperationData>> = (props) => {
       </NodeWrapper>
       <CustomHandle type="target" position={Position.Left} id={OperationData.Handle.INPUT} />
       {!metadata?.isTerminal && (
-        <CustomHandle
-          type="source"
-          position={Position.Right}
-          id={OperationData.Handle.OUTPUT}
-          // TODO[18935] bug with the isConnectable routine
-          // isConnectable={1}
-        />
+        <CustomHandle type="source" position={Position.Right} id={OperationData.Handle.OUTPUT} isConnectable={1} />
       )}
       {isSerialiser && <CustomHandle type="target" position={Position.Top} id={OperationData.Handle.SCHEMA} />}
       {isTransform && (
