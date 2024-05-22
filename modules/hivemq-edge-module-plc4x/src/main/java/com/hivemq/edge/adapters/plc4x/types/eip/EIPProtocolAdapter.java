@@ -70,7 +70,7 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
             final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
         final PollingContext pollingContext = pollingInput.getPollingContext();
         if (!(pollingContext instanceof EIPAdapterConfig.EIPPollingContextImpl)) {
-            pollingOutput.fail(new IllegalStateException("Subscription configuration is not of correct type Ethernet/IP"));
+            pollingOutput.fail( "Subscription configuration is not of correct type Ethernet/IP");
             return;
         }
         if (connection.isConnected()) {
@@ -80,7 +80,7 @@ public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
                     .thenApply(data -> captureDataSample(data, pollingContext))
                     .whenComplete((sample, t) -> handleDataAndExceptions(sample, t, pollingOutput));
         } else {
-            pollingOutput.fail(new IllegalStateException("EIP Adapter is not connected."));
+            pollingOutput.fail( "EIP Adapter is not connected.");
         }
     }
 }

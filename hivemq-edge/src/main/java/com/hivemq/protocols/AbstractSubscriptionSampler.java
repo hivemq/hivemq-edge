@@ -91,7 +91,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     }
 
     @Override
-    public abstract @NotNull CompletableFuture<PollingOutputImpl.PollingResult> execute();
+    public abstract @NotNull CompletableFuture<?> execute();
 
     @Override
     public void error(@NotNull final Throwable t, final boolean continuing) {
@@ -125,7 +125,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             List<AbstractProtocolAdapterJsonPayload> payloads = convertAdapterSampleToPublishes(sample, pollingContext);
             for (AbstractProtocolAdapterJsonPayload payload : payloads) {
                 byte[] json = convertToJson(payload);
-                final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
+                final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
                         .withTopic(pollingContext.getDestinationMqttTopic())
                         .withQoS(pollingContext.getQos())
                         .withPayload(json)

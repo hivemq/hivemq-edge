@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -138,7 +139,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
             @NotNull final PollingInput pollingInput, @NotNull final PollingOutput pollingOutput) {
 
         if (httpClient == null) {
-            pollingOutput.fail(new RuntimeException("No response was created, because the client is null."));
+            pollingOutput.fail(new ProtocolAdapterException(), "No response was created, because the client is null.");
             return;
         }
 
@@ -155,13 +156,15 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                 break;
             default:
                 pollingOutput.fail(new IllegalStateException("Unexpected value: " +
-                        adapterConfig.getHttpRequestMethod()));
+                                adapterConfig.getHttpRequestMethod()),
+                        "There was an unexpected value present in the request config: " +
+                                adapterConfig.getHttpRequestMethod());
                 return;
         }
 
         dataFuture.whenComplete((data, throwable) -> {
             if (throwable != null) {
-                pollingOutput.fail(throwable);
+                pollingOutput.fail(throwable, null);
                 return;
             }
             boolean publishData = isSuccessStatusCode(data.getHttpStatusCode()) ||
@@ -203,10 +206,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
             }
             httpClient = builder.build();
         } else {
-            protocolAdapterState.setErrorConnectionStatus(adapterConfig.getId(),
-                    adapterInformation.getProtocolId(),
-                    null,
-                    "Invalid URL supplied");
+            protocolAdapterState.setErrorConnectionStatus(null, "Invalid URL supplied");
         }
     }
 

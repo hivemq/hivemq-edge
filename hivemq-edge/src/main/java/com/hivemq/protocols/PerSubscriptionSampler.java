@@ -8,10 +8,16 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
+
+    private static final Logger log = LoggerFactory.getLogger(PerSubscriptionSampler.class);
+
 
     private final @NotNull PollingProtocolAdapter perSubscriptionProtocolAdapter;
     private final @NotNull PollingContext pollingContext;
@@ -36,26 +42,37 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
 
 
     @Override
-    public @NotNull CompletableFuture<PollingOutputImpl.PollingResult> execute() {
+    public @NotNull CompletableFuture<?> execute() {
         if (Thread.currentThread().isInterrupted()) {
             return CompletableFuture.failedFuture(new InterruptedException());
         }
         final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
         try {
             perSubscriptionProtocolAdapter.poll(new PollingInputImpl(pollingContext), pollingOutput);
-        }catch (Throwable t){
-            pollingOutput.fail(t);
+        } catch (Throwable t) {
+            pollingOutput.fail(t, null);
             throw t;
         }
-        final CompletableFuture<PollingOutputImpl.PollingResult> outputFuture = pollingOutput.getOutputFuture();
-        outputFuture.thenAccept(pollingResult -> {
+        final CompletableFuture<PollingOutputImpl.PollingResult> outputFuture =
+                pollingOutput.getOutputFuture().orTimeout(10_000, TimeUnit.MILLISECONDS);
+        return outputFuture.thenCompose(((pollingResult) -> {
             if (pollingResult == PollingOutputImpl.PollingResult.SUCCESS) {
-                this.captureDataSample(pollingOutput.getDataSample(), pollingContext);
-            } else if (pollingResult == PollingOutputImpl.PollingResult.FAILURE) {
-                // TODO LOG
+                return this.captureDataSample(pollingOutput.getDataSample(), pollingContext);
+            } else {
+                return CompletableFuture.completedFuture(null);
             }
+        })).exceptionally(throwable -> {
+            if (pollingOutput.getErrorMessage() == null) {
+                log.warn("During the polling for adapter with id '{}' an exception occurred: ",
+                        getAdapterId(),
+                        throwable);
+            } else {
+                log.warn("During the polling for adapter with id '{}' an exception occurred. Detailed error message: {}.",
+                        getAdapterId(),
+                        pollingOutput.getErrorMessage(),
+                        throwable);
+            } return null;
         });
-        return outputFuture;
     }
 
 

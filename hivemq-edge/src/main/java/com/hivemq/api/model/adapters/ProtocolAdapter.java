@@ -33,15 +33,12 @@ public class ProtocolAdapter {
 
     public enum Capability {
         @Schema(description = "The adapter is able to read tags or values from the connected device") READ,
-        @Schema(description = "The adapter is able to write values to tags on the connected device") WRITE,
         @Schema(description = "The adapter is able to discover tags from the connected device") DISCOVER;
 
         public static @NotNull Capability from(final ProtocolAdapterCapability capability) {
             switch (capability) {
                 case READ:
                     return READ;
-                case WRITE:
-                    return WRITE;
                 case DISCOVER:
                     return DISCOVER;
                 default:

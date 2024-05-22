@@ -83,7 +83,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
         try {
 
             final @NotNull byte[] convertedPayload = convertPayload(dataValue, OpcUaAdapterConfig.PayloadMode.JSON);
-            final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
+            final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
                     .withTopic(subscription.getMqttTopic())
                     .withPayload(convertedPayload)
                     .withQoS(subscription.getQos())

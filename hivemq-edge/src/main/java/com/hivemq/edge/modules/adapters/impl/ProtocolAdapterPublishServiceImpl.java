@@ -41,7 +41,7 @@ public class ProtocolAdapterPublishServiceImpl implements ProtocolAdapterPublish
     }
 
     @Override
-    public @NotNull ProtocolAdapterPublishBuilder publish() {
+    public @NotNull ProtocolAdapterPublishBuilder createPublish() {
         return new ProtocolAdapterPublishBuilderImpl(hiveMqId.get(), (publish, protocolAdapter, dynamicContext) -> {
 
             final ListenableFuture<PublishReturnCode> publishFuture = interceptorHandler.interceptOrDelegateInbound(

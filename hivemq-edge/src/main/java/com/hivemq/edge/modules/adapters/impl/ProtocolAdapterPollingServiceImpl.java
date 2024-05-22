@@ -17,14 +17,12 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.protocols.PollingOutputImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -163,10 +161,6 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     }
                 }
             }
-            final ProtocolAdapter protocolAdapter = sampler.getAdapter();
-            if (protocolAdapter instanceof PollingProtocolAdapter) {
-                ((PollingProtocolAdapter) protocolAdapter).onSamplerClosed();
-            }
         }
     }
 
@@ -244,7 +238,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                             if (execute) {
                                 runCount.incrementAndGet();
                                 currentThread.setName(originalName + " " + sampler.getAdapterId());
-                                final CompletableFuture<PollingOutputImpl.PollingResult> sampleFuture = sampler.execute();
+                                final CompletableFuture<?> sampleFuture = sampler.execute();
                                 if (sampleFuture != null) {
                                     sampleFuture.get();
                                     if (log.isTraceEnabled()) {

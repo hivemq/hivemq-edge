@@ -107,16 +107,16 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
                 CompletableFuture.supplyAsync(() -> readRegisters(pollingInput.getPollingContext()))
                         .whenComplete((modbusdata, throwable) -> {
                             if (throwable != null) {
-                                pollingOutput.fail(throwable);
+                                pollingOutput.fail(throwable, null);
                             } else {
                                 this.captureDataSample(modbusdata, pollingOutput);
                             }
                         });
             } else {
-                pollingOutput.fail(new IllegalStateException("client not initialised"));
+                pollingOutput.fail(new IllegalStateException("client not initialised"),"The client is not initialised.");
             }
         } catch (Exception e) {
-            pollingOutput.fail(e);
+            pollingOutput.fail(e, null);
         }
     }
 
@@ -212,23 +212,6 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
         delta.forEach(pollingOutput::addDataPoint);
         if (log.isTraceEnabled() && !delta.isEmpty()) {
             log.trace("Publishing data with {} samples", delta.size());
-        }
-    }
-
-
-    @Override
-    public void onSamplerClosed() {
-        try {
-            if (log.isTraceEnabled()) {
-                log.trace("Sampler was closed by framework, disconnect Modbus device.");
-            }
-            if (modbusClient != null) {
-                modbusClient.disconnect();
-            }
-        } catch (Exception e) {
-            if (log.isWarnEnabled()) {
-                log.warn("Error encountered closing connection to Modbus device.", e);
-            }
         }
     }
 

@@ -18,7 +18,6 @@ package com.hivemq.edge.modules.api.adapters;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.protocols.PollingOutputImpl;
 
 import java.util.Date;
 import java.util.UUID;
@@ -41,7 +40,7 @@ public interface ProtocolAdapterPollingSampler {
      * Do the work associated with this polling job. It is acceptable to throw exceptions from this method,
      * they will be caught and the process will be backed off accordingly
      */
-    @NotNull CompletableFuture<PollingOutputImpl.PollingResult> execute() ;
+    @NotNull CompletableFuture<?> execute() ;
 
     /**
      * Called when the job is remove from the pool

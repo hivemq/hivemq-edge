@@ -453,7 +453,7 @@ public class ProtocolAdapterManager {
 
 
             final ProtocolAdapterStateImpl protocolAdapterState =
-                    new ProtocolAdapterStateImpl(moduleServices.eventService());
+                    new ProtocolAdapterStateImpl(moduleServices.eventService(), configObject.getId(), protocolAdapterFactory.getInformation().getProtocolId() );
 
             final ModuleServicesPerModuleImpl moduleServicesPerModule =
                     new ModuleServicesPerModuleImpl(null, moduleServices, eventService);

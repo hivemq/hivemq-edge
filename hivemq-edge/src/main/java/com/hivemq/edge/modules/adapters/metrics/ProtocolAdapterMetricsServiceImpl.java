@@ -18,7 +18,6 @@ package com.hivemq.edge.modules.adapters.metrics;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.base.Preconditions;
-import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.HashSet;
@@ -33,7 +32,7 @@ import static com.hivemq.protocols.ProtocolAdapterMetrics.PROTOCOL_ADAPTER_PREFI
  *
  * @author Simon L Johnson
  */
-public class ProtocolAdapterMetricsServiceImpl implements ProtocolAdapterMetricsService {
+public class ProtocolAdapterMetricsServiceImpl implements InternalProtocolAdapterMetricsService {
 
     private static final @NotNull String SUCCESS_COUNT = "success.count";
     private static final @NotNull String FAILED_COUNT = "failed.count";

@@ -106,10 +106,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements Protoc
     }
 
     public void setErrorConnectionStatus(final @NotNull Throwable exception, final @Nullable String errorMessage) {
-        protocolAdapterState.setErrorConnectionStatus(adapter.getId(),
-                adapter.getProtocolAdapterInformation().getProtocolId(),
-                exception,
-                errorMessage);
+        protocolAdapterState.setErrorConnectionStatus(exception, errorMessage);
     }
 
     public void setRuntimeStatus(final @NotNull ProtocolAdapterState.RuntimeStatus runtimeStatus) {

@@ -70,8 +70,8 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
         }
 
         @Override
-        public @NotNull ProtocolAdapterPublishBuilder publish() {
-            final ProtocolAdapterPublishBuilderImpl builder = (ProtocolAdapterPublishBuilderImpl) delegate.publish();
+        public @NotNull ProtocolAdapterPublishBuilder createPublish() {
+            final ProtocolAdapterPublishBuilderImpl builder = (ProtocolAdapterPublishBuilderImpl) delegate.createPublish();
             return builder.withAdapter(adapter);
         }
     }

@@ -17,6 +17,7 @@ package com.hivemq.adapter;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.edge.modules.adapters.metrics.InternalProtocolAdapterMetricsService;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import org.junit.jupiter.api.Test;
 
@@ -53,7 +54,7 @@ public class ProtocolMetricsHelperTest {
         MetricRegistry registry = new MetricRegistry();
 
         //adapter helper creates 4 metrics
-        ProtocolAdapterMetricsService helper1 =
+        InternalProtocolAdapterMetricsService helper1 =
                 new ProtocolAdapterMetricsServiceImpl("tear-down-name1","test-adapter-id", registry);
 
         //add an arbitrary fifth

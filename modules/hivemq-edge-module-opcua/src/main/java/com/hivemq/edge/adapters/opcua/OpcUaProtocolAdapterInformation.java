@@ -72,7 +72,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @Nullable ProtocolAdapterCategory getCategory() {
-        return null;
+        return ProtocolAdapterCategory.INDUSTRIAL;
     }
 
     @Override

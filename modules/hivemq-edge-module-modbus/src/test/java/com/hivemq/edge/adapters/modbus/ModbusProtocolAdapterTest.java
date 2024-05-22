@@ -48,7 +48,7 @@ class ModbusProtocolAdapterTest {
         final ProtocolAdapterPublishBuilderImpl protocolAdapterPublishBuilder =
                 new ProtocolAdapterPublishBuilderImpl("hivemq", sendCallback);
         protocolAdapterPublishBuilder.withAdapter(adapter);
-        when(publishService.publish()).thenReturn(protocolAdapterPublishBuilder);
+        when(publishService.createPublish()).thenReturn(protocolAdapterPublishBuilder);
     }
 
     @Test

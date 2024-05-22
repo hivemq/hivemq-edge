@@ -43,7 +43,7 @@ class OpcUaProtocolAdapterAuthTest {
 
     @BeforeEach
     void setUp() {
-        when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock()));
+        when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(), configObject.getId(), protocolAdapterFactory.getInformation().getProtocolId()));
     }
 
     @Test

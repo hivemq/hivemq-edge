@@ -220,10 +220,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
             resultFuture.complete(null);
             return null;
         }).exceptionally(throwable -> {
-            protocolAdapterState.setErrorConnectionStatus(adapterConfig.getId(),
-                    adapterInformation.getProtocolId(),
-                    throwable,
-                    null);
+            protocolAdapterState.setErrorConnectionStatus(throwable, null);
             resultFuture.completeExceptionally(throwable);
             return null;
         });
@@ -254,10 +251,10 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         opcUaClient.addFaultListener(serviceFault -> {
             moduleServices.eventService()
                     .createAdapterEvent(adapterConfig.getId(), adapterInformation.getProtocolId())
-                            .withSeverity(Event.SEVERITY.ERROR)
-                            .withPayload(serviceFault.getResponseHeader().getServiceResult())
-                            .withMessage("A Service Fault was Detected.")
-                            .fire();
+                    .withSeverity(Event.SEVERITY.ERROR)
+                    .withPayload(serviceFault.getResponseHeader().getServiceResult())
+                    .withMessage("A Service Fault was Detected.")
+                    .fire();
         });
     }
 

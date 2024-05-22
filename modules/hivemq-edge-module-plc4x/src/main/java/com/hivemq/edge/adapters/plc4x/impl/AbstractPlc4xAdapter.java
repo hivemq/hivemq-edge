@@ -98,7 +98,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig> impleme
             final @Nullable Throwable throwable,
             final @NotNull PollingOutput pollingOutput) {
         if (throwable != null) {
-            pollingOutput.fail(throwable);
+            pollingOutput.fail(throwable, null);
         } else {
             for (DataPoint dataPoint : dataSample.getDataPoints()) {
                 pollingOutput.addDataPoint(dataPoint);
@@ -144,10 +144,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig> impleme
                 if (log.isWarnEnabled()) {
                     log.warn("Error disconnecting from PLC4X client", e);
                 }
-                protocolAdapterState.setErrorConnectionStatus(adapterConfig.getId(),
-                        adapterInformation.getProtocolId(),
-                        e,
-                        null);
+                protocolAdapterState.setErrorConnectionStatus(e, null);
                 return CompletableFuture.failedFuture(e);
             } finally {
                 connection = null;

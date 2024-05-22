@@ -13,13 +13,19 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
     private final @NotNull EventService eventService;
+    private final @NotNull String adapterId;
+    private final @NotNull String protocolId;
     protected @NotNull AtomicReference<RuntimeStatus> runtimeStatus = new AtomicReference<>(RuntimeStatus.STOPPED);
     protected @NotNull AtomicReference<ConnectionStatus> connectionStatus =
             new AtomicReference<>(ConnectionStatus.DISCONNECTED);
     protected @Nullable String lastErrorMessage;
 
-    public ProtocolAdapterStateImpl(final @NotNull EventService eventService) {
+    public ProtocolAdapterStateImpl(final @NotNull EventService eventService,
+                                    final @NotNull String adapterId,
+                                    final @NotNull String protocolId) {
         this.eventService = eventService;
+        this.adapterId = adapterId;
+        this.protocolId = protocolId;
     }
 
     @Override
@@ -39,12 +45,10 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
      */
     @Override
     public void setErrorConnectionStatus(
-            final @NotNull String adapterId,
-            final @NotNull String protocolId,
             @Nullable final Throwable t,
             @Nullable final String errorMessage) {
         boolean changed = setConnectionStatus(ConnectionStatus.ERROR);
-        reportErrorMessage(adapterId, protocolId, t, errorMessage, changed);
+        reportErrorMessage( t, errorMessage, changed);
     }
 
     /**
@@ -55,8 +59,6 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
      */
     @Override
     public void reportErrorMessage(
-            final @NotNull String adapterId,
-            final @NotNull String protocolId,
             @Nullable final Throwable throwable,
             @Nullable final String errorMessage,
             final boolean sendEvent) {
