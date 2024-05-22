@@ -61,17 +61,20 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
             } else {
                 return CompletableFuture.completedFuture(null);
             }
-        })).exceptionally(throwable -> {
-            if (pollingOutput.getErrorMessage() == null) {
-                log.warn("During the polling for adapter with id '{}' an exception occurred: ",
-                        getAdapterId(),
-                        throwable);
-            } else {
-                log.warn("During the polling for adapter with id '{}' an exception occurred. Detailed error message: {}.",
-                        getAdapterId(),
-                        pollingOutput.getErrorMessage(),
-                        throwable);
-            } return null;
+        })).whenComplete((aVoid, throwable) -> {
+            if (throwable != null) {
+                if (pollingOutput.getErrorMessage() == null) {
+                    log.warn("During the polling for adapter with id '{}' an exception occurred: ",
+                            getAdapterId(),
+                            throwable);
+                } else {
+                    log.warn(
+                            "During the polling for adapter with id '{}' an exception occurred. Detailed error message: {}.",
+                            getAdapterId(),
+                            pollingOutput.getErrorMessage(),
+                            throwable);
+                }
+            }
         });
     }
 
