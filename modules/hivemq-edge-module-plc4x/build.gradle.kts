@@ -37,8 +37,7 @@ repositories {
 
 dependencies {
     compileOnly("com.hivemq:hivemq-edge-extension-sdk")
-    compileOnly("com.hivemq:hivemq-edge-adapter-sdk")
-
+    compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 
     implementation("org.apache.plc4x:plc4j-api:${property("org.apache.plc4x.version")}")
     implementation("org.apache.plc4x:plc4j-driver-s7:${property("org.apache.plc4x.version")}")
@@ -47,10 +46,6 @@ dependencies {
     implementation("org.apache.plc4x:plc4j-driver-eip:${property("org.apache.plc4x.version")}")
     implementation("org.apache.plc4x:plc4j-driver-ab-eth:${property("org.apache.plc4x.version")}")
     implementation("org.apache.plc4x:plc4j-transport-raw-socket:${property("org.apache.plc4x.version")}")
-
-//    implementation("org.apache.plc4x:plc4j-driver-bacnet:${property("org.apache.plc4x.version")}")
-//    implementation("org.apache.plc4x:plc4j-driver-profinet:${property("org.apache.plc4x.version")}")
-
     runtimeOnly("com.google.guava:guava:${property("guava.version")}") {
         exclude("org.checkerframework", "checker-qual")
         exclude("com.google.errorprone", "error_prone_annotations")
@@ -68,7 +63,7 @@ configurations {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation("com.hivemq:hivemq-edge-extension-sdk")
+    testImplementation("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")

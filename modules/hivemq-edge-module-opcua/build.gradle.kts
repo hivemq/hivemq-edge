@@ -42,8 +42,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-edge-extension-sdk")
-    compileOnly("com.hivemq:hivemq-edge-adapter-sdk")
+    compileOnly("com.hivemq:hivemq-extension-sdk")
+    compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 
     runtimeOnly("com.google.guava:guava:${property("guava.version")}")
     compileOnly("org.apache.commons:commons-lang3:${property("commons-lang.version")}")
@@ -54,8 +54,8 @@ dependencies {
     implementation("org.eclipse.milo:bsd-parser-gson:${property("milo.version")}")
 
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation("com.hivemq:hivemq-edge-extension-sdk")
-    testImplementation("com.hivemq:hivemq-edge-adapter-sdk")
+    testImplementation("com.hivemq:hivemq-extension-sdk")
+    testImplementation("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 
     testImplementation("org.eclipse.milo:sdk-server:${property("milo.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
