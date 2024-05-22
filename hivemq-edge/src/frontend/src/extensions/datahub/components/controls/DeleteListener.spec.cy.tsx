@@ -135,7 +135,7 @@ describe('DeleteListener', () => {
     })
   })
 
-  it.only('should not delete if the designer is readonly', () => {
+  it('should not delete if the designer is readonly', () => {
     cy.mountWithProviders(<DeleteListener />, {
       wrapper: getWrapperWith(
         [
