@@ -23,6 +23,8 @@ import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
@@ -134,23 +136,19 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig> impleme
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> stop() {
+    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
         if (connection != null) {
             try {
                 //-- Disconnect client
                 connection.disconnect();
-                return CompletableFuture.completedFuture(null);
             } catch (Exception e) {
-                if (log.isWarnEnabled()) {
-                    log.warn("Error disconnecting from PLC4X client", e);
-                }
                 protocolAdapterState.setErrorConnectionStatus(e, null);
-                return CompletableFuture.failedFuture(e);
+                output.failStop(e, "Error disconnecting from PLC4X client");
             } finally {
                 connection = null;
             }
         }
-        return CompletableFuture.completedFuture(null);
+        output.stoppedSuccessfully();
     }
 
     @Override

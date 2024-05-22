@@ -25,6 +25,8 @@ import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
@@ -123,9 +125,9 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> stop() {
+    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
         httpClient = null;
-        return CompletableFuture.completedFuture(null);
+        output.stoppedSuccessfully();
     }
 
     @Override

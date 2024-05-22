@@ -21,11 +21,11 @@ import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-
-import java.util.concurrent.CompletableFuture;
 
 public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements ProtocolAdapter {
 
@@ -55,9 +55,9 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements Protoc
         adapter.start(input, output);
     }
 
-
-    public @NotNull CompletableFuture<Void> stop() {
-        return adapter.stop();
+    @Override
+    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+        adapter.stop(input, output);
     }
 
     @Override

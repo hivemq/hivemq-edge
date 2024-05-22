@@ -28,6 +28,8 @@ import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
@@ -118,7 +120,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                 });
             }).exceptionally(throwable -> {
                 log.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
-                stop();
+                stopInternal();
                 output.failStart(throwable, throwable.getMessage());
                 return null;
             });
@@ -129,7 +131,17 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> stop() {
+    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+        stopInternal().whenComplete((aVoid, t) -> {
+            if (t != null) {
+                output.failStop(t, null);
+            } else {
+                output.stoppedSuccessfully();
+            }
+        });
+    }
+
+    public @NotNull CompletableFuture<Void> stopInternal() {
         try {
             if (opcUaClient == null) {
                 return CompletableFuture.completedFuture(null);

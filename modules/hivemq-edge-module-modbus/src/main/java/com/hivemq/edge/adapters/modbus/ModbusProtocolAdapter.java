@@ -26,6 +26,8 @@ import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
@@ -80,17 +82,16 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> stop() {
+    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
         try {
             if (modbusClient != null) {
                 modbusClient.disconnect();
             }
         } catch (Exception e) {
-            if (log.isWarnEnabled()) {
-                log.warn("Error encountered closing connection to Modbus device.", e);
-            }
+                output.failStop(e, "Error encountered closing connection to Modbus device.");
+                return;
         }
-        return CompletableFuture.completedFuture(null);
+        output.stoppedSuccessfully();
     }
 
     @Override

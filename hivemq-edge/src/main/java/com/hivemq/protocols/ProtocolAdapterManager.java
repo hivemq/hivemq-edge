@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -296,9 +297,10 @@ public class ProtocolAdapterManager {
         if (protocolAdapter.getRuntimeStatus() == ProtocolAdapterState.RuntimeStatus.STOPPED) {
             stopFuture = CompletableFuture.completedFuture(null);
         } else {
-            stopFuture = protocolAdapter.stop();
-        }
-        stopFuture.thenApply(input -> {
+            final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
+            stopFuture = adapterStopOutput.getOutputFuture();
+            protocolAdapter.stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
+        } stopFuture.thenApply(input -> {
             if (log.isTraceEnabled()) {
                 log.trace("Protocol-adapter '{}' stopped.", protocolAdapter.getId());
             }
@@ -367,7 +369,18 @@ public class ProtocolAdapterManager {
             protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterInstance.get()
                     .getAdapterInformation()
                     .getProtocolId());
-            adapterInstance.get().stop();
+            final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
+            adapterInstance.get().stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
+
+            // FIXME: We need to adapt the whole flow to async
+            try {
+                adapterStopOutput.getOutputFuture().get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+
             if (protocolAdapters.remove(id) != null) {
                 try {
                     synchronized (lock) {
@@ -389,7 +402,8 @@ public class ProtocolAdapterManager {
                     eventService.createAdapterEvent(adapterId,
                                     adapterInstance.get().getProtocolAdapterInformation().getProtocolId())
                             .withSeverity(Event.SEVERITY.WARN)
-                            .withMessage(String.format("Adapter '%s' was deleted from the system permanently.", adapterId))
+                            .withMessage(String.format("Adapter '%s' was deleted from the system permanently.",
+                                    adapterId))
                             .fire();
 
                 }
@@ -453,7 +467,9 @@ public class ProtocolAdapterManager {
 
 
             final ProtocolAdapterStateImpl protocolAdapterState =
-                    new ProtocolAdapterStateImpl(moduleServices.eventService(), configObject.getId(), protocolAdapterFactory.getInformation().getProtocolId() );
+                    new ProtocolAdapterStateImpl(moduleServices.eventService(),
+                            configObject.getId(),
+                            protocolAdapterFactory.getInformation().getProtocolId());
 
             final ModuleServicesPerModuleImpl moduleServicesPerModule =
                     new ModuleServicesPerModuleImpl(null, moduleServices, eventService);
