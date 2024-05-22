@@ -350,19 +350,19 @@ export const reduceIdsFrom =
     return acc
   }
 
-interface ConnectableHandleProps extends Pick<HandleProps, 'id' | 'type'> {
+export interface ConnectableHandleProps extends Pick<HandleProps, 'id' | 'type'> {
   isConnectable?: boolean | number
 }
 
-export const isNodeHandleConnectable = (props: ConnectableHandleProps, node: Node, edges: Edge[]) => {
-  if (typeof props.isConnectable === 'number') {
+export const isNodeHandleConnectable = (handle: ConnectableHandleProps, node: Node, edges: Edge[]) => {
+  if (typeof handle.isConnectable === 'number') {
     const connectedEdges = getConnectedEdges([node], edges)
     const toHandle = connectedEdges.filter((edge) => {
-      return props.type === 'source'
-        ? edge.source === node.id && edge.sourceHandle === props.id
-        : edge.target === node.id && edge.targetHandle === props.id
+      return handle.type === 'source'
+        ? edge.source === node.id && edge.sourceHandle === handle.id
+        : edge.target === node.id && edge.targetHandle === handle.id
     })
-    return toHandle.length < props.isConnectable
+    return toHandle.length < handle.isConnectable
   }
-  return props.isConnectable
+  return handle.isConnectable
 }
