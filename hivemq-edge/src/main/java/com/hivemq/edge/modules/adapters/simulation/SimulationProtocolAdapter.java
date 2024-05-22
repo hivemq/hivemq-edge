@@ -79,7 +79,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @NotNull List<? extends PollingContext> getSubscriptions() {
+    public @NotNull List<? extends PollingContext> getPollingContexts() {
         return adapterConfig.getSubscriptions();
     }
 

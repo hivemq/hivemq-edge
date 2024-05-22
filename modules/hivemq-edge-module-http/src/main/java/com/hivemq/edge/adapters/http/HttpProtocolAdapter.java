@@ -177,7 +177,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @NotNull List<? extends PollingContext> getSubscriptions() {
+    public @NotNull List<? extends PollingContext> getPollingContexts() {
         return List.of(pollingContext);
     }
 
@@ -270,7 +270,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
                             log.debug("Invalid JSON data was [{}]", bodyData);
                         }
                         moduleServices.eventService()
-                                .adapterEvent(adapterConfig.getId(), adapterInformation.getProtocolId())
+                                .createAdapterEvent(adapterConfig.getId(), adapterInformation.getProtocolId())
                                 .withSeverity(Event.SEVERITY.WARN)
                                 .withMessage(String.format(
                                         "Http response on adapter '%s' could not be parsed as JSON data.",

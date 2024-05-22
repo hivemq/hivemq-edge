@@ -24,6 +24,8 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hivemq.protocols.ProtocolAdapterMetrics.PROTOCOL_ADAPTER_PREFIX;
+
 
 /**
  * Ensures the adapters use consistent namespaces for the metrics so they can be derived

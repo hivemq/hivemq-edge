@@ -66,7 +66,7 @@ public class EventServiceDelegateImpl implements EventService {
         }
     }
 
-    public @NotNull EventBuilder adapterEvent(final @NotNull String adapterId, final @NotNull String protocolId) {
+    public @NotNull EventBuilder createAdapterEvent(final @NotNull String adapterId, final @NotNull String protocolId) {
         return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis())
                 .withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER, adapterId))
                 .withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER_TYPE, protocolId));

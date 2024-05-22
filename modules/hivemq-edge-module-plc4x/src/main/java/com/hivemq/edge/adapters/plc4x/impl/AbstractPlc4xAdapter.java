@@ -108,7 +108,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig> impleme
     }
 
     @Override
-    public @NotNull List<? extends PollingContext> getSubscriptions() {
+    public @NotNull List<? extends PollingContext> getPollingContexts() {
         if (getReadType() == ReadType.Read) {
             return adapterConfig.getSubscriptions();
         } else {

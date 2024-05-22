@@ -35,6 +35,10 @@ import java.util.Objects;
 @SuppressWarnings("FieldCanBeLocal")
 public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
+    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+    private static final int PORT_MIN = 1;
+    private static final int PORT_MAX = 65535;
+
     @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",
                        description = "Unique identifier for this protocol adapter",
@@ -206,7 +210,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         }
 
         @Override
-        public @Nullable String getMqttTopic() {
+        public @Nullable String getDestinationMqttTopic() {
             return destination;
         }
 
@@ -263,7 +267,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         @ModuleConfigField(title = "Start Index",
                            description = "The Starting Index (Incl.) of the Address Range",
                            numberMin = 0,
-                           numberMax = ProtocolAdapterConfig.PORT_MAX,
+                           numberMax = PORT_MAX,
                            defaultValue = "0")
         public int startIdx;
 
@@ -271,15 +275,13 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         @ModuleConfigField(title = "End Index",
                            description = "The Finishing Index (Excl.) of the Address Range",
                            numberMin = 1,
-                           numberMax = ProtocolAdapterConfig.PORT_MAX,
+                           numberMax = PORT_MAX,
                            defaultValue = "1")
         public int endIdx;
 
         @Override
         public @Nullable String toString() {
-            return "AddressRange{" + "from=" + startIdx +
-                    ", to=" + endIdx +
-                    '}';
+            return "AddressRange{" + "from=" + startIdx + ", to=" + endIdx + '}';
         }
 
         @Override

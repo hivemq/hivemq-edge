@@ -62,7 +62,7 @@ public class ProtocolAdapterStateImpl implements ProtocolAdapterState {
             final boolean sendEvent) {
         this.lastErrorMessage = errorMessage == null ? throwable == null ? null : throwable.getMessage() : errorMessage;
         if (sendEvent) {
-            eventService.adapterEvent(adapterId, protocolId)
+            eventService.createAdapterEvent(adapterId, protocolId)
                     .withSeverity(EventImpl.SEVERITY.ERROR)
                     .withMessage(String.format("Adapter '%s' encountered an error.", adapterId))
                     .withPayload(Payload.ContentType.PLAIN_TEXT, ExceptionUtils.getStackTrace(throwable))

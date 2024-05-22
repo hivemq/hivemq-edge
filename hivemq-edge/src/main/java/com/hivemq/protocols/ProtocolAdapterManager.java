@@ -239,7 +239,7 @@ public class ProtocolAdapterManager {
             } else {
                 schedulePolling(protocolAdapterWrapper);
                 protocolAdapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
-                eventService.adapterEvent(protocolAdapterWrapper.getId(),
+                eventService.createAdapterEvent(protocolAdapterWrapper.getId(),
                                 protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId())
                         .withSeverity(Event.SEVERITY.INFO)
                         .withMessage(String.format("Adapter '%s' started OK.", protocolAdapterWrapper.getId()))
@@ -268,7 +268,7 @@ public class ProtocolAdapterManager {
             log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
             final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
 
-            adapter.getSubscriptions().forEach(adapterSubscription -> {
+            adapter.getPollingContexts().forEach(adapterSubscription -> {
                 //noinspection unchecked this is safe as we literally make a check on the adapter class before
                 final PerSubscriptionSampler sampler = new PerSubscriptionSampler(protocolAdapterWrapper,
                         metricRegistry,
@@ -303,7 +303,7 @@ public class ProtocolAdapterManager {
                 log.trace("Protocol-adapter '{}' stopped.", protocolAdapter.getId());
             }
             protocolAdapter.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-            eventService.adapterEvent(protocolAdapter.getId(),
+            eventService.createAdapterEvent(protocolAdapter.getId(),
                             protocolAdapter.getProtocolAdapterInformation().getProtocolId())
                     .withSeverity(Event.SEVERITY.INFO)
                     .withMessage(String.format("Adapter '%s' stopped OK.", protocolAdapter.getId()))
@@ -314,7 +314,7 @@ public class ProtocolAdapterManager {
             if (log.isWarnEnabled()) {
                 log.warn("Protocol-adapter '{}' was unable to stop cleanly", protocolAdapter.getId(), throwable);
             }
-            eventService.adapterEvent(protocolAdapter.getId(),
+            eventService.createAdapterEvent(protocolAdapter.getId(),
                             protocolAdapter.getProtocolAdapterInformation().getProtocolId())
                     .withSeverity(Event.SEVERITY.CRITICAL)
                     .withMessage("Error stopping adapter '" + protocolAdapter.getId() + "'.")
@@ -332,7 +332,7 @@ public class ProtocolAdapterManager {
                     output.getMessage(),
                     output.getThrowable());
         }
-        eventService.adapterEvent(protocolAdapter.getId(),
+        eventService.createAdapterEvent(protocolAdapter.getId(),
                         protocolAdapter.getProtocolAdapterInformation().getProtocolId())
                 .withSeverity(Event.SEVERITY.CRITICAL)
                 .withMessage("Error starting adapter '" + protocolAdapter.getId() + "'.")
@@ -386,7 +386,7 @@ public class ProtocolAdapterManager {
                     return true;
                 } finally {
                     final String adapterId = adapterInstance.get().getId();
-                    eventService.adapterEvent(adapterId,
+                    eventService.createAdapterEvent(adapterId,
                                     adapterInstance.get().getProtocolAdapterInformation().getProtocolId())
                             .withSeverity(Event.SEVERITY.WARN)
                             .withMessage(String.format("Adapter '%s' was deleted from the system permanently.", adapterId))
@@ -573,7 +573,7 @@ public class ProtocolAdapterManager {
             final @NotNull EventImpl.SEVERITY severity, final @NotNull ProtocolAdapter adapter) {
         Preconditions.checkNotNull(severity);
         Preconditions.checkNotNull(adapter);
-        return eventService.adapterEvent(adapter.getId(), adapter.getProtocolAdapterInformation().getProtocolId())
+        return eventService.createAdapterEvent(adapter.getId(), adapter.getProtocolAdapterInformation().getProtocolId())
                 .withSeverity(severity);
     }
 }

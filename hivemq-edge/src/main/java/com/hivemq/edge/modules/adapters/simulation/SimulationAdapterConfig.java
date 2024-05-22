@@ -29,6 +29,8 @@ import java.util.List;
 @JsonPropertyOrder({"minValue", "maxValue", "subscriptions"})
 public class SimulationAdapterConfig implements ProtocolAdapterConfig {
 
+    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+
     @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",
                        description = "Unique identifier for this protocol adapter",

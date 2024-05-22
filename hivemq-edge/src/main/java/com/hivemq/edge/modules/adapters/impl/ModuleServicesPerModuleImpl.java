@@ -23,8 +23,6 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
-import java.util.concurrent.ScheduledExecutorService;
-
 public class ModuleServicesPerModuleImpl implements ModuleServices {
 
     private final @NotNull ModuleServicesImpl delegate;
@@ -44,11 +42,6 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
     @Override
     public @NotNull ProtocolAdapterPublishService adapterPublishService() {
         return adapterPublishService;
-    }
-
-    @Override
-    public @NotNull ScheduledExecutorService scheduledExecutorService() {
-        return delegate.scheduledExecutorService();
     }
 
     @Override

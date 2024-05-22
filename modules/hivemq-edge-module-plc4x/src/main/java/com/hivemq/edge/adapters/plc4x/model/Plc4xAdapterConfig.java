@@ -31,6 +31,10 @@ import java.util.List;
 
 public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
 
+    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+    private static final int PORT_MIN = 1;
+    private static final int PORT_MAX = 65535;
+
     @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",
                        description = "Unique identifier for this protocol adapter",
@@ -227,7 +231,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
         }
 
         @Override
-        public @Nullable String getMqttTopic() {
+        public @Nullable String getDestinationMqttTopic() {
             return destination;
         }
 

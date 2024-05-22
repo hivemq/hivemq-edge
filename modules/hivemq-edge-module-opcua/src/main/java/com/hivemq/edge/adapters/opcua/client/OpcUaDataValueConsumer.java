@@ -108,7 +108,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
 
             if (firstMessageReceived.compareAndSet(false, true)) {
-                eventService.adapterEvent(adapterId, protocolAdapter.getId())
+                eventService.createAdapterEvent(adapterId, protocolAdapter.getId())
                         .withSeverity(Event.SEVERITY.INFO)
                         .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
                                 adapterId,

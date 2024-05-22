@@ -121,7 +121,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @NotNull List<? extends PollingContext> getSubscriptions() {
+    public @NotNull List<? extends PollingContext> getPollingContexts() {
         return new ArrayList<>(adapterConfig.getSubscriptions());
     }
 

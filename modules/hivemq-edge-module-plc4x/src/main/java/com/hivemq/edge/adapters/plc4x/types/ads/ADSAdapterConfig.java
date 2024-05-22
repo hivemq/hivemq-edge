@@ -23,6 +23,9 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 public class ADSAdapterConfig extends Plc4xAdapterConfig {
 
+    private static final int PORT_MIN = 1;
+    private static final int PORT_MAX = 65535;
+
     @JsonProperty("port")
     @ModuleConfigField(title = "Port",
                        description = "The port number on the device to connect to",

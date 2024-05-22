@@ -14,6 +14,9 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import java.util.function.Consumer;
 
 public class EventBuilderImpl implements EventBuilder {
+
+    private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private @Nullable EventImpl.SEVERITY severity;
     private @Nullable String message;
     private @Nullable Payload payload;
@@ -48,8 +51,8 @@ public class EventBuilderImpl implements EventBuilder {
     }
 
     @Override
-    public @NotNull EventBuilder withPayload(final @NotNull ObjectMapper mapper, final @NotNull Object data) {
-        this.payload = PayloadImpl.fromObject(mapper, data);
+    public @NotNull EventBuilder withPayload( final @NotNull Object data) {
+        this.payload = PayloadImpl.fromObject(OBJECT_MAPPER, data);
         return this;
     }
 

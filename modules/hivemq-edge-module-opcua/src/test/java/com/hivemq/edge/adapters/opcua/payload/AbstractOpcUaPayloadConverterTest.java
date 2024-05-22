@@ -79,7 +79,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
         when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
         when(adapterPublishService.publish()).thenReturn(adapterPublishBuilder);
         when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
-        when(eventService.adapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event->{}));
+        when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event->{}));
         when(moduleServices.eventService()).thenReturn(eventService);
     }
 

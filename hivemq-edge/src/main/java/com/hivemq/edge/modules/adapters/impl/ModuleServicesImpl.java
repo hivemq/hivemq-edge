@@ -21,20 +21,16 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.inject.Inject;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class ModuleServicesImpl implements ModuleServices {
 
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
-    private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull EventService eventService;
 
     @Inject
     public ModuleServicesImpl(@NotNull final ProtocolAdapterPublishService adapterPublishService,
-                              @NotNull final ScheduledExecutorService scheduledExecutorService,
                               @NotNull final EventService eventService) {
         this.adapterPublishService = adapterPublishService;
-        this.scheduledExecutorService = scheduledExecutorService;
         this.eventService = eventService;
     }
 
@@ -42,12 +38,6 @@ public class ModuleServicesImpl implements ModuleServices {
     public @NotNull ProtocolAdapterPublishService adapterPublishService() {
         return adapterPublishService;
     }
-
-    @Override
-    public @NotNull ScheduledExecutorService scheduledExecutorService() {
-        return scheduledExecutorService;
-    }
-
 
     @Override
     public @NotNull EventService eventService() {

@@ -73,7 +73,7 @@ public class PollingContextImpl implements PollingContext {
     }
 
     @Override
-    public @Nullable String getMqttTopic() {
+    public @Nullable String getDestinationMqttTopic() {
         return destination;
     }
 

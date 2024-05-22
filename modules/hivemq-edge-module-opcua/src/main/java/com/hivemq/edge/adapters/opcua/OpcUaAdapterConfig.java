@@ -27,6 +27,7 @@ import java.util.List;
 
 public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
 
+    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",

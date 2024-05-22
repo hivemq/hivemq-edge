@@ -116,7 +116,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             final @NotNull ProtocolAdapterDataSample sample, final @NotNull PollingContext pollingContext) {
         Preconditions.checkNotNull(sample);
         Preconditions.checkNotNull(pollingContext);
-        Preconditions.checkNotNull(pollingContext.getMqttTopic());
+        Preconditions.checkNotNull(pollingContext.getDestinationMqttTopic());
 
         Preconditions.checkArgument(pollingContext.getQos() <= 2 && pollingContext.getQos() >= 0,
                 "QoS needs to be a valid QoS value (0,1,2)");
@@ -126,7 +126,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             for (AbstractProtocolAdapterJsonPayload payload : payloads) {
                 byte[] json = convertToJson(payload);
                 final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.publish()
-                        .withTopic(pollingContext.getMqttTopic())
+                        .withTopic(pollingContext.getDestinationMqttTopic())
                         .withQoS(pollingContext.getQos())
                         .withPayload(json)
                         .withAdapter(protocolAdapter);
@@ -134,12 +134,12 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                 publishFuture.thenAccept(publishReturnCode -> {
                     protocolAdapterMetricsService.incrementReadPublishSuccess();
                     if (publishCount.incrementAndGet() == 1) {
-                        eventService.adapterEvent(adapterId, protocolAdapter.getAdapterInformation().getProtocolId())
+                        eventService.createAdapterEvent(adapterId, protocolAdapter.getAdapterInformation().getProtocolId())
                                 .withSeverity(EventImpl.SEVERITY.INFO)
                                 .withTimestamp(System.currentTimeMillis())
                                 .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
                                         adapterId,
-                                        pollingContext.getMqttTopic()))
+                                        pollingContext.getDestinationMqttTopic()))
                                 .withPayload(Payload.ContentType.JSON, new String(json, StandardCharsets.UTF_8))
                                 .fire();
                     }

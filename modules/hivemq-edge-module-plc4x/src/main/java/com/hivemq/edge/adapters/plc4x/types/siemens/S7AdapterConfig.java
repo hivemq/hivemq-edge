@@ -22,6 +22,9 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 public class S7AdapterConfig extends Plc4xAdapterConfig {
 
+    private static final int PORT_MIN = 1;
+    private static final int PORT_MAX = 65535;
+
     public enum ControllerType {
         S7_300,
         S7_400,
