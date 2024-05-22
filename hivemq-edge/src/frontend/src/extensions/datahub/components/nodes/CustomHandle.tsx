@@ -17,6 +17,7 @@ export const CustomHandle: FC<CustomHandleProps> = (props) => {
     const node = nodes.find((node) => node.id === nodeId)
     if (!node) return false
     return isNodeHandleConnectable(props, node, edges)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes.length, props, edges, nodeId])
 
   let transform: CSSProperties = {
