@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 import Form from '@rjsf/chakra-ui'
 import { FormProps } from '@rjsf/core'
 import {
@@ -17,6 +17,11 @@ import { GenericObjectType } from '@rjsf/utils/src/types.ts'
 import validator from '@rjsf/validator-ajv8'
 import { Alert, AlertTitle, Box, Divider, FormControl, Heading, List, ListIcon, ListItem, Text } from '@chakra-ui/react'
 import { WarningIcon } from '@chakra-ui/icons'
+
+import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
+import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { DesignerStatus } from '@datahub/types.ts'
 
 // overriding the heading definition
 function TitleFieldTemplate<T = unknown, S extends StrictRJSFSchema = RJSFSchema>({
@@ -153,17 +158,25 @@ export const ReactFlowSchemaForm: FC<Omit<FormProps, 'validator' | 'templates' |
   props
 ) => {
   const { uiSchema, ...rest } = props
+  const { status } = useDataHubDraftStore()
+  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
+
   return (
     <Form
+      readonly={status === DesignerStatus.LOADED}
       id="datahub-node-form"
       showErrorList="bottom"
       templates={{
+        ArrayFieldItemTemplate,
+        ArrayFieldTemplate,
         DescriptionFieldTemplate,
         FieldTemplate,
         ErrorListTemplate,
         TitleFieldTemplate,
       }}
       validator={validator}
+      // TODO[NVL] Not sure we want to hide the validation when readonly
+      noValidate={!isEditable}
       uiSchema={{
         ...uiSchema,
         'ui:submitButtonOptions': {

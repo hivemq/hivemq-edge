@@ -6,7 +6,7 @@ import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 
 const MOCK_ID = 'my-id'
 
-describe('SingleTopicCreatableSelect', () => {
+describe.skip('SingleTopicCreatableSelect', () => {
   beforeEach(() => {
     cy.viewport(450, 250)
   })
@@ -58,7 +58,7 @@ describe('SingleTopicCreatableSelect', () => {
   })
 })
 
-describe.only('MultiTopicsCreatableSelect', () => {
+describe('MultiTopicsCreatableSelect', () => {
   beforeEach(() => {
     cy.viewport(450, 250)
   })

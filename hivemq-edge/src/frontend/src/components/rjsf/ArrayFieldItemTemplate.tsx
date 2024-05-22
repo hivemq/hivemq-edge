@@ -5,6 +5,7 @@ import { Box, ButtonGroup, FormControl, HStack, useDisclosure, VStack } from '@c
 import { LuPanelTopClose, LuPanelTopOpen } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import { CopyButton, MoveDownButton, MoveUpButton, RemoveButton } from '@/components/rjsf/__internals/IconButton.tsx'
 
 // TODO[NVL] Need a better handling of the custom UISchema property, for the Adapter SDK
 interface ArrayFieldItemCollapsableUISchema {
@@ -48,7 +49,6 @@ export const ArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (props) =>
     return children.props.name
   }, [children.props.formData, children.props.name, collapsableItems?.titleKey])
 
-  const { CopyButton, MoveDownButton, MoveUpButton, RemoveButton } = registry.templates.ButtonTemplates
   const onCopyClick = useMemo(() => onCopyIndexClick(index), [index, onCopyIndexClick])
   const onRemoveClick = useMemo(() => onDropIndexClick(index), [index, onDropIndexClick])
   const onArrowUpClick = useMemo(() => onReorderClick(index, index - 1), [index, onReorderClick])

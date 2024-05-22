@@ -14,17 +14,18 @@ import { Box } from '@chakra-ui/react'
 
 import styles from './PolicyEditor.module.scss'
 
-import { CustomNodeTypes } from '@datahub/designer/mappings.tsx'
-import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
-import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
 import CanvasControls from '@datahub/components/controls/CanvasControls.tsx'
 import Minimap from '@datahub/components/controls/Minimap.tsx'
 import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
 import ToolboxSelectionListener from '@datahub/components/controls/ToolboxSelectionListener.tsx'
 import { CopyPasteListener } from '@datahub/components/controls/CopyPasteListener.tsx'
 import CopyPasteStatus from '@datahub/components/controls/CopyPasteStatus.tsx'
-import ConnectionLine from '@datahub/components/nodes/ConnectionLine.tsx'
 import DeleteListener from '@datahub/components/controls/DeleteListener.tsx'
+import ConnectionLine from '@datahub/components/nodes/ConnectionLine.tsx'
+import { CustomNodeTypes } from '@datahub/designer/mappings.tsx'
+import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
+import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
+import { DesignerStatus } from '@datahub/types.ts'
 
 export type OnConnectStartParams = {
   nodeId: string | null
@@ -39,10 +40,11 @@ const PolicyEditor: FC = () => {
   const { t } = useTranslation('datahub')
   const reactFlowWrapper = useRef(null)
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null)
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, onAddNodes } = useDataHubDraftStore()
+  const { status, nodes, edges, onNodesChange, onEdgesChange, onConnect, onAddNodes } = useDataHubDraftStore()
   const edgeConnectStart = useRef<OnConnectStartParamsNode | undefined>(undefined)
-
   const nodeTypes = useMemo(() => CustomNodeTypes, [])
+
+  const isEditable = useMemo(() => status !== DesignerStatus.LOADED, [status])
 
   const checkValidity = useCallback(
     (connection: Connection) => isValidPolicyConnection(connection, nodes, edges),
@@ -86,13 +88,14 @@ const PolicyEditor: FC = () => {
 
   const onConnectStart = useCallback(
     (_: unknown, params: OnConnectStartParams) => {
+      if (!isEditable) return
       const nodeFound = nodes.find((e) => e.id === params.nodeId)
       edgeConnectStart.current = undefined
       if (nodeFound) {
         edgeConnectStart.current = { ...params, type: nodeFound.type }
       }
     },
-    [nodes]
+    [isEditable, nodes]
   )
 
   const onConnectEnd = useCallback(
@@ -153,7 +156,7 @@ const PolicyEditor: FC = () => {
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
           onConnect={onConnect}
-          connectionLineComponent={ConnectionLine}
+          connectionLineComponent={isEditable ? ConnectionLine : undefined}
           onInit={setReactFlowInstance}
           fitView
           snapToGrid
@@ -163,7 +166,9 @@ const PolicyEditor: FC = () => {
           onDrop={onDrop}
           isValidConnection={checkValidity}
           deleteKeyCode={[]}
-
+          nodesConnectable={isEditable}
+          // nodesDraggable={isEditable}
+          // elementsSelectable={isEditable}
           // onError={(id: string, message: string) => console.log('XXXXXX e', id, message)}
         >
           <Box role="toolbar" aria-label={t('workspace.aria-label')} aria-controls="edge-workspace-canvas">
