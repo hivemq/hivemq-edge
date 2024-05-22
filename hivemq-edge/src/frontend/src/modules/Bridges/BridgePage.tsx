@@ -2,8 +2,9 @@ import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Button, Flex } from '@chakra-ui/react'
 import { BiAddToQueue } from 'react-icons/bi'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
+import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import PageContainer from '@/components/PageContainer.tsx'
 import Bridges from '@/modules/Bridges/Bridges.tsx'
 import { BridgeProvider } from '@/modules/Bridges/hooks/useBridgeConfig.tsx'
@@ -33,7 +34,7 @@ const BridgePage: FC = () => {
     >
       <BridgeProvider>
         <Bridges />
-        <Outlet />
+        <SuspenseOutlet />
       </BridgeProvider>
     </PageContainer>
   )

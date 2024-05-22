@@ -1,9 +1,10 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Outlet, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { Box, Flex } from '@chakra-ui/react'
 
 import PageContainer from '@/components/PageContainer.tsx'
+import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
 import LicenseWarning from '@datahub/components/helpers/LicenseWarning.tsx'
 import DraftCTA from '@datahub/components/helpers/DraftCTA.tsx'
@@ -28,7 +29,7 @@ const DataHubPage: FC = () => {
         )
       }
     >
-      {hasDataHub && <Outlet />}
+      {hasDataHub && <SuspenseOutlet />}
       {!hasDataHub && (
         <Box width="100%" mt={20}>
           <LicenseWarning />
