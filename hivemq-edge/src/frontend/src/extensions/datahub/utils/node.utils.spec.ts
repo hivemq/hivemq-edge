@@ -5,9 +5,11 @@ import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 import { DataPolicyValidator } from '@/api/__generated__'
 import { MOCK_JSONSCHEMA_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
 import {
+  ConnectableHandleProps,
   getAllParents,
   getNodeId,
   getNodePayload,
+  isNodeHandleConnectable,
   isValidPolicyConnection,
   reduceIdsFrom,
 } from '@datahub/utils/node.utils.ts'
@@ -335,5 +337,60 @@ describe('reduceIdsFrom', () => {
     expect(allNodes.reduce(reduceIdsFrom<DataPolicyData>(DataHubNodeType.DATA_POLICY, 'excluded-node-id'), [])).toEqual(
       ['first-id']
     )
+  })
+})
+
+describe('isNodeHandleConnectable', () => {
+  const nodes: Node[] = [
+    {
+      id: '1',
+      data: {},
+      position: { x: 0, y: 0 },
+    },
+    {
+      id: '2',
+      data: {},
+      position: { x: 0, y: 0 },
+    },
+    {
+      id: '3',
+      data: {},
+      position: { x: 0, y: 0 },
+    },
+    {
+      id: '3',
+      data: {},
+      position: { x: 0, y: 0 },
+    },
+  ]
+  const edges: Edge[] = [
+    { id: '1', source: '1', target: '3', sourceHandle: 'source1', targetHandle: 'target3' },
+    { id: '2', source: '2', target: '3', sourceHandle: 'source2', targetHandle: 'target3' },
+    { id: '3', source: '3', target: '4', sourceHandle: 'source3', targetHandle: 'target4' },
+  ]
+
+  it('should detect connectivity', async () => {
+    const handle: ConnectableHandleProps = { id: 'source', type: 'source', isConnectable: false }
+    expect(isNodeHandleConnectable(handle, nodes[0], edges)).toBeFalsy()
+    expect(isNodeHandleConnectable({ ...handle, isConnectable: undefined }, nodes[0], edges)).toBeFalsy()
+    expect(isNodeHandleConnectable({ ...handle, isConnectable: 1 }, nodes[0], edges)).toBeTruthy()
+  })
+
+  it('should detect connectivity', async () => {
+    const handle: ConnectableHandleProps = { id: 'target1', type: 'target', isConnectable: false }
+    expect(isNodeHandleConnectable({ ...handle, isConnectable: 1 }, nodes[0], edges)).toBeTruthy()
+  })
+
+  it('should detect connectivity', async () => {
+    const handle: ConnectableHandleProps = { id: 'source1', type: 'source', isConnectable: false }
+    expect(isNodeHandleConnectable({ ...handle, isConnectable: 1 }, nodes[0], edges)).toBeFalsy()
+    expect(isNodeHandleConnectable({ ...handle, isConnectable: 2 }, nodes[0], edges)).toBeTruthy()
+  })
+
+  it('should detect connectivity', async () => {
+    const handle: ConnectableHandleProps = { id: 'target3', type: 'target', isConnectable: false }
+    expect(isNodeHandleConnectable({ ...handle, isConnectable: 1 }, nodes[2], edges)).toBeFalsy()
+    expect(isNodeHandleConnectable({ ...handle, isConnectable: 2 }, nodes[2], edges)).toBeFalsy()
+    expect(isNodeHandleConnectable({ ...handle, isConnectable: 3 }, nodes[2], edges)).toBeTruthy()
   })
 })
