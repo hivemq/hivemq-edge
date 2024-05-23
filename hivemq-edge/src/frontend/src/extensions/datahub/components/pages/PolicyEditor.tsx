@@ -141,6 +141,14 @@ const PolicyEditor: FC = () => {
     [onAddNodes, onConnect, reactFlowInstance]
   )
 
+  const onConnectNodes = useCallback(
+    (connection: Connection) => {
+      edgeConnectStart.current = undefined
+      onConnect(connection)
+    },
+    [onConnect]
+  )
+
   return (
     <>
       <ReactFlowProvider>
@@ -155,7 +163,8 @@ const PolicyEditor: FC = () => {
           // onEdgeUpdate={onEdgeUpdate}
           onConnectStart={onConnectStart}
           onConnectEnd={onConnectEnd}
-          onConnect={onConnect}
+          onConnect={onConnectNodes}
+          connectionRadius={35}
           connectionLineComponent={isEditable ? ConnectionLine : undefined}
           onInit={setReactFlowInstance}
           fitView
