@@ -15,11 +15,6 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.List;
-
 /**
  * @author Simon L Johnson
  */

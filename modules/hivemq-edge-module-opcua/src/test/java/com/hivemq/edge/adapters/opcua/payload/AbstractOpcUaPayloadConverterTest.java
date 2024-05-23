@@ -15,26 +15,31 @@
  */
 package com.hivemq.edge.adapters.opcua.payload;
 
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableList;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartInput;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.api.events.EventService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import org.awaitility.Awaitility;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import util.EmbeddedOpcUaServerExtension;
@@ -44,10 +49,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.requireNonNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -57,44 +62,62 @@ abstract class AbstractOpcUaPayloadConverterTest {
     @RegisterExtension
     public final @NotNull EmbeddedOpcUaServerExtension opcUaServerExtension = new EmbeddedOpcUaServerExtension();
 
-    private ModuleServices moduleServices;
-    private ProtocolAdapterPublishService adapterPublishService;
-    private TestProtocolAdapterPublishBuilder adapterPublishBuilder;
+    private final @NotNull ModuleServices moduleServices = mock();
+    private final @NotNull ProtocolAdapterPublishService adapterPublishService = mock();
+    private final @NotNull TestProtocolAdapterPublishBuilder adapterPublishBuilder =
+            new TestProtocolAdapterPublishBuilder();
+    private final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> protocolAdapterInput = mock();
+    private final @NotNull AdapterFactories adapterFactories = mock();
+    private final @NotNull EventService eventService = mock();
+
+
 
     @BeforeEach
     public void before() {
-        setupMocks();
+        when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
+                "id",
+               "protocolId"));
+        when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
+        when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
+        when(adapterPublishService.createPublish()).thenReturn(adapterPublishBuilder);
+        when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
+        when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event->{}));
+        when(moduleServices.eventService()).thenReturn(eventService);
     }
 
     @NotNull
     protected OpcUaProtocolAdapter createAndStartAdapter(
-            final @NotNull String subcribedNodeId, final PayloadMode payloadMode)
-            throws InterruptedException, ExecutionException {
+            final @NotNull String subcribedNodeId, final PayloadMode payloadMode) throws Exception {
         final OpcUaAdapterConfig config =
                 new OpcUaAdapterConfig("test-" + UUID.randomUUID(), opcUaServerExtension.getServerUri());
         config.setSubscriptions(List.of(new OpcUaAdapterConfig.Subscription(subcribedNodeId, "topic")));
-        final OpcUaProtocolAdapter protocolAdapter = new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, config, new MetricRegistry());
+        when(protocolAdapterInput.getConfig()).thenReturn(config);
+        final OpcUaProtocolAdapter protocolAdapter =
+                new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
         final ProtocolAdapterStartInput in = () -> moduleServices;
-        final ProtocolAdapterStartOutput out = mock(ProtocolAdapterStartOutput.class);
-        protocolAdapter.start(in, out).get();
-        return protocolAdapter;
-    }
+        CompletableFuture<Void> startFuture = new CompletableFuture<>();
+        final ProtocolAdapterStartOutput out = new ProtocolAdapterStartOutput() {
+            @Override
+            public void startedSuccessfully() {
+                startFuture.complete(null);
+            }
 
-    protected void setupMocks() {
-        moduleServices = mock(ModuleServices.class);
-        adapterPublishService = mock(ProtocolAdapterPublishService.class);
-        when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
-        adapterPublishBuilder = new TestProtocolAdapterPublishBuilder();
-        when(adapterPublishService.publish()).thenReturn(adapterPublishBuilder);
-        when(moduleServices.eventService()).thenReturn(mock(EventService.class));
+            @Override
+            public void failStart(@NotNull final Throwable t, @Nullable final String errorMessage) {
+                startFuture.completeExceptionally(t);
+            }
+        };
+        protocolAdapter.start(in, out);
+        startFuture.get();
+        return protocolAdapter;
     }
 
     protected @NotNull PUBLISH expectAdapterPublish() {
         Awaitility.await()
                 .pollInterval(10, TimeUnit.MILLISECONDS)
                 .timeout(Duration.ofSeconds(5))
-                .until(() -> adapterPublishBuilder.getPublishes().size() > 0);
+                .until(() -> !adapterPublishBuilder.getPublishes().isEmpty());
         return adapterPublishBuilder.getPublishes().get(0);
     }
 
@@ -142,21 +165,26 @@ abstract class AbstractOpcUaPayloadConverterTest {
         }
 
         @Override
-        public @NotNull ProtocolAdapterPublishBuilder withContextInformation(
-                @NotNull final String key,
-                @NotNull final String value) {
+        public @NotNull ProtocolAdapterPublishBuilder withAdapter(@NotNull final ProtocolAdapter adapter) {
             return this;
         }
 
         @Override
-        public @NotNull CompletableFuture<PublishReturnCode> send() {
+        public @NotNull ProtocolAdapterPublishBuilder withContextInformation(
+                @NotNull final String key, @NotNull final String value) {
+            return this;
+        }
+
+        @Override
+        public @NotNull CompletableFuture<ProtocolPublishResult> send() {
 
             publishes.add(builder.withHivemqId("hivemqId")
                     .withUserProperties(Mqtt5UserProperties.of(userProperties.build()))
                     .build());
 
-            return CompletableFuture.completedFuture(PublishReturnCode.DELIVERED);
+            return CompletableFuture.completedFuture(ProtocolPublishResult.DELIVERED);
         }
+
 
         public @NotNull List<PUBLISH> getPublishes() {
             return publishes;

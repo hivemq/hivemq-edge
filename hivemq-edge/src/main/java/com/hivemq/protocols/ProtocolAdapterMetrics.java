@@ -8,10 +8,11 @@ import javax.inject.Singleton;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hivemq.metrics.HiveMQMetrics.ADAPTERS_CURRENT;
-import static com.hivemq.metrics.HiveMQMetrics.PROTOCOL_ADAPTER_PREFIX;
 
 @Singleton
 public class ProtocolAdapterMetrics {
+
+    public static final @NotNull String PROTOCOL_ADAPTER_PREFIX = "com.hivemq.edge.protocol-adapters.";
 
     private final @NotNull MetricRegistry metricRegistry;
     // we use this AtomicInteger in order to have a gauge for the current amount of adapters to

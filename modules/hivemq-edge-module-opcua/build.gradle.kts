@@ -42,16 +42,20 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-edge")
-    compileOnly("com.hivemq:hivemq-extension-sdk")
-    implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
-    runtimeOnly("com.google.guava:guava:${property("guava.version")}")
+    compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 
+    runtimeOnly("com.google.guava:guava:${property("guava.version")}")
+    compileOnly("org.apache.commons:commons-lang3:${property("commons-lang.version")}")
+    implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     implementation("org.eclipse.milo:sdk-client:${property("milo.version")}")
     implementation("org.eclipse.milo:dictionary-reader:${property("milo.version")}")
     implementation("org.eclipse.milo:bsd-parser-gson:${property("milo.version")}")
+}
 
+dependencies {
     testImplementation("com.hivemq:hivemq-edge")
+    testImplementation("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
+
     testImplementation("org.eclipse.milo:sdk-server:${property("milo.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
     testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")
@@ -207,7 +211,7 @@ downloadLicenses {
     )
 
     dependencyConfiguration = "runtimeClasspath"
-    excludeDependencies = listOf("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
+    excludeDependencies = listOf("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 }
 
 val updateThirdPartyLicenses by tasks.registering {

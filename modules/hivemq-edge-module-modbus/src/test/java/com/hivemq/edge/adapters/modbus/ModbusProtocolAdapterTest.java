@@ -1,18 +1,35 @@
+/*
+ * Copyright 2023-present HiveMQ GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.hivemq.edge.adapters.modbus;
 
-import com.codahale.metrics.MetricRegistry;
 import com.google.common.collect.ImmutableMap;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
-import com.hivemq.edge.modules.adapters.data.AdapterDataUtils;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
+import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
+import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
-import com.hivemq.edge.modules.api.events.EventService;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
+import com.hivemq.edge.modules.config.impl.PollingContextImpl;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,19 +37,16 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
-import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class ModbusProtocolAdapterTest {
 
-    private final @NotNull MetricRegistry metricRegistry = new MetricRegistry();
     private final @NotNull ModbusAdapterConfig adapterConfig = new ModbusAdapterConfig("adapterId");
     private final @NotNull ModbusProtocolAdapter adapter =
-            new ModbusProtocolAdapter(ModbusProtocolAdapterInformation.INSTANCE, adapterConfig, metricRegistry);
+            new ModbusProtocolAdapter(ModbusProtocolAdapterInformation.INSTANCE, adapterConfig, mock());
     private final @NotNull ProtocolAdapterPublishService publishService = mock(ProtocolAdapterPublishService.class);
     private final @NotNull ModuleServices moduleServices = mock(ModuleServices.class);
     private final @NotNull ProtocolAdapterPublishBuilderImpl.SendCallback sendCallback =
@@ -43,28 +57,13 @@ class ModbusProtocolAdapterTest {
     void setUp() {
         when(moduleServices.adapterPublishService()).thenReturn(publishService);
         when(moduleServices.eventService()).thenReturn(mock(EventService.class));
-        adapter.bindServices(moduleServices);
         //noinspection unchecked
         when(sendCallback.onPublishSend(publishArgumentCaptor.capture(), any(), any(ImmutableMap.class))).thenReturn(
                 CompletableFuture.completedFuture(PublishReturnCode.DELIVERED));
         final ProtocolAdapterPublishBuilderImpl protocolAdapterPublishBuilder =
                 new ProtocolAdapterPublishBuilderImpl("hivemq", sendCallback);
         protocolAdapterPublishBuilder.withAdapter(adapter);
-        when(publishService.publish()).thenReturn(protocolAdapterPublishBuilder);
-    }
-
-    @Test
-    void test_captureDataSample_expectedPayloadPresent() throws ExecutionException, InterruptedException {
-        final ModbusAdapterConfig.Subscription subscription =
-                new ModbusAdapterConfig.Subscription("topic", 2, null, null);
-        final ModBusData data = new ModBusData(subscription, ModBusData.TYPE.INPUT_REGISTERS);
-        data.addDataPoint("register", "hello world");
-
-        adapter.captureDataSample(data).get();
-
-        final String payloadAsString = new String(publishArgumentCaptor.getValue().getPayload());
-        assertThatJson(payloadAsString).node("timestamp").isIntegralNumber();
-        assertThatJson(payloadAsString).node("value").isString().isEqualTo("hello world");
+        when(publishService.createPublish()).thenReturn(protocolAdapterPublishBuilder);
     }
 
     @Test
@@ -76,7 +75,7 @@ class ModbusProtocolAdapterTest {
         Assertions.assertEquals(0,
                 AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints()).size(),
                 "There should be no deltas");
-        data2.getDataPoints().set(5, new ProtocolAdapterDataSample.DataPoint("register-5", 777));
+        data2.getDataPoints().set(5, new DataPointImpl("register-5", 777));
 
         Assertions.assertEquals(1,
                 AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints()).size(),
@@ -88,17 +87,22 @@ class ModbusProtocolAdapterTest {
 
         final ModBusData data1 = createSampleData(10);
         final ModBusData data2 = createSampleData(10);
-        data2.getDataPoints().set(5, new ProtocolAdapterDataSample.DataPoint("register-5", 777));
+        data2.getDataPoints().set(5, new DataPointImpl("register-5", 777));
 
         AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints());
 
-        Assertions.assertEquals(777, ((ProtocolAdapterDataSample.DataPoint)data1.getDataPoints().get(5)).getTagValue(), "Merged data should contain new value");
+        Assertions.assertEquals(777, ((DataPoint)data1.getDataPoints().get(5)).getTagValue(), "Merged data should contain new value");
     }
 
     protected static ModBusData createSampleData(final int registerCount){
-        final AbstractProtocolAdapterConfig.Subscription subscription =
-                new AbstractProtocolAdapterConfig.Subscription("topic", 2, List.of());
-        final ModBusData data = new ModBusData(subscription, ModBusData.TYPE.INPUT_REGISTERS);
+        final PollingContext pollingContext =
+                new PollingContextImpl("topic", 2, List.of());
+        final ModBusData data = new ModBusData(pollingContext,  new DataPointFactory() {
+            @Override
+            public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
+                return new DataPointImpl(tagName, tagValue);
+            }
+        });
         for (int i = 0; i < registerCount; i++){
             data.addDataPoint("register-" + i, i);
         }

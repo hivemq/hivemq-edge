@@ -15,15 +15,17 @@
  */
 package com.hivemq.edge.adapters.opcua.payload;
 
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
+import com.hivemq.protocols.ProtocolAdapterStopOutputImpl;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,7 +33,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.time.Instant;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -86,15 +87,16 @@ class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest 
 
     private void checkAdapterResult(
             @NotNull String name, @NotNull NodeId typeId, @NotNull Object serverValue, @NotNull String expectedValue)
-            throws InterruptedException, ExecutionException {
+            throws Exception {
         final String nodeId =
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> serverValue, 999);
 
         final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId, PayloadMode.STRING);
-        assertEquals(ProtocolAdapter.ConnectionStatus.CONNECTED, protocolAdapter.getConnectionStatus());
+        assertEquals(ProtocolAdapterState.ConnectionStatus.CONNECTED,
+                protocolAdapter.getProtocolAdapterState().getConnectionStatus());
 
         final PUBLISH publish = expectAdapterPublish();
-        protocolAdapter.stop();
+        protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
         assertThat(new String(publish.getPayload())).contains(expectedValue);
     }
 

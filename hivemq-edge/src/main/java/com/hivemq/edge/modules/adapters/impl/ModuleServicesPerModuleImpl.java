@@ -15,24 +15,22 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
-import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.concurrent.ScheduledExecutorService;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 public class ModuleServicesPerModuleImpl implements ModuleServices {
 
     private final @NotNull ModuleServicesImpl delegate;
-    private final @NotNull ProtocolAdapterPublishService adapterPublishService;
+    private final @NotNull ProtocolAdapterPublishServicePerAdapter adapterPublishService;
     private final @NotNull EventService eventService;
 
     public ModuleServicesPerModuleImpl(
-            final @NotNull ProtocolAdapter protocolAdapter,
+            final @Nullable ProtocolAdapter protocolAdapter,
             final @NotNull ModuleServicesImpl delegate,
             final @NotNull EventService eventService) {
         this.delegate = delegate;
@@ -47,19 +45,14 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
     }
 
     @Override
-    public @NotNull ScheduledExecutorService scheduledExecutorService() {
-        return delegate.scheduledExecutorService();
-    }
-
-    @Override
-    public @NotNull ProtocolAdapterPollingService protocolAdapterPollingService() {
-        return delegate.protocolAdapterPollingService();
-    }
-
-    @Override
-    public EventService eventService() {
+    public @NotNull EventService eventService() {
         return eventService;
     }
+
+    public void setAdapter(final @NotNull ProtocolAdapter protocolAdapter) {
+        this.adapterPublishService.setAdapter(protocolAdapter);
+    }
+
 
     private static class ProtocolAdapterPublishServicePerAdapter implements ProtocolAdapterPublishService {
 
@@ -68,15 +61,17 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
         public ProtocolAdapterPublishServicePerAdapter(
                 @NotNull final ProtocolAdapterPublishService delegate, @NotNull final ProtocolAdapter adapter) {
             this.delegate = delegate;
+        }
+
+        private @NotNull ProtocolAdapter adapter;
+
+        public void setAdapter(final @NotNull ProtocolAdapter adapter) {
             this.adapter = adapter;
         }
 
-        private final @NotNull ProtocolAdapter adapter;
-
-
         @Override
-        public @NotNull ProtocolAdapterPublishBuilder publish() {
-            final ProtocolAdapterPublishBuilderImpl builder = (ProtocolAdapterPublishBuilderImpl) delegate.publish();
+        public @NotNull ProtocolAdapterPublishBuilder createPublish() {
+            final ProtocolAdapterPublishBuilderImpl builder = (ProtocolAdapterPublishBuilderImpl) delegate.createPublish();
             return builder.withAdapter(adapter);
         }
     }

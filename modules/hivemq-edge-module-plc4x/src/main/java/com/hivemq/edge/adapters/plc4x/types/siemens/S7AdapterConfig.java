@@ -16,11 +16,14 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
-import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 public class S7AdapterConfig extends Plc4xAdapterConfig {
+
+    private static final int PORT_MIN = 1;
+    private static final int PORT_MAX = 65535;
 
     public enum ControllerType {
         S7_300,

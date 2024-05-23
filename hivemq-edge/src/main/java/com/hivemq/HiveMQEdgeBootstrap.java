@@ -176,6 +176,8 @@ public class HiveMQEdgeBootstrap {
         Preconditions.checkNotNull(generalBootstrapService);
         Preconditions.checkNotNull(configService);
         Preconditions.checkNotNull(commercialModuleLoaderDiscovery);
+        Preconditions.checkNotNull(injector);
+
 
         try {
             persistenceBootstrapService = injector.persistenceBootstrapService();

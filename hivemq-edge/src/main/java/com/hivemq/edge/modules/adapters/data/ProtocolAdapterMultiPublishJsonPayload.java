@@ -18,6 +18,7 @@ package com.hivemq.edge.modules.adapters.data;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.base.Preconditions;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.List;
 
@@ -27,15 +28,15 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProtocolAdapterMultiPublishJsonPayload extends AbstractProtocolAdapterJsonPayload {
 
-   private List<TagSample> samples;
+   private final @NotNull List<TagSample> samples;
 
-    public ProtocolAdapterMultiPublishJsonPayload(final Long timestamp, final @NotNull List<TagSample> samples) {
+    public ProtocolAdapterMultiPublishJsonPayload(final @Nullable Long timestamp, final @NotNull List<TagSample> samples) {
         super(timestamp);
         Preconditions.checkNotNull(samples);
         this.samples = samples;
     }
 
-    public List<TagSample> getSamples() {
+    public @NotNull List<TagSample> getSamples() {
         return samples;
     }
 }

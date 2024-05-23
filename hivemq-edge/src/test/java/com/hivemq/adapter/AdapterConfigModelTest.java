@@ -17,17 +17,17 @@ package com.hivemq.adapter;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
-import com.hivemq.api.json.CustomConfigSchemaGenerator;
-import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.impl.PollingContextImpl;
+import com.hivemq.edge.modules.config.impl.UserPropertyImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,7 +58,7 @@ public class AdapterConfigModelTest {
 
         AdapterConfiguration entity = new AdapterConfiguration();
         entity.subscriptions = new ArrayList<>();
-        entity.subscriptions.add(new AbstractProtocolAdapterConfig.Subscription("some/path",1,List.of(new AbstractProtocolAdapterConfig.UserProperty("propertyName", "propertyValue"))));
+        entity.subscriptions.add(new PollingContextImpl("some/path",1,List.of(new UserPropertyImpl("propertyName", "propertyValue"))));
         String marhslaled = mapper.writeValueAsString(entity);
         System.err.println(marhslaled);
 
@@ -89,12 +89,17 @@ public class AdapterConfigModelTest {
         return parent.get(nodeName) != null;
     }
 
-    static class AdapterConfiguration extends AbstractPollingProtocolAdapterConfig {
+    static class AdapterConfiguration implements ProtocolAdapterConfig {
 
         @JsonProperty("subscriptions")
         @ModuleConfigField(title = "Subscriptions",
                            description = "List of subscriptions for the simulation",
                            required = true)
-        private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+        private @NotNull List<PollingContext> subscriptions = new ArrayList<>();
+
+        @Override
+        public @NotNull String getId() {
+            return "id";
+        }
     }
 }

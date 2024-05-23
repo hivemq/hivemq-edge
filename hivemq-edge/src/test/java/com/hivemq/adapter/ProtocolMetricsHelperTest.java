@@ -16,7 +16,9 @@
 package com.hivemq.adapter;
 
 import com.codahale.metrics.MetricRegistry;
-import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsHelper;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.edge.modules.adapters.metrics.InternalProtocolAdapterMetricsService;
+import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,7 +34,8 @@ public class ProtocolMetricsHelperTest {
     void testMetricsAdapterWrapperUpdatesRegistry() {
 
         MetricRegistry registry = new MetricRegistry();
-        ProtocolAdapterMetricsHelper helper = new ProtocolAdapterMetricsHelper("test-adapter-name","test-adapter-id", registry);
+        ProtocolAdapterMetricsService
+                helper = new ProtocolAdapterMetricsServiceImpl("test-adapter-name","test-adapter-id", registry);
 
         helper.incrementReadPublishSuccess();
         helper.incrementReadPublishFailure();
@@ -51,8 +54,8 @@ public class ProtocolMetricsHelperTest {
         MetricRegistry registry = new MetricRegistry();
 
         //adapter helper creates 4 metrics
-        ProtocolAdapterMetricsHelper helper1 =
-                new ProtocolAdapterMetricsHelper("tear-down-name1","test-adapter-id", registry);
+        InternalProtocolAdapterMetricsService helper1 =
+                new ProtocolAdapterMetricsServiceImpl("tear-down-name1","test-adapter-id", registry);
 
         //add an arbitrary fifth
         registry.counter(ARBITRARY_METRIC).inc();

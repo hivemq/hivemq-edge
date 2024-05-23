@@ -15,13 +15,15 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class OpcUaProtocolAdapterInformation
-        extends AbstractProtocolAdapterInformation {
+import java.util.List;
+
+public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformation{
 
     public static final ProtocolAdapterInformation INSTANCE = new OpcUaProtocolAdapterInformation();
 
@@ -54,7 +56,27 @@ public class OpcUaProtocolAdapterInformation
     }
 
     @Override
+    public @NotNull String getVersion() {
+        return "${edge-version}";
+    }
+
+    @Override
     public @NotNull String getLogoUrl() {
         return "/images/opc-ua-icon.jpg";
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HIVEMQ";
+    }
+
+    @Override
+    public @Nullable ProtocolAdapterCategory getCategory() {
+        return ProtocolAdapterCategory.INDUSTRIAL;
+    }
+
+    @Override
+    public @Nullable List<ProtocolAdapterTag> getTags() {
+        return null;
     }
 }

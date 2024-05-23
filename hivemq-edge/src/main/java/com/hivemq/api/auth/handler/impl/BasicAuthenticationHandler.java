@@ -20,7 +20,7 @@ import com.hivemq.api.auth.ApiPrincipal;
 import com.hivemq.api.auth.handler.AuthenticationResult;
 import com.hivemq.api.auth.provider.IUsernamePasswordProvider;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.http.core.HttpConstants;
+import com.hivemq.http.HttpConstants;
 import com.hivemq.http.core.UsernamePasswordRoles;
 
 import javax.inject.Inject;

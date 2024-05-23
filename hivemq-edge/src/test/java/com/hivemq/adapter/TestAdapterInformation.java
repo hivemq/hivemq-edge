@@ -15,39 +15,69 @@
  */
 package com.hivemq.adapter;
 
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * @author Simon L Johnson
  */
-public class TestAdapterInformation extends AbstractProtocolAdapterInformation {
+public class TestAdapterInformation implements ProtocolAdapterInformation {
 
     public TestAdapterInformation() {
     }
 
     @Override
-    public String getProtocolName() {
+    public @NotNull String getProtocolName() {
         return "TestProtocol";
     }
 
     @Override
-    public String getProtocolId() {
+    public @NotNull String getProtocolId() {
         return "test-adapter-information";
     }
 
     @Override
-    public String getDisplayName() {
+    public @NotNull String getDisplayName() {
         return "Test Adapter Information";
     }
 
     @Override
-    public String getDescription() {
+    public @NotNull String getDescription() {
         return "This is the test protocol information";
     }
 
-    class TestConfig extends AbstractProtocolAdapterConfig {
+    @Override
+    public @NotNull String getUrl() {
+        return "null";
+    }
 
+    @Override
+    public @NotNull String getVersion() {
+        return "${edge-version}";
+    }
+
+    @Override
+    public @NotNull String getLogoUrl() {
+        return "null";
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HiveMQ";
+    }
+
+    @Override
+    public @Nullable ProtocolAdapterCategory getCategory() {
+        return null;
+    }
+
+    @Override
+    public @Nullable List<ProtocolAdapterTag> getTags() {
+        return null;
     }
 }

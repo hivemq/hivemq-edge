@@ -16,11 +16,16 @@
 package com.hivemq.bridge.mqtt;
 
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
+import com.hivemq.adapter.sdk.api.events.model.Payload;
+import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.bridge.MqttForwarder;
 import com.hivemq.bridge.config.BridgeTls;
 import com.hivemq.bridge.config.LocalSubscription;
@@ -48,13 +53,12 @@ import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.info.SystemInformation;
 import com.hivemq.edge.HiveMQEdgeConstants;
-import com.hivemq.edge.model.TypeIdentifier;
-import com.hivemq.edge.modules.api.events.EventService;
-import com.hivemq.edge.modules.api.events.EventUtils;
-import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.model.TypeIdentifierImpl;
+import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.security.ssl.SslUtil;
 import com.hivemq.util.StoreTypeUtil;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +69,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -87,8 +92,8 @@ public class BridgeMqttClient {
     private final @NotNull PerBridgeMetrics perBridgeMetrics;
     private final @NotNull EventService eventService;
     private final @NotNull MetricRegistry metricRegistry;
-    private final AtomicBoolean connected = new AtomicBoolean(false);
-    private final AtomicBoolean stopped = new AtomicBoolean(false);
+    private final @NotNull AtomicBoolean connected = new AtomicBoolean(false);
+    private final @NotNull AtomicBoolean stopped = new AtomicBoolean(false);
     private final @NotNull List<MqttForwarder> forwarders = Collections.synchronizedList(new ArrayList<>());
 
     public BridgeMqttClient(
@@ -125,15 +130,16 @@ public class BridgeMqttClient {
             forwarders.forEach(MqttForwarder::drainQueue);
         });
 
-        builder.addConnectedListener(context -> eventService.fireEvent(eventBuilder(Event.SEVERITY.INFO).withMessage(
-                String.format("Bridge '%s' connected", getBridge().getId())).build()));
+        builder.addConnectedListener(context -> eventBuilder(EventImpl.SEVERITY.INFO).withMessage(String.format(
+                "Bridge '%s' connected",
+                getBridge().getId())).fire());
 
         //-- Fire a system event for the various logging layers
-        builder.addDisconnectedListener(context -> eventService.fireEvent(eventBuilder(context.getCause() == null ?
-                Event.SEVERITY.INFO :
-                Event.SEVERITY.ERROR).withMessage(String.format("Bridge '%s' disconnected", getBridge().getId()))
-                .withPayload(EventUtils.generateErrorPayload(context.getCause()))
-                .build()));
+        builder.addDisconnectedListener(context -> eventBuilder(context.getCause() == null ?
+                EventImpl.SEVERITY.INFO :
+                EventImpl.SEVERITY.ERROR).withMessage(String.format("Bridge '%s' disconnected", getBridge().getId()))
+                .withPayload(Payload.ContentType.PLAIN_TEXT, ExceptionUtils.getStackTrace(context.getCause()))
+                .fire());
 
         builder.addDisconnectedListener(context -> {
             final Throwable cause = context.getCause();
@@ -230,7 +236,7 @@ public class BridgeMqttClient {
                 .send();
 
         connectFuture.handleAsync((mqtt5ConnAck, throwable) -> {
-            if(stopped.get()){
+            if (stopped.get()) {
                 return null;
             }
 
@@ -334,11 +340,23 @@ public class BridgeMqttClient {
         return connected.get();
     }
 
-    protected @NotNull Event.Builder eventBuilder(final @NotNull Event.SEVERITY severity) {
-        Event.Builder builder = new Event.Builder();
+    protected @NotNull EventBuilder eventBuilder(final @NotNull EventImpl.SEVERITY severity) {
+
+        EventBuilder builder = eventService.bridgeEvent();
         builder.withTimestamp(System.currentTimeMillis());
-        builder.withSource(TypeIdentifier.create(TypeIdentifier.TYPE.BRIDGE, bridge.getId()));
+        builder.withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.BRIDGE, bridge.getId()));
         builder.withSeverity(severity);
         return builder;
     }
+
+    /**
+     * Generate a globally unique type identifier in the namespace supplied
+     *
+     * @return The generated ID
+     */
+    static TypeIdentifier generate(@NotNull TypeIdentifier.Type type) {
+        Preconditions.checkNotNull(type);
+        return new TypeIdentifierImpl(type, UUID.randomUUID().toString());
+    }
+
 }

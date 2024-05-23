@@ -15,14 +15,17 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
-public class SimulationProtocolAdapterInformation extends AbstractProtocolAdapterInformation {
+import java.util.EnumSet;
+import java.util.List;
+
+public class SimulationProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new SimulationProtocolAdapterInformation();
 
@@ -50,23 +53,38 @@ public class SimulationProtocolAdapterInformation extends AbstractProtocolAdapte
     }
 
     @Override
+    public @NotNull String getUrl() {
+        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#simulation-adapter";
+    }
+
+    @Override
+    public @NotNull String getVersion() {
+        return "${edge-version}";
+    }
+
+    @Override
     public @NotNull String getLogoUrl() {
         return "/images/hivemq-icon.png";
     }
 
     @Override
-    public @NotNull String getUrl() {
-        return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html";
+    public @NotNull String getAuthor() {
+        return "HiveMQ";
     }
 
     @Override
-    public ProtocolAdapterConstants.CATEGORY getCategory() {
-        return ProtocolAdapterConstants.CATEGORY.SIMULATION;
+    public ProtocolAdapterCategory getCategory() {
+        return ProtocolAdapterCategory.SIMULATION;
     }
 
     @Override
-    public byte getCapabilities() {
-        return ProtocolAdapterCapability.READ;
+    public @Nullable List<ProtocolAdapterTag> getTags() {
+        return List.of();
+    }
+
+    @Override
+    public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
+        return EnumSet.of(ProtocolAdapterCapability.READ);
     }
 
 }

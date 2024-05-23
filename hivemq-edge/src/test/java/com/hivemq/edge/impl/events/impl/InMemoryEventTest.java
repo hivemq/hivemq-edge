@@ -15,12 +15,10 @@
  */
 package com.hivemq.edge.impl.events.impl;
 
+import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
-import com.hivemq.edge.modules.api.events.model.Event;
-import com.hivemq.util.RollingList;
-import com.hivemq.util.Strings;
-import net.openhft.hashing.LongHashFunction;
-import org.apache.commons.io.filefilter.FalseFileFilter;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
+import com.hivemq.edge.modules.api.events.model.EventImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -116,27 +114,30 @@ public class InMemoryEventTest {
         Assert.assertEquals("Epoch query should only return 1 match", 1, events.size());
     }
 
-    private static void contiguous(List<Event> list, boolean asc){
-        if(list == null || list.isEmpty()) {
+    private static void contiguous(List<Event> list, boolean asc) {
+        if (list == null || list.isEmpty()) {
             Assert.fail("Empty list not considered contiguous");
         }
         int startsAt = Integer.valueOf(list.get(0).getMessage());
-        for (int i = 0; i < list.size(); i++){
+        for (int i = 0; i < list.size(); i++) {
             Event event = list.get(i);
             Assert.assertEquals("The event messages weren't entirely contiguous",
-                    (asc ? (startsAt + i) : (startsAt - i)), (int) Integer.valueOf(event.getMessage()));
+                    (asc ? (startsAt + i) : (startsAt - i)),
+                    (int) Integer.valueOf(event.getMessage()));
         }
     }
 
-    private static void fill(InMemoryEventImpl impl, int count){
+    private static void fill(InMemoryEventImpl impl, int count) {
         int initialSize = impl.readEvents(null, null).size();
-        for (int i = 0; i < count; i++){
-            Event.Builder builder = new Event.Builder().withMessage((initialSize + i) + "").
-                    withSeverity(Event.SEVERITY.INFO).withTimestamp(System.currentTimeMillis());
-            impl.storeEvent(builder.build());
+        for (int i = 0; i < count; i++) {
+            new EventBuilderImpl(impl::storeEvent).withMessage((initialSize + i) + "")
+                    .withSeverity(EventImpl.SEVERITY.INFO)
+                    .withTimestamp(System.currentTimeMillis())
+                    .fire();
             try {
                 Thread.sleep(1);
-            } catch(Exception e){}
+            } catch (Exception e) {
+            }
         }
     }
 }

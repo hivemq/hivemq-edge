@@ -15,15 +15,11 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.ads;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.Map;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -37,17 +33,7 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<ADSAdapterConfig> input) {
-        return new ADSProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry());
-    }
-
-    @Override
-    public @NotNull ADSAdapterConfig convertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull Map<@NotNull String, Object> config) {
-        return ADSConfigConverter.convertConfig(objectMapper, config);
-    }
-
-    @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final CustomConfig config) {
-        return ADSConfigConverter.unconvertConfig(objectMapper, config);
+        return new ADSProtocolAdapter(adapterInformation, input);
     }
 
     @Override

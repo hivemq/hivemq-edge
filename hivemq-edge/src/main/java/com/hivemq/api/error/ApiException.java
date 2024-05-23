@@ -17,7 +17,6 @@ package com.hivemq.api.error;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.http.core.HttpConstants;
 
 /**
  * @author Simon L Johnson
@@ -26,7 +25,7 @@ public class ApiException extends RuntimeException {
 
     private Object subject = null;
     private String errorMessage;
-    private int httpStatusCode = HttpConstants.SC_INTERNAL_SERVER_ERROR;
+    private int httpStatusCode = 500;
     private Throwable cause;
     private String fieldName;
 

@@ -18,24 +18,25 @@ package com.hivemq.adapter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
-import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import wiremock.org.custommonkey.xmlunit.NodeTestException;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import static com.hivemq.edge.HiveMQEdgeConstants.ID_REGEX;
 
 
 /**
@@ -43,7 +44,7 @@ import java.util.List;
  */
 public class SchemaNodeGeneratorTest {
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final @NotNull ObjectMapper mapper = new ObjectMapper();
 
     @BeforeAll
     static void beforeStart(){
@@ -111,7 +112,17 @@ public class SchemaNodeGeneratorTest {
     }
 
     @JsonPropertyOrder({"startIdx", "endIdx"})
-    static class TestOrderingConfig extends AbstractProtocolAdapterConfig {
+    static class TestOrderingConfig implements ProtocolAdapterConfig {
+
+        @JsonProperty(value = "id", required = true)
+        @ModuleConfigField(title = "Identifier",
+                           description = "Unique identifier for this protocol adapter",
+                           format = ModuleConfigField.FieldType.IDENTIFIER,
+                           required = true,
+                           stringPattern = ID_REGEX,
+                           stringMinLength = 1,
+                           stringMaxLength = 1024)
+        protected @NotNull String id;
 
         @JsonProperty(value = "startIdx")
         @ModuleConfigField(title = "Start Index")
@@ -120,16 +131,36 @@ public class SchemaNodeGeneratorTest {
         @JsonProperty(value = "endIdx")
         @ModuleConfigField(title = "End Index")
         int endIdx;
+
+        @Override
+        public @NotNull String getId() {
+            return id;
+        }
     }
 
-    static class TestNestedEntity extends AbstractProtocolAdapterConfig {
+    static class TestNestedEntity implements ProtocolAdapterConfig {
 
         @JsonProperty("subscriptions")
         @ModuleConfigField(title = "Subscriptions",
                            description = "Map your sensor data to MQTT Topics", customAttributes = {
                 @ModuleConfigField.CustomAttribute(name = "testAttributeName", value = "testAttributeValue")
         })
-        private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+        private @NotNull List<PollingContext> subscriptions = new ArrayList<>();
 
+
+        @JsonProperty(value = "id", required = true)
+        @ModuleConfigField(title = "Identifier",
+                           description = "Unique identifier for this protocol adapter",
+                           format = ModuleConfigField.FieldType.IDENTIFIER,
+                           required = true,
+                           stringPattern = ID_REGEX,
+                           stringMinLength = 1,
+                           stringMaxLength = 1024)
+        protected @NotNull String id;
+
+        @Override
+        public @NotNull String getId() {
+            return id;
+        }
     }
 }

@@ -19,7 +19,7 @@ import com.hivemq.api.model.ApiErrorMessage;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.http.core.HttpConstants;
+import com.hivemq.http.HttpConstants;
 
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;

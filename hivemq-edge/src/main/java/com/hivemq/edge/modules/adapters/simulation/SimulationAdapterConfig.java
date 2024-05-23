@@ -15,23 +15,61 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.edge.modules.config.impl.PollingContextImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @JsonPropertyOrder({"minValue", "maxValue", "subscriptions"})
-public class SimulationAdapterConfig extends AbstractPollingProtocolAdapterConfig {
+public class SimulationAdapterConfig implements ProtocolAdapterConfig {
+
+    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+
+    @JsonProperty(value = "id", required = true)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    protected @NotNull String id;
+
+
+    @JsonProperty("pollingIntervalMillis")
+    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
+    @ModuleConfigField(title = "Polling Interval [ms]",
+                       description = "Time in millisecond that this endpoint will be polled",
+                       numberMin = 1,
+                       required = true,
+                       defaultValue = "1000")
+    private int pollingIntervalMillis = 1000; //1 second
+
+    @JsonProperty("maxPollingErrorsBeforeRemoval")
+    @ModuleConfigField(title = "Max. Polling Errors",
+                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
+                       defaultValue = "10")
+    private int maxPollingErrorsBeforeRemoval = 10;
+
+    public int getPollingIntervalMillis() {
+        return pollingIntervalMillis;
+    }
+
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return maxPollingErrorsBeforeRemoval;
+    }
+
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions",
                        description = "List of subscriptions for the simulation",
                        required = true)
-    private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+    private @NotNull List<PollingContextImpl> adapterSubscriptions = new ArrayList<>();
 
     @JsonProperty("minValue")
     @ModuleConfigField(title = "Min. Generated Value",
@@ -51,18 +89,26 @@ public class SimulationAdapterConfig extends AbstractPollingProtocolAdapterConfi
     }
 
     public SimulationAdapterConfig(
-            final @NotNull String id,
-            final @NotNull List<Subscription> subscriptions) {
+            final @NotNull String id, final @NotNull List<PollingContextImpl> adapterSubscriptions) {
         this.id = id;
-        this.subscriptions = subscriptions;
+        this.adapterSubscriptions = adapterSubscriptions;
     }
 
-    public void setSubscriptions(List<Subscription> subscriptions) {
-        this.subscriptions = subscriptions;
+    public @NotNull String getId() {
+        return id;
     }
 
-    public @NotNull List<Subscription> getSubscriptions() {
-        return subscriptions;
+    public void setId(final @NotNull String id) {
+        this.id = id;
+    }
+
+
+    public void setSubscriptions(List<PollingContextImpl> adapterSubscriptions) {
+        this.adapterSubscriptions = adapterSubscriptions;
+    }
+
+    public @NotNull List<PollingContextImpl> getSubscriptions() {
+        return adapterSubscriptions;
     }
 
     public int getMinValue() {

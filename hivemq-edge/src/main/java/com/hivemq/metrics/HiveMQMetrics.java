@@ -18,13 +18,14 @@ package com.hivemq.metrics;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
 
+import static com.hivemq.protocols.ProtocolAdapterMetrics.PROTOCOL_ADAPTER_PREFIX;
+
 /**
  * This class holds a constant {@link HiveMQMetric} for every metric which is provided by HiveMQ
  */
 public class HiveMQMetrics {
 
     public static final String HIVEMQ_PREFIX = "com.hivemq.edge.";
-    public static final String PROTOCOL_ADAPTER_PREFIX = "com.hivemq.edge.protocol-adapters.";
     /**
      * represents a {@link Counter}, which counts every incoming MQTT message
      *

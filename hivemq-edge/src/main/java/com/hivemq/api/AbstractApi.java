@@ -17,7 +17,7 @@ package com.hivemq.api;
 
 import com.hivemq.api.auth.ApiPrincipal;
 import com.hivemq.api.error.ApiException;
-import com.hivemq.http.core.HttpConstants;
+import com.hivemq.http.HttpConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

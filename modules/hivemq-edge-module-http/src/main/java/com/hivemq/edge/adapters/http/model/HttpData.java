@@ -15,29 +15,44 @@
  */
 package com.hivemq.edge.adapters.http.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author HiveMQ Adapter Generator
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class HttpData extends ProtocolAdapterDataSample {
+public class HttpData implements ProtocolAdapterDataSample {
 
     private final String requestUrl;
     private final String contentType;
     private int httpStatusCode;
+    private final @NotNull DataPointFactory dataPointFactory;
+    protected @NotNull PollingContext pollingContext;
+
+    //-- Handle multiple tags in the same sample
+    protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
+    private @NotNull Long timestamp = System.currentTimeMillis();
 
     public HttpData(
-            AbstractProtocolAdapterConfig.Subscription subscription, final String requestUrl,
+            final @NotNull PollingContext pollingContext,
+            final @NotNull String requestUrl,
             final int httpStatusCode,
-            final @NotNull String contentType) {
-        super(subscription);
+            final @NotNull String contentType,
+            final @NotNull DataPointFactory dataPointFactory) {
+        this.pollingContext = pollingContext;
         this.requestUrl = requestUrl;
         this.contentType = contentType;
         this.httpStatusCode = httpStatusCode;
+        this.dataPointFactory = dataPointFactory;
     }
 
 
@@ -53,5 +68,37 @@ public class HttpData extends ProtocolAdapterDataSample {
         return httpStatusCode;
     }
 
+    @Override
+    @JsonIgnore
+    public @NotNull PollingContext getPollingContext() {
+        return pollingContext;
+    }
+
+    @Override
+    @JsonIgnore
+    public @NotNull Long getTimestamp() {
+        return timestamp;
+    }
+
+    @Override
+    public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
+        dataPoints.add(dataPointFactory.create(tagName, tagValue));
+    }
+
+    @Override
+    public void addDataPoint(@NotNull final DataPoint dataPoint) {
+        dataPoints.add(dataPoint);
+    }
+
+    @Override
+    public void setDataPoints(@NotNull List<DataPoint> list) {
+        this.dataPoints = list;
+    }
+
+    @Override
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public @NotNull List<DataPoint> getDataPoints() {
+        return dataPoints;
+    }
 
 }

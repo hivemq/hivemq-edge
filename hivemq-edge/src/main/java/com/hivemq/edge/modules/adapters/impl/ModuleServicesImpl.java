@@ -15,31 +15,22 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
-import com.hivemq.edge.modules.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.inject.Inject;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class ModuleServicesImpl implements ModuleServices {
 
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
-    private final @NotNull ScheduledExecutorService scheduledExecutorService;
-    private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull EventService eventService;
 
     @Inject
     public ModuleServicesImpl(@NotNull final ProtocolAdapterPublishService adapterPublishService,
-                              @NotNull final ScheduledExecutorService scheduledExecutorService,
-                              @NotNull final ProtocolAdapterPollingService protocolAdapterPollingService,
                               @NotNull final EventService eventService) {
-
         this.adapterPublishService = adapterPublishService;
-        this.scheduledExecutorService = scheduledExecutorService;
-        this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.eventService = eventService;
     }
 
@@ -49,17 +40,7 @@ public class ModuleServicesImpl implements ModuleServices {
     }
 
     @Override
-    public @NotNull ScheduledExecutorService scheduledExecutorService() {
-        return scheduledExecutorService;
-    }
-
-    @Override
-    public @NotNull ProtocolAdapterPollingService protocolAdapterPollingService() {
-        return protocolAdapterPollingService;
-    }
-
-    @Override
-    public EventService eventService() {
+    public @NotNull EventService eventService() {
         return eventService;
     }
 }

@@ -15,60 +15,82 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
-import com.codahale.metrics.MetricRegistry;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.adapters.impl.AbstractPollingPerSubscriptionAdapter;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.polling.PollingInput;
+import com.hivemq.adapter.sdk.api.polling.PollingOutput;
+import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class SimulationProtocolAdapter extends AbstractPollingPerSubscriptionAdapter<SimulationAdapterConfig, ProtocolAdapterDataSample> {
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
+
+public class SimulationProtocolAdapter implements PollingProtocolAdapter {
+
+    private final @NotNull ProtocolAdapterInformation adapterInformation;
+    private final @NotNull SimulationAdapterConfig adapterConfig;
+    private final @NotNull ProtocolAdapterState protocolAdapterState;
 
     public SimulationProtocolAdapter(
-            @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final SimulationAdapterConfig adapterConfig,
-            @NotNull final MetricRegistry metricRegistry) {
-        super(adapterInformation, adapterConfig, metricRegistry);
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<SimulationAdapterConfig> protocolAdapterInput) {
+        this.adapterInformation = adapterInformation;
+        this.adapterConfig = protocolAdapterInput.getConfig();
+        this.protocolAdapterState = protocolAdapterInput.getProtocolAdapterState();
+        this.protocolAdapterState.setConnectionStatus(STATELESS);
     }
 
     @Override
-    public ConnectionStatus getConnectionStatus() {
-        return ConnectionStatus.STATELESS;
+    public @NotNull String getId() {
+        return adapterConfig.getId();
     }
 
     @Override
-    protected CompletableFuture<ProtocolAdapterStartOutput> startInternal( final @NotNull ProtocolAdapterStartOutput output) {
-        try {
-            if (adapterConfig.getSubscriptions() != null) {
-                for (SimulationAdapterConfig.Subscription subscription : adapterConfig.getSubscriptions()) {
-                    startPolling(new SubscriptionSampler(adapterConfig, subscription));
-                }
-            }
-            return CompletableFuture.completedFuture(output);
-        } catch (Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
+    public void start(
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+        output.startedSuccessfully();
     }
 
     @Override
-    protected CompletableFuture<Void> stopInternal() {
-        return CompletableFuture.completedFuture(null);
+    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+        output.stoppedSuccessfully();
     }
 
     @Override
-    protected CompletableFuture<ProtocolAdapterDataSample> onSamplerInvoked(
-            final SimulationAdapterConfig config,
-            final AbstractProtocolAdapterConfig.Subscription subscription) {
-        ProtocolAdapterDataSample dataSample =
-                new ProtocolAdapterDataSample(subscription);
+    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        return adapterInformation;
+    }
 
-        dataSample.addDataPoint("sample", ThreadLocalRandom.current().nextDouble(
-                Math.min(config.getMinValue(), config.getMaxValue()),
-                Math.max(config.getMinValue() + 1, config.getMaxValue())));
-        return CompletableFuture.completedFuture(dataSample);
+    @Override
+    public void poll(
+            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+        pollingOutput.addDataPoint("sample",
+                ThreadLocalRandom.current()
+                        .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
+                                Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
+        pollingOutput.finish();
+    }
+
+    @Override
+    public @NotNull List<? extends PollingContext> getPollingContexts() {
+        return adapterConfig.getSubscriptions();
+    }
+
+    @Override
+    public int getPollingIntervalMillis() {
+        return adapterConfig.getPollingIntervalMillis();
+    }
+
+    @Override
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
     }
 }

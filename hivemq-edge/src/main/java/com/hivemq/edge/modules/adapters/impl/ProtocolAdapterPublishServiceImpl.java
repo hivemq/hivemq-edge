@@ -17,11 +17,11 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.configuration.HivemqId;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 
 import javax.inject.Inject;
@@ -41,7 +41,7 @@ public class ProtocolAdapterPublishServiceImpl implements ProtocolAdapterPublish
     }
 
     @Override
-    public @NotNull ProtocolAdapterPublishBuilder publish() {
+    public @NotNull ProtocolAdapterPublishBuilder createPublish() {
         return new ProtocolAdapterPublishBuilderImpl(hiveMqId.get(), (publish, protocolAdapter, dynamicContext) -> {
 
             final ListenableFuture<PublishReturnCode> publishFuture = interceptorHandler.interceptOrDelegateInbound(

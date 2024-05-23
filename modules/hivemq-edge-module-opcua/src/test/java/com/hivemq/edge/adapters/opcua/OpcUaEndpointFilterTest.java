@@ -16,8 +16,8 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -26,8 +26,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.AES128_SHA256_RSAOAEP;
+import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.AES256_SHA256_RSAPSS;
+import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.BASIC128RSA15;
+import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.BASIC256;
+import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.BASIC256SHA256;
+import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.DEFAULT;
+import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.NONE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class OpcUaEndpointFilterTest {
 

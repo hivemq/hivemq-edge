@@ -18,10 +18,12 @@ package com.hivemq.protocols;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.api.json.CustomConfigSchemaGenerator;
-import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailure;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
+import com.hivemq.edge.modules.api.adapters.model.ProtocolAdapterValidationFailureImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
@@ -38,28 +40,29 @@ import java.util.stream.Collectors;
  * @author Simon L Johnson
  */
 public class ProtocolAdapterSchemaManager {
-    private final @NotNull Class<? extends CustomConfig> configBean;
+    private final @NotNull Class<? extends ProtocolAdapterConfig> configBean;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull CustomConfigSchemaGenerator customConfigSchemaGenerator;
-    private JsonNode schemaNode;
-    private JsonSchema schema;
+    private @Nullable JsonNode schemaNode;
+    private @Nullable JsonSchema schema;
 
-    public ProtocolAdapterSchemaManager(@NotNull final ObjectMapper objectMapper,
-                                        @NotNull final Class<? extends CustomConfig> configBean) {
+    public ProtocolAdapterSchemaManager(
+            @NotNull final ObjectMapper objectMapper,
+            @NotNull final Class<? extends ProtocolAdapterConfig> configBean) {
         this.objectMapper = objectMapper;
         this.configBean = configBean;
         this.customConfigSchemaGenerator = new CustomConfigSchemaGenerator();
     }
 
-    public synchronized JsonNode generateSchemaNode(){
-        if(schemaNode == null){
+    public synchronized @NotNull JsonNode generateSchemaNode() {
+        if (schemaNode == null) {
             schemaNode = customConfigSchemaGenerator.generateJsonSchema(configBean);
         }
         return schemaNode;
     }
 
-    public synchronized JsonSchema generateSchema(){
-        if(schema == null){
+    public synchronized @NotNull JsonSchema generateSchema() {
+        if (schema == null) {
             JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
             schema = factory.getSchema(generateSchemaNode());
             schema.initializeValidators();
@@ -67,33 +70,37 @@ public class ProtocolAdapterSchemaManager {
         return schema;
     }
 
-    public List<ProtocolAdapterValidationFailure> validateJsonDocument(@NotNull final byte[] jsonDocument) throws IOException {
+    public @NotNull List<ProtocolAdapterValidationFailure> validateJsonDocument(final byte @NotNull [] jsonDocument)
+            throws IOException {
         JsonSchema schema = generateSchema();
         Preconditions.checkNotNull(jsonDocument);
         JsonNode node = objectMapper.readTree(jsonDocument);
-        return schema.validate(node).stream().
-                map(v -> convertMessage(v)).
-                collect(Collectors.toList());
+        return schema.validate(node)
+                .stream()
+                .map(ProtocolAdapterSchemaManager::convertMessage)
+                .collect(Collectors.toList());
     }
 
-    public List<ProtocolAdapterValidationFailure> validateObject(@NotNull final Object o) {
+    public @NotNull List<ProtocolAdapterValidationFailure> validateObject(@NotNull final Object o) {
         Preconditions.checkNotNull(o);
         JsonNode node;
-        if(o instanceof JsonNode){
+        if (o instanceof JsonNode) {
             node = (JsonNode) o;
-        }
-        else {
+        } else {
             node = objectMapper.valueToTree(o);
         }
-        return generateSchema().validate(node).stream().
-                map(v -> convertMessage(v)).
-                collect(Collectors.toList());
+        return generateSchema().validate(node)
+                .stream()
+                .map(ProtocolAdapterSchemaManager::convertMessage)
+                .collect(Collectors.toList());
     }
 
-    public static ProtocolAdapterValidationFailure convertMessage(ValidationMessage validationMessage){
-        ProtocolAdapterValidationFailure failure =
-                new ProtocolAdapterValidationFailure(validationMessage.getMessage(), validationMessage.getPath(),
-                        validationMessage.getClass());
-        return failure;
+
+    static ProtocolAdapterValidationFailure convertMessage(ValidationMessage validationMessage) {
+        return new ProtocolAdapterValidationFailureImpl(validationMessage.getMessage(),
+                validationMessage.getPath(),
+                validationMessage.getClass());
     }
+
+
 }

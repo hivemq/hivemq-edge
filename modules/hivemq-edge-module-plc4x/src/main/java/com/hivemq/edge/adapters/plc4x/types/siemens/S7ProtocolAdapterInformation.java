@@ -15,18 +15,19 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.EnumSet;
 import java.util.List;
 
 /**
  * @author HiveMQ Adapter Generator
  */
-public class S7ProtocolAdapterInformation extends AbstractProtocolAdapterInformation {
+public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new S7ProtocolAdapterInformation();
 
@@ -54,25 +55,41 @@ public class S7ProtocolAdapterInformation extends AbstractProtocolAdapterInforma
     }
 
     @Override
-    public ProtocolAdapterConstants.CATEGORY getCategory() {
-        return ProtocolAdapterConstants.CATEGORY.INDUSTRIAL;
-    }
-
-    @Override
     public @NotNull String getUrl() {
         return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#s7-adapter";
     }
 
     @Override
-    public List<ProtocolAdapterConstants.TAG> getTags() {
-        return List.of(ProtocolAdapterConstants.TAG.TCP,
-                ProtocolAdapterConstants.TAG.AUTOMATION,
-                ProtocolAdapterConstants.TAG.FACTORY);
+    public @NotNull String getVersion() {
+        return "${edge-version}";
     }
 
     @Override
-    public byte getCapabilities() {
-        return ProtocolAdapterCapability.READ;
+    public @NotNull String getLogoUrl() {
+        return "/images/s8-icon.png";
+
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HiveMQ";
+    }
+
+    @Override
+    public ProtocolAdapterCategory getCategory() {
+        return ProtocolAdapterCategory.INDUSTRIAL;
+    }
+
+    @Override
+    public List<ProtocolAdapterTag> getTags() {
+        return List.of(ProtocolAdapterTag.TCP,
+                ProtocolAdapterTag.AUTOMATION,
+                ProtocolAdapterTag.FACTORY);
+    }
+
+    @Override
+    public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
+        return EnumSet.of(ProtocolAdapterCapability.READ);
     }
 
 }

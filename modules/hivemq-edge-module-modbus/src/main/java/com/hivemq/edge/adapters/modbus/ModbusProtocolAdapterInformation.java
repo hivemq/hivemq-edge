@@ -15,16 +15,16 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public class ModbusProtocolAdapterInformation
-        extends AbstractProtocolAdapterInformation {
+        implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new ModbusProtocolAdapterInformation();
 
@@ -57,7 +57,27 @@ public class ModbusProtocolAdapterInformation
     }
 
     @Override
-    public List<ProtocolAdapterConstants.TAG> getTags() {
-        return List.of(ProtocolAdapterConstants.TAG.TCP);
+    public @NotNull String getVersion() {
+        return "${edge-version}";
+    }
+
+    @Override
+    public @NotNull String getLogoUrl() {
+        return "/images/modbus-icon.png";
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HIVEMQ";
+    }
+
+    @Override
+    public @Nullable ProtocolAdapterCategory getCategory() {
+        return ProtocolAdapterCategory.INDUSTRIAL;
+    }
+
+    @Override
+    public List<ProtocolAdapterTag> getTags() {
+        return List.of(ProtocolAdapterTag.TCP);
     }
 }

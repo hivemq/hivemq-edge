@@ -15,10 +15,10 @@
  */
 package com.hivemq.api.resources.impl;
 
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.api.AbstractApi;
 import com.hivemq.api.model.events.EventList;
 import com.hivemq.api.resources.EventApi;
-import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.inject.Inject;

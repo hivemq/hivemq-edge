@@ -18,15 +18,18 @@ package com.hivemq.edge.adapters.plc4x.types.eip;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
-import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class EIPAdapterConfig extends Plc4xAdapterConfig {
+
+    private static final int PORT_MIN = 1;
+    private static final int PORT_MAX = 65535;
 
     @JsonProperty("port")
     @ModuleConfigField(title = "Port",
@@ -50,7 +53,7 @@ public class EIPAdapterConfig extends Plc4xAdapterConfig {
 
     @JsonProperty("subscriptions")
     @ModuleConfigField(title = "Subscriptions", description = "Map your sensor data to MQTT Topics")
-    private @NotNull List<EIPAdapterConfig.Subscription> subscriptions = new ArrayList<>();
+    private @NotNull List<EIPPollingContextImpl> subscriptions = new ArrayList<>();
 
     @Override
     public int getPort() {
@@ -59,7 +62,7 @@ public class EIPAdapterConfig extends Plc4xAdapterConfig {
 
     @NotNull
     @Override
-    public List<EIPAdapterConfig.Subscription> getSubscriptions() {
+    public List<EIPPollingContextImpl> getSubscriptions() {
         return subscriptions;
     }
 
@@ -82,7 +85,7 @@ public class EIPAdapterConfig extends Plc4xAdapterConfig {
 
     @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "destination", "qos"})
     @JsonIgnoreProperties({"dataType"})
-    public static class Subscription extends Plc4xAdapterConfig.Subscription {
+    public static class EIPPollingContextImpl extends PollingContextImpl {
         @JsonProperty("eipDataType")
         @ModuleConfigField(title = "Data Type", description = "The expected data type of the tag", enumDisplayValues = {
                 "Bool",

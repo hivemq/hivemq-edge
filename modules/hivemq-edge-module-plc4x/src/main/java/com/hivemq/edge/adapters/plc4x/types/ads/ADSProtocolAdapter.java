@@ -15,11 +15,11 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.ads;
 
-import com.codahale.metrics.MetricRegistry;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,36 +29,32 @@ import java.util.Map;
  */
 public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig> {
 
-    static final String
-            SOURCE_AMS_NET_ID = "sourceAmsNetId",
-            SOURCE_AMS_PORT = "sourceAmsPort",
-            TARGET_AMS_PORT = "targetAmsPort",
-            TARGET_AMS_NET_ID = "targetAmsNetId";
+    static final String SOURCE_AMS_NET_ID = "sourceAmsNetId", SOURCE_AMS_PORT = "sourceAmsPort", TARGET_AMS_PORT =
+            "targetAmsPort", TARGET_AMS_NET_ID = "targetAmsNetId";
 
     public ADSProtocolAdapter(
-            final ProtocolAdapterInformation adapterInformation,
-            final ADSAdapterConfig adapterConfig,
-            final MetricRegistry metricRegistry) {
-        super(adapterInformation, adapterConfig, metricRegistry);
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<ADSAdapterConfig> input) {
+        super(adapterInformation, input);
     }
 
     @Override
-    protected String getProtocolHandler() {
+    protected @NotNull String getProtocolHandler() {
         return "ads";
     }
 
     @Override
-    protected ReadType getReadType() {
+    protected @NotNull ReadType getReadType() {
         return ReadType.Read;
     }
 
     @Override
-    protected String createTagAddressForSubscription(final Plc4xAdapterConfig.Subscription subscription) {
+    protected @NotNull String createTagAddressForSubscription(final Plc4xAdapterConfig.PollingContextImpl subscription) {
         return subscription.getTagAddress();
     }
 
     @Override
-    protected Map<String, String> createQueryStringParams(final @NotNull ADSAdapterConfig config) {
+    protected @NotNull Map<String, String> createQueryStringParams(final @NotNull ADSAdapterConfig config) {
         Map<String, String> map = new HashMap<>();
         map.put(SOURCE_AMS_PORT, nullSafe(config.getSourceAmsPort()));
         map.put(SOURCE_AMS_NET_ID, nullSafe(config.getSourceAmsNetId()));
@@ -66,5 +62,15 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig> {
         map.put(TARGET_AMS_PORT, nullSafe(config.getTargetAmsPort()));
         map.put(TARGET_AMS_NET_ID, nullSafe(config.getTargetAmsNetId()));
         return map;
+    }
+
+    @Override
+    public int getPollingIntervalMillis() {
+        return adapterConfig.getPollingIntervalMillis();
+    }
+
+    @Override
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
     }
 }

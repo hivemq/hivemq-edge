@@ -15,16 +15,48 @@
  */
 package com.hivemq.edge.modules.adapters.impl;
 
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.exceptions.StackLessProtocolAdapterException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.protocols.params.NodeTreeImpl;
+
+import java.util.concurrent.CompletableFuture;
 
 public class ProtocolAdapterDiscoveryOutputImpl implements ProtocolAdapterDiscoveryOutput {
 
     private final @NotNull NodeTreeImpl nodeTree = new NodeTreeImpl();
+    private final @NotNull CompletableFuture<Void> outputFuture = new CompletableFuture<>();
+    private @Nullable String errorMessage = null;
+
 
     @Override
     public @NotNull NodeTreeImpl getNodeTree() {
         return nodeTree;
+    }
+
+    @Override
+    public void finish() {
+        outputFuture.complete(null);
+    }
+
+    @Override
+    public void fail(@NotNull final Throwable t, @Nullable final String errorMessage) {
+        this.errorMessage = errorMessage;
+        outputFuture.completeExceptionally(t);
+    }
+
+    @Override
+    public void fail(@NotNull final String errorMessage) {
+        this.errorMessage = errorMessage;
+        outputFuture.completeExceptionally(new StackLessProtocolAdapterException());
+    }
+
+    public @NotNull CompletableFuture<Void> getOutputFuture() {
+        return outputFuture;
+    }
+
+    public @Nullable String getErrorMessage() {
+        return errorMessage;
     }
 }

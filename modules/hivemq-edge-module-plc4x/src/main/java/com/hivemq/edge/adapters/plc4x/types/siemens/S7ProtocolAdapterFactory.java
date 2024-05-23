@@ -15,15 +15,11 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterInput;
-import com.hivemq.edge.modules.config.CustomConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-
-import java.util.Map;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -37,18 +33,9 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<S7AdapterConfig> input) {
-        return new S7ProtocolAdapter(adapterInformation, input.getConfig(), input.getMetricRegistry());
+        return new S7ProtocolAdapter(adapterInformation, input);
     }
 
-    @Override
-    public @NotNull S7AdapterConfig convertConfigObject(final @NotNull ObjectMapper objectMapper, final @NotNull Map<@NotNull String, Object> config) {
-        return S7ConfigConverter.convertConfig(objectMapper, config);
-    }
-
-    @Override
-    public Map<String, Object> unconvertConfigObject(final @NotNull ObjectMapper objectMapper, final CustomConfig config) {
-        return S7ConfigConverter.unconvertConfig(objectMapper, config);
-    }
 
     @Override
     public @NotNull Class<S7AdapterConfig> getConfigClass() {

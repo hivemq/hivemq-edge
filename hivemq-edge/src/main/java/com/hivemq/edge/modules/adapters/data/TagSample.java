@@ -17,6 +17,7 @@ package com.hivemq.edge.modules.adapters.data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 /**
  * @author Simon L Johnson
@@ -24,27 +25,27 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class TagSample {
 
-    private String tagName;
-    private Object tagValue;
+    private @Nullable String tagName;
+    private @Nullable Object tagValue;
 
-    public TagSample(final @NotNull String tagName, final @NotNull Object tagValue) {
+    public TagSample(final @Nullable String tagName, final @NotNull Object tagValue) {
         this.tagName = tagName;
         this.tagValue = tagValue;
     }
 
-    public String getTagName() {
+    public @Nullable String getTagName() {
         return tagName;
     }
 
-    public void setTagName(final String tagName) {
+    public void setTagName(final @Nullable String tagName) {
         this.tagName = tagName;
     }
 
-    public Object getTagValue() {
+    public @Nullable Object getTagValue() {
         return tagValue;
     }
 
-    public void setTagValue(final Object tagValue) {
+    public void setTagValue(final @Nullable Object tagValue) {
         this.tagValue = tagValue;
     }
 }

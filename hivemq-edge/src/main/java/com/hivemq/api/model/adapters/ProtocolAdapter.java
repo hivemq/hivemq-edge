@@ -17,13 +17,14 @@ package com.hivemq.api.model.adapters;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import javax.print.DocFlavor;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * The API representation of a Protocol Adapter type.
@@ -31,12 +32,19 @@ import java.util.Objects;
 public class ProtocolAdapter {
 
     public enum Capability {
-        @Schema(description = "The adapter is able to read tags or values from the connected device")
-        READ,
-        @Schema(description = "The adapter is able to write values to tags on the connected device")
-        WRITE,
-        @Schema(description = "The adapter is able to discover tags from the connected device")
-        DISCOVER
+        @Schema(description = "The adapter is able to read tags or values from the connected device") READ,
+        @Schema(description = "The adapter is able to discover tags from the connected device") DISCOVER;
+
+        public static @NotNull Capability from(final ProtocolAdapterCapability capability) {
+            switch (capability) {
+                case READ:
+                    return READ;
+                case DISCOVER:
+                    return DISCOVER;
+                default:
+                    throw new IllegalArgumentException("No capability found for " + capability);
+            }
+        }
     }
 
     @JsonProperty("id")
@@ -89,7 +97,7 @@ public class ProtocolAdapter {
 
     @JsonProperty("capabilities")
     @Schema(description = "The capabilities of this adapter")
-    private final @NotNull List<Capability> capabilities;
+    private final @NotNull Set<Capability> capabilities;
 
     @JsonProperty("configSchema")
     @Schema(description = "JSONSchema in the \'https://json-schema.org/draft/2020-12/schema\' format, which describes the configuration requirements for the adapter.")
@@ -106,9 +114,9 @@ public class ProtocolAdapter {
             @JsonProperty("provisioningUrl") final @Nullable String provisioningUrl,
             @JsonProperty("author") final @NotNull String author,
             @JsonProperty("installed") final @Nullable Boolean installed,
-            @JsonProperty("capabilities") final @NotNull List<Capability> capabilities,
+            @JsonProperty("capabilities") final @NotNull Set<Capability> capabilities,
             @JsonProperty("category") final @Nullable ProtocolAdapterCategory category,
-            @JsonProperty("tags") final @Nullable  List<String> tags,
+            @JsonProperty("tags") final @Nullable List<String> tags,
             @JsonProperty("configSchema") final @NotNull JsonNode configSchema) {
         this.id = id;
         this.protocol = protocol;
@@ -166,7 +174,7 @@ public class ProtocolAdapter {
         return configSchema;
     }
 
-    public List<Capability> getCapabilities() {
+    public @NotNull Set<Capability> getCapabilities() {
         return capabilities;
     }
 
@@ -184,8 +192,12 @@ public class ProtocolAdapter {
 
     @Override
     public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         final ProtocolAdapter that = (ProtocolAdapter) o;
         return Objects.equals(id, that.id);
     }

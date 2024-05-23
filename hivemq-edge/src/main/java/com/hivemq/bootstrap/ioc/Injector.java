@@ -17,6 +17,7 @@ package com.hivemq.bootstrap.ioc;
 
 import com.codahale.metrics.MetricRegistry;
 import com.hivemq.HiveMQEdgeGateway;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.api.ioc.ApiModule;
 import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.bootstrap.netty.ioc.NettyModule;
@@ -34,7 +35,6 @@ import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.datagov.ioc.DataGovernanceModule;
 import com.hivemq.edge.HiveMQCapabilityService;
 import com.hivemq.edge.modules.ModuleLoader;
-import com.hivemq.edge.modules.api.adapters.ModuleServices;
 import com.hivemq.edge.modules.ioc.ModulesModule;
 import com.hivemq.edge.modules.ioc.RemoteServiceModule;
 import com.hivemq.extensions.core.CommercialModuleLoaderDiscovery;

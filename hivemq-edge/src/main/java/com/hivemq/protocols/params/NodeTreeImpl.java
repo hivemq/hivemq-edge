@@ -16,8 +16,8 @@
 package com.hivemq.protocols.params;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.edge.modules.adapters.model.NodeTree;
-import com.hivemq.edge.modules.adapters.model.NodeType;
+import com.hivemq.adapter.sdk.api.discovery.NodeTree;
+import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -70,7 +70,6 @@ public class NodeTreeImpl implements NodeTree {
 
         @JsonProperty("id")
         private final @NotNull String id;
-
 
         @JsonProperty("name")
         private final @NotNull String name;
@@ -128,7 +127,7 @@ public class NodeTreeImpl implements NodeTree {
             return selectable;
         }
 
-        public String toString(int indent) {
+        public @NotNull String toString(int indent) {
             StringBuilder result = new StringBuilder(String.format("%s | %s | %s \n", id, name, description));
 
             for (ObjectNode child : children) {

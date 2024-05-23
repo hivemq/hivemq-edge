@@ -15,16 +15,17 @@
  */
 package com.hivemq.edge.adapters.http;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.hivemq.edge.modules.adapters.annotations.ModuleConfigField;
-import com.hivemq.edge.modules.config.impl.AbstractPollingProtocolAdapterConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.http.core.HttpConstants;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+
 
 @JsonPropertyOrder({
         "url",
@@ -37,7 +38,16 @@ import java.util.List;
         "assertResponseIsJson",
         "httpPublishSuccessStatusCodeOnly",
         "httpHeaders"})
-public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
+public class HttpAdapterConfig implements ProtocolAdapterConfig {
+
+
+    private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+
+    public static final @NotNull String HTML_MIME_TYPE = "text/html";
+    public static final @NotNull  String PLAIN_MIME_TYPE = "text/plain";
+    public static final @NotNull String JSON_MIME_TYPE = "application/json";
+    public static final String XML_MIME_TYPE = "application/xml";
+    public static final String YAML_MIME_TYPE = "application/yaml";
 
     public enum HttpMethod {
         GET,
@@ -46,22 +56,48 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
     }
 
     public enum HttpContentType {
-        JSON(HttpConstants.JSON_MIME_TYPE),
-        PLAIN(HttpConstants.PLAIN_MIME_TYPE),
-        HTML(HttpConstants.HTML_MIME_TYPE),
-        XML("application/xml"),
-        YAML("application/yaml");
+        JSON(JSON_MIME_TYPE),
+        PLAIN(PLAIN_MIME_TYPE),
+        HTML(HTML_MIME_TYPE),
+        XML(XML_MIME_TYPE),
+        YAML(YAML_MIME_TYPE);
 
-        HttpContentType(String contentType) {
+        HttpContentType(final @NotNull String contentType) {
             this.contentType = contentType;
         }
 
-        final String contentType;
+        final @NotNull String contentType;
 
-        public String getContentType() {
+        public @NotNull String getContentType() {
             return contentType;
         }
     }
+
+    @JsonProperty(value = "id", required = true)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    protected @NotNull String id;
+
+    @JsonProperty("pollingIntervalMillis")
+    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
+    @ModuleConfigField(title = "Polling Interval [ms]",
+                       description = "Time in millisecond that this endpoint will be polled",
+                       numberMin = 1,
+                       required = true,
+                       defaultValue = "1000")
+    private int pollingIntervalMillis = 1000; //1 second
+
+    @JsonProperty("maxPollingErrorsBeforeRemoval")
+    @ModuleConfigField(title = "Max. Polling Errors",
+                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
+                       numberMin = 3,
+                       defaultValue = "10")
+    private int maxPollingErrorsBeforeRemoval = 10;
 
     @JsonProperty("url")
     @ModuleConfigField(title = "URL", description = "The url of the http request you would like to make",
@@ -153,15 +189,15 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         return httpHeaders;
     }
 
-    public HttpContentType getHttpRequestBodyContentType() {
+    public @NotNull HttpContentType getHttpRequestBodyContentType() {
         return httpRequestBodyContentType;
     }
 
-    public String getHttpRequestBody() {
+    public @NotNull String getHttpRequestBody() {
         return httpRequestBody;
     }
 
-    public Integer getHttpConnectTimeout() {
+    public @NotNull Integer getHttpConnectTimeout() {
         return httpConnectTimeout;
     }
 
@@ -169,7 +205,7 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         return url;
     }
 
-    public String getDestination() {
+    public @NotNull String getDestination() {
         return destination;
     }
 
@@ -181,15 +217,28 @@ public class HttpAdapterConfig extends AbstractPollingProtocolAdapterConfig {
         return allowUntrustedCertificates;
     }
 
+    @Override
+    public @NotNull String getId() {
+        return id;
+    }
+
+    public int getPollingIntervalMillis() {
+        return pollingIntervalMillis;
+    }
+
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return maxPollingErrorsBeforeRemoval;
+    }
+
     public static class HttpHeader {
 
         @JsonProperty("name")
         @ModuleConfigField(title = "Http Header Name", description = "The name of the HTTP header")
-        private String name;
+        private @NotNull String name;
 
         @JsonProperty("value")
         @ModuleConfigField(title = "Http Header Value", description = "The value of the HTTP header")
-        private String value;
+        private @NotNull String value;
 
         public HttpHeader() {
         }

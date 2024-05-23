@@ -15,6 +15,8 @@
  */
 package com.hivemq.http.core;
 
+import com.hivemq.http.HttpConstants;
+
 public class HttpNotFoundException extends HttpException {
 
     public HttpNotFoundException(String responseMessage) {

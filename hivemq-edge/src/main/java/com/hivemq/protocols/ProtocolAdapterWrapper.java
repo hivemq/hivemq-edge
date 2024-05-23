@@ -15,36 +15,70 @@
  */
 package com.hivemq.protocols;
 
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterFactory;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 
-/**
- * Wraps the protocol adapter instance, the factory that created it, the information of the adapter type and the configuration object that it was instantiated
- * with
- */
-public class ProtocolAdapterWrapper {
+public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements ProtocolAdapter {
 
-    private final @NotNull ProtocolAdapter adapter;
+    private final @NotNull T adapter;
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
-    private final @NotNull CustomConfig configObject;
+    private final @NotNull ProtocolAdapterState protocolAdapterState;
+    private final @NotNull ProtocolAdapterConfig configObject;
+    protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
-            final @NotNull ProtocolAdapter adapter,
+            final @NotNull T adapter,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull CustomConfig configObject) {
+            final @NotNull ProtocolAdapterState protocolAdapterState,
+            final @NotNull ProtocolAdapterConfig configObject) {
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
         this.adapterInformation = adapterInformation;
+        this.protocolAdapterState = protocolAdapterState;
         this.configObject = configObject;
     }
 
-    public @NotNull ProtocolAdapter getAdapter() {
-        return adapter;
+    public void start(
+            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+        initStartAttempt();
+        adapter.start(input, output);
+    }
+
+    @Override
+    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+        adapter.stop(input, output);
+    }
+
+    @Override
+    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        return adapter.getProtocolAdapterInformation();
+    }
+
+    public @NotNull ProtocolAdapterState.ConnectionStatus getConnectionStatus() {
+        return protocolAdapterState.getConnectionStatus();
+    }
+
+    public @NotNull ProtocolAdapterState.RuntimeStatus getRuntimeStatus() {
+        return protocolAdapterState.getRuntimeStatus();
+    }
+
+    public @Nullable String getErrorMessage() {
+        return protocolAdapterState.getLastErrorMessage();
+    }
+
+    protected void initStartAttempt() {
+        lastStartAttemptTime = System.currentTimeMillis();
     }
 
     public @NotNull ProtocolAdapterFactory<?> getAdapterFactory() {
@@ -55,9 +89,27 @@ public class ProtocolAdapterWrapper {
         return adapterInformation;
     }
 
-    public @NotNull CustomConfig getConfigObject() {
+    public @NotNull ProtocolAdapterConfig getConfigObject() {
         return configObject;
     }
 
+    public @NotNull Long getTimeOfLastStartAttempt() {
+        return lastStartAttemptTime;
+    }
 
+    public @NotNull String getId() {
+        return adapter.getId();
+    }
+
+    public @NotNull T getAdapter() {
+        return adapter;
+    }
+
+    public void setErrorConnectionStatus(final @NotNull Throwable exception, final @Nullable String errorMessage) {
+        protocolAdapterState.setErrorConnectionStatus(exception, errorMessage);
+    }
+
+    public void setRuntimeStatus(final @NotNull ProtocolAdapterState.RuntimeStatus runtimeStatus) {
+        protocolAdapterState.setRuntimeStatus(runtimeStatus);
+    }
 }

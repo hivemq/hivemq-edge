@@ -17,18 +17,18 @@ package com.hivemq.edge.modules.adapters.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapter;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
+import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
 import com.hivemq.mqtt.message.mqtt5.MqttUserProperty;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 import static java.util.Objects.requireNonNull;
@@ -96,15 +96,26 @@ public class ProtocolAdapterPublishBuilderImpl implements ProtocolAdapterPublish
     }
 
     @Override
-    public @NotNull CompletableFuture<PublishReturnCode> send() {
-
+    public @NotNull CompletableFuture<ProtocolPublishResult> send() {
         final PUBLISH publish = builder.withHivemqId(hivemqId)
                 .withUserProperties(Mqtt5UserProperties.of(userProperties.build()))
                 .build();
-
-        return sendCallback.onPublishSend(publish, Objects.requireNonNull(adapter), dynamicContext.buildKeepingLast());
+        final CompletableFuture<PublishReturnCode> publishSend =
+                sendCallback.onPublishSend(publish, requireNonNull(adapter), dynamicContext.buildKeepingLast());
+        return publishSend.thenApply(publishReturnCode -> {
+            switch (publishReturnCode) {
+                case DELIVERED:
+                    return ProtocolPublishResult.DELIVERED;
+                case NO_MATCHING_SUBSCRIBERS:
+                    return ProtocolPublishResult.NO_MATCHING_SUBSCRIBERS;
+                case FAILED:
+                    return ProtocolPublishResult.FAILED;
+            }
+            throw new IllegalArgumentException();
+        });
     }
 
+    @Override
     public @NotNull ProtocolAdapterPublishBuilder withAdapter(final @NotNull ProtocolAdapter adapter) {
         this.adapter = adapter;
         return this;

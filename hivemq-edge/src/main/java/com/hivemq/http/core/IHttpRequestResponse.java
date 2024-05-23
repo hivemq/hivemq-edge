@@ -15,6 +15,8 @@
  */
 package com.hivemq.http.core;
 
+import com.hivemq.http.HttpConstants;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

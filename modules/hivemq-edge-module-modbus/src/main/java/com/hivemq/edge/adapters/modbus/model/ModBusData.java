@@ -15,28 +15,52 @@
  */
 package com.hivemq.edge.adapters.modbus.model;
 
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSample;
-import com.hivemq.edge.modules.config.impl.AbstractProtocolAdapterConfig;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * @author Simon L Johnson
  */
-public class ModBusData extends ProtocolAdapterDataSample {
-
+public class ModBusData  {
     public enum TYPE {
         COILS,
         INPUT_REGISTERS,
         HOLDING_REGISTERS,
     }
 
-    private final TYPE type;
+    private final DataPointFactory dataPointFactory;
+    protected @NotNull PollingContext pollingContext;
 
-    public ModBusData(AbstractProtocolAdapterConfig.Subscription subscription, final TYPE type) {
-        super(subscription);
-        this.type = type;
+    //-- Handle multiple tags in the same sample
+    protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
+
+    public ModBusData(
+            final @NotNull PollingContext pollingContext,
+            final @NotNull DataPointFactory dataPointFactory) {
+        this.pollingContext = pollingContext;
+        this.dataPointFactory = dataPointFactory;
     }
 
-    public TYPE getType() {
-        return type;
+
+    @JsonIgnore
+    public @NotNull PollingContext getPollingContext() {
+        return pollingContext;
+    }
+
+    public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
+        dataPoints.add(dataPointFactory.create(tagName, tagValue));
+    }
+
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public @NotNull List<DataPoint> getDataPoints() {
+        return dataPoints;
     }
 }

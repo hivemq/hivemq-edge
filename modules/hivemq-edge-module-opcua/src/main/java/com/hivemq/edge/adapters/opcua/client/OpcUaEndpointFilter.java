@@ -16,10 +16,10 @@
 package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.eclipse.milo.opcua.stack.core.util.EndpointUtil;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

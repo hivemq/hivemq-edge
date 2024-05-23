@@ -15,20 +15,19 @@
  */
 package com.hivemq.edge.adapters.http;
 
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.EnumSet;
 import java.util.List;
 
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapterInformation 
-    extends AbstractProtocolAdapterInformation {
+public class HttpProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new HttpProtocolAdapterInformation();
 
@@ -56,29 +55,40 @@ public class HttpProtocolAdapterInformation
     }
 
     @Override
-    public String getVersion() {
-        return super.getVersion() + " (BETA)";
-    }
-
-    @Override
-    public ProtocolAdapterConstants.CATEGORY getCategory() {
-        return ProtocolAdapterConstants.CATEGORY.CONNECTIVITY;
-    }
-
-    @Override
-    public byte getCapabilities() {
-        return ProtocolAdapterCapability.READ;
-    }
-
-    @Override
     public @NotNull String getUrl() {
         return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#http-adapter";
+
     }
 
     @Override
-    public List<ProtocolAdapterConstants.TAG> getTags() {
-        return List.of(ProtocolAdapterConstants.TAG.INTERNET,
-                ProtocolAdapterConstants.TAG.TCP,
-                ProtocolAdapterConstants.TAG.WEB);
+    public @NotNull String getVersion() {
+        return "${edge-version} (BETA)";
+    }
+
+    @Override
+    public @NotNull String getLogoUrl() {
+        return "/images/http-icon.png";
+    }
+
+    @Override
+    public @NotNull String getAuthor() {
+        return "HiveMQ";
+    }
+
+    @Override
+    public ProtocolAdapterCategory getCategory() {
+        return ProtocolAdapterCategory.CONNECTIVITY;
+    }
+
+    @Override
+    public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
+        return EnumSet.of(ProtocolAdapterCapability.READ);
+    }
+
+    @Override
+    public List<ProtocolAdapterTag> getTags() {
+        return List.of(ProtocolAdapterTag.INTERNET,
+                ProtocolAdapterTag.TCP,
+                ProtocolAdapterTag.WEB);
     }
 }

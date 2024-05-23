@@ -16,9 +16,9 @@
 package com.hivemq.mqtt.services;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.mqtt.handler.publish.PublishReturnCode;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 
 import java.util.concurrent.ExecutorService;

@@ -24,11 +24,6 @@ import com.hivemq.configuration.service.ApiConfigurationService;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.configuration.service.impl.ApiConfigurationServiceImpl;
 import com.hivemq.edge.HiveMQEdgeConstants;
-import com.hivemq.edge.modules.adapters.ProtocolAdapterConstants;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterCapability;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.config.CustomConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -37,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -50,9 +44,9 @@ public class AdapterModelConverterTest {
     void testCategoriesConvertToTransportModel() {
 
         ProtocolAdapterCategory apiCategory =
-                ProtocolAdapterApiUtils.convertApiCategory(ProtocolAdapterConstants.CATEGORY.INDUSTRIAL);
+                ProtocolAdapterApiUtils.convertApiCategory(com.hivemq.adapter.sdk.api.ProtocolAdapterCategory.INDUSTRIAL);
 
-        assertEquals(ProtocolAdapterConstants.CATEGORY.INDUSTRIAL.name(), apiCategory.getName());
+        assertEquals(com.hivemq.adapter.sdk.api.ProtocolAdapterCategory.INDUSTRIAL.name(), apiCategory.getName());
         assertNotNull(apiCategory.getDisplayName(), "Category Display Name should not be null");
         assertNotNull(apiCategory.getDescription(), "Category Description should not be null");
         assertNull(apiCategory.getImage(), "Category Image should be null");
@@ -113,74 +107,11 @@ public class AdapterModelConverterTest {
     }
 
     @Test
-    void testProtocolAdapterWriteDisabled() {
-
-        ConfigurationService configurationService = mock(ConfigurationService.class);
-        Module testModule = ModuleModelTests.createTestModule();
-        ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule,configurationService);
-        assertFalse(adapter.getCapabilities().contains(ProtocolAdapter.Capability.WRITE), "Module generated adapter should not support write");
-    }
-
-    @Test
     void testProtocolAdapterReadDisabled() {
 
         ConfigurationService configurationService = mock(ConfigurationService.class);
         Module testModule = ModuleModelTests.createTestModule();
         ProtocolAdapter adapter = ProtocolAdapterApiUtils.convertModuleAdapterType(testModule,configurationService);
         assertFalse(adapter.getCapabilities().contains(ProtocolAdapter.Capability.READ), "Module generated adapter should not support read");
-    }
-
-    @Test
-    void testProtocolAdapterCapabilities() {
-        assertTrue(ProtocolAdapterCapability.supportsCapability(new TestAdapterInformation() {
-            public byte getCapabilities() {
-                return ProtocolAdapterCapability.READ |
-                        ProtocolAdapterCapability.WRITE |
-                        ProtocolAdapterCapability.DISCOVER;
-            }
-        }, ProtocolAdapterCapability.READ), "all adapter should support read");
-
-        assertTrue(ProtocolAdapterCapability.supportsCapability(new TestAdapterInformation() {
-            public byte getCapabilities() {
-                return ProtocolAdapterCapability.READ |
-                        ProtocolAdapterCapability.WRITE |
-                        ProtocolAdapterCapability.DISCOVER;
-            }
-        }, ProtocolAdapterCapability.WRITE), "all adapter should support write");
-
-        assertTrue(ProtocolAdapterCapability.supportsCapability(new TestAdapterInformation() {
-            public byte getCapabilities() {
-                return ProtocolAdapterCapability.READ |
-                        ProtocolAdapterCapability.WRITE |
-                        ProtocolAdapterCapability.DISCOVER;
-            }
-        }, ProtocolAdapterCapability.DISCOVER), "all adapter should support discover");
-
-        assertTrue(ProtocolAdapterCapability.supportsCapability(new TestAdapterInformation() {
-            public byte getCapabilities() {
-                return ProtocolAdapterCapability.READ;
-            }
-        }, ProtocolAdapterCapability.READ), "read should support read");
-
-        assertFalse(ProtocolAdapterCapability.supportsCapability(new TestAdapterInformation() {
-            public byte getCapabilities() {
-                return ProtocolAdapterCapability.READ;
-            }
-        }, ProtocolAdapterCapability.WRITE), "read should not support write");
-
-        assertFalse(ProtocolAdapterCapability.supportsCapability(new TestAdapterInformation() {
-            public byte getCapabilities() {
-                return ProtocolAdapterCapability.READ;
-            }
-        }, ProtocolAdapterCapability.DISCOVER), "read should not support discover");
-
-        assertTrue(ProtocolAdapterCapability.supportsCapability(new TestAdapterInformation(),
-                ProtocolAdapterCapability.READ), "default adapter support read");
-
-        assertTrue(ProtocolAdapterCapability.supportsCapability(new TestAdapterInformation(),
-                ProtocolAdapterCapability.DISCOVER), "default adapter support discover");
-
-        assertFalse(ProtocolAdapterCapability.supportsCapability(new TestAdapterInformation(),
-                ProtocolAdapterCapability.WRITE), "default adapter not support write");
     }
 }

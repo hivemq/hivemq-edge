@@ -16,6 +16,7 @@
 package com.hivemq.http.core;
 
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.http.HttpConstants;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URL;

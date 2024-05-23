@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.modules.api.adapters;
 
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterPollingSampler;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
@@ -32,11 +32,11 @@ public interface ProtocolAdapterPollingService {
 
     void schedulePolling(@NotNull ProtocolAdapter adapter, @NotNull ProtocolAdapterPollingSampler input);
 
-    Optional<ProtocolAdapterPollingSampler> getPollingJob(@NotNull UUID id);
+    @NotNull Optional<ProtocolAdapterPollingSampler> getPollingJob(@NotNull UUID id);
 
-    List<ProtocolAdapterPollingSampler> getActiveProcesses();
+    @NotNull List<ProtocolAdapterPollingSampler> getActiveProcesses();
 
-    List<ProtocolAdapterPollingSampler> getPollingJobsForAdapter(@NotNull String adapterId);
+    @NotNull List<ProtocolAdapterPollingSampler> getPollingJobsForAdapter(@NotNull String adapterId);
 
     int currentErrorCount(@NotNull ProtocolAdapterPollingSampler pollingJob);
 

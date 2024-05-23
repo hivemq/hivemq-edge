@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 public class OpcUaException extends RuntimeException {
     public OpcUaException(final @NotNull String message) {

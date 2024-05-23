@@ -15,7 +15,8 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import com.hivemq.edge.modules.adapters.ProtocolAdapterException;
+
+import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 
 import java.util.concurrent.CompletableFuture;
 

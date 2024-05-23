@@ -16,10 +16,14 @@
 package com.hivemq.edge.impl.events;
 
 import com.google.common.base.Preconditions;
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
+import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
+import com.hivemq.edge.model.TypeIdentifierImpl;
 import com.hivemq.edge.modules.api.events.EventListener;
-import com.hivemq.edge.modules.api.events.EventService;
 import com.hivemq.edge.modules.api.events.EventStore;
-import com.hivemq.edge.modules.api.events.model.Event;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -38,14 +42,15 @@ import java.util.concurrent.ExecutorService;
 @Singleton
 public class EventServiceDelegateImpl implements EventService {
 
-    private Set<EventListener> eventListeners;
-    private EventStore eventStore;
-    private ExecutorService executorService;
+    private final @NotNull Set<EventListener> eventListeners;
+    private final @NotNull EventStore eventStore;
+    private final @NotNull ExecutorService executorService;
 
     @Inject
-    public EventServiceDelegateImpl(final @NotNull EventStore eventStore,
-                                    final @Nullable Set<EventListener> eventListeners,
-                                    final @NotNull ExecutorService executorService) {
+    public EventServiceDelegateImpl(
+            final @NotNull EventStore eventStore,
+            final @NotNull Set<EventListener> eventListeners,
+            final @NotNull ExecutorService executorService) {
         Preconditions.checkNotNull(eventStore);
         Preconditions.checkNotNull(executorService);
         this.eventStore = eventStore;
@@ -53,13 +58,23 @@ public class EventServiceDelegateImpl implements EventService {
         this.executorService = executorService;
     }
 
-    @Override
-    public void fireEvent(final Event event) {
+    public void fireEvent(final @NotNull Event event) {
         try {
             eventStore.storeEvent(event);
         } finally {
             notifyEventListeners(event);
         }
+    }
+
+    public @NotNull EventBuilder createAdapterEvent(final @NotNull String adapterId, final @NotNull String protocolId) {
+        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis())
+                .withSource(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER, adapterId))
+                .withAssociatedObject(TypeIdentifierImpl.create(TypeIdentifier.Type.ADAPTER_TYPE, protocolId));
+    }
+
+    @Override
+    public @NotNull EventBuilder bridgeEvent() {
+        return new EventBuilderImpl(this::fireEvent).withTimestamp(System.currentTimeMillis());
     }
 
     @Override
@@ -69,9 +84,8 @@ public class EventServiceDelegateImpl implements EventService {
 
     private void notifyEventListeners(final @NotNull Event event) {
         Preconditions.checkNotNull(event);
-        if(!eventListeners.isEmpty()){
-            eventListeners.forEach(l ->
-                    executorService.submit(() -> l.eventFired(event)));
+        if (!eventListeners.isEmpty()) {
+            eventListeners.forEach(l -> executorService.submit(() -> l.eventFired(event)));
         }
     }
 }

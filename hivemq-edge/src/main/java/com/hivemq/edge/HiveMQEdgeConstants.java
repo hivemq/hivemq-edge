@@ -1,40 +1,20 @@
-/*
- * Copyright 2019-present HiveMQ GmbH
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.hivemq.edge;
 
-import com.hivemq.HiveMQEdgeMain;
-import com.hivemq.util.ManifestUtils;
-
-/**
- * @author Simon L Johnson
- */
 public interface HiveMQEdgeConstants {
 
-    String VERSION = ManifestUtils.getValueFromManifest(HiveMQEdgeMain.class, "HiveMQ-Version");
+    String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+
+    String CLIENT_AGENT_PROPERTY_VALUE = "HiveMQ-Edge; %s";
+
     String DEVELOPMENT_MODE = "hivemq.edge.workspace.modules";
     String CONFIG_FILE_NAME = "hivemq.edge.config.xml";
     String MUTABLE_CONFIGURAION_ENABLED = "mutable.configuration.enabled";
     String CONFIGURATION_EXPORT_ENABLED = "configuration.export.enabled";
     String VERSION_PROPERTY = "version";
     String CLIENT_AGENT_PROPERTY = "client-agent";
-    String CLIENT_AGENT_PROPERTY_VALUE = "HiveMQ-Edge; %s";
 
     int MAX_ID_LEN = 500;
     int MAX_NAME_LEN = 256;
-    String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
     String NAME_REGEX = "^[A-Za-z0-9-_](?:[A-Za-z0-9_ -]*[A-Za-z0-9_-])$"; //-- alpha-num with spaces, underscore and hyphen (but NOT starting or ending with spaces)
     int MAX_UINT16 = 65535;
     String MAX_UINT16_String = "65535";

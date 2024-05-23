@@ -15,28 +15,31 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.hivemq.api.model.core.Payload;
+import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.discovery.NodeType;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.events.model.Event;
+import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
+import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
-import com.hivemq.edge.modules.adapters.impl.AbstractProtocolAdapter;
-import com.hivemq.edge.modules.adapters.model.NodeType;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryInput;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterDiscoveryOutput;
-import com.hivemq.edge.modules.adapters.model.ProtocolAdapterStartOutput;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterInformation;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPublishService;
-import com.hivemq.edge.modules.api.events.EventUtils;
-import com.hivemq.edge.modules.api.events.model.Event;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
-import org.eclipse.milo.opcua.sdk.client.api.ServiceFaultListener;
 import org.eclipse.milo.opcua.sdk.client.api.UaSession;
 import org.eclipse.milo.opcua.sdk.client.dtd.DataTypeDictionarySessionInitializer;
 import org.eclipse.milo.opcua.stack.core.AttributeId;
@@ -52,7 +55,8 @@ import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
-import org.eclipse.milo.opcua.stack.core.types.structured.ServiceFault;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,58 +68,80 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
+import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterConfig> {
+public class OpcUaProtocolAdapter implements ProtocolAdapter {
     private static final Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
+    private final @NotNull ProtocolAdapterInformation adapterInformation;
+    private final @NotNull OpcUaAdapterConfig adapterConfig;
+    private final @NotNull ProtocolAdapterState protocolAdapterState;
+    private final @NotNull ModuleServices moduleServices;
+    private final @NotNull AdapterFactories adapterFactories;
+    private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private @Nullable OpcUaClient opcUaClient;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap = new ConcurrentHashMap<>();
+    private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull OpcUaAdapterConfig adapterConfig,
-            final @NotNull MetricRegistry metricRegistry) {
-        super(adapterInformation, adapterConfig, metricRegistry);
+            final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> input) {
+        this.adapterInformation = adapterInformation;
+        this.adapterConfig = input.getConfig();
+        this.protocolAdapterState = input.getProtocolAdapterState();
+        this.moduleServices = input.moduleServices();
+        this.adapterFactories = input.adapterFactories();
+        this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
+    }
+
+
+    @Override
+    public @NotNull String getId() {
+        return adapterConfig.getId();
     }
 
     @Override
-    protected @NotNull CompletableFuture<ProtocolAdapterStartOutput> startInternal(final @NotNull ProtocolAdapterStartOutput output) {
+    public void start(
+            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
         try {
             if (opcUaClient == null) {
                 createClient();
             }
-            final CompletableFuture<ProtocolAdapterStartOutput> resultFuture = new CompletableFuture<>();
-
             opcUaClient.connect().thenAccept(uaClient -> {
                 opcUaClient.getSubscriptionManager().addSubscriptionListener(createSubscriptionListener());
                 createAllSubscriptions().whenComplete((unused, throwable) -> {
                     if (throwable == null) {
-                        resultFuture.complete(output);
+                        output.startedSuccessfully();
                     } else {
                         output.failStart(throwable, throwable.getMessage());
-                        resultFuture.completeExceptionally(throwable);
                     }
                 });
-
             }).exceptionally(throwable -> {
                 log.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
-                stop();
+                stopInternal();
                 output.failStart(throwable, throwable.getMessage());
-                resultFuture.completeExceptionally(throwable);
                 return null;
             });
-
-            return resultFuture;
-
         } catch (Exception e) {
             log.error("Not able to start OPC-UA client for server {}", adapterConfig.getUri(), e);
-            return CompletableFuture.failedFuture(e);
+            output.failStart(e, "Not able to start OPC-UA client for server " + adapterConfig.getUri());
         }
     }
 
     @Override
-    protected @NotNull CompletableFuture<Void> stopInternal() {
+    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+        stopInternal().whenComplete((aVoid, t) -> {
+            if (t != null) {
+                output.failStop(t, null);
+            } else {
+                output.stoppedSuccessfully();
+            }
+        });
+    }
+
+    public @NotNull CompletableFuture<Void> stopInternal() {
         try {
             if (opcUaClient == null) {
                 return CompletableFuture.completedFuture(null);
@@ -123,7 +149,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
                 subscriptionMap.clear();
                 try {
                     return opcUaClient.disconnect().thenAccept(client -> {
-                        setConnectionStatus(ConnectionStatus.DISCONNECTED);
+                        protocolAdapterState.setConnectionStatus(DISCONNECTED);
                     });
                 } finally {
                     opcUaClient = null;
@@ -133,6 +159,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
             return CompletableFuture.failedFuture(e);
         }
     }
+
 
     @Override
     public @NotNull CompletableFuture<Void> discoverValues(
@@ -163,13 +190,18 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
                             requireNonNullElse(displayName, ""),
                             parent != null ? parent.getNodeId().toParseableString() : null,
                             nodeType != null ? nodeType : NodeType.VALUE,
-                            nodeType != null && nodeType == NodeType.VALUE);
+                            nodeType == NodeType.VALUE);
         }, input.getDepth());
+    }
+
+    @Override
+    public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
+        return adapterInformation;
     }
 
     @NotNull
     private OpcUaSubscriptionListener createSubscriptionListener() {
-        return new OpcUaSubscriptionListener(protocolAdapterMetricsHelper, adapterConfig.getId(), (subscription) -> {
+        return new OpcUaSubscriptionListener(protocolAdapterMetricsService, adapterConfig.getId(), (subscription) -> {
             //re-create a subscription on failure
             final OpcUaAdapterConfig.Subscription subscriptionConfig =
                     subscriptionMap.get(subscription.getSubscriptionId());
@@ -200,7 +232,7 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
             resultFuture.complete(null);
             return null;
         }).exceptionally(throwable -> {
-            setErrorConnectionStatus(throwable);
+            protocolAdapterState.setErrorConnectionStatus(throwable, null);
             resultFuture.completeExceptionally(throwable);
             return null;
         });
@@ -219,21 +251,23 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
         //-- Seems to be not connection monitoring hook, use the session activity listener
         opcUaClient.addSessionActivityListener(new SessionActivityListener() {
             @Override
-            public void onSessionInactive(final UaSession session) {
-                setConnectionStatus(ConnectionStatus.DISCONNECTED);
+            public void onSessionInactive(final @NotNull UaSession session) {
+                protocolAdapterState.setConnectionStatus(DISCONNECTED);
             }
+
             @Override
-            public void onSessionActive(final UaSession session) {
-                setConnectionStatus(ConnectionStatus.CONNECTED);
+            public void onSessionActive(final @NotNull UaSession session) {
+                protocolAdapterState.setConnectionStatus(CONNECTED);
             }
         });
         opcUaClient.addFaultListener(serviceFault -> {
-            eventService.fireEvent(
-                    eventBuilder(Event.SEVERITY.ERROR).
-                            withPayload(Payload.fromObject(objectMapper, serviceFault.getResponseHeader().getServiceResult())).
-                            withMessage("A Service Fault was Detected.").build());
+            moduleServices.eventService()
+                    .createAdapterEvent(adapterConfig.getId(), adapterInformation.getProtocolId())
+                    .withSeverity(Event.SEVERITY.ERROR)
+                    .withPayload(serviceFault.getResponseHeader().getServiceResult())
+                    .withMessage("A Service Fault was Detected.")
+                    .fire();
         });
-        setRuntimeStatus(RuntimeStatus.STARTED);
     }
 
     private @NotNull CompletableFuture<Void> subscribeToNode(final @NotNull OpcUaAdapterConfig.Subscription subscription) {
@@ -251,15 +285,15 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
                     .createSubscription(subscription.getPublishingInterval())
                     .thenAccept(new OpcUaSubscriptionConsumer(subscription,
                             readValueId,
-                            adapterPublishService,
-                            eventService,
+                            moduleServices.adapterPublishService(),
+                            moduleServices.eventService(),
                             resultFuture,
                             opcUaClient,
                             subscriptionMap,
-                            protocolAdapterMetricsHelper,
-                            adapterConfig.getId()));
-
-
+                            protocolAdapterMetricsService,
+                            adapterConfig.getId(),
+                            this,
+                            adapterFactories));
             return resultFuture;
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
@@ -346,4 +380,8 @@ public class OpcUaProtocolAdapter extends AbstractProtocolAdapter<OpcUaAdapterCo
         return CompletableFuture.allOf(childFutures.build().toArray(new CompletableFuture[]{}));
     }
 
+    @VisibleForTesting
+    public @NotNull ProtocolAdapterState getProtocolAdapterState() {
+        return protocolAdapterState;
+    }
 }
