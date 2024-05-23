@@ -1,13 +1,12 @@
 import { FC, lazy, Suspense, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Node, useEdges, useNodes } from 'reactflow'
-import { AbsoluteCenter, useDisclosure } from '@chakra-ui/react'
+import { useDisclosure } from '@chakra-ui/react'
 
 import { Adapter, Bridge } from '@/api/__generated__'
-import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+import { SuspenseFallback } from '@/components/SuspenseOutlet.tsx'
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
-
-import { EdgeTypes, Group, NodeTypes } from '../../types.ts'
+import { EdgeTypes, Group, NodeTypes } from '@/modules/Workspace/types.ts'
 
 const NodePropertyDrawer = lazy(() => import('../drawers/NodePropertyDrawer.tsx'))
 const LinkPropertyDrawer = lazy(() => import('../drawers/LinkPropertyDrawer.tsx'))
@@ -68,14 +67,7 @@ const NodePanelController: FC = () => {
   if (!nodeId) return null
 
   return (
-    <Suspense
-      // TODO[NVL] Would be good to integrate the loader within the drawer
-      fallback={
-        <AbsoluteCenter axis="both">
-          <LoaderSpinner />
-        </AbsoluteCenter>
-      }
-    >
+    <Suspense fallback={<SuspenseFallback />}>
       {selectedLinkSource && selectedLinkSource.type !== NodeTypes.CLUSTER_NODE && (
         <LinkPropertyDrawer
           nodeId={nodeId}

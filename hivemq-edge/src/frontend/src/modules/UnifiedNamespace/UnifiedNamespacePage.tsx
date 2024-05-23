@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Box, Button, Flex, SimpleGrid } from '@chakra-ui/react'
 
 import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUnifiedNamespace.tsx'
@@ -12,6 +12,7 @@ import RecommendationPanel from '@/modules/UnifiedNamespace/components/panels/Re
 import PrefixPanel from '@/modules/UnifiedNamespace/components/panels/PrefixPanel.tsx'
 import { BiPlus } from 'react-icons/bi'
 import { mockISA95ApiBean } from '@/api/hooks/useUnifiedNamespace/__handlers__'
+import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 
 const UnifiedNamespacePage: FC = () => {
   const { t } = useTranslation()
@@ -70,7 +71,7 @@ const UnifiedNamespacePage: FC = () => {
               <PrefixPanel data={safeData} isLoading={isLoading} />
             </SimpleGrid>
           </SimpleGrid>
-          <Outlet />
+          <SuspenseOutlet />
         </>
       )}
     </PageContainer>

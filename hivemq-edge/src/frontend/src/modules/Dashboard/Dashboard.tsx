@@ -1,13 +1,13 @@
-import { FC, Suspense } from 'react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { AbsoluteCenter, Box, Flex } from '@chakra-ui/react'
 import { SkipNavContent, SkipNavLink } from '@chakra-ui/skip-nav'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
-
-import SidePanel from './components/SidePanel.tsx'
-import { useAuth } from '../Auth/hooks/useAuth.ts'
+import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
+import SidePanel from '@/modules/Dashboard/components/SidePanel.tsx'
+import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 
 const Dashboard: FC = () => {
   const { credentials, isLoading } = useAuth()
@@ -33,15 +33,7 @@ const Dashboard: FC = () => {
         <SidePanel />
         <Flex as="main" flexGrow={1} overflow="auto">
           <SkipNavContent />
-          <Suspense
-            fallback={
-              <AbsoluteCenter axis="both">
-                <LoaderSpinner />
-              </AbsoluteCenter>
-            }
-          >
-            <Outlet />
-          </Suspense>
+          <SuspenseOutlet />
         </Flex>
       </Flex>
     </>

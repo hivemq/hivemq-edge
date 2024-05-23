@@ -8,12 +8,12 @@ import ReactFlow, {
   ReactFlowProvider,
   XYPosition,
 } from 'reactflow'
-import { Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Box } from '@chakra-ui/react'
 
 import styles from './PolicyEditor.module.scss'
 
+import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import CanvasControls from '@datahub/components/controls/CanvasControls.tsx'
 import Minimap from '@datahub/components/controls/Minimap.tsx'
 import DesignerToolbox from '@datahub/components/controls/DesignerToolbox.tsx'
@@ -180,7 +180,7 @@ const PolicyEditor: FC = () => {
             <Minimap />
           </Box>
         </ReactFlow>
-        <Outlet />
+        <SuspenseOutlet />
       </ReactFlowProvider>
     </>
   )

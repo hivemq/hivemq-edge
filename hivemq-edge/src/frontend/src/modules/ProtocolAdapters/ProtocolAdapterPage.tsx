@@ -1,11 +1,11 @@
-import { FC, Suspense, useEffect, useMemo, useState } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AbsoluteCenter, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
 
-import { Outlet, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
-import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import PageContainer from '@/components/PageContainer.tsx'
 import ProtocolAdapters from '@/modules/ProtocolAdapters/components/panels/ProtocolAdapters.tsx'
 import ProtocolIntegrationStore from '@/modules/ProtocolAdapters/components/panels/ProtocolIntegrationStore.tsx'
@@ -55,15 +55,7 @@ const ProtocolAdapterPage: FC = () => {
           </TabPanel>
         </TabPanels>
       </Tabs>
-      <Suspense
-        fallback={
-          <AbsoluteCenter axis="both">
-            <LoaderSpinner />
-          </AbsoluteCenter>
-        }
-      >
-        <Outlet />
-      </Suspense>
+      <SuspenseOutlet />
     </PageContainer>
   )
 }
