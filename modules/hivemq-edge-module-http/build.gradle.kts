@@ -36,9 +36,9 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
     compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 
+    implementation("org.slf4j:slf4j-api:${property("slf4j.version")}")
     implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     runtimeOnly("com.google.guava:guava:${property("guava.version")}") {
         exclude("org.checkerframework", "checker-qual")
@@ -57,7 +57,6 @@ configurations {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
     testImplementation("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
     testImplementation("org.apache.commons:commons-lang3:${property("commons-lang.version")}")
     testImplementation("commons-io:commons-io:${property("commons-io.version")}")
@@ -204,7 +203,7 @@ downloadLicenses {
     )
 
     dependencyConfiguration = "runtimeClasspath"
-    excludeDependencies = listOf("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
+    excludeDependencies = listOf("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 }
 
 val updateThirdPartyLicenses by tasks.registering {

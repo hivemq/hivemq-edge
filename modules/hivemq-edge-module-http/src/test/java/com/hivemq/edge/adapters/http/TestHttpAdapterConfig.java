@@ -33,9 +33,9 @@ import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
 import com.hivemq.configuration.reader.UnsConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.ProtocolAdapterUtils;
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

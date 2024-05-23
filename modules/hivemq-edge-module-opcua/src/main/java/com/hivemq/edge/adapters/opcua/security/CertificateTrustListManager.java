@@ -16,9 +16,9 @@
 package com.hivemq.edge.adapters.opcua.security;
 
 import com.google.common.collect.ImmutableList;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.eclipse.milo.opcua.stack.core.security.TrustListManager;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.jetbrains.annotations.NotNull;
 
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;

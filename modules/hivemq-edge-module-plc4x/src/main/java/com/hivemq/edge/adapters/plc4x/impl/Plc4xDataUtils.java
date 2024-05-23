@@ -15,11 +15,11 @@
  */
 package com.hivemq.edge.adapters.plc4x.impl;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.plc4x.java.api.messages.PlcReadResponse;
 import org.apache.plc4x.java.api.types.PlcValueType;
 import org.apache.plc4x.java.api.value.PlcValue;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;

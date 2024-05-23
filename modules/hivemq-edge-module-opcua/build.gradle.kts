@@ -42,7 +42,6 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
     compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 
     runtimeOnly("com.google.guava:guava:${property("guava.version")}")
@@ -55,7 +54,6 @@ dependencies {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
     testImplementation("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 
     testImplementation("org.eclipse.milo:sdk-server:${property("milo.version")}")
@@ -213,7 +211,7 @@ downloadLicenses {
     )
 
     dependencyConfiguration = "runtimeClasspath"
-    excludeDependencies = listOf("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
+    excludeDependencies = listOf("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 }
 
 val updateThirdPartyLicenses by tasks.registering {

@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.adapters.http;
 
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.URL;
 

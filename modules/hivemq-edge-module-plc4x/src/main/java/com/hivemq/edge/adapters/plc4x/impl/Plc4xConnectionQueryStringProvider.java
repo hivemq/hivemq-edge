@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.plc4x.impl;
 
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * @author Simon L Johnson

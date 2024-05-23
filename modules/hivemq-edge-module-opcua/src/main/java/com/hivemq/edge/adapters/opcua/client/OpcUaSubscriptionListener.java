@@ -16,11 +16,11 @@
 package com.hivemq.edge.adapters.opcua.client;
 
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 

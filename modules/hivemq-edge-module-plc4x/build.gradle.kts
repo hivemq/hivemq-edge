@@ -36,7 +36,6 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
     compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 
     implementation("org.apache.plc4x:plc4j-api:${property("org.apache.plc4x.version")}")
@@ -63,7 +62,6 @@ configurations {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
     testImplementation("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
@@ -206,7 +204,7 @@ downloadLicenses {
     )
 
     dependencyConfiguration = "runtimeClasspath"
-    excludeDependencies = listOf("com.hivemq:hivemq-extension-sdk:${property("hivemq-extension-sdk.version")}")
+    excludeDependencies = listOf("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 }
 
 val updateThirdPartyLicenses by tasks.registering {

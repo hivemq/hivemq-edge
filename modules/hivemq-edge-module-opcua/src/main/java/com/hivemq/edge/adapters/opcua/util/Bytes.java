@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.util;
 
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 

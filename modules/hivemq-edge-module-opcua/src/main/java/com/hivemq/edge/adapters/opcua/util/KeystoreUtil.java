@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.opcua.util;
 
 import com.google.common.collect.ImmutableList;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;

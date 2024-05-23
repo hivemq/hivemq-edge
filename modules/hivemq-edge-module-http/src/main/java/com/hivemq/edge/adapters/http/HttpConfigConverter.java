@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
