@@ -246,4 +246,40 @@ describe('OperationPanel', () => {
       cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.SERDES_DESERIALIZE}`)
     })
   })
+
+  describe(OperationData.Function.SERDES_SERIALIZE, () => {
+    const node: Node<OperationData> = {
+      id: 'my-node',
+      type: DataHubNodeType.OPERATION,
+      position: { x: 0, y: 0 },
+      data: {
+        id: 'default-id',
+        functionId: OperationData.Function.SERDES_SERIALIZE,
+        formData: {
+          schemaId: 'schema-id',
+          schemaVersion: 'version1',
+        },
+      },
+    }
+
+    it('should render the form', () => {
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.get('h2').should('contain.text', 'Serdes.serialize')
+      cy.get('label#root_formData_schemaId-label').should('contain.text', 'Schema ID')
+      cy.get('label#root_formData_schemaId-label + input').should('contain.value', 'schema-id')
+      cy.get('label#root_formData_schemaVersion-label').should('contain.text', 'Schema Version')
+      cy.get('label#root_formData_schemaVersion-label + input').should('contain.value', 'version1')
+    })
+
+    it('should be accessible', () => {
+      cy.injectAxe()
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.checkAccessibility()
+      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.SERDES_SERIALIZE}`)
+    })
+  })
 })
