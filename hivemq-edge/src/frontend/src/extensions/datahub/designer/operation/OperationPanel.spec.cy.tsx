@@ -174,4 +174,40 @@ describe('OperationPanel', () => {
       cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.DELIVERY_REDIRECT}`)
     })
   })
+
+  describe(OperationData.Function.MQTT_USER_PROPERTY, () => {
+    const node: Node<OperationData> = {
+      id: 'my-node',
+      type: DataHubNodeType.OPERATION,
+      position: { x: 0, y: 0 },
+      data: {
+        id: 'default-id',
+        functionId: OperationData.Function.MQTT_USER_PROPERTY,
+        formData: {
+          name: 'key',
+          value: 'value',
+        },
+      },
+    }
+
+    it('should render the form', () => {
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.get('h2').should('contain.text', 'Mqtt.UserProperties.add')
+      cy.get('label#root_formData_name-label').should('contain.text', 'Property Name')
+      cy.get('label#root_formData_name-label + input').should('contain.value', 'key')
+      cy.get('label#root_formData_value-label').should('contain.text', 'Property Value')
+      cy.get('label#root_formData_value-label + input').should('contain.value', 'value')
+    })
+
+    it('should be accessible', () => {
+      cy.injectAxe()
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.checkAccessibility()
+      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.MQTT_USER_PROPERTY}`)
+    })
+  })
 })
