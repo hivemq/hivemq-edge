@@ -139,4 +139,39 @@ describe('OperationPanel', () => {
       cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.SYSTEM_LOG}`)
     })
   })
+
+  describe(OperationData.Function.DELIVERY_REDIRECT, () => {
+    const node: Node<OperationData> = {
+      id: 'my-node',
+      type: DataHubNodeType.TOPIC_FILTER,
+      position: { x: 0, y: 0 },
+      data: {
+        id: 'default-id',
+        functionId: OperationData.Function.DELIVERY_REDIRECT,
+        formData: { topic: 'a/simple/topic', applyPolicies: true },
+      },
+    }
+
+    it('should render the form', () => {
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.get('h2').should('contain.text', 'Delivery.redirectTo')
+      cy.get('label#root_formData_topic-label').should('contain.text', 'Topic')
+      cy.get('label#root_formData_topic-label + input').should('contain.value', 'a/simple/topic')
+      cy.get('label:has(> input#root_formData_applyPolicies) ')
+        .as('topic_Errors')
+        .should('contain.text', 'Apply Policies')
+        .should('have.attr', 'data-checked')
+    })
+
+    it('should be accessible', () => {
+      cy.injectAxe()
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.checkAccessibility()
+      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.DELIVERY_REDIRECT}`)
+    })
+  })
 })
