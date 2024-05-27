@@ -1,20 +1,21 @@
 /// <reference types="cypress" />
 
-import { Node } from 'reactflow'
+import { Edge, Node } from 'reactflow'
 import { Button } from '@chakra-ui/react'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
 import { SUGGESTION_TRIGGER_CHAR } from '@datahub/components/interpolation/Suggestion.ts'
-import { DataHubNodeType, OperationData } from '@datahub/types.ts'
+import { DataHubNodeType, FunctionData, OperationData } from '@datahub/types.ts'
 import { OperationPanel } from './OperationPanel.tsx'
 
-const getWrapperWith = (initNodes: Node[]) => {
+const getWrapperWith = (initNodes: Node[], initEdges?: Edge[]) => {
   const Wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
     return (
       <MockStoreWrapper
         config={{
           initialState: {
             nodes: initNodes,
+            edges: initEdges,
           },
         }}
       >
@@ -380,6 +381,60 @@ describe('OperationPanel', () => {
       })
       cy.checkAccessibility()
       cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.MQTT_DROP}`)
+    })
+  })
+
+  describe(OperationData.Function.DATAHUB_TRANSFORM, () => {
+    const node: Node<OperationData> = {
+      id: 'my-node',
+      type: DataHubNodeType.OPERATION,
+      position: { x: 0, y: 0 },
+      data: {
+        id: 'default-id',
+        functionId: OperationData.Function.DATAHUB_TRANSFORM,
+        formData: { transform: ['script-1', 'script-2'] },
+      },
+    }
+
+    const script1: Node<FunctionData> = {
+      id: 'script-1',
+      type: DataHubNodeType.FUNCTION,
+      position: { x: 0, y: 0 },
+      data: { name: 'my function 1', type: 'Javascript', version: 1 },
+    }
+
+    const script2: Node<FunctionData> = {
+      id: 'script-2',
+      type: DataHubNodeType.FUNCTION,
+      position: { x: 0, y: 0 },
+      data: { name: 'my function 2', type: 'Javascript', version: 1 },
+    }
+
+    it('should render the form', () => {
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith(
+          [script1, script2, node],
+          [
+            { id: 'e1', source: 'script-1', target: 'my-node' },
+            { id: 'e2', source: 'script-2', target: 'my-node' },
+          ]
+        ),
+      })
+      cy.get('h2').first().should('contain.text', 'Transformation')
+      cy.get('h2').eq(1).should('contain.text', 'Execution order')
+      cy.get('label#root_formData_transform_0-label').should('contain.text', 'Function name')
+      cy.get('label#root_formData_transform_0-label + input').should('contain.value', 'my function 1')
+      cy.get('label#root_formData_transform_1-label').should('contain.text', 'Function name')
+      cy.get('label#root_formData_transform_1-label + input').should('contain.value', 'my function 2')
+    })
+
+    it('should be accessible', () => {
+      cy.injectAxe()
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.checkAccessibility()
+      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.DATAHUB_TRANSFORM}`)
     })
   })
 })
