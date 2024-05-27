@@ -58,7 +58,7 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
  *
  * @author Simon L Johnson
  */
-public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig> implements PollingProtocolAdapter {
+public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig, C extends Plc4xAdapterConfig.PollingContextImpl> implements PollingProtocolAdapter<C> {
 
     protected static final String TAG_ADDRESS_TYPE_SEP = ":";
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -110,9 +110,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig> impleme
     }
 
     @Override
-    public @NotNull List<? extends PollingContext> getPollingContexts() {
+    public @NotNull List<C> getPollingContexts() {
         if (getReadType() == ReadType.Read) {
-            return adapterConfig.getSubscriptions();
+            return (List<C>) adapterConfig.getSubscriptions();
         } else {
             return List.of();
         }

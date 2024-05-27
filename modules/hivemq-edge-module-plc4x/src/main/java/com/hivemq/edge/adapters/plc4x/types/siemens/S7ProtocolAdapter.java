@@ -45,7 +45,7 @@ import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.WSTRI
 /**
  * @author HiveMQ Adapter Generator
  */
-public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig> {
+public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig, Plc4xAdapterConfig.PollingContextImpl> {
 
     private static final Logger log = LoggerFactory.getLogger(S7ProtocolAdapter.class);
 
