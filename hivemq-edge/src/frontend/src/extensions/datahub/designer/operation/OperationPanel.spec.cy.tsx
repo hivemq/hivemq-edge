@@ -4,6 +4,8 @@ import { Node } from 'reactflow'
 import { Button } from '@chakra-ui/react'
 
 import { MockStoreWrapper } from '@datahub/__test-utils__/MockStoreWrapper.tsx'
+import { SUGGESTION_TRIGGER_CHAR } from '@datahub/components/interpolation/Suggestion.ts'
+import { DataHubNodeType, OperationData } from '@datahub/types.ts'
 import { OperationPanel } from './OperationPanel.tsx'
 
 const getWrapperWith = (initNodes: Node[]) => {
@@ -73,7 +75,8 @@ describe('OperationPanel', () => {
 
     cy.get('@functionSelect').eq(1).click()
 
-    cy.get('p#root_formData_applyPolicies__description + label').should('have.text', 'Apply Policies').click()
+    cy.get('p#root_formData_applyPolicies__description + label').should('have.text', 'Apply Policies')
+    cy.get('p#root_formData_applyPolicies__description + label').click()
 
     cy.get('@submit').should('not.have.been.calledWith')
     cy.get("button[type='submit']").click()
@@ -89,5 +92,51 @@ describe('OperationPanel', () => {
     cy.get('[role="alert"][data-status="error"] ul li').as('listErrors')
     cy.get('@listErrors').eq(0).should('contain.text', "must have required property 'id'")
     cy.get('@listErrors').eq(1).should('contain.text', "must have required property 'Topic'")
+  })
+
+  describe(OperationData.Function.SYSTEM_LOG, () => {
+    const node: Node<OperationData> = {
+      id: 'my-node',
+      type: DataHubNodeType.TOPIC_FILTER,
+      position: { x: 0, y: 0 },
+      data: {
+        id: 'default-id',
+        functionId: OperationData.Function.SYSTEM_LOG,
+        formData: { level: 'DEBUG', message: 'a message' },
+      },
+    }
+
+    it('should render the form', () => {
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+
+      cy.get('h2').should('contain.text', 'System.log')
+      cy.get('label#root_formData_level-label').should('contain.text', 'Log Level')
+      cy.get('label#root_formData_level-label + div').should('contain.text', 'DEBUG')
+      cy.get('label#root_formData_level-label + div').click()
+      cy.get('label#root_formData_level-label + div')
+        .find("[role='listbox']")
+        .find("[role='option']")
+        .as('logLevelSelect')
+      cy.get('@logLevelSelect').should('have.length', 5)
+      cy.get('@logLevelSelect').eq(4).should('contain.text', 'TRACE')
+      cy.get('@logLevelSelect').eq(4).click()
+      cy.get('label#root_formData_level-label + div').should('contain.text', 'TRACE')
+
+      // Need a better (and shorter) way of testing it display the right widget
+      cy.get('#root_formData_message').type(`A new topic ${SUGGESTION_TRIGGER_CHAR}`)
+      cy.getByTestId('interpolation-container').should('be.visible')
+      cy.get('#root_formData_message').type('{esc}')
+    })
+
+    it('should be accessible', () => {
+      cy.injectAxe()
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.checkAccessibility()
+      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.SYSTEM_LOG}`)
+    })
   })
 })
