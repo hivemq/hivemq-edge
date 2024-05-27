@@ -282,4 +282,44 @@ describe('OperationPanel', () => {
       cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.SERDES_SERIALIZE}`)
     })
   })
+
+  describe(OperationData.Function.METRICS_COUNTER_INC, () => {
+    const node: Node<OperationData> = {
+      id: 'my-node',
+      type: DataHubNodeType.OPERATION,
+      position: { x: 0, y: 0 },
+      data: {
+        id: 'default-id',
+        functionId: OperationData.Function.METRICS_COUNTER_INC,
+        formData: {
+          metricName: 'metric-name',
+          incrementBy: 12,
+        },
+      },
+    }
+
+    it('should render the form', () => {
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.get('h2').should('contain.text', 'Metrics.Counter.increment')
+      cy.get('label#root_formData_metricName-label').should('contain.text', 'Metric Name')
+      cy.get('label#root_formData_metricName-label + div > div').should(
+        'contain.text',
+        'com.hivemq.com.data-hub.custom.counters.'
+      )
+      cy.get('label#root_formData_metricName-label + div > input').should('contain.value', 'metric-name')
+      cy.get('label[for="root_formData_incrementBy"]').should('contain.text', 'IncrementBy')
+      cy.get('label[for="root_formData_incrementBy"] + div >  input').should('contain.value', 12)
+    })
+
+    it('should be accessible', () => {
+      cy.injectAxe()
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.checkAccessibility()
+      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.METRICS_COUNTER_INC}`)
+    })
+  })
 })
