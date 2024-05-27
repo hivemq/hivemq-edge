@@ -331,10 +331,7 @@ describe('OperationPanel', () => {
       data: {
         id: 'default-id',
         functionId: OperationData.Function.MQTT_DISCONNECT,
-        formData: {
-          metricName: 'metric-name',
-          incrementBy: 12,
-        },
+        formData: {},
       },
     }
 
@@ -353,6 +350,36 @@ describe('OperationPanel', () => {
       })
       cy.checkAccessibility()
       cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.MQTT_DISCONNECT}`)
+    })
+  })
+
+  describe(OperationData.Function.MQTT_DROP, () => {
+    const node: Node<OperationData> = {
+      id: 'my-node',
+      type: DataHubNodeType.OPERATION,
+      position: { x: 0, y: 0 },
+      data: {
+        id: 'default-id',
+        functionId: OperationData.Function.MQTT_DROP,
+        formData: {},
+      },
+    }
+
+    it('should render the form', () => {
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.get('h2').should('contain.text', 'Mqtt.drop')
+      cy.get('[role="group"]:has(#root_formData__title) ').last().find('label').should('not.exist')
+    })
+
+    it('should be accessible', () => {
+      cy.injectAxe()
+      cy.mountWithProviders(<OperationPanel selectedNode="my-node" />, {
+        wrapper: getWrapperWith([node]),
+      })
+      cy.checkAccessibility()
+      cy.percySnapshot(`Component: OperationPanel > ${OperationData.Function.MQTT_DROP}`)
     })
   })
 })
