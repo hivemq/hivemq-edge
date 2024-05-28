@@ -40,7 +40,7 @@ export const UploadStepper: FC<UploadStepper> = ({ steps, activeStep }) => {
             </Step>
           ))}
       </Stepper>
-      <Box minHeight={450} w="100%" p={4}>
+      <Box data-testid="stepper-container" minHeight={450} w="100%" p={4}>
         {steps[activeStep]?.renderer}
       </Box>
     </VStack>
