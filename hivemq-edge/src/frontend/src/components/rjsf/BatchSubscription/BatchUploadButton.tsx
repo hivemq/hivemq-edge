@@ -24,7 +24,7 @@ export interface BatchSubscriptionProps {
 const BatchUploadButton: FC<BatchSubscriptionProps> = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation('components')
-  const { activeStep, steps, goToNext, goToPrevious } = useBatchModeSteps()
+  const { activeStep, steps, isStepCompleted, goToNext, goToPrevious } = useBatchModeSteps()
 
   return (
     <>
