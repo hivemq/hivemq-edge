@@ -28,10 +28,11 @@ const BatchUploadButton: FC<BatchSubscriptionProps> = () => {
 
   return (
     <>
-      <Button colorScheme="red" onClick={onOpen} leftIcon={<LuHardDriveUpload />}>
+      <Button onClick={onOpen} leftIcon={<LuHardDriveUpload />} data-testid="array-field-batch-cta">
         {t('rjsf.batchUpload.button')}
       </Button>
       <Modal
+        id="array-field-batch"
         size="3xl"
         closeOnOverlayClick={false}
         // initialFocusRef={cancelRef}

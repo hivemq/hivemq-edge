@@ -2,6 +2,10 @@ import { useSteps } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { useCallback } from 'react'
 
+import DataSourceStep from '@/components/rjsf/BatchSubscription/components/DataSourceStep.tsx'
+import SubscriptionsValidationStep from '@/components/rjsf/BatchSubscription/components/SubscriptionsValidationStep.tsx'
+import ColumnMatcherStep from '@/components/rjsf/BatchSubscription/components/ColumnMatcherStep.tsx'
+import ConfirmStep from '@/components/rjsf/BatchSubscription/components/ConfirmStep.tsx'
 
 export enum BatchModeStep {
   UPLOAD,
