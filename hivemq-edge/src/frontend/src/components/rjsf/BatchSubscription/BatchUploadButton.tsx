@@ -50,10 +50,10 @@ const BatchUploadButton: FC<BatchSubscriptionProps> = () => {
           </ModalBody>
           <ModalFooter>
             <ButtonGroup>
-              <Button onClick={goToPrevious} isDisabled={activeStep === 0}>
+              <Button onClick={goToPrevious} isDisabled={!activeStep}>
                 {t('rjsf.batchUpload.modal.action.previous')}
               </Button>
-              <Button onClick={goToNext} isDisabled={activeStep === steps.length}>
+              <Button onClick={goToNext} isDisabled={activeStep === steps.length - 1 || !isStepCompleted(activeStep)}>
                 {t('rjsf.batchUpload.modal.action.next')}
               </Button>
               <Button onClick={onClose}>{t('rjsf.batchUpload.modal.action.cancel')}</Button>
