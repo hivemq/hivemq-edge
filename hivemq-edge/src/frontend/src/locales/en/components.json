@@ -98,6 +98,10 @@
           "validate": {
             "title": "Validate",
             "description": "Check the subscriptions"
+          },
+          "confirm": {
+            "title": "Confirm",
+            "description": "Confirm the batch creation"
           }
         }
       }
