@@ -76,6 +76,31 @@
         "expanded_true": "Collapse Item",
         "expanded_false": "Expand Item"
       }
+    },
+    "batchUpload": {
+      "button": "Upload",
+      "modal": {
+        "header": "Bulk Subscription Creation",
+        "action": {
+          "previous": "Previous",
+          "next": "Next",
+          "cancel": "Cancel"
+        },
+        "step": {
+          "upload": {
+            "title": "Upload",
+            "description": "Select your data source"
+          },
+          "match": {
+            "title": "Match",
+            "description": "Select your data points"
+          },
+          "validate": {
+            "title": "Validate",
+            "description": "Check the subscriptions"
+          }
+        }
+      }
     }
   }
 }
