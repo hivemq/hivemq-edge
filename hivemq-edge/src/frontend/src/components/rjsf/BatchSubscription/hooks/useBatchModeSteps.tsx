@@ -1,5 +1,7 @@
 import { useSteps } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
+import { useCallback } from 'react'
+
 
 export enum BatchModeStep {
   UPLOAD,
@@ -15,7 +17,12 @@ export interface BatchModeSteps {
 
 export const useBatchModeSteps = () => {
   const { t } = useTranslation('components')
-  const stepper = useSteps()
+  const { isCompleteStep, isIncompleteStep, ...stepper } = useSteps()
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const isStepCompleted = useCallback((_: BatchModeStep): boolean => {
+    return true
+  }, [])
 
   const steps: BatchModeSteps[] = [
     {
@@ -37,6 +44,7 @@ export const useBatchModeSteps = () => {
 
   return {
     ...stepper,
+    isStepCompleted,
     steps,
   }
 }
