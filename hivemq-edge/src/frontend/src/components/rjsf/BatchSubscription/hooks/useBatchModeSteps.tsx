@@ -17,6 +17,8 @@ export interface BatchModeSteps {
   id: BatchModeStep
   title: string
   description: string
+  renderer: JSX.Element
+  isFinal?: boolean
 }
 
 export const useBatchModeSteps = () => {
@@ -33,16 +35,19 @@ export const useBatchModeSteps = () => {
       id: BatchModeStep.UPLOAD,
       title: t('rjsf.batchUpload.modal.step.upload.title'),
       description: t('rjsf.batchUpload.modal.step.upload.description'),
+      renderer: <DataSourceStep />,
     },
     {
       id: BatchModeStep.MATCH,
       title: t('rjsf.batchUpload.modal.step.match.title'),
       description: t('rjsf.batchUpload.modal.step.match.description'),
+      renderer: <ColumnMatcherStep />,
     },
     {
       id: BatchModeStep.VALIDATE,
       title: t('rjsf.batchUpload.modal.step.validate.title'),
       description: t('rjsf.batchUpload.modal.step.validate.description'),
+      renderer: <SubscriptionsValidationStep />,
     },
   ]
 

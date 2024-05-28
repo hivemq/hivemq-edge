@@ -42,9 +42,7 @@ export const UploadStepper: FC<UploadStepper> = ({ steps, activeStep }) => {
         ))}
       </Stepper>
       <Box minHeight={450} w="100%" p={4}>
-        {activeStep === BatchModeStep.UPLOAD && <DataSourceStep />}
-        {activeStep === BatchModeStep.MATCH && <ColumnMatcherStep />}
-        {activeStep === BatchModeStep.VALIDATE && <SubscriptionsValidationStep />}
+        {steps[activeStep]?.renderer}
       </Box>
     </VStack>
   )
