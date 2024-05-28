@@ -106,6 +106,8 @@ const useGetUiSchema = (isNewAdapter = true) => {
     },
     'ui:order': ['id', 'host', 'port', '*', 'subscriptions'],
     subscriptions: {
+      // Allow multiple subscriptions to be imported
+      'ui:batchMode': true,
       items: {
         'ui:order': ['node', 'holding-registers', 'mqtt-topic', 'destination', 'qos', '*'],
         'ui:collapsable': {
