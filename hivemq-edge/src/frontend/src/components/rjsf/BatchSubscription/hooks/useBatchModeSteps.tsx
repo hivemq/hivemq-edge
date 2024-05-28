@@ -11,6 +11,7 @@ export enum BatchModeStep {
   UPLOAD,
   MATCH,
   VALIDATE,
+  CONFIRM,
 }
 
 export interface BatchModeSteps {
@@ -48,6 +49,13 @@ export const useBatchModeSteps = () => {
       title: t('rjsf.batchUpload.modal.step.validate.title'),
       description: t('rjsf.batchUpload.modal.step.validate.description'),
       renderer: <SubscriptionsValidationStep />,
+    },
+    {
+      id: BatchModeStep.CONFIRM,
+      isFinal: true,
+      title: t('rjsf.batchUpload.modal.step.confirm.title'),
+      description: t('rjsf.batchUpload.modal.step.confirm.description'),
+      renderer: <ConfirmStep />,
     },
   ]
 
