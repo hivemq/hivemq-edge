@@ -6,7 +6,7 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { Box, HStack, Input, chakra, FormControl, FormErrorMessage } from '@chakra-ui/react'
 import { LuChevronsRight } from 'react-icons/lu'
 
-import { ColumnOption, StepRendererProps } from '@/components/rjsf/BatchSubscription/types.ts'
+import { ColumnMappingData, ColumnOption, StepRendererProps } from '@/components/rjsf/BatchSubscription/types.ts'
 import { findMatch } from '@/components/rjsf/BatchSubscription/utils/levenshtein.utils.ts'
 
 const ColumnMatcherStep: FC<StepRendererProps> = ({ store }) => {
@@ -35,10 +35,7 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store }) => {
   }, [worksheet])
 
   type FormValues = {
-    mapping: {
-      column: string
-      subscription: string
-    }[]
+    mapping: ColumnMappingData[]
   }
 
   const {

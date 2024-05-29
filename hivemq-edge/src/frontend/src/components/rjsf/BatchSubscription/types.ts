@@ -25,6 +25,7 @@ export interface BatchModeStore {
   schema: RJSFSchema
   fileName?: string
   worksheet?: WorksheetData[]
+  mapping?: ColumnMappingData[]
 }
 
 export interface WorksheetData {
@@ -36,4 +37,9 @@ export interface ColumnOption {
   value: string | number
   label: string
   type?: string
+}
+
+export interface ColumnMappingData {
+  column: string
+  subscription: string
 }
