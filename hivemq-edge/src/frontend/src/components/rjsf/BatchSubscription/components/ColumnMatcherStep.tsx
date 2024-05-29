@@ -9,7 +9,7 @@ import { LuChevronsRight } from 'react-icons/lu'
 import { ColumnMappingData, ColumnOption, StepRendererProps } from '@/components/rjsf/BatchSubscription/types.ts'
 import { findMatch } from '@/components/rjsf/BatchSubscription/utils/levenshtein.utils.ts'
 
-const ColumnMatcherStep: FC<StepRendererProps> = ({ store }) => {
+const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
   const { schema, worksheet } = store
   const { t } = useTranslation('components')
 
@@ -42,8 +42,8 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store }) => {
     register,
     control,
     trigger,
-    handleSubmit,
-    formState: { errors },
+    getValues,
+    formState: { errors, isValid },
   } = useForm<FormValues>({
     defaultValues: {
       mapping: subscriptions.map((e) => {
@@ -60,12 +60,18 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store }) => {
     control,
   })
 
-  const onSubmit = (data: FormValues) => console.log(data)
-
   useEffect(() => {
+    onContinue({ mapping: undefined })
     trigger()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (isValid) {
+      const { mapping } = getValues()
+      onContinue({ mapping: mapping })
+    }
+  }, [getValues, isValid, onContinue])
 
   return (
     <>
