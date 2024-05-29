@@ -46,7 +46,7 @@ const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
           <ModalHeader>{t('rjsf.batchUpload.modal.header')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <UploadStepper steps={steps} activeStep={activeStep} onContinue={onContinue} />
+            <UploadStepper steps={steps} activeStep={activeStep} onContinue={onContinue} store={store} />
           </ModalBody>
           <ModalFooter>
             <ButtonGroup>

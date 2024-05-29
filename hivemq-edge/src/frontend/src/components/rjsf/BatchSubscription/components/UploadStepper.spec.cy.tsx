@@ -43,7 +43,7 @@ describe('UploadStepper', () => {
   })
 
   it('should render the steps', () => {
-    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={0} onContinue={cy.stub()} />)
+    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={0} onContinue={cy.stub()} store={MOCK_STORE} />)
 
     cy.getByAriaLabel('Progress').should('be.visible')
     cy.get('[aria-label="Progress"] > div[data-status]').as('steps').should('have.length', 2)
@@ -59,7 +59,7 @@ describe('UploadStepper', () => {
   })
 
   it('should render the final step', () => {
-    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={2} onContinue={cy.stub()} />)
+    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={2} onContinue={cy.stub()} store={MOCK_STORE} />)
 
     cy.getByAriaLabel('Progress').should('be.visible')
     cy.get('[aria-label="Progress"] > div[data-status]').as('steps').should('have.length', 2)
