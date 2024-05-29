@@ -4,7 +4,8 @@ import { useDropzone } from 'react-dropzone'
 import * as XLSX from 'xlsx'
 import { Button, Text, useToast, VStack } from '@chakra-ui/react'
 
-import { acceptMimeTypes, readFileAsync } from '@/components/rjsf/BatchSubscription/utils/dropzone.utils.ts'
+import { acceptMimeTypes } from '@/components/rjsf/BatchSubscription/utils/config.utils.ts'
+import { readFileAsync } from '@/components/rjsf/BatchSubscription/utils/dropzone.utils.ts'
 import { StepRendererProps, WorksheetData } from '@/components/rjsf/BatchSubscription/types.ts'
 import { DEFAULT_TOAST_OPTION, ToastStatus } from '@/hooks/useEdgeToast/toast-utils.ts'
 

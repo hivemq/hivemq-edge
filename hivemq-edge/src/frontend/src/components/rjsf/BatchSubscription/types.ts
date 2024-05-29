@@ -31,3 +31,9 @@ export interface WorksheetData {
   [x: string]: unknown
   __rowNum__: number
 }
+
+export interface ColumnOption {
+  value: string | number
+  label: string
+  type?: string
+}
