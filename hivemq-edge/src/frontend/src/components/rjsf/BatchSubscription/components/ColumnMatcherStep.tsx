@@ -1,9 +1,12 @@
-import { FC, useMemo } from 'react'
-import { StepRendererProps } from '@/components/rjsf/BatchSubscription/types.ts'
-import { Box, HStack, VStack } from '@chakra-ui/react'
-import { Select } from 'chakra-react-select'
-import { LuChevronsRight } from 'react-icons/lu'
+import { FC, useEffect, useMemo } from 'react'
 import { JSONSchema7 } from 'json-schema'
+import { Select } from 'chakra-react-select'
+import { Controller, useFieldArray, useForm } from 'react-hook-form'
+import { Box, HStack, Input, chakra, FormControl, FormErrorMessage } from '@chakra-ui/react'
+import { LuChevronsRight } from 'react-icons/lu'
+
+import { StepRendererProps } from '@/components/rjsf/BatchSubscription/types.ts'
+import { useTranslation } from 'react-i18next'
 
 interface ColumnOption {
   value: string | number
@@ -13,6 +16,7 @@ interface ColumnOption {
 
 const ColumnMatcherStep: FC<StepRendererProps> = ({ store }) => {
   const { schema, worksheet } = store
+  const { t } = useTranslation('components')
 
   const subscriptions = useMemo<ColumnOption[]>(() => {
     const { required, properties } = schema.items as JSONSchema7
@@ -35,27 +39,81 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store }) => {
     return Object.keys(header).map((e) => ({ value: e, label: e }))
   }, [worksheet])
 
+  type FormValues = {
+    mapping: {
+      column: string
+      subscription: string
+    }[]
+  }
+
+  const {
+    register,
+    control,
+    trigger,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
+    defaultValues: {
+      mapping: subscriptions.map((e) => ({ column: '', subscription: e.label })),
+    },
+    mode: 'onChange',
+    reValidateMode: 'onChange',
+  })
+  const { fields } = useFieldArray({
+    name: 'mapping',
+    control,
+  })
+
+  const onSubmit = (data: FormValues) => console.log(data)
+
+  useEffect(() => {
+    trigger()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   return (
-    <VStack>
-      {subscriptions.map((subscription) => (
-        <HStack w="100%" key={subscription.value}>
-          <Box w="100%">
-            <Select<ColumnOption> options={columns} />
-          </Box>
-          <Box>
-            <LuChevronsRight />
-          </Box>
-          <Box w="100%">
-            <Select
-              options={[subscription]}
-              defaultValue={subscription}
-              isReadOnly
-              components={{ DropdownIndicator: undefined }}
-            />
-          </Box>
-        </HStack>
-      ))}
-    </VStack>
+    <>
+      <chakra.form onSubmit={handleSubmit(onSubmit)} id="SSSSSS">
+        {fields.map((field, index) => {
+          return (
+            <FormControl key={field.id} isInvalid={!!errors?.mapping?.[index]?.column} p={4}>
+              <HStack>
+                <Box flex={1}>
+                  <Controller
+                    name={`mapping.${index}.column`}
+                    control={control}
+                    rules={{ required: t('rjsf.batchUpload.columnMapping.validation.required', { prop: '' }) }}
+                    render={({ field: { value, onChange, ...rest } }) => {
+                      return (
+                        <Select<ColumnOption>
+                          {...rest}
+                          onChange={(e) => onChange(e?.label)}
+                          value={{ label: value, value }}
+                          options={columns}
+                        />
+                      )
+                    }}
+                  ></Controller>
+                </Box>
+                <LuChevronsRight />
+                <Box flex={1}>
+                  <Input
+                    readOnly
+                    placeholder="quantity"
+                    {...register(`mapping.${index}.subscription`, {
+                      required: true,
+                    })}
+                    className={errors?.mapping?.[index]?.subscription ? 'error' : ''}
+                  />
+                </Box>
+              </HStack>
+              <FormErrorMessage>{errors?.mapping?.[index]?.column?.message}</FormErrorMessage>
+            </FormControl>
+          )
+        })}
+      </chakra.form>
+      <input type="submit" form="SSSSSS" />
+    </>
   )
 }
 
