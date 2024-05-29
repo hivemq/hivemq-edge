@@ -11,10 +11,18 @@ import ConfirmStep from '@/components/rjsf/BatchSubscription/components/ConfirmS
 export const useBatchModeSteps = () => {
   const { t } = useTranslation('components')
   const { isCompleteStep, isIncompleteStep, ...stepper } = useSteps()
+  const [store, setStore] = useState<BatchModeStore>({})
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const isStepCompleted = useCallback((_: BatchModeStep): boolean => {
-    return true
+  const isStepCompleted = useCallback(
+    (step: BatchModeStep): boolean => {
+      if (step === BatchModeStep.UPLOAD) return Boolean(store.worksheet)
+      return false
+    },
+    [store.worksheet]
+  )
+
+  const onContinue = useCallback((partialStore: BatchModeStore) => {
+    setStore(partialStore)
   }, [])
 
   const steps: BatchModeSteps[] = [
@@ -48,6 +56,7 @@ export const useBatchModeSteps = () => {
   return {
     ...stepper,
     isStepCompleted,
+    onContinue,
     steps,
   }
 }
