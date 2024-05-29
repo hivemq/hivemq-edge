@@ -9,11 +9,7 @@ import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/use
 
 describe('useBatchModeSteps', () => {
   it('should initialise the stepper', async () => {
-    const { result } = renderHook(() => useBatchModeSteps())
-    expect(result.current.isActiveStep(BatchModeStep.UPLOAD)).toBeTruthy()
-    expect(result.current.isStepCompleted(BatchModeStep.UPLOAD)).toBeFalsy()
-    expect(result.current.isStepCompleted(BatchModeStep.MATCH)).toBeFalsy()
-    expect(result.current.isStepCompleted(BatchModeStep.VALIDATE)).toBeFalsy()
+    const { result } = renderHook(() => useBatchModeSteps(MOCK_STORE.schema))
     expect(result.current.isActiveStep(BatchModeStepType.UPLOAD)).toBeTruthy()
     expect(result.current.isStepCompleted(BatchModeStepType.UPLOAD)).toBeFalsy()
     expect(result.current.isStepCompleted(BatchModeStepType.MATCH)).toBeFalsy()
@@ -24,10 +20,6 @@ describe('useBatchModeSteps', () => {
     const { result } = renderHook(() => useBatchModeSteps())
     expect(result.current.steps).toHaveLength(4)
     expect(result.current.steps.map((step) => step.id)).toEqual([
-      BatchModeStep.UPLOAD,
-      BatchModeStep.MATCH,
-      BatchModeStep.VALIDATE,
-      BatchModeStep.CONFIRM,
       BatchModeStepType.UPLOAD,
       BatchModeStepType.MATCH,
       BatchModeStepType.VALIDATE,
@@ -37,9 +29,7 @@ describe('useBatchModeSteps', () => {
   })
 
   it('should navigate between steps', async () => {
-    const { result } = renderHook(() => useBatchModeSteps())
-    expect(result.current.isActiveStep(BatchModeStep.UPLOAD)).toBeTruthy()
-    expect(result.current.isStepCompleted(BatchModeStep.UPLOAD)).toBeFalsy()
+    const { result } = renderHook(() => useBatchModeSteps(MOCK_STORE.schema))
     expect(result.current.isActiveStep(BatchModeStepType.UPLOAD)).toBeTruthy()
     expect(result.current.isStepCompleted(BatchModeStepType.UPLOAD)).toBeFalsy()
     act(() => {

@@ -7,9 +7,10 @@ import {
 } from '@/components/rjsf/BatchSubscription/types.ts'
 import { FC } from 'react'
 
-const First: FC<StepProps> = () => <div>The first step container</div>
-const Second: FC<StepProps> = () => <div>The second step container</div>
-const Final: FC<StepProps> = () => <div>The final step container</div>
+const MOCK_STORE: BatchModeStore = {
+  schema: {},
+}
+
 const First: FC<StepRendererProps> = () => <div>The first step container</div>
 const Second: FC<StepRendererProps> = () => <div>The second step container</div>
 const Final: FC<StepRendererProps> = () => <div>The final step container</div>

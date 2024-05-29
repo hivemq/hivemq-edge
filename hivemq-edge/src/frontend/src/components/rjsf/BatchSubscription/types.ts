@@ -7,9 +7,9 @@ export enum BatchModeStepType {
   CONFIRM,
 }
 
-export interface StepProps {
-  onContinue: (partialStore: BatchModeStore) => void
 export interface StepRendererProps {
+  store: BatchModeStore
+  onContinue: (partialStore: Partial<BatchModeStore>) => void
 }
 
 export interface BatchModeSteps {
