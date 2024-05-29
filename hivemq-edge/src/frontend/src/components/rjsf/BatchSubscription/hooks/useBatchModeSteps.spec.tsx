@@ -4,7 +4,7 @@ import { act, renderHook } from '@testing-library/react'
 
 import '@/config/i18n.config.ts'
 
-import { BatchModeStep, BatchModeSteps } from '@/components/rjsf/BatchSubscription/types.ts'
+import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.tsx'
 
 describe('useBatchModeSteps', () => {
@@ -14,6 +14,10 @@ describe('useBatchModeSteps', () => {
     expect(result.current.isStepCompleted(BatchModeStep.UPLOAD)).toBeFalsy()
     expect(result.current.isStepCompleted(BatchModeStep.MATCH)).toBeFalsy()
     expect(result.current.isStepCompleted(BatchModeStep.VALIDATE)).toBeFalsy()
+    expect(result.current.isActiveStep(BatchModeStepType.UPLOAD)).toBeTruthy()
+    expect(result.current.isStepCompleted(BatchModeStepType.UPLOAD)).toBeFalsy()
+    expect(result.current.isStepCompleted(BatchModeStepType.MATCH)).toBeFalsy()
+    expect(result.current.isStepCompleted(BatchModeStepType.VALIDATE)).toBeFalsy()
   })
 
   it('should create the steps', async () => {
@@ -24,6 +28,10 @@ describe('useBatchModeSteps', () => {
       BatchModeStep.MATCH,
       BatchModeStep.VALIDATE,
       BatchModeStep.CONFIRM,
+      BatchModeStepType.UPLOAD,
+      BatchModeStepType.MATCH,
+      BatchModeStepType.VALIDATE,
+      BatchModeStepType.CONFIRM,
     ])
     expect(result.current.steps[3]).toEqual(expect.objectContaining<Partial<BatchModeSteps>>({ isFinal: true }))
   })
@@ -32,22 +40,24 @@ describe('useBatchModeSteps', () => {
     const { result } = renderHook(() => useBatchModeSteps())
     expect(result.current.isActiveStep(BatchModeStep.UPLOAD)).toBeTruthy()
     expect(result.current.isStepCompleted(BatchModeStep.UPLOAD)).toBeFalsy()
+    expect(result.current.isActiveStep(BatchModeStepType.UPLOAD)).toBeTruthy()
+    expect(result.current.isStepCompleted(BatchModeStepType.UPLOAD)).toBeFalsy()
     act(() => {
       result.current.goToNext()
     })
-    expect(result.current.isActiveStep(BatchModeStep.MATCH)).toBeTruthy()
+    expect(result.current.isActiveStep(BatchModeStepType.MATCH)).toBeTruthy()
     act(() => {
       result.current.goToPrevious()
     })
-    expect(result.current.isActiveStep(BatchModeStep.UPLOAD)).toBeTruthy()
+    expect(result.current.isActiveStep(BatchModeStepType.UPLOAD)).toBeTruthy()
     act(() => {
       result.current.goToNext()
       result.current.goToNext()
     })
-    expect(result.current.isActiveStep(BatchModeStep.VALIDATE)).toBeTruthy()
+    expect(result.current.isActiveStep(BatchModeStepType.VALIDATE)).toBeTruthy()
     act(() => {
       result.current.goToNext()
     })
-    expect(result.current.isActiveStep(BatchModeStep.CONFIRM)).toBeTruthy()
+    expect(result.current.isActiveStep(BatchModeStepType.CONFIRM)).toBeTruthy()
   })
 })

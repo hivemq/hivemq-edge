@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-export enum BatchModeStep {
+export enum BatchModeStepType {
   UPLOAD,
   MATCH,
   VALIDATE,
@@ -9,13 +9,14 @@ export enum BatchModeStep {
 
 export interface StepProps {
   onContinue: (partialStore: BatchModeStore) => void
+export interface StepRendererProps {
 }
 
 export interface BatchModeSteps {
-  id: BatchModeStep
+  id: BatchModeStepType
   title: string
   description: string
-  renderer: FC<StepProps>
+  renderer: FC<StepRendererProps>
   isFinal?: boolean
 }
 

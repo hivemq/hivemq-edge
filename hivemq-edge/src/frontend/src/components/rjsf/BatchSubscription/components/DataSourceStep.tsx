@@ -5,7 +5,7 @@ import * as XLSX from 'xlsx'
 import { Button, Text, useToast, VStack } from '@chakra-ui/react'
 
 import { acceptMimeTypes, readFileAsync } from '@/components/rjsf/BatchSubscription/utils/dropzone.utils.ts'
-import { StepProps, WorksheetData } from '@/components/rjsf/BatchSubscription/types.ts'
+import { StepRendererProps, WorksheetData } from '@/components/rjsf/BatchSubscription/types.ts'
 import { DEFAULT_TOAST_OPTION, ToastStatus } from '@/hooks/useEdgeToast/toast-utils.ts'
 
 const getDropZoneBorder = (color: string) => {
@@ -18,7 +18,7 @@ const getDropZoneBorder = (color: string) => {
   }
 }
 
-const DataSourceStep: FC<StepProps> = ({ onContinue }) => {
+const DataSourceStep: FC<StepRendererProps> = ({ onContinue }) => {
   const { t } = useTranslation('components')
   const toast = useToast()
   const [loading, setLoading] = useState(false)

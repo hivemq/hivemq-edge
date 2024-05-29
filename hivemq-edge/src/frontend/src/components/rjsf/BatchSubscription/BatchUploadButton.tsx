@@ -21,7 +21,7 @@ interface BatchUploadButtonProps {
   schema: RJSFSchema
 }
 
-const BatchUploadButton: FC<BatchUploadButtonProps> = () => {
+const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation('components')
   const { activeStep, steps, isStepCompleted, onContinue, goToNext, goToPrevious } = useBatchModeSteps()
