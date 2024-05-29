@@ -1,25 +1,30 @@
 import { UploadStepper } from '@/components/rjsf/BatchSubscription/components/UploadStepper.tsx'
-import { BatchModeStep, BatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.tsx'
+import { BatchModeStep, BatchModeSteps, StepProps } from '@/components/rjsf/BatchSubscription/types.ts'
+import { FC } from 'react'
+
+const First: FC<StepProps> = () => <div>The first step container</div>
+const Second: FC<StepProps> = () => <div>The second step container</div>
+const Final: FC<StepProps> = () => <div>The final step container</div>
 
 const MOCK_STEPS: BatchModeSteps[] = [
   {
     id: BatchModeStep.UPLOAD,
     title: 'first step',
     description: 'about the first step',
-    renderer: <div>The first step container</div>,
+    renderer: First,
   },
   {
     id: BatchModeStep.VALIDATE,
     title: 'second step',
     description: 'about the second step',
-    renderer: <div>The second step container</div>,
+    renderer: Second,
   },
   {
     id: BatchModeStep.CONFIRM,
     isFinal: true,
     title: 'final step',
     description: 'about the final step',
-    renderer: <div>The final step container</div>,
+    renderer: Final,
   },
 ]
 
@@ -29,7 +34,7 @@ describe('UploadStepper', () => {
   })
 
   it('should render the steps', () => {
-    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={0} />)
+    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={0} onContinue={cy.stub()} />)
 
     cy.getByAriaLabel('Progress').should('be.visible')
     cy.get('[aria-label="Progress"] > div[data-status]').as('steps').should('have.length', 2)
@@ -44,8 +49,8 @@ describe('UploadStepper', () => {
     cy.getByTestId('stepper-container').should('contain.text', 'The first step container')
   })
 
-  it.only('should render the final step', () => {
-    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={2} />)
+  it('should render the final step', () => {
+    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={2} onContinue={cy.stub()} />)
 
     cy.getByAriaLabel('Progress').should('be.visible')
     cy.get('[aria-label="Progress"] > div[data-status]').as('steps').should('have.length', 2)

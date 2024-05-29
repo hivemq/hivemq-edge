@@ -4,19 +4,16 @@ import { act, renderHook } from '@testing-library/react'
 
 import '@/config/i18n.config.ts'
 
-import {
-  BatchModeStep,
-  BatchModeSteps,
-  useBatchModeSteps,
-} from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.tsx'
+import { BatchModeStep, BatchModeSteps } from '@/components/rjsf/BatchSubscription/types.ts'
+import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.tsx'
 
 describe('useBatchModeSteps', () => {
   it('should initialise the stepper', async () => {
     const { result } = renderHook(() => useBatchModeSteps())
     expect(result.current.isActiveStep(BatchModeStep.UPLOAD)).toBeTruthy()
-    expect(result.current.isStepCompleted(BatchModeStep.UPLOAD)).toBeTruthy()
-    expect(result.current.isStepCompleted(BatchModeStep.MATCH)).toBeTruthy()
-    expect(result.current.isStepCompleted(BatchModeStep.VALIDATE)).toBeTruthy()
+    expect(result.current.isStepCompleted(BatchModeStep.UPLOAD)).toBeFalsy()
+    expect(result.current.isStepCompleted(BatchModeStep.MATCH)).toBeFalsy()
+    expect(result.current.isStepCompleted(BatchModeStep.VALIDATE)).toBeFalsy()
   })
 
   it('should create the steps', async () => {
@@ -34,7 +31,7 @@ describe('useBatchModeSteps', () => {
   it('should navigate between steps', async () => {
     const { result } = renderHook(() => useBatchModeSteps())
     expect(result.current.isActiveStep(BatchModeStep.UPLOAD)).toBeTruthy()
-    expect(result.current.isStepCompleted(BatchModeStep.UPLOAD)).toBeTruthy()
+    expect(result.current.isStepCompleted(BatchModeStep.UPLOAD)).toBeFalsy()
     act(() => {
       result.current.goToNext()
     })
