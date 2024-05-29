@@ -24,7 +24,7 @@ interface BatchUploadButtonProps {
 const BatchUploadButton: FC<BatchUploadButtonProps> = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation('components')
-  const { activeStep, steps, isStepCompleted, goToNext, goToPrevious } = useBatchModeSteps()
+  const { activeStep, steps, isStepCompleted, onContinue, goToNext, goToPrevious } = useBatchModeSteps()
 
   return (
     <>
@@ -46,7 +46,7 @@ const BatchUploadButton: FC<BatchUploadButtonProps> = () => {
           <ModalHeader>{t('rjsf.batchUpload.modal.header')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <UploadStepper steps={steps} activeStep={activeStep} />
+            <UploadStepper steps={steps} activeStep={activeStep} onContinue={onContinue} />
           </ModalBody>
           <ModalFooter>
             <ButtonGroup>
