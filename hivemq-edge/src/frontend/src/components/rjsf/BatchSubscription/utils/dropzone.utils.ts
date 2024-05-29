@@ -7,6 +7,7 @@ export const acceptMimeTypes: Accept = {
   'text/csv': ['.csv'],
 }
 
+/* istanbul ignore next -- @preserve */
 export const readFileAsync = (file: File) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

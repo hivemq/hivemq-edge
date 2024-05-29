@@ -82,6 +82,7 @@ const DataSourceStep: FC<StepProps> = ({ onContinue }) => {
       display="flex"
       justifyContent="center"
       alignItems="center"
+      id="dropzone"
     >
       <input {...getInputProps()} data-testid="batch-load-dropzone" />
       {isDragActive ? (
