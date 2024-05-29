@@ -22,8 +22,8 @@ export const useBatchModeSteps = (schema: RJSFSchema) => {
     [store.worksheet]
   )
 
-  const onContinue = useCallback((partialStore: BatchModeStore) => {
-    setStore(partialStore)
+  const onContinue = useCallback((partialStore: Partial<BatchModeStore>) => {
+    setStore((old) => ({ ...old, ...partialStore }))
   }, [])
 
   const steps: BatchModeSteps[] = [

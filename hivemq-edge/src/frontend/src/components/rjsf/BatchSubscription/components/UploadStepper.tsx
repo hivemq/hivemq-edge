@@ -17,7 +17,7 @@ import { BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscript
 interface UploadStepperProps {
   activeStep: number
   steps: BatchModeSteps[]
-  onContinue: (partialStore: BatchModeStore) => void
+  onContinue: (partialStore: Partial<BatchModeStore>) => void
   store: BatchModeStore
 }
 
