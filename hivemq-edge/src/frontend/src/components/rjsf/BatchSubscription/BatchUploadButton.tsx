@@ -24,7 +24,7 @@ interface BatchUploadButtonProps {
 const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation('components')
-  const { activeStep, steps, isStepCompleted, onContinue, goToNext, goToPrevious } = useBatchModeSteps()
+  const { activeStep, steps, isStepCompleted, onContinue, goToNext, goToPrevious, store } = useBatchModeSteps(schema)
 
   return (
     <>
