@@ -56,7 +56,7 @@ const DataSourceStep: FC<StepRendererProps> = ({ onContinue }) => {
           status,
           title: t('rjsf.batchUpload.dropZone.status', { context: status, fileName: file.name }),
         })
-        onContinue({ worksheet: jsonData })
+        onContinue({ worksheet: jsonData, fileName: file.name })
       } catch (error) {
         let message
         if (error instanceof Error) message = error.message
