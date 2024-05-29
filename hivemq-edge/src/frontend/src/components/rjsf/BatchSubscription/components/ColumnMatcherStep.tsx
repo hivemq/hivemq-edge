@@ -1,18 +1,13 @@
 import { FC, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { JSONSchema7 } from 'json-schema'
 import { Select } from 'chakra-react-select'
 import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { Box, HStack, Input, chakra, FormControl, FormErrorMessage } from '@chakra-ui/react'
 import { LuChevronsRight } from 'react-icons/lu'
 
-import { StepRendererProps } from '@/components/rjsf/BatchSubscription/types.ts'
-import { useTranslation } from 'react-i18next'
-
-interface ColumnOption {
-  value: string | number
-  label: string
-  type?: string
-}
+import { ColumnOption, StepRendererProps } from '@/components/rjsf/BatchSubscription/types.ts'
+import { findMatch } from '@/components/rjsf/BatchSubscription/utils/levenshtein.utils.ts'
 
 const ColumnMatcherStep: FC<StepRendererProps> = ({ store }) => {
   const { schema, worksheet } = store
@@ -54,7 +49,11 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store }) => {
     formState: { errors },
   } = useForm<FormValues>({
     defaultValues: {
-      mapping: subscriptions.map((e) => ({ column: '', subscription: e.label })),
+      mapping: subscriptions.map((e) => {
+        const autoMatch = findMatch(e, columns)
+
+        return { column: autoMatch || '', subscription: e.label }
+      }),
     },
     mode: 'onChange',
     reValidateMode: 'onChange',

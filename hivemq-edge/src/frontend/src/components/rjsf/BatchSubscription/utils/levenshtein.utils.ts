@@ -1,5 +1,8 @@
 // see https://github.com/gustf/js-levenshtein
 
+import { ColumnOption } from '@/components/rjsf/BatchSubscription/types.ts'
+import { AUTO_MATCH_DISTANCE } from '@/components/rjsf/BatchSubscription/utils/config.utils.ts'
+
 const _min = (d0: number, d1: number, d2: number, bx: number, ay: number): number => {
   return d0 < d1 || d2 < d1 ? (d0 > d2 ? d2 + 1 : d0 + 1) : bx === ay ? d1 : d1 + 1
 }
@@ -91,6 +94,25 @@ const levenshtein = (a: string, b: string): number => {
   }
 
   return dd
+}
+
+type AutoMatchAccumulator = {
+  distance: number
+  value: string
+}
+
+export const findMatch = (
+  header: ColumnOption,
+  fields: ColumnOption[],
+  autoMapDistance: number = AUTO_MATCH_DISTANCE
+): string | undefined => {
+  const smallestValue = fields.reduce<AutoMatchAccumulator>((acc, field) => {
+    const distance = Math.min(
+      ...[levenshtein(field.label, header.value.toString()), levenshtein(field.label, header.label.toString())]
+    )
+    return distance < acc.distance || acc.distance === undefined ? { value: field.label, distance } : acc
+  }, {} as AutoMatchAccumulator)
+  return smallestValue.distance <= autoMapDistance ? smallestValue.value : undefined
 }
 
 export default levenshtein
