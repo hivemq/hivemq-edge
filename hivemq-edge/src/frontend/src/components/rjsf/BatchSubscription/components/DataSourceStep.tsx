@@ -49,7 +49,6 @@ const DataSourceStep: FC<StepRendererProps> = ({ onContinue }) => {
         const worksheet = workbook.Sheets[workbook.SheetNames[0]] // get the first worksheet
         const jsonData = XLSX.utils.sheet_to_json<WorksheetData>(worksheet) // generate objects
 
-        console.log('xxxxxx', jsonData)
         const status: ToastStatus = 'success'
         toast({
           ...DEFAULT_TOAST_OPTION,
