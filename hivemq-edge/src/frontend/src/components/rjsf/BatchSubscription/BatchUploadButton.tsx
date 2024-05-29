@@ -17,11 +17,11 @@ import { LuHardDriveUpload } from 'react-icons/lu'
 import { UploadStepper } from '@/components/rjsf/BatchSubscription/components/UploadStepper.tsx'
 import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.tsx'
 
-export interface BatchSubscriptionProps {
+interface BatchUploadButtonProps {
   schema: RJSFSchema
 }
 
-const BatchUploadButton: FC<BatchSubscriptionProps> = () => {
+const BatchUploadButton: FC<BatchUploadButtonProps> = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation('components')
   const { activeStep, steps, isStepCompleted, goToNext, goToPrevious } = useBatchModeSteps()
