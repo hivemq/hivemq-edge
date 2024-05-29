@@ -7,11 +7,12 @@ import DataSourceStep from '@/components/rjsf/BatchSubscription/components/DataS
 import SubscriptionsValidationStep from '@/components/rjsf/BatchSubscription/components/SubscriptionsValidationStep.tsx'
 import ColumnMatcherStep from '@/components/rjsf/BatchSubscription/components/ColumnMatcherStep.tsx'
 import ConfirmStep from '@/components/rjsf/BatchSubscription/components/ConfirmStep.tsx'
+import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
-export const useBatchModeSteps = () => {
+export const useBatchModeSteps = (schema: RJSFSchema) => {
   const { t } = useTranslation('components')
   const { isCompleteStep, isIncompleteStep, ...stepper } = useSteps()
-  const [store, setStore] = useState<BatchModeStore>({})
+  const [store, setStore] = useState<BatchModeStore>({ schema })
 
   const isStepCompleted = useCallback(
     (step: BatchModeStepType): boolean => {
@@ -58,5 +59,6 @@ export const useBatchModeSteps = () => {
     isStepCompleted,
     onContinue,
     steps,
+    store,
   }
 }

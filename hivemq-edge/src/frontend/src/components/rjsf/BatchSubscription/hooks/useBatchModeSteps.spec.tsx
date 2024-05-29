@@ -7,6 +7,10 @@ import '@/config/i18n.config.ts'
 import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.tsx'
 
+const MOCK_STORE: BatchModeStore = {
+  schema: {},
+}
+
 describe('useBatchModeSteps', () => {
   it('should initialise the stepper', async () => {
     const { result } = renderHook(() => useBatchModeSteps(MOCK_STORE.schema))
@@ -17,7 +21,7 @@ describe('useBatchModeSteps', () => {
   })
 
   it('should create the steps', async () => {
-    const { result } = renderHook(() => useBatchModeSteps())
+    const { result } = renderHook(() => useBatchModeSteps(MOCK_STORE.schema))
     expect(result.current.steps).toHaveLength(4)
     expect(result.current.steps.map((step) => step.id)).toEqual([
       BatchModeStepType.UPLOAD,
