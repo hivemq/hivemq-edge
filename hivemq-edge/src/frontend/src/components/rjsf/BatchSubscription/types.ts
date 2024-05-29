@@ -1,8 +1,5 @@
 import { FC } from 'react'
 
-// TODO[NVL] Should be exported
-export type ToastStatus = 'default' | 'success' | 'error' | 'warning' | 'info' | 'loading'
-
 export enum BatchModeStep {
   UPLOAD,
   MATCH,
