@@ -46,10 +46,10 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
     formState: { errors, isValid },
   } = useForm<FormValues>({
     defaultValues: {
-      mapping: subscriptions.map((e) => {
-        const autoMatch = findMatch(e, columns)
+      mapping: subscriptions.map((subscription) => {
+        const autoMatch = findMatch(subscription, columns)
 
-        return { column: autoMatch || '', subscription: e.label }
+        return { column: autoMatch || '', subscription: subscription.label }
       }),
     },
     mode: 'onChange',
@@ -75,7 +75,7 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
 
   return (
     <>
-      <chakra.form onSubmit={handleSubmit(onSubmit)} id="SSSSSS">
+      <chakra.form id="batch-mapping-form">
         {fields.map((field, index) => {
           return (
             <FormControl key={field.id} isInvalid={!!errors?.mapping?.[index]?.column} p={4}>
@@ -84,7 +84,7 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
                   <Controller
                     name={`mapping.${index}.column`}
                     control={control}
-                    rules={{ required: t('rjsf.batchUpload.columnMapping.validation.required', { prop: '' }) }}
+                    rules={{ required: t('rjsf.batchUpload.columnMapping.validation.required') }}
                     render={({ field: { value, onChange, ...rest } }) => {
                       return (
                         <Select<ColumnOption>
@@ -114,7 +114,6 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
           )
         })}
       </chakra.form>
-      <input type="submit" form="SSSSSS" />
     </>
   )
 }
