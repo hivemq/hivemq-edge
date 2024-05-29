@@ -1,4 +1,5 @@
 import { FC } from 'react'
+import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
 export enum BatchModeStepType {
   UPLOAD,
@@ -21,6 +22,8 @@ export interface BatchModeSteps {
 }
 
 export interface BatchModeStore {
+  schema: RJSFSchema
+  fileName?: string
   worksheet?: WorksheetData[]
 }
 
