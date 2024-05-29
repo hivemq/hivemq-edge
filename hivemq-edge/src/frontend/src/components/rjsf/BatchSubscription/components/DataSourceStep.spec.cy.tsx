@@ -1,4 +1,9 @@
 import DataSourceStep from '@/components/rjsf/BatchSubscription/components/DataSourceStep.tsx'
+import { BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
+
+const MOCK_STORE: BatchModeStore = {
+  schema: {},
+}
 
 describe('DataSourceStep', () => {
   beforeEach(() => {
@@ -6,7 +11,7 @@ describe('DataSourceStep', () => {
   })
 
   it('should render the dropzone', () => {
-    cy.mountWithProviders(<DataSourceStep onContinue={cy.stub()} />)
+    cy.mountWithProviders(<DataSourceStep onContinue={cy.stub()} store={MOCK_STORE} />)
     cy.get('#dropzone > p').should('contain.text', 'Upload a .xlsx, .xls or .csv file')
     cy.get('#dropzone > button').should('contain.text', 'Select file')
 
@@ -19,7 +24,7 @@ describe('DataSourceStep', () => {
   })
 
   it('should deliver the data', () => {
-    cy.mountWithProviders(<DataSourceStep onContinue={cy.stub().as('getWorksheet')} />)
+    cy.mountWithProviders(<DataSourceStep onContinue={cy.stub().as('getWorksheet')} store={MOCK_STORE} />)
 
     cy.get('#dropzone').selectFile('cypress/fixtures/test-spreadsheet.xlsx', { action: 'drag-drop' })
     cy.get('@getWorksheet')
