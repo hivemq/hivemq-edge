@@ -30,7 +30,6 @@ export interface BatchModeStore {
 
 export interface WorksheetData {
   [x: string]: unknown
-  __rowNum__: number
 }
 
 export interface ColumnOption {
