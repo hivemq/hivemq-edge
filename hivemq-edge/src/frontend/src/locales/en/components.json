@@ -123,6 +123,12 @@
         "validation": {
           "required": "The subscription property is required so a column must be selected"
         }
+      },
+      "dataValidation": {
+        "action": {
+          "delete": "Delete,",
+          "errorOnly": "Show only errors"
+        }
       }
     }
   }
