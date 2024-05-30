@@ -53,14 +53,20 @@ const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
           <ModalBody>
             <UploadStepper steps={steps} activeStep={activeStep} onContinue={onContinue} store={store} />
           </ModalBody>
-          <ModalFooter>
+          <ModalFooter justifyContent="space-between" gap={2}>
             <ButtonGroup>
               <Button onClick={goToPrevious} isDisabled={!activeStep}>
                 {t('rjsf.batchUpload.modal.action.previous')}
               </Button>
-              <Button onClick={goToNext} isDisabled={activeStep === steps.length - 1 || !isStepCompleted(activeStep)}>
+              <Button
+                variant="primary"
+                onClick={goToNext}
+                isDisabled={activeStep === steps.length - 1 || !isStepCompleted(activeStep)}
+              >
                 {t('rjsf.batchUpload.modal.action.next')}
               </Button>
+            </ButtonGroup>
+            <ButtonGroup>
               <Button onClick={onClose}>{t('rjsf.batchUpload.modal.action.cancel')}</Button>
             </ButtonGroup>
           </ModalFooter>
