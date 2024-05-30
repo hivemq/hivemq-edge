@@ -70,6 +70,7 @@ const PaginatedTable = <T,>({
   const { t } = useTranslation()
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState('')
+  const [rowSelection, setRowSelection] = useState({})
 
   const table = useReactTable({
     data: data,
@@ -77,7 +78,10 @@ const PaginatedTable = <T,>({
     state: {
       columnFilters,
       globalFilter,
+      rowSelection,
     },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
     enableColumnFilters: enableColumnFilters,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
