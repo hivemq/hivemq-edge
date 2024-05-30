@@ -42,7 +42,12 @@ const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
         scrollBehavior="inside"
       >
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent
+          style={
+            // TODO[modal-portal] Feels like a hack. Check for side-effects
+            { position: 'static' }
+          }
+        >
           <ModalHeader>{t('rjsf.batchUpload.modal.header')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>

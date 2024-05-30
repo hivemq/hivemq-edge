@@ -88,6 +88,8 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
                     render={({ field: { value, onChange, ...rest } }) => {
                       return (
                         <Select<ColumnOption>
+                          // TODO[modal-portal] Feels like a hack. Use a ref [?]
+                          menuPortalTarget={document.getElementById('chakra-modal-array-field-batch') as HTMLElement}
                           id={`mapping.${index}.column`}
                           instanceId={`mapping.${index}.column`}
                           aria-label={t('rjsf.batchUpload.columnMapping.column.ariaLabel')}
