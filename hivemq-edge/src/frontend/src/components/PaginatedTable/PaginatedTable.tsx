@@ -42,6 +42,8 @@ interface PaginatedTableProps<T> {
   noDataText?: string
   enableColumnFilters?: boolean
   enablePagination?: boolean
+  enablePaginationSizes?: boolean
+  enablePaginationGoTo?: boolean
   isError?: boolean
   'aria-label': string
   /**
@@ -60,6 +62,8 @@ const PaginatedTable = <T,>({
   getRowStyles,
   enableColumnFilters = false,
   enablePagination = true,
+  enablePaginationSizes = true,
+  enablePaginationGoTo = true,
   isError = false,
   'aria-label': ariaLabel,
 }: PaginatedTableProps<T>) => {
@@ -189,7 +193,9 @@ const PaginatedTable = <T,>({
           )}
         </Table>
       </TableContainer>
-      {enablePagination && <PaginationBar table={table} pageSizes={pageSizes} />}
+      {enablePagination && (
+        <PaginationBar table={table} pageSizes={pageSizes} options={{ enablePaginationSizes, enablePaginationGoTo }} />
+      )}
     </>
   )
 }

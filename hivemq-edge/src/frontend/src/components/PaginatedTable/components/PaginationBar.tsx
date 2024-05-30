@@ -24,13 +24,17 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 interface PaginationProps<T> {
   table: Table<T>
   pageSizes: number[]
+  options?: {
+    enablePaginationSizes?: boolean
+    enablePaginationGoTo?: boolean
+  }
 }
 
 const PaginationButton: FC<IconButtonProps> = (props) => (
   <IconButton icon={<LuSkipBack />} {...props} size="sm" fontSize="18px" />
 )
 
-const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
+const PaginationBar = <T,>({ table, pageSizes, options }: PaginationProps<T>) => {
   const { t } = useTranslation()
   return (
     <HStack as="nav" aria-label={t('components:pagination.ariaLabel')} gap={8} mt={4}>
@@ -70,43 +74,47 @@ const PaginationBar = <T,>({ table, pageSizes }: PaginationProps<T>) => {
         </Text>
       </Box>
 
-      <FormControl display="flex" alignItems="center" w="inherit">
-        <FormLabel mb={0}>{t('components:pagination.goPage')}</FormLabel>
-        <NumberInput
-          size="sm"
-          maxWidth="80px"
-          defaultValue={table.getState().pagination.pageIndex + 1}
-          min={1}
-          max={table.getPageCount()}
-          onChange={(e) => table.setPageIndex(Number(e) - 1)}
-        >
-          <NumberInputField />
-          <NumberInputStepper>
-            <NumberIncrementStepper />
-            <NumberDecrementStepper />
-          </NumberInputStepper>
-        </NumberInput>
-      </FormControl>
-
-      <Flex flex={1}>
-        <FormControl display="flex" alignItems="baseline" justifyContent="flex-end">
-          <FormLabel> {t('components:pagination.perPage')}</FormLabel>
-          <Select
-            maxWidth="80px"
+      {options?.enablePaginationGoTo && (
+        <FormControl display="flex" alignItems="center" w="inherit">
+          <FormLabel mb={0}>{t('components:pagination.goPage')}</FormLabel>
+          <NumberInput
             size="sm"
-            value={table.getState().pagination.pageSize}
-            onChange={(e) => {
-              table.setPageSize(Number(e.target.value))
-            }}
+            maxWidth="80px"
+            defaultValue={table.getState().pagination.pageIndex + 1}
+            min={1}
+            max={table.getPageCount()}
+            onChange={(e) => table.setPageIndex(Number(e) - 1)}
           >
-            {pageSizes.map((pageSize) => (
-              <option key={pageSize} value={pageSize}>
-                {pageSize}
-              </option>
-            ))}
-          </Select>
+            <NumberInputField />
+            <NumberInputStepper>
+              <NumberIncrementStepper />
+              <NumberDecrementStepper />
+            </NumberInputStepper>
+          </NumberInput>
         </FormControl>
-      </Flex>
+      )}
+
+      {options?.enablePaginationSizes && (
+        <Flex flex={1}>
+          <FormControl display="flex" alignItems="baseline" justifyContent="flex-end">
+            <FormLabel> {t('components:pagination.perPage')}</FormLabel>
+            <Select
+              maxWidth="80px"
+              size="sm"
+              value={table.getState().pagination.pageSize}
+              onChange={(e) => {
+                table.setPageSize(Number(e.target.value))
+              }}
+            >
+              {pageSizes.map((pageSize) => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize}
+                </option>
+              ))}
+            </Select>
+          </FormControl>
+        </Flex>
+      )}
     </HStack>
   )
 }
