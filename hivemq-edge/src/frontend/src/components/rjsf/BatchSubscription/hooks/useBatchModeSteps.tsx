@@ -1,67 +1,66 @@
 import { useSteps } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
+import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import DataSourceStep from '@/components/rjsf/BatchSubscription/components/DataSourceStep.tsx'
 import SubscriptionsValidationStep from '@/components/rjsf/BatchSubscription/components/SubscriptionsValidationStep.tsx'
 import ColumnMatcherStep from '@/components/rjsf/BatchSubscription/components/ColumnMatcherStep.tsx'
 import ConfirmStep from '@/components/rjsf/BatchSubscription/components/ConfirmStep.tsx'
+import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
-export enum BatchModeStep {
-  UPLOAD,
-  MATCH,
-  VALIDATE,
-  CONFIRM,
-}
-
-export interface BatchModeSteps {
-  id: BatchModeStep
-  title: string
-  description: string
-  renderer: JSX.Element
-  isFinal?: boolean
-}
-
-export const useBatchModeSteps = () => {
+export const useBatchModeSteps = (schema: RJSFSchema) => {
   const { t } = useTranslation('components')
   const { isCompleteStep, isIncompleteStep, ...stepper } = useSteps()
+  const [store, setStore] = useState<BatchModeStore>({ schema })
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const isStepCompleted = useCallback((_: BatchModeStep): boolean => {
-    return true
+  const isStepCompleted = useCallback(
+    (step: BatchModeStepType): boolean => {
+      if (step === BatchModeStepType.UPLOAD) return Boolean(store.worksheet)
+      if (step === BatchModeStepType.MATCH) return Boolean(store.mapping)
+
+      return false
+    },
+    [store.mapping, store.worksheet]
+  )
+
+  const onContinue = useCallback((partialStore: Partial<BatchModeStore>) => {
+    setStore((old) => ({ ...old, ...partialStore }))
   }, [])
 
   const steps: BatchModeSteps[] = [
     {
-      id: BatchModeStep.UPLOAD,
+      id: BatchModeStepType.UPLOAD,
       title: t('rjsf.batchUpload.modal.step.upload.title'),
       description: t('rjsf.batchUpload.modal.step.upload.description'),
-      renderer: <DataSourceStep />,
+      renderer: DataSourceStep,
     },
     {
-      id: BatchModeStep.MATCH,
+      id: BatchModeStepType.MATCH,
       title: t('rjsf.batchUpload.modal.step.match.title'),
       description: t('rjsf.batchUpload.modal.step.match.description'),
-      renderer: <ColumnMatcherStep />,
+      renderer: ColumnMatcherStep,
     },
     {
-      id: BatchModeStep.VALIDATE,
+      id: BatchModeStepType.VALIDATE,
       title: t('rjsf.batchUpload.modal.step.validate.title'),
       description: t('rjsf.batchUpload.modal.step.validate.description'),
-      renderer: <SubscriptionsValidationStep />,
+      renderer: SubscriptionsValidationStep,
     },
     {
-      id: BatchModeStep.CONFIRM,
+      id: BatchModeStepType.CONFIRM,
       isFinal: true,
       title: t('rjsf.batchUpload.modal.step.confirm.title'),
       description: t('rjsf.batchUpload.modal.step.confirm.description'),
-      renderer: <ConfirmStep />,
+      renderer: ConfirmStep,
     },
   ]
 
   return {
     ...stepper,
     isStepCompleted,
+    onContinue,
     steps,
+    store,
   }
 }

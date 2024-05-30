@@ -104,6 +104,25 @@
             "description": "Confirm the batch creation"
           }
         }
+      },
+      "dropZone": {
+        "placeholder": "Upload a .xlsx, .xls or .csv file",
+        "dropping": "Drop a file here ...",
+        "loading": "Processing ...",
+        "selectFile": "Select file",
+        "status_error": "{{ fileName}} upload rejected",
+        "status_success": "{{ fileName}} upload successful"
+      },
+      "columnMapping": {
+        "subscription": {
+          "ariaLabel": "Subscription property"
+        },
+        "column": {
+          "ariaLabel": "Column header"
+        },
+        "validation": {
+          "required": "The subscription property is required so a column must be selected"
+        }
       }
     }
   }

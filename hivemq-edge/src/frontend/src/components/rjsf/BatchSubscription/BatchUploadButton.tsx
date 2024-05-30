@@ -17,14 +17,14 @@ import { LuHardDriveUpload } from 'react-icons/lu'
 import { UploadStepper } from '@/components/rjsf/BatchSubscription/components/UploadStepper.tsx'
 import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.tsx'
 
-export interface BatchSubscriptionProps {
+interface BatchUploadButtonProps {
   schema: RJSFSchema
 }
 
-const BatchUploadButton: FC<BatchSubscriptionProps> = () => {
+const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation('components')
-  const { activeStep, steps, isStepCompleted, goToNext, goToPrevious } = useBatchModeSteps()
+  const { activeStep, steps, isStepCompleted, onContinue, goToNext, goToPrevious, store } = useBatchModeSteps(schema)
 
   return (
     <>
@@ -42,11 +42,16 @@ const BatchUploadButton: FC<BatchSubscriptionProps> = () => {
         scrollBehavior="inside"
       >
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent
+          style={
+            // TODO[modal-portal] Feels like a hack. Check for side-effects
+            { position: 'static' }
+          }
+        >
           <ModalHeader>{t('rjsf.batchUpload.modal.header')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <UploadStepper steps={steps} activeStep={activeStep} />
+            <UploadStepper steps={steps} activeStep={activeStep} onContinue={onContinue} store={store} />
           </ModalBody>
           <ModalFooter>
             <ButtonGroup>
