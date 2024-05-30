@@ -1,26 +1,35 @@
 import { UploadStepper } from '@/components/rjsf/BatchSubscription/components/UploadStepper.tsx'
-import { BatchModeStep, BatchModeSteps, StepProps } from '@/components/rjsf/BatchSubscription/types.ts'
+import {
+  BatchModeStepType,
+  BatchModeSteps,
+  StepRendererProps,
+  BatchModeStore,
+} from '@/components/rjsf/BatchSubscription/types.ts'
 import { FC } from 'react'
 
-const First: FC<StepProps> = () => <div>The first step container</div>
-const Second: FC<StepProps> = () => <div>The second step container</div>
-const Final: FC<StepProps> = () => <div>The final step container</div>
+const MOCK_STORE: BatchModeStore = {
+  schema: {},
+}
+
+const First: FC<StepRendererProps> = () => <div>The first step container</div>
+const Second: FC<StepRendererProps> = () => <div>The second step container</div>
+const Final: FC<StepRendererProps> = () => <div>The final step container</div>
 
 const MOCK_STEPS: BatchModeSteps[] = [
   {
-    id: BatchModeStep.UPLOAD,
+    id: BatchModeStepType.UPLOAD,
     title: 'first step',
     description: 'about the first step',
     renderer: First,
   },
   {
-    id: BatchModeStep.VALIDATE,
+    id: BatchModeStepType.VALIDATE,
     title: 'second step',
     description: 'about the second step',
     renderer: Second,
   },
   {
-    id: BatchModeStep.CONFIRM,
+    id: BatchModeStepType.CONFIRM,
     isFinal: true,
     title: 'final step',
     description: 'about the final step',
@@ -34,7 +43,7 @@ describe('UploadStepper', () => {
   })
 
   it('should render the steps', () => {
-    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={0} onContinue={cy.stub()} />)
+    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={0} onContinue={cy.stub()} store={MOCK_STORE} />)
 
     cy.getByAriaLabel('Progress').should('be.visible')
     cy.get('[aria-label="Progress"] > div[data-status]').as('steps').should('have.length', 2)
@@ -50,7 +59,7 @@ describe('UploadStepper', () => {
   })
 
   it('should render the final step', () => {
-    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={2} onContinue={cy.stub()} />)
+    cy.mountWithProviders(<UploadStepper steps={MOCK_STEPS} activeStep={2} onContinue={cy.stub()} store={MOCK_STORE} />)
 
     cy.getByAriaLabel('Progress').should('be.visible')
     cy.get('[aria-label="Progress"] > div[data-status]').as('steps').should('have.length', 2)

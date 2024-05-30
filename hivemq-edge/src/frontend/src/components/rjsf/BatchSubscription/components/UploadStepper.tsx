@@ -14,13 +14,14 @@ import {
 } from '@chakra-ui/react'
 import { BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 
-interface UploadStepper {
+interface UploadStepperProps {
   activeStep: number
   steps: BatchModeSteps[]
-  onContinue: (partialStore: BatchModeStore) => void
+  onContinue: (partialStore: Partial<BatchModeStore>) => void
+  store: BatchModeStore
 }
 
-export const UploadStepper: FC<UploadStepper> = ({ steps, activeStep, onContinue }) => {
+export const UploadStepper: FC<UploadStepperProps> = ({ store, steps, activeStep, onContinue }) => {
   const Component = steps[activeStep]?.renderer
 
   return (
@@ -44,7 +45,7 @@ export const UploadStepper: FC<UploadStepper> = ({ steps, activeStep, onContinue
           ))}
       </Stepper>
       <Box data-testid="stepper-container" minHeight={450} w="100%" p={4}>
-        <Component onContinue={onContinue} />
+        <Component onContinue={onContinue} store={store} />
       </Box>
     </VStack>
   )

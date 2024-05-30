@@ -2,50 +2,53 @@ import { useSteps } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { useCallback, useState } from 'react'
 
-import { BatchModeStep, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
+import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import DataSourceStep from '@/components/rjsf/BatchSubscription/components/DataSourceStep.tsx'
 import SubscriptionsValidationStep from '@/components/rjsf/BatchSubscription/components/SubscriptionsValidationStep.tsx'
 import ColumnMatcherStep from '@/components/rjsf/BatchSubscription/components/ColumnMatcherStep.tsx'
 import ConfirmStep from '@/components/rjsf/BatchSubscription/components/ConfirmStep.tsx'
+import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
-export const useBatchModeSteps = () => {
+export const useBatchModeSteps = (schema: RJSFSchema) => {
   const { t } = useTranslation('components')
   const { isCompleteStep, isIncompleteStep, ...stepper } = useSteps()
-  const [store, setStore] = useState<BatchModeStore>({})
+  const [store, setStore] = useState<BatchModeStore>({ schema })
 
   const isStepCompleted = useCallback(
-    (step: BatchModeStep): boolean => {
-      if (step === BatchModeStep.UPLOAD) return Boolean(store.worksheet)
+    (step: BatchModeStepType): boolean => {
+      if (step === BatchModeStepType.UPLOAD) return Boolean(store.worksheet)
+      if (step === BatchModeStepType.MATCH) return Boolean(store.mapping)
+
       return false
     },
-    [store.worksheet]
+    [store.mapping, store.worksheet]
   )
 
-  const onContinue = useCallback((partialStore: BatchModeStore) => {
-    setStore(partialStore)
+  const onContinue = useCallback((partialStore: Partial<BatchModeStore>) => {
+    setStore((old) => ({ ...old, ...partialStore }))
   }, [])
 
   const steps: BatchModeSteps[] = [
     {
-      id: BatchModeStep.UPLOAD,
+      id: BatchModeStepType.UPLOAD,
       title: t('rjsf.batchUpload.modal.step.upload.title'),
       description: t('rjsf.batchUpload.modal.step.upload.description'),
       renderer: DataSourceStep,
     },
     {
-      id: BatchModeStep.MATCH,
+      id: BatchModeStepType.MATCH,
       title: t('rjsf.batchUpload.modal.step.match.title'),
       description: t('rjsf.batchUpload.modal.step.match.description'),
       renderer: ColumnMatcherStep,
     },
     {
-      id: BatchModeStep.VALIDATE,
+      id: BatchModeStepType.VALIDATE,
       title: t('rjsf.batchUpload.modal.step.validate.title'),
       description: t('rjsf.batchUpload.modal.step.validate.description'),
       renderer: SubscriptionsValidationStep,
     },
     {
-      id: BatchModeStep.CONFIRM,
+      id: BatchModeStepType.CONFIRM,
       isFinal: true,
       title: t('rjsf.batchUpload.modal.step.confirm.title'),
       description: t('rjsf.batchUpload.modal.step.confirm.description'),
@@ -58,5 +61,6 @@ export const useBatchModeSteps = () => {
     isStepCompleted,
     onContinue,
     steps,
+    store,
   }
 }

@@ -1,29 +1,44 @@
 import { FC } from 'react'
+import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
-export enum BatchModeStep {
+export enum BatchModeStepType {
   UPLOAD,
   MATCH,
   VALIDATE,
   CONFIRM,
 }
 
-export interface StepProps {
-  onContinue: (partialStore: BatchModeStore) => void
+export interface StepRendererProps {
+  store: BatchModeStore
+  onContinue: (partialStore: Partial<BatchModeStore>) => void
 }
 
 export interface BatchModeSteps {
-  id: BatchModeStep
+  id: BatchModeStepType
   title: string
   description: string
-  renderer: FC<StepProps>
+  renderer: FC<StepRendererProps>
   isFinal?: boolean
 }
 
 export interface BatchModeStore {
+  schema: RJSFSchema
+  fileName?: string
   worksheet?: WorksheetData[]
+  mapping?: ColumnMappingData[]
 }
 
 export interface WorksheetData {
   [x: string]: unknown
-  __rowNum__: number
+}
+
+export interface ColumnOption {
+  value: string | number
+  label: string
+  type?: string
+}
+
+export interface ColumnMappingData {
+  column: string
+  subscription: string
 }
