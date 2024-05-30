@@ -47,8 +47,8 @@ const DataSourceStep: FC<StepRendererProps> = ({ onContinue }) => {
         const workbook = XLSX.read(await readFileAsync(file), {
           dense: true,
         })
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]] // get the first worksheet
-        const jsonData = XLSX.utils.sheet_to_json<WorksheetData>(worksheet) // generate objects
+        const firstWorksheetAsRawData = workbook.Sheets[workbook.SheetNames[0]]
+        const firstWorksheetData = XLSX.utils.sheet_to_json<WorksheetData>(firstWorksheetAsRawData)
 
         const status: AlertStatus = 'success'
         toast({
@@ -56,7 +56,7 @@ const DataSourceStep: FC<StepRendererProps> = ({ onContinue }) => {
           status,
           title: t('rjsf.batchUpload.dropZone.status', { context: status, fileName: file.name }),
         })
-        onContinue({ worksheet: jsonData, fileName: file.name })
+        onContinue({ worksheet: firstWorksheetData, fileName: file.name })
       } catch (error) {
         let message
         if (error instanceof Error) message = error.message
@@ -85,11 +85,9 @@ const DataSourceStep: FC<StepRendererProps> = ({ onContinue }) => {
       id="dropzone"
     >
       <input {...getInputProps()} data-testid="batch-load-dropzone" />
-      {isDragActive ? (
-        <Text>{t('rjsf.batchUpload.dropZone.dropping')}</Text>
-      ) : loading ? (
-        <Text>{t('rjsf.batchUpload.dropZone.loading')}</Text>
-      ) : (
+      {isDragActive && <Text>{t('rjsf.batchUpload.dropZone.dropping')}</Text>}
+      {loading && <Text>{t('rjsf.batchUpload.dropZone.loading')}</Text>}
+      {!isDragActive && !loading && (
         <>
           <Text>{t('rjsf.batchUpload.dropZone.placeholder')}</Text>
           <Button onClick={open}>{t('rjsf.batchUpload.dropZone.selectFile')}</Button>
