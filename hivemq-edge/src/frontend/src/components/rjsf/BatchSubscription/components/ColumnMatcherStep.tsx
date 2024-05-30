@@ -88,6 +88,9 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
                     render={({ field: { value, onChange, ...rest } }) => {
                       return (
                         <Select<ColumnOption>
+                          id={`mapping.${index}.column`}
+                          instanceId={`mapping.${index}.column`}
+                          aria-label={t('rjsf.batchUpload.columnMapping.column.ariaLabel')}
                           {...rest}
                           onChange={(e) => onChange(e?.label)}
                           value={{ label: value, value }}
@@ -100,8 +103,8 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
                 <LuChevronsRight />
                 <Box flex={1}>
                   <Input
+                    aria-label={t('rjsf.batchUpload.columnMapping.subscription.ariaLabel')}
                     readOnly
-                    placeholder="quantity"
                     {...register(`mapping.${index}.subscription`, {
                       required: true,
                     })}
@@ -109,7 +112,9 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
                   />
                 </Box>
               </HStack>
-              <FormErrorMessage>{errors?.mapping?.[index]?.column?.message}</FormErrorMessage>
+              <FormErrorMessage id={`mapping.${index}.error`}>
+                {errors?.mapping?.[index]?.column?.message}
+              </FormErrorMessage>
             </FormControl>
           )
         })}
