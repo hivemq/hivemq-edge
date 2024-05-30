@@ -187,7 +187,7 @@ const PaginatedTable = <T,>({
               {table.getFooterGroups().map((footerGroup) => (
                 <Tr key={footerGroup.id}>
                   {footerGroup.headers.map((header) => (
-                    <Td key={header.id}>
+                    <Td key={header.id} colSpan={header.colSpan}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.footer, header.getContext())}
                     </Td>
                   ))}
