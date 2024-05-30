@@ -18,9 +18,9 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
 
     //  TODO[NVL] If not required properties, do we "force" some (assuming a mqtt-topic for example)
     return required
-      ? required.map((e) => {
-          const sss = properties?.[e] as JSONSchema7 | undefined
-          return { value: e, label: sss?.title || e }
+      ? required.map((requiredItem) => {
+          const requiredItemProperties = properties?.[requiredItem] as JSONSchema7 | undefined
+          return { value: requiredItem, label: requiredItemProperties?.title || requiredItem }
         })
       : []
   }, [schema.items])
@@ -88,12 +88,12 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
                     render={({ field: { value, onChange, ...rest } }) => {
                       return (
                         <Select<ColumnOption>
+                          {...rest}
                           // TODO[modal-portal] Feels like a hack. Use a ref [?]
                           menuPortalTarget={document.getElementById('chakra-modal-array-field-batch') as HTMLElement}
                           id={`mapping.${index}.column`}
                           instanceId={`mapping.${index}.column`}
                           aria-label={t('rjsf.batchUpload.columnMapping.column.ariaLabel')}
-                          {...rest}
                           onChange={(e) => onChange(e?.label)}
                           value={{ label: value, value }}
                           options={columns}
@@ -105,12 +105,12 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
                 <LuChevronsRight />
                 <Box flex={1}>
                   <Input
-                    aria-label={t('rjsf.batchUpload.columnMapping.subscription.ariaLabel')}
-                    readOnly
                     {...register(`mapping.${index}.subscription`, {
                       required: true,
                     })}
+                    aria-label={t('rjsf.batchUpload.columnMapping.subscription.ariaLabel')}
                     className={errors?.mapping?.[index]?.subscription ? 'error' : ''}
+                    readOnly
                   />
                 </Box>
               </HStack>
