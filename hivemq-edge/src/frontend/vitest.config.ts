@@ -17,7 +17,13 @@ export default defineConfig({
     setupFiles: './src/__test-utils__/setup.ts',
     coverage: {
       include: ['**/src/'],
-      exclude: ['**/src/api/__generated__/**', '**/__handlers__/**', '**/__test-utils__/**', '**/*.tsx'],
+      exclude: [
+        '**/src/api/__generated__/**',
+        '**/__handlers__/**',
+        '**/__test-utils__/**',
+        '**/modules/Theme/**',
+        '**/*.tsx',
+      ],
       provider: 'istanbul', // or 'v8'
       reporter: ['text', 'json', 'html', 'lcov'],
     },
