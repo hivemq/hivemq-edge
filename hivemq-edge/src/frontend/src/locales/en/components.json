@@ -127,7 +127,9 @@
       },
       "dataValidation": {
         "action": {
-          "delete": "Delete,",
+          "delete_zero": "Delete rows",
+          "delete_one": "Delete {{ count }} row",
+          "delete_other": "Delete {{ count }} rows",
           "errorOnly": "Show only errors"
         }
       }

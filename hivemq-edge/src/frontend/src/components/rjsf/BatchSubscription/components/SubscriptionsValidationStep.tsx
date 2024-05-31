@@ -29,8 +29,11 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store }) => {
       {
         id: 'group',
         footer: ({ table }) => (
-          <Button leftIcon={<LuCheckSquare />} isDisabled={!table.getIsSomeRowsSelected()}>
-            {t('rjsf.batchUpload.dataValidation.action.delete')}
+          <Button
+            leftIcon={<LuCheckSquare />}
+            isDisabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
+          >
+            {t('rjsf.batchUpload.dataValidation.action.delete', { count: table.getSelectedRowModel().rows.length })}
           </Button>
         ),
         columns: [
