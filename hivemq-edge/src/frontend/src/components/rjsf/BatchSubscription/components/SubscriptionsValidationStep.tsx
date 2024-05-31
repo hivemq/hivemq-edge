@@ -77,7 +77,7 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store }) => {
             const { errors } = info.row.original
             const cellError = errors?.find((error) => {
               // TODO[NVL] need to check for other types of error
-              const isTypeError = () => error.keyword === 'type' && error.instancePath.includes(info.cell.column.id)
+              const isTypeError = () => error.instancePath.includes(info.cell.column.id)
               const isRequiredError = () =>
                 error.keyword === 'required' && error.params.missingProperty === info.cell.column.id
               return isTypeError() || isRequiredError()
