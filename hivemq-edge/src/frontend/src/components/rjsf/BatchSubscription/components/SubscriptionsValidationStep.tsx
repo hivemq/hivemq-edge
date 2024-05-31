@@ -112,7 +112,7 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
 
     const validate = validator.ajv.compile(store.schema.items)
 
-    const rows = store.worksheet.map((row, index) => {
+    return store.worksheet.map((row, index) => {
       const mappedData = store.mapping?.reduce<ValidationColumns>(
         (acc, elt) => {
           acc[elt.subscription] = row[elt.column]
@@ -124,8 +124,6 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
       const ggg = validate(mappedData)
       return { ...mappedData, isError: !ggg, errors: validate.errors } as ValidationColumns
     })
-
-    return rows
   }, [store.mapping, store.schema.items, store.worksheet])
   const [subscriptions, setSubscriptions] = useState<ValidationColumns[]>(data)
   const isSubscriptionsValid = useMemo(() => {
