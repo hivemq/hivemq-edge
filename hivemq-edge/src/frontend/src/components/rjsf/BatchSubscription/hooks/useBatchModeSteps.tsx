@@ -18,10 +18,11 @@ export const useBatchModeSteps = (schema: RJSFSchema) => {
     (step: BatchModeStepType): boolean => {
       if (step === BatchModeStepType.UPLOAD) return Boolean(store.worksheet)
       if (step === BatchModeStepType.MATCH) return Boolean(store.mapping)
+      if (step === BatchModeStepType.VALIDATE) return Boolean(store.subscriptions)
 
       return false
     },
-    [store.mapping, store.worksheet]
+    [store.mapping, store.subscriptions, store.worksheet]
   )
 
   const onContinue = useCallback((partialStore: Partial<BatchModeStore>) => {
