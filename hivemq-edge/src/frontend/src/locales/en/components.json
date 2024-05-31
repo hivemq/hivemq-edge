@@ -127,6 +127,7 @@
       },
       "dataValidation": {
         "table": {
+          "ariaLabel": "List of subscriptions to be created",
           "noDataText": "There is no rows to display"
         },
         "action": {
