@@ -158,7 +158,7 @@ const PaginatedTable = <T,>({
           <Tbody>
             {table.getRowModel().rows.length === 0 && (
               <Tr>
-                <Td colSpan={table.getAllColumns().length}>
+                <Td colSpan={table.getAllFlatColumns().length}>
                   {isError ? (
                     <Alert status="error">There was an error loading the data</Alert>
                   ) : (
