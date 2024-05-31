@@ -160,7 +160,7 @@ const PaginatedTable = <T,>({
               <Tr>
                 <Td colSpan={table.getAllFlatColumns().length}>
                   {isError ? (
-                    <Alert status="error">There was an error loading the data</Alert>
+                    <Alert status="error">{t('components:pagination.noDataLoadError')}</Alert>
                   ) : (
                     <Alert status="info">
                       {table.getCoreRowModel().rows.length === 0

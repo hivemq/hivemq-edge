@@ -12,6 +12,7 @@
       "clear": "Clear filter"
     },
     "noDataText": "No data received yet.",
+    "noDataLoadError": "There was an error loading the data.",
     "noDataFiltered": "No data matching your filters.",
     "goFirstPage": "Go to the first page",
     "goPreviousPage": "Go to the previous page",
