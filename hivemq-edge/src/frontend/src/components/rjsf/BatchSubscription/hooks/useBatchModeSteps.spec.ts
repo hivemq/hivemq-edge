@@ -1,11 +1,10 @@
-/// <reference types="cypress" />
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 
 import '@/config/i18n.config.ts'
 
 import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
-import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.tsx'
+import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.ts'
 
 const MOCK_STORE: BatchModeStore = {
   schema: {},
