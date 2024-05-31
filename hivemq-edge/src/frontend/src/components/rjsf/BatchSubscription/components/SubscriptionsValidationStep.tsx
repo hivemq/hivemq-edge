@@ -1,15 +1,12 @@
-import { FC, useMemo } from 'react'
+import { FC, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import validator from '@rjsf/validator-ajv8'
 import { ColumnDef } from '@tanstack/react-table'
 import { Button, Checkbox, FormControl, FormLabel, Switch, Tag, Text, Tooltip, useBoolean } from '@chakra-ui/react'
 import { LuCheckSquare } from 'react-icons/lu'
-import { CompiledValidateFunction } from '@rjsf/validator-ajv8/lib/types'
-import validator from '@rjsf/validator-ajv8'
 
-import { StepRendererProps } from '@/components/rjsf/BatchSubscription/types.ts'
+import { StepRendererProps, ValidationColumns } from '@/components/rjsf/BatchSubscription/types.ts'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
-import { useTranslation } from 'react-i18next'
-
-type ErrorObject = Pick<CompiledValidateFunction, 'errors'>
 
 interface ValidationColumns extends ErrorObject {
   [x: string]: unknown

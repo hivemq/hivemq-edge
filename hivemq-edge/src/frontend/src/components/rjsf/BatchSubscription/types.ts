@@ -1,5 +1,6 @@
 import { FC } from 'react'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import { CompiledValidateFunction } from '@rjsf/validator-ajv8/lib/types'
 
 export enum BatchModeStepType {
   UPLOAD,
@@ -26,6 +27,7 @@ export interface BatchModeStore {
   fileName?: string
   worksheet?: WorksheetData[]
   mapping?: ColumnMappingData[]
+  subscriptions?: ValidationColumns[]
 }
 
 export interface WorksheetData {
@@ -41,4 +43,12 @@ export interface ColumnOption {
 export interface ColumnMappingData {
   column: string
   subscription: string
+}
+
+type ErrorObject = Pick<CompiledValidateFunction, 'errors'>
+
+export interface ValidationColumns extends ErrorObject {
+  [x: string]: unknown
+  row: number
+  isError?: boolean
 }
