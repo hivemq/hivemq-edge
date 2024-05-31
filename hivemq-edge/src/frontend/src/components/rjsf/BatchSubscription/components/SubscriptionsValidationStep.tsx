@@ -140,7 +140,7 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
     <PaginatedTable<ValidationColumns>
       noDataText={t('rjsf.batchUpload.dataValidation.table.noDataText')}
       aria-label="sss"
-      data={data}
+      data={flagError ? subscriptions.filter((e) => e.isError) : subscriptions}
       columns={columns}
       enablePagination={true}
       pageSizes={[10]}
