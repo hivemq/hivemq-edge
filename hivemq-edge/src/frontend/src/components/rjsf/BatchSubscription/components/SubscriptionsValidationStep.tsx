@@ -86,7 +86,9 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store }) => {
             if (cellError) {
               return (
                 <Tooltip label={cellError.message}>
-                  <Tag colorScheme="red">{info.getValue<string>()}</Tag>
+                  <Tag colorScheme="red" minW={75}>
+                    {info.getValue<string>()}
+                  </Tag>
                 </Tooltip>
               )
             }
@@ -106,7 +108,7 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store }) => {
     ]
 
     return columns
-  }, [flagError, setFlagError.toggle, store])
+  }, [flagError, setFlagError.toggle, store, t])
 
   const data = useMemo<ValidationColumns[]>(() => {
     if (!store.mapping || !store.worksheet || !store.schema.items) return []
@@ -131,6 +133,7 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store }) => {
 
   return (
     <PaginatedTable<ValidationColumns>
+      noDataText={t('rjsf.batchUpload.dataValidation.table.noDataText')}
       aria-label="sss"
       data={data}
       columns={columns}
