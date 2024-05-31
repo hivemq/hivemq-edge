@@ -8,13 +8,7 @@ import { LuCheckSquare } from 'react-icons/lu'
 import { StepRendererProps, ValidationColumns } from '@/components/rjsf/BatchSubscription/types.ts'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
-interface ValidationColumns extends ErrorObject {
-  [x: string]: unknown
-  row: number
-  isError?: boolean
-}
-
-const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store }) => {
+const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue }) => {
   const { t } = useTranslation('components')
   const [flagError, setFlagError] = useBoolean()
 
@@ -29,6 +23,12 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store }) => {
           <Button
             leftIcon={<LuCheckSquare />}
             isDisabled={!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()}
+            onClick={() => {
+              const selectedRows = table.getSelectedRowModel().rows
+              const selectedIDs = selectedRows.map((row) => row.original.row)
+              setSubscriptions((old) => old.filter((subscription) => !selectedIDs.includes(subscription.row)))
+              table.resetRowSelection()
+            }}
           >
             {t('rjsf.batchUpload.dataValidation.action.delete', { count: table.getSelectedRowModel().rows.length })}
           </Button>
@@ -125,8 +125,16 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store }) => {
       return { ...mappedData, isError: !ggg, errors: validate.errors } as ValidationColumns
     })
 
-    return flagError ? rows.filter((e) => e.isError) : rows
-  }, [flagError, store.mapping, store.schema.items, store.worksheet])
+    return rows
+  }, [store.mapping, store.schema.items, store.worksheet])
+  const [subscriptions, setSubscriptions] = useState<ValidationColumns[]>(data)
+  const isSubscriptionsValid = useMemo(() => {
+    return subscriptions.length && subscriptions.every((e) => !e.isError)
+  }, [subscriptions])
+
+  useEffect(() => {
+    onContinue({ subscriptions: isSubscriptionsValid ? subscriptions : undefined })
+  }, [isSubscriptionsValid, onContinue, subscriptions])
 
   return (
     <PaginatedTable<ValidationColumns>
