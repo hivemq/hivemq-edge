@@ -126,6 +126,9 @@
         }
       },
       "dataValidation": {
+        "table": {
+          "noDataText": "There is no rows to display"
+        },
         "action": {
           "delete_zero": "Delete rows",
           "delete_one": "Delete {{ count }} row",
