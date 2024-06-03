@@ -33,7 +33,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
-public class SimulationProtocolAdapter implements PollingProtocolAdapter {
+public class SimulationProtocolAdapter implements PollingProtocolAdapter<PollingContext> {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull SimulationAdapterConfig adapterConfig;
@@ -71,7 +71,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void poll(
-            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<com.hivemq.adapter.sdk.api.config.PollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
         pollingOutput.addDataPoint("sample",
                 ThreadLocalRandom.current()
                         .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
@@ -80,7 +80,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @NotNull List<? extends PollingContext> getPollingContexts() {
+    public @NotNull List<PollingContext> getPollingContexts() {
         return adapterConfig.getSubscriptions();
     }
 

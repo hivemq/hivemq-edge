@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -62,7 +63,7 @@ public class LargeConfigFileTest extends AbstractConfigWriterTest {
         start = printTimer("Initial Read", System.out, start);
 
         SimulationAdapterConfig config = readConfig(mapper, entity.getProtocolAdapterConfig());
-        List<PollingContextImpl> subscriptions  = config.getSubscriptions();
+        List<PollingContext> subscriptions  = config.getSubscriptions();
 
         for (int i = 0; i < 100000; i++){
             subscriptions.add(new PollingContextImpl("foo" + i, 1, null));

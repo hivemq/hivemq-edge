@@ -14,20 +14,20 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
+public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSubscriptionSampler {
 
     private static final Logger log = LoggerFactory.getLogger(PerSubscriptionSampler.class);
 
 
     private final @NotNull PollingProtocolAdapter perSubscriptionProtocolAdapter;
-    private final @NotNull PollingContext pollingContext;
+    private final @NotNull T pollingContext;
 
     public PerSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> protocolAdapter,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull PollingContext pollingContext,
+            final @NotNull T pollingContext,
             final @NotNull EventService eventService) {
         super(protocolAdapter,
                 protocolAdapter.getAdapter().getPollingIntervalMillis(),
@@ -48,7 +48,7 @@ public class PerSubscriptionSampler extends AbstractSubscriptionSampler {
         }
         final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
         try {
-            perSubscriptionProtocolAdapter.poll(new PollingInputImpl(pollingContext), pollingOutput);
+            perSubscriptionProtocolAdapter.poll(new PollingInputImpl<>(pollingContext), pollingOutput);
         } catch (Throwable t) {
             pollingOutput.fail(t, null);
             throw t;

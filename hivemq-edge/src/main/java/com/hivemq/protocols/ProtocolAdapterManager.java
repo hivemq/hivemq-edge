@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
@@ -268,14 +269,13 @@ public class ProtocolAdapterManager {
         if (protocolAdapterWrapper.getAdapter() instanceof PollingProtocolAdapter) {
             log.info("Scheduling polling for adapter {}", protocolAdapterWrapper.getId());
             final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
-
             adapter.getPollingContexts().forEach(adapterSubscription -> {
                 //noinspection unchecked this is safe as we literally make a check on the adapter class before
-                final PerSubscriptionSampler sampler = new PerSubscriptionSampler(protocolAdapterWrapper,
+                final PerSubscriptionSampler<? extends PollingContext> sampler = new PerSubscriptionSampler<>(protocolAdapterWrapper,
                         metricRegistry,
                         objectMapper,
                         moduleServices.adapterPublishService(),
-                        adapterSubscription,
+                        (PollingContext)adapterSubscription,
                         eventService);
                 protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
             });
