@@ -103,6 +103,10 @@ public class ProtocolAdapter {
     @Schema(description = "JSONSchema in the \'https://json-schema.org/draft/2020-12/schema\' format, which describes the configuration requirements for the adapter.")
     private final @NotNull JsonNode configSchema;
 
+    @JsonProperty("uiSchema")
+    @Schema(description = "UISchema (see https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/uiSchema/), which describes the rendering of the configuration for the adapter.")
+    private final @NotNull JsonNode uiSchema;
+
     public ProtocolAdapter(
             @JsonProperty("id") final @NotNull String id,
             @JsonProperty("protocol") final @NotNull String protocol,
@@ -117,7 +121,8 @@ public class ProtocolAdapter {
             @JsonProperty("capabilities") final @NotNull Set<Capability> capabilities,
             @JsonProperty("category") final @Nullable ProtocolAdapterCategory category,
             @JsonProperty("tags") final @Nullable List<String> tags,
-            @JsonProperty("configSchema") final @NotNull JsonNode configSchema) {
+            @JsonProperty("configSchema") final @NotNull JsonNode configSchema,
+            @JsonProperty("uiSchema") final @NotNull JsonNode uiSchema) {
         this.id = id;
         this.protocol = protocol;
         this.name = name;
@@ -132,6 +137,7 @@ public class ProtocolAdapter {
         this.category = category;
         this.tags = tags;
         this.configSchema = configSchema;
+        this.uiSchema = uiSchema;
     }
 
     public @NotNull String getId() {
@@ -188,6 +194,10 @@ public class ProtocolAdapter {
 
     public @Nullable ProtocolAdapterCategory getCategory() {
         return category;
+    }
+
+    public @Nullable JsonNode getUiSchema() {
+        return uiSchema;
     }
 
     @Override

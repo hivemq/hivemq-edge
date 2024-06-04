@@ -19,8 +19,14 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -29,6 +35,7 @@ import java.util.List;
  */
 public class HttpProtocolAdapterInformation implements ProtocolAdapterInformation {
 
+    private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapterInformation.class);
     public static final ProtocolAdapterInformation INSTANCE = new HttpProtocolAdapterInformation();
 
     protected HttpProtocolAdapterInformation() {
@@ -57,7 +64,6 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
     @Override
     public @NotNull String getUrl() {
         return "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#http-adapter";
-
     }
 
     @Override
@@ -87,8 +93,22 @@ public class HttpProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public List<ProtocolAdapterTag> getTags() {
-        return List.of(ProtocolAdapterTag.INTERNET,
-                ProtocolAdapterTag.TCP,
-                ProtocolAdapterTag.WEB);
+        return List.of(ProtocolAdapterTag.INTERNET, ProtocolAdapterTag.TCP, ProtocolAdapterTag.WEB);
+    }
+
+    @Override
+    public @Nullable String getUiSchema() {
+        try (final InputStream is = this.getClass()
+                .getClassLoader()
+                .getResourceAsStream("http-adapter-ui-schema.json")) {
+            if (is == null) {
+                log.warn("The UISchema for the Http Adapter could not be loaded from resources: Not found.");
+                return null;
+            }
+            return IOUtils.toString(is, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.warn("The UISchema for the Http Adapter could not be loaded from resources:", e);
+            return null;
+        }
     }
 }

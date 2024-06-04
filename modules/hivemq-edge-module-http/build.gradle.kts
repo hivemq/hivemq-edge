@@ -37,6 +37,7 @@ repositories {
 
 dependencies {
     compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
+    compileOnly("commons-io:commons-io:${property("commons-io.version")}")
 
     implementation("org.slf4j:slf4j-api:${property("slf4j.version")}")
     implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")

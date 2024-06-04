@@ -21,11 +21,18 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
 
 public class SimulationProtocolAdapterInformation implements ProtocolAdapterInformation {
+
+    private static final Logger log = LoggerFactory.getLogger(SimulationProtocolAdapterInformation.class);
 
     public static final ProtocolAdapterInformation INSTANCE = new SimulationProtocolAdapterInformation();
 
@@ -87,4 +94,19 @@ public class SimulationProtocolAdapterInformation implements ProtocolAdapterInfo
         return EnumSet.of(ProtocolAdapterCapability.READ);
     }
 
+    @Override
+    public @Nullable String getUiSchema() {
+        try (final InputStream is = this.getClass()
+                .getClassLoader()
+                .getResourceAsStream("simulation-adapter-ui-schema.json")) {
+            if (is == null) {
+                log.warn("The UISchema for the Simulation Adapter could not be loaded from resources: Not found.");
+                return null;
+            }
+            return IOUtils.toString(is, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.warn("The UISchema for the Simulation Adapter could not be loaded from resources:", e);
+            return null;
+        }
+    }
 }

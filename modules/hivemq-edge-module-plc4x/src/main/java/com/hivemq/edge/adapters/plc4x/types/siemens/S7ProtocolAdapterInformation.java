@@ -19,8 +19,14 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -30,6 +36,8 @@ import java.util.List;
 public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation {
 
     public static final ProtocolAdapterInformation INSTANCE = new S7ProtocolAdapterInformation();
+    private static final @NotNull Logger log = LoggerFactory.getLogger(S7ProtocolAdapterInformation.class);
+
 
     protected S7ProtocolAdapterInformation() {
     }
@@ -92,4 +100,19 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
         return EnumSet.of(ProtocolAdapterCapability.READ);
     }
 
+    @Override
+    public @Nullable String getUiSchema() {
+        try (final InputStream is = this.getClass()
+                .getClassLoader()
+                .getResourceAsStream("s7-adapter-ui-schema.json")) {
+            if (is == null) {
+                log.warn("The UISchema for the S7 Adapter could not be loaded from resources: Not found.");
+                return null;
+            }
+            return IOUtils.toString(is, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.warn("The UISchema for the S7 Adapter could not be loaded from resources:", e);
+            return null;
+        }
+    }
 }

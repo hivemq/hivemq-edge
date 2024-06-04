@@ -18,14 +18,21 @@ package com.hivemq.edge.adapters.opcua;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformation{
 
     public static final ProtocolAdapterInformation INSTANCE = new OpcUaProtocolAdapterInformation();
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterInformation.class);
+
 
     private OpcUaProtocolAdapterInformation() {
     }
@@ -78,5 +85,21 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
     @Override
     public @Nullable List<ProtocolAdapterTag> getTags() {
         return null;
+    }
+
+    @Override
+    public @Nullable String getUiSchema() {
+        try (final InputStream is = this.getClass()
+                .getClassLoader()
+                .getResourceAsStream("opcua-adapter-ui-schema.json")) {
+            if (is == null) {
+                log.warn("The UISchema for the OPC-UA Adapter could not be loaded from resources: Not found.");
+                return null;
+            }
+            return IOUtils.toString(is, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.warn("The UISchema for the OPC-UA Adapter could not be loaded from resources:", e);
+            return null;
+        }
     }
 }

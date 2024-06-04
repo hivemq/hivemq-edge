@@ -1,0 +1,47 @@
+{
+  "ui:tabs": [
+    {
+      "id": "coreFields",
+      "title": "Core Fields",
+      "properties": ["id", "port", "host","timeout"]
+    },
+    {
+      "id": "subFields",
+      "title": "Subscription",
+      "properties": ["subscriptions"]
+    },
+    {
+      "id": "publishing",
+      "title": "protocolAdapter.uiSchema.groups.publishing",
+      "properties": [
+        "maxPollingErrorsBeforeRemoval",
+        "publishChangedDataOnly",
+        "publishingInterval",
+        "pollingIntervalMillis",
+        "destination",
+        "qos",
+        "minValue",
+        "maxValue"
+      ]
+    }
+  ],
+  "ui:submitButtonOptions": {
+    "norender": true
+  },
+  "id": {
+    "ui:disabled": true
+  },
+  "port": {
+    "ui:widget": "updown"
+  },
+  "ui:order": ["id", "host", "port", "*", "subscriptions"],
+  "subscriptions": {
+    "ui:batchMode": true,
+    "items": {
+      "ui:order": ["node", "holding-registers", "mqtt-topic", "destination", "qos", "*"],
+      "ui:collapsable": {
+        "titleKey": "destination"
+      }
+    }
+  }
+}

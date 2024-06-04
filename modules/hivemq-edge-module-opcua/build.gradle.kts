@@ -43,6 +43,7 @@ repositories {
 
 dependencies {
     compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
+    compileOnly("commons-io:commons-io:${property("commons-io.version")}")
 
     runtimeOnly("com.google.guava:guava:${property("guava.version")}")
     compileOnly("org.apache.commons:commons-lang3:${property("commons-lang.version")}")

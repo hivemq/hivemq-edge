@@ -1,0 +1,43 @@
+{
+  "ui:tabs": [
+    {
+      "id": "coreFields",
+      "title": "Settings",
+      "properties": ["id"]
+    },
+    {
+      "id": "subFields",
+      "title": "Subscription",
+      "properties": ["subscriptions"]
+    },
+    {
+      "id": "publishing",
+      "title": "Publishing",
+      "properties": [
+        "maxPollingErrorsBeforeRemoval",
+        "publishingInterval",
+        "pollingIntervalMillis",
+        "destination",
+        "qos",
+        "minValue",
+        "maxValue"
+      ]
+    }
+  ],
+  "ui:submitButtonOptions": {
+    "norender": true
+  },
+
+  "id": {
+    "ui:disabled": false
+  },
+  "ui:order": ["id", "host", "port", "subscriptions"],
+  "subscriptions": {
+    "items": {
+      "ui:order": [ "destination", "qos", "*"],
+      "ui:collapsable": {
+        "titleKey": "destination"
+      }
+    }
+  }
+}

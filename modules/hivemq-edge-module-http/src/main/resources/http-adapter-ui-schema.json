@@ -1,0 +1,56 @@
+{
+  "ui:tabs": [
+    {
+      "id": "coreFields",
+      "title": "Core Fields",
+      "properties": ["id", "url"]
+    },
+    {
+      "id": "publishing",
+      "title": "Publishing",
+      "properties": [
+        "maxPollingErrorsBeforeRemoval",
+        "pollingIntervalMillis",
+        "destination",
+        "qos"
+      ]
+    },
+    {
+      "id": "http",
+      "title": "protocolAdapter.uiSchema.groups.http",
+      "properties": [
+        "httpRequestMethod",
+        "httpRequestBodyContentType",
+        "httpRequestBody",
+        "httpHeaders",
+        "httpConnectTimeout",
+        "httpRequestBodyContentType",
+        "assertResponseIsJson",
+        "httpPublishSuccessStatusCodeOnly",
+        "allowUntrustedCertificates"
+      ]
+    }
+  ],
+  "ui:submitButtonOptions": {
+    "norender": true
+  },
+  "id": {
+    "ui:disabled": true
+  },
+  "port": {
+    "ui:widget": "updown"
+  },
+  "httpRequestBody": {
+    "ui:widget": "textarea"
+  },
+  "ui:order": ["id", "host", "port", "*"],
+  "subscriptions": {
+    "ui:batchMode": true,
+    "items": {
+      "ui:order": ["destination", "qos", "*"],
+      "ui:collapsable": {
+        "titleKey": "destination"
+      }
+    }
+  }
+}
