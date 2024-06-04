@@ -19,17 +19,21 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 @JsonPropertyOrder({"minValue", "maxValue", "subscriptions"})
 public class SimulationAdapterConfig implements ProtocolAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
+
+    @JsonProperty("subscriptions")
+    @ModuleConfigField(title = "subscription", description = "List of subscriptions for the simulation")
+    private @NotNull List<SimulationPollingContext> pollingContexts = new ArrayList<>();
 
     @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",
@@ -40,7 +44,6 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
                        stringMinLength = 1,
                        stringMaxLength = 1024)
     protected @NotNull String id;
-
 
     @JsonProperty("pollingIntervalMillis")
     @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
@@ -56,20 +59,6 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
                        description = "Max. errors polling the endpoint before the polling daemon is stopped",
                        defaultValue = "10")
     private int maxPollingErrorsBeforeRemoval = 10;
-
-    public int getPollingIntervalMillis() {
-        return pollingIntervalMillis;
-    }
-
-    public int getMaxPollingErrorsBeforeRemoval() {
-        return maxPollingErrorsBeforeRemoval;
-    }
-
-    @JsonProperty("subscriptions")
-    @ModuleConfigField(title = "Subscriptions",
-                       description = "List of subscriptions for the simulation",
-                       required = true)
-    private @NotNull List<PollingContext> adapterSubscriptions = new ArrayList<>();
 
     @JsonProperty("minValue")
     @ModuleConfigField(title = "Min. Generated Value",
@@ -88,27 +77,12 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
     public SimulationAdapterConfig() {
     }
 
-    public SimulationAdapterConfig(
-            final @NotNull String id, final @NotNull List<PollingContext> adapterSubscriptions) {
-        this.id = id;
-        this.adapterSubscriptions = adapterSubscriptions;
+    public @NotNull List<SimulationPollingContext> getPollingContexts() {
+       return pollingContexts;
     }
 
     public @NotNull String getId() {
         return id;
-    }
-
-    public void setId(final @NotNull String id) {
-        this.id = id;
-    }
-
-
-    public void setSubscriptions(@NotNull List<PollingContext> adapterSubscriptions) {
-        this.adapterSubscriptions = adapterSubscriptions;
-    }
-
-    public @NotNull List<PollingContext> getSubscriptions() {
-        return adapterSubscriptions;
     }
 
     public int getMinValue() {
@@ -117,5 +91,13 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
 
     public int getMaxValue() {
         return maxValue;
+    }
+
+    public int getPollingIntervalMillis() {
+        return pollingIntervalMillis;
+    }
+
+    public int getMaxPollingErrorsBeforeRemoval() {
+        return maxPollingErrorsBeforeRemoval;
     }
 }
