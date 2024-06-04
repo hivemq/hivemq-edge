@@ -67,8 +67,13 @@ const getTopicsFromPath = (path: string, instance: RJSFSchema): string[] => {
   if (property === TOPIC_PATH_ITEMS_TOKEN) {
     const res: string[] = []
 
-    for (const item of instance as RJSFSchema[]) {
-      const topicsFromPath = getTopicsFromPath(rest.join('.'), item)
+    if (Array.isArray(instance)) {
+      for (const item of instance as RJSFSchema[]) {
+        const topicsFromPath = getTopicsFromPath(rest.join('.'), item)
+        res.push(...topicsFromPath)
+      }
+    } else {
+      const topicsFromPath = getTopicsFromPath(rest.join('.'), instance as RJSFSchema)
       res.push(...topicsFromPath)
     }
     return res
