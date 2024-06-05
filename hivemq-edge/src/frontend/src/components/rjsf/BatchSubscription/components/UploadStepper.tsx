@@ -1,4 +1,5 @@
 import { FC } from 'react'
+import { IdSchema } from '@rjsf/utils'
 import {
   Box,
   Stepper,
@@ -18,7 +19,7 @@ interface UploadStepperProps {
   activeStep: number
   steps: BatchModeSteps[]
   onContinue: (partialStore: Partial<BatchModeStore>) => void
-  onBatchUpload?: (batch: Record<string, unknown>[]) => void
+  onBatchUpload?: (idSchema: IdSchema<unknown>, batch: Record<string, unknown>[]) => void
   onClose?: () => void
   store: BatchModeStore
 }

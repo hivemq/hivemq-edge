@@ -16,7 +16,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 import { IChangeEvent } from '@rjsf/core'
-import { RJSFSchema } from '@rjsf/utils'
+import { IdSchema, RJSFSchema } from '@rjsf/utils'
 import Form from '@rjsf/chakra-ui'
 
 import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
@@ -80,7 +80,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   }
 
   const context: AdapterContext = {
-    onBatchUpload: (batch) => console.log('XXXXXX', batch),
+    onBatchUpload: (idSchema: IdSchema<unknown>, batch) => console.log('XXXXXX', idSchema, batch),
   }
 
   return (

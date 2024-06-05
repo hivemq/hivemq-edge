@@ -8,7 +8,7 @@ const ConfirmStep: FC<StepRendererProps> = ({ onBatchUpload, onClose, store }) =
 
   const handleConfirm = () => {
     if (store.subscriptions) {
-      onBatchUpload?.(store.subscriptions)
+      onBatchUpload?.(store.idSchema, store.subscriptions)
       // onContinue({ fileName: undefined, subscriptions: undefined, mapping: undefined, worksheet: undefined })
       onClose?.()
     }

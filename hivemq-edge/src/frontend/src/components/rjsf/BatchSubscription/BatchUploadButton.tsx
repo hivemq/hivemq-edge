@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import { IdSchema } from '@rjsf/utils'
 import {
   Button,
   ButtonGroup,
@@ -19,15 +20,16 @@ import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/use
 import { BatchModeStepType } from '@/components/rjsf/BatchSubscription/types.ts'
 
 interface BatchUploadButtonProps {
+  idSchema: IdSchema<unknown>
   schema: RJSFSchema
-  onBatchUpload?: (batch: Record<string, unknown>[]) => void
+  onBatchUpload?: (idSchema: IdSchema<unknown>, batch: Record<string, unknown>[]) => void
 }
 
-const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema, onBatchUpload }) => {
+const BatchUploadButton: FC<BatchUploadButtonProps> = ({ idSchema, schema, onBatchUpload }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation('components')
   const { steps, activeStep, setActiveStep, isStepCompleted, onContinue, goToNext, goToPrevious, store } =
-    useBatchModeSteps(schema)
+    useBatchModeSteps(idSchema, schema)
 
   const isLastStep = activeStep === BatchModeStepType.CONFIRM
 

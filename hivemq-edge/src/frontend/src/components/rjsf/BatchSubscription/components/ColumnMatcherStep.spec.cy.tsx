@@ -1,7 +1,10 @@
+import { IdSchema } from '@rjsf/utils'
 import { BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import ColumnMatcherStep from '@/components/rjsf/BatchSubscription/components/ColumnMatcherStep.tsx'
 
+const MOCK_ID_SCHEMA: IdSchema<unknown> = { $id: 'my-id' }
 const MOCK_STORE: BatchModeStore = {
+  idSchema: MOCK_ID_SCHEMA,
   schema: {
     type: 'array',
     items: {

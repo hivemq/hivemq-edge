@@ -72,7 +72,7 @@ export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps<unknown, RJSFSchema,
               registry={registry}
             />
             {uiOptions.batchMode && onBatchUpload && (
-              <BatchUploadButton schema={schema} onBatchUpload={onBatchUpload} />
+              <BatchUploadButton idSchema={idSchema} schema={schema} onBatchUpload={onBatchUpload} />
             )}
           </HStack>
         )}

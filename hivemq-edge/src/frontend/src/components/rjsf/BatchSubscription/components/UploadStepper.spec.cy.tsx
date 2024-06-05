@@ -1,3 +1,5 @@
+import { FC } from 'react'
+import { IdSchema } from '@rjsf/utils'
 import { UploadStepper } from '@/components/rjsf/BatchSubscription/components/UploadStepper.tsx'
 import {
   BatchModeStepType,
@@ -5,9 +7,10 @@ import {
   StepRendererProps,
   BatchModeStore,
 } from '@/components/rjsf/BatchSubscription/types.ts'
-import { FC } from 'react'
 
+const MOCK_ID_SCHEMA: IdSchema<unknown> = { $id: 'my-id' }
 const MOCK_STORE: BatchModeStore = {
+  idSchema: MOCK_ID_SCHEMA,
   schema: {},
 }
 

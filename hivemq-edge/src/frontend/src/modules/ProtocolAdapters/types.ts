@@ -1,4 +1,5 @@
 import { UseFormReturn, FieldValues } from 'react-hook-form'
+import { IdSchema } from '@rjsf/utils'
 import { Adapter, ProtocolAdapter } from '@/api/__generated__'
 
 export type SubscriptionType = 'remoteSubscriptions' | 'localSubscriptions'
@@ -42,5 +43,5 @@ export type AdapterConfig = NonNullable<Adapter['config']>
 
 export interface AdapterContext {
   // TODO[NVL] Is that good enough for ANY form data?
-  onBatchUpload?: (batch: Record<string, unknown>[]) => void
+  onBatchUpload?: (idSchema: IdSchema<unknown>, batch: Record<string, unknown>[]) => void
 }

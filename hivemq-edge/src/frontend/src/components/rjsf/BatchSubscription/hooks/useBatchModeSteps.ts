@@ -1,21 +1,23 @@
 import { useSteps } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 import { useCallback, useState } from 'react'
+import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import { IdSchema } from '@rjsf/utils'
 
 import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import DataSourceStep from '@/components/rjsf/BatchSubscription/components/DataSourceStep.tsx'
 import SubscriptionsValidationStep from '@/components/rjsf/BatchSubscription/components/SubscriptionsValidationStep.tsx'
 import ColumnMatcherStep from '@/components/rjsf/BatchSubscription/components/ColumnMatcherStep.tsx'
 import ConfirmStep from '@/components/rjsf/BatchSubscription/components/ConfirmStep.tsx'
-import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
-export const useBatchModeSteps = (schema: RJSFSchema) => {
+export const useBatchModeSteps = (idSchema: IdSchema<unknown>, schema: RJSFSchema) => {
   const { t } = useTranslation('components')
   const { isCompleteStep, isIncompleteStep, ...stepper } = useSteps()
-  const [store, setStore] = useState<BatchModeStore>({ schema })
+  const [store, setStore] = useState<BatchModeStore>({ idSchema, schema })
 
   const isStepCompleted = useCallback(
     (step: BatchModeStepType): boolean => {
+      console.log('XXXXX store', store)
       if (step === BatchModeStepType.UPLOAD) return Boolean(store.worksheet)
       if (step === BatchModeStepType.MATCH) return Boolean(store.mapping)
       if (step === BatchModeStepType.VALIDATE) return Boolean(store.subscriptions)
