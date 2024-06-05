@@ -3,13 +3,15 @@ import { Alert, AlertDescription, AlertIcon, AlertTitle, Button, VStack } from '
 import { StepRendererProps } from '@/components/rjsf/BatchSubscription/types.ts'
 import { useTranslation } from 'react-i18next'
 
-const ConfirmStep: FC<StepRendererProps> = ({ onBatchUpload, onClose, store }) => {
+const ConfirmStep: FC<StepRendererProps> = ({ onBatchUpload, onClose, onContinue, store }) => {
   const { t } = useTranslation('components')
 
   const handleConfirm = () => {
     if (store.subscriptions) {
-      onBatchUpload?.(store.idSchema, store.subscriptions)
-      // onContinue({ fileName: undefined, subscriptions: undefined, mapping: undefined, worksheet: undefined })
+      const subscriptions = store.subscriptions.map(({ errors, isError, row, ...subs }) => subs)
+      onBatchUpload?.(store.idSchema, subscriptions)
+      // Confusing. Get a "clear" method instead or change the onClose
+      onContinue({ fileName: undefined, subscriptions: undefined, mapping: undefined, worksheet: undefined })
       onClose?.()
     }
   }
