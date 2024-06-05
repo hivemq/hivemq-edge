@@ -17,6 +17,7 @@ import { LuHardDriveUpload } from 'react-icons/lu'
 import { UploadStepper } from '@/components/rjsf/BatchSubscription/components/UploadStepper.tsx'
 import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.ts'
 
+
 interface BatchUploadButtonProps {
   schema: RJSFSchema
 }
@@ -66,7 +67,7 @@ const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
                 {t('rjsf.batchUpload.modal.action.next')}
               </Button>
             </ButtonGroup>
-            <ButtonGroup>
+            <ButtonGroup>=
               <Button onClick={onClose}>{t('rjsf.batchUpload.modal.action.cancel')}</Button>
             </ButtonGroup>
           </ModalFooter>

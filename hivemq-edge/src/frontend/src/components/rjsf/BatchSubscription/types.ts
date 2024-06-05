@@ -2,6 +2,7 @@ import { FC } from 'react'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 import { CompiledValidateFunction } from '@rjsf/validator-ajv8/lib/types'
 
+
 export enum BatchModeStepType {
   UPLOAD,
   MATCH,
@@ -28,6 +29,7 @@ export interface BatchModeStore {
   worksheet?: WorksheetData[]
   mapping?: ColumnMappingData[]
   subscriptions?: ValidationColumns[]
+
 }
 
 export interface WorksheetData {
