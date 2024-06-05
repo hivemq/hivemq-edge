@@ -6,7 +6,6 @@ import '@/config/i18n.config.ts'
 import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.ts'
 
-
 const MOCK_STORE: BatchModeStore = {
   schema: {},
 }
