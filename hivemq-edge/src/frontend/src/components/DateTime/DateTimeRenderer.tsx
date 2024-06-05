@@ -33,6 +33,10 @@ const DateTimeRenderer: FC<DateTimeRendererProps> = ({ date, isApprox = false, i
   })
 
   const formatter = isShort ? formatShortDate : formatLongDate
+  if (!date.isValid) {
+    // Need to check for error type
+    return null
+  }
 
   if (isApprox) {
     const relative = toHuman(date)
