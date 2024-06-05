@@ -16,10 +16,12 @@ const ConfirmStep: FC<StepRendererProps> = ({ onBatchUpload, onClose, onContinue
     }
   }
 
+  const isBundleValid = store.subscriptions && store.subscriptions.length > 0
+
   return (
     <VStack minHeight="calc(450px - 2rem)" display="flex" justifyContent="space-evenly" alignItems="center">
       <Alert
-        status="success"
+        status={isBundleValid ? 'success' : 'error'}
         variant="subtle"
         flexDirection="column"
         alignItems="center"
@@ -29,12 +31,14 @@ const ConfirmStep: FC<StepRendererProps> = ({ onBatchUpload, onClose, onContinue
       >
         <AlertIcon boxSize="40px" mr={0} />
         <AlertTitle mt={4} mb={1} fontSize="lg">
-          {t('rjsf.batchUpload.confirm.alert.title')}
+          {t('rjsf.batchUpload.confirm.alert.title', { count: store.subscriptions?.length })}
         </AlertTitle>
-        <AlertDescription maxWidth="sm">{t('rjsf.batchUpload.confirm.alert.description')} </AlertDescription>
+        <AlertDescription maxWidth="sm">
+          {t('rjsf.batchUpload.confirm.alert.description', { count: store.subscriptions?.length })}
+        </AlertDescription>
       </Alert>
 
-      <Button variant="primary" onClick={handleConfirm}>
+      <Button variant="primary" onClick={handleConfirm} isDisabled={!isBundleValid}>
         {t('rjsf.batchUpload.confirm.action.upload')}
       </Button>
     </VStack>

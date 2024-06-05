@@ -139,8 +139,12 @@
       },
       "confirm": {
         "alert": {
-          "title": "Subscriptions defined",
-          "description": "Subscriptions are ready to be uploaded. Any existing subscription already defined will be deleted"
+          "title_zero": "No valid subscriptions",
+          "title_one": "One subscription loaded",
+          "title_other": "{{ count}} subscriptions loaded",
+          "description_zero": "There was a problem loading valid subscriptions from your configuration. Please try again.",
+          "description_one": "You subscription is ready to be uploaded. Any existing subscription already defined in the adapter will be deleted",
+          "description_other": "Your subscriptions are ready to be uploaded. Any existing subscription already defined in the adapter will be deleted"
         },
         "action": {
           "upload": "Upload records"
