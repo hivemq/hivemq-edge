@@ -18,8 +18,8 @@ interface UploadStepperProps {
   activeStep: number
   steps: BatchModeSteps[]
   onContinue: (partialStore: Partial<BatchModeStore>) => void
-  onBatchUpload: (batch: Record<string, unknown>[]) => void
-  onClose: () => void
+  onBatchUpload?: (batch: Record<string, unknown>[]) => void
+  onClose?: () => void
   store: BatchModeStore
 }
 

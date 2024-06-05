@@ -3,14 +3,14 @@ import { Alert, AlertDescription, AlertIcon, AlertTitle, Button, VStack } from '
 import { StepRendererProps } from '@/components/rjsf/BatchSubscription/types.ts'
 import { useTranslation } from 'react-i18next'
 
-const ConfirmStep: FC<StepRendererProps> = ({ onBatchUpload, onClose, onContinue, store }) => {
+const ConfirmStep: FC<StepRendererProps> = ({ onBatchUpload, onClose, store }) => {
   const { t } = useTranslation('components')
 
   const handleConfirm = () => {
     if (store.subscriptions) {
-      onBatchUpload(store.subscriptions)
-      onContinue({ fileName: undefined, subscriptions: undefined, mapping: undefined, worksheet: undefined })
-      onClose()
+      onBatchUpload?.(store.subscriptions)
+      // onContinue({ fileName: undefined, subscriptions: undefined, mapping: undefined, worksheet: undefined })
+      onClose?.()
     }
   }
 

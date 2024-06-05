@@ -20,7 +20,7 @@ import { BatchModeStepType } from '@/components/rjsf/BatchSubscription/types.ts'
 
 interface BatchUploadButtonProps {
   schema: RJSFSchema
-  onBatchUpload: (batch: Record<string, unknown>[]) => void
+  onBatchUpload?: (batch: Record<string, unknown>[]) => void
 }
 
 const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema, onBatchUpload }) => {

@@ -8,7 +8,7 @@ import { LuCheckSquare } from 'react-icons/lu'
 import { StepRendererProps, ValidationColumns } from '@/components/rjsf/BatchSubscription/types.ts'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
-const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue, onBatchUpload }) => {
+const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue }) => {
   const { t } = useTranslation('components')
   const [flagError, setFlagError] = useBoolean()
 
