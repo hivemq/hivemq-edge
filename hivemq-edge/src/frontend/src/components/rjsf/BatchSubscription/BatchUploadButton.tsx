@@ -24,7 +24,15 @@ interface BatchUploadButtonProps {
 const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation('components')
-  const { activeStep, steps, isStepCompleted, onContinue, goToNext, goToPrevious, store } = useBatchModeSteps(schema)
+  const { steps, activeStep, setActiveStep, isStepCompleted, onContinue, goToNext, goToPrevious, store } =
+    useBatchModeSteps(schema)
+
+  const isLastStep = activeStep === BatchModeStepType.CONFIRM
+
+  const handleClose = () => {
+    setActiveStep(BatchModeStepType.UPLOAD)
+    onClose()
+  }
 
   return (
     <>
@@ -58,13 +66,15 @@ const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
               <Button onClick={goToPrevious} isDisabled={!activeStep}>
                 {t('rjsf.batchUpload.modal.action.previous')}
               </Button>
-              <Button
-                variant="primary"
-                onClick={goToNext}
-                isDisabled={activeStep === steps.length - 1 || !isStepCompleted(activeStep)}
-              >
-                {t('rjsf.batchUpload.modal.action.next')}
-              </Button>
+              {!isLastStep && (
+                <Button
+                  variant="primary"
+                  onClick={goToNext}
+                  isDisabled={activeStep === steps.length - 1 || !isStepCompleted(activeStep)}
+                >
+                  {t('rjsf.batchUpload.modal.action.next')}
+                </Button>
+              )}
             </ButtonGroup>
             <ButtonGroup>
               <Button onClick={onClose}>{t('rjsf.batchUpload.modal.action.cancel')}</Button>
