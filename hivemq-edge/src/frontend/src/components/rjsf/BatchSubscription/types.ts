@@ -12,6 +12,8 @@ export enum BatchModeStepType {
 export interface StepRendererProps {
   store: BatchModeStore
   onContinue: (partialStore: Partial<BatchModeStore>) => void
+  onBatchUpload: (batch: Record<string, unknown>[]) => void
+  onClose: () => void
 }
 
 export interface BatchModeSteps {

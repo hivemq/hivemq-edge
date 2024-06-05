@@ -18,10 +18,19 @@ interface UploadStepperProps {
   activeStep: number
   steps: BatchModeSteps[]
   onContinue: (partialStore: Partial<BatchModeStore>) => void
+  onBatchUpload: (batch: Record<string, unknown>[]) => void
+  onClose: () => void
   store: BatchModeStore
 }
 
-export const UploadStepper: FC<UploadStepperProps> = ({ store, steps, activeStep, onContinue }) => {
+export const UploadStepper: FC<UploadStepperProps> = ({
+  store,
+  steps,
+  activeStep,
+  onContinue,
+  onBatchUpload,
+  onClose,
+}) => {
   const Component = steps[activeStep]?.renderer
 
   return (
@@ -45,7 +54,7 @@ export const UploadStepper: FC<UploadStepperProps> = ({ store, steps, activeStep
           ))}
       </Stepper>
       <Box data-testid="stepper-container" minHeight={450} w="100%" p={4}>
-        <Component onContinue={onContinue} store={store} />
+        <Component onContinue={onContinue} store={store} onBatchUpload={onBatchUpload} onClose={onClose} />
       </Box>
     </VStack>
   )
