@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { FC, useMemo, useState } from 'react'
 import {
   Button,
   Drawer,
@@ -18,6 +18,8 @@ import { useParams } from 'react-router-dom'
 import { IChangeEvent } from '@rjsf/core'
 import { IdSchema, RJSFSchema } from '@rjsf/utils'
 import Form from '@rjsf/chakra-ui'
+import { immutableJSONPatch, JSONPatchAdd, JSONPatchDocument } from 'immutable-json-patch'
+import validator from '@rjsf/validator-ajv8'
 
 import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
@@ -45,6 +47,8 @@ interface AdapterInstanceDrawerProps {
   onDelete?: () => void
 }
 
+const FLAG_POST_VALIDATE = false
+
 const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   adapterType,
   isNewAdapter = false,
@@ -56,6 +60,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   const { data } = useGetAdapterTypes()
   const { data: allAdapters } = useListProtocolAdapters()
   const { adapterId } = useParams()
+  const [bachData, setBachData] = useState<JSONPatchDocument | undefined>(undefined)
 
   const { schema, name, logo } = useMemo(() => {
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
@@ -66,8 +71,11 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   const defaultValues = useMemo(() => {
     if (isNewAdapter || !adapterId) return undefined
     const { config } = allAdapters?.find((e) => e.id === adapterId) || {}
+    if (bachData) {
+      return immutableJSONPatch(config, bachData)
+    }
     return config
-  }, [allAdapters, adapterId, isNewAdapter])
+  }, [isNewAdapter, adapterId, allAdapters, bachData])
   const uiSchema = useGetUiSchema(isNewAdapter)
 
   const onValidate = (data: IChangeEvent<Adapter, RJSFSchema>) => {
@@ -80,7 +88,19 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   }
 
   const context: AdapterContext = {
-    onBatchUpload: (idSchema: IdSchema<unknown>, batch) => console.log('XXXXXX', idSchema, batch),
+    onBatchUpload: (idSchema: IdSchema<unknown>, batch) => {
+      const path = idSchema.$id.replace('root_', '/').replaceAll('_', '/') + '/-'
+      const operations: JSONPatchDocument = batch.map<JSONPatchAdd>((value) => ({ op: 'add', path, value }))
+
+      if (schema && FLAG_POST_VALIDATE) {
+        const updatedDocument = immutableJSONPatch(defaultValues, operations)
+        const { $schema, ...rest } = schema
+        const validate = validator.ajv.compile(rest)
+        validate(updatedDocument)
+      }
+
+      setBachData(operations)
+    },
   }
 
   return (
