@@ -17,7 +17,6 @@ export const useBatchModeSteps = (idSchema: IdSchema<unknown>, schema: RJSFSchem
 
   const isStepCompleted = useCallback(
     (step: BatchModeStepType): boolean => {
-      console.log('XXXXX store', store)
       if (step === BatchModeStepType.UPLOAD) return Boolean(store.worksheet)
       if (step === BatchModeStepType.MATCH) return Boolean(store.mapping)
       if (step === BatchModeStepType.VALIDATE) return Boolean(store.subscriptions)
