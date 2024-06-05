@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig> {
+public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, Plc4xAdapterConfig.PollingContextImpl> {
 
     static final String SOURCE_AMS_NET_ID = "sourceAmsNetId", SOURCE_AMS_PORT = "sourceAmsPort", TARGET_AMS_PORT =
             "targetAmsPort", TARGET_AMS_NET_ID = "targetAmsNetId";

@@ -48,7 +48,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
-public class ModbusProtocolAdapter implements PollingProtocolAdapter {
+public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapterConfig.PollingContextImpl> {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -96,7 +96,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
 
     @Override
     public void poll(
-            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<ModbusAdapterConfig.PollingContextImpl> pollingInput, final @NotNull PollingOutput pollingOutput) {
 
         //-- If a previously linked job has terminally disconnected the client
         //-- we need to ensure any orphaned jobs tidy themselves up properly
@@ -122,7 +122,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @NotNull List<? extends PollingContext> getPollingContexts() {
+    public @NotNull List<ModbusAdapterConfig.PollingContextImpl> getPollingContexts() {
         return new ArrayList<>(adapterConfig.getSubscriptions());
     }
 

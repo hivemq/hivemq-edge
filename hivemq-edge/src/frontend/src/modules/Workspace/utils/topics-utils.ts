@@ -67,8 +67,14 @@ const getTopicsFromPath = (path: string, instance: RJSFSchema): string[] => {
   if (property === TOPIC_PATH_ITEMS_TOKEN) {
     const res: string[] = []
 
-    for (const item of instance as RJSFSchema[]) {
-      const topicsFromPath = getTopicsFromPath(rest.join('.'), item)
+    /* istanbul ignore else -- @preserve */
+    if (Array.isArray(instance)) {
+      for (const item of instance as RJSFSchema[]) {
+        const topicsFromPath = getTopicsFromPath(rest.join('.'), item)
+        res.push(...topicsFromPath)
+      }
+    } else {
+      const topicsFromPath = getTopicsFromPath(rest.join('.'), instance as RJSFSchema)
       res.push(...topicsFromPath)
     }
     return res
@@ -107,6 +113,7 @@ export const mergeAllTopics = (
   if (adapters) {
     const adapterTopics = adapters.reduce<string[]>((acc, cur) => {
       const type = types?.items?.find((e) => e.id === cur.type)
+      /* istanbul ignore next -- @preserve */
       if (!type) return acc
       const topics = discoverAdapterTopics(type, cur.config as GenericObjectType)
       acc.push(...topics)

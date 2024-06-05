@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 import { IdSchema } from '@rjsf/utils'
 
+
 import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import DataSourceStep from '@/components/rjsf/BatchSubscription/components/DataSourceStep.tsx'
 import SubscriptionsValidationStep from '@/components/rjsf/BatchSubscription/components/SubscriptionsValidationStep.tsx'
@@ -13,7 +14,7 @@ import ConfirmStep from '@/components/rjsf/BatchSubscription/components/ConfirmS
 export const useBatchModeSteps = (idSchema: IdSchema<unknown>, schema: RJSFSchema) => {
   const { t } = useTranslation('components')
   const { isCompleteStep, isIncompleteStep, ...stepper } = useSteps()
-  const [store, setStore] = useState<BatchModeStore>({ idSchema, schema })
+  const [store, setStore] = useState<BatchModeStore>({ idSchema, schema }
 
   const isStepCompleted = useCallback(
     (step: BatchModeStepType): boolean => {

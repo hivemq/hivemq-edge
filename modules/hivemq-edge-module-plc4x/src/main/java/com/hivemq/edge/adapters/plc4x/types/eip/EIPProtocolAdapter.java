@@ -31,7 +31,7 @@ import java.util.Map;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig> {
+public class EIPProtocolAdapter extends AbstractPlc4xAdapter<EIPAdapterConfig, Plc4xAdapterConfig.PollingContextImpl> {
 
     static final String SLOT = "slot", BACKPLANE = "backplane";
 
