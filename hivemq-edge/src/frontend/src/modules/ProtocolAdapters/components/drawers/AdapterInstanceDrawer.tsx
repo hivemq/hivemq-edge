@@ -32,6 +32,7 @@ import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate
 import useGetUiSchema from '../../hooks/useGetUISchema.ts'
 import { customFormatsValidator, customValidate } from '../../utils/validation-utils.ts'
 import { RJSFValidationError } from '@rjsf/utils/src/types.ts'
+import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -78,6 +79,10 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
     return errors.filter((error) => !error.stack.startsWith('no schema with key or ref'))
   }
 
+  const context: AdapterContext = {
+    onBatchUpload: (batch) => console.log('XXXXXX', batch),
+  }
+
   return (
     <Drawer variant="hivemq" closeOnOverlayClick={false} size="lg" isOpen={isOpen} placement="right" onClose={onClose}>
       <DrawerOverlay />
@@ -99,28 +104,27 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
             </DrawerHeader>
             <DrawerBody>
               {schema && (
-                <>
-                  <Form
-                    id="adapter-instance-form"
-                    schema={schema}
-                    uiSchema={uiSchema}
-                    templates={{
-                      ObjectFieldTemplate,
-                      FieldTemplate,
-                      BaseInputTemplate,
-                      ArrayFieldTemplate,
-                      ArrayFieldItemTemplate,
-                    }}
-                    liveValidate
-                    onSubmit={onValidate}
-                    validator={customFormatsValidator}
-                    showErrorList="bottom"
-                    onError={(errors) => console.log('XXXXXXX', errors)}
-                    formData={defaultValues}
-                    customValidate={customValidate(schema, allAdapters, t)}
-                    transformErrors={filterUnboundErrors}
-                  />
-                </>
+                <Form
+                  id="adapter-instance-form"
+                  schema={schema}
+                  uiSchema={uiSchema}
+                  templates={{
+                    ObjectFieldTemplate,
+                    FieldTemplate,
+                    BaseInputTemplate,
+                    ArrayFieldTemplate,
+                    ArrayFieldItemTemplate,
+                  }}
+                  liveValidate
+                  onSubmit={onValidate}
+                  validator={customFormatsValidator}
+                  showErrorList="bottom"
+                  onError={(errors) => console.log('XXXXXXX', errors)}
+                  formData={defaultValues}
+                  customValidate={customValidate(schema, allAdapters, t)}
+                  transformErrors={filterUnboundErrors}
+                  formContext={context}
+                />
               )}
             </DrawerBody>
 
