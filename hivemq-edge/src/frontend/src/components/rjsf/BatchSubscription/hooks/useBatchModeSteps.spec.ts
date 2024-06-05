@@ -1,13 +1,12 @@
 import { expect } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
-import { IdSchema } from '@rjsf/utils'
 
 import '@/config/i18n.config.ts'
 
 import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.ts'
+import { MOCK_ID_SCHEMA } from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
 
-const MOCK_ID_SCHEMA: IdSchema<unknown> = { $id: 'my-id' }
 const MOCK_STORE: BatchModeStore = {
   idSchema: MOCK_ID_SCHEMA,
   schema: {},

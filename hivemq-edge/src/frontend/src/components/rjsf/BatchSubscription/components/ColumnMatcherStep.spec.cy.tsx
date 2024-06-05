@@ -1,49 +1,15 @@
-import { IdSchema } from '@rjsf/utils'
 import { BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import ColumnMatcherStep from '@/components/rjsf/BatchSubscription/components/ColumnMatcherStep.tsx'
+import {
+  MOCK_ID_SCHEMA,
+  MOCK_SCHEMA,
+  MOCK_WORKSHEET,
+} from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
 
-const MOCK_ID_SCHEMA: IdSchema<unknown> = { $id: 'my-id' }
 const MOCK_STORE: BatchModeStore = {
   idSchema: MOCK_ID_SCHEMA,
-  schema: {
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        'message-expiry-interval': {
-          type: 'integer',
-          title: 'MQTT message expiry interval [s]',
-        },
-        'mqtt-topic': {
-          type: 'string',
-          title: 'Destination MQTT topic',
-        },
-        node: {
-          type: 'string',
-          title: 'Source Node ID',
-        },
-        'publishing-interval': {
-          type: 'integer',
-          title: 'OPC UA publishing interval [ms]',
-        },
-      },
-      required: ['mqtt-topic', 'node'],
-    },
-  },
-  worksheet: [
-    {
-      a: 1,
-      b: 2,
-      c: 3,
-      d: 4,
-    },
-    {
-      a: 2,
-      b: 3,
-      c: 3,
-      d: 5,
-    },
-  ],
+  schema: MOCK_SCHEMA,
+  worksheet: MOCK_WORKSHEET,
 }
 
 describe('DataSourceStep', () => {
@@ -57,13 +23,13 @@ describe('DataSourceStep', () => {
     cy.get('form#batch-mapping-form').find('[role="group"]').as('mapper')
     cy.get('@mapper').should('have.length', 2)
     cy.get('input[name="mapping.0.column"]').should('have.value', '')
-    cy.get('input[name="mapping.0.subscription"]').should('have.value', 'Destination MQTT topic')
+    cy.get('input[name="mapping.0.subscription"]').should('have.value', 'mqtt-topic')
     cy.get('#mapping\\.0\\.error').should(
       'contain.text',
       'The subscription property is required so a column must be selected'
     )
     cy.get('input[name="mapping.1.column"]').should('have.value', 'd')
-    cy.get('input[name="mapping.1.subscription"]').should('have.value', 'Source Node ID')
+    cy.get('input[name="mapping.1.subscription"]').should('have.value', 'node')
 
     cy.get('#mapping\\.0\\.column').click()
     cy.get('#react-select-mapping\\.0\\.column-listbox').find('[role="option"]').as('columnHeaders')
@@ -90,11 +56,11 @@ describe('DataSourceStep', () => {
       mapping: [
         {
           column: 'a',
-          subscription: 'Destination MQTT topic',
+          subscription: 'mqtt-topic',
         },
         {
           column: 'd',
-          subscription: 'Source Node ID',
+          subscription: 'node',
         },
       ],
     })

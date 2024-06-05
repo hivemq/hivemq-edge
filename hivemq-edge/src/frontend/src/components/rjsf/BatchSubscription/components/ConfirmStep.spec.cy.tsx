@@ -1,52 +1,16 @@
-import { IdSchema } from '@rjsf/utils'
 import { BatchModeStore, ValidationColumns } from '@/components/rjsf/BatchSubscription/types.ts'
 import ConfirmStep from '@/components/rjsf/BatchSubscription/components/ConfirmStep.tsx'
-import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import {
+  MOCK_ID_SCHEMA,
+  MOCK_SCHEMA,
+  MOCK_WORKSHEET,
+} from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
 
-const MOCK_ID_SCHEMA: IdSchema<unknown> = { $id: 'my-id' }
-const MOCK_SCHEMA: RJSFSchema = {
-  type: 'array',
-  items: {
-    type: 'object',
-    properties: {
-      'message-expiry-interval': {
-        type: 'integer',
-        title: 'MQTT message expiry interval [s]',
-      },
-      'mqtt-topic': {
-        type: 'string',
-        title: 'Destination MQTT topic',
-      },
-      node: {
-        type: 'string',
-        title: 'Source Node ID',
-      },
-      'publishing-interval': {
-        type: 'integer',
-        title: 'OPC UA publishing interval [ms]',
-      },
-    },
-    required: ['mqtt-topic', 'node'],
-  },
-}
 const MOCK_VALIDATION: ValidationColumns[] = [{ row: 0, isError: false, message: 'MQTT topic validation failed' }]
 const MOCK_STORE: BatchModeStore = {
   idSchema: MOCK_ID_SCHEMA,
   schema: MOCK_SCHEMA,
-  worksheet: [
-    {
-      a: 1,
-      b: 2,
-      c: 3,
-      d: 4,
-    },
-    {
-      a: 2,
-      b: 3,
-      c: 3,
-      d: 5,
-    },
-  ],
+  worksheet: MOCK_WORKSHEET,
 }
 
 describe('ConfirmStep', () => {
