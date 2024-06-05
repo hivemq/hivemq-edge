@@ -1,5 +1,3 @@
-/// <reference types="cypress" />
-
 import { ColumnDef, type SortDirection } from '@tanstack/react-table'
 import PaginatedTable from './PaginatedTable.tsx'
 
