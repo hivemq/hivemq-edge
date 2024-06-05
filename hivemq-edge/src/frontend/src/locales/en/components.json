@@ -136,6 +136,15 @@
           "delete_other": "Delete {{ count }} rows",
           "errorOnly": "Show only errors"
         }
+      },
+      "confirm": {
+        "alert": {
+          "title": "Subscriptions defined",
+          "description": "Subscriptions are ready to be uploaded. Any existing subscription already defined will be deleted"
+        },
+        "action": {
+          "upload": "Upload records"
+        }
       }
     }
   }
