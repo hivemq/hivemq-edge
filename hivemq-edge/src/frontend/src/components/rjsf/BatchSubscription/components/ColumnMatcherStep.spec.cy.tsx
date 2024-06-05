@@ -43,7 +43,7 @@ const MOCK_STORE: BatchModeStore = {
   ],
 }
 
-describe('DataSourceStep', () => {
+describe('ColumnMatcherStep', () => {
   beforeEach(() => {
     cy.viewport(600, 600)
   })
@@ -54,13 +54,13 @@ describe('DataSourceStep', () => {
     cy.get('form#batch-mapping-form').find('[role="group"]').as('mapper')
     cy.get('@mapper').should('have.length', 2)
     cy.get('input[name="mapping.0.column"]').should('have.value', '')
-    cy.get('input[name="mapping.0.subscription"]').should('have.value', 'Destination MQTT topic')
+    cy.get('input[name="mapping.0.subscription"]').should('have.value', 'mqtt-topic')
     cy.get('#mapping\\.0\\.error').should(
       'contain.text',
       'The subscription property is required so a column must be selected'
     )
     cy.get('input[name="mapping.1.column"]').should('have.value', 'd')
-    cy.get('input[name="mapping.1.subscription"]').should('have.value', 'Source Node ID')
+    cy.get('input[name="mapping.1.subscription"]').should('have.value', 'node')
 
     cy.get('#mapping\\.0\\.column').click()
     cy.get('#react-select-mapping\\.0\\.column-listbox').find('[role="option"]').as('columnHeaders')
@@ -87,11 +87,11 @@ describe('DataSourceStep', () => {
       mapping: [
         {
           column: 'a',
-          subscription: 'Destination MQTT topic',
+          subscription: 'mqtt-topic',
         },
         {
           column: 'd',
-          subscription: 'Source Node ID',
+          subscription: 'node',
         },
       ],
     })
