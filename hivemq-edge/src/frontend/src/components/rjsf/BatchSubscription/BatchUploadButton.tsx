@@ -16,12 +16,14 @@ import {
 import { LuHardDriveUpload } from 'react-icons/lu'
 import { UploadStepper } from '@/components/rjsf/BatchSubscription/components/UploadStepper.tsx'
 import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.ts'
+import { BatchModeStepType } from '@/components/rjsf/BatchSubscription/types.ts'
 
 interface BatchUploadButtonProps {
   schema: RJSFSchema
+  onBatchUpload: (batch: Record<string, unknown>[]) => void
 }
 
-const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
+const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema, onBatchUpload }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation('components')
   const { steps, activeStep, setActiveStep, isStepCompleted, onContinue, goToNext, goToPrevious, store } =
@@ -59,7 +61,14 @@ const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
           <ModalHeader>{t('rjsf.batchUpload.modal.header')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <UploadStepper steps={steps} activeStep={activeStep} onContinue={onContinue} store={store} />
+            <UploadStepper
+              steps={steps}
+              activeStep={activeStep}
+              onContinue={onContinue}
+              onClose={handleClose}
+              store={store}
+              onBatchUpload={onBatchUpload}
+            />
           </ModalBody>
           <ModalFooter justifyContent="space-between" gap={2}>
             <ButtonGroup>
