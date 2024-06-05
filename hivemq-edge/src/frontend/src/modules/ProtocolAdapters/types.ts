@@ -39,3 +39,8 @@ export interface AdapterNavigateState {
 }
 
 export type AdapterConfig = NonNullable<Adapter['config']>
+
+export interface AdapterContext {
+  // TODO[NVL] Is that good enough for ANY form data?
+  onBatchUpload?: (batch: Record<string, unknown>[]) => void
+}
