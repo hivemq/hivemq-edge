@@ -52,3 +52,10 @@ export interface ValidationColumns extends ErrorObject {
   row: number
   isError?: boolean
 }
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace ErrorObject {
+  export enum keyword {
+    REQUIRED = 'required',
+  }
+}

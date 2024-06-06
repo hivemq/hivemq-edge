@@ -5,7 +5,7 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Button, Checkbox, FormControl, FormLabel, Switch, Tag, Text, Tooltip, useBoolean } from '@chakra-ui/react'
 import { LuCheckSquare } from 'react-icons/lu'
 
-import { StepRendererProps, ValidationColumns } from '@/components/rjsf/BatchSubscription/types.ts'
+import { ErrorObject, StepRendererProps, ValidationColumns } from '@/components/rjsf/BatchSubscription/types.ts'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
 const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue }) => {
@@ -76,7 +76,7 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
               // TODO[NVL] need to check for other types of error
               const isTypeError = () => error.instancePath.includes(info.cell.column.id)
               const isRequiredError = () =>
-                error.keyword === 'required' && error.params.missingProperty === info.cell.column.id
+                error.keyword === ErrorObject.keyword.REQUIRED && error.params.missingProperty === info.cell.column.id
               return isTypeError() || isRequiredError()
             })
 
