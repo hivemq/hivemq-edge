@@ -67,7 +67,7 @@ const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
               </Button>
             </ButtonGroup>
             <ButtonGroup>
-              =<Button onClick={onClose}>{t('rjsf.batchUpload.modal.action.cancel')}</Button>
+              <Button onClick={onClose}>{t('rjsf.batchUpload.modal.action.cancel')}</Button>
             </ButtonGroup>
           </ModalFooter>
         </ModalContent>
