@@ -26,8 +26,8 @@ import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.edge.modules.config.impl.PollingContextImpl;
-import com.hivemq.edge.modules.config.impl.UserPropertyImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,7 +58,7 @@ public class AdapterConfigModelTest {
 
         AdapterConfiguration entity = new AdapterConfiguration();
         entity.subscriptions = new ArrayList<>();
-        entity.subscriptions.add(new PollingContextImpl("some/path",1,List.of(new UserPropertyImpl("propertyName", "propertyValue"))));
+        entity.subscriptions.add(new PollingContextImpl("some/path",1,List.of(new UserProperty("propertyName", "propertyValue"))));
         String marhslaled = mapper.writeValueAsString(entity);
         System.err.println(marhslaled);
 
