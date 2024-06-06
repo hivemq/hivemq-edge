@@ -16,7 +16,6 @@
 package com.hivemq.edge.modules.adapters.simulation;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -33,7 +32,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
-public class SimulationProtocolAdapter implements PollingProtocolAdapter<PollingContext> {
+public class SimulationProtocolAdapter implements PollingProtocolAdapter<SimulationPollingContext> {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull SimulationAdapterConfig adapterConfig;
@@ -71,7 +70,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Polling
 
     @Override
     public void poll(
-            final @NotNull PollingInput<com.hivemq.adapter.sdk.api.config.PollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<SimulationPollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
         pollingOutput.addDataPoint("sample",
                 ThreadLocalRandom.current()
                         .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
@@ -80,8 +79,8 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Polling
     }
 
     @Override
-    public @NotNull List<PollingContext> getPollingContexts() {
-        return adapterConfig.getSubscriptions();
+    public @NotNull List<SimulationPollingContext> getPollingContexts() {
+        return adapterConfig.getPollingContexts();
     }
 
     @Override
