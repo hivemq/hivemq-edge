@@ -2,7 +2,18 @@ import { FC, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import validator from '@rjsf/validator-ajv8'
 import { ColumnDef } from '@tanstack/react-table'
-import { Button, Checkbox, FormControl, FormLabel, Switch, Tag, Text, Tooltip, useBoolean } from '@chakra-ui/react'
+import {
+  Button,
+  Checkbox,
+  FormControl,
+  FormLabel,
+  Switch,
+  Tag,
+  Text,
+  Tooltip,
+  useBoolean,
+  VisuallyHidden,
+} from '@chakra-ui/react'
 import { LuCheckSquare } from 'react-icons/lu'
 
 import { ErrorObject, StepRendererProps, ValidationColumns } from '@/components/rjsf/BatchSubscription/types.ts'
@@ -19,6 +30,7 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
     const columns: ColumnDef<ValidationColumns>[] = [
       {
         id: 'group',
+        header: () => <VisuallyHidden>{t('rjsf.batchUpload.dataValidation.columns.admin')}</VisuallyHidden>,
         footer: ({ table }) => (
           <Button
             leftIcon={<LuCheckSquare />}
@@ -41,6 +53,7 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
               const { isError } = row.original
               return (
                 <Checkbox
+                  aria-label={t('rjsf.batchUpload.dataValidation.columns.selectRow')}
                   isChecked={row.getIsSelected()}
                   onChange={row.getToggleSelectedHandler()}
                   colorScheme={isError ? 'red' : 'blue'}
@@ -50,6 +63,7 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
             header: ({ table }) => {
               return (
                 <Checkbox
+                  aria-label={t('rjsf.batchUpload.dataValidation.columns.selectHeader')}
                   isChecked={table.getIsAllRowsSelected()}
                   isIndeterminate={table.getIsSomeRowsSelected()}
                   onChange={table.getToggleAllRowsSelectedHandler()}
@@ -65,6 +79,7 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
       },
       {
         id: 'data',
+        header: () => <VisuallyHidden>{t('rjsf.batchUpload.dataValidation.columns.subscription')}</VisuallyHidden>,
         columns: required.map<ColumnDef<ValidationColumns>>((columnId) => ({
           header: columnId.subscription,
           accessorKey: columnId.subscription,
@@ -95,10 +110,10 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
         })),
         footer: () => (
           <FormControl display="flex" alignItems="center" justifyContent="flex-end">
-            <FormLabel htmlFor="email-alerts" mb="0">
-              Show errors only
+            <FormLabel htmlFor="show-errors" mb="0">
+              {t('rjsf.batchUpload.dataValidation.action.errorOnly')}
             </FormLabel>
-            <Switch id="email-alerts" isChecked={flagError.valueOf()} onChange={setFlagError.toggle} />
+            <Switch id="show-errors" isChecked={flagError.valueOf()} onChange={setFlagError.toggle} />
           </FormControl>
         ),
       },

@@ -1,46 +1,15 @@
 import { BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import ColumnMatcherStep from '@/components/rjsf/BatchSubscription/components/ColumnMatcherStep.tsx'
+import {
+  MOCK_ID_SCHEMA,
+  MOCK_SCHEMA,
+  MOCK_WORKSHEET,
+} from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
 
 const MOCK_STORE: BatchModeStore = {
-  schema: {
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        'message-expiry-interval': {
-          type: 'integer',
-          title: 'MQTT message expiry interval [s]',
-        },
-        'mqtt-topic': {
-          type: 'string',
-          title: 'Destination MQTT topic',
-        },
-        node: {
-          type: 'string',
-          title: 'Source Node ID',
-        },
-        'publishing-interval': {
-          type: 'integer',
-          title: 'OPC UA publishing interval [ms]',
-        },
-      },
-      required: ['mqtt-topic', 'node'],
-    },
-  },
-  worksheet: [
-    {
-      a: 1,
-      b: 2,
-      c: 3,
-      d: 4,
-    },
-    {
-      a: 2,
-      b: 3,
-      c: 3,
-      d: 5,
-    },
-  ],
+  idSchema: MOCK_ID_SCHEMA,
+  schema: MOCK_SCHEMA,
+  worksheet: MOCK_WORKSHEET,
 }
 
 describe('ColumnMatcherStep', () => {

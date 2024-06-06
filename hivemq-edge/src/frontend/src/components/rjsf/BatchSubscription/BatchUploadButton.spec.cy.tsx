@@ -1,13 +1,12 @@
 import BatchUploadButton from '@/components/rjsf/BatchSubscription/BatchUploadButton.tsx'
-
-const MOCK_SCHEMA = {}
+import { MOCK_ID_SCHEMA, MOCK_SCHEMA } from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
 
 describe('BatchUploadButton', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
   })
   it('should renders the CTA', () => {
-    cy.mountWithProviders(<BatchUploadButton schema={MOCK_SCHEMA} />)
+    cy.mountWithProviders(<BatchUploadButton idSchema={MOCK_ID_SCHEMA} schema={MOCK_SCHEMA} />)
 
     cy.getByTestId('array-field-batch-cta').should('contain.text', 'Upload').click()
     cy.get('section[role="dialog"]').should('exist')

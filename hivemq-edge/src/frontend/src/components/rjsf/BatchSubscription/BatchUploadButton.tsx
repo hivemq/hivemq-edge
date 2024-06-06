@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import { IdSchema } from '@rjsf/utils'
 import {
   Button,
   ButtonGroup,
@@ -16,15 +17,26 @@ import {
 import { LuHardDriveUpload } from 'react-icons/lu'
 import { UploadStepper } from '@/components/rjsf/BatchSubscription/components/UploadStepper.tsx'
 import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.ts'
+import { BatchModeStepType } from '@/components/rjsf/BatchSubscription/types.ts'
 
 interface BatchUploadButtonProps {
+  idSchema: IdSchema<unknown>
   schema: RJSFSchema
+  onBatchUpload?: (idSchema: IdSchema<unknown>, batch: Record<string, unknown>[]) => void
 }
 
-const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
+const BatchUploadButton: FC<BatchUploadButtonProps> = ({ idSchema, schema, onBatchUpload }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { t } = useTranslation('components')
-  const { activeStep, steps, isStepCompleted, onContinue, goToNext, goToPrevious, store } = useBatchModeSteps(schema)
+  const { steps, activeStep, setActiveStep, isStepCompleted, onContinue, goToNext, goToPrevious, store } =
+    useBatchModeSteps(idSchema, schema)
+
+  const isLastStep = activeStep === BatchModeStepType.CONFIRM
+
+  const handleClose = () => {
+    setActiveStep(BatchModeStepType.UPLOAD)
+    onClose()
+  }
 
   return (
     <>
@@ -51,20 +63,29 @@ const BatchUploadButton: FC<BatchUploadButtonProps> = ({ schema }) => {
           <ModalHeader>{t('rjsf.batchUpload.modal.header')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <UploadStepper steps={steps} activeStep={activeStep} onContinue={onContinue} store={store} />
+            <UploadStepper
+              steps={steps}
+              activeStep={activeStep}
+              onContinue={onContinue}
+              onClose={handleClose}
+              store={store}
+              onBatchUpload={onBatchUpload}
+            />
           </ModalBody>
           <ModalFooter justifyContent="space-between" gap={2}>
             <ButtonGroup>
               <Button onClick={goToPrevious} isDisabled={!activeStep}>
                 {t('rjsf.batchUpload.modal.action.previous')}
               </Button>
-              <Button
-                variant="primary"
-                onClick={goToNext}
-                isDisabled={activeStep === steps.length - 1 || !isStepCompleted(activeStep)}
-              >
-                {t('rjsf.batchUpload.modal.action.next')}
-              </Button>
+              {!isLastStep && (
+                <Button
+                  variant="primary"
+                  onClick={goToNext}
+                  isDisabled={activeStep === steps.length - 1 || !isStepCompleted(activeStep)}
+                >
+                  {t('rjsf.batchUpload.modal.action.next')}
+                </Button>
+              )}
             </ButtonGroup>
             <ButtonGroup>
               <Button onClick={onClose}>{t('rjsf.batchUpload.modal.action.cancel')}</Button>

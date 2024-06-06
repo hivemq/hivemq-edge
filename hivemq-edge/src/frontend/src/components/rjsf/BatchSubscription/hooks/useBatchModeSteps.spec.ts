@@ -5,14 +5,16 @@ import '@/config/i18n.config.ts'
 
 import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
 import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.ts'
+import { MOCK_ID_SCHEMA } from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
 
 const MOCK_STORE: BatchModeStore = {
+  idSchema: MOCK_ID_SCHEMA,
   schema: {},
 }
 
 describe('useBatchModeSteps', () => {
   it('should initialise the stepper', async () => {
-    const { result } = renderHook(() => useBatchModeSteps(MOCK_STORE.schema))
+    const { result } = renderHook(() => useBatchModeSteps(MOCK_ID_SCHEMA, MOCK_STORE.schema))
     expect(result.current.isActiveStep(BatchModeStepType.UPLOAD)).toBeTruthy()
     expect(result.current.isStepCompleted(BatchModeStepType.UPLOAD)).toBeFalsy()
     expect(result.current.isStepCompleted(BatchModeStepType.MATCH)).toBeFalsy()
@@ -20,7 +22,7 @@ describe('useBatchModeSteps', () => {
   })
 
   it('should create the steps', async () => {
-    const { result } = renderHook(() => useBatchModeSteps(MOCK_STORE.schema))
+    const { result } = renderHook(() => useBatchModeSteps(MOCK_ID_SCHEMA, MOCK_STORE.schema))
     expect(result.current.steps).toHaveLength(4)
     expect(result.current.steps.map((step) => step.id)).toEqual([
       BatchModeStepType.UPLOAD,
@@ -32,7 +34,7 @@ describe('useBatchModeSteps', () => {
   })
 
   it('should navigate between steps', async () => {
-    const { result } = renderHook(() => useBatchModeSteps(MOCK_STORE.schema))
+    const { result } = renderHook(() => useBatchModeSteps(MOCK_ID_SCHEMA, MOCK_STORE.schema))
     expect(result.current.isActiveStep(BatchModeStepType.UPLOAD)).toBeTruthy()
     expect(result.current.isStepCompleted(BatchModeStepType.UPLOAD)).toBeFalsy()
     act(() => {

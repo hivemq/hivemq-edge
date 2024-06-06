@@ -1,6 +1,7 @@
 import { FC } from 'react'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 import { CompiledValidateFunction } from '@rjsf/validator-ajv8/lib/types'
+import { IdSchema } from '@rjsf/utils'
 
 export enum BatchModeStepType {
   UPLOAD,
@@ -12,6 +13,8 @@ export enum BatchModeStepType {
 export interface StepRendererProps {
   store: BatchModeStore
   onContinue: (partialStore: Partial<BatchModeStore>) => void
+  onBatchUpload?: (idSchema: IdSchema<unknown>, batch: Record<string, unknown>[]) => void
+  onClose?: () => void
 }
 
 export interface BatchModeSteps {
@@ -23,6 +26,7 @@ export interface BatchModeSteps {
 }
 
 export interface BatchModeStore {
+  idSchema: IdSchema<unknown>
   schema: RJSFSchema
   fileName?: string
   worksheet?: WorksheetData[]
