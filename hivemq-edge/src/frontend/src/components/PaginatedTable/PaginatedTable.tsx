@@ -42,6 +42,8 @@ interface PaginatedTableProps<T> {
   noDataText?: string
   enableColumnFilters?: boolean
   enablePagination?: boolean
+  enablePaginationSizes?: boolean
+  enablePaginationGoTo?: boolean
   isError?: boolean
   'aria-label': string
   /**
@@ -60,12 +62,15 @@ const PaginatedTable = <T,>({
   getRowStyles,
   enableColumnFilters = false,
   enablePagination = true,
+  enablePaginationSizes = true,
+  enablePaginationGoTo = true,
   isError = false,
   'aria-label': ariaLabel,
 }: PaginatedTableProps<T>) => {
   const { t } = useTranslation()
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState('')
+  const [rowSelection, setRowSelection] = useState({})
 
   const table = useReactTable({
     data: data,
@@ -73,7 +78,10 @@ const PaginatedTable = <T,>({
     state: {
       columnFilters,
       globalFilter,
+      rowSelection,
     },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
     enableColumnFilters: enableColumnFilters,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
@@ -150,9 +158,9 @@ const PaginatedTable = <T,>({
           <Tbody>
             {table.getRowModel().rows.length === 0 && (
               <Tr>
-                <Td colSpan={table.getAllColumns().length}>
+                <Td colSpan={table.getAllFlatColumns().length}>
                   {isError ? (
-                    <Alert status="error">There was an error loading the data</Alert>
+                    <Alert status="error">{t('components:pagination.noDataLoadError')}</Alert>
                   ) : (
                     <Alert status="info">
                       {table.getCoreRowModel().rows.length === 0
@@ -179,7 +187,7 @@ const PaginatedTable = <T,>({
               {table.getFooterGroups().map((footerGroup) => (
                 <Tr key={footerGroup.id}>
                   {footerGroup.headers.map((header) => (
-                    <Td key={header.id}>
+                    <Td key={header.id} colSpan={header.colSpan}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.footer, header.getContext())}
                     </Td>
                   ))}
@@ -189,7 +197,9 @@ const PaginatedTable = <T,>({
           )}
         </Table>
       </TableContainer>
-      {enablePagination && <PaginationBar table={table} pageSizes={pageSizes} />}
+      {enablePagination && (
+        <PaginationBar table={table} pageSizes={pageSizes} options={{ enablePaginationSizes, enablePaginationGoTo }} />
+      )}
     </>
   )
 }

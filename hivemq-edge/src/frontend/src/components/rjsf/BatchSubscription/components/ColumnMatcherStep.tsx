@@ -48,8 +48,7 @@ const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
     defaultValues: {
       mapping: subscriptions.map((subscription) => {
         const autoMatch = findMatch(subscription, columns)
-
-        return { column: autoMatch || '', subscription: subscription.label }
+        return { column: autoMatch || '', subscription: subscription.value.toString() }
       }),
     },
     mode: 'onChange',

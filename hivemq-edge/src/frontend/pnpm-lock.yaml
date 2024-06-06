@@ -130,6 +130,9 @@ dependencies:
   i18next:
     specifier: ^23.11.3
     version: 23.11.5
+  immutable-json-patch:
+    specifier: ^6.0.1
+    version: 6.0.1
   luxon:
     specifier: ^3.3.0
     version: 3.3.0
@@ -6720,6 +6723,10 @@ packages:
       queue: 6.0.2
     dev: true
 
+  /immutable-json-patch@6.0.1:
+    resolution: {integrity: sha512-BHL/cXMjwFZlTOffiWNdY8ZTvNyYLrutCnWxrcKPHr5FqpAb6vsO6WWSPnVSys3+DruFN6lhHJJPHi8uELQL5g==}
+    dev: false
+
   /immutable@4.3.5:
     resolution: {integrity: sha512-8eabxkth9gZatlwl5TBuJnCsoTADlL6ftEr7A4qgdaTsPyreilDSnUk57SO+jfKcNtxPa22U5KK6DSeAYhpBJw==}
 
@@ -10213,4 +10220,3 @@ packages:
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
-

@@ -1,5 +1,7 @@
 import { FC } from 'react'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import { CompiledValidateFunction } from '@rjsf/validator-ajv8/lib/types'
+import { IdSchema } from '@rjsf/utils'
 
 export enum BatchModeStepType {
   UPLOAD,
@@ -11,6 +13,8 @@ export enum BatchModeStepType {
 export interface StepRendererProps {
   store: BatchModeStore
   onContinue: (partialStore: Partial<BatchModeStore>) => void
+  onBatchUpload?: (idSchema: IdSchema<unknown>, batch: Record<string, unknown>[]) => void
+  onClose?: () => void
 }
 
 export interface BatchModeSteps {
@@ -22,10 +26,12 @@ export interface BatchModeSteps {
 }
 
 export interface BatchModeStore {
+  idSchema: IdSchema<unknown>
   schema: RJSFSchema
   fileName?: string
   worksheet?: WorksheetData[]
   mapping?: ColumnMappingData[]
+  subscriptions?: ValidationColumns[]
 }
 
 export interface WorksheetData {
@@ -41,4 +47,19 @@ export interface ColumnOption {
 export interface ColumnMappingData {
   column: string
   subscription: string
+}
+
+type ErrorObject = Pick<CompiledValidateFunction, 'errors'>
+
+export interface ValidationColumns extends ErrorObject {
+  [x: string]: unknown
+  row: number
+  isError?: boolean
+}
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace ErrorObject {
+  export enum keyword {
+    REQUIRED = 'required',
+  }
 }
