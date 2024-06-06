@@ -121,13 +121,13 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
         { row: index }
       )
 
-      const ggg = validate(mappedData)
-      return { ...mappedData, isError: !ggg, errors: validate.errors } as ValidationColumns
+      const isValid = validate(mappedData)
+      return { ...mappedData, isError: !isValid, errors: validate.errors } as ValidationColumns
     })
   }, [store.mapping, store.schema.items, store.worksheet])
   const [subscriptions, setSubscriptions] = useState<ValidationColumns[]>(data)
   const isSubscriptionsValid = useMemo(() => {
-    return subscriptions.length && subscriptions.every((e) => !e.isError)
+    return subscriptions.length && subscriptions.every((subscription) => !subscription.isError)
   }, [subscriptions])
 
   useEffect(() => {
@@ -138,7 +138,7 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
     <PaginatedTable<ValidationColumns>
       noDataText={t('rjsf.batchUpload.dataValidation.table.noDataText')}
       aria-label={t('rjsf.batchUpload.dataValidation.table.ariaLabel')}
-      data={flagError ? subscriptions.filter((e) => e.isError) : subscriptions}
+      data={flagError ? subscriptions.filter((subscription) => subscription.isError) : subscriptions}
       columns={columns}
       enablePagination={true}
       pageSizes={[10]}
