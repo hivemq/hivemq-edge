@@ -2,7 +2,7 @@ import { FC, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 import { IChangeEvent } from '@rjsf/core'
-import { RJSFSchema } from '@rjsf/utils'
+import { IdSchema, RJSFSchema } from '@rjsf/utils'
 import { RJSFValidationError } from '@rjsf/utils/src/types.ts'
 import Form from '@rjsf/chakra-ui'
 import {
@@ -19,11 +19,6 @@ import {
   Image,
   Text,
 } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router-dom'
-import { IChangeEvent } from '@rjsf/core'
-import { IdSchema, RJSFSchema } from '@rjsf/utils'
-import Form from '@rjsf/chakra-ui'
 import { immutableJSONPatch, JSONPatchAdd, JSONPatchDocument } from 'immutable-json-patch'
 import validator from '@rjsf/validator-ajv8'
 
