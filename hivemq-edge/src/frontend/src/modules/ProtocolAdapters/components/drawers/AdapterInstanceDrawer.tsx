@@ -60,7 +60,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   const { data } = useGetAdapterTypes()
   const { data: allAdapters } = useListProtocolAdapters()
   const { adapterId } = useParams()
-  const [bachData, setBachData] = useState<JSONPatchDocument | undefined>(undefined)
+  const [batchData, setBatchData] = useState<JSONPatchDocument | undefined>(undefined)
 
   const { schema, name, logo } = useMemo(() => {
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
@@ -71,11 +71,11 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   const defaultValues = useMemo(() => {
     if (isNewAdapter || !adapterId) return undefined
     const { config } = allAdapters?.find((e) => e.id === adapterId) || {}
-    if (bachData) {
-      return immutableJSONPatch(config, bachData)
+    if (batchData) {
+      return immutableJSONPatch(config, batchData)
     }
     return config
-  }, [isNewAdapter, adapterId, allAdapters, bachData])
+  }, [isNewAdapter, adapterId, allAdapters, batchData])
   const uiSchema = useGetUiSchema(isNewAdapter)
 
   const onValidate = (data: IChangeEvent<Adapter, RJSFSchema>) => {
@@ -99,7 +99,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
         validate(updatedDocument)
       }
 
-      setBachData(operations)
+      setBatchData(operations)
     },
   }
 

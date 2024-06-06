@@ -147,7 +147,7 @@
         "alert": {
           "title_zero": "No valid subscriptions",
           "title_one": "One subscription created",
-          "title_other": "{{ count}} subscriptions created",
+          "title_other": "{{ count }} subscriptions created",
           "description_zero": "There was a problem loading valid subscriptions from your configuration. Please try again.",
           "description_one": "Your subscription is ready to be uploaded. Any existing subscription already defined in the adapter will be deleted.",
           "description_other": "Your subscriptions are ready to be uploaded. Any existing subscription already defined in the adapter will be deleted."
