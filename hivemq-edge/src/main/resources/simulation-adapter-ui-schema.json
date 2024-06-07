@@ -15,10 +15,7 @@
       "title": "Publishing",
       "properties": [
         "maxPollingErrorsBeforeRemoval",
-        "publishingInterval",
         "pollingIntervalMillis",
-        "destination",
-        "qos",
         "minValue",
         "maxValue"
       ]
@@ -31,7 +28,6 @@
   "id": {
     "ui:disabled": false
   },
-  "ui:order": ["id", "host", "port", "subscriptions"],
   "subscriptions": {
     "items": {
       "ui:order": [ "destination", "qos", "*"],
