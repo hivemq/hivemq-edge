@@ -10,8 +10,8 @@ import NodeWrapper from '../parts/NodeWrapper.tsx'
 import TopicsContainer from '../parts/TopicsContainer.tsx'
 import { discoverAdapterTopics } from '../../utils/topics-utils.ts'
 import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils.ts'
-import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
-import { useContextMenu } from '../../hooks/useContextMenu.tsx'
+import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
+import { useContextMenu } from '../../hooks/useContextMenu.ts'
 import { TopicFilter } from '../../types.ts'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) => {

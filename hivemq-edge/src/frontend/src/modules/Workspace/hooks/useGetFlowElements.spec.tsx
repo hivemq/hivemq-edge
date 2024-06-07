@@ -7,7 +7,7 @@ import '@/config/i18n.config.ts'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
 import { EdgeFlowProvider } from './FlowContext.tsx'
-import useGetFlowElements from './useGetFlowElements.tsx'
+import useGetFlowElements from './useGetFlowElements.ts'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { handlers } from '@/__test-utils__/msw/handlers.ts'

@@ -10,8 +10,8 @@ import logo from '@/assets/hivemq/05-icon-hivemq-bridge-extension.svg'
 import NodeWrapper from '../parts/NodeWrapper.tsx'
 import TopicsContainer from '../parts/TopicsContainer.tsx'
 import { getBridgeTopics } from '../../utils/topics-utils.ts'
-import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
-import { useContextMenu } from '../../hooks/useContextMenu.tsx'
+import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
+import { useContextMenu } from '../../hooks/useContextMenu.ts'
 
 const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
   const { t } = useTranslation()

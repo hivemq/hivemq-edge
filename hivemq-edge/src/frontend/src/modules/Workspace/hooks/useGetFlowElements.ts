@@ -11,7 +11,7 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 
 import { createEdgeNode, createBridgeNode, createAdapterNode, createListenerNode } from '../utils/nodes-utils.ts'
 import { applyLayout } from '../utils/layout-utils.ts'
-import { useEdgeFlowContext } from '../hooks/useEdgeFlowContext.tsx'
+import { useEdgeFlowContext } from './useEdgeFlowContext.ts'
 
 const useGetFlowElements = () => {
   const { t } = useTranslation()

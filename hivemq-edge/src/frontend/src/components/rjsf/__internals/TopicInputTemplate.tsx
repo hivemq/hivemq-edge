@@ -3,7 +3,7 @@ import { BaseInputTemplateProps } from '@rjsf/utils'
 import { FormControl, FormLabel } from '@chakra-ui/react'
 
 import { SingleTopicCreatableSelect } from '@/components/MQTT/TopicCreatableSelect.tsx'
-import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.tsx'
+import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
 
 import config from '@/config'
 
