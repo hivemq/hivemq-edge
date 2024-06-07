@@ -1,0 +1,65 @@
+{
+  "ui:tabs": [
+    {
+      "id": "coreFields",
+      "title": "Core Fields",
+      "properties": ["id", "port", "host"]
+    },
+    {
+      "id": "subFields",
+      "title": "Subscription",
+      "properties": ["subscriptions"]
+    },
+
+    {
+      "id": "publishing",
+      "title": "Publishing",
+      "properties": [
+        "maxPollingErrorsBeforeRemoval",
+        "publishChangedDataOnly",
+        "publishingInterval",
+        "pollingIntervalMillis",
+        "destination",
+        "qos"
+      ]
+    },
+    {
+      "id": "s7advanced",
+      "title": "protocolAdapter.uiSchema.groups.s7advanced",
+      "properties": [
+        "controllerType",
+        "remoteRack",
+        "remoteSlot",
+        "ping",
+        "pingTime",
+        "maxAmqCaller",
+        "maxAmqCallee",
+        "remoteTsap",
+        "remoteRack2",
+        "remoteSlot2",
+        "pduSize",
+        "retryTime",
+        "retryTimeout",
+        "readTimeout"
+      ]
+    }
+  ],
+  "ui:submitButtonOptions": {
+    "norender": true
+  },
+  "id": {
+    "ui:disabled": false
+  },
+  "port": {
+    "ui:widget": "updown"
+  },
+  "subscriptions": {
+    "ui:batchMode": true,
+    "items": {
+      "ui:order": ["node", "mqtt-topic", "destination", "qos", "*"],
+      "ui:collapsable": {
+        "titleKey": "destination"
+      }
+    }
+  }
+}
