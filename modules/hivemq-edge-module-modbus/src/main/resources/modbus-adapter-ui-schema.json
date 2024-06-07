@@ -24,7 +24,7 @@
     "norender": true
   },
   "id": {
-    "ui:disabled": true
+    "ui:disabled": false
   },
   "port": {
     "ui:widget": "updown"
