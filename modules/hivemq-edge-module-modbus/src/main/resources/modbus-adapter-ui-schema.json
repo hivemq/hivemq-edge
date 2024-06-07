@@ -2,7 +2,7 @@
   "ui:tabs": [
     {
       "id": "coreFields",
-      "title": "Core Fields",
+      "title": "Settings",
       "properties": ["id", "port", "host","timeout"]
     },
     {
@@ -12,16 +12,11 @@
     },
     {
       "id": "publishing",
-      "title": "protocolAdapter.uiSchema.groups.publishing",
+      "title": "Publishing",
       "properties": [
         "maxPollingErrorsBeforeRemoval",
         "publishChangedDataOnly",
-        "publishingInterval",
-        "pollingIntervalMillis",
-        "destination",
-        "qos",
-        "minValue",
-        "maxValue"
+        "pollingIntervalMillis"
       ]
     }
   ],
@@ -34,11 +29,11 @@
   "port": {
     "ui:widget": "updown"
   },
-  "ui:order": ["id", "host", "port", "*", "subscriptions"],
+  "ui:order": ["id", "host", "port", "*"],
   "subscriptions": {
     "ui:batchMode": true,
     "items": {
-      "ui:order": ["node", "holding-registers", "mqtt-topic", "destination", "qos", "*"],
+      "ui:order": ["destination", "addressRange", "qos", "*", "userProperties"],
       "ui:collapsable": {
         "titleKey": "destination"
       }
