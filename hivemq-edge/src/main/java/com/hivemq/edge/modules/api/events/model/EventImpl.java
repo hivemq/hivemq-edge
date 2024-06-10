@@ -115,6 +115,11 @@ public class EventImpl implements Event {
     }
 
     @Override
+    public @NotNull Long getCreated() {
+        return created;
+    }
+
+    @Override
     public @Nullable TypeIdentifier getAssociatedObject() {
         return associatedObject;
     }
