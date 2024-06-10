@@ -1,24 +1,16 @@
 import { vi, expect, beforeEach } from 'vitest'
-import { MemoryRouter } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
 import { act, renderHook, waitFor } from '@testing-library/react'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
+import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
+
 import { handlers as frontendHandler } from '@/api/hooks/useFrontendServices/__handlers__'
 import { handlers as gitHubHandler } from '@/api/hooks/useGitHub/__handlers__'
-import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
 import { useGetManagedNotifications } from './useGetManagedNotifications.tsx'
 
 import '@/config/i18n.config.ts'
-
-const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
-  <QueryClientProvider client={new QueryClient()}>
-    <AuthProvider>
-      <MemoryRouter>{children}</MemoryRouter>
-    </AuthProvider>
-  </QueryClientProvider>
-)
 
 describe('useGetManagedNotifications', () => {
   beforeEach(() => {

@@ -1,14 +1,11 @@
 import { describe, expect, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import { QueryClientProvider } from '@tanstack/react-query'
 
 import '@/config/i18n.config.ts'
 
 import { StatusTransitionResult } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
-import queryClient from '@/api/queryClient.ts'
-
-import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
+import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
 import ConnectionController from './ConnectionController.tsx'
 
@@ -32,12 +29,6 @@ vi.mock('@/api/hooks/useGetBridges/useSetConnectionStatus.tsx', () => {
 vi.mock('@/hooks/useEdgeToast/useEdgeToast.tsx', () => {
   return { useEdgeToast: () => ({ successToast: successToast, errorToast: errorToast }) }
 })
-
-const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>{children}</AuthProvider>
-  </QueryClientProvider>
-)
 
 const mockID = 'my-id'
 const mockStatusTransitionResult: StatusTransitionResult = {
