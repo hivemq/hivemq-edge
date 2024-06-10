@@ -102,52 +102,52 @@ public class Module {
         this.provisioningLink = provisioningLink;
     }
 
-    public String getId() {
+    public @NotNull String getId() {
         return id;
     }
 
-    public String getVersion() {
+    public @NotNull String getVersion() {
         return version;
     }
 
-    public String getName() {
+    public @NotNull String getName() {
         return name;
     }
 
-    public String getAuthor() {
+    public @NotNull String getAuthor() {
         return author;
     }
 
-    public Integer getPriority() {
+    public @NotNull Integer getPriority() {
         return priority;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public Boolean getInstalled() {
+    public @Nullable Boolean getInstalled() {
         return installed;
     }
 
-    public Link getDocumentationLink() {
+    public @Nullable Link getDocumentationLink() {
         return documentationLink;
     }
 
-    public Link getProvisioningLink() {
+    public @Nullable Link getProvisioningLink() {
         return provisioningLink;
     }
 
-    public Link getLogoUrl() {
+    public @Nullable Link getLogoUrl() {
         return logoUrl;
     }
 
-    public String getModuleType() {
+    public @Nullable String getModuleType() {
         return moduleType;
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(final @Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Module extension = (Module) o;
@@ -160,7 +160,7 @@ public class Module {
     }
 
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         final StringBuilder sb = new StringBuilder("Module{");
         sb.append("id='").append(id).append('\'');
         sb.append(", version='").append(version).append('\'');
