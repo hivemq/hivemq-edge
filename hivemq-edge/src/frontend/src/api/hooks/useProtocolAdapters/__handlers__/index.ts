@@ -100,11 +100,11 @@ export const mockAdapter: Adapter = {
 }
 
 export const handlers = [
-  http.get('**/protocol-adapters/types', () => {
+  http.get('*/protocol-adapters/types', () => {
     return HttpResponse.json<ProtocolAdaptersList>({ items: [mockProtocolAdapter] }, { status: 200 })
   }),
 
-  http.get('**/protocol-adapters/adapters', () => {
+  http.get('*/protocol-adapters/adapters', () => {
     return HttpResponse.json<AdaptersList>({ items: [mockAdapter] }, { status: 200 })
   }),
 

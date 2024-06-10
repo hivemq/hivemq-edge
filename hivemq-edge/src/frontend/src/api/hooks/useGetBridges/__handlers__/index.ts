@@ -1,6 +1,7 @@
-import { Bridge, BridgeList, Status } from '@/api/__generated__'
+import { Bridge, BridgeList, Status, StatusList } from '@/api/__generated__'
 import { http, HttpResponse } from 'msw'
 import { MOCK_TOPIC_ALL, MOCK_TOPIC_BRIDGE_DESTINATION, MOCK_TOPIC_REF1 } from '@/__test-utils__/react-flow/topics.ts'
+import { mockBridgeConnectionStatus } from '@/api/hooks/useConnection/__handlers__'
 
 export const mockBridgeId = 'bridge-id-01'
 
@@ -51,5 +52,14 @@ export const handlers = [
 
   http.put('*/bridges/:bridgeId', () => {
     return HttpResponse.json({}, { status: 200 })
+  }),
+
+  http.get('*/bridges/:bridgeId/connection-status', () => {
+    return HttpResponse.json<StatusList>(
+      {
+        items: [mockBridgeConnectionStatus],
+      },
+      { status: 200 }
+    )
   }),
 ]

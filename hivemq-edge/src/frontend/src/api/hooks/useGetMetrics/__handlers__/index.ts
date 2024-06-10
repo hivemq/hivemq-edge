@@ -1,7 +1,8 @@
-import { DataPoint, Metric } from '@/api/__generated__'
+import { DataPoint, Metric, MetricList } from '@/api/__generated__'
 import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { DateTime } from 'luxon'
+import { http, HttpResponse } from 'msw'
 
 export const MOCK_METRICS: Array<Metric> = [
   { name: `com.hivemq.edge.bridge.${mockBridgeId}.forward.publish.count` },
@@ -67,3 +68,13 @@ export const MOCK_METRIC_SAMPLE_ARRAY: DataPoint[] = Array.from(Array(10), (_, x
     .toISO(),
   value: (MOCK_METRIC_SAMPLE.value as number) + 1000 * x,
 }))
+
+export const handlers = [
+  http.get('*/metrics', () => {
+    return HttpResponse.json<MetricList>({ items: MOCK_METRICS }, { status: 200 })
+  }),
+
+  http.get('*/metrics/:metricName/latest', () => {
+    return HttpResponse.json<DataPoint>(MOCK_METRIC_SAMPLE, { status: 200 })
+  }),
+]
