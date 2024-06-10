@@ -39,6 +39,7 @@ repositories {
 
 dependencies {
     compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
+    compileOnly("commons-io:commons-io:${property("commons-io.version")}")
 
     implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
     runtimeOnly("com.google.guava:guava:${property("guava.version")}") {
