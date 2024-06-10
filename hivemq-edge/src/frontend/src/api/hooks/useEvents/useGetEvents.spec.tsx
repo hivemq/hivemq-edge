@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 
 import '@/config/i18n.config.ts'
 
-import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.tsx'
+import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.ts'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
