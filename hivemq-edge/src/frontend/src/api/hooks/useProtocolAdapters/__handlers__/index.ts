@@ -108,17 +108,16 @@ export const handlers = [
     return HttpResponse.json<AdaptersList>({ items: [mockAdapter] }, { status: 200 })
   }),
 
-  http.get('**/protocol-adapters/adapters/:adapterType', () => {
-    // @ts-ignore
-    const { adapterType } = req.params
-    return HttpResponse.json<Adapter>({ ...mockAdapter, id: adapterType }, { status: 200 })
+  http.get('*/protocol-adapters/adapters/:adapterType', ({ params }) => {
+    const { adapterType } = params
+    return HttpResponse.json<Adapter>({ ...mockAdapter, id: adapterType as string }, { status: 200 })
   }),
 
-  http.post('**/protocol-adapters/adapters/:adapterType', () => {
+  http.post('*/protocol-adapters/adapters/:adapterType', () => {
     return HttpResponse.json({}, { status: 200 })
   }),
 
-  http.delete('**/protocol-adapters/adapters/:adapterType', () => {
+  http.delete('*/protocol-adapters/adapters/:adapterType', () => {
     return HttpResponse.json({}, { status: 200 })
   }),
 
