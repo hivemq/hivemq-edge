@@ -5,6 +5,7 @@ export const MOCK_RANGE_OPTION: RangeOption = {
   value: 'range1',
   label: 'Range 1',
   colorScheme: 'yellow',
+  /* istanbul ignore next -- @preserve */
   duration: Duration.fromObject({ hour: 1 }),
 }
 

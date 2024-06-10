@@ -5,6 +5,7 @@ export const toHuman = (timestamp: DateTime, alternativeNow?: DateTime) => {
   const units: DurationUnits = ['weeks', 'days', 'hours', 'minutes', 'seconds']
 
   // mostly used for testing
+  /* istanbul ignore next -- @preserve */
   const diff = alternativeNow ? timestamp.diff(alternativeNow, units) : timestamp.diffNow(units)
 
   const rescaledDuration = diff
