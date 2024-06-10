@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { FormControl, FormErrorMessage, FormHelperText, FormLabel, Input } from '@chakra-ui/react'
 
 import { $Bridge } from '@/api/__generated__'
-import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
+import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
 import { BridgePanelType } from '@/modules/Bridges/types.ts'
 

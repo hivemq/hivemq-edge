@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { FormControl, FormErrorMessage, FormLabel, Select } from '@chakra-ui/react'
 
 import { ProtocolAdapter } from '@/api/__generated__'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { AdapterType, GenericPanelType } from '@/modules/ProtocolAdapters/types.ts'
 
 import AdapterTypeSummary from '../adapters/AdapterTypeSummary.tsx'

@@ -1,7 +1,7 @@
 import { Node } from 'reactflow'
 import { Bridge, DataPolicy } from '@/api/__generated__'
 import { CAPABILITY, useGetCapability } from '@/api/hooks/useFrontendServices/useGetCapability.tsx'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { Group, NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { discoverAdapterTopics, getBridgeTopics } from '@/modules/Workspace/utils/topics-utils.ts'

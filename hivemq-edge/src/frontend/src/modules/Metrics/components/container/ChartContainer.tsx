@@ -4,7 +4,7 @@ import { Box, Card, CardBody, CloseButton, HStack, Icon, type StackProps, VStack
 import { BiCollapseHorizontal, BiExpandHorizontal } from 'react-icons/bi'
 
 import { DataPoint } from '@/api/__generated__'
-import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
+import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.ts'
 import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton.tsx'
 
 import { ChartTheme, ChartType } from '../../types.ts'

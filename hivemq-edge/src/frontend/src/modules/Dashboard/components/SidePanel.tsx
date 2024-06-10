@@ -7,7 +7,7 @@ import { FiLogOut } from 'react-icons/fi'
 import logo1 from '@/assets/edge/03-hivemq-industrial-edge-vert.svg'
 import logo2 from '@/assets/edge/04-hivemq-industrial-edge-vert-neg.svg'
 
-import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 import SwitchModeButton from '@/components/Chakra/SwitchModeButton.tsx'
 import { useAuth } from '@/modules/Auth/hooks/useAuth.ts'
 import NotificationBadge from '@/modules/Notifications/NotificationBadge.tsx'

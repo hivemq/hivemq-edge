@@ -7,7 +7,7 @@ import { BsIntersect } from 'react-icons/bs'
 import { GoLinkExternal } from 'react-icons/go'
 import { MdOutlineEventNote, MdPolicy } from 'react-icons/md'
 
-import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 import WorkspaceIcon from '@/components/Icons/WorkspaceIcon.tsx'
 
 import config from '@/config'

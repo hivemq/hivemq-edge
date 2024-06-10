@@ -4,9 +4,9 @@ import { useLocalStorage } from '@uidotdev/usehooks'
 import { Badge, Link, Text, UseToastOptions } from '@chakra-ui/react'
 import { ExternalLinkIcon } from '@chakra-ui/icons'
 
-import { useGetReleases } from '@/api/hooks/useGitHub/useGetReleases.tsx'
-import { useGetNotifications } from '@/api/hooks/useFrontendServices/useGetNotifications.tsx'
-import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
+import { useGetReleases } from '@/api/hooks/useGitHub/useGetReleases.ts'
+import { useGetNotifications } from '@/api/hooks/useFrontendServices/useGetNotifications.ts'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 
 export const useGetManagedNotifications = () => {
   const { t } = useTranslation()

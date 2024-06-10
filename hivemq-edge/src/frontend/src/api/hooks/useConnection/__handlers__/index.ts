@@ -27,7 +27,7 @@ export const handlers = [
   http.get('*/management/protocol-adapters/status', () => {
     return HttpResponse.json<StatusList>(
       {
-        items: [mockBridgeConnectionStatus],
+        items: [mockAdapterConnectionStatus],
       },
       { status: 200 }
     )

@@ -2,9 +2,9 @@ import { useEffect } from 'react'
 import { useReactFlow } from 'reactflow'
 import { useTheme } from '@chakra-ui/react'
 
-import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.tsx'
-import { useGetBridgesStatus } from '@/api/hooks/useConnection/useGetBridgesStatus.tsx'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.ts'
+import { useGetBridgesStatus } from '@/api/hooks/useConnection/useGetBridgesStatus.ts'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 
 import { updateEdgesStatus, updateNodeStatus } from '../../utils/status-utils.ts'
 

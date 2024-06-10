@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
 
 import { ProtocolAdapter } from '@/api/__generated__'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
 
 import config from '@/config'

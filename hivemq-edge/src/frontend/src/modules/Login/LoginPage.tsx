@@ -5,7 +5,7 @@ import logoLight from '@/assets/edge/01-hivemq-industrial-edge.svg'
 import logoDark from '@/assets/edge/02-hivemq-industrial-edge-neg.svg'
 import bgImage from '@/assets/app/background-sidepanel.svg'
 
-import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
 import Login from './components/Login.tsx'

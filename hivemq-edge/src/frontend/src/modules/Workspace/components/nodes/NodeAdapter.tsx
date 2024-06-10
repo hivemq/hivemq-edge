@@ -3,7 +3,7 @@ import { Handle, NodeProps, Position } from 'reactflow'
 import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
 
 import { Adapter } from '@/api/__generated__'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 
 import NodeWrapper from '../parts/NodeWrapper.tsx'

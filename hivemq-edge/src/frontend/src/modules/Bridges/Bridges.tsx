@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import BridgeEmptyLogo from '@/assets/app/bridge-empty.svg'
 
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
-import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
+import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'

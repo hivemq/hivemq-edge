@@ -18,7 +18,7 @@ import { EditIcon } from '@chakra-ui/icons'
 import BridgeLogo from '@/assets/app/bridges.svg'
 
 import { Bridge } from '@/api/__generated__'
-import { useGetBridgesStatus } from '@/api/hooks/useConnection/useGetBridgesStatus.tsx'
+import { useGetBridgesStatus } from '@/api/hooks/useConnection/useGetBridgesStatus.ts'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
