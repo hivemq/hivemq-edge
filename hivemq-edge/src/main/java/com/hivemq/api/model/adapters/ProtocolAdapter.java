@@ -104,7 +104,7 @@ public class ProtocolAdapter {
     private final @NotNull JsonNode configSchema;
 
     @JsonProperty("uiSchema")
-    @Schema(description = "UISchema (see https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/uiSchema/), which describes the rendering of the configuration for the adapter.")
+    @Schema(description = "UISchema (see https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/uiSchema/), which describes the UI rendering of the configuration for the adapter.")
     private final @NotNull JsonNode uiSchema;
 
     public ProtocolAdapter(
