@@ -73,7 +73,7 @@ const ProtocolAdapters: FC = () => {
   const columns = useMemo<ColumnDef<Adapter>[]>(() => {
     const handleCreateInstance = (type: string | undefined) => {
       const adapterNavigateState: AdapterNavigateState = {
-        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
         protocolAdapterType: type,
       }
       navigate('/protocol-adapters/new', { state: adapterNavigateState })
@@ -81,7 +81,7 @@ const ProtocolAdapters: FC = () => {
 
     const handleEditInstance = (adapterId: string, type: string) => {
       const adapterNavigateState: AdapterNavigateState = {
-        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
         protocolAdapterType: type,
       }
       if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: adapterNavigateState })

@@ -21,7 +21,7 @@ const ProtocolAdapterPage: FC = () => {
   const [tabIndex, setTabIndex] = useState(0)
 
   useEffect(() => {
-    setTabIndex(isReturningUser ? ProtocolAdapterTabIndex.adapters : ProtocolAdapterTabIndex.protocols)
+    setTabIndex(isReturningUser ? ProtocolAdapterTabIndex.ADAPTERS : ProtocolAdapterTabIndex.PROTOCOLS)
   }, [isReturningUser])
 
   useEffect(() => {

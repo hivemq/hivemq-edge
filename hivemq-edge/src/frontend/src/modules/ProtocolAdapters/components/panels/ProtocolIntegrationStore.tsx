@@ -29,7 +29,7 @@ const ProtocolIntegrationStore: FC = () => {
 
   const handleCreateInstance = (adapterId: string | undefined) => {
     const adapterNavigateState: AdapterNavigateState = {
-      protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+      protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
       protocolAdapterType: adapterId,
       // selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selected?.data as Adapter).id },
     }

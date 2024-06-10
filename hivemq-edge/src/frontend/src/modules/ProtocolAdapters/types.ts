@@ -24,8 +24,8 @@ export interface UITab {
 }
 
 export enum ProtocolAdapterTabIndex {
-  protocols = 0,
-  adapters = 1,
+  PROTOCOLS,
+  ADAPTERS,
 }
 
 export interface AdapterNavigateState {

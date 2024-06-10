@@ -52,7 +52,7 @@ const NodePanelController: FC = () => {
   const handleEditEntity = () => {
     if (selectedNode?.type === NodeTypes.ADAPTER_NODE) {
       const adapterNavigateState: AdapterNavigateState = {
-        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
         protocolAdapterType: (selectedNode?.data as Adapter).type,
         selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selectedNode?.data as Adapter).id },
       }
