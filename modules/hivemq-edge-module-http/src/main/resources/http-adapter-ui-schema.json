@@ -17,7 +17,7 @@
     },
     {
       "id": "http",
-      "title": "protocolAdapter.uiSchema.groups.http",
+      "title": "HTTP",
       "properties": [
         "httpRequestMethod",
         "httpRequestBodyContentType",
@@ -31,9 +31,6 @@
       ]
     }
   ],
-  "ui:submitButtonOptions": {
-    "norender": true
-  },
   "id": {
     "ui:disabled": true
   },

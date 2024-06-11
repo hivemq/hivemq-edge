@@ -15,22 +15,16 @@
       "title": "Publishing",
       "properties": [
         "maxPollingErrorsBeforeRemoval",
-        "publishChangedDataOnly",
-        "publishingInterval",
         "pollingIntervalMillis",
-        "destination",
-        "qos"
+        "publishChangedDataOnly"
       ]
     },
     {
       "id": "eip",
-      "title": "protocolAdapter.uiSchema.groups.eip",
+      "title": "Ethernet IP",
       "properties": ["slot", "backplane"]
     }
   ],
-  "ui:submitButtonOptions": {
-    "norender": true
-  },
   "id": {
     "ui:disabled": false
   },

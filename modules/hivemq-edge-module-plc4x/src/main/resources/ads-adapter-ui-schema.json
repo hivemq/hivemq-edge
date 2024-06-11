@@ -15,29 +15,22 @@
       "title": "Publishing",
       "properties": [
         "maxPollingErrorsBeforeRemoval",
-        "publishChangedDataOnly",
-        "publishingInterval",
         "pollingIntervalMillis",
-        "destination",
-        "qos"
+        "publishChangedDataOnly"
       ]
     },
     {
       "id": "ads",
-      "title": "protocolAdapter.uiSchema.groups.ads",
+      "title": "ADS",
       "properties": ["sourceAmsPort", "targetAmsPort", "sourceAmsNetId", "targetAmsNetId"]
     }
   ],
-  "ui:submitButtonOptions": {
-    "norender": true
-  },
   "id": {
     "ui:disabled": false
   },
   "port": {
     "ui:widget": "updown"
   },
-  "ui:order": ["id", "host", "port", "*", "subscriptions"],
   "subscriptions": {
     "ui:batchMode": true,
     "items": {

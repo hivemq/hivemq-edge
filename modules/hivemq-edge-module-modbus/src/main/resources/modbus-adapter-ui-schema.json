@@ -20,9 +20,6 @@
       ]
     }
   ],
-  "ui:submitButtonOptions": {
-    "norender": true
-  },
   "id": {
     "ui:disabled": false
   },
