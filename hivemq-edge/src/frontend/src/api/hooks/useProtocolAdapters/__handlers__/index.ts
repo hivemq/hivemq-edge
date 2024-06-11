@@ -1,7 +1,43 @@
-import { Adapter, AdaptersList, JsonNode, ProtocolAdapter, ProtocolAdaptersList, Status } from '@/api/__generated__'
 import { http, HttpResponse } from 'msw'
+import { UiSchema } from '@rjsf/utils'
+
 import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
+import { Adapter, AdaptersList, JsonNode, ProtocolAdapter, ProtocolAdaptersList, Status } from '@/api/__generated__'
+
+export const mockUISchema: UiSchema = {
+  'ui:tabs': [
+    {
+      id: 'coreFields',
+      title: 'Settings',
+      properties: ['id'],
+    },
+    {
+      id: 'subFields',
+      title: 'Subscription',
+      properties: ['subscriptions'],
+    },
+    {
+      id: 'publishing',
+      title: 'Publishing',
+      properties: ['maxPollingErrorsBeforeRemoval', 'pollingIntervalMillis', 'minValue', 'maxValue'],
+    },
+  ],
+  'ui:submitButtonOptions': {
+    norender: true,
+  },
+  id: {
+    'ui:disabled': false,
+  },
+  subscriptions: {
+    items: {
+      'ui:order': ['destination', 'qos', '*'],
+      'ui:collapsable': {
+        titleKey: 'destination',
+      },
+    },
+  },
+}
 
 export const mockJSONSchema: JsonNode = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
@@ -65,6 +101,7 @@ export const mockProtocolAdapter: ProtocolAdapter = {
   logoUrl: 'http://localhost:8080/images/hivemq-icon.png',
   author: 'HiveMQ',
   configSchema: mockJSONSchema,
+  uiSchema: mockUISchema,
   installed: true,
   category: {
     description: 'Industrial, typically field bus protocols.',
