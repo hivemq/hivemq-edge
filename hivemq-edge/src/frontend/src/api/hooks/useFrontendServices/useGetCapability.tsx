@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Capability } from '@/api/__generated__'
 
-import { useGetCapabilities } from './useGetCapabilities.tsx'
+import { useGetCapabilities } from './useGetCapabilities.ts'
 
 export enum CAPABILITY {
   PERSISTENCE = 'mqtt-persistence',

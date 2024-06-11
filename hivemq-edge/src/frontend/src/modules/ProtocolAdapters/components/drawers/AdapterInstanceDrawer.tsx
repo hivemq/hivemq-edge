@@ -20,8 +20,8 @@ import { RJSFSchema } from '@rjsf/utils'
 import Form from '@rjsf/chakra-ui'
 
 import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
-import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
+import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'

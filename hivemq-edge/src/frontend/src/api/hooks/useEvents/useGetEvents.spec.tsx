@@ -1,23 +1,13 @@
 import { expect } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter } from 'react-router-dom'
 
 import '@/config/i18n.config.ts'
 
-import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.tsx'
+import { useGetEvents } from '@/api/hooks/useEvents/useGetEvents.ts'
 import { server } from '@/__test-utils__/msw/mockServer.ts'
-import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
+import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
 
 import { handlers } from './__handlers__'
-
-const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
-  <QueryClientProvider client={new QueryClient()}>
-    <AuthProvider>
-      <MemoryRouter>{children}</MemoryRouter>
-    </AuthProvider>
-  </QueryClientProvider>
-)
 
 describe('useGetEvents', () => {
   afterEach(() => {

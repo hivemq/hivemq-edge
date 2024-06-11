@@ -4,7 +4,7 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react'
 
 import { useLocation } from 'react-router-dom'
 
-import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import PageContainer from '@/components/PageContainer.tsx'
 import ProtocolAdapters from '@/modules/ProtocolAdapters/components/panels/ProtocolAdapters.tsx'
@@ -21,7 +21,7 @@ const ProtocolAdapterPage: FC = () => {
   const [tabIndex, setTabIndex] = useState(0)
 
   useEffect(() => {
-    setTabIndex(isReturningUser ? ProtocolAdapterTabIndex.adapters : ProtocolAdapterTabIndex.protocols)
+    setTabIndex(isReturningUser ? ProtocolAdapterTabIndex.ADAPTERS : ProtocolAdapterTabIndex.PROTOCOLS)
   }, [isReturningUser])
 
   useEffect(() => {

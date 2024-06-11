@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Button, FormControl, FormLabel, VStack } from '@chakra-ui/react'
 import { BiAddToQueue } from 'react-icons/bi'
 
-import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.tsx'
+import { useGetMetrics } from '@/api/hooks/useGetMetrics/useGetMetrics.ts'
 
 import { extractMetricInfo } from '../../utils/metrics-name.utils.ts'
 import { ChartType, ChartTypeOption, MetricDefinition, MetricNameOption } from '../../types.ts'

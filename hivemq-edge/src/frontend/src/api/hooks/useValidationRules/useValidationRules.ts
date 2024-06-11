@@ -35,7 +35,9 @@ export const useValidationRules = () => {
     if (schema.pattern) {
       assert('string')
       let patternString = schema.pattern as string
+      /* istanbul ignore next -- @preserve */
       if (!patternString.startsWith('^')) patternString = `^${patternString}`
+      /* istanbul ignore next -- @preserve */
       if (!patternString.endsWith('$')) patternString = `${patternString}$`
       try {
         const pattern = new RegExp(patternString)

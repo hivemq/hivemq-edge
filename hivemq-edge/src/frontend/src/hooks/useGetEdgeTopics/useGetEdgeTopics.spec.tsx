@@ -15,7 +15,7 @@ import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
-import { EdgeTopicsOptions, useGetEdgeTopics, reduceTopicsBy } from './useGetEdgeTopics.tsx'
+import { EdgeTopicsOptions, useGetEdgeTopics, reduceTopicsBy } from './useGetEdgeTopics.ts'
 
 interface Suite {
   topic: string

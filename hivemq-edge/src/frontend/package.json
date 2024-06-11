@@ -115,7 +115,7 @@
     "eslint-plugin-react-refresh": "^0.3.4",
     "i18next-pseudo": "^2.2.1",
     "jsdom": "^24.0.0",
-    "msw": "^2.2.14",
+    "msw": "^2.3.1",
     "openapi-typescript-codegen": "^0.25.0",
     "prettier": "2.8.8",
     "sass": "^1.70.0",
@@ -123,7 +123,7 @@
     "stylelint-config-standard": "^33.0.0",
     "stylelint-config-standard-scss": "^9.0.0",
     "typescript": "^5.0.4",
-    "vite": "^5.2.7",
+    "vite": "^5.2.13",
     "vitest": "^1.5.3"
   },
   "msw": {

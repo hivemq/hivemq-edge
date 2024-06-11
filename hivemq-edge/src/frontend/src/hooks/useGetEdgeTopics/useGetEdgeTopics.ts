@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 
 import { ApiError } from '@/api/__generated__'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
-import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
-import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
+import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
+import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
 
 import { mergeAllTopics } from '@/modules/Workspace/utils/topics-utils.ts'
 

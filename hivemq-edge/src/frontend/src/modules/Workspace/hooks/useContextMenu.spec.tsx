@@ -3,7 +3,7 @@ import { describe, expect, vi } from 'vitest'
 import { MouseEvent, ReactElement } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 
-import { useContextMenu } from './useContextMenu.tsx'
+import { useContextMenu } from './useContextMenu.ts'
 
 const wrapper: React.JSXElementConstructor<{ children: ReactElement }> = ({ children }) => (
   <MemoryRouter>{children}</MemoryRouter>

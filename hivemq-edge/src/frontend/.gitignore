@@ -25,5 +25,8 @@ cypress/screenshots
 
 # Exclude test-results
 test-results
+
+# Local dev fixes
 /public/app/
 /public/images/
+/public/module/

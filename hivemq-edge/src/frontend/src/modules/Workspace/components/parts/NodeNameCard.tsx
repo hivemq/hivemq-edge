@@ -5,7 +5,7 @@ import { PiBridgeThin, PiPlugsConnectedFill } from 'react-icons/pi'
 import { useTranslation } from 'react-i18next'
 
 import { Adapter, Bridge } from '@/api/__generated__'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 
 import { NodeTypes } from '../../types.ts'
 

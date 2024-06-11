@@ -5,10 +5,10 @@ import { SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
 import { ApiError, Bridge } from '@/api/__generated__'
-import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.tsx'
-import { useCreateBridge } from '@/api/hooks/useGetBridges/useCreateBridge.tsx'
-import { useUpdateBridge } from '@/api/hooks/useGetBridges/useUpdateBridge.tsx'
-import { useDeleteBridge } from '@/api/hooks/useGetBridges/useDeleteBridge.tsx'
+import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
+import { useCreateBridge } from '@/api/hooks/useGetBridges/useCreateBridge.ts'
+import { useUpdateBridge } from '@/api/hooks/useGetBridges/useUpdateBridge.ts'
+import { useDeleteBridge } from '@/api/hooks/useGetBridges/useDeleteBridge.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 

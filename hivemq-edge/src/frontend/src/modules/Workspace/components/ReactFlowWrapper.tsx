@@ -8,7 +8,7 @@ import './reactflow-chakra.fix.css'
 
 import SuspenseOutlet from '@/components/SuspenseOutlet.tsx'
 import { EdgeTypes, NodeTypes } from '@/modules/Workspace/types.ts'
-import useGetFlowElements from '@/modules/Workspace/hooks/useGetFlowElements.tsx'
+import useGetFlowElements from '@/modules/Workspace/hooks/useGetFlowElements.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import StatusListener from '@/modules/Workspace/components/controls/StatusListener.tsx'
 import CanvasControls from '@/modules/Workspace/components/controls/CanvasControls.tsx'

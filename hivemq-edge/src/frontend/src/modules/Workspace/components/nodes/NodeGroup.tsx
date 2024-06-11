@@ -18,7 +18,7 @@ import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 
 import { Group } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
-import { useContextMenu } from '../../hooks/useContextMenu.tsx'
+import { useContextMenu } from '../../hooks/useContextMenu.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {

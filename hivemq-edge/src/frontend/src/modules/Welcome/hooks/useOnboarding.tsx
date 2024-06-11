@@ -3,7 +3,7 @@ import { IoLinkOutline } from 'react-icons/io5'
 import { GoLinkExternal } from 'react-icons/go'
 
 import { OnboardingTask } from '@/modules/Welcome/types.ts'
-import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.tsx'
+import { useGetConfiguration } from '@/api/hooks/useFrontendServices/useGetConfiguration.ts'
 import { ApiError } from '@/api/__generated__'
 
 export interface OnboardingFetchType {

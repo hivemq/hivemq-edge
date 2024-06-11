@@ -22,7 +22,7 @@ const LinkWrapper: Record<TypeIdentifier.type, LinkWrapperProps> = {
   [TypeIdentifier.type.ADAPTER]: {
     Icon: <Icon as={PiPlugsConnectedFill} mr={2} />,
     State: (id: string) => ({
-      protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+      protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
       protocolAdapterType: id,
     }),
     To: (id: string) => `/protocol-adapters/${id}`,

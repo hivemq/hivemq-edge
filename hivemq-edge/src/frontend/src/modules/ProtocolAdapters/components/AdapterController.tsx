@@ -5,14 +5,14 @@ import { SubmitHandler } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
 import { Adapter, ApiError } from '@/api/__generated__'
-import { useCreateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useCreateProtocolAdapter.tsx'
-import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpdateProtocolAdapter.tsx'
+import { useCreateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useCreateProtocolAdapter.ts'
+import { useUpdateProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useUpdateProtocolAdapter.ts'
 
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
 import AdapterInstanceDrawer from '@/modules/ProtocolAdapters/components/drawers/AdapterInstanceDrawer.tsx'
-import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
+import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 
 interface AdapterEditorProps {
   isNew?: boolean
@@ -61,7 +61,7 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
 
   const handleInstanceClose = () => {
     onInstanceClose()
-    navigate('/protocol-adapters', { state: { protocolAdapterTabIndex: ProtocolAdapterTabIndex.protocols } })
+    navigate('/protocol-adapters', { state: { protocolAdapterTabIndex: ProtocolAdapterTabIndex.PROTOCOLS } })
   }
 
   const handleInstanceSubmit: SubmitHandler<Adapter> = (props) => {
@@ -123,7 +123,7 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
 
     onInstanceClose()
     const adapterNavigateState: AdapterNavigateState = {
-      protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+      protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
       selectedActiveAdapter: { isNew: !!isNew, isOpen: false, adapterId: id },
     }
     navigate('/protocol-adapters', {

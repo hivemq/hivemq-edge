@@ -7,7 +7,7 @@ import { IoMdOptions } from 'react-icons/io'
 import { LuBoxSelect } from 'react-icons/lu'
 import { FaLock, FaLockOpen, FaMinus, FaPlus } from 'react-icons/fa6'
 
-import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
+import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 
 const selector = (s: ReactFlowState) => ({

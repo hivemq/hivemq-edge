@@ -2,7 +2,7 @@ import { FC, useEffect, useState } from 'react'
 import { Box, CloseButton, VStack, StackProps } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
-import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.tsx'
+import { useGetSample } from '@/api/hooks/useGetMetrics/useGetSample.ts'
 import { DataPoint } from '@/api/__generated__'
 
 import ClipboardCopyIconButton from '@/components/Chakra/ClipboardCopyIconButton.tsx'

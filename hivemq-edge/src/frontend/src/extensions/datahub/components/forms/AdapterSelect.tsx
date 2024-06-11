@@ -5,7 +5,7 @@ import { FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
 import { Select, OnChangeValue, SingleValueProps, chakraComponents, OptionProps } from 'chakra-react-select'
 
 import { Adapter } from '@/api/__generated__'
-import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
+import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 
 const SingleValue = (props: SingleValueProps<Adapter>) => {
   return (

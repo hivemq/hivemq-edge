@@ -14,7 +14,7 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 
-import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.tsx'
+import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
 import { useNavigate } from 'react-router-dom'

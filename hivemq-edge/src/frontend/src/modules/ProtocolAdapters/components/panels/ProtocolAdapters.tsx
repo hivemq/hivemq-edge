@@ -6,11 +6,11 @@ import { DateTime } from 'luxon'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
-import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.tsx'
-import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDeleteProtocolAdapter.tsx'
-import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.tsx'
+import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
+import { useDeleteProtocolAdapter } from '@/api/hooks/useProtocolAdapters/useDeleteProtocolAdapter.ts'
+import { useGetAdaptersStatus } from '@/api/hooks/useConnection/useGetAdaptersStatus.ts'
 import { ProblemDetails } from '@/api/types/http-problem-details.ts'
-import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.tsx'
+import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import AdapterEmptyLogo from '@/assets/app/adaptor-empty.svg'
@@ -73,7 +73,7 @@ const ProtocolAdapters: FC = () => {
   const columns = useMemo<ColumnDef<Adapter>[]>(() => {
     const handleCreateInstance = (type: string | undefined) => {
       const adapterNavigateState: AdapterNavigateState = {
-        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
         protocolAdapterType: type,
       }
       navigate('/protocol-adapters/new', { state: adapterNavigateState })
@@ -81,7 +81,7 @@ const ProtocolAdapters: FC = () => {
 
     const handleEditInstance = (adapterId: string, type: string) => {
       const adapterNavigateState: AdapterNavigateState = {
-        protocolAdapterTabIndex: ProtocolAdapterTabIndex.adapters,
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
         protocolAdapterType: type,
       }
       if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: adapterNavigateState })

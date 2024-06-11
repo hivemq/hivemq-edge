@@ -5,6 +5,7 @@ import { QUERY_KEYS } from '@/api/utils.ts'
 
 import { MOCK_CAPABILITIES } from './__handlers__'
 
+/* istanbul ignore next -- @preserve */
 const getLocalConfig = (): CapabilityList | undefined => {
   const config: string | undefined =
     import.meta.env.MODE === 'development' ? import.meta.env.VITE_FLAG_CAPABILITIES : undefined

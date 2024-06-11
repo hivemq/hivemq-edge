@@ -15,6 +15,7 @@ interface TestSuite {
 
 const allTests: TestSuite[] = [
   { range: { ...MOCK_RANGE_OPTION, duration: undefined }, badge: undefined },
+  { range: { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({}) }, badge: undefined },
   { range: { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ second: 1 }) }, badge: '1s' },
   { range: { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ second: 10 }) }, badge: '10s' },
   { range: { ...MOCK_RANGE_OPTION, duration: Duration.fromObject({ minute: 1 }) }, badge: '1m' },

@@ -14,7 +14,7 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import { ApiError, ISA95ApiBean } from '@/api/__generated__'
-import { useSetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useSetUnifiedNamespace.tsx'
+import { useSetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useSetUnifiedNamespace.ts'
 import NamespaceDisplay from '@/modules/UnifiedNamespace/components/NamespaceDisplay.tsx'
 import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 

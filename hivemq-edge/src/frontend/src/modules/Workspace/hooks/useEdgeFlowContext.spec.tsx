@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react'
 import { describe, expect } from 'vitest'
 
-import { useEdgeFlowContext } from './useEdgeFlowContext.tsx'
+import { useEdgeFlowContext } from './useEdgeFlowContext.ts'
 import { EdgeFlowProvider } from './FlowContext.tsx'
 import { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
 
