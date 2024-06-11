@@ -52,6 +52,7 @@ export type ProtocolAdapter = {
      * The search tags associated with this adapter
      */
     tags?: Array<string>;
+    uiSchema?: JsonNode;
     /**
      * The url of the adapter
      */

@@ -56,6 +56,9 @@ export const $ProtocolAdapter = {
                 description: `The search tags associated with this adapter`,
             },
         },
+        uiSchema: {
+            type: 'JsonNode',
+        },
         url: {
             type: 'string',
             description: `The url of the adapter`,

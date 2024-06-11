@@ -1,4 +1,10 @@
 import { FC, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useParams } from 'react-router-dom'
+import { IChangeEvent } from '@rjsf/core'
+import { RJSFSchema } from '@rjsf/utils'
+import { RJSFValidationError } from '@rjsf/utils/src/types.ts'
+import Form from '@rjsf/chakra-ui'
 import {
   Button,
   Drawer,
@@ -13,11 +19,6 @@ import {
   Image,
   Text,
 } from '@chakra-ui/react'
-import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router-dom'
-import { IChangeEvent } from '@rjsf/core'
-import { RJSFSchema } from '@rjsf/utils'
-import Form from '@rjsf/chakra-ui'
 
 import { Adapter, ApiError, ProtocolAdapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
@@ -29,9 +30,8 @@ import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
 import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
-import useGetUiSchema from '../../hooks/useGetUISchema.ts'
-import { customFormatsValidator, customValidate } from '../../utils/validation-utils.ts'
-import { RJSFValidationError } from '@rjsf/utils/src/types.ts'
+import { customFormatsValidator, customValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
+import { getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -56,18 +56,22 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   const { data: allAdapters } = useListProtocolAdapters()
   const { adapterId } = useParams()
 
-  const { schema, name, logo } = useMemo(() => {
+  const { schema, uiSchema, name, logo } = useMemo(() => {
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
-    const { configSchema } = adapter || {}
-    return { schema: configSchema, name: adapter?.name, logo: adapter?.logoUrl }
-  }, [data, adapterType])
+    const { configSchema, uiSchema } = adapter || {}
+    return {
+      schema: configSchema,
+      name: adapter?.name,
+      logo: adapter?.logoUrl,
+      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter),
+    }
+  }, [data?.items, isNewAdapter, adapterType])
 
   const defaultValues = useMemo(() => {
     if (isNewAdapter || !adapterId) return undefined
     const { config } = allAdapters?.find((e) => e.id === adapterId) || {}
     return config
   }, [allAdapters, adapterId, isNewAdapter])
-  const uiSchema = useGetUiSchema(isNewAdapter)
 
   const onValidate = (data: IChangeEvent<Adapter, RJSFSchema>) => {
     if (data.formData) onSubmit(data.formData)

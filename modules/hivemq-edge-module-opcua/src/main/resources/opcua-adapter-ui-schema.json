@@ -3,7 +3,7 @@
     {
       "id": "coreFields",
       "title": "Core Fields",
-      "properties": ["id", "port", "host", "uri", "url", "timeout"]
+      "properties": ["id", "uri", "overrideUri"]
     },
     {
       "id": "subFields",
@@ -12,77 +12,16 @@
     },
     {
       "id": "security",
-      "title": "protocolAdapter.uiSchema.groups.security",
+      "title": "Security",
       "properties": ["security", "tls"]
     },
-    {
-      "id": "publishing",
-      "title": "protocolAdapter.uiSchema.groups.publishing",
-      "properties": [
-        "maxPollingErrorsBeforeRemoval",
-        "publishChangedDataOnly",
-        "publishingInterval",
-        "pollingIntervalMillis",
-        "destination",
-        "qos",
-        "minValue",
-        "maxValue"
-      ]
-    },
+
     {
       "id": "authentication",
-      "title": "protocolAdapter.uiSchema.groups.authentication",
+      "title": "Authentication",
       "properties": ["auth"]
-    },
-    {
-      "id": "http",
-      "title": "protocolAdapter.uiSchema.groups.http",
-      "properties": [
-        "httpRequestMethod",
-        "httpRequestBodyContentType",
-        "httpRequestBody",
-        "httpHeaders",
-        "httpConnectTimeout",
-        "httpRequestBodyContentType",
-        "assertResponseIsJson",
-        "httpPublishSuccessStatusCodeOnly",
-        "allowUntrustedCertificates"
-      ]
-    },
-    {
-      "id": "ads",
-      "title": "protocolAdapter.uiSchema.groups.ads",
-      "properties": ["sourceAmsPort", "targetAmsPort", "sourceAmsNetId", "targetAmsNetId"]
-    },
-    {
-      "id": "eip",
-      "title": "protocolAdapter.uiSchema.groups.eip",
-      "properties": ["slot", "backplane"]
-    },
-    {
-      "id": "s7advanced",
-      "title": "protocolAdapter.uiSchema.groups.s7advanced",
-      "properties": [
-        "controllerType",
-        "remoteRack",
-        "remoteSlot",
-        "ping",
-        "pingTime",
-        "maxAmqCaller",
-        "maxAmqCallee",
-        "remoteTsap",
-        "remoteRack2",
-        "remoteSlot2",
-        "pduSize",
-        "retryTime",
-        "retryTimeout",
-        "readTimeout"
-      ]
     }
   ],
-  "ui:submitButtonOptions": {
-    "norender": true
-  },
   "id": {
     "ui:disabled": true
   },

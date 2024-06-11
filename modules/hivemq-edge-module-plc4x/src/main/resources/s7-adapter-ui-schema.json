@@ -16,37 +16,23 @@
       "title": "Publishing",
       "properties": [
         "maxPollingErrorsBeforeRemoval",
-        "publishChangedDataOnly",
-        "publishingInterval",
         "pollingIntervalMillis",
-        "destination",
-        "qos"
+        "publishChangedDataOnly"
       ]
     },
     {
       "id": "s7advanced",
-      "title": "protocolAdapter.uiSchema.groups.s7advanced",
+      "title": "S7 Device",
       "properties": [
         "controllerType",
         "remoteRack",
         "remoteSlot",
-        "ping",
-        "pingTime",
-        "maxAmqCaller",
-        "maxAmqCallee",
         "remoteTsap",
         "remoteRack2",
-        "remoteSlot2",
-        "pduSize",
-        "retryTime",
-        "retryTimeout",
-        "readTimeout"
+        "remoteSlot2"
       ]
     }
   ],
-  "ui:submitButtonOptions": {
-    "norender": true
-  },
   "id": {
     "ui:disabled": false
   },
