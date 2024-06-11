@@ -24,8 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +39,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @author Dominik Obermaier
  */
-@Singleton
 public class ShutdownHooks {
 
     private static final Logger log = LoggerFactory.getLogger(ShutdownHooks.class);
@@ -49,7 +46,6 @@ public class ShutdownHooks {
     private final @NotNull AtomicBoolean shuttingDown;
     private final @NotNull Multimap</* Priority */Integer, HiveMQShutdownHook> synchronousHooks;
 
-    @Inject
     public ShutdownHooks() {
         shuttingDown = new AtomicBoolean(false);
 
