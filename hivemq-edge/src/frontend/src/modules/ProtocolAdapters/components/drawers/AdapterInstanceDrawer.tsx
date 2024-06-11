@@ -2,7 +2,7 @@ import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams } from 'react-router-dom'
 import { IChangeEvent } from '@rjsf/core'
-import { RJSFSchema, UiSchema } from '@rjsf/utils'
+import { RJSFSchema } from '@rjsf/utils'
 import { RJSFValidationError } from '@rjsf/utils/src/types.ts'
 import Form from '@rjsf/chakra-ui'
 import {
@@ -30,8 +30,8 @@ import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
 import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
-import { customFormatsValidator, customValidate } from '../../utils/validation-utils.ts'
-import { defaultUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
+import { customFormatsValidator, customValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
+import { getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -63,9 +63,9 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
       schema: configSchema,
       name: adapter?.name,
       logo: adapter?.logoUrl,
-      uiSchema: { ...uiSchema, ...defaultUiSchema } as UiSchema,
+      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter),
     }
-  }, [data, adapterType])
+  }, [data?.items, isNewAdapter, adapterType])
 
   const defaultValues = useMemo(() => {
     if (isNewAdapter || !adapterId) return undefined
