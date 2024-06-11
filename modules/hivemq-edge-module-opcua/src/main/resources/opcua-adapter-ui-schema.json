@@ -20,7 +20,7 @@
       "id": "authentication",
       "title": "Authentication",
       "properties": ["auth"]
-    },
+    }
   ],
   "id": {
     "ui:disabled": true
