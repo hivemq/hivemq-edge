@@ -17,7 +17,6 @@ package com.hivemq.edge.adapters.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
@@ -33,6 +32,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.http.model.HttpData;
+import com.hivemq.edge.adapters.http.model.HttpPollingContextImpl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -65,7 +65,7 @@ import static com.hivemq.edge.adapters.http.HttpAdapterConfig.PLAIN_MIME_TYPE;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapter implements PollingProtocolAdapter {
+public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingContextImpl> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
 
@@ -80,7 +80,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull AdapterFactories adapterFactories;
     // The http adapter only supports a single endpont to be polled from
-    private final @NotNull PollingContext pollingContext;
+    private final @NotNull HttpPollingContextImpl pollingContext;
 
     private volatile @Nullable HttpClient httpClient = null;
     protected @NotNull
@@ -97,8 +97,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
         this.adapterFactories = input.adapterFactories();
-        this.pollingContext = adapterFactories.pollingContextFactory()
-                .create(adapterConfig.getDestination(), adapterConfig.getQos(), null);
+        this.pollingContext = new HttpPollingContextImpl(adapterConfig.getDestination(), adapterConfig.getQos(), null);
     }
 
     @Override
@@ -182,7 +181,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter {
     }
 
     @Override
-    public @NotNull List<? extends PollingContext> getPollingContexts() {
+    public @NotNull List<HttpPollingContextImpl> getPollingContexts() {
         return List.of(pollingContext);
     }
 
