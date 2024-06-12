@@ -46,3 +46,21 @@ export interface AdapterContext {
   onBatchUpload?: (idSchema: IdSchema<unknown>, batch: Record<string, unknown>[]) => void
   isEditAdapter?: boolean
 }
+
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace ExportFormat {
+  export enum Type {
+    CONFIGURATION = 'CONFIGURATION',
+    SUBSCRIPTIONS = 'SUBSCRIPTIONS',
+  }
+}
+
+export interface ExportFormat {
+  value: ExportFormat.Type
+  formats?: string[]
+}
+
+export interface ExportFormatDisplay extends ExportFormat {
+  label: string
+  description: string
+}
