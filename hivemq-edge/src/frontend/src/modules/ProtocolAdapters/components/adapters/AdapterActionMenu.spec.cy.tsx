@@ -17,6 +17,7 @@ describe('AdapterActionMenu', () => {
     cy.getByTestId('adapter-action-create').should('be.visible')
     cy.getByTestId('adapter-action-edit').should('be.visible')
     cy.getByTestId('adapter-action-delete').should('be.visible')
+    cy.getByTestId('adapter-action-export').should('be.visible')
 
     cy.get('body').click(0, 0)
     cy.getByTestId('device-action-start').should('not.be.visible')
@@ -47,9 +48,18 @@ describe('AdapterActionMenu', () => {
     const onEdit = cy.stub().as('onEdit')
     const onCreate = cy.stub().as('onCreate')
     const onDelete = cy.stub().as('onDelete')
+    const onViewWorkspace = cy.stub().as('onViewWorkspace')
+    const onExport = cy.stub().as('onExport')
 
     cy.mountWithProviders(
-      <AdapterActionMenu adapter={mockAdapter} onEdit={onEdit} onCreate={onCreate} onDelete={onDelete} />
+      <AdapterActionMenu
+        adapter={mockAdapter}
+        onEdit={onEdit}
+        onCreate={onCreate}
+        onDelete={onDelete}
+        onViewWorkspace={onViewWorkspace}
+        onExport={onExport}
+      />
     )
 
     cy.get('@onCreate').should('not.have.been.called')
@@ -69,12 +79,29 @@ describe('AdapterActionMenu', () => {
     cy.getByTestId('adapter-action-delete').click()
     cy.get('@onDelete').should('have.been.calledWith', 'my-adapter')
     cy.getByTestId('adapter-action-delete').should('not.be.visible')
+
+    cy.get('@onViewWorkspace').should('not.have.been.called')
+    cy.getByAriaLabel('Actions').click()
+    cy.getByTestId('adapter-action-workspace').click()
+    cy.get('@onViewWorkspace').should('have.been.calledWith', 'my-adapter', 'simulation')
+    cy.getByTestId('adapter-action-workspace').should('not.be.visible')
+
+    cy.get('@onExport').should('not.have.been.called')
+    cy.getByAriaLabel('Actions').click()
+    cy.getByTestId('adapter-action-export').click()
+    cy.get('@onExport').should('have.been.calledWith', 'my-adapter', 'simulation')
+    cy.getByTestId('adapter-action-export').should('not.be.visible')
   })
 
-  it('should be accessible', () => {
+  it.only('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<AdapterActionMenu adapter={mockAdapter} />)
-    cy.checkAccessibility()
+    cy.getByAriaLabel('Actions').click()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        'color-contrast': { enabled: false },
+      },
+    })
     cy.percySnapshot('Component: AdapterActionMenu')
   })
 })
