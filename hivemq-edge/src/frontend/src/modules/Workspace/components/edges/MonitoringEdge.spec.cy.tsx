@@ -34,7 +34,12 @@ describe('MonitoringEdge', () => {
         edgeTypes={{ [EdgeTypes.REPORT_EDGE]: MonitoringEdge }}
       />
     )
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        // ReactFlow watermark not accessible
+        'color-contrast': { enabled: false },
+      },
+    })
     cy.percySnapshot('Component: MonitoringEdge')
   })
 })

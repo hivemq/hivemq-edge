@@ -1,11 +1,27 @@
 import { FC } from 'react'
-import { ArrayFieldTemplateProps } from '@rjsf/utils'
-import { Box, Grid, GridItem } from '@chakra-ui/react'
-import { getTemplate, getUiOptions, ArrayFieldTemplateItemType } from '@rjsf/utils'
-import AddButton from '@/components/rjsf/__internals/AddButton.tsx'
+import { ArrayFieldTemplateProps, getTemplate, getUiOptions, ArrayFieldTemplateItemType } from '@rjsf/utils'
+import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import { Box, Grid, GridItem, HStack } from '@chakra-ui/react'
 
-export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps> = (props) => {
-  const { canAdd, disabled, idSchema, uiSchema, items, onAddClick, readonly, registry, required, schema, title } = props
+import AddButton from '@/components/rjsf/__internals/AddButton.tsx'
+import BatchUploadButton from '@/components/rjsf/BatchSubscription/BatchUploadButton.tsx'
+import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+
+export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps<unknown, RJSFSchema, AdapterContext>> = (props) => {
+  const {
+    canAdd,
+    disabled,
+    idSchema,
+    uiSchema,
+    items,
+    onAddClick,
+    readonly,
+    registry,
+    required,
+    schema,
+    title,
+    formContext,
+  } = props
   const uiOptions = getUiOptions(uiSchema)
   const ArrayFieldDescriptionTemplate = getTemplate<'ArrayFieldDescriptionTemplate'>(
     'ArrayFieldDescriptionTemplate',
@@ -15,6 +31,7 @@ export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps> = (props) => {
   const ArrayFieldItemTemplate = getTemplate<'ArrayFieldItemTemplate'>('ArrayFieldItemTemplate', registry, uiOptions)
   const ArrayFieldTitleTemplate = getTemplate<'ArrayFieldTitleTemplate'>('ArrayFieldTitleTemplate', registry, uiOptions)
 
+  const { onBatchUpload } = formContext || {}
   return (
     <Box>
       <ArrayFieldTitleTemplate
@@ -46,17 +63,18 @@ export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps> = (props) => {
           </GridItem>
         </Grid>
         {canAdd && (
-          <GridItem justifySelf="flex-end">
-            <Box mt={2}>
-              <AddButton
-                className="array-item-add"
-                onClick={onAddClick}
-                disabled={disabled || readonly}
-                uiSchema={uiSchema}
-                registry={registry}
-              />
-            </Box>
-          </GridItem>
+          <HStack justifyContent="space-between" mt={2}>
+            <AddButton
+              className="array-item-add"
+              onClick={onAddClick}
+              disabled={disabled || readonly}
+              uiSchema={uiSchema}
+              registry={registry}
+            />
+            {uiOptions.batchMode && onBatchUpload && (
+              <BatchUploadButton idSchema={idSchema} schema={schema} onBatchUpload={onBatchUpload} />
+            )}
+          </HStack>
         )}
       </>
     </Box>

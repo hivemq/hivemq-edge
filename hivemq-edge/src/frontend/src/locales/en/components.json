@@ -12,6 +12,7 @@
       "clear": "Clear filter"
     },
     "noDataText": "No data received yet.",
+    "noDataLoadError": "There was an error loading the data.",
     "noDataFiltered": "No data matching your filters.",
     "goFirstPage": "Go to the first page",
     "goPreviousPage": "Go to the previous page",
@@ -75,6 +76,85 @@
       "Buttons": {
         "expanded_true": "Collapse Item",
         "expanded_false": "Expand Item"
+      }
+    },
+    "batchUpload": {
+      "button": "Upload",
+      "modal": {
+        "header": "Bulk Subscription Creation",
+        "action": {
+          "previous": "Previous",
+          "next": "Next",
+          "cancel": "Cancel"
+        },
+        "step": {
+          "upload": {
+            "title": "Upload",
+            "description": "Select your data source"
+          },
+          "match": {
+            "title": "Match",
+            "description": "Select your data points"
+          },
+          "validate": {
+            "title": "Validate",
+            "description": "Check the subscriptions"
+          },
+          "confirm": {
+            "title": "Confirm",
+            "description": "Confirm the batch creation"
+          }
+        }
+      },
+      "dropZone": {
+        "placeholder": "Upload a .xlsx, .xls or .csv file",
+        "dropping": "Drop a file here ...",
+        "loading": "Processing ...",
+        "selectFile": "Select file",
+        "status_error": "{{ fileName}} upload rejected",
+        "status_success": "{{ fileName}} upload successful"
+      },
+      "columnMapping": {
+        "subscription": {
+          "ariaLabel": "Subscription property"
+        },
+        "column": {
+          "ariaLabel": "Column header"
+        },
+        "validation": {
+          "required": "The subscription property is required so a column must be selected"
+        }
+      },
+      "dataValidation": {
+        "table": {
+          "ariaLabel": "List of subscriptions to be created",
+          "noDataText": "There is no rows to display"
+        },
+        "columns": {
+          "admin": "Admin columns",
+          "subscription": "Subscription columns",
+          "selectHeader": "Select all rows",
+          "selectRow": "Select the row"
+        },
+        "action": {
+          "delete_zero": "Delete rows",
+          "delete_one": "Delete {{ count }} row",
+          "delete_other": "Delete {{ count }} rows",
+          "errorOnly": "Show only errors"
+        }
+      },
+      "confirm": {
+        "alert": {
+          "title_zero": "No valid subscriptions",
+          "title_one": "One subscription created",
+          "title_other": "{{ count }} subscriptions created",
+          "description_zero": "There was a problem loading valid subscriptions from your configuration. Please try again.",
+          "description_one": "Your subscription is ready to be uploaded. Any existing subscription already defined in the adapter will be deleted.",
+          "description_other": "Your subscriptions are ready to be uploaded. Any existing subscription already defined in the adapter will be deleted."
+        },
+        "action": {
+          "upload": "Upload records"
+        }
       }
     }
   }

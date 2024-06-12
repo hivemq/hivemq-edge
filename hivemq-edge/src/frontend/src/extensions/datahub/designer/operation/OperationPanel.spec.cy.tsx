@@ -161,7 +161,6 @@ describe('OperationPanel', () => {
       cy.get('label#root_formData_topic-label').should('contain.text', 'Topic')
       cy.get('label#root_formData_topic-label + input').should('contain.value', 'a/simple/topic')
       cy.get('label:has(> input#root_formData_applyPolicies) ')
-        .as('topic_Errors')
         .should('contain.text', 'Apply Policies')
         .should('have.attr', 'data-checked')
     })
