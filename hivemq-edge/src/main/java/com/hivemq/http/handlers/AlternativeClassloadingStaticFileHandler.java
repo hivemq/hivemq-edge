@@ -16,10 +16,10 @@
 package com.hivemq.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.http.core.HttpUtils;
-import com.hivemq.http.core.IHttpRequestResponse;
+import com.hivemq.common.shutdown.HiveMQShutdownHook;
+import com.hivemq.common.shutdown.ShutdownHooks;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -31,20 +31,24 @@ import java.util.Set;
  * allowing modules to contribute arbitrary resources
  */
 public class AlternativeClassloadingStaticFileHandler extends StaticFileHandler {
-    protected static Set<ClassLoader> classLoaders;
+    protected final static @NotNull Set<ClassLoader> classLoaders = new HashSet<>();;
 
-    public AlternativeClassloadingStaticFileHandler(ObjectMapper mapper, String resourceRoot) {
+    public AlternativeClassloadingStaticFileHandler(ObjectMapper mapper, String resourceRoot, ShutdownHooks shutdownHooks) {
         super(mapper, resourceRoot);
+        shutdownHooks.add(new HiveMQShutdownHook() {
+            @Override
+            public @NotNull String name() {
+                return "AlternativeClassloadingStaticFileHandler - Shutdown";
+            }
+
+            @Override
+            public void run() {
+                classLoaders.clear();
+            }
+        });
     }
 
     public static void addClassLoader(ClassLoader classLoader){
-        if(classLoaders == null){
-            synchronized (AlternativeClassloadingStaticFileHandler.class){
-                if(classLoaders == null){
-                    classLoaders = new HashSet<>();
-                }
-            }
-        }
         classLoaders.add(classLoader);
     }
 

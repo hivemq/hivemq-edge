@@ -56,6 +56,8 @@ public class HiveMQExceptionHandlerBootstrap {
             if (showException) {
                 log.error("Cause: ", e);
             }
+        } else if (rootCause instanceof ThreadDeath) {
+           // NOOP: this happens when tests stop the remaining threads via thread.stop();
         } else {
             log.error("Uncaught Error:", e);
         }
