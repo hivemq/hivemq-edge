@@ -467,7 +467,8 @@
         "create": "Create similar",
         "edit": "Edit",
         "delete": "Delete",
-        "workspace": "View on workspace"
+        "workspace": "View on workspace",
+        "export": "Export"
       }
     },
     "toast": {
@@ -519,6 +520,18 @@
         "eip": "Ethernet IP",
         "s7advanced": "S7 Device",
         "authentication": "Authentication"
+      }
+    },
+    "export": {
+      "header": "Adapter Export",
+      "action": {
+        "export": "Export"
+      },
+      "formats": {
+        "label_CONFIGURATION": "Adapter configuration",
+        "description_CONFIGURATION": "This will export the whole configuration of the adapter, as a standalone JSON file",
+        "label_SUBSCRIPTIONS": "Subscriptions",
+        "description_SUBSCRIPTIONS": "This will only export the subscriptions currently defined in the adapter, in a format suitable for batch processing"
       }
     }
   },
