@@ -23,6 +23,7 @@ import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.configuration.ConfigurationBootstrap;
 import com.hivemq.configuration.info.SystemInformationImpl;
 import com.hivemq.configuration.service.ConfigurationService;
+import com.hivemq.configuration.service.InternalConfigurationService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.ModuleLoader;
 import com.hivemq.embedded.EmbeddedExtension;
@@ -36,7 +37,11 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 
 /**
@@ -62,6 +67,7 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
     private @NotNull LinkedList<CompletableFuture<Void>> startFutures = new LinkedList<>();
     private @NotNull LinkedList<CompletableFuture<Void>> stopFutures = new LinkedList<>();
     private @Nullable Future<?> shutDownFuture;
+    private ModuleLoader moduleLoader;
 
     EmbeddedHiveMQImpl(
             final @Nullable File conf,
@@ -163,10 +169,11 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
                         bootstrapConfig();
                     }
 
-                    hiveMQServer = new HiveMQEdgeMain(systemInformation,
-                            metricRegistry,
-                            configurationService,
-                            moduleLoaderFactory.apply(systemInformation));
+                    reduceResources();
+
+                    moduleLoader = moduleLoaderFactory.apply(systemInformation);
+                    hiveMQServer =
+                            new HiveMQEdgeMain(systemInformation, metricRegistry, configurationService, moduleLoader);
                     hiveMQServer.bootstrap();
                     hiveMQServer.start(embeddedExtension);
 
@@ -198,6 +205,14 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
         return configurationService;
     }
 
+    private void reduceResources() {
+        final InternalConfigurationService internalConfigurationService =
+                configurationService.internalConfigurationService();
+
+        //only use 4 buckets per persistence to reduce count of open files
+        internalConfigurationService.set(InternalConfigurations.PERSISTENCE_BUCKET_COUNT, "4");
+    }
+
     private void performStop(
             final @NotNull State desiredState,
             final @NotNull List<CompletableFuture<Void>> startFutures,
@@ -208,6 +223,7 @@ class EmbeddedHiveMQImpl implements EmbeddedHiveMQ {
 
             try {
                 hiveMQServer.stop();
+                moduleLoader.clear();
             } catch (final Exception ex) {
                 if (desiredState == State.CLOSED) {
                     log.error("Exception during running shutdown hook.", ex);
