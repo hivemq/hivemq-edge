@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon'
 
-const downloadTimeStamp = () =>
+export const downloadTimeStamp = () =>
   DateTime.now().startOf('second').toISO({ suppressMilliseconds: true, suppressSeconds: true, includeOffset: false })
 
 export function downloadJSON<T>(name: string, source: T) {
