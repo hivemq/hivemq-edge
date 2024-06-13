@@ -5,7 +5,7 @@ import { CustomFormat } from '@/api/types/json-schema.ts'
 
 import { TopicFilter } from '../types.ts'
 
-const TOPIC_PATH_ITEMS_TOKEN = '*'
+export const TOPIC_PATH_ITEMS_TOKEN = '*'
 
 const subsToTopics = (subs: BridgeSubscription[] | undefined): TopicFilter[] => {
   return (
