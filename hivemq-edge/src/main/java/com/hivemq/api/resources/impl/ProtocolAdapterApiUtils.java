@@ -66,12 +66,12 @@ public class ProtocolAdapterApiUtils {
             "    },\n" +
             "    {\n" +
             "      \"id\": \"security\",\n" +
-            "      \"title\": \"protocolAdapter.uiSchema.groups.security\",\n" +
+            "      \"title\": \"Security\",\n" +
             "      \"properties\": [\"security\", \"tls\"]\n" +
             "    },\n" +
             "    {\n" +
             "      \"id\": \"publishing\",\n" +
-            "      \"title\": \"protocolAdapter.uiSchema.groups.publishing\",\n" +
+            "      \"title\": \"Publishing\",\n" +
             "      \"properties\": [\n" +
             "        \"maxPollingErrorsBeforeRemoval\",\n" +
             "        \"publishChangedDataOnly\",\n" +
@@ -85,12 +85,12 @@ public class ProtocolAdapterApiUtils {
             "    },\n" +
             "    {\n" +
             "      \"id\": \"authentication\",\n" +
-            "      \"title\": \"protocolAdapter.uiSchema.groups.authentication\",\n" +
+            "      \"title\": \"Authentication\",\n" +
             "      \"properties\": [\"auth\"]\n" +
             "    },\n" +
             "    {\n" +
             "      \"id\": \"http\",\n" +
-            "      \"title\": \"protocolAdapter.uiSchema.groups.http\",\n" +
+            "      \"title\": \"Http\",\n" +
             "      \"properties\": [\n" +
             "        \"httpRequestMethod\",\n" +
             "        \"httpRequestBodyContentType\",\n" +
@@ -105,17 +105,17 @@ public class ProtocolAdapterApiUtils {
             "    },\n" +
             "    {\n" +
             "      \"id\": \"ads\",\n" +
-            "      \"title\": \"protocolAdapter.uiSchema.groups.ads\",\n" +
+            "      \"title\": \"ADS\",\n" +
             "      \"properties\": [\"sourceAmsPort\", \"targetAmsPort\", \"sourceAmsNetId\", \"targetAmsNetId\"]\n" +
             "    },\n" +
             "    {\n" +
             "      \"id\": \"eip\",\n" +
-            "      \"title\": \"protocolAdapter.uiSchema.groups.eip\",\n" +
+            "      \"title\": \"EIP\",\n" +
             "      \"properties\": [\"slot\", \"backplane\"]\n" +
             "    },\n" +
             "    {\n" +
             "      \"id\": \"s7advanced\",\n" +
-            "      \"title\": \"protocolAdapter.uiSchema.groups.s7advanced\",\n" +
+            "      \"title\": \"S7-Advanced\",\n" +
             "      \"properties\": [\n" +
             "        \"controllerType\",\n" +
             "        \"remoteRack\",\n" +
@@ -137,9 +137,6 @@ public class ProtocolAdapterApiUtils {
             "  \"ui:submitButtonOptions\": {\n" +
             "    \"norender\": true\n" +
             "  },\n" +
-            "  \"id\": {\n" +
-            "    \"ui:disabled\": true\n" +
-            "  },\n" +
             "  \"port\": {\n" +
             "    \"ui:widget\": \"updown\"\n" +
             "  },\n" +
@@ -147,7 +144,6 @@ public class ProtocolAdapterApiUtils {
             "    \"ui:widget\": \"textarea\"\n" +
             "  },\n" +
             "  \"subscriptions\": {\n" +
-            "    \"ui:batchMode\": true,\n" +
             "    \"items\": {\n" +
             "      \"ui:order\": [\"node\", \"holding-registers\", \"mqtt-topic\", \"destination\", \"qos\", \"*\"],\n" +
             "      \"ui:collapsable\": {\n" +
