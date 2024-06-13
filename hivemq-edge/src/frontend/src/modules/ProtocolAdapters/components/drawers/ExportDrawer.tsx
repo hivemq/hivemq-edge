@@ -159,14 +159,22 @@ const ExportDrawer: FC = () => {
                 render={({ field: { value, ...rest } }) => (
                   <RadioGroup {...rest} value={value.toString()} id="field-content" data-testid="field-content-options">
                     <VStack alignItems="flex-start" gap={6}>
-                      {listFormats.map((format) => (
-                        <FormControl as="div" key={format.value} w="-webkit-fill-available">
-                          <Radio value={format.value}>
-                            <Text>{format.label} </Text>
-                            <FormHelperText as="p">{format.description}</FormHelperText>
-                          </Radio>
-                        </FormControl>
-                      ))}
+                      {listFormats.map((format) => {
+                        const isDisabled = format.isDisabled?.(protocol)
+                        return (
+                          <FormControl as="div" key={format.value} w="-webkit-fill-available" isDisabled={isDisabled}>
+                            <Radio value={format.value}>
+                              <Text>{format.label} </Text>
+                              <FormHelperText as="p">{format.description}</FormHelperText>
+                              {isDisabled && (
+                                <FormHelperText as="p">
+                                  {t('protocolAdapter.export.formats.notAvailable')}
+                                </FormHelperText>
+                              )}
+                            </Radio>
+                          </FormControl>
+                        )
+                      })}
                     </VStack>
                   </RadioGroup>
                 )}
