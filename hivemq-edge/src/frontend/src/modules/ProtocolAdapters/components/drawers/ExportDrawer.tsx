@@ -46,7 +46,8 @@ const ExportDrawer: FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { adapterId } = useParams()
   const navigate = useNavigate()
-  const { name, logo, adapter } = useGetAdapterInfo(adapterId)
+  const { protocol, adapter } = useGetAdapterInfo(adapterId)
+  const { name, logoUrl } = protocol || {}
   const [formatOptions, setFormatOptions] = useState<MIMETypeOptions[]>([])
   const form = useForm<SelectedExportFormat>({
     mode: 'all',
@@ -104,7 +105,7 @@ const ExportDrawer: FC = () => {
         <DrawerHeader id="adapter-discovery-header" borderBottomWidth="1px">
           <Text>{t('protocolAdapter.export.header')}</Text>
           <HStack>
-            <Image boxSize="30px" objectFit="scale-down" src={logo} aria-label={name} />
+            <Image boxSize="30px" objectFit="scale-down" src={logoUrl} aria-label={name} />
             <Text fontSize="md" fontWeight="500">
               {name}
             </Text>
