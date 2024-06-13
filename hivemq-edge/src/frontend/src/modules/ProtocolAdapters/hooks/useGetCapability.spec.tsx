@@ -25,10 +25,30 @@ describe('useGetAdapterInfo', () => {
     expect(result.current.isDiscoverable).toBeFalsy()
     expect(result.current.name).toBe('Simulated Edge Device')
     expect(result.current.logo).toBe('http://localhost:8080/images/hivemq-icon.png')
-    expect(result.current.schema).toStrictEqual(
+    expect(result.current.configSchema).toStrictEqual(
       expect.objectContaining({
         required: ['id', 'subscriptions'],
         type: 'object',
+      })
+    )
+    expect(result.current.adapter).toStrictEqual(
+      expect.objectContaining({
+        id: 'my-adapter',
+        status: {
+          connection: 'CONNECTED',
+          startedAt: '2023-08-21T11:51:24.234+01',
+        },
+        type: 'simulation',
+      })
+    )
+    expect(result.current.uiSchema).toStrictEqual(
+      expect.objectContaining({
+        id: {
+          'ui:disabled': false,
+        },
+        'ui:submitButtonOptions': {
+          norender: true,
+        },
       })
     )
   })

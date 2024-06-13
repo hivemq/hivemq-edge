@@ -7,22 +7,24 @@ const useGetAdapterInfo = (adapterId: string | undefined) => {
   const { data: allProtocols, isLoading: isProtocolLoading } = useGetAdapterTypes()
   const { data: allAdapters, isLoading: isAdapterLoading } = useListProtocolAdapters()
 
-  const { isDiscoverable, schema, name, logo } = useMemo(() => {
-    const { type } = allAdapters?.find((e) => e.id === adapterId) || {}
-    const adapter: ProtocolAdapter | undefined = allProtocols?.items?.find((e) => e.id === type)
-    const { capabilities, configSchema } = adapter || {}
+  const { adapter, isDiscoverable, name, logo, configSchema, uiSchema } = useMemo(() => {
+    const adapter = allAdapters?.find((e) => e.id === adapterId)
+    const protocol: ProtocolAdapter | undefined = allProtocols?.items?.find((e) => e.id === adapter?.type)
+    const { capabilities, configSchema, uiSchema } = protocol || {}
 
     return {
-      isDiscoverable: Boolean(capabilities?.includes('DISCOVER')),
-      schema: configSchema,
-      name: adapter?.name,
-      logo: adapter?.logoUrl,
+      isDiscoverable: capabilities?.includes('DISCOVER'),
+      name: protocol?.name,
+      logo: protocol?.logoUrl,
+      adapter: adapter,
+      configSchema,
+      uiSchema,
     }
   }, [adapterId, allAdapters, allProtocols])
 
   const isLoading = isAdapterLoading || isProtocolLoading
 
-  return { isLoading, isDiscoverable, schema, name, logo }
+  return { isLoading, isDiscoverable, name, logo, adapter, configSchema, uiSchema }
 }
 
 export default useGetAdapterInfo
