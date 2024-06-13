@@ -58,6 +58,8 @@ export namespace ExportFormat {
 export interface ExportFormat {
   value: ExportFormat.Type
   formats?: string[]
+  isDisabled?: (protocol?: ProtocolAdapter) => boolean
+  downloader?: (name: string, ext: string, source: Adapter) => void
 }
 
 export interface ExportFormatDisplay extends ExportFormat {
