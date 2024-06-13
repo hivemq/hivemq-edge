@@ -25,10 +25,18 @@ import {
   Text,
   useDisclosure,
   VStack,
+  AlertStatus,
+  useToast,
 } from '@chakra-ui/react'
-import { ExportFormat, ExportFormatDisplay, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
+import {
+  AdapterExportError,
+  ExportFormat,
+  ExportFormatDisplay,
+  ProtocolAdapterTabIndex,
+} from '@/modules/ProtocolAdapters/types.ts'
 import useGetAdapterInfo from '@/modules/ProtocolAdapters/hooks/useGetAdapterInfo.ts'
 import { adapterExportFormats } from '@/modules/ProtocolAdapters/utils/export.utils.ts'
+import { DEFAULT_TOAST_OPTION } from '@/hooks/useEdgeToast/toast-utils.ts'
 
 interface SelectedExportFormat {
   content: ExportFormat.Type
@@ -44,6 +52,7 @@ interface MIMETypeOptions {
 const ExportDrawer: FC = () => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const toast = useToast()
   const { adapterId } = useParams()
   const navigate = useNavigate()
   const { protocol, adapter } = useGetAdapterInfo(adapterId)
@@ -78,7 +87,30 @@ const ExportDrawer: FC = () => {
   }
 
   const handleEditorOnSubmit: SubmitHandler<SelectedExportFormat> = (data) => {
-    console.log('XXXXX', data)
+    const downloader = adapterExportFormats.find((e) => e.value === data.content)
+    if (downloader && adapter && protocol) {
+      try {
+        downloader.downloader?.(adapter.id, data.format, adapter, protocol)
+        const status: AlertStatus = 'success'
+        toast({
+          ...DEFAULT_TOAST_OPTION,
+          status,
+          title: t('protocolAdapter.export.download.status', { context: status, name: adapter.id }),
+        })
+      } catch (error) {
+        let message
+        if (error instanceof AdapterExportError) message = t(error.message)
+        else if (error instanceof Error) message = error.message
+        else message = String(error)
+        const status: AlertStatus = 'error'
+        toast({
+          ...DEFAULT_TOAST_OPTION,
+          status,
+          title: t('protocolAdapter.export.download.status', { context: status, name: adapter.id }),
+          description: message,
+        })
+      }
+    }
     // handleInstanceClose()
   }
 
