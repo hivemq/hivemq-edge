@@ -524,14 +524,29 @@
     },
     "export": {
       "header": "Adapter Export",
+      "form": {
+        "content": {
+          "label": "Select the type of adapter export "
+        },
+        "format": {
+          "label": "Select the file format ",
+          "aria-label": "Select the file format "
+        }
+      },
       "action": {
         "export": "Export"
       },
       "formats": {
-        "label_CONFIGURATION": "Adapter configuration",
+        "label_CONFIGURATION": "Full configuration",
         "description_CONFIGURATION": "This will export the whole configuration of the adapter, as a standalone JSON file",
         "label_SUBSCRIPTIONS": "Subscriptions",
         "description_SUBSCRIPTIONS": "This will only export the subscriptions currently defined in the adapter, in a format suitable for batch processing"
+      },
+      "mimeTypes": {
+        ".json": "JSON format",
+        ".xls": "Microsoft Excel",
+        ".xlsx": "Microsoft Excel (OpenXML)",
+        ".csv": "Comma-separated values (CSV)"
       }
     }
   },
