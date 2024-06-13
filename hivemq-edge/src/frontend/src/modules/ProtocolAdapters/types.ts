@@ -44,4 +44,5 @@ export type AdapterConfig = NonNullable<Adapter['config']>
 export interface AdapterContext {
   // TODO[NVL] Is that good enough for ANY form data?
   onBatchUpload?: (idSchema: IdSchema<unknown>, batch: Record<string, unknown>[]) => void
+  isEditAdapter?: boolean
 }
