@@ -23,14 +23,6 @@ describe('useGetAdapterInfo', () => {
       expect(result.current.isLoading).toBeFalsy()
     })
     expect(result.current.isDiscoverable).toBeFalsy()
-    expect(result.current.name).toBe('Simulated Edge Device')
-    expect(result.current.logo).toBe('http://localhost:8080/images/hivemq-icon.png')
-    expect(result.current.configSchema).toStrictEqual(
-      expect.objectContaining({
-        required: ['id', 'subscriptions'],
-        type: 'object',
-      })
-    )
     expect(result.current.adapter).toStrictEqual(
       expect.objectContaining({
         id: 'my-adapter',
@@ -41,14 +33,16 @@ describe('useGetAdapterInfo', () => {
         type: 'simulation',
       })
     )
-    expect(result.current.uiSchema).toStrictEqual(
+    expect(result.current.protocol).toStrictEqual(
       expect.objectContaining({
-        id: {
-          'ui:disabled': false,
-        },
-        'ui:submitButtonOptions': {
-          norender: true,
-        },
+        author: 'HiveMQ',
+        description:
+          'Without needing to configure real devices, simulate traffic from an edge device into HiveMQ Edge.',
+        id: 'simulation',
+        installed: true,
+        logoUrl: 'http://localhost:8080/images/hivemq-icon.png',
+        name: 'Simulated Edge Device',
+        protocol: 'Simulation',
       })
     )
   })
