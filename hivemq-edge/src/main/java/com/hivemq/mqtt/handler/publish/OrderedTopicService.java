@@ -73,8 +73,6 @@ public class OrderedTopicService {
         if (publishStatusFuture != null) {
             messageIdToFutureMap.remove(packetId);
             publishStatusFuture.set(PublishStatus.DELIVERED);
-        } else {
-            returnMessageId(ctx, packetId);
         }
 
         final boolean removed = unacknowledgedMessages.remove(packetId);
@@ -209,19 +207,6 @@ public class OrderedTopicService {
         return unacknowledgedMessages;
     }
 
-    private void returnMessageId(final @NotNull ChannelHandlerContext ctx, final int messageId) {
-
-        //Such a message ID must never be zero, but better be safe than sorry
-        if (messageId > 0) {
-            final ClientConnection clientConnection = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
-            final MessageIDPool messageIDPool = clientConnection.getMessageIDPool();
-            messageIDPool.returnId(messageId);
-            if (log.isTraceEnabled()) {
-                log.trace("Returning Message ID {} for client {}", messageId, clientConnection.getClientId());
-            }
-        }
-
-    }
 
     @Immutable
     @VisibleForTesting
