@@ -59,7 +59,7 @@ export interface ExportFormat {
   value: ExportFormat.Type
   formats?: string[]
   isDisabled?: (protocol?: ProtocolAdapter) => boolean
-  downloader?: (name: string, ext: string, source: Adapter) => void
+  downloader?: (name: string, ext: string, source: Adapter, protocol: ProtocolAdapter) => void
 }
 
 export interface ExportFormatDisplay extends ExportFormat {
