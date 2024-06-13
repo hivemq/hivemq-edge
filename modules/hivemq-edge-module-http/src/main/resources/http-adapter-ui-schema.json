@@ -40,14 +40,5 @@
   "httpRequestBody": {
     "ui:widget": "textarea"
   },
-  "ui:order": ["id", "host", "port", "*"],
-  "subscriptions": {
-    "ui:batchMode": true,
-    "items": {
-      "ui:order": ["destination", "qos", "*"],
-      "ui:collapsable": {
-        "titleKey": "destination"
-      }
-    }
-  }
+  "ui:order": ["id", "*"]
 }
