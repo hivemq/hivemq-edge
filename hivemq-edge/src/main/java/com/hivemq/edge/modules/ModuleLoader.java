@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -34,7 +33,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Singleton
 public class ModuleLoader {
     private static final Logger log = LoggerFactory.getLogger(ModuleLoader.class);
 
@@ -42,7 +40,6 @@ public class ModuleLoader {
     protected final @NotNull Set<EdgeModule> modules = new HashSet<>();
     private final @NotNull ClassServiceLoader classServiceLoader = new ClassServiceLoader();
 
-    @Inject
     public ModuleLoader(final @NotNull SystemInformation systemInformation) {
         this.systemInformation = systemInformation;
     }
@@ -93,7 +90,7 @@ public class ModuleLoader {
                     }
                     final IsolatedModuleClassloader isolatedClassloader =
                             new IsolatedModuleClassloader(urls.toArray(new URL[0]), parentClassloader);
-                    modules.add(new EdgeModule(files[i], isolatedClassloader));
+                    modules.add(new EdgeModule(files[i], isolatedClassloader, true));
                 } catch (final IOException ioException) {
                     log.warn("Exception with reason {} while reading module file {}",
                             ioException.getMessage(),
@@ -115,7 +112,7 @@ public class ModuleLoader {
                         log.debug("Found module jar in modules lib {}.", lib.getAbsolutePath());
                         final IsolatedModuleClassloader isolatedClassloader =
                                 new IsolatedModuleClassloader(new URL[]{lib.toURI().toURL()}, parentClassloader);
-                        modules.add(new EdgeModule(lib, isolatedClassloader));
+                        modules.add(new EdgeModule(lib, isolatedClassloader, true));
                     } else {
                         log.debug("Ignoring non jar file in module folder {}.", lib.getAbsolutePath());
                     }
@@ -154,15 +151,19 @@ public class ModuleLoader {
         return modules;
     }
 
+    public void clear() {
+        modules.clear();
+    }
+
     public static class EdgeModule {
 
         private File root;
         private final @NotNull ClassLoader classloader;
 
-        public EdgeModule(final @NotNull File root, final @NotNull ClassLoader classloader) {
+        public EdgeModule(final @NotNull File root, final @NotNull ClassLoader classloader, final boolean registerStaticResources) {
             this.classloader = classloader;
             this.root = root;
-            if (classloader != null) {
+            if (registerStaticResources) {
                 AlternativeClassloadingStaticFileHandler.addClassLoader(classloader);
             }
         }

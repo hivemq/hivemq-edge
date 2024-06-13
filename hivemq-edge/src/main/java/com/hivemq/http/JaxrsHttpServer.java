@@ -62,6 +62,7 @@ public class JaxrsHttpServer {
     static final String MAX_RESP_TIME = "sun.net.httpserver.maxRspTime";
     private static final Logger logger = LoggerFactory.getLogger(JaxrsHttpServer.class);
     private final @NotNull List<HttpServer> httpServers = new ArrayList<>();
+    private final @NotNull ShutdownHooks shutdownHooks;
     private final @NotNull List<JaxrsHttpServerConfiguration> configs;
     private final @Nullable ResourceConfig resourceConfig;
     private @Nullable JaxrsObjectMapperProvider objectMapperProvider;
@@ -72,6 +73,7 @@ public class JaxrsHttpServer {
             final @NotNull ShutdownHooks shutdownHooks,
             final @NotNull List<JaxrsHttpServerConfiguration> configs,
             final @Nullable ResourceConfig resourceConfig) {
+        this.shutdownHooks = shutdownHooks;
         this.configs = configs;
         this.resourceConfig = resourceConfig;
         shutdownHooks.add(new Shutdown());
@@ -181,7 +183,8 @@ public class JaxrsHttpServer {
                                 httpServer);
                         registerContext("/module/images",
                                 new AlternativeClassloadingStaticFileHandler(objectMapperProvider.getMapper(),
-                                        "httpd/images"),
+                                        "httpd/images",
+                                        shutdownHooks),
                                 httpServer);
 
 

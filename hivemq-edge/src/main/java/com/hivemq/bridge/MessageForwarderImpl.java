@@ -21,6 +21,8 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.hivemq.common.shutdown.HiveMQShutdownHook;
+import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -77,11 +79,23 @@ public class MessageForwarderImpl implements MessageForwarder {
             final @NotNull LocalTopicTree topicTree,
             final @NotNull HivemqId hivemqId,
             final @NotNull Lazy<ClientQueuePersistence> queuePersistence,
-            final @NotNull SingleWriterService singleWriterService) {
+            final @NotNull SingleWriterService singleWriterService,
+            final @NotNull ShutdownHooks shutdownHooks) {
         this.topicTree = topicTree;
         this.hivemqId = hivemqId;
         this.queuePersistence = queuePersistence;
         this.singleWriterService = singleWriterService;
+        shutdownHooks.add(new HiveMQShutdownHook() {
+            @Override
+            public @NotNull String name() {
+                return "MessageForwarder-Shutdown";
+            }
+
+            @Override
+            public void run() {
+                executorService.shutdown();
+            }
+        });
     }
 
     @Override
