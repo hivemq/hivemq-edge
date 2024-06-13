@@ -66,3 +66,10 @@ export interface ExportFormatDisplay extends ExportFormat {
   label: string
   description: string
 }
+
+export class AdapterExportError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AdapterExportError'
+  }
+}
