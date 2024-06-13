@@ -61,7 +61,7 @@ const ExportDrawer: FC = () => {
   const form = useForm<SelectedExportFormat>({
     mode: 'all',
     criteriaMode: 'all',
-    defaultValues: { content: ExportFormat.Type.SUBSCRIPTIONS },
+    defaultValues: { content: ExportFormat.Type.CONFIGURATION },
   })
   const watchFormatChange = form.watch('content')
 
