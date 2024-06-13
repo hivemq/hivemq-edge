@@ -4815,8 +4815,8 @@ components:
             description: The capabilities of this adapter
             enum:
               - READ
-              - WRITE
               - DISCOVER
+          uniqueItems: true
         category:
           $ref: '#/components/schemas/ProtocolAdapterCategory'
         configSchema:
@@ -5117,7 +5117,7 @@ components:
           description: The verifyHostname from the config
     TypeIdentifier:
       type: object
-      description: The type-identifier of the object who caused the event to be generated
+      description: The unique id of the event object
       properties:
         fullQualifiedIdentifier:
           type: string

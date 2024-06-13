@@ -3,7 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export const $TypeIdentifier = {
-    description: `The type-identifier of the object who caused the event to be generated`,
+    description: `The unique id of the event object`,
     properties: {
         fullQualifiedIdentifier: {
             type: 'string',
