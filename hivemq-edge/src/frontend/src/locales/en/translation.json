@@ -526,11 +526,11 @@
       "header": "Adapter Export",
       "form": {
         "content": {
-          "label": "Select the type of adapter export "
+          "label": "Type of export of the adapter"
         },
         "format": {
-          "label": "Select the file format ",
-          "aria-label": "Select the file format "
+          "label": "Select the file format of the output",
+          "aria-label": "File format"
         }
       },
       "action": {
@@ -538,15 +538,24 @@
       },
       "formats": {
         "label_CONFIGURATION": "Full configuration",
-        "description_CONFIGURATION": "This will export the whole configuration of the adapter, as a standalone JSON file",
+        "description_CONFIGURATION": "This will export the whole configuration of the adapter, as a standalone JSON file.",
         "label_SUBSCRIPTIONS": "Subscriptions",
-        "description_SUBSCRIPTIONS": "This will only export the subscriptions currently defined in the adapter, in a format suitable for batch processing"
+        "description_SUBSCRIPTIONS": "This will only export the subscriptions currently defined in the adapter, in a format suitable for batch processing.",
+        "notAvailable": "The format is not available for this adapter."
       },
       "mimeTypes": {
         ".json": "JSON format",
         ".xls": "Microsoft Excel",
         ".xlsx": "Microsoft Excel (OpenXML)",
         ".csv": "Comma-separated values (CSV)"
+      },
+      "download": {
+        "status_error": "Error in exporting adapter {{ name }}",
+        "status_success": "Adapter {{ name }} successfully downloaded "
+      },
+      "error": {
+        "noSubscription": "No subscription could be detected in the adapter configuration",
+        "noDataRows": "There are no subscription being defined in the adapter"
       }
     }
   },
