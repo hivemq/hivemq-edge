@@ -34,6 +34,6 @@ artifacts {
 
 node {
   download.set(true)
-  version = "16.14.2"
-  pnpmVersion = "8"
+  version.set("16.14.2")
+  pnpmVersion.set("8")
 }
