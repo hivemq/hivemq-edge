@@ -10,7 +10,15 @@ import { MOCK_PROTOCOL_SIMULATION, MOCK_ADAPTER_SIMULATION } from '@/__test-util
 import { MOCK_PROTOCOL_OPC_UA, MOCK_ADAPTER_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
 import { MOCK_PROTOCOL_HTTP, MOCK_ADAPTER_HTTP } from '@/__test-utils__/adapters/http.ts'
 
-import { discoverAdapterTopics, flattenObject, getBridgeTopics, getTopicPaths, mergeAllTopics } from './topics-utils.ts'
+import {
+  discoverAdapterTopics,
+  flattenObject,
+  getBridgeTopics,
+  getPropertiesFromPath,
+  getTopicPaths,
+  mergeAllTopics,
+} from './topics-utils.ts'
+import { mockJSONSchema } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 describe('getBridgeTopics', () => {
   it('should extract topics from a Bridge', async () => {
@@ -166,5 +174,33 @@ describe('mergeAllTopics', () => {
     const actual = mergeAllTopics(undefined, undefined, undefined)
 
     expect(actual).toStrictEqual([])
+  })
+})
+
+describe('getPropertiesFromPath', () => {
+  it('should work', () => {
+    expect(getPropertiesFromPath('test', undefined)).toStrictEqual(undefined)
+    expect(getPropertiesFromPath('test', { type: 'string' })).toStrictEqual(
+      expect.objectContaining({
+        type: 'string',
+      })
+    )
+    expect(getPropertiesFromPath('test.*', { type: 'string' })).toStrictEqual(undefined)
+    expect(getPropertiesFromPath('subscriptions.*.destination', mockJSONSchema)).toStrictEqual({
+      destination: {
+        description: 'The topic to publish data on',
+        format: 'mqtt-topic',
+        title: 'Destination Topic',
+        type: 'string',
+      },
+      qos: {
+        default: 0,
+        description: 'MQTT quality of service level',
+        maximum: 2,
+        minimum: 0,
+        title: 'QoS',
+        type: 'integer',
+      },
+    })
   })
 })
