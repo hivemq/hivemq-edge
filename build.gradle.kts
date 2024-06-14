@@ -47,6 +47,7 @@ tasks.register("testClasses") {
         dependsOn(it.task(":$name"))
     }
 }
+
 /* ******************** release tasks ******************** */
 
 val hivemq: Configuration by configurations.creating { isCanBeConsumed = false; isCanBeResolved = false }
