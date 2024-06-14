@@ -555,7 +555,7 @@
       },
       "error": {
         "noSubscription": "No subscription could be detected in the adapter configuration",
-        "noDataRows": "There are no subscription being defined in the adapter"
+        "noSchema": "There are no valid schema defining the extracted subscriptions"
       }
     }
   },
