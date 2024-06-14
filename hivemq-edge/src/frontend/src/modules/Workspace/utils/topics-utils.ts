@@ -1,8 +1,8 @@
 import { Adapter, Bridge, BridgeSubscription, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { GenericObjectType, RJSFSchema } from '@rjsf/utils'
+import { JSONSchema7 } from 'json-schema'
 
 import { CustomFormat } from '@/api/types/json-schema.ts'
-
 import { TopicFilter } from '../types.ts'
 
 export const TOPIC_PATH_ITEMS_TOKEN = '*'
@@ -53,6 +53,23 @@ export const getTopicPaths = (configSchema: RJSFSchema) => {
           .replace(/items\.properties/gi, TOPIC_PATH_ITEMS_TOKEN)
       )
   )
+}
+
+export const getPropertiesFromPath = (path: string, instance: JSONSchema7 | undefined): JSONSchema7 | undefined => {
+  const [property, ...rest] = path.split('.')
+
+  if (!instance) return undefined
+  if (!rest.length) {
+    // TODO[NVL] should we test that the path is a property of instance?
+    return instance
+  }
+
+  if (property === TOPIC_PATH_ITEMS_TOKEN) {
+    const { properties } = instance.items as JSONSchema7
+    return getPropertiesFromPath(rest.join('.'), properties)
+  }
+  const { properties } = instance as JSONSchema7
+  return getPropertiesFromPath(rest.join('.'), properties?.[property] as JSONSchema7)
 }
 
 const getTopicsFromPath = (path: string, instance: RJSFSchema): string[] => {
