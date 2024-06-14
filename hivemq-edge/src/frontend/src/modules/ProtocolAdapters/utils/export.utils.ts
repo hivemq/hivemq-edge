@@ -5,6 +5,7 @@ import { getPropertiesFromPath, getTopicPaths, TOPIC_PATH_ITEMS_TOKEN } from '@/
 import { AdapterExportError, ExportFormat } from '@/modules/ProtocolAdapters/types.ts'
 import { acceptMimeTypes } from '@/components/rjsf/BatchSubscription/utils/config.utils.ts'
 import { downloadJSON, downloadTimeStamp } from '@datahub/utils/download.utils.ts'
+import validator from '@rjsf/validator-ajv8'
 
 export const adapterExportFormats: ExportFormat[] = [
   {
@@ -31,24 +32,41 @@ export const adapterExportFormats: ExportFormat[] = [
 ]
 
 export const downloadTableData = (name: string, adapter: Adapter, protocol: ProtocolAdapter) => {
+  // Get the list of "mqtt topic" xPaths from the protocol
   const paths = getTopicPaths(protocol.configSchema || {})
 
-  // We are ignoring potential multiple sources of subscriptions
+  // Only get the first of the subscription arrays (we are ignoring many other sources of subscriptions)
   const subscriptionPath = paths.find((path) => path.includes(`.${TOPIC_PATH_ITEMS_TOKEN}.`))
   if (!subscriptionPath) throw new AdapterExportError('protocolAdapter.export.error.noSubscription')
 
+  // Extract the path to the containing array property
+  // TODO This is wrong: the "subscription" could be nested or the mqtt topic itself nested
+  //  (e.g. root.subscription.*.nested.*.destination or root.remote.*.subscription.destination)
   const subscription = subscriptionPath.split(`.${TOPIC_PATH_ITEMS_TOKEN}.`).shift()
   if (!subscription) throw new AdapterExportError('protocolAdapter.export.error.noSubscription')
 
-  // TODO[NVL] Data rows and columns' schema should ve validated [?]
+  // Get the JSON Schema of the item of the containing array property
+  const subscriptionSchema = getPropertiesFromPath(subscriptionPath, protocol.configSchema)
+  if (!subscriptionSchema) throw new AdapterExportError('protocolAdapter.export.error.noSchema')
 
+  // Get the data from the active adapter
+  // TODO This is wrong: the "subscription" might not be at the root. Use the xPath
   let rows: RJSFSchema[] | undefined = adapter.config?.[subscription] as RJSFSchema[] | undefined
-  if (!rows?.length) {
-    const subscriptionSchema = getPropertiesFromPath(subscriptionPath, protocol.configSchema)
-    if (!subscriptionSchema) throw new AdapterExportError('protocolAdapter.export.error.noSchema')
 
+  if (!rows?.length) {
+    // if empty, build a dummy row
+    // TODO This is wrong: cells should be matching the types
     const entries = Object.keys(subscriptionSchema).map((property) => [property, ''])
     rows = [Object.fromEntries(entries)]
+  } else {
+    // Validate the extracted data to the extracted  schema
+    const validate = validator.ajv.compile({
+      type: 'array',
+      // TODO This is wrong: required is missing. The extraction of the item's JSONSchema is not working. Get definitions!
+      items: { properties: subscriptionSchema },
+    })
+    const isValid = validate(rows)
+    if (!isValid) throw new AdapterExportError('protocolAdapter.export.error.notValid')
   }
 
   // generate worksheet and workbook
