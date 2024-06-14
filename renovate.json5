@@ -98,6 +98,14 @@
             "ignoreUnstable": false,
             "enabled": false
         },
+        // 1.0.88 is the version that compiles with the current data hub
+        {
+            "matchPackagePrefixes": [
+                "com.networknt"
+            ],
+            "matchCurrentVersion": "[1.0.88,)",
+            "allowedVersions": "<=1.0.88"
+        },
         // 8.14.3 is the latest version that still has the Apache v2 license. So, we can't upgrade to versions greater than that.
         {
             "matchPackagePrefixes": [
