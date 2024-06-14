@@ -192,7 +192,7 @@ dependencies {
     implementation("org.bouncycastle:bcprov-jdk15on")
 
     //json schema
-    implementation("com.networknt:json-schema-validator:1.0.84")
+    implementation("com.networknt:json-schema-validator:1.0.88")
     implementation("com.github.victools:jsonschema-generator:4.35.0")
     implementation("com.github.victools:jsonschema-module-jackson:4.35.0")
 }
