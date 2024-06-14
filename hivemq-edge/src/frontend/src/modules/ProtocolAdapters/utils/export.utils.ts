@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx'
+import { RJSFSchema } from '@rjsf/utils'
 import { Adapter, JsonNode, ProtocolAdapter } from '@/api/__generated__'
-import { getTopicPaths, TOPIC_PATH_ITEMS_TOKEN } from '@/modules/Workspace/utils/topics-utils.ts'
+import { getPropertiesFromPath, getTopicPaths, TOPIC_PATH_ITEMS_TOKEN } from '@/modules/Workspace/utils/topics-utils.ts'
 import { AdapterExportError, ExportFormat } from '@/modules/ProtocolAdapters/types.ts'
 import { acceptMimeTypes } from '@/components/rjsf/BatchSubscription/utils/config.utils.ts'
 import { downloadJSON, downloadTimeStamp } from '@datahub/utils/download.utils.ts'
@@ -32,14 +33,18 @@ export const downloadTableData = (name: string, adapter: Adapter, protocol: Prot
   const subscriptionPath = paths.find((path) => path.includes(`.${TOPIC_PATH_ITEMS_TOKEN}.`))
   if (!subscriptionPath) throw new AdapterExportError('protocolAdapter.export.error.noSubscription')
 
-  // TODO[NVL] Technically the subscription could be deeper in the object
   const subscription = subscriptionPath.split(`.${TOPIC_PATH_ITEMS_TOKEN}.`).shift()
   if (!subscription) throw new AdapterExportError('protocolAdapter.export.error.noSubscription')
 
-  const rows = ((adapter.config?.[subscription] as JsonNode[]) || []) satisfies JsonNode[]
-  if (!rows.length) {
-    // Columns should be set
-    throw new AdapterExportError('protocolAdapter.export.error.noDataRows')
+  // TODO[NVL] Data rows and columns' schema should ve validated [?]
+
+  let rows: RJSFSchema[] | undefined = adapter.config?.[subscription] as RJSFSchema[] | undefined
+  if (!rows?.length) {
+    const subscriptionSchema = getPropertiesFromPath(subscriptionPath, protocol.configSchema)
+    if (!subscriptionSchema) throw new AdapterExportError('protocolAdapter.export.error.noSchema')
+
+    const entries = Object.keys(subscriptionSchema).map((property) => [property, ''])
+    rows = [Object.fromEntries(entries)]
   }
 
   // generate worksheet and workbook
@@ -54,6 +59,8 @@ export const downloadTableData = (name: string, adapter: Adapter, protocol: Prot
     })
   }, [])
   worksheet['!cols'] = colSizes.map((width) => ({ wch: width }))
+
+  // TODO[NVL] With xlsx output, we should be able to define type and enums for the columns!
 
   // create the output file, type based on extension
   XLSX.writeFile(workbook, name, { compression: true })
