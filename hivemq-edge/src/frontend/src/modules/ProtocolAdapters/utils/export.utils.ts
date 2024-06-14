@@ -10,7 +10,10 @@ export const adapterExportFormats: ExportFormat[] = [
   {
     value: ExportFormat.Type.CONFIGURATION,
     formats: ['.json'],
-    downloader: (name, _, source) => downloadJSON<JsonNode>(name, source),
+    downloader: (name, _ext, source, _protocol, callback) => {
+      downloadJSON<JsonNode>(name, source)
+      callback?.()
+    },
   },
   {
     value: ExportFormat.Type.SUBSCRIPTIONS,
@@ -20,8 +23,9 @@ export const adapterExportFormats: ExportFormat[] = [
       const paths = getTopicPaths(protocol.configSchema || {})
       return !paths.some((path) => path.includes(`.${TOPIC_PATH_ITEMS_TOKEN}.`))
     },
-    downloader: (name, ext, source, protocol) => {
+    downloader: (name, ext, source, protocol, callback) => {
       downloadTableData(`${name}-${downloadTimeStamp()}${ext}`, source, protocol)
+      callback?.()
     },
   },
 ]
