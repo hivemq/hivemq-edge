@@ -31,7 +31,8 @@ export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps<unknown, RJSFSchema,
   const ArrayFieldItemTemplate = getTemplate<'ArrayFieldItemTemplate'>('ArrayFieldItemTemplate', registry, uiOptions)
   const ArrayFieldTitleTemplate = getTemplate<'ArrayFieldTitleTemplate'>('ArrayFieldTitleTemplate', registry, uiOptions)
 
-  const { onBatchUpload } = formContext || {}
+  const { onBatchUpload, isEditAdapter } = formContext || {}
+
   return (
     <Box>
       <ArrayFieldTitleTemplate
@@ -71,7 +72,7 @@ export const ArrayFieldTemplate: FC<ArrayFieldTemplateProps<unknown, RJSFSchema,
               uiSchema={uiSchema}
               registry={registry}
             />
-            {uiOptions.batchMode && onBatchUpload && (
+            {uiOptions.batchMode && onBatchUpload && isEditAdapter && (
               <BatchUploadButton idSchema={idSchema} schema={schema} onBatchUpload={onBatchUpload} />
             )}
           </HStack>

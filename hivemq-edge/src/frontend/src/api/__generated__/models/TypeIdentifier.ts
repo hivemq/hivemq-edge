@@ -4,7 +4,7 @@
 /* eslint-disable */
 
 /**
- * The type-identifier of the object who caused the event to be generated
+ * The unique id of the event object
  */
 export type TypeIdentifier = {
     fullQualifiedIdentifier?: string;

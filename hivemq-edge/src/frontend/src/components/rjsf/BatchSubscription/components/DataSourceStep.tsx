@@ -19,10 +19,11 @@ const getDropZoneBorder = (color: string) => {
   }
 }
 
-const DataSourceStep: FC<StepRendererProps> = ({ onContinue }) => {
+const DataSourceStep: FC<StepRendererProps> = ({ onContinue, store }) => {
   const { t } = useTranslation('components')
   const toast = useToast()
   const [loading, setLoading] = useState(false)
+  const { fileName } = store
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     noClick: true,
     noKeyboard: true,
@@ -89,6 +90,7 @@ const DataSourceStep: FC<StepRendererProps> = ({ onContinue }) => {
       {loading && <Text>{t('rjsf.batchUpload.dropZone.loading')}</Text>}
       {!isDragActive && !loading && (
         <>
+          {fileName && <Text mb={4}>{t('rjsf.batchUpload.dropZone.currentlyLoaded', { fileName: fileName })}</Text>}
           <Text>{t('rjsf.batchUpload.dropZone.placeholder')}</Text>
           <Button onClick={open}>{t('rjsf.batchUpload.dropZone.selectFile')}</Button>
         </>

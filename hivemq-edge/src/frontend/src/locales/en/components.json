@@ -107,6 +107,7 @@
         }
       },
       "dropZone": {
+        "currentlyLoaded": "File currently loaded : {{ fileName }}",
         "placeholder": "Upload a .xlsx, .xls or .csv file",
         "dropping": "Drop a file here ...",
         "loading": "Processing ...",
