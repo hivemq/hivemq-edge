@@ -134,11 +134,11 @@ const ExportDrawer: FC = () => {
       <DrawerOverlay />
       <DrawerContent aria-label={t('protocolAdapter.export.header')}>
         <DrawerCloseButton />
-        <DrawerHeader id="adapter-discovery-header" borderBottomWidth="1px">
-          <Text>{t('protocolAdapter.export.header')}</Text>
+        <DrawerHeader borderBottomWidth="1px">
+          <Text data-testid="adapter-export-title">{t('protocolAdapter.export.header')}</Text>
           <HStack>
             <Image boxSize="30px" objectFit="scale-down" src={logoUrl} aria-label={name} />
-            <Text fontSize="md" fontWeight="500">
+            <Text data-testid="adapter-export-type" fontSize="md" fontWeight="500">
               {name}
             </Text>
           </HStack>
@@ -195,7 +195,7 @@ const ExportDrawer: FC = () => {
                       {...rest}
                       id="field-format"
                       isDisabled={formatOptions.length === 1}
-                      // instanceId={`mapping.${index}.column`}
+                      instanceId="field-format.toto"
                       aria-label={t('protocolAdapter.export.form.format.aria-label')}
                       onChange={(e) => onChange(e?.value)}
                       value={{ label: value, value, description: '' }}

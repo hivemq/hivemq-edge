@@ -19,13 +19,42 @@ describe('ExportDrawer', () => {
     cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] })
   })
 
+  it('should render the form', () => {
+    cy.mountWithProviders(<ExportDrawer />, {
+      wrapper: Wrapper,
+      routerProps: { initialEntries: [`/protocol-adapters/${MOCK_ADAPTER_ID}/export`] },
+    })
+
+    cy.getByTestId('adapter-export-title').should('contain.text', 'Adapter Export')
+    cy.getByTestId('adapter-export-type').should('contain.text', 'Simulated Edge Device')
+
+    cy.getByTestId('field-content-options').find('label').as('options')
+    cy.get('@options').should('have.length', 2)
+    cy.get('@options').eq(0).should('contain.text', 'Full configuration')
+    cy.get('@options').eq(1).should('contain.text', 'Subscriptions')
+
+    cy.getByTestId('field-format-label').should('contain.text', 'Select the file format of the output')
+    cy.get('#field-format').should('contain.text', '.json')
+
+    cy.get('@options').eq(1).click()
+    cy.get('#field-format').should('contain.text', '.xlsx')
+  })
+
   it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<ExportDrawer />, {
       wrapper: Wrapper,
       routerProps: { initialEntries: [`/protocol-adapters/${MOCK_ADAPTER_ID}/export`] },
     })
-    cy.checkAccessibility()
+
+    cy.getByTestId('field-content-options').find('label').eq(1).click()
+    cy.get('#field-format').click()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        // TODO[NVL] ReactSelect not tagging properly the listbox
+        'aria-input-field-name': { enabled: false },
+      },
+    })
     cy.percySnapshot('Component: ExportDrawer')
   })
 })
