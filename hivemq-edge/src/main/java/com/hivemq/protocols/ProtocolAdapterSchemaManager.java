@@ -98,7 +98,7 @@ public class ProtocolAdapterSchemaManager {
 
     static ProtocolAdapterValidationFailure convertMessage(ValidationMessage validationMessage) {
         return new ProtocolAdapterValidationFailureImpl(validationMessage.getMessage(),
-                validationMessage.getPath(),
+                validationMessage.getEvaluationPath().toString(),
                 validationMessage.getClass());
     }
 
