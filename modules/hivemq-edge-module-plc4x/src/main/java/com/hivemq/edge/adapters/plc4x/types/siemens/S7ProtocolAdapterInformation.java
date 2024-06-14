@@ -74,7 +74,7 @@ public class S7ProtocolAdapterInformation implements ProtocolAdapterInformation 
 
     @Override
     public @NotNull String getLogoUrl() {
-        return "/images/s8-icon.png";
+        return "/images/s7-icon.png";
 
     }
 
