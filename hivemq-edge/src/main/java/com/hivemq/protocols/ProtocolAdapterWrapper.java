@@ -18,6 +18,8 @@ package com.hivemq.protocols;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
+import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -26,6 +28,8 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+
+import java.util.concurrent.CompletableFuture;
 
 public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements ProtocolAdapter {
 
@@ -63,6 +67,13 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements Protoc
     @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapter.getProtocolAdapterInformation();
+    }
+
+    @Override
+    public @NotNull CompletableFuture<Void> discoverValues(
+            @NotNull final ProtocolAdapterDiscoveryInput input,
+            @NotNull final ProtocolAdapterDiscoveryOutput output) {
+        return adapter.discoverValues(input, output);
     }
 
     public @NotNull ProtocolAdapterState.ConnectionStatus getConnectionStatus() {
