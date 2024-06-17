@@ -373,3 +373,9 @@ export enum PolicyDryRunStatus {
   SUCCESS = 'SUCCESS',
   FAILURE = 'FAILURE',
 }
+
+export interface ValidDropConnection {
+  type: DataHubNodeType
+  handle: string | null
+  isSource: boolean
+}

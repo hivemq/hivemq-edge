@@ -1,5 +1,7 @@
+/* istanbul ignore next -- @preserve */
 export const TLS_PROTOCOLS: string[] = ['TLSv1.3', 'TLSv1.2', 'TLSv1.1', 'TLSv1.0']
 
+/* istanbul ignore next -- @preserve */
 export const DEFAULT_CYPHER_SUITES: string[] = [
   'TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384',
   'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256',
@@ -11,6 +13,7 @@ export const DEFAULT_CYPHER_SUITES: string[] = [
   'TLS_RSA_WITH_AES_256_CBC_SHA',
 ]
 
+/* istanbul ignore next -- @preserve */
 export const CYPHER_SUITES: string[] = [
   'TLS_AES_256_GCM_SHA384',
   'TLS_AES_128_GCM_SHA256',

@@ -4,7 +4,12 @@ import { EdgeAddChange, Node, Edge, Rect } from 'reactflow'
 
 import { Group, IdStubs, NodeTypes, WorkspaceAction, WorkspaceState } from '../types.ts'
 import useWorkspaceStore from './useWorkspaceStore.ts'
-import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_EDGE } from '@/__test-utils__/react-flow/nodes.ts'
+import {
+  MOCK_NODE_ADAPTER,
+  MOCK_NODE_BRIDGE,
+  MOCK_NODE_EDGE,
+  MOCK_NODE_GROUP,
+} from '@/__test-utils__/react-flow/nodes.ts'
 
 describe('useWorkspaceStore', () => {
   beforeEach(() => {
@@ -96,6 +101,108 @@ describe('useWorkspaceStore', () => {
     )
     expect(result.current.nodes.find((e) => e.id === 'idBridge')).toStrictEqual(
       expect.objectContaining({ parentNode: 'group1', selected: false, expandParent: true })
+    )
+  })
+
+  it('should add a node', async () => {
+    const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useWorkspaceStore)
+    expect(result.current.nodes).toHaveLength(0)
+    expect(result.current.edges).toHaveLength(0)
+
+    act(() => {
+      const { onAddNodes } = result.current
+      const item: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+      onAddNodes([{ item, type: 'add' }])
+    })
+
+    expect(result.current.nodes).toHaveLength(1)
+    expect(result.current.edges).toHaveLength(0)
+  })
+
+  it('should add an edge', async () => {
+    const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useWorkspaceStore)
+    expect(result.current.nodes).toHaveLength(0)
+    expect(result.current.edges).toHaveLength(0)
+
+    act(() => {
+      const { onAddEdges } = result.current
+      const item: Partial<Edge> = { id: '1-2', source: '1', target: '2' }
+      onAddEdges([{ item, type: 'add' } as EdgeAddChange])
+    })
+
+    expect(result.current.nodes).toHaveLength(0)
+    expect(result.current.edges).toHaveLength(1)
+  })
+
+  it('should delete a node', async () => {
+    const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useWorkspaceStore)
+    expect(result.current.nodes).toHaveLength(0)
+    expect(result.current.edges).toHaveLength(0)
+
+    act(() => {
+      const { onNodesChange } = result.current
+      const item: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+      onNodesChange([{ item, type: 'add' }])
+    })
+
+    expect(result.current.nodes).toHaveLength(1)
+    expect(result.current.edges).toHaveLength(0)
+
+    act(() => {
+      const { onDeleteNode } = result.current
+      onDeleteNode(NodeTypes.ADAPTER_NODE, MOCK_NODE_ADAPTER.data.id)
+    })
+
+    expect(result.current.nodes).toHaveLength(0)
+    expect(result.current.edges).toHaveLength(0)
+  })
+
+  it.skip('should toggle a group', async () => {
+    // TODO
+  })
+
+  it('should change the data of a group', async () => {
+    const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useWorkspaceStore)
+    expect(result.current.nodes).toHaveLength(0)
+    expect(result.current.edges).toHaveLength(0)
+
+    act(() => {
+      const { onAddNodes } = result.current
+      const item: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+      const group: Node<Group> = { ...MOCK_NODE_GROUP, position: { x: 0, y: 0 } }
+      onAddNodes([
+        { item, type: 'add' },
+        { item: group, type: 'add' },
+      ])
+    })
+    expect(result.current.nodes).toHaveLength(2)
+    expect(result.current.edges).toHaveLength(0)
+    expect(result.current.nodes[1]).toStrictEqual(
+      expect.objectContaining({
+        id: 'idGroup',
+        type: 'CLUSTER_NODE',
+        data: expect.objectContaining({
+          title: 'The group title',
+        }),
+      })
+    )
+
+    act(() => {
+      const { onGroupSetData } = result.current
+      onGroupSetData('idGroup', { title: 'a new title', colorScheme: 'green' })
+    })
+
+    expect(result.current.nodes).toHaveLength(2)
+    expect(result.current.edges).toHaveLength(0)
+    expect(result.current.nodes[1]).toStrictEqual(
+      expect.objectContaining({
+        id: 'idGroup',
+        type: 'CLUSTER_NODE',
+        data: expect.objectContaining({
+          title: 'a new title',
+          colorScheme: 'green',
+        }),
+      })
     )
   })
 })

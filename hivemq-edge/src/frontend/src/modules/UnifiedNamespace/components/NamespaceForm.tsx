@@ -17,7 +17,7 @@ import { $ISA95ApiBean, ISA95ApiBean } from '@/api/__generated__'
 import { useValidationRules } from '@/api/hooks/useValidationRules/useValidationRules.ts'
 
 import NamespaceDisplay from './NamespaceDisplay.tsx'
-import { NAMESPACE_SEPARATOR } from '../namespace-utils.ts'
+import { NAMESPACE_SEPARATOR } from '../utils/namespace.utils.ts'
 
 interface NamespaceFormProps {
   defaultValues: ISA95ApiBean

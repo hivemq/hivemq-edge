@@ -9,7 +9,14 @@ import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
 import { IdStubs, NodeTypes } from '../types.ts'
-import { createAdapterNode, createBridgeNode, createEdgeNode, createListenerNode } from './nodes-utils.ts'
+import {
+  createAdapterNode,
+  createBridgeNode,
+  createEdgeNode,
+  createListenerNode,
+  getDefaultMetricsFor,
+} from './nodes-utils.ts'
+import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_EDGE } from '@/__test-utils__/react-flow/nodes.ts'
 
 describe('createEdgeNode', () => {
   it('should create a default Edge node', async () => {
@@ -187,5 +194,17 @@ describe('createAdapterNode', () => {
     }
 
     expect(actual).toStrictEqual(expect.objectContaining(expected))
+  })
+})
+
+describe('getDefaultMetricsFor', () => {
+  it('should return the default metrics', async () => {
+    expect(getDefaultMetricsFor({ ...MOCK_NODE_EDGE, position: { x: 0, y: 0 } })).toStrictEqual([])
+    expect(getDefaultMetricsFor({ ...MOCK_NODE_BRIDGE, position: { x: 0, y: 0 } })).toStrictEqual([
+      'com.hivemq.edge.bridge.bridge-id-01.forward.publish.count',
+    ])
+    expect(getDefaultMetricsFor({ ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } })).toStrictEqual([
+      'com.hivemq.edge.protocol-adapters.simulation.my-adapter.read.publish.success.count',
+    ])
   })
 })

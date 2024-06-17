@@ -5,15 +5,28 @@ import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 import { DataPolicyValidator } from '@/api/__generated__'
 import { MOCK_JSONSCHEMA_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
 import {
+  canDeleteEdge,
+  canDeleteNode,
   ConnectableHandleProps,
   getAllParents,
+  getConnectedNodeFrom,
   getNodeId,
   getNodePayload,
   isNodeHandleConnectable,
   isValidPolicyConnection,
   reduceIdsFrom,
 } from '@datahub/utils/node.utils.ts'
-import { DataHubNodeType, DataPolicyData, OperationData, SchemaType, StrategyType } from '@datahub/types.ts'
+import {
+  BehaviorPolicyData,
+  DataHubNodeType,
+  DataPolicyData,
+  DesignerStatus,
+  OperationData,
+  SchemaType,
+  StrategyType,
+  TransitionData,
+  ValidDropConnection,
+} from '@datahub/types.ts'
 
 describe('getNodeId', () => {
   it('should return the initial state of the store', async () => {
@@ -393,4 +406,255 @@ describe('isNodeHandleConnectable', () => {
     expect(isNodeHandleConnectable({ ...handle, isConnectable: 2 }, nodes[2], edges)).toBeFalsy()
     expect(isNodeHandleConnectable({ ...handle, isConnectable: 3 }, nodes[2], edges)).toBeTruthy()
   })
+})
+
+describe('canDeleteEdge', () => {
+  it('should prevent illegal deletions', async () => {
+    const allNodes: Node[] = [
+      {
+        id: 'target-dataPolicy',
+        type: DataHubNodeType.DATA_POLICY,
+        data: {},
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: 'source-TopicFilter',
+        type: DataHubNodeType.TOPIC_FILTER,
+        data: {},
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: 'node-operation1',
+        data: { id: 'second-id' },
+        type: DataHubNodeType.OPERATION,
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: 'node-operation2',
+        data: { id: 'third-id' },
+        type: DataHubNodeType.OPERATION,
+        position: { x: 0, y: 0 },
+      },
+    ]
+    const edge: Edge[] = [
+      {
+        id: '1',
+        source: 'source-TopicFilter',
+        target: 'target-dataPolicy',
+        sourceHandle: null,
+        targetHandle: null,
+      },
+      {
+        id: '2',
+        source: 'node-operation1',
+        target: 'node-operation2',
+        sourceHandle: null,
+        targetHandle: null,
+      },
+    ]
+
+    expect(canDeleteEdge(edge[0], allNodes, DesignerStatus.DRAFT)).toStrictEqual({ delete: true })
+    expect(canDeleteEdge(edge[0])).toStrictEqual({ delete: true })
+    expect(canDeleteEdge(edge[0], allNodes, DesignerStatus.MODIFIED)).toStrictEqual({
+      delete: false,
+      error: 'Topic filter cannot be modified once published',
+    })
+    expect(canDeleteEdge(edge[1])).toStrictEqual({ delete: true })
+  })
+})
+
+describe('canDeleteNode', () => {
+  it('should prevent illegal deletions', async () => {
+    const allNodes: Node[] = [
+      {
+        id: 'target-dataPolicy',
+        type: DataHubNodeType.DATA_POLICY,
+        data: {},
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: 'source-TopicFilter',
+        type: DataHubNodeType.TOPIC_FILTER,
+        data: {},
+        position: { x: 0, y: 0 },
+      },
+      {
+        id: 'node-behaviorPolicy',
+        data: {},
+        type: DataHubNodeType.BEHAVIOR_POLICY,
+        position: { x: 0, y: 0 },
+      },
+    ]
+
+    expect(canDeleteNode(allNodes[1], DesignerStatus.DRAFT)).toStrictEqual({ delete: true })
+    expect(canDeleteNode(allNodes[1], DesignerStatus.MODIFIED)).toStrictEqual({
+      delete: false,
+      error: 'Topic filter cannot be modified once published',
+    })
+    expect(canDeleteNode(allNodes[0], DesignerStatus.MODIFIED)).toStrictEqual({
+      delete: false,
+      error: 'Policy node cannot be deleted once published',
+    })
+    expect(canDeleteNode(allNodes[2], DesignerStatus.MODIFIED)).toStrictEqual({
+      delete: false,
+      error: 'Policy node cannot be deleted once published',
+    })
+  })
+})
+
+interface ConnectionTest {
+  node?: string
+  handle?: string | null
+  result: Partial<ValidDropConnection> | undefined
+}
+
+const connectionTestSuite: ConnectionTest[] = [
+  {
+    node: DataHubNodeType.TOPIC_FILTER,
+    result: {
+      type: DataHubNodeType.DATA_POLICY,
+    },
+  },
+  {
+    node: DataHubNodeType.CLIENT_FILTER,
+    result: {
+      type: DataHubNodeType.BEHAVIOR_POLICY,
+    },
+  },
+  {
+    node: DataHubNodeType.DATA_POLICY,
+    handle: DataPolicyData.Handle.TOPIC_FILTER,
+    result: {
+      type: DataHubNodeType.TOPIC_FILTER,
+    },
+  },
+  {
+    node: DataHubNodeType.DATA_POLICY,
+    handle: DataPolicyData.Handle.VALIDATION,
+    result: {
+      type: DataHubNodeType.VALIDATOR,
+    },
+  },
+  {
+    node: DataHubNodeType.DATA_POLICY,
+    handle: DataPolicyData.Handle.ON_SUCCESS,
+    result: {
+      type: DataHubNodeType.OPERATION,
+    },
+  },
+  {
+    node: DataHubNodeType.DATA_POLICY,
+    handle: DataPolicyData.Handle.ON_ERROR,
+    result: {
+      type: DataHubNodeType.OPERATION,
+    },
+  },
+
+  {
+    node: DataHubNodeType.VALIDATOR,
+    handle: 'source',
+    result: {
+      type: DataHubNodeType.DATA_POLICY,
+    },
+  },
+  {
+    node: DataHubNodeType.VALIDATOR,
+    handle: 'target',
+    result: {
+      type: DataHubNodeType.SCHEMA,
+    },
+  },
+  {
+    node: DataHubNodeType.SCHEMA,
+    result: undefined,
+  },
+  {
+    node: DataHubNodeType.OPERATION,
+    handle: OperationData.Handle.OUTPUT,
+    result: {
+      type: DataHubNodeType.OPERATION,
+      handle: OperationData.Handle.INPUT,
+    },
+  },
+  {
+    node: DataHubNodeType.OPERATION,
+    handle: OperationData.Handle.INPUT,
+    result: {
+      type: DataHubNodeType.OPERATION,
+      handle: OperationData.Handle.OUTPUT,
+    },
+  },
+  {
+    node: DataHubNodeType.OPERATION,
+    handle: OperationData.Handle.SCHEMA,
+    result: {
+      type: DataHubNodeType.SCHEMA,
+    },
+  },
+  {
+    node: DataHubNodeType.OPERATION,
+    handle: OperationData.Handle.SERIALISER,
+    result: {
+      type: DataHubNodeType.SCHEMA,
+    },
+  },
+  {
+    node: DataHubNodeType.OPERATION,
+    handle: OperationData.Handle.DESERIALISER,
+    result: {
+      type: DataHubNodeType.SCHEMA,
+    },
+  },
+  {
+    node: DataHubNodeType.OPERATION,
+    handle: OperationData.Handle.FUNCTION,
+    result: {
+      type: DataHubNodeType.FUNCTION,
+    },
+  },
+  {
+    node: DataHubNodeType.FUNCTION,
+    result: undefined,
+  },
+  {
+    node: DataHubNodeType.BEHAVIOR_POLICY,
+    handle: BehaviorPolicyData.Handle.CLIENT_FILTER,
+    result: {
+      type: DataHubNodeType.CLIENT_FILTER,
+    },
+  },
+  {
+    node: DataHubNodeType.BEHAVIOR_POLICY,
+    handle: BehaviorPolicyData.Handle.TRANSITIONS,
+    result: {
+      type: DataHubNodeType.TRANSITION,
+    },
+  },
+  {
+    node: DataHubNodeType.TRANSITION,
+    handle: TransitionData.Handle.BEHAVIOR_POLICY,
+    result: {
+      type: DataHubNodeType.BEHAVIOR_POLICY,
+    },
+  },
+  {
+    node: DataHubNodeType.TRANSITION,
+    handle: TransitionData.Handle.OPERATION,
+    result: {
+      type: DataHubNodeType.OPERATION,
+    },
+  },
+  {
+    node: DataHubNodeType.INTERNAL,
+    result: undefined,
+  },
+]
+
+describe('getConnectedNodeFrom', () => {
+  it.each<ConnectionTest>(connectionTestSuite)(
+    'should return a $result.type with $node + $handle',
+    ({ node, handle, result }) => {
+      expect(getConnectedNodeFrom(node, handle)).toStrictEqual(result ? expect.objectContaining(result) : undefined)
+    }
+  )
 })
