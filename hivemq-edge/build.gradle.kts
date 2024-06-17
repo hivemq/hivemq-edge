@@ -28,7 +28,7 @@ plugins {
     id("pmd")
     id("com.github.spotbugs")
     id("de.thetaphi.forbiddenapis")
-    id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.21"
+    id("io.swagger.core.v3.swagger-gradle-plugin") version "2.2.22"
     id("com.hivemq.edge-version-updater")
 }
 
