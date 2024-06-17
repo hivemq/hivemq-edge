@@ -51,6 +51,9 @@ import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
 import com.hivemq.protocols.ProtocolAdapterWrapper;
 import com.hivemq.protocols.params.NodeTreeImpl;
+import com.hivemq.util.ErrorResponseUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
@@ -60,9 +63,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdaptersResourceImpl.class);
 
     private final @NotNull HiveMQEdgeRemoteService remoteService;
     private final @NotNull ConfigurationService configurationService;
@@ -196,11 +202,18 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     return (depth != null && depth > 0) ? depth : 1;
                 }
 
-            }, output);
+            }, output).get();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            log.warn("Exception occurred during discovery for adapter '{}'", adapterId, cause);
+            return ErrorResponseUtil.genericError("Exception during discovery.");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Thread was interrupted during discovery for adapter '{}'", adapterId);
+            return ErrorResponseUtil.genericError("Exception during discovery.");
         } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
-
         final NodeTreeImpl nodeTree = output.getNodeTree();
         final List<NodeTreeImpl.ObjectNode> children = nodeTree.getRootNode().getChildren();
         return Response.status(200).entity(new ValuesTree(children)).build();
