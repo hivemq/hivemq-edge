@@ -94,6 +94,9 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
 
   const context: AdapterContext = {
     isEditAdapter: !isNewAdapter,
+    isDiscoverable: isDiscoverable,
+    adapterType: adapterType,
+    adapterId: adapterId,
     onBatchUpload: (idSchema: IdSchema<unknown>, batch) => {
       const path = idSchema.$id.replace('root_', '/').replaceAll('_', '/') + '/-'
       const operations: JSONPatchDocument = batch.map<JSONPatchAdd>((value) => ({ op: 'add', path, value }))
