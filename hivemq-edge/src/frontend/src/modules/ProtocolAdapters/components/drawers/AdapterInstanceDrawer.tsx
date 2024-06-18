@@ -33,7 +33,7 @@ import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
 import { customFormatsValidator, customValidate } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
-import { getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
+import { adapterJSFWidgets, getRequiredUiSchema } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 interface AdapterInstanceDrawerProps {
@@ -149,6 +149,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                   customValidate={customValidate(schema, allAdapters, t)}
                   transformErrors={filterUnboundErrors}
                   formContext={context}
+                  widgets={adapterJSFWidgets}
                 />
               )}
             </DrawerBody>
