@@ -3,7 +3,16 @@ import { UiSchema } from '@rjsf/utils'
 
 import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
-import { Adapter, AdaptersList, JsonNode, ProtocolAdapter, ProtocolAdaptersList, Status } from '@/api/__generated__'
+import {
+  Adapter,
+  AdaptersList,
+  JsonNode,
+  ObjectNode,
+  ProtocolAdapter,
+  ProtocolAdaptersList,
+  Status,
+  type ValuesTree,
+} from '@/api/__generated__'
 
 export const mockUISchema: UiSchema = {
   'ui:tabs': [
@@ -136,6 +145,104 @@ export const mockAdapter: Adapter = {
   },
 }
 
+export const mockDataPointOPCUA: ValuesTree = {
+  items: [
+    {
+      id: 'i=85',
+      name: 'Object',
+      description:
+        'The Apollotech B340 is an affordable wireless mouse with reliable connectivity, 12 months battery life and modern design',
+      nodeType: ObjectNode.nodeType.FOLDER,
+      selectable: false,
+      children: [
+        {
+          id: 'ns=3;s=85/0:Simulation',
+          name: 'Simulation',
+          description:
+            'Andy shoes are designed to keeping in mind durability as well as trends, the most stylish range of shoes & sandals',
+          nodeType: ObjectNode.nodeType.FOLDER,
+          selectable: false,
+          children: [
+            {
+              id: 'ns=3;i=1001',
+              name: 'Constant',
+              description:
+                'New range of formal shirts are designed keeping you in mind. With fits and styling that will make you stand apart',
+              nodeType: ObjectNode.nodeType.VALUE,
+              selectable: true,
+            },
+            {
+              id: 'ns=3;i=1002',
+              name: 'Counter',
+              description: 'Carbonite web goalkeeper gloves are ergonomically designed to give easy fit',
+              nodeType: ObjectNode.nodeType.VALUE,
+              selectable: true,
+            },
+            {
+              id: 'ns=3;i=1003',
+              name: 'Random',
+              description:
+                'The automobile layout consists of a front-engine design, with transaxle-type transmissions mounted at the rear of the engine and four wheel drive',
+              nodeType: ObjectNode.nodeType.VALUE,
+              selectable: true,
+            },
+            {
+              id: 'ns=3;i=1004',
+              name: 'SawTooth',
+              description:
+                'Ergonomic executive chair upholstered in bonded black leather and PVC padded seat and back for all-day comfort and support',
+              nodeType: ObjectNode.nodeType.VALUE,
+              selectable: true,
+            },
+            {
+              id: 'ns=3;i=1007',
+              name: 'NewValues',
+              description:
+                'Andy shoes are designed to keeping in mind durability as well as trends, the most stylish range of shoes & sandals',
+              nodeType: ObjectNode.nodeType.FOLDER,
+              selectable: false,
+              children: [
+                {
+                  id: 'ns=3;i=1010',
+                  name: 'Triangle',
+                  description:
+                    'The beautiful range of Apple Naturalé that has an exciting mix of natural ingredients. With the Goodness of 100% Natural Ingredients',
+                  nodeType: ObjectNode.nodeType.VALUE,
+                  selectable: true,
+                },
+                {
+                  id: 'ns=3;i=1011',
+                  name: 'Circle',
+                  description:
+                    'New range of formal shirts are designed keeping you in mind. With fits and styling that will make you stand apart',
+                  nodeType: ObjectNode.nodeType.VALUE,
+                  selectable: true,
+                },
+              ],
+            },
+            {
+              id: 'ns=3;i=1005',
+              name: 'Sinusoid',
+              description:
+                'The beautiful range of Apple Naturalé that has an exciting mix of natural ingredients. With the Goodness of 100% Natural Ingredients',
+              nodeType: ObjectNode.nodeType.VALUE,
+              selectable: true,
+            },
+            {
+              id: 'ns=3;i=1006',
+              name: 'Square',
+              description:
+                'New range of formal shirts are designed keeping you in mind. With fits and styling that will make you stand apart',
+              nodeType: ObjectNode.nodeType.VALUE,
+              selectable: true,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+}
+
 export const handlers = [
   http.get('*/protocol-adapters/types', () => {
     return HttpResponse.json<ProtocolAdaptersList>({ items: [mockProtocolAdapter] }, { status: 200 })
@@ -164,5 +271,9 @@ export const handlers = [
 
   http.put('**/protocol-adapters/adapters/:adapterType', () => {
     return HttpResponse.json({}, { status: 200 })
+  }),
+
+  http.get('*/protocol-adapters/adapters/:adapterId/discover', () => {
+    return HttpResponse.json<ValuesTree>(mockDataPointOPCUA, { status: 200 })
   }),
 ]
