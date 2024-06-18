@@ -28,10 +28,14 @@ const Option: ComponentType<OptionProps<INode<FlatObjectNode>, false, GroupBase<
     <chakraComponents.Option {...props} isSelected={val?.metadata?.id === id}>
       <VStack alignItems="flex-start" width="inherit" gap={0}>
         <HStack flexWrap="nowrap" width="inherit" justifyContent="space-between">
-          <Text fontWeight="bold">{name}</Text>
-          <Code>{id}</Code>
+          <Text fontWeight="bold" data-testid="dataPoint-name">
+            {name}
+          </Text>
+          <Code data-testid="dataPoint-id">{id}</Code>
         </HStack>
-        <Text fontSize="xs">{description}</Text>
+        <Text fontSize="xs" data-testid="dataPoint-description">
+          {description}
+        </Text>
       </VStack>
     </chakraComponents.Option>
   )
@@ -86,6 +90,8 @@ const AdapterTagSelect: FC<WidgetProps<unknown, RJSFSchema, AdapterContext>> = (
         isLoading={isLoading}
         isInvalid={isError}
         inputId={props.id}
+        id="react-select-dataPoint-container"
+        instanceId="dataPoint"
         isRequired={props.required}
         options={options}
         value={options.find((e) => e.metadata?.id === props.value)}
