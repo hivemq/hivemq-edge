@@ -15,7 +15,6 @@
       "title": "Security",
       "properties": ["security", "tls"]
     },
-
     {
       "id": "authentication",
       "title": "Authentication",
@@ -25,19 +24,16 @@
   "id": {
     "ui:disabled": true
   },
-  "port": {
-    "ui:widget": "updown"
-  },
-  "httpRequestBody": {
-    "ui:widget": "textarea"
-  },
-  "ui:order": ["id", "host", "port", "*", "subscriptions"],
+  "ui:order": ["id", "*", "subscriptions"],
   "subscriptions": {
     "ui:batchMode": true,
     "items": {
-      "ui:order": ["node", "holding-registers", "mqtt-topic", "destination", "qos", "*"],
+      "ui:order": ["node", "mqtt-topic", "qos", "*"],
       "ui:collapsable": {
-        "titleKey": "destination"
+        "titleKey": "mqtt-topic"
+      },
+      "node": {
+        "ui:widget": "discovery:tagBrowser"
       }
     }
   },
