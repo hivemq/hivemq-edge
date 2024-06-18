@@ -62,10 +62,11 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   const { adapterId } = useParams()
   const [batchData, setBatchData] = useState<JSONPatchDocument | undefined>(undefined)
 
-  const { schema, uiSchema, name, logo } = useMemo(() => {
+  const { schema, uiSchema, name, logo, isDiscoverable } = useMemo(() => {
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
-    const { configSchema, uiSchema } = adapter || {}
+    const { configSchema, uiSchema, capabilities } = adapter || {}
     return {
+      isDiscoverable: Boolean(capabilities?.includes('DISCOVER')),
       schema: configSchema,
       name: adapter?.name,
       logo: adapter?.logoUrl,
