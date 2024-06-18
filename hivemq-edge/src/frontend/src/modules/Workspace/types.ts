@@ -9,7 +9,6 @@ export interface EdgeFlowOptions {
 
 export enum EdgeFlowLayout {
   HORIZONTAL = 'HORIZONTAL',
-  CIRCLE_PACKING = 'CIRCLE_PACKING',
 }
 
 export interface EdgeFlowGrouping {

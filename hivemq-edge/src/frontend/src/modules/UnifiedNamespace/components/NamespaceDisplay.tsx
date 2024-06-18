@@ -2,7 +2,7 @@ import { FC } from 'react'
 import { Breadcrumb, BreadcrumbItem, type BreadcrumbProps, Text } from '@chakra-ui/react'
 import { ISA95Namespace } from '@/modules/UnifiedNamespace/types.ts'
 
-import { NAMESPACE_SEPARATOR, namespaceToStrings } from '../namespace-utils.ts'
+import { NAMESPACE_SEPARATOR, namespaceToStrings } from '../utils/namespace.utils.ts'
 
 interface NamespaceDisplayProps extends Pick<BreadcrumbProps, 'fontSize'> {
   namespace: ISA95Namespace

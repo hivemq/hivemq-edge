@@ -51,6 +51,30 @@ const allTests: DefaultOptionTestSuite[] = [
 
     items: ['minute1', 'minute5', 'minute15', 'minute30', 'more'],
   },
+  {
+    min: MOCK_DATE_TIME_NOW,
+    max: MOCK_DATE_TIME_NOW.plus({ month: 2 }),
+
+    items: ['month1', 'more'],
+  },
+  {
+    min: MOCK_DATE_TIME_NOW,
+    max: MOCK_DATE_TIME_NOW.plus({ week: 2 }),
+
+    items: ['week1', 'more'],
+  },
+  {
+    min: MOCK_DATE_TIME_NOW,
+    max: MOCK_DATE_TIME_NOW.plus({ day: 2 }),
+
+    items: ['day1', 'more'],
+  },
+  {
+    min: MOCK_DATE_TIME_NOW,
+    max: MOCK_DATE_TIME_NOW.plus({ hour: 2 }),
+
+    items: ['hour1', 'hour2', 'hour6', 'more'],
+  },
 ]
 
 describe('makeDefaultRangeOption', () => {

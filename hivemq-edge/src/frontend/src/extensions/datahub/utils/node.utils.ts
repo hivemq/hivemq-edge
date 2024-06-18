@@ -20,6 +20,7 @@ import {
   TopicFilterData,
   TransitionData,
   ValidatorData,
+  ValidDropConnection,
 } from '../types.ts'
 import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
 import { DataPolicyValidator } from '@/api/__generated__'
@@ -166,12 +167,6 @@ export const isDataPolicyNodeType = (node: Node): node is Node<DataPolicyData> =
 
 export const isBehaviorPolicyNodeType = (node: Node): node is Node<BehaviorPolicyData> =>
   node.type === DataHubNodeType.BEHAVIOR_POLICY
-
-interface ValidDropConnection {
-  type: DataHubNodeType
-  handle: string | null
-  isSource: boolean
-}
 
 // TODO[NVL] Would a map object->Object make this process easier and more performant?
 export const getConnectedNodeFrom = (node?: string, handle?: string | null): ValidDropConnection | undefined => {

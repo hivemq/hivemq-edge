@@ -21,7 +21,8 @@ export default defineConfig({
         '**/src/api/__generated__/**',
         '**/__handlers__/**',
         '**/__test-utils__/**',
-        '**/modules/Theme/**',
+        '**/src/modules/Theme/**',
+        '**/types.ts',
         '**/*.tsx',
       ],
       provider: 'istanbul', // or 'v8'
