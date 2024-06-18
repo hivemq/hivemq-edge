@@ -29,7 +29,7 @@ const MOCK_ADAPTER_PROPS: WidgetProps = {
 describe('AdapterTagSelect', () => {
   beforeEach(() => {
     cy.viewport(800, 600)
-    cy.intercept('/api/v1/management/protocol-adapters/**/discover', mockDataPointOPCUA).as('getDataPoints')
+    cy.intercept('/api/v1/management/protocol-adapters/**/discover', mockDataPointOPCUA)
   })
 
   it('should throw an error without the context defined', () => {
