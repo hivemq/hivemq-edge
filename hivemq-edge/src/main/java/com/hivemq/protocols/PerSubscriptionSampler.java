@@ -46,7 +46,7 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
             final @NotNull EventService eventService) {
         super(protocolAdapter,
                 protocolAdapter.getAdapter().getPollingIntervalMillis(),
-                protocolAdapter.getAdapter().getPollingIntervalMillis(),
+                protocolAdapter.getAdapter().getMaxPollingErrorsBeforeRemoval(),
                 metricRegistry,
                 objectMapper,
                 adapterPublishService,
