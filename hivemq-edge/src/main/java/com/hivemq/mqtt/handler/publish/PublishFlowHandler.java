@@ -124,9 +124,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
 
         if (msg instanceof PUBACK) {
             final PUBACK puback = (PUBACK) msg;
-            final String client = ctx.channel().attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get().getClientId();
             final int messageId = puback.getPacketIdentifier();
-            persistence.addOrReplace(client, messageId, puback);
             promise.addListener((ChannelFutureListener) future -> {
                 if (future.isSuccess()) {
                     qos1AlreadySentMap.remove(messageId);
