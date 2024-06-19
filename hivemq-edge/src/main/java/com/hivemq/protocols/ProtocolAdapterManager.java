@@ -369,6 +369,7 @@ public class ProtocolAdapterManager {
             protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterInstance.get()
                     .getAdapterInformation()
                     .getProtocolId());
+            protocolAdapterPollingService.stopPollingForAdapterInstance(adapterInstance.get());
             final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
             adapterInstance.get().stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
 
