@@ -1,9 +1,8 @@
 import { describe, expect } from 'vitest'
-import { INode } from 'react-accessible-treeview'
 
 import { ObjectNode } from '@/api/__generated__'
 import { convertEdgeNode, getAdapterTreeView } from '@/components/rjsf/Widgets/utils/treeview.utils.ts'
-import { FlatObjectNode } from '@/components/rjsf/Widgets/types.ts'
+import { FlatObjectNode, INode } from '@/components/rjsf/Widgets/types.ts'
 
 interface TestEachSuite {
   parent: INode<FlatObjectNode>
@@ -39,6 +38,7 @@ describe('convertEdgeNode', () => {
             name: 'node1',
             description: 'the first node',
             nodeType: ObjectNode.nodeType.OBJECT,
+            breadcrumb: ['node1'],
             selectable: false,
           },
           name: 'node1',
@@ -82,6 +82,7 @@ describe('convertEdgeNode', () => {
             id: 'node1',
             name: 'node1',
             description: 'the first node',
+            breadcrumb: ['node1'],
             nodeType: ObjectNode.nodeType.OBJECT,
             selectable: false,
           },
@@ -97,6 +98,7 @@ describe('convertEdgeNode', () => {
             name: 'node2',
             description: 'the second node',
             nodeType: ObjectNode.nodeType.OBJECT,
+            breadcrumb: ['node1', 'node2'],
             selectable: false,
           },
           name: 'node2',
@@ -111,6 +113,7 @@ describe('convertEdgeNode', () => {
             name: 'node3',
             description: 'the third node',
             nodeType: ObjectNode.nodeType.OBJECT,
+            breadcrumb: ['node1', 'node3'],
             selectable: false,
           },
           name: 'node3',
@@ -154,6 +157,7 @@ describe('convertEdgeNode', () => {
             id: 'node1',
             name: 'node1',
             description: 'the first node',
+            breadcrumb: ['node1'],
             nodeType: ObjectNode.nodeType.OBJECT,
             selectable: false,
           },
@@ -168,6 +172,7 @@ describe('convertEdgeNode', () => {
             id: 'node2',
             name: 'node2',
             description: 'the second node',
+            breadcrumb: ['node1', 'node2'],
             nodeType: ObjectNode.nodeType.VALUE,
             selectable: false,
           },
@@ -183,6 +188,7 @@ describe('convertEdgeNode', () => {
             name: 'node3',
             description: 'the third node',
             nodeType: ObjectNode.nodeType.FOLDER,
+            breadcrumb: ['node1', 'node2', 'node3'],
             selectable: false,
           },
           name: 'node3',
@@ -250,6 +256,7 @@ describe('getAdapterTreeView', () => {
           name: 'node0',
           description: 'the root',
           nodeType: 'OBJECT',
+          breadcrumb: ['node0'],
           selectable: false,
         },
         name: 'node0',
@@ -264,6 +271,7 @@ describe('getAdapterTreeView', () => {
           name: 'node1',
           description: 'the first node',
           nodeType: 'OBJECT',
+          breadcrumb: ['node1'],
           selectable: false,
         },
         name: 'node1',
@@ -278,6 +286,7 @@ describe('getAdapterTreeView', () => {
           name: 'node2',
           description: 'the second node',
           nodeType: 'VALUE',
+          breadcrumb: ['node1', 'node2'],
           selectable: false,
         },
         name: 'node2',
@@ -292,6 +301,7 @@ describe('getAdapterTreeView', () => {
           name: 'node3',
           description: 'the third node',
           nodeType: 'FOLDER',
+          breadcrumb: ['node1', 'node2', 'node3'],
           selectable: false,
         },
         name: 'node3',

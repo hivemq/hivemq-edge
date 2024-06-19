@@ -1,19 +1,19 @@
-import { INode } from 'react-accessible-treeview'
 import { v4 as uuidv4 } from 'uuid'
 
 import { type ObjectNode, ValuesTree } from '@/api/__generated__'
-import { FlatObjectNode } from '@/components/rjsf/Widgets/types.ts'
+import { FlatObjectNode, INode } from '@/components/rjsf/Widgets/types.ts'
 
 export const convertEdgeNode = (parent: INode<FlatObjectNode>, node: ObjectNode): INode<FlatObjectNode>[] => {
   const { children, ...flatNode } = node
   const nodeId = uuidv4()
+  const breadcrumb = parent.metadata?.breadcrumb || []
 
   const newNode: INode<FlatObjectNode> = {
     id: nodeId,
     name: flatNode.name as string,
     parent: parent.id,
     isBranch: false,
-    metadata: flatNode,
+    metadata: { ...flatNode, breadcrumb: [...breadcrumb, flatNode.name as string] },
     children: [],
   }
 
