@@ -25,6 +25,7 @@ import com.hivemq.mqtt.event.PublishDroppedEvent;
 import com.hivemq.mqtt.event.PubrelDroppedEvent;
 import com.hivemq.mqtt.message.MessageWithID;
 import com.hivemq.mqtt.message.QoS;
+import com.hivemq.mqtt.message.pool.FreePacketIdRanges;
 import com.hivemq.mqtt.message.puback.PUBACK;
 import com.hivemq.mqtt.message.pubcomp.PUBCOMP;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -34,6 +35,7 @@ import com.hivemq.mqtt.message.reason.Mqtt5PubRecReasonCode;
 import com.hivemq.mqtt.services.PublishPollService;
 import com.hivemq.persistence.qos.IncomingMessageFlowPersistence;
 import com.hivemq.persistence.util.FutureUtils;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -222,6 +224,7 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
         log.trace("Client {}: Received PUBACK", client);
         final int messageId = msg.getPacketIdentifier();
         orderedTopicService.messageFlowComplete(ctx, messageId);
+        returnMessageId(ctx.channel(), msg, client);
         if (log.isTraceEnabled()) {
             log.trace("Client {}: Received PUBACK remove message id:[{}] ", client, messageId);
         }
@@ -258,9 +261,29 @@ public class PublishFlowHandler extends ChannelDuplexHandler {
         log.trace("Client {}: Received PUBCOMP", client);
 
         orderedTopicService.messageFlowComplete(ctx, msg.getPacketIdentifier());
-
+        returnMessageId(ctx.channel(), msg, client);
         if (log.isTraceEnabled()) {
             log.trace("Client {}: Received PUBCOMP remove message id:[{}]", client, msg.getPacketIdentifier());
+        }
+
+    }
+
+    private void returnMessageId(
+            final @NotNull Channel channel, final @NotNull MessageWithID msg, final @NotNull String clientId) {
+
+        final int messageId = msg.getPacketIdentifier();
+
+        //Such a message ID must never be zero, but better be safe than sorry
+        if (messageId > 0) {
+            final ClientConnection clientConnection = channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
+            final FreePacketIdRanges freePacketIdRanges = clientConnection.getMessageIDPool();
+            freePacketIdRanges.returnId(messageId);
+            if (log.isTraceEnabled()) {
+                log.trace("Returning Message ID {} for client {} because of a {} message was received",
+                        messageId,
+                        clientId,
+                        msg.getClass().getSimpleName());
+            }
         }
 
     }

@@ -21,7 +21,7 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
 import com.hivemq.mqtt.message.QoS;
-import com.hivemq.mqtt.message.pool.MessageIDPool;
+import com.hivemq.mqtt.message.pool.FreePacketIdRanges;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.services.PublishPollService;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
@@ -47,7 +47,7 @@ public class PublishStatusFutureCallback implements FutureCallback<PublishStatus
     @NotNull
     private final PUBLISH publish;
     @NotNull
-    private final MessageIDPool messageIDPool;
+    private final FreePacketIdRanges messageIDPool;
     private final int packetIdentifier;
     @NotNull
     private final Channel channel;
@@ -59,7 +59,7 @@ public class PublishStatusFutureCallback implements FutureCallback<PublishStatus
                                        final boolean sharedSubscription,
                                        @NotNull final String queueId,
                                        @NotNull final PUBLISH publish,
-                                       @NotNull final MessageIDPool messageIDPool,
+                                       @NotNull final FreePacketIdRanges messageIDPool,
                                        @NotNull final Channel channel,
                                        @NotNull final String client) {
         this.payloadPersistence = payloadPersistence;
