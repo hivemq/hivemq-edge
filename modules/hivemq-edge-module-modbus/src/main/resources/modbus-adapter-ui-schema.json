@@ -3,7 +3,7 @@
     {
       "id": "coreFields",
       "title": "Settings",
-      "properties": ["id", "port", "host","timeout"]
+      "properties": ["id", "port", "host", "timeout"]
     },
     {
       "id": "subFields",
@@ -13,11 +13,7 @@
     {
       "id": "publishing",
       "title": "Publishing",
-      "properties": [
-        "maxPollingErrorsBeforeRemoval",
-        "publishChangedDataOnly",
-        "pollingIntervalMillis"
-      ]
+      "properties": ["maxPollingErrorsBeforeRemoval", "publishChangedDataOnly", "pollingIntervalMillis"]
     }
   ],
   "id": {
@@ -33,6 +29,14 @@
       "ui:order": ["destination", "addressRange", "qos", "*", "userProperties"],
       "ui:collapsable": {
         "titleKey": "destination"
+      },
+      "addressRange": {
+        "endIdx": {
+          "ui:widget": "discovery:tagBrowser"
+        },
+        "startIdx": {
+          "ui:widget": "discovery:tagBrowser"
+        }
       }
     }
   }

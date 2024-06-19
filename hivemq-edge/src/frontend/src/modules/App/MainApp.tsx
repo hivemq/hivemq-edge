@@ -22,7 +22,9 @@ const MainApp: FC = () => {
         </AuthProvider>
         <PrivacyConsentBanner />
       </ChakraProvider>
-      {import.meta.env.MODE === 'development' && <ReactQueryDevtools position="bottom" initialIsOpen={false} />}
+      {import.meta.env.MODE === 'development' && (
+        <ReactQueryDevtools position="bottom" buttonPosition="top-left" initialIsOpen={false} />
+      )}
     </QueryClientProvider>
   )
 }

@@ -44,7 +44,10 @@ export type AdapterConfig = NonNullable<Adapter['config']>
 export interface AdapterContext {
   // TODO[NVL] Is that good enough for ANY form data?
   onBatchUpload?: (idSchema: IdSchema<unknown>, batch: Record<string, unknown>[]) => void
-  isEditAdapter?: boolean
+  isEditAdapter: boolean
+  isDiscoverable: boolean
+  adapterType?: string
+  adapterId?: string
 }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
