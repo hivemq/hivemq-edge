@@ -1,11 +1,11 @@
 import { Adapter, Bridge, BridgeSubscription, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { GenericObjectType, RJSFSchema } from '@rjsf/utils'
+import { JSONSchema7 } from 'json-schema'
 
 import { CustomFormat } from '@/api/types/json-schema.ts'
-
 import { TopicFilter } from '../types.ts'
 
-const TOPIC_PATH_ITEMS_TOKEN = '*'
+export const TOPIC_PATH_ITEMS_TOKEN = '*'
 
 const subsToTopics = (subs: BridgeSubscription[] | undefined): TopicFilter[] => {
   return (
@@ -53,6 +53,23 @@ export const getTopicPaths = (configSchema: RJSFSchema) => {
           .replace(/items\.properties/gi, TOPIC_PATH_ITEMS_TOKEN)
       )
   )
+}
+
+export const getPropertiesFromPath = (path: string, instance: JSONSchema7 | undefined): JSONSchema7 | undefined => {
+  const [property, ...rest] = path.split('.')
+
+  if (!instance) return undefined
+  if (!rest.length) {
+    // TODO[NVL] should we test that the path is a property of instance?
+    return instance
+  }
+
+  if (property === TOPIC_PATH_ITEMS_TOKEN) {
+    const { properties } = instance.items as JSONSchema7
+    return getPropertiesFromPath(rest.join('.'), properties)
+  }
+  const { properties } = instance as JSONSchema7
+  return getPropertiesFromPath(rest.join('.'), properties?.[property] as JSONSchema7)
 }
 
 const getTopicsFromPath = (path: string, instance: RJSFSchema): string[] => {
@@ -104,15 +121,15 @@ export const mergeAllTopics = (
   if (bridges) {
     const bridgeTopics = bridges.reduce<string[]>((acc, cur) => {
       const { local, remote } = getBridgeTopics(cur)
-      acc.push(...local.map((e) => e.topic))
-      acc.push(...remote.map((e) => e.topic))
+      acc.push(...local.map((topicFilter) => topicFilter.topic))
+      acc.push(...remote.map((topicFilter) => topicFilter.topic))
       return acc
     }, [])
     data.push(...bridgeTopics)
   }
   if (adapters) {
     const adapterTopics = adapters.reduce<string[]>((acc, cur) => {
-      const type = types?.items?.find((e) => e.id === cur.type)
+      const type = types?.items?.find((protocolAdapter) => protocolAdapter.id === cur.type)
       /* istanbul ignore next -- @preserve */
       if (!type) return acc
       const topics = discoverAdapterTopics(type, cur.config as GenericObjectType)

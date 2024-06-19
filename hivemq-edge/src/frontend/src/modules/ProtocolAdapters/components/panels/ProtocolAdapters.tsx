@@ -96,6 +96,10 @@ const ProtocolAdapters: FC = () => {
       if (adapterId) navigate(`/edge-flow`, { state: { selectedAdapter: { adapterId, type } } })
     }
 
+    const handleExport = (adapterId: string) => {
+      if (adapterId) navigate(`/protocol-adapters/${adapterId}/export`)
+    }
+
     return [
       {
         accessorKey: 'id',
@@ -151,6 +155,7 @@ const ProtocolAdapters: FC = () => {
                 onEdit={handleEditInstance}
                 onDelete={handleOnDelete}
                 onViewWorkspace={handleViewWorkspace}
+                onExport={handleExport}
               />
               {id === selectedActiveAdapter?.adapterId && (
                 <IconButton

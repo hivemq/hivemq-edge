@@ -75,7 +75,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
 
   const defaultValues = useMemo(() => {
     if (isNewAdapter || !adapterId) return undefined
-    const { config } = allAdapters?.find((e) => e.id === adapterId) || {}
+    const { config } = allAdapters?.find((adapter) => adapter.id === adapterId) || {}
     if (batchData) {
       return immutableJSONPatch(config, batchData)
     }

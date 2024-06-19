@@ -14,9 +14,17 @@ interface AdapterActionMenuProps {
   onEdit?: (id: string, type: string) => void
   onDelete?: (id: string) => void
   onViewWorkspace?: (id: string, type: string) => void
+  onExport?: (id: string, type: string) => void
 }
 
-const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEdit, onDelete, onViewWorkspace }) => {
+const AdapterActionMenu: FC<AdapterActionMenuProps> = ({
+  adapter,
+  onCreate,
+  onEdit,
+  onDelete,
+  onViewWorkspace,
+  onExport,
+}) => {
   const { t } = useTranslation()
 
   const { type, id, status } = adapter
@@ -35,6 +43,10 @@ const AdapterActionMenu: FC<AdapterActionMenuProps> = ({ adapter, onCreate, onEd
 
         <MenuItem data-testid="adapter-action-workspace" onClick={() => onViewWorkspace?.(id, type as string)}>
           {t('protocolAdapter.table.actions.workspace')}
+        </MenuItem>
+        <MenuDivider />
+        <MenuItem data-testid="adapter-action-export" onClick={() => onExport?.(id, type as string)}>
+          {t('protocolAdapter.table.actions.export')}
         </MenuItem>
         <MenuDivider />
         <MenuItem data-testid="adapter-action-create" onClick={() => onCreate?.(type as string)}>

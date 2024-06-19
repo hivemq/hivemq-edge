@@ -11,6 +11,7 @@ const BridgePage = lazy(() => import('@/modules/Bridges/BridgePage.tsx'))
 const BridgeEditor = lazy(() => import('@/modules/Bridges/components/panels/BridgeEditor.tsx'))
 const ProtocolAdapterPage = lazy(() => import('@/modules/ProtocolAdapters/ProtocolAdapterPage.tsx'))
 const AdapterController = lazy(() => import('@/modules/ProtocolAdapters/components/AdapterController.tsx'))
+const ExportDrawer = lazy(() => import('@/modules/ProtocolAdapters/components/drawers/ExportDrawer.tsx'))
 const UnifiedNamespaceEditor = lazy(() => import('@/modules/UnifiedNamespace/components/UnifiedNamespaceEditor.tsx'))
 const UnifiedNamespacePage = lazy(() => import('@/modules/UnifiedNamespace/UnifiedNamespacePage.tsx'))
 const EdgeFlowPage = lazy(() => import('@/modules/Workspace/EdgeFlowPage.tsx'))
@@ -57,6 +58,10 @@ export const routes = createBrowserRouter(
             {
               path: ':adapterId',
               element: <AdapterController />,
+            },
+            {
+              path: ':adapterId/export',
+              element: <ExportDrawer />,
             },
           ],
         },
