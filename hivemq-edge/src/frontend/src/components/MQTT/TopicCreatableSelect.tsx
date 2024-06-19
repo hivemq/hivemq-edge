@@ -79,7 +79,7 @@ const AbstractTopicCreatableSelect = <T extends boolean>({
       aria-label={t('topicCreate.label')}
       placeholder={t('topicCreate.placeholder')}
       noOptionsMessage={() => t('topicCreate.options.noOptionsMessage')}
-      formatCreateLabel={(e) => t('topicCreate.options.createLabel', { topic: e })}
+      formatCreateLabel={(topic) => t('topicCreate.options.createLabel', { topic: topic })}
       isLoading={isLoading}
       id={id}
       isClearable

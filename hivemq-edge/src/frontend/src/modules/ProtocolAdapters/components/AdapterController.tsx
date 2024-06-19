@@ -40,7 +40,7 @@ const AdapterController: FC<AdapterEditorProps> = ({ children, isNew }) => {
 
   useEffect(() => {
     if (!allAdapters) return
-    const instance = allAdapters?.find((e) => e.id === adapterId)
+    const instance = allAdapters?.find((adapter) => adapter.id === adapterId)
     if (!isNew && !instance) {
       errorToast(
         {

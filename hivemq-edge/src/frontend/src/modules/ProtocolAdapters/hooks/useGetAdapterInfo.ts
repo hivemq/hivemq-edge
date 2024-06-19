@@ -8,8 +8,10 @@ const useGetAdapterInfo = (adapterId: string | undefined) => {
   const { data: allAdapters, isLoading: isAdapterLoading } = useListProtocolAdapters()
 
   const { adapter, isDiscoverable, protocol } = useMemo(() => {
-    const adapter = allAdapters?.find((e) => e.id === adapterId)
-    const protocol: ProtocolAdapter | undefined = allProtocols?.items?.find((e) => e.id === adapter?.type)
+    const adapter = allAdapters?.find((adapter) => adapter.id === adapterId)
+    const protocol: ProtocolAdapter | undefined = allProtocols?.items?.find(
+      (protocolAdapter) => protocolAdapter.id === adapter?.type
+    )
     const { capabilities } = protocol || {}
 
     return {

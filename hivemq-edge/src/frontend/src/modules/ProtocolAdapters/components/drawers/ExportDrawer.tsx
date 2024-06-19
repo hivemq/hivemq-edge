@@ -72,7 +72,7 @@ const ExportDrawer: FC = () => {
   }, [adapterId, onOpen])
 
   useEffect(() => {
-    const format = adapterExportFormats.find((e) => e.value === watchFormatChange)
+    const format = adapterExportFormats.find((exportFormat) => exportFormat.value === watchFormatChange)
     if (format) {
       const mimeOptions =
         format.formats?.map<MIMETypeOptions>((format) => ({ label: format, value: format, description: '' })) || []
@@ -87,7 +87,7 @@ const ExportDrawer: FC = () => {
   }
 
   const handleEditorOnSubmit: SubmitHandler<SelectedExportFormat> = (data) => {
-    const downloader = adapterExportFormats.find((e) => e.value === data.content)
+    const downloader = adapterExportFormats.find((exportFormat) => exportFormat.value === data.content)
     if (downloader && adapter && protocol) {
       try {
         downloader.downloader?.(adapter.id, data.format, adapter, protocol)
