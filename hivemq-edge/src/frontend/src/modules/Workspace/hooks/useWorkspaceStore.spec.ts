@@ -157,8 +157,62 @@ describe('useWorkspaceStore', () => {
     expect(result.current.edges).toHaveLength(0)
   })
 
-  it.skip('should toggle a group', async () => {
-    // TODO
+  it('should toggle a group', async () => {
+    const { result } = renderHook<WorkspaceState & WorkspaceAction, unknown>(useWorkspaceStore)
+    expect(result.current.nodes).toHaveLength(0)
+    expect(result.current.edges).toHaveLength(0)
+
+    act(() => {
+      const { onAddNodes, onEdgesChange } = result.current
+      const item1: Node = { ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }
+      const item2: Node = { ...MOCK_NODE_BRIDGE, position: { x: 0, y: 0 } }
+      const group: Node<Group> = { ...MOCK_NODE_GROUP, position: { x: 0, y: 0 } }
+      const item3: Node = { ...MOCK_NODE_BRIDGE, id: 'item3', position: { x: 0, y: 0 } }
+      const item4: Node = { ...MOCK_NODE_BRIDGE, id: 'item4', position: { x: 0, y: 0 } }
+      onAddNodes([
+        { item: group, type: 'add' },
+        { item: item1, type: 'add' },
+        { item: item2, type: 'add' },
+        { item: item3, type: 'add' },
+        { item: item4, type: 'add' },
+      ])
+
+      const edge1: Edge = { id: '1-2', source: 'idAdapter', target: MOCK_NODE_GROUP.id }
+      const edge2: Edge = { id: '1-3', source: MOCK_NODE_GROUP.id, target: item3.id }
+      const edge3: Edge = { id: '1-4', source: item3.id, target: item4.id }
+
+      onEdgesChange([
+        { item: edge1, type: 'add' },
+        { item: edge2, type: 'add' },
+        { item: edge3, type: 'add' },
+      ])
+    })
+
+    expect(result.current.nodes).toHaveLength(5)
+    expect(result.current.edges).toHaveLength(3)
+    expect(result.current.edges[0].hidden).toBeFalsy()
+    expect(result.current.edges[1].hidden).toBeFalsy()
+    expect(result.current.edges[2].hidden).toBeFalsy()
+
+    const actGroup = { id: MOCK_NODE_GROUP.id, data: MOCK_NODE_GROUP.data }
+    act(() => {
+      const { onToggleGroup } = result.current
+      onToggleGroup(actGroup, false)
+    })
+    expect(result.current.nodes).toHaveLength(5)
+    expect(result.current.edges).toHaveLength(3)
+    expect(result.current.edges[0].hidden).toBeTruthy()
+    expect(result.current.edges[1].hidden).toBeFalsy()
+    expect(result.current.edges[2].hidden).toBeFalsy()
+    act(() => {
+      const { onToggleGroup } = result.current
+      onToggleGroup(actGroup, true)
+    })
+    expect(result.current.nodes).toHaveLength(5)
+    expect(result.current.edges).toHaveLength(3)
+    expect(result.current.edges[0].hidden).toBeFalsy()
+    expect(result.current.edges[1].hidden).toBeTruthy()
+    expect(result.current.edges[2].hidden).toBeFalsy()
   })
 
   it('should change the data of a group', async () => {
