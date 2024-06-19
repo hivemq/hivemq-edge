@@ -19,6 +19,7 @@ describe('useBatchModeSteps', () => {
     expect(result.current.isStepCompleted(BatchModeStepType.UPLOAD)).toBeFalsy()
     expect(result.current.isStepCompleted(BatchModeStepType.MATCH)).toBeFalsy()
     expect(result.current.isStepCompleted(BatchModeStepType.VALIDATE)).toBeFalsy()
+    expect(result.current.isStepCompleted(BatchModeStepType.CONFIRM)).toBeFalsy()
   })
 
   it('should create the steps', async () => {
@@ -54,5 +55,15 @@ describe('useBatchModeSteps', () => {
       result.current.goToNext()
     })
     expect(result.current.isActiveStep(BatchModeStepType.CONFIRM)).toBeTruthy()
+  })
+
+  it('should update the store', async () => {
+    const { result } = renderHook(() => useBatchModeSteps(MOCK_ID_SCHEMA, MOCK_STORE.schema))
+
+    expect(result.current.store.fileName).toBeUndefined()
+    act(() => {
+      result.current.onContinue({ fileName: 'a new file name' })
+    })
+    expect(result.current.store.fileName).toEqual('a new file name')
   })
 })

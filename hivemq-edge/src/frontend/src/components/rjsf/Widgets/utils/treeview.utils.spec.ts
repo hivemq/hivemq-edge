@@ -208,7 +208,7 @@ describe('getAdapterTreeView', () => {
     expect(getAdapterTreeView({ items: [] })).toStrictEqual([])
   })
 
-  it('should convert a  tree', () => {
+  it('should convert a tree', () => {
     expect(
       getAdapterTreeView({
         items: [
@@ -305,6 +305,68 @@ describe('getAdapterTreeView', () => {
           selectable: false,
         },
         name: 'node3',
+        parent: expect.stringContaining(''),
+      },
+    ])
+  })
+
+  it('should add the root when asked to', () => {
+    expect(
+      getAdapterTreeView(
+        {
+          items: [
+            {
+              id: 'node0',
+              name: 'node0',
+              description: 'the root',
+              nodeType: ObjectNode.nodeType.OBJECT,
+              selectable: false,
+            },
+            {
+              id: 'node1',
+              name: 'node1',
+              description: 'the first node',
+              nodeType: ObjectNode.nodeType.OBJECT,
+              selectable: false,
+              children: [],
+            },
+          ],
+        },
+        true
+      )
+    ).toStrictEqual([
+      {
+        children: [],
+        id: expect.stringContaining(''),
+        name: 'root-node',
+        parent: null,
+      },
+      {
+        children: [],
+        id: expect.stringContaining(''),
+        isBranch: false,
+        metadata: {
+          id: 'node0',
+          name: 'node0',
+          description: 'the root',
+          nodeType: 'OBJECT',
+          selectable: false,
+        },
+        name: 'node0',
+        parent: expect.stringContaining(''),
+      },
+      {
+        children: [],
+        id: expect.stringContaining(''),
+        isBranch: false,
+        metadata: {
+          id: 'node1',
+          name: 'node1',
+          description: 'the first node',
+          nodeType: 'OBJECT',
+          selectable: false,
+        },
+        name: 'node1',
         parent: expect.stringContaining(''),
       },
     ])

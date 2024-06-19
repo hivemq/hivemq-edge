@@ -28,6 +28,7 @@ export const prettifyXml = (sourceXml: string | undefined) => {
     'application/xml'
   )
 
+  /* istanbul ignore next -- @preserve */
   try {
     const xsltProcessor = new XSLTProcessor()
     xsltProcessor.importStylesheet(xsltDoc)
