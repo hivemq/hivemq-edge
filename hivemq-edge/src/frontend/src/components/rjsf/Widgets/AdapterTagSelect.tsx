@@ -59,6 +59,7 @@ const SingleValue = (props: SingleValueProps<INode<FlatObjectNode>>) => {
 }
 
 const AdapterTagSelect: FC<WidgetProps<unknown, RJSFSchema, AdapterContext>> = (props) => {
+  const { t } = useTranslation('components')
   const { formContext } = props
   const { isDiscoverable, adapterType, adapterId } = formContext || {}
   if (!adapterType || !adapterId) throw new Error('The adapter has not been added to the form context')

@@ -157,6 +157,15 @@
           "upload": "Upload records"
         }
       }
+    },
+    "AdapterTagSelect": {
+      "select": {
+        "noTags": "There are no tags available from your device",
+        "noSelectable": "None of the tags are selectable",
+        "noOption_zero": "No options",
+        "noOption_one": "No options matching {{ value }}",
+        "noOption_other": "No options matching {{ value }}"
+      }
     }
   }
 }
