@@ -19,9 +19,9 @@ export const convertEdgeNode = (parent: INode<FlatObjectNode>, node: ObjectNode)
 
   const allChildren: INode<FlatObjectNode>[] = []
   for (const child of children || []) {
-    const gg = convertEdgeNode(newNode, child)
-    allChildren.push(...gg)
-    newNode.children.push(gg[0].id)
+    const edgeNodes = convertEdgeNode(newNode, child)
+    allChildren.push(...edgeNodes)
+    newNode.children.push(edgeNodes[0].id)
   }
 
   return [newNode, ...allChildren]
@@ -40,27 +40,9 @@ export const getAdapterTreeView = (tree: ValuesTree, withRoot = false): INode<Fl
 
   const allNodes: INode<FlatObjectNode>[] = withRoot ? [root] : []
   for (const child of tree.items) {
-    const gg = convertEdgeNode(root, child)
-    allNodes.push(...gg)
+    const edgeNodes = convertEdgeNode(root, child)
+    allNodes.push(...edgeNodes)
   }
-
-  // const uniq = allNodes
-  //   .map((name) => {
-  //     return {
-  //       count: 1,
-  //       name: name.id as string,
-  //     }
-  //   })
-  //   .reduce((result, b) => {
-  //     result[b.name] = (result[b.name] || 0) + b.count
-  //
-  //     return result
-  //   }, {})
-  //
-  // const duplicates = Object.keys(uniq).filter((a) => uniq[a] > 1)
-  //
-  // console.log('XXXXXX', duplicates)
-  // console.log('XXXXXX', allNodes)
 
   return allNodes
 }
