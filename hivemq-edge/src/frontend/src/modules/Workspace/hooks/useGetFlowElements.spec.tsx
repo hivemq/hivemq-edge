@@ -13,6 +13,7 @@ import '@/config/i18n.config.ts'
 
 import { EdgeFlowProvider } from './FlowContext.tsx'
 import useGetFlowElements from './useGetFlowElements.ts'
+import { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
 
 // [Vitest] Mocking hooks
 vi.mock('@chakra-ui/react', async () => {
@@ -42,20 +43,32 @@ describe('useGetFlowElements', () => {
   it('should be used in the right context', async () => {
     const { result } = renderHook(() => useGetFlowElements(), { wrapper })
 
-    // [Vitest] Need to make sure the async requests have been intercepted
+    expect(result.current.nodes).toHaveLength(0)
+    expect(result.current.edges).toHaveLength(0)
+  })
+
+  it.each<[Partial<EdgeFlowOptions>, number, number]>([
+    [{}, 3, 2],
+    [{ showGateway: true }, 4, 3],
+    [{ showGateway: false }, 3, 2],
+    [{ showHosts: true }, 4, 3],
+    [{ showHosts: false }, 3, 2],
+    [{ showGateway: true, showHosts: true }, 5, 4],
+  ])('should consider %s for %s nodes and %s edges', async (defaults, countNode, countEdge) => {
+    const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
+      <SimpleWrapper>
+        <EdgeFlowProvider defaults={defaults}>{children}</EdgeFlowProvider>
+      </SimpleWrapper>
+    )
+
+    const { result } = renderHook(() => useGetFlowElements(), { wrapper })
+
     await waitFor(() => {
       const { nodes } = result.current
       expect(!!nodes.length).toBeTruthy()
     })
 
-    expect(result.current.nodes).toHaveLength(3)
-    expect(result.current.edges).toHaveLength(2)
-  })
-
-  it('should be used in the right context', async () => {
-    const { result } = renderHook(() => useGetFlowElements(), { wrapper })
-
-    expect(result.current.nodes).toHaveLength(0)
-    expect(result.current.edges).toHaveLength(0)
+    expect(result.current.nodes).toHaveLength(countNode)
+    expect(result.current.edges).toHaveLength(countEdge)
   })
 })
