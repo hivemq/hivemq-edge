@@ -32,8 +32,7 @@ import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import com.hivemq.mqtt.message.ProtocolVersion;
 import com.hivemq.mqtt.message.connect.CONNECT;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5UserProperties;
-import com.hivemq.mqtt.message.pool.MessageIDPool;
-import com.hivemq.mqtt.message.pool.SequentialMessageIDPoolImpl;
+import com.hivemq.mqtt.message.pool.FreePacketIdRanges;
 import com.hivemq.security.auth.SslClientCertificate;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
@@ -79,7 +78,7 @@ public class ClientConnection {
     private boolean requestResponseInformation;
     private @Nullable Boolean requestProblemInformation;
     private @Nullable SettableFuture<Void> disconnectFuture;
-    private final @NotNull MessageIDPool messageIDPool;
+    private final @NotNull FreePacketIdRanges messageIDPool;
 
     private @Nullable ConnectionAttributes connectionAttributes;
 
@@ -110,7 +109,7 @@ public class ClientConnection {
     public ClientConnection(final @NotNull Channel channel, final @NotNull PublishFlushHandler publishFlushHandler) {
         this.channel = channel;
         this.publishFlushHandler = publishFlushHandler;
-        messageIDPool = new SequentialMessageIDPoolImpl();
+        messageIDPool = new FreePacketIdRanges();
         this.additionalInformation = new HashMap<>();
     }
 
@@ -225,7 +224,7 @@ public class ClientConnection {
         this.queueSizeMaximum = queueSizeMaximum;
     }
 
-    public @NotNull MessageIDPool getMessageIDPool() {
+    public @NotNull FreePacketIdRanges getMessageIDPool() {
         return messageIDPool;
     }
 
@@ -380,11 +379,11 @@ public class ClientConnection {
     public synchronized @NotNull ConnectionAttributes setConnectionAttributesIfAbsent(
             final @NotNull ConnectionAttributes connectionAttributes) {
 
-            if (this.connectionAttributes == null) {
-                this.connectionAttributes = connectionAttributes;
-            }
-            return this.connectionAttributes;
+        if (this.connectionAttributes == null) {
+            this.connectionAttributes = connectionAttributes;
         }
+        return this.connectionAttributes;
+    }
 
     public boolean isSendWill() {
         return sendWill;
@@ -586,7 +585,7 @@ public class ClientConnection {
         return additionalInformation;
     }
 
-    public static @NotNull ClientConnection fromChannel(Channel channel){
+    public static @NotNull ClientConnection fromChannel(Channel channel) {
         return channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME).get();
     }
 }

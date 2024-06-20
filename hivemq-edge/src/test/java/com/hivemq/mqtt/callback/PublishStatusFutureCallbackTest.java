@@ -19,7 +19,7 @@ import com.google.common.util.concurrent.Futures;
 import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
 import com.hivemq.mqtt.message.QoS;
-import com.hivemq.mqtt.message.pool.MessageIDPool;
+import com.hivemq.mqtt.message.pool.FreePacketIdRanges;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.services.PublishPollService;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
@@ -56,7 +56,7 @@ public class PublishStatusFutureCallbackTest {
     private PublishPollService publishPollService;
 
     @Mock
-    private MessageIDPool messageIDPool;
+    private FreePacketIdRanges messageIDPool;
 
     private boolean sharedSubscription;
 

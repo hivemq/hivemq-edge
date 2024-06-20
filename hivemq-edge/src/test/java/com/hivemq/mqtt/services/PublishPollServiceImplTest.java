@@ -30,7 +30,8 @@ import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import com.hivemq.mqtt.handler.publish.PublishStatus;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
-import com.hivemq.mqtt.message.pool.MessageIDPool;
+import com.hivemq.mqtt.message.pool.FreePacketIdRanges;
+import com.hivemq.mqtt.message.pool.exception.MessageIdUnavailableException;
 import com.hivemq.mqtt.message.pool.exception.NoMessageIdAvailableException;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.publish.PublishWithFuture;
@@ -78,7 +79,8 @@ public class PublishPollServiceImplTest {
     private @NotNull AutoCloseable closeableMock;
 
     @Mock
-    @NotNull MessageIDPool messageIDPool;
+    @NotNull
+    FreePacketIdRanges messageIDPool;
 
     @Mock
     @NotNull ClientQueuePersistence clientQueuePersistence;
@@ -213,9 +215,7 @@ public class PublishPollServiceImplTest {
     }
 
     @Test
-    public void test_inflight_messages() throws NoMessageIdAvailableException {
-        when(messageIDPool.takeIfAvailable(1)).thenReturn(1);
-        when(messageIDPool.takeIfAvailable(2)).thenReturn(2);
+    public void test_inflight_messages() throws MessageIdUnavailableException {
         when(clientQueuePersistence.readInflight(eq("client"), anyLong(), anyInt())).thenReturn(Futures.immediateFuture(
                 ImmutableList.of(createPublish(1), new PUBREL(2))));
 
@@ -225,14 +225,13 @@ public class PublishPollServiceImplTest {
 
         publishPollService.pollInflightMessages("client", channel);
 
-        verify(messageIDPool, times(2)).takeIfAvailable(anyInt());
+        verify(messageIDPool, times(2)).takeSpecificId(anyInt());
         verify(publishFlushHandler, times(1)).sendPublishes(any(List.class));
         verify(channel).writeAndFlush(any(PubrelWithFuture.class));
     }
 
     @Test
-    public void test_inflight_messages_packet_id_not_available() throws NoMessageIdAvailableException {
-        when(messageIDPool.takeIfAvailable(1)).thenReturn(2);
+    public void test_inflight_messages_packet_id_not_available() throws MessageIdUnavailableException {
         when(clientQueuePersistence.readInflight(eq("client"), anyLong(), anyInt())).thenReturn(Futures.immediateFuture(
                 ImmutableList.of(createPublish(1))));
 
@@ -241,20 +240,19 @@ public class PublishPollServiceImplTest {
 
         publishPollService.pollInflightMessages("client", channel);
 
-        verify(messageIDPool, times(1)).takeIfAvailable(anyInt());
+        verify(messageIDPool, times(1)).takeSpecificId(anyInt());
         verify(publishFlushHandler, times(1)).sendPublishes(any(List.class));
-        verify(messageIDPool).returnId(2);
     }
 
     @Test
-    public void test_inflight_messages_empty() throws NoMessageIdAvailableException {
+    public void test_inflight_messages_empty() throws MessageIdUnavailableException {
         clientConnection.setInFlightMessagesSent(true);
 
         when(clientQueuePersistence.readInflight(eq("client"), anyLong(), anyInt())).thenReturn(Futures.immediateFuture(
                 ImmutableList.of()));
         publishPollService.pollInflightMessages("client", channel);
 
-        verify(messageIDPool, never()).takeIfAvailable(anyInt());
+        verify(messageIDPool, never()).takeSpecificId(anyInt());
     }
 
     @Test
