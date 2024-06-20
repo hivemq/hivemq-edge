@@ -349,6 +349,7 @@ describe('getAdapterTreeView', () => {
           id: 'node0',
           name: 'node0',
           description: 'the root',
+          breadcrumb: ['node0'],
           nodeType: 'OBJECT',
           selectable: false,
         },
@@ -362,6 +363,7 @@ describe('getAdapterTreeView', () => {
         metadata: {
           id: 'node1',
           name: 'node1',
+          breadcrumb: ['node1'],
           description: 'the first node',
           nodeType: 'OBJECT',
           selectable: false,
