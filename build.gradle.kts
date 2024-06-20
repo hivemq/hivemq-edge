@@ -76,8 +76,9 @@ val moduleReleaseBinaries: Configuration by configurations.creating {
 
 dependencies {
     hivemq("com.hivemq:hivemq-edge")
-    edgeModule("com.hivemq:hivemq-edge-module-http")
     // ** module-deps ** //
+    edgeModule("com.hivemq:hivemq-edge-module-file")
+    edgeModule("com.hivemq:hivemq-edge-module-http")
     edgeModule("com.hivemq:hivemq-edge-module-plc4x")
     edgeModule("com.hivemq:hivemq-edge-module-opcua")
     edgeModule("com.hivemq:hivemq-edge-module-modbus")
@@ -101,6 +102,7 @@ val hivemqEdgeZip by tasks.registering(Zip::class) {
 
 val edgeProjectsToUpdate = setOf(
     "hivemq-edge",
+    "hivemq-edge-module-file",
     "hivemq-edge-module-http",
     "hivemq-edge-module-modbus",
     "hivemq-edge-module-opcua",
