@@ -63,19 +63,19 @@ describe('AdapterTagSelect', () => {
     cy.get('#react-select-dataPoint-container').click()
     cy.get('#react-select-dataPoint-listbox').should('be.visible')
     cy.get('#react-select-dataPoint-listbox').find('[role="option"]').as('options')
-    cy.get('@options').should('have.length', 11)
-    cy.get('@options').eq(0).find('[data-testid="dataPoint-name"]').should('have.text', 'Object')
-    cy.get('@options').eq(0).find('[data-testid="dataPoint-id"]').should('have.text', 'i=85')
+    cy.get('@options').should('have.length', 8)
+    cy.get('@options').eq(0).find('[data-testid="dataPoint-name"]').should('have.text', 'Constant')
+    cy.get('@options').eq(0).find('[data-testid="dataPoint-id"]').should('have.text', 'ns=3;i=1001')
     cy.get('@options')
       .eq(0)
       .find('[data-testid="dataPoint-description"]')
       .should(
         'have.text',
-        'The Apollotech B340 is an affordable wireless mouse with reliable connectivity, 12 months battery life and modern design'
+        'New range of formal shirts are designed keeping you in mind. With fits and styling that will make you stand apart'
       )
 
     cy.get('@options').eq(3).click()
-    cy.get('#react-select-dataPoint-container').should('contain.text', 'ns=3;i=1002')
+    cy.get('#react-select-dataPoint-container').should('contain.text', 'ns=3;i=1004')
   })
 
   it('should be accessible', () => {

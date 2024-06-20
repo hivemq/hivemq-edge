@@ -1,6 +1,9 @@
 import { ComponentType, FC, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getTemplate, labelValue, WidgetProps } from '@rjsf/utils'
-import { Code, FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
+import { getChakra } from '@rjsf/chakra-ui/lib/utils'
+import { RJSFSchema } from '@rjsf/utils/src/types.ts'
+import { Breadcrumb, BreadcrumbItem, Code, FormControl, FormLabel, HStack, Text, VStack } from '@chakra-ui/react'
 import {
   chakraComponents,
   createFilter,
@@ -10,14 +13,11 @@ import {
   Select,
   SingleValueProps,
 } from 'chakra-react-select'
-import { getChakra } from '@rjsf/chakra-ui/lib/utils'
-import { RJSFSchema } from '@rjsf/utils/src/types.ts'
-import { INode } from 'react-accessible-treeview'
 
 import { useGetDataPoints } from '@/api/hooks/useProtocolAdapters/useGetDataPoints.tsx'
-import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
-import { FlatObjectNode } from '@/components/rjsf/Widgets/types.ts'
+import { FlatObjectNode, INode } from '@/components/rjsf/Widgets/types.ts'
 import { getAdapterTreeView } from '@/components/rjsf/Widgets/utils/treeview.utils.ts'
+import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 const Option: ComponentType<OptionProps<INode<FlatObjectNode>, false, GroupBase<INode<FlatObjectNode>>>> = (props) => {
   const { metadata } = props.data
@@ -33,9 +33,18 @@ const Option: ComponentType<OptionProps<INode<FlatObjectNode>, false, GroupBase<
           </Text>
           <Code data-testid="dataPoint-id">{id}</Code>
         </HStack>
-        <Text fontSize="xs" data-testid="dataPoint-description">
-          {description}
-        </Text>
+        <VStack width="inherit" alignItems="flex-start" gap={0} pl={4}>
+          <Breadcrumb separator=">" fontSize="xs">
+            {metadata?.breadcrumb?.slice(0, -1).map((crumb, index) => (
+              <BreadcrumbItem key={`${crumb}-${index}`}>
+                <Text>{crumb}</Text>
+              </BreadcrumbItem>
+            ))}
+          </Breadcrumb>
+          <Text fontSize="xs" data-testid="dataPoint-description">
+            {description}
+          </Text>
+        </VStack>
       </VStack>
     </chakraComponents.Option>
   )
@@ -50,6 +59,7 @@ const SingleValue = (props: SingleValueProps<INode<FlatObjectNode>>) => {
 }
 
 const AdapterTagSelect: FC<WidgetProps<unknown, RJSFSchema, AdapterContext>> = (props) => {
+  const { t } = useTranslation('components')
   const { formContext } = props
   const { isDiscoverable, adapterType, adapterId } = formContext || {}
   if (!adapterType || !adapterId) throw new Error('The adapter has not been added to the form context')
@@ -69,7 +79,19 @@ const AdapterTagSelect: FC<WidgetProps<unknown, RJSFSchema, AdapterContext>> = (
     return <BaseInputTemplate {...props} />
   }
 
-  const options = getAdapterTreeView(data).filter((option) => option.parent !== null)
+  const flattenDataTree = getAdapterTreeView(data)
+  const options = flattenDataTree.filter((option) => option.parent !== null && option.metadata?.selectable === true)
+
+  function noOptionsMessage(obj: { inputValue: string }) {
+    const getErrorMessage = () => {
+      if (!flattenDataTree.length) return t('rjsf.AdapterTagSelect.select.noTags')
+      if (!options.length) return t('rjsf.AdapterTagSelect.select.noSelectable')
+
+      return t('rjsf.AdapterTagSelect.select.noOption', { count: obj.inputValue.length, value: obj.inputValue })
+    }
+
+    return <Text>{getErrorMessage()}</Text>
+  }
 
   return (
     <FormControl
@@ -96,8 +118,8 @@ const AdapterTagSelect: FC<WidgetProps<unknown, RJSFSchema, AdapterContext>> = (
         options={options}
         value={options.find((e) => e.metadata?.id === props.value)}
         onChange={onChange}
+        noOptionsMessage={noOptionsMessage}
         filterOption={createFilter({
-          // search in the name and description
           stringify: (option) => {
             return `${option.data.metadata?.name || ''}${option.data.metadata?.id || ''}`
           },
