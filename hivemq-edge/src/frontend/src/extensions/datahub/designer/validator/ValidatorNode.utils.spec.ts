@@ -1,8 +1,8 @@
 import { expect } from 'vitest'
-import { Node } from 'reactflow'
+import { Connection, Node, NodeAddChange } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
-import { DataPolicyValidator } from '@/api/__generated__'
+import { DataPolicy, DataPolicyValidator, Schema } from '@/api/__generated__'
 import {
   DataHubNodeType,
   DataPolicyData,
@@ -15,6 +15,7 @@ import {
 import {
   checkValidityPolicyValidator,
   checkValidityPolicyValidators,
+  loadValidators,
 } from '@datahub/designer/validator/ValidatorNode.utils.ts'
 
 const MOCK_NODE_VALIDATOR: Node<ValidatorData> = {
@@ -139,5 +140,165 @@ describe('checkValidityPolicyValidators', () => {
     expect(results).toHaveLength(1)
     const { node } = results[0]
     expect(node).toStrictEqual(MOCK_NODE_VALIDATOR)
+  })
+})
+
+describe('loadValidators', () => {
+  const MOCK_NODE_DATA_POLICY: Node<DataPolicyData> = {
+    id: 'node-id',
+    type: DataHubNodeType.DATA_POLICY,
+    data: { id: 'my-policy-id' },
+    ...MOCK_DEFAULT_NODE,
+    position: { x: 0, y: 0 },
+  }
+
+  const schemas: Schema[] = [
+    {
+      id: 'test',
+      version: 1,
+      type: 'JSON',
+      schemaDefinition:
+        'ewogICAiJHNjaGVtYSI6Imh0dHBzOi8vanNvbi1zY2hlbWEub3JnL2RyYWZ0LzIwMjAtMTIvc2NoZW1hIiwKICAgInRpdGxlIjoiZGZkZmRmZGYiLAogICAiZGVzY3JpcHRpb24iOiIiLAogICAicmVxdWlyZWQiOltdLAogICAidHlwZSI6Im9iamVjdCIsCiAgICJwcm9wZXJ0aWVzIjp7fQp9Cg==',
+    },
+  ]
+
+  it('should return nodes', () => {
+    const dataPolicy: DataPolicy = {
+      id: 'policy1',
+      matching: {
+        topicFilter: 'topic/example/2',
+      },
+      validation: {
+        validators: [
+          {
+            type: DataPolicyValidator.type.SCHEMA,
+            arguments: {
+              strategy: 'ALL_OF',
+              schemas: [
+                {
+                  schemaId: 'test',
+                  version: '1',
+                },
+                {
+                  schemaId: 'test',
+                  version: '1',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    }
+
+    expect(loadValidators(dataPolicy, schemas, MOCK_NODE_DATA_POLICY)).toStrictEqual<(NodeAddChange | Connection)[]>([
+      expect.objectContaining({
+        item: {
+          data: {
+            schemas: [
+              {
+                schemaId: 'test',
+                version: '1',
+              },
+              {
+                schemaId: 'test',
+                version: '1',
+              },
+            ],
+            strategy: 'ALL_OF',
+            type: 'SCHEMA',
+          },
+          id: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+          position: {
+            x: 0,
+            y: -150,
+          },
+          type: 'VALIDATOR',
+        },
+        type: 'add',
+      }),
+      expect.objectContaining({
+        source: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+        target: 'node-id',
+        targetHandle: 'validation',
+      }),
+      expect.objectContaining({
+        item: {
+          data: {
+            internalVersions: [1],
+            name: 'test',
+            schemaSource: expect.stringContaining('dfdfdfdf'),
+            type: 'JSON',
+            version: 1,
+          },
+          id: 'test',
+          position: {
+            x: 0,
+            y: -300,
+          },
+          type: 'SCHEMA',
+        },
+        type: 'add',
+      }),
+      expect.objectContaining({
+        source: 'test',
+        target: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+      }),
+      expect.objectContaining({
+        item: {
+          data: {
+            internalVersions: [1],
+            name: 'test',
+            schemaSource: expect.stringContaining('dfdfdfdf'),
+            type: 'JSON',
+            version: 1,
+          },
+          id: 'test',
+          position: {
+            x: 0,
+            y: -300,
+          },
+          type: 'SCHEMA',
+        },
+        type: 'add',
+      }),
+      expect.objectContaining({
+        source: 'test',
+        target: expect.stringContaining('node_'), //'node_0bf21139-7f2c-41d0-98b5-6024af1b31e4',
+      }),
+    ])
+  })
+
+  it('should be used in the right context', () => {
+    const dataPolicy: DataPolicy = {
+      id: 'policy1',
+      matching: {
+        topicFilter: 'topic/example/2',
+      },
+      validation: {
+        validators: [
+          {
+            // @ts-ignore This should not happen
+            type: 'FAKE_VALIDATOR',
+            arguments: {
+              strategy: 'ALL_OF',
+              schemas: [
+                {
+                  schemaId: 'test',
+                  version: '1',
+                },
+                {
+                  schemaId: 'test',
+                  version: '1',
+                },
+              ],
+            },
+          },
+        ],
+      },
+    }
+
+    expect(() => loadValidators(dataPolicy, schemas, MOCK_NODE_DATA_POLICY)).toThrow(
+      'Cannot find the Policy Validator node'
+    )
   })
 })
