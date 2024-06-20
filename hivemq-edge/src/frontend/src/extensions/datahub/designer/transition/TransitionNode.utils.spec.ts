@@ -1,5 +1,5 @@
 import { expect } from 'vitest'
-import { Node } from 'reactflow'
+import { Connection, Node, NodeAddChange } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 import {
@@ -12,7 +12,13 @@ import {
   TransitionType,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { checkValidityTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
+import {
+  checkValidityTransitions,
+  extractEventStates,
+  getActiveTransition,
+  loadTransitions,
+} from '@datahub/designer/transition/TransitionNode.utils.ts'
+import { type BehaviorPolicy, BehaviorPolicyOnTransition, Schema, Script } from '@/api/__generated__'
 
 const MOCK_NODE_BEHAVIOR: Node<BehaviorPolicyData> = {
   id: 'node-id',
@@ -227,5 +233,88 @@ describe('checkValidityTransitions', () => {
     expect(resources).toBeUndefined()
     expect(node).toStrictEqual(MOCK_NODE_TRANSITION)
     expect(error).toBeUndefined()
+  })
+})
+
+describe('getActiveTransition', () => {
+  const base: BehaviorPolicyOnTransition = { fromState: 'A', toState: 'B' }
+  it.each<[Partial<BehaviorPolicyOnTransition>, string | undefined]>([
+    [{}, undefined],
+    [{ 'Event.OnAny': { pipeline: [] }, 'Connection.OnDisconnect': { pipeline: [] } }, 'Event.OnAny'],
+    [
+      { 'Connection.OnDisconnect': { pipeline: [] }, 'Mqtt.OnInboundConnect': { pipeline: [] } },
+      'Connection.OnDisconnect',
+    ],
+    [
+      { 'Mqtt.OnInboundConnect': { pipeline: [] }, 'Mqtt.OnInboundDisconnect': { pipeline: [] } },
+      'Mqtt.OnInboundConnect',
+    ],
+    [
+      { 'Mqtt.OnInboundDisconnect': { pipeline: [] }, 'Mqtt.OnInboundPublish': { pipeline: [] } },
+      'Mqtt.OnInboundDisconnect',
+    ],
+    [
+      { 'Mqtt.OnInboundPublish': { pipeline: [] }, 'Mqtt.OnInboundSubscribe': { pipeline: [] } },
+      'Mqtt.OnInboundPublish',
+    ],
+    [{ 'Mqtt.OnInboundSubscribe': { pipeline: [] } }, 'Mqtt.OnInboundSubscribe'],
+  ])('should identify %s as %s', (transition, key) => {
+    expect(getActiveTransition({ ...base, ...transition })).toBe(key)
+  })
+})
+
+describe('extractEventStates', () => {
+  const base: BehaviorPolicyOnTransition = { fromState: 'A', toState: 'B' }
+
+  it.each<[BehaviorPolicyType, Partial<BehaviorPolicyOnTransition>, TransitionData]>([
+    [BehaviorPolicyType.MQTT_EVENT, {}, { model: BehaviorPolicyType.MQTT_EVENT }],
+    [
+      BehaviorPolicyType.MQTT_EVENT,
+      { 'Connection.OnDisconnect': { pipeline: [] } },
+      {
+        event: TransitionType.ON_DISCONNECT,
+        model: BehaviorPolicyType.MQTT_EVENT,
+      },
+    ],
+  ])('should identify %s %s as %s', (model, transition, res) => {
+    expect(extractEventStates(model, { ...base, ...transition })).toEqual(expect.objectContaining(res))
+  })
+})
+
+describe('loadTransitions', () => {
+  const MOCK_NODE_BEHAVIOR: Node<BehaviorPolicyData> = {
+    id: 'node-id',
+    type: DataHubNodeType.BEHAVIOR_POLICY,
+    data: { id: 'my-policy-id', model: BehaviorPolicyType.MQTT_EVENT },
+    ...MOCK_DEFAULT_NODE,
+    position: { x: 0, y: 0 },
+  }
+
+  it('should return nodes', () => {
+    const behaviorPolicy: BehaviorPolicy = {
+      behavior: { id: 'Mqtt.events' },
+
+      id: 'string',
+      matching: { clientIdRegex: '*.*' },
+    }
+    const schemas: Schema[] = []
+    const scripts: Script[] = []
+
+    expect(loadTransitions(behaviorPolicy, schemas, scripts, MOCK_NODE_BEHAVIOR)).toStrictEqual<
+      (NodeAddChange | Connection)[]
+    >([])
+  })
+
+  it('should throw error', () => {
+    const behaviorPolicy: BehaviorPolicy = {
+      behavior: { id: 'FAKE_MODEL' },
+      id: 'string',
+      matching: { clientIdRegex: '*.*' },
+    }
+    const schemas: Schema[] = []
+    const scripts: Script[] = []
+    expect(() => loadTransitions(behaviorPolicy, schemas, scripts, MOCK_NODE_BEHAVIOR)).toThrow(
+      'Something is wrong with the transition model'
+    )
   })
 })
