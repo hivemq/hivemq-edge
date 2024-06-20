@@ -41,17 +41,17 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @NotNull String getProtocolName() {
-        return "File Polling Protocol";
+        return "File Input Protocol";
     }
 
     @Override
     public @NotNull String getProtocolId() {
-        return "file_polling_protocol";
+        return "file_input";
     }
 
     @Override
     public @NotNull String getDisplayName() {
-        return "File Polling Protocol Adapter";
+        return "File Input Adapter";
     }
 
     @Override
