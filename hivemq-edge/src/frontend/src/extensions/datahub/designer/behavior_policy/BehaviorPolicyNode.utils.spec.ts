@@ -1,9 +1,10 @@
 import { expect } from 'vitest'
-import { Node } from 'reactflow'
+import { Node, NodeAddChange } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 import { BehaviorPolicyData, BehaviorPolicyType, DataHubNodeType } from '@datahub/types.ts'
-import { checkValidityModel } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
+import { checkValidityModel, loadBehaviorPolicy } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
+import type { BehaviorPolicy, BehaviorPolicyOnTransition } from '@/api/__generated__'
 
 describe('checkValidityModel', () => {
   it('should return error if no model configured', async () => {
@@ -49,5 +50,47 @@ describe('checkValidityModel', () => {
       })
     )
     expect(error).toBeUndefined()
+  })
+})
+
+describe('loadBehaviorPolicy', () => {
+  const base: BehaviorPolicyOnTransition = { fromState: 'A', toState: 'B' }
+
+  it('should return nodes', () => {
+    const behaviorPolicy: BehaviorPolicy = {
+      behavior: { id: 'Mqtt.events' },
+      createdAt: '',
+
+      id: 'string',
+
+      lastUpdatedAt: 'string',
+      matching: { clientIdRegex: 'ss' },
+      onTransitions: [base],
+    }
+    expect(loadBehaviorPolicy(behaviorPolicy)).toEqual<NodeAddChange>({
+      item: {
+        data: {
+          arguments: undefined,
+          id: 'string',
+          model: 'Mqtt.events',
+        },
+        id: expect.stringContaining(''),
+        position: {
+          x: 0,
+          y: 0,
+        },
+        type: 'BEHAVIOR_POLICY',
+      },
+      type: 'add',
+    })
+  })
+
+  it('should throw an error without a model', () => {
+    const behaviorPolicy: BehaviorPolicy = {
+      behavior: { id: 'fake' },
+      id: 'string',
+      matching: { clientIdRegex: 'ss' },
+    }
+    expect(() => loadBehaviorPolicy(behaviorPolicy)).toThrowError('Cannot find the Behavior Policy node')
   })
 })
