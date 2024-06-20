@@ -93,7 +93,7 @@ export const getActiveTransition = (transition: BehaviorPolicyOnTransition) => {
   return undefined
 }
 
-const extractEventStates = (
+export const extractEventStates = (
   model: BehaviorPolicyType,
   behaviorPolicyTransition: BehaviorPolicyOnTransition
 ): TransitionData => {
