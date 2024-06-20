@@ -27,7 +27,6 @@ import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
-import com.hivemq.adapter.sdk.api.events.model.EventBuilder;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
@@ -48,7 +47,6 @@ import com.hivemq.edge.modules.adapters.impl.factories.AdapterFactoriesImpl;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFactory;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
-import com.hivemq.edge.modules.api.events.model.EventImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
@@ -369,6 +367,7 @@ public class ProtocolAdapterManager {
             protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterInstance.get()
                     .getAdapterInformation()
                     .getProtocolId());
+            protocolAdapterPollingService.stopPollingForAdapterInstance(adapterInstance.get());
             final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
             adapterInstance.get().stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
 
@@ -583,13 +582,5 @@ public class ProtocolAdapterManager {
         public @NotNull ProtocolAdapterMetricsService getProtocolAdapterMetricsHelper() {
             return protocolAdapterMetricsService;
         }
-    }
-
-    protected @NotNull EventBuilder eventBuilder(
-            final @NotNull EventImpl.SEVERITY severity, final @NotNull ProtocolAdapter adapter) {
-        Preconditions.checkNotNull(severity);
-        Preconditions.checkNotNull(adapter);
-        return eventService.createAdapterEvent(adapter.getId(), adapter.getProtocolAdapterInformation().getProtocolId())
-                .withSeverity(severity);
     }
 }
