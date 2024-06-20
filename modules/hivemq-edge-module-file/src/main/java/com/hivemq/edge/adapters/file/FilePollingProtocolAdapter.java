@@ -28,6 +28,7 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FilePollingContext;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,12 +39,16 @@ import java.util.List;
 
 public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePollingContext> {
 
+    private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(FilePollingProtocolAdapter.class);
+
     private final @NotNull FileAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull List<FilePollingContext> pollingContext;
 
-    public FilePollingProtocolAdapter(final @NotNull ProtocolAdapterInformation adapterInformation, final @NotNull ProtocolAdapterInput<FileAdapterConfig> input) {
+    public FilePollingProtocolAdapter(
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<FileAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
@@ -56,7 +61,9 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePo
     }
 
     @Override
-    public void start(final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+    public void start(
+            final @NotNull ProtocolAdapterStartInput input,
+            final @NotNull ProtocolAdapterStartOutput output) {
         // any setup which should be done before the adapter starts polling comes here.
         try {
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
@@ -67,7 +74,9 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePo
     }
 
     @Override
-    public void stop(final @NotNull ProtocolAdapterStopInput protocolAdapterStopInput, final @NotNull ProtocolAdapterStopOutput protocolAdapterStopOutput) {
+    public void stop(
+            final @NotNull ProtocolAdapterStopInput protocolAdapterStopInput,
+            final @NotNull ProtocolAdapterStopOutput protocolAdapterStopOutput) {
         protocolAdapterStopOutput.stoppedSuccessfully();
     }
 
@@ -78,31 +87,29 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePo
     }
 
     @Override
-    public void poll(final @NotNull PollingInput<FilePollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
-        // absolute path to the file that contains the data. Magic string for now. Later it will be part of the config
+    public void poll(
+            final @NotNull PollingInput<FilePollingContext> pollingInput,
+            final @NotNull PollingOutput pollingOutput) {
         final String absolutePathToFle = pollingInput.getPollingContext().getFilePath();
         try {
             final Path path = Path.of(absolutePathToFle);
             final long length = path.toFile().length();
             final int limit = 64_000; // not a constant to have a more compact code example
             if (length > limit) {
-                pollingOutput.fail(String.format("File '%s' of size '%d' exceeds the limit '%d'.", path.toAbsolutePath(), length, limit));
+                pollingOutput.fail(String.format("File '%s' of size '%d' exceeds the limit '%d'.",
+                        path.toAbsolutePath(),
+                        length,
+                        limit));
                 return;
             }
-            // load the content of the file
             byte[] fileContent = Files.readAllBytes(path);
-            // encode it as base64
             final String encodedFileContent = Base64.getEncoder().encodeToString(fileContent);
-            // add the content of the file to the output
             pollingOutput.addDataPoint("value", encodedFileContent);
+            pollingOutput.finish();
         } catch (IOException e) {
-            // in case something goes wrong while reading the file, an IOException will be thrown.
-            // we handle it by failing the poll process and returning from the poll method.
+            LOG.warn("An exception occurred while reading the file '{}'.", absolutePathToFle, e);
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
-            return;
         }
-        // we need to tell edge that the polling is done as edge also supports asynchronous polling.
-        pollingOutput.finish();
     }
 
     @Override
