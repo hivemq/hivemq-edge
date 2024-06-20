@@ -12,7 +12,8 @@ import {
   TransitionType,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { checkValidityTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
+import { checkValidityTransitions, getActiveTransition } from '@datahub/designer/transition/TransitionNode.utils.ts'
+import { BehaviorPolicyOnTransition } from '@/api/__generated__'
 
 const MOCK_NODE_BEHAVIOR: Node<BehaviorPolicyData> = {
   id: 'node-id',
@@ -227,5 +228,32 @@ describe('checkValidityTransitions', () => {
     expect(resources).toBeUndefined()
     expect(node).toStrictEqual(MOCK_NODE_TRANSITION)
     expect(error).toBeUndefined()
+  })
+})
+
+describe('getActiveTransition', () => {
+  const base: BehaviorPolicyOnTransition = { fromState: 'A', toState: 'B' }
+  it.each<[Partial<BehaviorPolicyOnTransition>, string | undefined]>([
+    [{}, undefined],
+    [{ 'Event.OnAny': { pipeline: [] }, 'Connection.OnDisconnect': { pipeline: [] } }, 'Event.OnAny'],
+    [
+      { 'Connection.OnDisconnect': { pipeline: [] }, 'Mqtt.OnInboundConnect': { pipeline: [] } },
+      'Connection.OnDisconnect',
+    ],
+    [
+      { 'Mqtt.OnInboundConnect': { pipeline: [] }, 'Mqtt.OnInboundDisconnect': { pipeline: [] } },
+      'Mqtt.OnInboundConnect',
+    ],
+    [
+      { 'Mqtt.OnInboundDisconnect': { pipeline: [] }, 'Mqtt.OnInboundPublish': { pipeline: [] } },
+      'Mqtt.OnInboundDisconnect',
+    ],
+    [
+      { 'Mqtt.OnInboundPublish': { pipeline: [] }, 'Mqtt.OnInboundSubscribe': { pipeline: [] } },
+      'Mqtt.OnInboundPublish',
+    ],
+    [{ 'Mqtt.OnInboundSubscribe': { pipeline: [] } }, 'Mqtt.OnInboundSubscribe'],
+  ])('should identify %s as %s', (transition, key) => {
+    expect(getActiveTransition({ ...base, ...transition })).toBe(key)
   })
 })
