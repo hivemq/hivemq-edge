@@ -76,7 +76,7 @@ export const loadValidators = (policy: DataPolicy, schemas: Schema[], dataPolicy
     const type = enumFromStringValue(DataPolicyValidator.type, validator.type.toUpperCase())
     if (!type)
       throw new Error(
-        i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.DATA_POLICY }) as string
+        i18n.t('datahub:error.loading.connection.notFound', { type: DataHubNodeType.VALIDATOR }) as string
       )
 
     const validatorNode: Node<ValidatorData> = {
