@@ -62,7 +62,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -272,11 +271,12 @@ public class ProtocolAdapterManager {
             final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
             adapter.getPollingContexts().forEach(adapterSubscription -> {
                 //noinspection unchecked this is safe as we literally make a check on the adapter class before
-                final PerSubscriptionSampler<? extends PollingContext> sampler = new PerSubscriptionSampler<>(protocolAdapterWrapper,
+                final PerSubscriptionSampler<? extends PollingContext> sampler = new PerSubscriptionSampler<>(
+                        protocolAdapterWrapper,
                         metricRegistry,
                         objectMapper,
                         moduleServices.adapterPublishService(),
-                        (PollingContext)adapterSubscription,
+                        (PollingContext) adapterSubscription,
                         eventService,
                         jsonPayloadDefaultCreator);
                 protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
@@ -302,7 +302,8 @@ public class ProtocolAdapterManager {
             final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
             stopFuture = adapterStopOutput.getOutputFuture();
             protocolAdapter.stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
-        } stopFuture.thenApply(input -> {
+        }
+        stopFuture.thenApply(input -> {
             if (log.isTraceEnabled()) {
                 log.trace("Protocol-adapter '{}' stopped.", protocolAdapter.getId());
             }
@@ -364,26 +365,27 @@ public class ProtocolAdapterManager {
         return addAdapterAndStartInRuntime(adapterType, config);
     }
 
-    public boolean deleteAdapter(final @NotNull String id) {
+    public @NotNull CompletableFuture<Boolean> deleteAdapter(final @NotNull String id) {
         Preconditions.checkNotNull(id);
         Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapterInstance = getAdapterById(id);
-        if (adapterInstance.isPresent()) {
-            protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterInstance.get()
-                    .getAdapterInformation()
-                    .getProtocolId());
-            protocolAdapterPollingService.stopPollingForAdapterInstance(adapterInstance.get());
-            final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
-            adapterInstance.get().stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
+        if (adapterInstance.isEmpty()) {
+            return CompletableFuture.completedFuture(false);
+        }
+        protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterInstance.get()
+                .getAdapterInformation()
+                .getProtocolId());
+        protocolAdapterPollingService.stopPollingForAdapterInstance(adapterInstance.get());
+        final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
+        adapterInstance.get().stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
 
-            // FIXME: We need to adapt the whole flow to async
-            try {
-                adapterStopOutput.getOutputFuture().get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
+        return adapterStopOutput.getOutputFuture().handle((aVoid, throwable) -> {
+            final String adapterId = adapterInstance.get().getId();
+            if (throwable != null) {
+                log.warn(
+                        "An exception was raised while stopping adapter '{}' before deleting the adapter. The adapter will be tried to be deleted anyway.",
+                        adapterId,
+                        throwable);
             }
-
             if (protocolAdapters.remove(id) != null) {
                 try {
                     synchronized (lock) {
@@ -393,15 +395,11 @@ public class ProtocolAdapterManager {
                                 configurationService.protocolAdapterConfigurationService().getAllConfigs();
                         List<Map<String, ?>> adapterList =
                                 getAdapterListForType(adapterInstance.get().getAdapterInformation().getProtocolId());
-                        if (adapterList != null) {
-                            if (adapterList.removeIf(instance -> id.equals(instance.get("id")))) {
-                                configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
-                            }
+                        if (adapterList.removeIf(instance -> id.equals(instance.get("id")))) {
+                            configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
                         }
                     }
-                    return true;
                 } finally {
-                    final String adapterId = adapterInstance.get().getId();
                     eventService.createAdapterEvent(adapterId,
                                     adapterInstance.get().getProtocolAdapterInformation().getProtocolId())
                             .withSeverity(Event.SEVERITY.WARN)
@@ -411,20 +409,24 @@ public class ProtocolAdapterManager {
 
                 }
             }
-        }
-        return false;
+            return true;
+        });
     }
 
-    public boolean updateAdapter(final @NotNull String adapterId, final @NotNull Map<String, Object> config) {
+    public @NotNull CompletableFuture<Boolean> updateAdapter(
+            final @NotNull String adapterId,
+            final @NotNull Map<String, Object> config) {
         Preconditions.checkNotNull(adapterId);
         Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapterInstance = getAdapterById(adapterId);
-        if (adapterInstance.isPresent()) {
-            ProtocolAdapterWrapper<? extends ProtocolAdapter> oldInstance = adapterInstance.get();
-            deleteAdapter(oldInstance.getId());
-            addAdapter(oldInstance.getProtocolAdapterInformation().getProtocolId(), oldInstance.getId(), config);
-            return true;
+        if (adapterInstance.isEmpty()) {
+            return CompletableFuture.completedFuture(false);
         }
-        return false;
+        ProtocolAdapterWrapper<? extends ProtocolAdapter> oldInstance = adapterInstance.get();
+
+        return deleteAdapter(oldInstance.getId()).thenCompose(aVoid -> addAdapter(oldInstance.getProtocolAdapterInformation().getProtocolId(),
+                oldInstance.getId(),
+                config).thenApply(otherVoid -> true)
+        );
     }
 
     public @NotNull Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> getAdapterById(final @NotNull String id) {
@@ -516,19 +518,15 @@ public class ProtocolAdapterManager {
     }
 
     protected @NotNull List<Map<String, ?>> getAdapterListForType(final @NotNull String adapterType) {
-
-        Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
-        List<Map<String, ?>> adapterList = null;
-        Object o = mainMap.get(adapterType);
-        if (o instanceof Map || o instanceof String || o == null) {
-            if (adapterList == null) {
-                adapterList = new ArrayList<>();
-            }
-            if (o != null && o instanceof Map) {
-                adapterList.add((Map) o);
-            }
+        final Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
+        List<Map<String, ?>> adapterList = new ArrayList<>();
+        final Object o = mainMap.get(adapterType);
+        if (o instanceof Map) {
+            adapterList.add((Map) o);
             mainMap.put(adapterType, adapterList);
-        } else {
+        } else if (o instanceof String || o == null) {
+            mainMap.put(adapterType, adapterList);
+        } else if (o instanceof List) {
             adapterList = (List) o;
         }
         return adapterList;
