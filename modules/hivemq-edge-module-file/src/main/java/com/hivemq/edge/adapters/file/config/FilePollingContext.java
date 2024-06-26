@@ -21,6 +21,8 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
+import com.hivemq.edge.adapters.file.payload.FileJsonPayloadCreator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -77,14 +79,22 @@ public class FilePollingContext implements PollingContext {
             required = true)
     protected @NotNull String filePath;
 
+    @JsonProperty(value = "contentType", required = true)
+    @ModuleConfigField(title = "Content Type",
+                       description = "The type of the content within the file.",
+                       required = true)
+    protected @NotNull ContentType contentType;
+
     @JsonCreator
     public FilePollingContext(
             @JsonProperty("destination") @Nullable final String destination,
             @JsonProperty("qos") final int qos,
             @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties,
-            @JsonProperty("filePath") @NotNull String filePath) {
+            @JsonProperty("filePath") @NotNull String filePath,
+            @JsonProperty(value = "contentType") @NotNull ContentType contentType) {
         this.destination = destination;
         this.qos = qos;
+        this.contentType = contentType;
         if (userProperties != null) {
             this.userProperties = userProperties;
         }
@@ -124,5 +134,10 @@ public class FilePollingContext implements PollingContext {
     @Override
     public @NotNull List<UserProperty> getUserProperties() {
         return userProperties;
+    }
+
+    @Override
+    public @Nullable JsonPayloadCreator getJsonPayloadCreator() {
+        return  FileJsonPayloadCreator.INSTANCE;
     }
 }
