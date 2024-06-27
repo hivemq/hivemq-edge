@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -301,7 +302,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     errorCountTotal = applicationErrorCount.incrementAndGet();
 
                     final int maxErrorsBeforeRemoval = sampler.getMaxErrorsBeforeRemoval();
-                    if (maxErrorsBeforeRemoval < 0) {
+                    if (maxErrorsBeforeRemoval < 0 || errorCountTotal <= maxErrorsBeforeRemoval) {
                         continuing = true;
                     } else {
                         log.info(
@@ -309,14 +310,22 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                                 errorCountTotal,
                                 maxErrorsBeforeRemoval,
                                 sampler.getAdapterId());
-                        continuing = errorCountTotal < maxErrorsBeforeRemoval;
+                        continuing = false;
                     }
                     if (log.isDebugEnabled()) {
-                        log.debug("Application Error {} In Sampler {} -> {}",
-                                errorCountTotal,
-                                sampler.getAdapterId(),
-                                e.getMessage(),
-                                e);
+                        if (e instanceof ExecutionException) {
+                            log.debug("Application Error {} In Sampler {} -> {}",
+                                    errorCountTotal,
+                                    sampler.getAdapterId(),
+                                    e.getCause().getMessage(),
+                                    e.getCause());
+                        } else {
+                            log.debug("Application Error {} In Sampler {} -> {}",
+                                    errorCountTotal,
+                                    sampler.getAdapterId(),
+                                    e.getMessage(),
+                                    e);
+                        }
                     }
                 }
                 try {

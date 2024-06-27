@@ -83,13 +83,13 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
                 if (pollingOutput.getErrorMessage() == null) {
                     log.warn("During the polling for adapter with id '{}' an exception occurred: ",
                             getAdapterId(),
-                            throwable);
+                            throwable.getCause());
                 } else {
                     log.warn(
                             "During the polling for adapter with id '{}' an exception occurred. Detailed error message: {}.",
                             getAdapterId(),
                             pollingOutput.getErrorMessage(),
-                            throwable);
+                            throwable.getCause());
                 }
             }
         });

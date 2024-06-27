@@ -27,6 +27,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FilePollingContext;
+import com.hivemq.edge.adapters.file.convertion.MappingException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 
@@ -99,13 +100,15 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePo
                         limit));
                 return;
             }
-
             final byte[] fileContent = Files.readAllBytes(path);
             final Object value = pollingInput.getPollingContext().getContentType().map(fileContent);
             pollingOutput.addDataPoint("value", value);
             pollingOutput.finish();
         } catch (IOException e) {
             LOG.warn("An exception occurred while reading the file '{}'.", absolutePathToFle, e);
+            pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
+        } catch (MappingException e){
+            LOG.warn("An exception occurred while converting the data in file '{}' to a payload '{}'.", absolutePathToFle, e.getMessage());
             pollingOutput.fail(e, "An exception occurred while reading the file '" + absolutePathToFle + "'.");
         }
     }

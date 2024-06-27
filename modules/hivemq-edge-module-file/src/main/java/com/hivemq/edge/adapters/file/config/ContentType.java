@@ -1,7 +1,11 @@
 package com.hivemq.edge.adapters.file.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.edge.adapters.file.convertion.MappingException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -18,13 +22,15 @@ public enum ContentType {
     TEXT_CSV(ContentType::mapPlainText);
 
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final Logger log = LoggerFactory.getLogger(ContentType.class);
+
     private final @NotNull Function<byte[], Object> mapperFunction;
 
     ContentType(final @NotNull Function<byte[], Object> mapperFunction) {
         this.mapperFunction = mapperFunction;
     }
 
-    public @NotNull Object map(byte @NotNull [] fileContent) {
+    public @Nullable Object map(byte @NotNull [] fileContent) {
         return mapperFunction.apply(fileContent);
     }
 
@@ -40,7 +46,7 @@ public enum ContentType {
         try {
             return OBJECT_MAPPER.readTree(data);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new MappingException("The content of the file could not be parsed to a JSON:" + e.getMessage());
         }
     }
 }
