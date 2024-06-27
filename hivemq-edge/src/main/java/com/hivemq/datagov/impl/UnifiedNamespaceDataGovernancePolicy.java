@@ -25,9 +25,11 @@ import com.hivemq.datagov.model.impl.DataGovernancePolicyImpl;
 import com.hivemq.mqtt.message.publish.PUBLISHFactory;
 import com.hivemq.uns.UnifiedNamespaceService;
 import com.hivemq.uns.config.ISA95;
+import com.hivemq.uns.config.NamespaceProfile;
 
 import javax.inject.Inject;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * @author Simon L Johnson
@@ -48,7 +50,7 @@ public class UnifiedNamespaceDataGovernancePolicy extends DataGovernancePolicyIm
 
     public void execute(final DataGovernanceContext context, final DataGovernanceData input){
 
-        ImmutableMap.Builder builder = ImmutableMap.<String, String>builder();
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
         Map<String, String> tokens = context.getTokenProvider().getTokenReplacements(context);
         if(tokens != null){
             builder.putAll(tokens);
@@ -56,12 +58,15 @@ public class UnifiedNamespaceDataGovernancePolicy extends DataGovernancePolicyIm
 
         MqttTopic mqttTopic = MqttTopic.of(input.getPublish().getTopic());
         //-- Topic modifications
-        ISA95 isa95 = unifiedNamespaceService.getISA95();
-        if(isa95.isEnabled()){
-            builder.putAll(unifiedNamespaceService.getTopicReplacements(isa95));
-            if(isa95.isPrefixAllTopics()){
+        //-- SLJ Edit - updated to support generic namespace definitions. Used to pass ISA95 legacy profile, now use
+        //-- whichever is enabled
+        Optional<NamespaceProfile> namespaceProfileOptional = unifiedNamespaceService.getActiveProfile();
+        if(namespaceProfileOptional.isPresent()){
+            NamespaceProfile profile = namespaceProfileOptional.get();
+            builder.putAll(unifiedNamespaceService.getTopicReplacements(profile));
+            if(profile.getPrefixAllTopics()){
                 //-- Add a topic prefix regardless of the templates being used
-                mqttTopic = unifiedNamespaceService.prefixISA95(mqttTopic);
+                mqttTopic = unifiedNamespaceService.prefixWithActiveProfile(profile, mqttTopic);
             }
         }
 
