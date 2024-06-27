@@ -91,7 +91,7 @@ public class FilePollingContext implements PollingContext {
             @JsonProperty("qos") final int qos,
             @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties,
             @JsonProperty("filePath") @NotNull String filePath,
-            @JsonProperty(value = "contentType") @NotNull ContentType contentType) {
+            @JsonProperty("contentType") @NotNull ContentType contentType) {
         this.destination = destination;
         this.qos = qos;
         this.contentType = contentType;

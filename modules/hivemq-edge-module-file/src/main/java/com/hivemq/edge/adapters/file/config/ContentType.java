@@ -1,5 +1,6 @@
 package com.hivemq.edge.adapters.file.config;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
 import org.jetbrains.annotations.NotNull;
@@ -21,8 +22,8 @@ public enum ContentType {
     TEXT_XML(ContentType::mapPlainText),
     TEXT_CSV(ContentType::mapPlainText);
 
-    private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Logger log = LoggerFactory.getLogger(ContentType.class);
+    private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper().enable(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ContentType.class);
 
     private final @NotNull Function<byte[], Object> mapperFunction;
 
