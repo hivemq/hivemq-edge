@@ -32,21 +32,22 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Simon L Johnson
  */
-public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample {
+public class ProtocolAdapterDataSampleImpl<T extends PollingContext> implements ProtocolAdapterDataSample {
 
-    protected @NotNull Long timestamp = System.currentTimeMillis();
-    protected @NotNull PollingContext pollingContext;
+    private final @NotNull Long timestamp = System.currentTimeMillis();
+    private final @NotNull T pollingContext;
 
     //-- Handle multiple tags in the same sample
-    protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
+    private @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
-    public ProtocolAdapterDataSampleImpl() {
 
+    public ProtocolAdapterDataSampleImpl(final @NotNull T pollingContext) {
+        this.pollingContext = pollingContext;
     }
 
     @Override
     @JsonIgnore
-    public @NotNull PollingContext getPollingContext() {
+    public @NotNull T getPollingContext() {
         return pollingContext;
     }
 
@@ -69,7 +70,7 @@ public class ProtocolAdapterDataSampleImpl implements ProtocolAdapterDataSample 
     }
 
     @Override
-    public void setDataPoints(@NotNull List<DataPoint> list) {
+    public void setDataPoints(@NotNull final List<DataPoint> list) {
         this.dataPoints = list;
     }
 

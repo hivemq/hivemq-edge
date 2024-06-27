@@ -140,4 +140,8 @@ public class FilePollingContext implements PollingContext {
     public @Nullable JsonPayloadCreator getJsonPayloadCreator() {
         return  FileJsonPayloadCreator.INSTANCE;
     }
+
+    public @NotNull ContentType getContentType() {
+        return contentType;
+    }
 }

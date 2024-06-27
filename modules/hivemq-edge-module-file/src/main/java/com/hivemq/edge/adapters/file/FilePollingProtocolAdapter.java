@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Base64;
 import java.util.List;
 
 
@@ -62,8 +61,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePo
 
     @Override
     public void start(
-            final @NotNull ProtocolAdapterStartInput input,
-            final @NotNull ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         // any setup which should be done before the adapter starts polling comes here.
         try {
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.STATELESS);
@@ -88,8 +86,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePo
 
     @Override
     public void poll(
-            final @NotNull PollingInput<FilePollingContext> pollingInput,
-            final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<FilePollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
         final String absolutePathToFle = pollingInput.getPollingContext().getFilePath();
         try {
             final Path path = Path.of(absolutePathToFle);
@@ -102,9 +99,10 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePo
                         limit));
                 return;
             }
-            byte[] fileContent = Files.readAllBytes(path);
-            final String encodedFileContent = Base64.getEncoder().encodeToString(fileContent);
-            pollingOutput.addDataPoint("value", encodedFileContent);
+
+            final byte[] fileContent = Files.readAllBytes(path);
+            final Object value = pollingInput.getPollingContext().getContentType().map(fileContent);
+            pollingOutput.addDataPoint("value", value);
             pollingOutput.finish();
         } catch (IOException e) {
             LOG.warn("An exception occurred while reading the file '{}'.", absolutePathToFle, e);

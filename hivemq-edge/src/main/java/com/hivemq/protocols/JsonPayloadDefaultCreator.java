@@ -2,7 +2,6 @@ package com.hivemq.protocols;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
@@ -16,17 +15,24 @@ import com.hivemq.edge.modules.adapters.data.TagSample;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Singleton
 public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
+
+    @Inject
+    JsonPayloadDefaultCreator() {
+    }
 
     @Override
     public @NotNull List<byte[]> convertToJson(
             final @NotNull ProtocolAdapterDataSample sample, final @NotNull ObjectMapper objectMapper) {
-        List<AbstractProtocolAdapterJsonPayload> payloads = convertAdapterSampleToPublishes(sample);
-        List<byte[]> jsonPayloadsAsBytes = new ArrayList<>();
+        final List<AbstractProtocolAdapterJsonPayload> payloads = convertAdapterSampleToPublishes(sample);
+        final List<byte[]> jsonPayloadsAsBytes = new ArrayList<>();
         payloads.forEach(payload -> {
             try {
                 jsonPayloadsAsBytes.add(convertToJson(payload, objectMapper));
@@ -39,10 +45,9 @@ public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
 
 
     public byte @NotNull [] convertToJson(
-            final @NotNull AbstractProtocolAdapterJsonPayload data,
-            final @NotNull ObjectMapper objectMapper) throws ProtocolAdapterException {
+            final @NotNull AbstractProtocolAdapterJsonPayload data, final @NotNull ObjectMapper objectMapper)
+            throws ProtocolAdapterException {
         try {
-            Preconditions.checkNotNull(data);
             return objectMapper.writeValueAsBytes(data);
         } catch (JsonProcessingException e) {
             throw new ProtocolAdapterException("Error Wrapping Adapter Data", e);
@@ -51,15 +56,14 @@ public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
 
     public @NotNull List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(
             final @NotNull ProtocolAdapterDataSample data) {
-        Preconditions.checkNotNull(data);
         final PollingContext pollingContext = data.getPollingContext();
         final List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
         //-- Only include the timestamp if the settings say so
-        Long timestamp = pollingContext.getIncludeTimestamp() ? data.getTimestamp() : null;
+        final Long timestamp = pollingContext.getIncludeTimestamp() ? data.getTimestamp() : null;
         if (data.getDataPoints().size() > 1 &&
                 pollingContext.getMessageHandlingOptions() == MessageHandlingOptions.MQTTMessagePerSubscription) {
             //-- Put all derived samples into a single MQTT message
-            AbstractProtocolAdapterJsonPayload payload =
+            final AbstractProtocolAdapterJsonPayload payload =
                     createMultiPublishPayload(timestamp, data.getDataPoints(), pollingContext.getIncludeTagNames());
             decoratePayloadMessage(payload, pollingContext);
             list.add(payload);
