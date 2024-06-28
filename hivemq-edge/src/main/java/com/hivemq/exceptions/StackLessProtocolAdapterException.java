@@ -20,6 +20,10 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 public class StackLessProtocolAdapterException extends ProtocolAdapterException {
 
+    public StackLessProtocolAdapterException(final @org.jetbrains.annotations.NotNull String message) {
+        super(message);
+    }
+
     // makes this exception much cheaper, but we wont get a nice stack trace.
     @Override
     public synchronized @NotNull Throwable fillInStackTrace() {
