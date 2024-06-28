@@ -75,7 +75,7 @@ public class FilePollingContext implements PollingContext {
 
     @JsonProperty(value = "filePath", required = true)
     @ModuleConfigField(title = "The file path",
-            description = "The path to the file that should be scraped.",
+            description = "The absolute path to the file that should be scraped.",
             required = true)
     protected @NotNull String filePath;
 
