@@ -29,8 +29,6 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
-import java.util.concurrent.CompletableFuture;
-
 public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements ProtocolAdapter {
 
     private final @NotNull T adapter;
@@ -70,10 +68,10 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements Protoc
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> discoverValues(
+    public void discoverValues(
             @NotNull final ProtocolAdapterDiscoveryInput input,
             @NotNull final ProtocolAdapterDiscoveryOutput output) {
-        return adapter.discoverValues(input, output);
+        adapter.discoverValues(input, output);
     }
 
     public @NotNull ProtocolAdapterState.ConnectionStatus getConnectionStatus() {

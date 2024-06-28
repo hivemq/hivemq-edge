@@ -158,7 +158,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> discoverValues(
+    public void discoverValues(
             final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
 
         if (opcUaClient == null) {
@@ -176,7 +176,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
             browseRoot = parsedNodeId.get();
         }
 
-        return browse(opcUaClient, browseRoot, null, (ref, parent) -> {
+        browse(opcUaClient, browseRoot, null, (ref, parent) -> {
             final String name = ref.getBrowseName() != null ? ref.getBrowseName().getName() : "";
             final String displayName = ref.getDisplayName() != null ? ref.getDisplayName().getText() : "";
             final NodeType nodeType = getNodeType(ref);
@@ -188,7 +188,13 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                             parent != null ? parent.getNodeId().toParseableString() : null,
                             nodeType != null ? nodeType : NodeType.VALUE,
                             nodeType == NodeType.VALUE);
-        }, input.getDepth());
+        }, input.getDepth()).whenComplete((aVoid, t) -> {
+            if (t != null) {
+                output.fail(t, null);
+            } else {
+                output.finish();
+            }
+        });
     }
 
     @Override
