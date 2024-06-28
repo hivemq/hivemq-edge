@@ -64,6 +64,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class ProtocolAdaptersResourceImpl extends AbstractApi implements ProtocolAdaptersApi {
@@ -202,7 +203,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                     return (depth != null && depth > 0) ? depth : 1;
                 }
 
-            }, output).get();
+            }, output);
+            output.getOutputFuture().orTimeout(1, TimeUnit.MINUTES).get();
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             log.warn("Exception occurred during discovery for adapter '{}'", adapterId, cause);
@@ -211,7 +213,13 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             Thread.currentThread().interrupt();
             log.warn("Thread was interrupted during discovery for adapter '{}'", adapterId);
             return ErrorResponseUtil.genericError("Exception during discovery.");
-        } finally {
+        } catch (Exception e ){
+            log.warn("Exception was thrown during discovery for adapter '{}'.", adapterId);
+            return ErrorResponseUtil.genericError("Exception during discovery.");
+        }
+
+
+        finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
         final NodeTreeImpl nodeTree = output.getNodeTree();
