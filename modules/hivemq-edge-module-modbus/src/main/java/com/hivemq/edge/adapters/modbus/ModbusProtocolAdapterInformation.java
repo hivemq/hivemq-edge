@@ -74,7 +74,7 @@ public class ModbusProtocolAdapterInformation
 
     @Override
     public @NotNull String getAuthor() {
-        return "HIVEMQ";
+        return "HiveMQ";
     }
 
     @Override

@@ -74,7 +74,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull String getAuthor() {
-        return "HIVEMQ";
+        return "HiveMQ";
     }
 
     @Override
