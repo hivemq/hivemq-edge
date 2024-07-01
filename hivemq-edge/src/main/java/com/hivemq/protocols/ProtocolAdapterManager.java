@@ -81,6 +81,7 @@ public class ProtocolAdapterManager {
     private final @NotNull VersionProvider versionProvider;
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics;
+    private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
 
     private final @NotNull Object lock = new Object();
 
@@ -95,7 +96,8 @@ public class ProtocolAdapterManager {
             final @NotNull EventService eventService,
             final @NotNull VersionProvider versionProvider,
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
-            final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics) {
+            final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics,
+            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
@@ -106,6 +108,7 @@ public class ProtocolAdapterManager {
         this.versionProvider = versionProvider;
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetrics = protocolAdapterMetrics;
+        this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
     }
 
 
@@ -274,7 +277,8 @@ public class ProtocolAdapterManager {
                         objectMapper,
                         moduleServices.adapterPublishService(),
                         (PollingContext)adapterSubscription,
-                        eventService);
+                        eventService,
+                        jsonPayloadDefaultCreator);
                 protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
             });
         }

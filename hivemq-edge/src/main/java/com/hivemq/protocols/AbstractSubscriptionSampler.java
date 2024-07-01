@@ -16,26 +16,19 @@
 package com.hivemq.protocols;
 
 import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterPublishBuilder;
 import com.hivemq.adapter.sdk.api.ProtocolPublishResult;
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
-import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.edge.modules.adapters.data.AbstractProtocolAdapterJsonPayload;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterMultiPublishJsonPayload;
-import com.hivemq.edge.modules.adapters.data.ProtocolAdapterPublisherJsonPayload;
-import com.hivemq.edge.modules.adapters.data.TagSample;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.events.model.EventImpl;
@@ -45,7 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -55,7 +47,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPollingSampler {
 
@@ -79,6 +70,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     protected final @NotNull AtomicBoolean closed = new AtomicBoolean(false);
     protected final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapter;
+    private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
 
     public AbstractSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapter,
@@ -87,12 +79,14 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull EventService eventService) {
+            final @NotNull EventService eventService,
+            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
         this.protocolAdapter = protocolAdapter;
         this.adapterId = protocolAdapter.getId();
         this.initialDelay = Math.max(protocolPollingIntervalMillis, 100);
         this.period = Math.max(protocolPollingIntervalMillis, 10);
         this.objectMapper = objectMapper;
+        this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
         this.unit = TimeUnit.MILLISECONDS;
@@ -137,9 +131,16 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                 "QoS needs to be a valid QoS value (0,1,2)");
         try {
             final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
-            List<AbstractProtocolAdapterJsonPayload> payloads = convertAdapterSampleToPublishes(sample, pollingContext);
-            for (AbstractProtocolAdapterJsonPayload payload : payloads) {
-                byte[] json = convertToJson(payload);
+
+            final List<byte[]> jsonPayloadsAsBytes;
+            final JsonPayloadCreator jsonPayloadCreatorOverride = pollingContext.getJsonPayloadCreator();
+            if (jsonPayloadCreatorOverride != null) {
+                jsonPayloadsAsBytes = jsonPayloadCreatorOverride.convertToJson(sample, objectMapper);
+            } else {
+                jsonPayloadsAsBytes = jsonPayloadDefaultCreator.convertToJson(sample, objectMapper);
+            }
+
+            for (byte[] json : jsonPayloadsAsBytes) {
                 final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
                         .withTopic(pollingContext.getDestinationMqttTopic())
                         .withQoS(pollingContext.getQos())
@@ -149,7 +150,8 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                 publishFuture.thenAccept(publishReturnCode -> {
                     protocolAdapterMetricsService.incrementReadPublishSuccess();
                     if (publishCount.incrementAndGet() == 1) {
-                        eventService.createAdapterEvent(adapterId, protocolAdapter.getAdapterInformation().getProtocolId())
+                        eventService.createAdapterEvent(adapterId,
+                                        protocolAdapter.getAdapterInformation().getProtocolId())
                                 .withSeverity(EventImpl.SEVERITY.INFO)
                                 .withTimestamp(System.currentTimeMillis())
                                 .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
@@ -170,64 +172,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             log.warn("Exception during polling of data for adapters '{}':", adapterId, e);
             return CompletableFuture.failedFuture(e);
         }
-    }
-
-    public byte @NotNull [] convertToJson(final @NotNull AbstractProtocolAdapterJsonPayload data)
-            throws ProtocolAdapterException {
-        try {
-            Preconditions.checkNotNull(data);
-            return objectMapper.writeValueAsBytes(data);
-        } catch (JsonProcessingException e) {
-            throw new ProtocolAdapterException("Error Wrapping Adapter Data", e);
-        }
-    }
-
-    public @NotNull List<AbstractProtocolAdapterJsonPayload> convertAdapterSampleToPublishes(
-            final @NotNull ProtocolAdapterDataSample data, final @NotNull PollingContext pollingContext) {
-        Preconditions.checkNotNull(data);
-        List<AbstractProtocolAdapterJsonPayload> list = new ArrayList<>();
-        //-- Only include the timestamp if the settings say so
-        Long timestamp = pollingContext.getIncludeTimestamp() ? data.getTimestamp() : null;
-        if (data.getDataPoints().size() > 1 &&
-                pollingContext.getMessageHandlingOptions() == MessageHandlingOptions.MQTTMessagePerSubscription) {
-            //-- Put all derived samples into a single MQTT message
-            AbstractProtocolAdapterJsonPayload payload =
-                    createMultiPublishPayload(timestamp, data.getDataPoints(), pollingContext.getIncludeTagNames());
-            decoratePayloadMessage(payload, pollingContext);
-            list.add(payload);
-        } else {
-            //-- Put all derived samples into individual publish messages
-            data.getDataPoints()
-                    .stream()
-                    .map(dp -> createPublishPayload(timestamp, dp, pollingContext.getIncludeTagNames()))
-                    .map(pp -> decoratePayloadMessage(pp, pollingContext))
-                    .forEach(list::add);
-        }
-        return list;
-    }
-
-    protected @NotNull ProtocolAdapterPublisherJsonPayload createPublishPayload(
-            final @Nullable Long timestamp, @NotNull DataPoint dataPoint, boolean includeTagName) {
-        return new ProtocolAdapterPublisherJsonPayload(timestamp, createTagSample(dataPoint, includeTagName));
-    }
-
-    protected @NotNull AbstractProtocolAdapterJsonPayload createMultiPublishPayload(
-            final @Nullable Long timestamp, List<DataPoint> dataPoint, boolean includeTagName) {
-        return new ProtocolAdapterMultiPublishJsonPayload(timestamp,
-                dataPoint.stream().map(dp -> createTagSample(dp, includeTagName)).collect(Collectors.toList()));
-    }
-
-    protected static TagSample createTagSample(final @NotNull DataPoint dataPoint, boolean includeTagName) {
-        return new TagSample(includeTagName ? dataPoint.getTagName() : null, dataPoint.getTagValue());
-    }
-
-    protected @NotNull AbstractProtocolAdapterJsonPayload decoratePayloadMessage(
-            final @NotNull AbstractProtocolAdapterJsonPayload payload,
-            final @NotNull PollingContext pollingContext) {
-        if (!pollingContext.getUserProperties().isEmpty()) {
-            payload.setUserProperties(pollingContext.getUserProperties());
-        }
-        return payload;
     }
 
     @Override

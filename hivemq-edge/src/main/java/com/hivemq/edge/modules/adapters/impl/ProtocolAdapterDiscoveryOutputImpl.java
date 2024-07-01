@@ -49,7 +49,7 @@ public class ProtocolAdapterDiscoveryOutputImpl implements ProtocolAdapterDiscov
     @Override
     public void fail(@NotNull final String errorMessage) {
         this.errorMessage = errorMessage;
-        outputFuture.completeExceptionally(new StackLessProtocolAdapterException());
+        outputFuture.completeExceptionally(new StackLessProtocolAdapterException(errorMessage));
     }
 
     public @NotNull CompletableFuture<Void> getOutputFuture() {

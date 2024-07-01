@@ -43,14 +43,16 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull T pollingContext,
-            final @NotNull EventService eventService) {
+            final @NotNull EventService eventService,
+            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
         super(protocolAdapter,
                 protocolAdapter.getAdapter().getPollingIntervalMillis(),
                 protocolAdapter.getAdapter().getMaxPollingErrorsBeforeRemoval(),
                 metricRegistry,
                 objectMapper,
                 adapterPublishService,
-                eventService);
+                eventService,
+                jsonPayloadDefaultCreator);
         this.perSubscriptionProtocolAdapter = protocolAdapter.getAdapter();
         this.pollingContext = pollingContext;
     }
@@ -61,7 +63,7 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
         if (Thread.currentThread().isInterrupted()) {
             return CompletableFuture.failedFuture(new InterruptedException());
         }
-        final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl());
+        final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(pollingContext));
         try {
             perSubscriptionProtocolAdapter.poll(new PollingInputImpl<>(pollingContext), pollingOutput);
         } catch (Throwable t) {
@@ -81,13 +83,13 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
                 if (pollingOutput.getErrorMessage() == null) {
                     log.warn("During the polling for adapter with id '{}' an exception occurred: ",
                             getAdapterId(),
-                            throwable);
+                            throwable.getCause());
                 } else {
                     log.warn(
                             "During the polling for adapter with id '{}' an exception occurred. Detailed error message: {}.",
                             getAdapterId(),
                             pollingOutput.getErrorMessage(),
-                            throwable);
+                            throwable.getCause());
                 }
             }
         });

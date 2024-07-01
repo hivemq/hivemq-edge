@@ -1,0 +1,47 @@
+{
+  "ui:tabs": [
+    {
+      "id": "coreFields",
+      "title": "Settings",
+      "properties": [
+        "id"
+      ]
+    },
+    {
+      "id": "subFields",
+      "title": "Subscription",
+      "properties": [
+        "subscriptions"
+      ]
+    },
+    {
+      "id": "publishing",
+      "title": "Publishing",
+      "properties": [
+        "maxPollingErrorsBeforeRemoval",
+        "pollingIntervalMillis"
+      ]
+    }
+  ],
+  "port": {
+    "ui:widget": "updown"
+  },
+  "ui:order": [
+    "id",
+    "*"
+  ],
+  "subscriptions": {
+    "ui:batchMode": true,
+    "items": {
+      "ui:order": [
+        "destination",
+        "qos",
+        "*",
+        "userProperties"
+      ],
+      "ui:collapsable": {
+        "titleKey": "destination"
+      }
+    }
+  }
+}
