@@ -35,15 +35,15 @@ import java.util.concurrent.TimeUnit;
  * @author Daniel Krüger
  */
 @Singleton
-public class SequentialProtocolAdapterPollingServiceImpl implements ProtocolAdapterPollingService {
+public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPollingService {
 
-    private static final Logger log = LoggerFactory.getLogger(SequentialProtocolAdapterPollingServiceImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
 
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull Map<ProtocolAdapterPollingSampler, PollingTask> samplerToTask = new ConcurrentHashMap<>();
 
     @Inject
-    public SequentialProtocolAdapterPollingServiceImpl(
+    public ProtocolAdapterPollingServiceImpl(
             final @NotNull ScheduledExecutorService scheduledExecutorService,
             final @NotNull ShutdownHooks shutdownHooks) {
         this.scheduledExecutorService = scheduledExecutorService;
