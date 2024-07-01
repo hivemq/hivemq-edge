@@ -22,7 +22,7 @@ import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
-import com.hivemq.edge.modules.adapters.impl.polling.SequentialProtocolAdapterPollingServiceImpl;
+import com.hivemq.edge.modules.adapters.impl.polling.ProtocolAdapterPollingServiceImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.EventListener;
 import com.hivemq.edge.modules.api.events.EventStore;
@@ -49,7 +49,7 @@ public abstract class ModulesModule {
 
     @Binds
     @Singleton
-    abstract @NotNull ProtocolAdapterPollingService protocolAdapterPollingService(@NotNull SequentialProtocolAdapterPollingServiceImpl protocolAdapterPollingService);
+    abstract @NotNull ProtocolAdapterPollingService protocolAdapterPollingService(@NotNull ProtocolAdapterPollingServiceImpl protocolAdapterPollingService);
 
     @Binds
     @Singleton

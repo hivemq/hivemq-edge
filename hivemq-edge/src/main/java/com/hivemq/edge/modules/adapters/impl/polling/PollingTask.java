@@ -144,7 +144,6 @@ public class PollingTask implements Runnable {
 
     }
 
-
     private void notifyOnError(
             final @NotNull ProtocolAdapterPollingSampler sampler,
             final @NotNull Throwable t,
