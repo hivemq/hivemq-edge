@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.modules.api.adapters;
+package com.hivemq.util;
 
-import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
-/**
- * The Polling Service allows Protocol Adapters to use a centrally managed and tracked Scheduler
- * which means all processes can be managed via API / UX.
- *
- * @author Simon L Johnson
- */
-public interface ProtocolAdapterPollingService {
+import java.util.concurrent.TimeoutException;
 
-    void schedulePolling(@NotNull ProtocolAdapter adapter, @NotNull ProtocolAdapterPollingSampler input);
+public class ExceptionUtils {
 
-    void stopPollingForAdapterInstance(@NotNull ProtocolAdapter adapter);
+    public static boolean isInterruptedException(final @NotNull Throwable original) {
+        Throwable t = original;
+        do {
+            if (t instanceof InterruptedException || t instanceof TimeoutException) {
+                return true;
+            }
+            t = t.getCause();
+        } while (t != null);
+        return false;
+    }
+
 }

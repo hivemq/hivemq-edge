@@ -30,11 +30,8 @@ import javax.inject.Inject;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -45,7 +42,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
  * The polling service provides utility to track and invoke adapter
@@ -124,20 +120,6 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
         activePollers.put(sampler, internalJob);
     }
 
-
-    public @NotNull Optional<ProtocolAdapterPollingSampler> getPollingJob(final @NotNull UUID id) {
-        Preconditions.checkNotNull(id);
-        return activePollers.keySet().stream().filter(p -> p.getId().equals(id)).findAny();
-    }
-
-    public @NotNull List<ProtocolAdapterPollingSampler> getPollingJobsForAdapter(final @NotNull String adapterId) {
-        Preconditions.checkNotNull(adapterId);
-        return activePollers.keySet()
-                .stream()
-                .filter(p -> p.getAdapterId().equals(adapterId))
-                .collect(Collectors.toList());
-    }
-
     public void stopPollingForAdapterInstance(final @NotNull ProtocolAdapter adapter) {
         Preconditions.checkNotNull(adapter);
         activePollers.keySet()
@@ -163,16 +145,6 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                 }
             }
         }
-    }
-
-    @Override
-    public @NotNull List<ProtocolAdapterPollingSampler> getActiveProcesses() {
-        return List.copyOf(activePollers.keySet());
-    }
-
-    @Override
-    public int currentErrorCount(final @NotNull ProtocolAdapterPollingSampler pollingJob) {
-        return activePollers.get(pollingJob).applicationErrorCount.get();
     }
 
     public void stopAllPolling() {
