@@ -158,7 +158,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapt
 
 
     @Override
-    public @NotNull CompletableFuture<Void> discoverValues(
+    public void discoverValues(
             @NotNull ProtocolAdapterDiscoveryInput input, @NotNull ProtocolAdapterDiscoveryOutput output) {
         //-- Do the discovery of registers and coils, only for root level
         final NodeTree nodeTree = output.getNodeTree();
@@ -173,8 +173,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapt
         }
         addAddresses(nodeTree, "holding-registers", 1, 256, 16);
         addAddresses(nodeTree, "coils", 1, 256, 16);
-
-        return CompletableFuture.completedFuture(null);
+        output.finish();
     }
 
     @Override
