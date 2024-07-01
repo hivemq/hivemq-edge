@@ -115,7 +115,7 @@ public class PollingTask implements Runnable {
                         milliSecondsSinceLastPoll);
             }
         }
-        if (stopBecauseOfTooManyErrors) {
+        if (!stopBecauseOfTooManyErrors) {
             reschedule(errorCountTotal);
         }
     }
@@ -127,7 +127,7 @@ public class PollingTask implements Runnable {
         // case 1: Unlimited retry (maxErrorsBeforeRemoval < 0) or less errors than the limit
         if (maxErrorsBeforeRemoval < 0 || errorCountTotal <= maxErrorsBeforeRemoval) {
             if (log.isDebugEnabled()) {
-                log.debug("Application Error {} In Sampler {} -> {}",
+                log.debug("Application Error {} in sampler {} -> {}",
                         errorCountTotal,
                         sampler.getAdapterId(),
                         throwable.getMessage(),
