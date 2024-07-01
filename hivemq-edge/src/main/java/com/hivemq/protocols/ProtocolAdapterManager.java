@@ -292,8 +292,7 @@ public class ProtocolAdapterManager {
         CompletableFuture<Void> stopFuture;
 
         if (protocolAdapter instanceof PollingProtocolAdapter) {
-            protocolAdapterPollingService.getPollingJobsForAdapter(protocolAdapter.getId())
-                    .forEach(protocolAdapterPollingService::stopPolling);
+            protocolAdapterPollingService.stopPollingForAdapterInstance(protocolAdapter);
         }
 
         if (protocolAdapter.getRuntimeStatus() == ProtocolAdapterState.RuntimeStatus.STOPPED) {
