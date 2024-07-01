@@ -59,7 +59,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull EventService eventService;
-    private final @NotNull TimeUnit unit;
+    private final @NotNull TimeUnit unit = TimeUnit.MILLISECONDS;
     private final @NotNull String adapterId;
     private final @NotNull UUID uuid;
     private final @NotNull Date created;
@@ -89,7 +89,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
-        this.unit = TimeUnit.MILLISECONDS;
         this.maxErrorsBeforeRemoval = maxPollingErrorsBeforeRemoval;
         this.uuid = UUID.randomUUID();
         this.created = new Date();
