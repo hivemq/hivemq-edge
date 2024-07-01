@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.adapters.impl.polling;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.common.shutdown.HiveMQShutdownHook;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
@@ -40,20 +41,23 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
 
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
+    private final @NotNull EventService eventService;
     private final @NotNull Map<ProtocolAdapterPollingSampler, PollingTask> samplerToTask = new ConcurrentHashMap<>();
 
     @Inject
     public ProtocolAdapterPollingServiceImpl(
             final @NotNull ScheduledExecutorService scheduledExecutorService,
-            final @NotNull ShutdownHooks shutdownHooks) {
+            final @NotNull ShutdownHooks shutdownHooks,
+            final @NotNull EventService eventService) {
         this.scheduledExecutorService = scheduledExecutorService;
+        this.eventService = eventService;
         shutdownHooks.add(new Shutdown());
     }
 
     @Override
     public void schedulePolling(
             @NotNull final ProtocolAdapter adapter, @NotNull final ProtocolAdapterPollingSampler sampler) {
-        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService);
+        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService, eventService);
         scheduledExecutorService.schedule(pollingTask, sampler.getInitialDelay(), sampler.getUnit());
     }
 
