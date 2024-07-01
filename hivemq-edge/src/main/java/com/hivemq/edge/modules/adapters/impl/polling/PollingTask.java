@@ -56,7 +56,7 @@ public class PollingTask implements Runnable {
     @Override
     public void run() {
         try {
-            nanosOfLastPolling = System.currentTimeMillis();
+            nanosOfLastPolling = System.nanoTime();
 
             // synchronized with stop so that the change of the executor future field and the setting of the continueScheduling
             // has exclusive access by either of the two methods.
