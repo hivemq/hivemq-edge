@@ -236,6 +236,11 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     }
 
     @Override
+    public @NotNull String getProtocolId() {
+        return protocolAdapter.getProtocolAdapterInformation().getProtocolId();
+    }
+
+    @Override
     public @Nullable ScheduledFuture<?> getScheduledFuture() {
         return future;
     }
