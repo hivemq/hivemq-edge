@@ -73,7 +73,7 @@ public class PollingTask implements Runnable {
                         reschedule(0);
                     } else {
                         if (ExceptionUtils.isInterruptedException(throwable)) {
-                            handleInterruptionException();
+                            handleInterruptionException(throwable);
                         } else {
                             handleExceptionDuringPolling(throwable);
                         }
@@ -92,7 +92,7 @@ public class PollingTask implements Runnable {
     }
 
 
-    private void handleInterruptionException() {
+    private void handleInterruptionException(final @NotNull Throwable throwable) {
         //-- Job was killed by the framework as it took too long
         //-- Do not call back to the job here (notify) since it will
         //-- Not respond and we dont want to block other polls
@@ -115,6 +115,7 @@ public class PollingTask implements Runnable {
                         milliSecondsSinceLastPoll);
             }
         }
+        notifyOnError(sampler, throwable, !stopBecauseOfTooManyErrors);
         if (!stopBecauseOfTooManyErrors) {
             reschedule(errorCountTotal);
         }
@@ -134,16 +135,32 @@ public class PollingTask implements Runnable {
                         throwable);
             }
             reschedule(errorCountTotal);
+            notifyOnError(sampler, throwable,true);
         } else {
             log.info(
                     "Detected '{}' recent errors when sampling. This exceeds the configured limit of '{}'. Sampling for adapter with id '{}' gets stopped.",
                     errorCountTotal,
                     maxErrorsBeforeRemoval,
                     sampler.getAdapterId());
+            notifyOnError(sampler, throwable,false);
             // no rescheduling
         }
+
     }
 
+
+    private void notifyOnError(
+            final @NotNull ProtocolAdapterPollingSampler sampler,
+            final @NotNull Throwable t,
+            boolean continuing) {
+        try {
+            sampler.error(t, continuing);
+        } catch (Throwable samplerError) {
+            if (log.isInfoEnabled()) {
+                log.info("Sampler Encountered Error In Notification", samplerError);
+            }
+        }
+    }
 
     private void reschedule(int errorCountTotal) {
         final long delayInMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - nanosOfLastPolling);

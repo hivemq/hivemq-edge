@@ -244,7 +244,7 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     stopPolling(sampler);
                 }
             } catch (Throwable e) {
-                boolean continuing, notify = true;
+                boolean continuing;
                 int errorCountTotal;
                 if (isInterruptedException(e)) {
                     //-- Job was killed by the framework as it took too long
@@ -301,13 +301,11 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
                     }
                 }
                 try {
-                    if (notify) {
-                        try {
-                            sampler.error(e, continuing);
-                        } catch (Throwable samplerError) {
-                            if (log.isInfoEnabled()) {
-                                log.info("Sampler Encountered Error In Notification", samplerError);
-                            }
+                    try {
+                        sampler.error(e, continuing);
+                    } catch (Throwable samplerError) {
+                        if (log.isInfoEnabled()) {
+                            log.info("Sampler Encountered Error In Notification", samplerError);
                         }
                     }
                     if (!continuing) {
