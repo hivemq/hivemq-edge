@@ -20,10 +20,12 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.util.ExceptionUtils;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -155,16 +157,23 @@ public class PollingTask implements Runnable {
         long nonNegativeDelay = Math.max(0, delayInMillis);
 
         if (errorCountTotal == 0) {
-            if(continueScheduling.get()) {
-                scheduledExecutorService.schedule(this, nonNegativeDelay, TimeUnit.MILLISECONDS);
-            }
+            schedule(nonNegativeDelay);
         } else {
             long backoff = getBackoff(errorCountTotal,
                     InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get(),
                     true);
             long effectiveDelay = Math.max(nonNegativeDelay, backoff);
-            if(continueScheduling.get()) {
-                scheduledExecutorService.schedule(this, effectiveDelay, TimeUnit.MILLISECONDS);
+            schedule(effectiveDelay);
+        }
+    }
+
+    @VisibleForTesting
+    void schedule(long nonNegativeDelay) {
+        if (continueScheduling.get()) {
+            try {
+                scheduledExecutorService.schedule(this, nonNegativeDelay, TimeUnit.MILLISECONDS);
+            } catch (RejectedExecutionException rejectedExecutionException) {
+                // ignore. This is fine during shutdown.
             }
         }
     }
