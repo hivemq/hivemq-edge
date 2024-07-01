@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.modules.adapters.impl.polling;
 
+import com.hivemq.adapter.sdk.api.events.EventService;
+import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -37,6 +39,7 @@ public class PollingTask implements Runnable {
 
     private final @NotNull ProtocolAdapterPollingSampler sampler;
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
+    private final @NotNull EventService eventService;
     private final @NotNull AtomicInteger watchdogErrorCount = new AtomicInteger();
     private final @NotNull AtomicInteger applicationErrorCount = new AtomicInteger();
 
@@ -46,9 +49,11 @@ public class PollingTask implements Runnable {
 
     public PollingTask(
             final @NotNull ProtocolAdapterPollingSampler sampler,
-            final @NotNull ScheduledExecutorService scheduledExecutorService) {
+            final @NotNull ScheduledExecutorService scheduledExecutorService,
+            final @NotNull EventService eventService) {
         this.sampler = sampler;
         this.scheduledExecutorService = scheduledExecutorService;
+        this.eventService = eventService;
     }
 
     @Override
@@ -131,23 +136,21 @@ public class PollingTask implements Runnable {
                         throwable);
             }
             reschedule(errorCountTotal);
-            notifyOnError(sampler, throwable,true);
+            notifyOnError(sampler, throwable, true);
         } else {
             log.info(
                     "Detected '{}' recent errors when sampling. This exceeds the configured limit of '{}'. Sampling for adapter with id '{}' gets stopped.",
                     errorCountTotal,
                     maxErrorsBeforeRemoval,
                     sampler.getAdapterId());
-            notifyOnError(sampler, throwable,false);
+            notifyOnError(sampler, throwable, false);
             // no rescheduling
         }
 
     }
 
     private void notifyOnError(
-            final @NotNull ProtocolAdapterPollingSampler sampler,
-            final @NotNull Throwable t,
-            boolean continuing) {
+            final @NotNull ProtocolAdapterPollingSampler sampler, final @NotNull Throwable t, boolean continuing) {
         try {
             sampler.error(t, continuing);
         } catch (Throwable samplerError) {
@@ -161,9 +164,17 @@ public class PollingTask implements Runnable {
         final long delayInMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - nanosOfLastPolling);
         // a negative delay means that the last polling attempt took longer to be processed than the specified delay between polls
         if (delayInMillis < 0) {
-            log.warn("Polling for protocol adapter '{}' can not keep up with the specified '{}' interval.",
+            log.warn(
+                    "Polling for protocol adapter '{}' can not keep up with the specified '{}' interval, because the polling takes too long.",
                     sampler.getAdapterId(),
                     sampler.getPeriod());
+            eventService.createAdapterEvent(sampler.getAdapterId(), sampler.getProtocolId())
+                    .withMessage(String.format(
+                            "Polling for protocol adapter '%s' can not keep up with the specified '%d' ms interval, because the polling takes too long.",
+                            sampler.getAdapterId(),
+                            sampler.getPeriod()))
+                    .withSeverity(Event.SEVERITY.WARN)
+                    .fire();
         }
 
         long nonNegativeDelay = Math.max(0, delayInMillis);

@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.impl.polling;
 
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
@@ -38,9 +39,9 @@ import static org.mockito.Mockito.when;
 
 class PollingTaskTest {
 
-
     private final @NotNull AbstractSubscriptionSampler sampler = mock();
     private final @NotNull ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+    private final @NotNull EventService eventService = mock();
 
     @BeforeEach
     void setUp() {
@@ -58,7 +59,7 @@ class PollingTaskTest {
 
     @Test
     void when_executorServiceIsShutdown_thenNoException() throws InterruptedException {
-        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService);
+        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService, eventService);
         pollingTask.run();
         scheduledExecutorService.shutdown();
         Thread.sleep(10_000);
@@ -70,7 +71,7 @@ class PollingTaskTest {
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(3);
 
         when(sampler.execute()).thenThrow(new RuntimeException());
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
 
         pollingTask.run();
         verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
@@ -86,7 +87,7 @@ class PollingTaskTest {
     void run_whenSampleExecutionThrowsError_thenTaskIsRescheduled() {
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.execute()).thenThrow(new RuntimeException());
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
 
         pollingTask.run();
 
@@ -98,7 +99,7 @@ class PollingTaskTest {
     void run_whenSampleExecutionReturnsExceptionalFuture_thenTaskIsRescheduled() {
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new RuntimeException()));
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
 
         pollingTask.run();
 
@@ -110,7 +111,7 @@ class PollingTaskTest {
         InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.set(1);
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.execute()).thenReturn(new CompletableFuture<>());
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
 
         pollingTask.run();
         Thread.sleep(2_000);
@@ -121,7 +122,7 @@ class PollingTaskTest {
     @Test
     void schedule_whenTaskShouldBeScheduled_thenTaskGetsGetsScheduled() {
         ScheduledExecutorService mockedExecutor = mock();
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
 
         pollingTask.schedule(1);
 
@@ -131,7 +132,7 @@ class PollingTaskTest {
     @Test
     void schedule_whenExecutorServiceIsShutdown_thenExceptionIsHandled() {
         scheduledExecutorService.shutdownNow();
-        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService);
+        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService, eventService);
 
         pollingTask.schedule(1);
     }
@@ -139,7 +140,7 @@ class PollingTaskTest {
     @Test
     void schedule_whenTaskShouldNotBeScheduled_thenTaskGetsGetsScheduled() {
         ScheduledExecutorService mockedExecutor = mock();
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
         pollingTask.stopScheduling();
 
         pollingTask.schedule(1);

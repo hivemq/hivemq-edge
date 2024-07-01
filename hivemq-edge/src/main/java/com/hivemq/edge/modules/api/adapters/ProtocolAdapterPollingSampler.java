@@ -52,6 +52,7 @@ public interface ProtocolAdapterPollingSampler {
     @NotNull UUID getId();
     @NotNull Date getCreated();
     @NotNull String getAdapterId();
+    @NotNull String getProtocolId();
 
     default @NotNull String getReferenceId(){
         return String.format("%s:%s", getAdapterId(), getId());
