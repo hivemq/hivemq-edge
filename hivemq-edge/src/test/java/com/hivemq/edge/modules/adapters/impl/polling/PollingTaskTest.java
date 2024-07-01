@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.modules.adapters.impl.polling;
 
+import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
 import org.junit.jupiter.api.AfterEach;
@@ -26,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
@@ -45,6 +47,8 @@ class PollingTaskTest {
         when(sampler.getInitialDelay()).thenReturn(0L);
         when(sampler.getPeriod()).thenReturn(0L);
         when(sampler.execute()).thenReturn(CompletableFuture.completedFuture(null));
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(-1);
+        when(sampler.getAdapterId()).thenReturn("test-adapter-1");
     }
 
     @AfterEach
@@ -60,8 +64,58 @@ class PollingTaskTest {
         Thread.sleep(10_000);
     }
 
+    @Test
+    void run_whenSampleExecutionThrowsErrorMoreThanLimitedTimes_thenTaskIsRescheduledMaxErrorTimes() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(3);
+
+        when(sampler.execute()).thenThrow(new RuntimeException());
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor);
+
+        pollingTask.run();
+        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        pollingTask.run();
+        verify(mockedExecutor, times(2)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        pollingTask.run();
+        verify(mockedExecutor, times(3)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        pollingTask.run();
+        verify(mockedExecutor, times(3)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    void run_whenSampleExecutionThrowsError_thenTaskIsRescheduled() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.execute()).thenThrow(new RuntimeException());
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor);
+
+        pollingTask.run();
+
+        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+    }
 
 
+    @Test
+    void run_whenSampleExecutionReturnsExceptionalFuture_thenTaskIsRescheduled() {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new RuntimeException()));
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor);
+
+        pollingTask.run();
+
+        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    void run_whenSampleExecutionExceedsTime_thenTaskIsRescheduled() throws InterruptedException {
+        InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.set(1);
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.execute()).thenReturn(new CompletableFuture<>());
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor);
+
+        pollingTask.run();
+        Thread.sleep(2_000);
+        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+    }
 
 
     @Test
