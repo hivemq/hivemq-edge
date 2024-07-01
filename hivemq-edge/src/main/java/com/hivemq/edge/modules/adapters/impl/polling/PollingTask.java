@@ -18,7 +18,6 @@ package com.hivemq.edge.modules.adapters.impl.polling;
 import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.util.ExceptionUtils;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -42,7 +41,6 @@ public class PollingTask implements Runnable {
     private final @NotNull AtomicInteger applicationErrorCount = new AtomicInteger();
 
     private volatile long nanosOfLastPolling;
-    private volatile @Nullable CompletableFuture<?> executionFuture;
     private final @NotNull AtomicBoolean continueScheduling = new AtomicBoolean(true);
 
 
@@ -67,7 +65,6 @@ public class PollingTask implements Runnable {
                 final CompletableFuture<?> localExecutionFuture = sampler.execute()
                         .orTimeout(InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get(),
                                 TimeUnit.MILLISECONDS);
-                executionFuture = localExecutionFuture;
                 localExecutionFuture.whenComplete((aVoid, throwable) -> {
                     if (throwable == null) {
                         reschedule(0);
@@ -86,9 +83,8 @@ public class PollingTask implements Runnable {
         }
     }
 
-    public synchronized @Nullable CompletableFuture<?> stopScheduling() {
+    public synchronized void stopScheduling() {
         continueScheduling.set(false);
-        return executionFuture;
     }
 
 
@@ -177,8 +173,7 @@ public class PollingTask implements Runnable {
             schedule(nonNegativeDelay);
         } else {
             long backoff = getBackoff(errorCountTotal,
-                    InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get(),
-                    true);
+                    InternalConfigurations.ADAPTER_RUNTIME_MAX_APPLICATION_ERROR_BACKOFF.get());
             long effectiveDelay = Math.max(nonNegativeDelay, backoff);
             schedule(effectiveDelay);
         }
@@ -195,12 +190,10 @@ public class PollingTask implements Runnable {
         }
     }
 
-    private static long getBackoff(int errorCount, long max, boolean addFuzziness) {
+    private static long getBackoff(int errorCount, long max) {
         //-- This will backoff up to a max of about a day (unless the max provided is less)
         long f = (long) (Math.pow(2, Math.min(errorCount, 20)) * 100);
-        if (addFuzziness) {
-            f += ThreadLocalRandom.current().nextInt(0, errorCount * 100);
-        }
+        f += ThreadLocalRandom.current().nextInt(0, errorCount * 100);
         f = Math.min(f, max);
         return f;
     }
