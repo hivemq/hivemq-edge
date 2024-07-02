@@ -32,10 +32,15 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.writing.WriteInput;
+import com.hivemq.adapter.sdk.api.writing.WriteOutput;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
+import com.hivemq.edge.adapters.opcua.writing.JsonToOpcUAConverter;
+import com.hivemq.edge.adapters.opcua.writing.OpcUAWritePayload;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
@@ -45,8 +50,11 @@ import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
@@ -72,9 +80,8 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-public class OpcUaProtocolAdapter implements ProtocolAdapter {
+public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAdapter<OpcUAWritePayload> {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
-
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -377,5 +384,40 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     @VisibleForTesting
     public @NotNull ProtocolAdapterState getProtocolAdapterState() {
         return protocolAdapterState;
+    }
+
+    @Override
+    public void write(@NotNull final WriteInput<OpcUAWritePayload> input, @NotNull final WriteOutput writeOutput) {
+        System.err.println("WRITE INVOCATION");
+        final OpcUAWritePayload opcUAWritePayload = input.getWritePayload();
+        final NodeId nodeId = NodeId.parse(opcUAWritePayload.getNode());
+        try {
+            final Object opcUaObject =
+                    JsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(), opcUAWritePayload.getType());
+            Variant variant = new Variant(opcUaObject);
+            DataValue dataValue = new DataValue(variant, null, null);
+            if (opcUaClient == null) {
+                writeOutput.fail("Client is not connected.");
+                return;
+            }
+            System.err.println("TRYING TO WRITE TO PLC");
+            CompletableFuture<StatusCode> writeFuture = opcUaClient.writeValue(nodeId, dataValue);
+            writeFuture.whenComplete((statusCode, throwable) -> {
+                if (throwable != null) {
+                    writeOutput.fail(throwable, null);
+                } else {
+                    log.info("Wrote '{}' to nodeId={}", variant, nodeId);
+                    System.err.println("WRITE FINISHED");
+
+                }
+            });
+        } catch (IllegalArgumentException illegalArgumentException) {
+            writeOutput.fail(illegalArgumentException, null);
+        }
+    }
+
+    @Override
+    public @NotNull Class<OpcUAWritePayload> getPayloadClass() {
+        return OpcUAWritePayload.class;
     }
 }
