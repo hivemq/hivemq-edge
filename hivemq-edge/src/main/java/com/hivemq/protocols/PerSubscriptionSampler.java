@@ -65,7 +65,8 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
         }
         final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(pollingContext));
         try {
-            perSubscriptionProtocolAdapter.poll(new PollingInputImpl<>(pollingContext), pollingOutput);
+            final PollingInputImpl<T> pollingInput = new PollingInputImpl<>(pollingContext);
+            perSubscriptionProtocolAdapter.poll(pollingInput, pollingOutput);
         } catch (Throwable t) {
             pollingOutput.fail(t, null);
             throw t;

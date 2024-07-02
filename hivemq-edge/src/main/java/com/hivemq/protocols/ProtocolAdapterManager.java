@@ -35,6 +35,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -49,6 +50,7 @@ import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFact
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.protocols.writing.ProtocolAdapterWritingService;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +84,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics;
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
+    private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
 
     private final @NotNull Object lock = new Object();
 
@@ -97,7 +100,8 @@ public class ProtocolAdapterManager {
             final @NotNull VersionProvider versionProvider,
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
             final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
+            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
+            final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
@@ -109,6 +113,7 @@ public class ProtocolAdapterManager {
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetrics = protocolAdapterMetrics;
         this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
+        this.protocolAdapterWritingService = protocolAdapterWritingService;
     }
 
 
@@ -241,6 +246,9 @@ public class ProtocolAdapterManager {
                 handleStartupError(protocolAdapterWrapper, output);
             } else {
                 schedulePolling(protocolAdapterWrapper);
+                if(protocolAdapterWrapper.getAdapter() instanceof  WritingProtocolAdapter) {
+                    protocolAdapterWritingService.startWriting((WritingProtocolAdapter) protocolAdapterWrapper.getAdapter());
+                }
                 protocolAdapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
                 eventService.createAdapterEvent(protocolAdapterWrapper.getId(),
                                 protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId())
