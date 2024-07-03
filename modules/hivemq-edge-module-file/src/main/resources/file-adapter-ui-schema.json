@@ -36,6 +36,7 @@
       "ui:order": [
         "destination",
         "qos",
+        "filePath",
         "*",
         "userProperties"
       ],
