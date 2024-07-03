@@ -17,6 +17,7 @@ package com.hivemq.edge.modules.adapters.impl.polling;
 
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.configuration.service.InternalConfigurations;
+import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
 import org.junit.jupiter.api.AfterEach;
@@ -28,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
@@ -50,6 +52,8 @@ class PollingTaskTest {
         when(sampler.execute()).thenReturn(CompletableFuture.completedFuture(null));
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(-1);
         when(sampler.getAdapterId()).thenReturn("test-adapter-1");
+        when(sampler.getProtocolId()).thenReturn("test-protocol");
+        when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl((event)->{}));
     }
 
     @AfterEach
