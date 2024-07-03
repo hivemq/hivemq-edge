@@ -32,57 +32,62 @@ import java.util.List;
 public class FilePollingContext implements PollingContext {
     @JsonProperty(value = "destination", required = true)
     @ModuleConfigField(title = "Destination Topic",
-            description = "The topic to publish data on",
-            required = true,
-            format = ModuleConfigField.FieldType.MQTT_TOPIC)
+                       description = "The topic to publish data on",
+                       required = true,
+                       format = ModuleConfigField.FieldType.MQTT_TOPIC)
     protected @Nullable String destination;
 
     @JsonProperty(value = "qos", required = true)
     @ModuleConfigField(title = "QoS",
-            description = "MQTT Quality of Service level",
-            required = true,
-            numberMin = 0,
-            numberMax = 2,
-            defaultValue = "0")
+                       description = "MQTT Quality of Service level",
+                       required = true,
+                       numberMin = 0,
+                       numberMax = 2,
+                       defaultValue = "0")
     protected int qos = 0;
 
     @JsonProperty(value = "messageHandlingOptions")
     @ModuleConfigField(title = "Message Handling Options",
-            description = "This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample",
-            enumDisplayValues = {
-                    "MQTT Message Per Device Tag",
-                    "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
-            defaultValue = "MQTTMessagePerTag")
+                       description = "This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample",
+                       enumDisplayValues = {
+                               "MQTT Message Per Device Tag",
+                               "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
+                       defaultValue = "MQTTMessagePerTag")
     protected @NotNull MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
 
     @JsonProperty(value = "includeTimestamp")
     @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
-            description = "Include the unix timestamp of the sample time in the resulting MQTT message",
-            defaultValue = "true")
+                       description = "Include the unix timestamp of the sample time in the resulting MQTT message",
+                       defaultValue = "true")
     protected @NotNull Boolean includeTimestamp = Boolean.TRUE;
 
     @JsonProperty(value = "includeTagNames")
     @ModuleConfigField(title = "Include Tag Names In Publish?",
-            description = "Include the names of the tags in the resulting MQTT publish",
-            defaultValue = "false")
+                       description = "Include the names of the tags in the resulting MQTT publish",
+                       defaultValue = "false")
     protected @NotNull Boolean includeTagNames = Boolean.FALSE;
 
     @JsonProperty(value = "userProperties")
     @ModuleConfigField(title = "User Properties",
-            description = "Arbitrary properties to associate with the subscription",
-            arrayMaxItems = 10)
+                       description = "Arbitrary properties to associate with the subscription",
+                       arrayMaxItems = 10)
     private @NotNull List<UserProperty> userProperties = new ArrayList<>();
 
     @JsonProperty(value = "filePath", required = true)
     @ModuleConfigField(title = "The file path",
-            description = "The absolute path to the file that should be scraped.",
-            required = true)
+                       description = "The absolute path to the file that should be scraped.",
+                       required = true)
     protected @NotNull String filePath;
 
     @JsonProperty(value = "contentType", required = true)
     @ModuleConfigField(title = "Content Type",
-                       description = "The type of the content within the file.", enumDisplayValues = {
-            "Binary", "text/plain", "application/json", "application/xml", "text/csv"},
+                       description = "The type of the content within the file.",
+                       enumDisplayValues = {
+                               "application/octet-stream",
+                               "text/plain",
+                               "application/json",
+                               "application/xml",
+                               "text/csv"},
                        required = true)
     protected @NotNull ContentType contentType;
 
@@ -139,7 +144,7 @@ public class FilePollingContext implements PollingContext {
 
     @Override
     public @Nullable JsonPayloadCreator getJsonPayloadCreator() {
-        return  FileJsonPayloadCreator.INSTANCE;
+        return FileJsonPayloadCreator.INSTANCE;
     }
 
     public @NotNull ContentType getContentType() {
