@@ -60,7 +60,7 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
 
 
     @JsonProperty("subscriptions")
-    @ModuleConfigField(title = "subscription", description = "Map your sensor data to a MQTT Topic")
+    @ModuleConfigField(title = "subscription", description = "Map your file content to an MQTT Topic")
     private @NotNull List<FilePollingContext> pollingContexts = new ArrayList<>();
 
     public FileAdapterConfig() {
