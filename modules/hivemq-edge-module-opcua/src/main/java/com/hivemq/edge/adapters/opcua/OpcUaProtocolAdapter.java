@@ -408,7 +408,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                 } else {
                     log.info("Wrote '{}' to nodeId={}", variant, nodeId);
                     System.err.println("WRITE FINISHED");
-
+                    writeOutput.finish();
                 }
             });
         } catch (IllegalArgumentException illegalArgumentException) {

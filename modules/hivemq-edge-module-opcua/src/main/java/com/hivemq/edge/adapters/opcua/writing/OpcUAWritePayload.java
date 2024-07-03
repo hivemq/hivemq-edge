@@ -14,7 +14,6 @@ public class OpcUAWritePayload implements WritePayload {
                        required = true)
     private @NotNull String node = "";
 
-
     @JsonProperty("value")
     @ModuleConfigField(title = "Value", description = "The value that should be written", required = true)
     private @NotNull Object value;

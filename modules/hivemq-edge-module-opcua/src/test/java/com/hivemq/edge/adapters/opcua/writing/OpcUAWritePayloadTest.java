@@ -22,7 +22,8 @@ class OpcUAWritePayloadTest {
         final OpcUAWritePayload afterConversion = objectMapper.readValue(bytes, OpcUAWritePayload.class);
         assertEquals(payload, afterConversion);
 
-        final Object opcUAObject = JsonToOpcUAConverter. convertToOpcUAValue(afterConversion.getValue(), afterConversion.getType());
+        final Object opcUAObject =
+                JsonToOpcUAConverter.convertToOpcUAValue(afterConversion.getValue(), afterConversion.getType());
         assertInstanceOf(Integer.class, opcUAObject);
         assertEquals(1337, opcUAObject);
 
