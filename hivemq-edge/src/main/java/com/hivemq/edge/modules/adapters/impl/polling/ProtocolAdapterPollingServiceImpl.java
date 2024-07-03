@@ -22,6 +22,7 @@ import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.util.NanoTimeProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,26 +39,29 @@ import java.util.concurrent.TimeUnit;
 @Singleton
 public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPollingService {
 
-    private static final Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ProtocolAdapterPollingServiceImpl.class);
 
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull EventService eventService;
+    private final @NotNull NanoTimeProvider nanoTimeProvider;
     private final @NotNull Map<ProtocolAdapterPollingSampler, PollingTask> samplerToTask = new ConcurrentHashMap<>();
 
     @Inject
     public ProtocolAdapterPollingServiceImpl(
             final @NotNull ScheduledExecutorService scheduledExecutorService,
             final @NotNull ShutdownHooks shutdownHooks,
-            final @NotNull EventService eventService) {
+            final @NotNull EventService eventService,
+            final @NotNull NanoTimeProvider nanoTimeProvider) {
         this.scheduledExecutorService = scheduledExecutorService;
         this.eventService = eventService;
+        this.nanoTimeProvider = nanoTimeProvider;
         shutdownHooks.add(new Shutdown());
     }
 
     @Override
     public void schedulePolling(
             @NotNull final ProtocolAdapter adapter, @NotNull final ProtocolAdapterPollingSampler sampler) {
-        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService, eventService);
+        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService, eventService, nanoTimeProvider);
         scheduledExecutorService.schedule(pollingTask, sampler.getInitialDelay(), sampler.getUnit());
     }
 

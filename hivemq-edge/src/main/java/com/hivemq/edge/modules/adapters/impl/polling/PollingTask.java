@@ -21,6 +21,7 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.util.ExceptionUtils;
+import com.hivemq.util.NanoTimeProvider;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,11 +36,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class PollingTask implements Runnable {
 
-    private static final Logger log = LoggerFactory.getLogger(PollingTask.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(PollingTask.class);
 
     private final @NotNull ProtocolAdapterPollingSampler sampler;
     private final @NotNull ScheduledExecutorService scheduledExecutorService;
     private final @NotNull EventService eventService;
+    private final @NotNull NanoTimeProvider nanoTimeProvider;
     private final @NotNull AtomicInteger watchdogErrorCount = new AtomicInteger();
     private final @NotNull AtomicInteger applicationErrorCount = new AtomicInteger();
 
@@ -50,16 +52,18 @@ public class PollingTask implements Runnable {
     public PollingTask(
             final @NotNull ProtocolAdapterPollingSampler sampler,
             final @NotNull ScheduledExecutorService scheduledExecutorService,
-            final @NotNull EventService eventService) {
+            final @NotNull EventService eventService,
+            final @NotNull NanoTimeProvider nanoTimeProvider) {
         this.sampler = sampler;
         this.scheduledExecutorService = scheduledExecutorService;
         this.eventService = eventService;
+        this.nanoTimeProvider = nanoTimeProvider;
     }
 
     @Override
     public void run() {
         try {
-            nanosOfLastPolling = System.nanoTime();
+            nanosOfLastPolling = nanoTimeProvider.nanoTime();
             if (!continueScheduling.get()) {
                 return;
             }
@@ -94,7 +98,7 @@ public class PollingTask implements Runnable {
         int errorCountTotal = watchdogErrorCount.incrementAndGet();
         boolean stopBecauseOfTooManyErrors =
                 errorCountTotal > InternalConfigurations.ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT.get();
-        final long milliSecondsSinceLastPoll = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - nanosOfLastPolling);
+        final long milliSecondsSinceLastPoll = TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
         if (stopBecauseOfTooManyErrors) {
             log.warn(
                     "Detected bad system process {} in sampler {} - terminating process to maintain health ({}ms runtime)",
@@ -155,7 +159,7 @@ public class PollingTask implements Runnable {
     }
 
     private void reschedule(int errorCountTotal) {
-        long pollDuration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - nanosOfLastPolling);
+        long pollDuration = TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
         final long delayInMillis = sampler.getPeriod() - pollDuration;
         // a negative delay means that the last polling attempt took longer to be processed than the specified delay between polls
         if (delayInMillis < 0) {
