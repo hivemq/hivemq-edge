@@ -30,6 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -55,7 +56,7 @@ class PollingTaskTest {
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(-1);
         when(sampler.getAdapterId()).thenReturn("test-adapter-1");
         when(sampler.getProtocolId()).thenReturn("test-protocol");
-        when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl((event)->{}));
+        when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl((event) -> {}));
         when(nanoTimeProvider.nanoTime()).thenReturn(0L, 1000L);
     }
 
@@ -92,8 +93,14 @@ class PollingTaskTest {
         final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
 
         pollingTask.run();
-        Thread.sleep(500);
-        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        await().until(() -> {
+            try {
+                verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+            } catch (Exception e) {
+                return false;
+            }
+            return true;
+        });
 
         pollingTask.run();
         Thread.sleep(500);
@@ -101,7 +108,7 @@ class PollingTaskTest {
     }
 
     @Test
-    void run_whenSampleExecutionGetsInterrupted_thenTaskIsRescheduledMaxErrorTimes() throws InterruptedException {
+    void run_whenSampleExecutionGetsInterrupted_thenTaskIsRescheduledMaxErrorTimes() {
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(1);
         InternalConfigurations.ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT.set(1);
@@ -140,15 +147,21 @@ class PollingTaskTest {
     }
 
     @Test
-    void run_whenSampleExecutionExceedsTime_thenTaskIsRescheduled() throws InterruptedException {
+    void run_whenSampleExecutionExceedsTime_thenTaskIsRescheduled() {
         InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.set(1);
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.execute()).thenReturn(new CompletableFuture<>());
         final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
 
         pollingTask.run();
-        Thread.sleep(2_000);
-        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+        await().until(() -> {
+            try {
+                verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+            } catch (Exception e) {
+                return false;
+            }
+            return true;
+        });
     }
 
 
@@ -188,7 +201,6 @@ class PollingTaskTest {
 
         verify(mockedExecutor, times(1)).schedule(same(pollingTask), eq(expectedDelay), eq(TimeUnit.MILLISECONDS));
     }
-
 
 
 }
