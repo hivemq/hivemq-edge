@@ -20,6 +20,7 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.AbstractSubscriptionSampler;
+import com.hivemq.util.NanoTimeProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,7 @@ class PollingTaskTest {
     private final @NotNull AbstractSubscriptionSampler sampler = mock();
     private final @NotNull ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
     private final @NotNull EventService eventService = mock();
+    private final @NotNull NanoTimeProvider nanoTimeProvider = mock();
 
     @BeforeEach
     void setUp() {
@@ -54,6 +56,7 @@ class PollingTaskTest {
         when(sampler.getAdapterId()).thenReturn("test-adapter-1");
         when(sampler.getProtocolId()).thenReturn("test-protocol");
         when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl((event)->{}));
+        when(nanoTimeProvider.nanoTime()).thenReturn(0L, 1000L);
     }
 
     @AfterEach
@@ -62,20 +65,12 @@ class PollingTaskTest {
     }
 
     @Test
-    void when_executorServiceIsShutdown_thenNoException() throws InterruptedException {
-        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService, eventService);
-        pollingTask.run();
-        scheduledExecutorService.shutdown();
-        Thread.sleep(10_000);
-    }
-
-    @Test
     void run_whenSampleExecutionThrowsErrorMoreThanLimitedTimes_thenTaskIsRescheduledMaxErrorTimes() {
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(3);
 
         when(sampler.execute()).thenThrow(new RuntimeException());
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
 
         pollingTask.run();
         verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
@@ -91,7 +86,7 @@ class PollingTaskTest {
     void run_whenSampleExecutionThrowsError_thenTaskIsRescheduled() {
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.execute()).thenThrow(new RuntimeException());
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
 
         pollingTask.run();
 
@@ -103,7 +98,7 @@ class PollingTaskTest {
     void run_whenSampleExecutionReturnsExceptionalFuture_thenTaskIsRescheduled() {
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new RuntimeException()));
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
 
         pollingTask.run();
 
@@ -115,7 +110,7 @@ class PollingTaskTest {
         InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.set(1);
         final ScheduledExecutorService mockedExecutor = mock();
         when(sampler.execute()).thenReturn(new CompletableFuture<>());
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
 
         pollingTask.run();
         Thread.sleep(2_000);
@@ -126,7 +121,7 @@ class PollingTaskTest {
     @Test
     void schedule_whenTaskShouldBeScheduled_thenTaskGetsGetsScheduled() {
         ScheduledExecutorService mockedExecutor = mock();
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
 
         pollingTask.schedule(1);
 
@@ -134,23 +129,32 @@ class PollingTaskTest {
     }
 
     @Test
-    void schedule_whenExecutorServiceIsShutdown_thenExceptionIsHandled() {
-        scheduledExecutorService.shutdownNow();
-        final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService, eventService);
-
-        pollingTask.schedule(1);
-    }
-
-    @Test
     void schedule_whenTaskShouldNotBeScheduled_thenTaskGetsGetsScheduled() {
         ScheduledExecutorService mockedExecutor = mock();
-        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService);
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
         pollingTask.stopScheduling();
 
         pollingTask.schedule(1);
 
         verify(mockedExecutor, never()).schedule(same(pollingTask), eq(1L), eq(TimeUnit.MILLISECONDS));
     }
+
+    @Test
+    void run_whenFutureCompletes_thenTaskGetsExactlyScheduled() {
+        ScheduledExecutorService mockedExecutor = mock();
+        // period is exactly 2s
+        when(sampler.getPeriod()).thenReturn(2000L);
+        // polling takes exactly 4ms
+        when(nanoTimeProvider.nanoTime()).thenReturn(0L, TimeUnit.MILLISECONDS.toNanos(4));
+        // expected delay is 2s-4ms = 1996ms
+        long expectedDelay = 1996L;
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
+
+        pollingTask.run();
+
+        verify(mockedExecutor, times(1)).schedule(same(pollingTask), eq(expectedDelay), eq(TimeUnit.MILLISECONDS));
+    }
+
 
 
 }
