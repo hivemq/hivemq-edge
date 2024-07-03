@@ -81,7 +81,8 @@ public class FilePollingContext implements PollingContext {
 
     @JsonProperty(value = "contentType", required = true)
     @ModuleConfigField(title = "Content Type",
-                       description = "The type of the content within the file.",
+                       description = "The type of the content within the file.", enumDisplayValues = {
+            "Binary", "text/plain", "application/json", "application/xml", "text/csv"},
                        required = true)
     protected @NotNull ContentType contentType;
 
