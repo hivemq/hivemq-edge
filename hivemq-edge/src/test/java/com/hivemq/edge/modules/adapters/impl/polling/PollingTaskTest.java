@@ -100,6 +100,21 @@ class PollingTaskTest {
         verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
     }
 
+    @Test
+    void run_whenSampleExecutionGetsInterrupted_thenTaskIsRescheduledMaxErrorTimes() throws InterruptedException {
+        final ScheduledExecutorService mockedExecutor = mock();
+        when(sampler.getMaxErrorsBeforeRemoval()).thenReturn(1);
+        InternalConfigurations.ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT.set(1);
+        when(sampler.execute()).thenReturn(CompletableFuture.failedFuture(new InterruptedException()));
+        final PollingTask pollingTask = new PollingTask(sampler, mockedExecutor, eventService, nanoTimeProvider);
+
+        pollingTask.run();
+        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+
+        pollingTask.run();
+        verify(mockedExecutor, times(1)).schedule(same(pollingTask), anyLong(), eq(TimeUnit.MILLISECONDS));
+    }
+
 
     @Test
     void run_whenSampleExecutionThrowsError_thenTaskIsRescheduled() {
