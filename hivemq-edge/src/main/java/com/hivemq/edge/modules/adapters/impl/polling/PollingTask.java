@@ -60,38 +60,32 @@ public class PollingTask implements Runnable {
     public void run() {
         try {
             nanosOfLastPolling = System.nanoTime();
-
-            // synchronized with stop so that the change of the executor future field and the setting of the continueScheduling
-            // has exclusive access by either of the two methods.
-            synchronized (this) {
-                if (!continueScheduling.get()) {
-                    return;
-                }
-                final CompletableFuture<?> localExecutionFuture = sampler.execute()
-                        .orTimeout(InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get(),
-                                TimeUnit.MILLISECONDS);
-                localExecutionFuture.whenComplete((aVoid, throwable) -> {
-                    if (throwable == null) {
-                        reschedule(0);
-                    } else {
-                        if (ExceptionUtils.isInterruptedException(throwable)) {
-                            handleInterruptionException(throwable);
-                        } else {
-                            handleExceptionDuringPolling(throwable);
-                        }
-                    }
-                });
+            if (!continueScheduling.get()) {
+                return;
             }
+            final CompletableFuture<?> localExecutionFuture = sampler.execute()
+                    .orTimeout(InternalConfigurations.ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS.get(),
+                            TimeUnit.MILLISECONDS);
+            localExecutionFuture.whenComplete((aVoid, throwable) -> {
+                if (throwable == null) {
+                    reschedule(0);
+                } else {
+                    if (ExceptionUtils.isInterruptedException(throwable)) {
+                        handleInterruptionException(throwable);
+                    } else {
+                        handleExceptionDuringPolling(throwable);
+                    }
+                }
+            });
         } catch (Throwable t) {
-            // the sampler shouldnt throw a exception, but better safe than sorry as we might to
+            // the sampler shouldn't throw a exception, but better safe than sorry as we might to miss rescheduling the task otherwise.
             handleExceptionDuringPolling(t);
         }
     }
 
-    public synchronized void stopScheduling() {
+    public void stopScheduling() {
         continueScheduling.set(false);
     }
-
 
     private void handleInterruptionException(final @NotNull Throwable throwable) {
         //-- Job was killed by the framework as it took too long
@@ -161,7 +155,8 @@ public class PollingTask implements Runnable {
     }
 
     private void reschedule(int errorCountTotal) {
-        final long delayInMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - nanosOfLastPolling);
+        long pollDuration = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - nanosOfLastPolling);
+        final long delayInMillis = sampler.getPeriod() - pollDuration;
         // a negative delay means that the last polling attempt took longer to be processed than the specified delay between polls
         if (delayInMillis < 0) {
             log.warn(
