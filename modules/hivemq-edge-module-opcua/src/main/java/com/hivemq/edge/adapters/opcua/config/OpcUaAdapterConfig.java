@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua;
+package com.hivemq.edge.adapters.opcua.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.WriteContext;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,6 +57,10 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
 
     @JsonProperty("subscriptions")
     private @NotNull List<Subscription> subscriptions = new ArrayList<>();
+
+    @JsonProperty("mqtt-to-opcua-mappings")
+    @ModuleConfigField(title = "MQTT to OPC Mappings ", description = "Map your sensor data to MQTT Topics")
+    private @NotNull List<OpcUAWriteContext> writeContexts = new ArrayList<>();
 
     @JsonProperty("auth")
     private @NotNull Auth auth = new Auth(null, null);
@@ -141,6 +146,11 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
                 ", auth=" +
                 auth +
                 '}';
+    }
+
+
+    public @NotNull List<? extends WriteContext> getWriteContexts() {
+        return writeContexts;
     }
 
     public static class Subscription {

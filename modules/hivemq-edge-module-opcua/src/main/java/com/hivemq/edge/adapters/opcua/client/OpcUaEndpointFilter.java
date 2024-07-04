@@ -15,7 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.eclipse.milo.opcua.stack.core.util.EndpointUtil;

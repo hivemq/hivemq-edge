@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.hivemq.adapter.sdk.api.config.WriteContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
@@ -26,8 +27,6 @@ import static com.hivemq.configuration.service.InternalConfigurations.PUBLISH_PO
 
 @Singleton
 public class ProtocolAdapterWritingService {
-
-
 
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull ExecutorService executorService;
@@ -53,18 +52,20 @@ public class ProtocolAdapterWritingService {
         this.hivemqId = hivemqId;
     }
 
-    public void startWriting(final @NotNull WritingProtocolAdapter<?> writingProtocolAdapter) {
-        final String queueId = createSubscription();
-        scheduledExecutorService.scheduleWithFixedDelay(() -> {
-            pollForQueue(queueId, new WriteTask(writingProtocolAdapter, objectMapper));
-        },1,1, TimeUnit.SECONDS);
+    public void startWriting(final @NotNull WritingProtocolAdapter<?, ?> writingProtocolAdapter) {
+        writingProtocolAdapter.getWriteContexts().forEach(writeContext -> {
+            final String queueId = createSubscription(writeContext);
+            scheduledExecutorService.scheduleWithFixedDelay(() -> {
+                pollForQueue(queueId, new WriteTask(writingProtocolAdapter, objectMapper), writeContext);
+            }, 1, 1, TimeUnit.SECONDS);
+        });
     }
 
-    public String createSubscription(){
+    public String createSubscription(final WriteContext writeContext) {
         final String forwarderId = "adapter-writer";
         final String clientId = FORWARDER_PREFIX + forwarderId + "#" + hivemqId.get();
         final String shareName = FORWARDER_PREFIX + forwarderId;
-        final String topic = "test";
+        final String topic = writeContext.getSourceMqttTopic();
         localTopicTree.addTopic(clientId,
                 new Topic(topic, QoS.AT_LEAST_ONCE, false, true),
                 SubscriptionFlag.getDefaultFlags(true, true, false),
@@ -74,18 +75,19 @@ public class ProtocolAdapterWritingService {
     }
 
 
-
     @NotNull
     private ListenableFuture<Boolean> pollForQueue(
-            final @NotNull String queueId, final @NotNull WriteTask writeTask) {
-        final ListenableFuture<ImmutableList<PUBLISH>> pollFuture = clientQueuePersistence
-                .readShared(queueId, 1, PUBLISH_POLL_BATCH_SIZE_BYTES);
+            final @NotNull String queueId,
+            final @NotNull WriteTask writeTask,
+            final @NotNull WriteContext writeContext) {
+        final ListenableFuture<ImmutableList<PUBLISH>> pollFuture =
+                clientQueuePersistence.readShared(queueId, 1, PUBLISH_POLL_BATCH_SIZE_BYTES);
         return Futures.transformAsync(pollFuture, publishes -> {
             if (publishes == null) {
                 return Futures.immediateFuture(false);
             }
             for (final PUBLISH publish : publishes) {
-                writeTask.onMessage(publish.getPayload());
+                writeTask.onMessage(publish.getPayload(), writeContext);
             }
             return Futures.immediateFuture(!publishes.isEmpty());
         }, executorService);

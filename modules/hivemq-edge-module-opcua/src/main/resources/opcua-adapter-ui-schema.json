@@ -11,6 +11,13 @@
       "properties": ["subscriptions"]
     },
     {
+      "id" : "mqttToOpcUAFields",
+      "title" : "Mqtt to OpcUA",
+      "properties" : [
+        "mqtt-to-opcua-mappings"
+      ]
+    },
+    {
       "id": "security",
       "title": "Security",
       "properties": ["security", "tls"]
