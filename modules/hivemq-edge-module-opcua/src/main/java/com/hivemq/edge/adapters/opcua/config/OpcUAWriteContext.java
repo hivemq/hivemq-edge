@@ -3,9 +3,11 @@ package com.hivemq.edge.adapters.opcua.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.WriteContext;
+import com.hivemq.edge.adapters.opcua.writing.OpcUaValueType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@SuppressWarnings("ALL")
 public class OpcUAWriteContext implements WriteContext {
 
     @JsonProperty(value = "source", required = true)
@@ -28,7 +30,13 @@ public class OpcUAWriteContext implements WriteContext {
     @ModuleConfigField(title = "Destination Node ID",
                        description = "identifier of the node on the OPC-UA server. Example: \"ns=3;s=85/0:Temperature\"",
                        required = true)
-    private @NotNull String node = "";
+    private @NotNull String destination = "";
+
+    @JsonProperty("type")
+    @ModuleConfigField(title = "The type of the attribute",
+                       description = "The data type of the attribute that should be written",
+                       required = true)
+    private @NotNull OpcUaValueType type;
 
     @Override
     public @Nullable String getSourceMqttTopic() {
@@ -40,7 +48,11 @@ public class OpcUAWriteContext implements WriteContext {
         return qos;
     }
 
-    public @NotNull String getNode() {
-        return node;
+    public @NotNull String getDestination() {
+        return destination;
+    }
+
+    public @NotNull OpcUaValueType getType() {
+        return type;
     }
 }

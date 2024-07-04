@@ -14,6 +14,7 @@ import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 
 import javax.inject.Inject;
@@ -36,6 +37,7 @@ public class ProtocolAdapterWritingService {
     public static final String FORWARDER_PREFIX = "adapter-forwarder#";
     //TODO
     final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(10);
+    private final @NotNull SingleWriterService singleWriterService;
 
     @Inject
     public ProtocolAdapterWritingService(
@@ -44,19 +46,23 @@ public class ProtocolAdapterWritingService {
             final @NotNull ExecutorService executorService,
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull LocalTopicTree localTopicTree,
-            final @NotNull HivemqId hivemqId) {
+            final @NotNull HivemqId hivemqId,
+            final @NotNull SingleWriterService singleWriterService) {
         this.objectMapper = objectMapper;
         this.executorService = executorService;
         this.clientQueuePersistence = clientQueuePersistence;
         this.localTopicTree = localTopicTree;
         this.hivemqId = hivemqId;
+        this.singleWriterService = singleWriterService;
     }
 
     public void startWriting(final @NotNull WritingProtocolAdapter<?, ?> writingProtocolAdapter) {
         writingProtocolAdapter.getWriteContexts().forEach(writeContext -> {
             final String queueId = createSubscription(writeContext);
+            final WriteTask writeTask =
+                    new WriteTask(writingProtocolAdapter, clientQueuePersistence, singleWriterService, objectMapper);
             scheduledExecutorService.scheduleWithFixedDelay(() -> {
-                pollForQueue(queueId, new WriteTask(writingProtocolAdapter, objectMapper), writeContext);
+                pollForQueue(queueId, writeTask, writeContext);
             }, 1, 1, TimeUnit.SECONDS);
         });
     }
@@ -87,7 +93,7 @@ public class ProtocolAdapterWritingService {
                 return Futures.immediateFuture(false);
             }
             for (final PUBLISH publish : publishes) {
-                writeTask.onMessage(publish.getPayload(), writeContext);
+                writeTask.onMessage(publish, queueId, writeContext);
             }
             return Futures.immediateFuture(!publishes.isEmpty());
         }, executorService);

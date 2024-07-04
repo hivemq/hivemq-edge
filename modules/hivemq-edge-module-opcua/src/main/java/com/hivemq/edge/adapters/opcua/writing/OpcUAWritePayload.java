@@ -11,20 +11,10 @@ public class OpcUAWritePayload implements WritePayload {
     @ModuleConfigField(title = "Value", description = "The value that should be written", required = true)
     private @NotNull Object value;
 
-    @JsonProperty("type")
-    @ModuleConfigField(title = "Type", description = "The type of the value that should be written", required = true)
-    private @NotNull OpcUaValueType type;
 
     public OpcUAWritePayload(
-            final @NotNull @JsonProperty("value") Object value,
-            final @NotNull @JsonProperty("type") OpcUaValueType type) {
+            final @NotNull @JsonProperty("value") Object value) {
         this.value = value;
-        this.type = type;
-    }
-
-
-    public @NotNull OpcUaValueType getType() {
-        return type;
     }
 
     public @NotNull Object getValue() {
@@ -41,13 +31,11 @@ public class OpcUAWritePayload implements WritePayload {
         }
 
         OpcUAWritePayload payload = (OpcUAWritePayload) o;
-        return value.equals(payload.value) && type == payload.type;
+        return value.equals(payload.value);
     }
 
     @Override
     public int hashCode() {
-        int result = value.hashCode();
-        result = 31 * result + type.hashCode();
-        return result;
+        return value.hashCode();
     }
 }
