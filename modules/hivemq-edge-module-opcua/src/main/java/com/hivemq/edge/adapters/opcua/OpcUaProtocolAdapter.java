@@ -19,6 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.WriteContext;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
@@ -39,6 +40,8 @@ import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
+import com.hivemq.edge.adapters.opcua.config.OpcUAWriteContext;
+import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.writing.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.writing.OpcUAWritePayload;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
@@ -67,6 +70,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -80,7 +84,8 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAdapter<OpcUAWritePayload> {
+public class OpcUaProtocolAdapter
+        implements ProtocolAdapter, WritingProtocolAdapter<OpcUAWritePayload, OpcUAWriteContext> {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaAdapterConfig adapterConfig;
@@ -387,10 +392,12 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     }
 
     @Override
-    public void write(@NotNull final WriteInput<OpcUAWritePayload> input, @NotNull final WriteOutput writeOutput) {
+    public void write(
+            @NotNull final WriteInput<OpcUAWritePayload, OpcUAWriteContext> input,
+            @NotNull final WriteOutput writeOutput) {
         System.err.println("WRITE INVOCATION");
         final OpcUAWritePayload opcUAWritePayload = input.getWritePayload();
-        final NodeId nodeId = NodeId.parse(opcUAWritePayload.getNode());
+        final NodeId nodeId = NodeId.parse(input.getWriteContext().getNode());
         try {
             final Object opcUaObject =
                     JsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(), opcUAWritePayload.getType());
@@ -419,5 +426,10 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     @Override
     public @NotNull Class<OpcUAWritePayload> getPayloadClass() {
         return OpcUAWritePayload.class;
+    }
+
+    @Override
+    public @NotNull List<? extends WriteContext> getWriteContexts() {
+        return adapterConfig.getWriteContexts();
     }
 }

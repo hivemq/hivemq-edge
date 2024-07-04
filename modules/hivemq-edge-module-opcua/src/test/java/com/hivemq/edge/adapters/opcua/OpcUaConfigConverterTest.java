@@ -35,6 +35,7 @@ import com.hivemq.configuration.reader.SecurityConfigurator;
 import com.hivemq.configuration.reader.UnsConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
 import org.jetbrains.annotations.NotNull;
+import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

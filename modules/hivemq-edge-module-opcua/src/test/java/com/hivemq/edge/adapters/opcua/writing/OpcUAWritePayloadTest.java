@@ -13,7 +13,7 @@ class OpcUAWritePayloadTest {
 
     @Test
     void test_whenDataGetsConvertedToJsonAndThenConvertedBack_thenObjectsShouldBeEqual() throws IOException {
-        OpcUAWritePayload payload = new OpcUAWritePayload("ns=2;i=999", 1337, OpcUaValueType.INTEGER);
+        OpcUAWritePayload payload = new OpcUAWritePayload(1337, OpcUaValueType.INTEGER);
 
         ObjectMapper objectMapper = new ObjectMapper();
         final byte[] bytes = objectMapper.writeValueAsBytes(payload);

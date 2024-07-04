@@ -1,7 +1,7 @@
 package com.hivemq.protocols.writing;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.config.WriteContext;
 import com.hivemq.adapter.sdk.api.writing.WriteInput;
 import com.hivemq.adapter.sdk.api.writing.WritePayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
@@ -21,11 +21,11 @@ public class WriteTask {
         this.objectMapper = objectMapper;
     }
 
-    public void onMessage(byte[] payload) throws JsonProcessingException {
+    public void onMessage(byte[] payload, final @NotNull WriteContext writeContext) {
         try {
             final Class<? extends WritePayload> payloadClass = protocolAdapter.getPayloadClass();
             final WritePayload writePayload = objectMapper.readValue(payload, payloadClass);
-            final WriteInput writeInput = new WriteInputImpl<>(writePayload);
+            final WriteInput writeInput = new WriteInputImpl<>(writePayload, writeContext);
             final WriteOutputImpl writeOutput = new WriteOutputImpl();
             writeOutput.getFuture().whenComplete(((aBoolean, throwable) -> {
                 System.err.println("throwable:" + throwable);
@@ -35,9 +35,5 @@ public class WriteTask {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
     }
-
-
 }
