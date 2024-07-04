@@ -397,21 +397,21 @@ public class OpcUaProtocolAdapter
             @NotNull final WriteOutput writeOutput) {
         System.err.println("WRITE INVOCATION");
         final OpcUAWritePayload opcUAWritePayload = input.getWritePayload();
-        final NodeId nodeId = NodeId.parse(input.getWriteContext().getNode());
+        final NodeId nodeId = NodeId.parse(input.getWriteContext().getDestination());
         try {
-            final Object opcUaObject =
-                    JsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(), opcUAWritePayload.getType());
+            final Object opcUaObject = JsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(),
+                    input.getWriteContext().getType());
             Variant variant = new Variant(opcUaObject);
             DataValue dataValue = new DataValue(variant, null, null);
             if (opcUaClient == null) {
-                writeOutput.fail("Client is not connected.");
+                writeOutput.fail("Client is not connected.", true);
                 return;
             }
             System.err.println("TRYING TO WRITE TO PLC");
             CompletableFuture<StatusCode> writeFuture = opcUaClient.writeValue(nodeId, dataValue);
             writeFuture.whenComplete((statusCode, throwable) -> {
                 if (throwable != null) {
-                    writeOutput.fail(throwable, null);
+                    writeOutput.fail(throwable, null, false);
                 } else {
                     log.info("Wrote '{}' to nodeId={}", variant, nodeId);
                     System.err.println("WRITE FINISHED");
@@ -419,7 +419,7 @@ public class OpcUaProtocolAdapter
                 }
             });
         } catch (IllegalArgumentException illegalArgumentException) {
-            writeOutput.fail(illegalArgumentException, null);
+            writeOutput.fail(illegalArgumentException, null, false);
         }
     }
 

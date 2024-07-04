@@ -12,6 +12,7 @@ public class WriteOutputImpl implements WriteOutput {
     private volatile @Nullable String message = null;
     private volatile @Nullable Throwable throwable = null;
     private final @NotNull CompletableFuture<Boolean> future = new CompletableFuture<>();
+    private boolean canBeRetried = true;
 
     public @Nullable Throwable getThrowable() {
         return throwable;
@@ -25,21 +26,27 @@ public class WriteOutputImpl implements WriteOutput {
         return future;
     }
 
+    public boolean canBeRetried() {
+        return canBeRetried;
+    }
+
     @Override
     public void finish() {
         this.future.complete(true);
     }
 
     @Override
-    public void fail(@NotNull final Throwable t, @Nullable final String errorMessage) {
+    public void fail(@NotNull final Throwable t, @Nullable final String errorMessage, boolean retry) {
         this.throwable = t;
         this.message = errorMessage;
         this.future.complete(false);
+        this.canBeRetried = retry;
     }
 
     @Override
-    public void fail(@NotNull final String errorMessage) {
+    public void fail(@NotNull final String errorMessage, boolean retry) {
         this.message = errorMessage;
-        future.completeExceptionally(new StackLessProtocolAdapterException(errorMessage));
+        this.future.completeExceptionally(new StackLessProtocolAdapterException(errorMessage));
+        this.canBeRetried = retry;
     }
 }
