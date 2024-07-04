@@ -31,19 +31,26 @@ import java.util.function.Function;
 @SuppressWarnings("unused")
 public enum ContentType {
 
-    BINARY(ContentType::mapBinary),
-    TEXT_PLAIN(ContentType::mapPlainText),
-    TEXT_JSON(ContentType::mapJson),
-    TEXT_XML(ContentType::mapPlainText),
-    TEXT_CSV(ContentType::mapPlainText);
+    BINARY(ContentType::mapBinary, "application/octet-stream"),
+    TEXT_PLAIN(ContentType::mapPlainText, "text/plain"),
+    TEXT_JSON(ContentType::mapJson, "application/json"),
+    TEXT_XML(ContentType::mapPlainText, "application/xml"),
+    TEXT_CSV(ContentType::mapPlainText, "text/csv");
 
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper().enable(JsonParser.Feature.INCLUDE_SOURCE_IN_LOCATION);
     private static final @NotNull Logger log = LoggerFactory.getLogger(ContentType.class);
 
     private final @NotNull Function<byte[], Object> mapperFunction;
+    private final @NotNull String mimeTypeRepresentation;
 
-    ContentType(final @NotNull Function<byte[], Object> mapperFunction) {
+
+    ContentType(final @NotNull Function<byte[], Object> mapperFunction, final @NotNull String mimeTypeRepresentation) {
         this.mapperFunction = mapperFunction;
+        this.mimeTypeRepresentation = mimeTypeRepresentation;
+    }
+
+    public @NotNull String getMimeTypeRepresentation() {
+        return mimeTypeRepresentation;
     }
 
     public @Nullable Object map(byte @NotNull [] fileContent) {

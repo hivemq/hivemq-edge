@@ -28,7 +28,7 @@ import java.util.List;
 public class FilePayload {
 
     @JsonProperty("timestamp")
-    private final @Nullable Long timestamp;
+    private final @NotNull Long timestamp;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private final @Nullable List<UserProperty> userProperties;
@@ -37,21 +37,18 @@ public class FilePayload {
     private final @NotNull Object value;
 
     @JsonProperty("tagName")
-    private final @Nullable String tagName;
+    private final @NotNull String tagName;
 
     @JsonProperty("contentType")
-    private final @Nullable ContentType contentType;
+    private final @NotNull String contentType;
 
     public FilePayload(
-            final @Nullable Long timestamp,
-            final @Nullable List<UserProperty> userProperties,
-            final @NotNull Object value,
-            final @Nullable String tagName,
-            final @Nullable ContentType contentType) {
+            final @NotNull Long timestamp, final @NotNull List<UserProperty> userProperties,
+            final @NotNull Object value, final @NotNull String tagName, final @NotNull ContentType contentType) {
         this.timestamp = timestamp;
         this.userProperties = userProperties;
         this.value = value;
         this.tagName = tagName;
-        this.contentType = contentType;
+        this.contentType = contentType.getMimeTypeRepresentation();
     }
 }
