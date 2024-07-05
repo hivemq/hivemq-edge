@@ -39,7 +39,7 @@ public class WriteOutputImpl implements WriteOutput {
     public void fail(@NotNull final Throwable t, @Nullable final String errorMessage, boolean retry) {
         this.throwable = t;
         this.message = errorMessage;
-        this.future.complete(false);
+        this.future.completeExceptionally(t);
         this.canBeRetried = retry;
     }
 
