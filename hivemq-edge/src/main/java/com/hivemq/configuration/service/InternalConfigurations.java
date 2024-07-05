@@ -295,4 +295,9 @@ public class InternalConfigurations {
     public static final @NotNull AtomicInteger ADAPTER_RUNTIME_JOB_EXECUTION_TIMEOUT_MILLIS = new AtomicInteger(60 * 1000);  //-- 60 Seconds
     public static final @NotNull AtomicInteger ADAPTER_RUNTIME_WATCHDOG_TIMEOUT_ERRORS_BEFORE_INTERRUPT = new AtomicInteger(10);
     public static final @NotNull AtomicInteger EDGE_RUNTIME_MAX_EVENTS_IN_INMEMORY_LIST = new AtomicInteger(250);
+
+    public static final AtomicInteger ADAPTER_STOP_TIMEOUT_SECONDS = new AtomicInteger(10);
+    public static final AtomicInteger ADAPTER_START_TIMEOUT_SECONDS = new AtomicInteger(30);
+    public static final AtomicInteger ADAPTER_POLL_TIMEOUT_SECONDS = new AtomicInteger(30);
+
 }

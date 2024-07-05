@@ -16,15 +16,19 @@
 package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class ProtocolAdapterStopOutputImpl implements ProtocolAdapterStopOutput {
 
 
-    final @NotNull CompletableFuture<Void> outputFuture = new CompletableFuture<>();
+    final @NotNull CompletableFuture<Void> outputFuture =
+            new CompletableFuture<Void>().orTimeout(InternalConfigurations.ADAPTER_STOP_TIMEOUT_SECONDS.get(),
+                    TimeUnit.SECONDS);
     private @Nullable String errorMessage = null;
 
     public ProtocolAdapterStopOutputImpl() {

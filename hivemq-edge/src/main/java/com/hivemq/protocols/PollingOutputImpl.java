@@ -18,12 +18,14 @@ package com.hivemq.protocols;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
+import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.exceptions.StackLessProtocolAdapterException;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class PollingOutputImpl implements PollingOutput {
 
@@ -33,7 +35,9 @@ public class PollingOutputImpl implements PollingOutput {
     }
 
     private final @NotNull ProtocolAdapterDataSample dataSample;
-    final @NotNull CompletableFuture<PollingResult> outputFuture = new CompletableFuture<>();
+    final @NotNull CompletableFuture<PollingResult> outputFuture = new CompletableFuture<PollingResult>().orTimeout(
+            InternalConfigurations.ADAPTER_POLL_TIMEOUT_SECONDS.get(),
+            TimeUnit.SECONDS);
     private @Nullable String errorMessage = null;
 
     public PollingOutputImpl(final @NotNull ProtocolAdapterDataSample dataSample) {

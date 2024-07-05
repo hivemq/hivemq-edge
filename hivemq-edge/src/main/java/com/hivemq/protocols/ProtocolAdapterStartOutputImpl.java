@@ -16,16 +16,20 @@
 package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
+import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class ProtocolAdapterStartOutputImpl implements ProtocolAdapterStartOutput {
 
     private @Nullable volatile String message = null;
     private @Nullable volatile Throwable throwable = null;
-    private final @NotNull CompletableFuture<Boolean> startFuture = new CompletableFuture<>();
+    private final @NotNull CompletableFuture<Boolean> startFuture = new CompletableFuture<Boolean>().orTimeout(
+            InternalConfigurations.ADAPTER_START_TIMEOUT_SECONDS.get(),
+            TimeUnit.SECONDS);
 
     @Override
     public void startedSuccessfully() {
