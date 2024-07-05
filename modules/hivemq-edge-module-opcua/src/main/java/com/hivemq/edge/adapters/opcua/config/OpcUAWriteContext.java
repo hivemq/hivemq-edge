@@ -26,6 +26,15 @@ public class OpcUAWriteContext implements WriteContext {
                        defaultValue = "0")
     protected int qos = 0;
 
+    @JsonProperty("writingIntervalMillis")
+    @ModuleConfigField(title = "Polling Interval [ms]",
+                       description = "Minimum time in millisecond between consecutive writes for this mapping. " +
+                               "This is intended to protect constrained devices from overloading.",
+                       numberMin = 0,
+                       required = true,
+                       defaultValue = "1000")
+    private int writingIntervalMillis = 1000; //1 second
+
     @JsonProperty("node")
     @ModuleConfigField(title = "Destination Node ID",
                        description = "identifier of the node on the OPC-UA server. Example: \"ns=3;s=85/0:Temperature\"",
@@ -46,6 +55,11 @@ public class OpcUAWriteContext implements WriteContext {
     @Override
     public int getQos() {
         return qos;
+    }
+
+    @Override
+    public long getWritingInterval() {
+        return writingIntervalMillis;
     }
 
     public @NotNull String getDestination() {

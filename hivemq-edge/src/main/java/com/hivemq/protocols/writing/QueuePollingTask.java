@@ -124,10 +124,8 @@ public class QueuePollingTask implements Runnable {
                 }
 
                 @Override
-                public void onFailure(final Throwable t) {
-                    // TODO
-
-
+                public void onFailure(final @NotNull Throwable t) {
+                    handleInterruptionException(t);
                 }
             }, scheduledExecutorService);
 
@@ -143,12 +141,9 @@ public class QueuePollingTask implements Runnable {
     }
 
     private void handleInterruptionException(final @NotNull Throwable throwable) {
-        //-- Job was killed by the framework as it took too long
-        //-- Do not call back to the job here (notify) since it will
-        //-- Not respond and we dont want to block other polls
         int errorCountTotal = watchdogErrorCount.incrementAndGet();
-        final long milliSecondsSinceLastPoll =
-                TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
+        System.err.println("Interruption:");
+        throwable.printStackTrace();
         // TODO log
         // TODO notifyOnError(sampler, throwable, !stopBecauseOfTooManyErrors);
         reschedule(errorCountTotal);
@@ -157,6 +152,9 @@ public class QueuePollingTask implements Runnable {
 
     private void handleExceptionDuringPolling(final @NotNull Throwable throwable) {
         int errorCountTotal = applicationErrorCount.incrementAndGet();
+        System.err.println("Exception:");
+        throwable.printStackTrace();
+
         //TODO log and notify adapter
         reschedule(errorCountTotal);
     }
@@ -174,20 +172,20 @@ public class QueuePollingTask implements Runnable {
 
     private void reschedule(int errorCountTotal) {
         long pollDuration = TimeUnit.NANOSECONDS.toMillis(nanoTimeProvider.nanoTime() - nanosOfLastPolling);
-        final long delayInMillis = writeContext.getPeriod() - pollDuration;
+        final long delayInMillis = writeContext.getWritingInterval() - pollDuration;
         // a negative delay means that the last polling attempt took longer to be processed than the specified delay between polls
         if (delayInMillis < 0) {
             log.warn(
                     "Polling for protocol adapter '{}' can not keep up with the specified '{}' interval, because the polling takes too long.",
                     writingProtocolAdapter.getId(),
-                    writeContext.getPeriod());
+                    writeContext.getWritingInterval());
 
             eventService.createAdapterEvent(writingProtocolAdapter.getId(),
                             writingProtocolAdapter.getProtocolAdapterInformation().getProtocolId())
                     .withMessage(String.format(
                             "Polling for protocol adapter '%s' can not keep up with the specified '%d' ms interval, because the polling takes too long.",
                             writingProtocolAdapter.getId(),
-                            writeContext.getPeriod()))
+                            writeContext.getWritingInterval()))
                     .withSeverity(Event.SEVERITY.WARN)
                     .fire();
         }

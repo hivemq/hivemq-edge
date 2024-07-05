@@ -6,12 +6,14 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class WriteOutputImpl implements WriteOutput {
 
     private volatile @Nullable String message = null;
     private volatile @Nullable Throwable throwable = null;
-    private final @NotNull CompletableFuture<Boolean> future = new CompletableFuture<>();
+    private final @NotNull CompletableFuture<Boolean> future =
+            new CompletableFuture<Boolean>().orTimeout(30, TimeUnit.SECONDS);
     private boolean canBeRetried = true;
 
     public @Nullable Throwable getThrowable() {
