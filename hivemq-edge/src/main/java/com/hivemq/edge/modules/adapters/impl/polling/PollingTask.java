@@ -72,6 +72,7 @@ public class PollingTask implements Runnable {
                             TimeUnit.MILLISECONDS);
             localExecutionFuture.whenComplete((aVoid, throwable) -> {
                 if (throwable == null) {
+                    resetErrorStats();
                     reschedule(0);
                 } else {
                     if (ExceptionUtils.isInterruptedException(throwable)) {
@@ -197,6 +198,11 @@ public class PollingTask implements Runnable {
                 // ignore. This is fine during shutdown.
             }
         }
+    }
+
+    private void resetErrorStats() {
+        applicationErrorCount.set(0);
+        watchdogErrorCount.set(0);
     }
 
     private static long getBackoff(int errorCount, long max) {
