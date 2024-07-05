@@ -15,6 +15,7 @@ import com.hivemq.persistence.util.FutureUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 public class WriteTask {
@@ -36,7 +37,7 @@ public class WriteTask {
         this.objectMapper = objectMapper;
     }
 
-    public void onMessage(
+    public @NotNull CompletableFuture<Boolean> onMessage(
             final @NotNull PUBLISH publish, final @NotNull String queueId, final @NotNull WriteContext writeContext) {
         try {
             final Class<? extends WritePayload> payloadClass = protocolAdapter.getPayloadClass();
@@ -45,9 +46,11 @@ public class WriteTask {
             final WriteOutputImpl writeOutput = new WriteOutputImpl();
             writeOutput.getFuture().whenComplete(new AfterWriteCallback(publish, queueId, writeOutput));
             protocolAdapter.write(writeInput, writeOutput);
+            return writeOutput.getFuture();
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return null;
     }
 
     public class AfterWriteCallback implements BiConsumer<Boolean, Throwable> {

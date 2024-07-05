@@ -1,16 +1,13 @@
 package com.hivemq.protocols.writing;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.hivemq.adapter.sdk.api.config.WriteContext;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.QoS;
-import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
@@ -22,9 +19,6 @@ import javax.inject.Singleton;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import static com.hivemq.configuration.service.InternalConfigurations.PUBLISH_POLL_BATCH_SIZE_BYTES;
 
 @Singleton
 public class ProtocolAdapterWritingService {
@@ -38,6 +32,8 @@ public class ProtocolAdapterWritingService {
     //TODO
     final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(10);
     private final @NotNull SingleWriterService singleWriterService;
+    private final EventService eventService;
+    private final QueuePollingTaskFactory queuePollingTaskFactory;
 
     @Inject
     public ProtocolAdapterWritingService(
@@ -47,27 +43,29 @@ public class ProtocolAdapterWritingService {
             final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull LocalTopicTree localTopicTree,
             final @NotNull HivemqId hivemqId,
-            final @NotNull SingleWriterService singleWriterService) {
+            final @NotNull SingleWriterService singleWriterService,
+            final @NotNull EventService eventService,
+            final @NotNull QueuePollingTaskFactory queuePollingTaskFactory) {
         this.objectMapper = objectMapper;
         this.executorService = executorService;
         this.clientQueuePersistence = clientQueuePersistence;
         this.localTopicTree = localTopicTree;
         this.hivemqId = hivemqId;
         this.singleWriterService = singleWriterService;
+        this.eventService = eventService;
+        this.queuePollingTaskFactory = queuePollingTaskFactory;
     }
 
     public void startWriting(final @NotNull WritingProtocolAdapter<?, ?> writingProtocolAdapter) {
         writingProtocolAdapter.getWriteContexts().forEach(writeContext -> {
             final String queueId = createSubscription(writeContext);
-            final WriteTask writeTask =
-                    new WriteTask(writingProtocolAdapter, clientQueuePersistence, singleWriterService, objectMapper);
-            scheduledExecutorService.scheduleWithFixedDelay(() -> {
-                pollForQueue(queueId, writeTask, writeContext);
-            }, 1, 1, TimeUnit.SECONDS);
+            final QueuePollingTask queuePollingTask =
+                    queuePollingTaskFactory.create(writingProtocolAdapter, queueId, writeContext);
+            queuePollingTask.run();
         });
     }
 
-    public String createSubscription(final WriteContext writeContext) {
+    public @NotNull String createSubscription(final WriteContext writeContext) {
         final String forwarderId = "adapter-writer";
         final String clientId = FORWARDER_PREFIX + forwarderId + "#" + hivemqId.get();
         final String shareName = FORWARDER_PREFIX + forwarderId;
@@ -78,25 +76,6 @@ public class ProtocolAdapterWritingService {
                 shareName);
         final String queueId = createQueueId(forwarderId, topic);
         return queueId;
-    }
-
-
-    @NotNull
-    private ListenableFuture<Boolean> pollForQueue(
-            final @NotNull String queueId,
-            final @NotNull WriteTask writeTask,
-            final @NotNull WriteContext writeContext) {
-        final ListenableFuture<ImmutableList<PUBLISH>> pollFuture =
-                clientQueuePersistence.readShared(queueId, 1, PUBLISH_POLL_BATCH_SIZE_BYTES);
-        return Futures.transformAsync(pollFuture, publishes -> {
-            if (publishes == null) {
-                return Futures.immediateFuture(false);
-            }
-            for (final PUBLISH publish : publishes) {
-                writeTask.onMessage(publish, queueId, writeContext);
-            }
-            return Futures.immediateFuture(!publishes.isEmpty());
-        }, executorService);
     }
 
     private static @NotNull String createQueueId(final @NotNull String forwarderId, final @NotNull String topic) {
