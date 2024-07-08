@@ -53,28 +53,32 @@ class SimulationProtocolAdapterTest {
         when(protocolAdapterConfig.getMaxDelay()).thenReturn(1);
 
         simulationProtocolAdapter.poll(pollingInput, pollingOutput);
+
         assertThrows(ExecutionException.class, () -> pollingOutput.getOutputFuture().get());
         verify(timeWaiter, never()).sleep(anyInt());
     }
 
     @Test
     @Timeout(2)
-    void test_poll_whenMinAndMaxIsTheSame_thenThreadWaitsExactlyTimeAmount() throws InterruptedException {
+    void test_poll_whenMinAndMaxIsTheSame_thenThreadWaitsExactlyTimeAmount()
+            throws InterruptedException, ExecutionException {
         when(protocolAdapterConfig.getMinDelay()).thenReturn(1);
         when(protocolAdapterConfig.getMaxDelay()).thenReturn(1);
 
         simulationProtocolAdapter.poll(pollingInput, pollingOutput);
+        pollingOutput.getOutputFuture().get();
 
         verify(timeWaiter, times(1)).sleep(eq(1));
     }
 
     @Test
     @Timeout(2)
-    void test_poll_whenMaxBiggerMin_thenThreadWaitsBetweem() throws InterruptedException {
+    void test_poll_whenMaxBiggerMin_thenThreadWaitsBetweem() throws InterruptedException, ExecutionException {
         when(protocolAdapterConfig.getMinDelay()).thenReturn(1);
         when(protocolAdapterConfig.getMaxDelay()).thenReturn(3);
 
         simulationProtocolAdapter.poll(pollingInput, pollingOutput);
+        pollingOutput.getOutputFuture().get();
 
         ArgumentCaptor<Integer> argumentCaptor = ArgumentCaptor.forClass(Integer.class);
         verify(timeWaiter, times(1)).sleep(argumentCaptor.capture());
@@ -85,11 +89,12 @@ class SimulationProtocolAdapterTest {
 
     @Test
     @Timeout(2)
-    void test_poll_whenMaxAndMinAreZero_thenDoNotSleep() throws InterruptedException {
+    void test_poll_whenMaxAndMinAreZero_thenDoNotSleep() throws InterruptedException, ExecutionException {
         when(protocolAdapterConfig.getMinDelay()).thenReturn(0);
         when(protocolAdapterConfig.getMaxDelay()).thenReturn(0);
 
         simulationProtocolAdapter.poll(pollingInput, pollingOutput);
+        pollingOutput.getOutputFuture().get();
 
         verify(timeWaiter, never()).sleep(anyInt());
     }
