@@ -18,28 +18,12 @@
 rootProject.name = "hivemq-edge"
 
 pluginManagement {
-    plugins {
-        id("com.github.johnrengelman.shadow") version "${extra["plugin.shadow.version"]}"
-        id("com.github.hierynomus.license") version "${extra["plugin.license.version"]}"
-        id("org.owasp.dependencycheck") version "${extra["plugin.dependencycheck.version"]}"
-        id("com.github.spotbugs") version "${extra["plugin.spotbugs.version"]}"
-        id("de.thetaphi.forbiddenapis") version "${extra["plugin.forbiddenapis.version"]}"
-        id("com.github.sgtsilvio.gradle.utf8") version "${extra["plugin.utf8.version"]}"
-        id("com.github.sgtsilvio.gradle.metadata") version "${extra["plugin.metadata.version"]}"
-        id("com.github.sgtsilvio.gradle.javadoc-links") version "${extra["plugin.javadoc-links.version"]}"
-        id("io.github.gradle-nexus.publish-plugin") version "${extra["plugin.nexus-publish.version"]}"
-        id("com.github.breadmoirai.github-release") version "${extra["plugin.github-release.version"]}"
-        id("com.github.ben-manes.versions") version "${extra["plugin.versions.version"]}"
-        id("com.github.node-gradle.node") version "${extra["plugin.node.version"]}"
-    }
     includeBuild("../edge-plugins")
 }
-
 
 includeBuild("./src/frontend") {
     name = "hivemq-edge-frontend"
 }
-
 
 if (file("../../hivemq-edge-extension-sdk").exists()) {
     includeBuild("../../hivemq-edge-extension-sdk")
