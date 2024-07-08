@@ -82,4 +82,15 @@ class SimulationProtocolAdapterTest {
         assertTrue(sleepTimeMillis >= 1);
         assertTrue(sleepTimeMillis <= 3);
     }
+
+    @Test
+    @Timeout(2)
+    void test_poll_whenMaxAndMinAreZero_thenDoNotSleep() throws InterruptedException {
+        when(protocolAdapterConfig.getMinDelay()).thenReturn(0);
+        when(protocolAdapterConfig.getMaxDelay()).thenReturn(0);
+
+        simulationProtocolAdapter.poll(pollingInput, pollingOutput);
+
+        verify(timeWaiter, never()).sleep(anyInt());
+    }
 }

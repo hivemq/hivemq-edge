@@ -82,22 +82,24 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
             final @NotNull PollingInput<SimulationPollingContext> pollingInput,
             final @NotNull PollingOutput pollingOutput) {
 
-        if (adapterConfig.getMinDelay() > adapterConfig.getMaxDelay()) {
+        final int minDelay = adapterConfig.getMinDelay();
+        final int maxDelay = adapterConfig.getMaxDelay();
+
+        if (minDelay > maxDelay) {
             pollingOutput.fail(String.format(
                     "The configured min '%d' delay was bigger than the max delay '%d'. Simulator Adapter will not publish a value.",
-                    adapterConfig.getMinDelay(),
-                    adapterConfig.getMaxDelay()));
-        } else if (adapterConfig.getMinDelay() == adapterConfig.getMaxDelay()) {
+                    minDelay,
+                    maxDelay));
+        } else if (minDelay == maxDelay && maxDelay > 0) {
             try {
-                timeWaiter.sleep(adapterConfig.getMinDelay());
+                timeWaiter.sleep(minDelay);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 pollingOutput.fail("Thread was interrupted");
                 return;
             }
-        } else if (adapterConfig.getMaxDelay() > 0) {
-            final int sleepMS = adapterConfig.getMinDelay() +
-                    RANDOM.nextInt(adapterConfig.getMaxDelay() - adapterConfig.getMinDelay());
+        } else if (maxDelay > 0) {
+            final int sleepMS = minDelay + RANDOM.nextInt(maxDelay - minDelay);
             try {
                 timeWaiter.sleep(sleepMS);
             } catch (InterruptedException e) {
