@@ -2,13 +2,11 @@ import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
-
 plugins {
-    id("java")
-    id("com.github.sgtsilvio.gradle.utf8")
-    id("com.github.johnrengelman.shadow")
-    id("com.github.hierynomus.license")
-    id("org.owasp.dependencycheck")
+    java
+    alias(libs.plugins.utf8)
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")
 }
 
@@ -36,40 +34,19 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
-    compileOnly("commons-io:commons-io:${property("commons-io.version")}")
-
-    implementation("org.slf4j:slf4j-api:${property("slf4j.version")}")
-    implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
-    runtimeOnly("com.google.guava:guava:${property("guava.version")}") {
-        exclude("org.checkerframework", "checker-qual")
-        exclude("com.google.errorprone", "error_prone_annotations")
-    }
-}
-
-configurations {
-    runtimeClasspath {
-        exclude(group = "com.google.guava")
-        exclude(group = "io.netty")
-        exclude(group = "io.dropwizard.metrics")
-        exclude(group = "org.slf4j")
-    }
+    compileOnly(libs.hivemq.edge.adapter.sdk)
+    compileOnly(libs.apache.commonsIO)
+    compileOnly(libs.slf4j.api)
+    compileOnly(libs.jackson.databind)
 }
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
-    testImplementation("org.apache.commons:commons-lang3:${property("commons-lang.version")}")
-    testImplementation("commons-io:commons-io:${property("commons-io.version")}")
-    testImplementation("com.google.guava:guava:${property("guava.version")}")
-    testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")
-    testImplementation("org.junit.platform:junit-platform-launcher:${property("junit.jupiter.platform.version")}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${property("junit.jupiter.version")}")
-    testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
-    testImplementation("org.mockito:mockito-junit-jupiter:${property("mockito.version")}")
-    testImplementation("net.javacrumbs.json-unit:json-unit-assertj:${property("jsonUnit")}")
+    testImplementation(libs.jackson.databind)
+    testImplementation(libs.hivemq.edge.adapter.sdk)
+    testImplementation(libs.apache.commonsIO)
+    testImplementation(libs.mockito.junit)
+    testImplementation(libs.junit.jupiter)
 }
 
 tasks.test {
@@ -204,7 +181,6 @@ downloadLicenses {
     )
 
     dependencyConfiguration = "runtimeClasspath"
-    excludeDependencies = listOf("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 }
 
 val updateThirdPartyLicenses by tasks.registering {

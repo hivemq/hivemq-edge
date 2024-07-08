@@ -2,20 +2,12 @@ import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
-buildscript {
-    if (gradle.includedBuilds.any { it.name == "edge-plugins" }) {
-        plugins {
-            id("com.hivemq.edge-version-updater")
-        }
-    }
-}
-
 plugins {
-    id("java")
-    id("com.github.sgtsilvio.gradle.utf8")
-    id("com.github.johnrengelman.shadow")
-    id("com.github.hierynomus.license")
-    id("org.owasp.dependencycheck")
+    java
+    alias(libs.plugins.utf8)
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.license)
+    id("com.hivemq.edge-version-updater")
 }
 
 group = "com.hivemq"
@@ -42,30 +34,28 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
-    compileOnly("commons-io:commons-io:${property("commons-io.version")}")
+    compileOnly(libs.hivemq.edge.adapter.sdk)
+    compileOnly(libs.apache.commonsIO)
+    compileOnly(libs.slf4j.api)
+    compileOnly(libs.jackson.databind)
 
-    runtimeOnly("com.google.guava:guava:${property("guava.version")}")
-    compileOnly("org.apache.commons:commons-lang3:${property("commons-lang.version")}")
-    implementation("com.fasterxml.jackson.core:jackson-databind:${property("jackson.version")}")
-    implementation("org.eclipse.milo:sdk-client:${property("milo.version")}")
-    implementation("org.eclipse.milo:dictionary-reader:${property("milo.version")}")
-    implementation("org.eclipse.milo:bsd-parser-gson:${property("milo.version")}")
+    compileOnly(libs.apache.commonsLang)
+    implementation(libs.milo.bsdParserGson)
+    implementation(libs.milo.client)
+    implementation(libs.milo.dictionaryReader)
 }
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
+    testImplementation(libs.jackson.databind)
+    testImplementation(libs.hivemq.edge.adapter.sdk)
+    testImplementation(libs.apache.commonsIO)
+    testImplementation(libs.mockito.junit)
+    testImplementation(libs.junit.jupiter)
 
-    testImplementation("org.eclipse.milo:sdk-server:${property("milo.version")}")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")
-    testImplementation("org.junit.platform:junit-platform-launcher:${property("junit.jupiter.platform.version")}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${property("junit.jupiter.version")}")
-    testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
-    testImplementation("org.mockito:mockito-junit-jupiter:${property("mockito.version")}")
-    testImplementation("org.assertj:assertj-core:${property("assertj.version")}")
-    testImplementation("org.awaitility:awaitility:${property("awaitility.version")}")
+    testImplementation(libs.milo.server)
+    testImplementation(libs.assertj)
+    testImplementation(libs.awaitility)
 }
 
 configurations {
@@ -212,7 +202,6 @@ downloadLicenses {
     )
 
     dependencyConfiguration = "runtimeClasspath"
-    excludeDependencies = listOf("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 }
 
 val updateThirdPartyLicenses by tasks.registering {
