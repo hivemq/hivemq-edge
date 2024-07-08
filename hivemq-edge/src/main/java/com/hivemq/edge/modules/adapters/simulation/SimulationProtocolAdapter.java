@@ -26,24 +26,33 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
 public class SimulationProtocolAdapter implements PollingProtocolAdapter<SimulationPollingContext> {
 
+
+    private static final Logger log = LoggerFactory.getLogger(SimulationProtocolAdapter.class);
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull SimulationAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
+    private final @NotNull TimeWaiter timeWaiter;
+    private static final @NotNull Random RANDOM = new Random();
 
     public SimulationProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<SimulationAdapterConfig> protocolAdapterInput) {
+            final @NotNull ProtocolAdapterInput<SimulationAdapterConfig> protocolAdapterInput,
+            final @NotNull TimeWaiter timeWaiter) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = protocolAdapterInput.getConfig();
         this.protocolAdapterState = protocolAdapterInput.getProtocolAdapterState();
+        this.timeWaiter = timeWaiter;
         this.protocolAdapterState.setConnectionStatus(STATELESS);
     }
 
@@ -70,12 +79,44 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
 
     @Override
     public void poll(
-            final @NotNull PollingInput<SimulationPollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<SimulationPollingContext> pollingInput,
+            final @NotNull PollingOutput pollingOutput) {
+
+        if (adapterConfig.getMinDelay() > adapterConfig.getMaxDelay()) {
+            pollingOutput.fail(String.format(
+                    "The configured min '%d' delay was bigger than the max delay '%d'. Simulator Adapter will not publish a value.",
+                    adapterConfig.getMinDelay(),
+                    adapterConfig.getMaxDelay()));
+        } else if (adapterConfig.getMinDelay() == adapterConfig.getMaxDelay()) {
+            try {
+                timeWaiter.sleep(adapterConfig.getMinDelay());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                pollingOutput.fail("Thread was interrupted");
+                return;
+            }
+        } else if (adapterConfig.getMaxDelay() > 0) {
+            final int sleepMS = adapterConfig.getMinDelay() +
+                    RANDOM.nextInt(adapterConfig.getMaxDelay() - adapterConfig.getMinDelay());
+            try {
+                timeWaiter.sleep(sleepMS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                pollingOutput.fail("Thread was interrupted");
+                return;
+            }
+        }
+
         pollingOutput.addDataPoint("sample",
                 ThreadLocalRandom.current()
                         .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
                                 Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
         pollingOutput.finish();
+    }
+
+    public static void main(String[] args) {
+        Random random = new Random();
+        System.err.println(random.nextInt(0));
     }
 
     @Override
