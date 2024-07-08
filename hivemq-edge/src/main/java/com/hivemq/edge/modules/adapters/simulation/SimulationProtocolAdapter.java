@@ -116,11 +116,6 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
         pollingOutput.finish();
     }
 
-    public static void main(String[] args) {
-        Random random = new Random();
-        System.err.println(random.nextInt(0));
-    }
-
     @Override
     public @NotNull List<SimulationPollingContext> getPollingContexts() {
         return adapterConfig.getPollingContexts();
