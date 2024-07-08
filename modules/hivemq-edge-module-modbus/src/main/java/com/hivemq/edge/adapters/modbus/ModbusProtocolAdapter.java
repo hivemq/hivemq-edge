@@ -165,11 +165,11 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapt
         if (input.getRootNode() == null) {
             nodeTree.addNode("holding-registers",
                     "Holding Registers",
-                    "Holding Registers",
+                    "Holding Registers", "Holding Registers",
                     null,
                     NodeType.FOLDER,
                     false);
-            nodeTree.addNode("coils", "Coils", "Coils", null, NodeType.FOLDER, false);
+            nodeTree.addNode("coils", "Coils", "Coils", "coils", null, NodeType.FOLDER, false);
         }
         addAddresses(nodeTree, "holding-registers", 1, 256, 16);
         addAddresses(nodeTree, "coils", 1, 256, 16);
@@ -240,18 +240,24 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapt
         if (groupIdx < count) {
             tree.addNode("grouping-" + startIdx,
                     "Addresses " + startIdx + "-" + (startIdx + groupIdx - 1),
-                    "",
+                    "", "",
                     parent,
                     NodeType.FOLDER,
                     false);
             parentNode = "grouping-" + startIdx;
         }
         for (int i = startIdx; i <= count; i++) {
-            tree.addNode("address-location-" + i, String.valueOf(i), "", parentNode, NodeType.VALUE, true);
+            tree.addNode("address-location-" + i,
+                    String.valueOf(i),
+                    String.valueOf(i),
+                    "",
+                    parentNode,
+                    NodeType.VALUE,
+                    true);
             if (i % groupIdx == 0 && i < count) {
                 tree.addNode("grouping-" + i,
                         "Addresses " + (i + 1) + "-" + (i + groupIdx),
-                        "",
+                        "", "",
                         parent,
                         NodeType.FOLDER,
                         false);
