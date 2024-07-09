@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { labelValue, WidgetProps } from '@rjsf/utils'
 import { Editor, useMonaco } from '@monaco-editor/react'
-import { FormControl, FormHelperText, FormLabel, VStack } from '@chakra-ui/react'
+import { FormControl, FormLabel, Text, VStack } from '@chakra-ui/react'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { generateWidgets } from '@rjsf/chakra-ui'
 
@@ -30,7 +30,7 @@ const CodeEditor = (lng: string, props: WidgetProps) => {
     return (
       <>
         <TextareaWidget {...rest} options={{ ...options, rows: 6 }} />
-        <FormHelperText>{t('workspace.codeEditor.loadingError')}</FormHelperText>
+        <Text fontSize="sm">{t('workspace.codeEditor.loadingError')}</Text>
       </>
     )
   }
