@@ -1,3 +1,4 @@
+/* istanbul ignore file -- @preserve */
 import { PanelSpecs } from '@/extensions/datahub/types.ts'
 import { RJSFSchema } from '@rjsf/utils'
 

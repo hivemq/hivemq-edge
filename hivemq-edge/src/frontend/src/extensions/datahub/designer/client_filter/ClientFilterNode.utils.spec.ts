@@ -1,5 +1,5 @@
 import { expect } from 'vitest'
-import { Node } from 'reactflow'
+import { Connection, Node, NodeAddChange } from 'reactflow'
 import { MOCK_DEFAULT_NODE } from '@/__test-utils__/react-flow/nodes.ts'
 
 import {
@@ -9,7 +9,8 @@ import {
   DataHubNodeType,
   WorkspaceState,
 } from '@datahub/types.ts'
-import { checkValidityClients } from '@datahub/designer/client_filter/ClientFilterNode.utils.ts'
+import { checkValidityClients, loadClientFilter } from '@datahub/designer/client_filter/ClientFilterNode.utils.ts'
+import type { BehaviorPolicy } from '@/api/__generated__'
 
 describe('checkValidityClients', () => {
   const MOCK_NODE_BEHAVIOR_POLICY: Node<BehaviorPolicyData> = {
@@ -126,5 +127,45 @@ describe('checkValidityClients', () => {
     expect(resources).toBeUndefined()
     expect(data).toEqual('client 1')
     expect(error).toBeUndefined()
+  })
+})
+
+describe('loadClientFilter', () => {
+  const MOCK_NODE_BEHAVIOR: Node<BehaviorPolicyData> = {
+    id: 'node-id',
+    type: DataHubNodeType.BEHAVIOR_POLICY,
+    data: { id: 'my-policy-id', model: BehaviorPolicyType.MQTT_EVENT },
+    ...MOCK_DEFAULT_NODE,
+    position: { x: 0, y: 0 },
+  }
+
+  const behaviorPolicy: BehaviorPolicy = {
+    behavior: { id: 'Mqtt.events' },
+
+    id: 'string',
+    matching: { clientIdRegex: '*.*' },
+  }
+
+  it('should return nodes', () => {
+    expect(loadClientFilter(behaviorPolicy, MOCK_NODE_BEHAVIOR)).toStrictEqual<(NodeAddChange | Connection)[]>([
+      expect.objectContaining<NodeAddChange>({
+        item: {
+          data: {
+            clients: ['*.*'],
+          },
+          id: expect.stringContaining('node_'),
+          position: {
+            x: -300,
+            y: 0,
+          },
+          type: DataHubNodeType.CLIENT_FILTER,
+        },
+        type: 'add',
+      }),
+      expect.objectContaining({
+        source: expect.stringContaining('node_'),
+        target: 'node-id',
+      }),
+    ])
   })
 })

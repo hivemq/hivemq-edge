@@ -47,6 +47,15 @@ describe('extractMetricInfo', () => {
         suffix: 'bytes.read.total',
       },
     },
+    {
+      metricName: MOCK_METRICS[38].name as string,
+      expected: {
+        device: 'subscriptions',
+        id: 'current',
+        suffix: '',
+        type: 'overall',
+      },
+    },
   ])('should returns $expected.suffix with metricName', ({ metricName, expected }) => {
     expect(extractMetricInfo(metricName)).toStrictEqual(expected)
   })

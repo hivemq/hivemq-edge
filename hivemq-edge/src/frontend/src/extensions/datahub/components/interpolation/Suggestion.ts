@@ -1,3 +1,4 @@
+/* istanbul ignore file -- @preserve */
 import { ReactRenderer } from '@tiptap/react'
 import { MentionOptions } from '@tiptap/extension-mention'
 import tippy, { type Instance as TippyInstance } from 'tippy.js'
