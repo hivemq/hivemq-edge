@@ -36,4 +36,15 @@ describe('CodeEditor', () => {
   it('should render the JSONSchema Editor', () => {
     cy.mountWithProviders(<JSONSchemaEditor {...MOCK_WIDGET_PROPS} value={MOCK_JSONSCHEMA_SCHEMA} />)
   })
+
+  it('should render the fallback editor', () => {
+    cy.intercept('**/cdn.jsdelivr.net/**', { statusCode: 404 })
+    cy.mountWithProviders(<JSONSchemaEditor {...MOCK_WIDGET_PROPS} value={MOCK_JSONSCHEMA_SCHEMA} />)
+
+    cy.get('textarea').should('be.visible')
+    cy.get("[role='group'] + p").should(
+      'contain.text',
+      'The advanced editor cannot be loaded. Syntax highlighting is not supported'
+    )
+  })
 })
