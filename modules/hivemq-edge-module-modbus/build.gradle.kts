@@ -40,15 +40,15 @@ dependencies {
     compileOnly(libs.slf4j.api)
     compileOnly(libs.jackson.databind)
     implementation(libs.digitalpetri.modbus.master.tcp)
-}
 
-dependencies {
-    testImplementation("com.hivemq:hivemq-edge")
+    testImplementation(libs.hivemq.edge)
     testImplementation(libs.jackson.databind)
     testImplementation(libs.hivemq.edge.adapter.sdk)
     testImplementation(libs.apache.commonsIO)
     testImplementation(libs.mockito.junit)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.guava)
+
 }
 
 tasks.test {

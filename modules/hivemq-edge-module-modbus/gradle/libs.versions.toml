@@ -1,5 +1,6 @@
 [versions]
 apache-commonsIO = "2.16.1"
+guava = "32.1.3-jre"
 hivemq-edge-adapter-sdk = "2024.5"
 jackson = "2.17.1"
 junit-jupiter = "5.10.3"
@@ -10,6 +11,8 @@ slf4j = "2.0.13"
 [libraries]
 apache-commonsIO = { module = "commons-io:commons-io", version.ref = "apache-commonsIO" }
 digitalpetri-modbus-master-tcp = { module = "com.digitalpetri.modbus:modbus-master-tcp", version.ref = "modbus" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+hivemq-edge = { module = "com.hivemq:hivemq-edge" }
 hivemq-edge-adapter-sdk = { module = "com.hivemq:hivemq-edge-adapter-sdk", version.ref = "hivemq-edge-adapter-sdk" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
