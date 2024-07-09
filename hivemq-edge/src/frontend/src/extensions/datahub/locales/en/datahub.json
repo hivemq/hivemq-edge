@@ -187,6 +187,7 @@
       }
     },
     "codeEditor": {
+      "loadingError": "The advanced editor cannot be loaded. Syntax highlighting is not supported",
       "delete": "Delete this version",
       "test": "Test code"
     },
