@@ -26,5 +26,8 @@ export const $ObjectNode = {
         selectable: {
             type: 'boolean',
         },
+        value: {
+            type: 'string',
+        },
     },
 } as const;

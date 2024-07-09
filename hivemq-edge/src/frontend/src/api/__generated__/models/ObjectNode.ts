@@ -13,6 +13,7 @@ export type ObjectNode = {
     name?: string;
     nodeType?: ObjectNode.nodeType;
     selectable?: boolean;
+    value?: string;
 };
 
 export namespace ObjectNode {
