@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -69,7 +69,7 @@ jobs:
         run: pnpm run build
 
       - name: Upload artifact
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4
         with:
           name: application
           path: hivemq-edge/src/frontend/dist
@@ -80,7 +80,7 @@ jobs:
     needs: [ build_production ]
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -89,7 +89,7 @@ jobs:
           run-install: true
 
       - name: Download artifact
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
         with:
           name: application
           path: hivemq-edge/src/frontend/dist
@@ -105,7 +105,7 @@ jobs:
       # after the test run completes store videos
       - name: 💾 Upload Component videos
         if: failure()
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4
         with:
           name: cypress-component-videos
           path: hivemq-edge/src/frontend/cypress/videos
@@ -117,7 +117,7 @@ jobs:
     needs: [ build_production ]
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: 🏗️ Setup node environment
         uses: ./.github/actions/setup_node
@@ -126,7 +126,7 @@ jobs:
           run-install: true
 
       - name: Download artifact
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
         with:
           name: application
           path: hivemq-edge/src/frontend/dist
@@ -139,7 +139,7 @@ jobs:
           quiet: true
       - name: 💾 Upload E2E videos
         if: failure()
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4
+        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4
         with:
           name: cypress-e2e-videos
           path: hivemq-edge/src/frontend/cypress/videos
@@ -151,10 +151,10 @@ jobs:
     needs: [ build_production ]
     steps:
       - name: 👓 Checkout repository
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
 
       - name: Download artifact
-        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4
         with:
           name: application
           path: hivemq-edge/src/frontend/dist
