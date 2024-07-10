@@ -1,0 +1,26 @@
+[versions]
+apache-commonsIO = "2.16.1"
+guava = "32.1.3-jre"
+hivemq-edge-adapterSdk = "2024.5"
+jackson = "2.17.1"
+junit-jupiter = "5.10.3"
+mockito = "5.12.0"
+modbus = "1.2.2"
+slf4j = "2.0.13"
+
+[libraries]
+apache-commonsIO = { module = "commons-io:commons-io", version.ref = "apache-commonsIO" }
+digitalpetri-modbus-master-tcp = { module = "com.digitalpetri.modbus:modbus-master-tcp", version.ref = "modbus" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+hivemq-edge = { module = "com.hivemq:hivemq-edge" }
+hivemq-edge-adapterSdk = { module = "com.hivemq:hivemq-edge-adapter-sdk", version.ref = "hivemq-edge-adapterSdk" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
+mockito-junitJupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+
+[plugins]
+license = { id = "com.github.hierynomus.license", version = "0.16.1" }
+shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
+defaults = { id = "io.github.sgtsilvio.gradle.defaults", version = "0.2.0" }
+
+

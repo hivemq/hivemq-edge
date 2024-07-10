@@ -4,11 +4,10 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 
 plugins {
-    id("java")
-    id("com.github.sgtsilvio.gradle.utf8")
-    id("com.github.johnrengelman.shadow")
-    id("com.github.hierynomus.license")
-    id("org.owasp.dependencycheck")
+    java
+    alias(libs.plugins.defaults)
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")
 }
 
@@ -36,41 +35,23 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
-    compileOnly("commons-io:commons-io:${property("commons-io.version")}")
+    compileOnly(libs.hivemq.edge.adapterSdk)
+    compileOnly(libs.apache.commonsIO)
 
-    implementation("org.apache.plc4x:plc4j-api:${property("org.apache.plc4x.version")}")
-    implementation("org.apache.plc4x:plc4j-driver-s7:${property("org.apache.plc4x.version")}")
-    implementation("org.apache.plc4x:plc4j-driver-ads:${property("org.apache.plc4x.version")}")
-    implementation("org.apache.plc4x:plc4j-driver-ads:${property("org.apache.plc4x.version")}")
-    implementation("org.apache.plc4x:plc4j-driver-eip:${property("org.apache.plc4x.version")}")
-    implementation("org.apache.plc4x:plc4j-driver-ab-eth:${property("org.apache.plc4x.version")}")
-    implementation("org.apache.plc4x:plc4j-transport-raw-socket:${property("org.apache.plc4x.version")}")
-    runtimeOnly("com.google.guava:guava:${property("guava.version")}") {
-        exclude("org.checkerframework", "checker-qual")
-        exclude("com.google.errorprone", "error_prone_annotations")
-    }
-}
-
-configurations {
-    runtimeClasspath {
-        exclude(group = "com.google.guava")
-        exclude(group = "io.netty")
-        exclude(group = "io.dropwizard.metrics")
-        exclude(group = "org.slf4j")
-    }
+    implementation(libs.plc4j.s7)
+    implementation(libs.plc4j.ads)
+    implementation(libs.plc4j.api)
+    implementation(libs.plc4j.eip)
+    implementation(libs.plc4j.ab.eth)
+    implementation(libs.plc4j.transport.raw.socket)
 }
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
-
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${property("junit.jupiter.version")}")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:${property("junit.jupiter.version")}")
-    testImplementation("org.junit.platform:junit-platform-launcher:${property("junit.jupiter.platform.version")}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${property("junit.jupiter.version")}")
-    testImplementation("org.mockito:mockito-core:${property("mockito.version")}")
-    testImplementation("org.mockito:mockito-junit-jupiter:${property("mockito.version")}")
+    testImplementation(libs.hivemq.edge.adapterSdk)
+    testImplementation(libs.apache.commonsIO)
+    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.junit.jupiter)
 }
 
 tasks.test {
@@ -205,7 +186,6 @@ downloadLicenses {
     )
 
     dependencyConfiguration = "runtimeClasspath"
-    excludeDependencies = listOf("com.hivemq:hivemq-edge-adapter-sdk:${property("hivemq-edge-adapter-sdk.version")}")
 }
 
 val updateThirdPartyLicenses by tasks.registering {
