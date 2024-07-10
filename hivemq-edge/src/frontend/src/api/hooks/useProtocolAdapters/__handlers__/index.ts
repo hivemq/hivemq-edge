@@ -150,6 +150,7 @@ export const mockDataPointOPCUA: ValuesTree = {
     {
       id: 'i=85',
       name: 'Object',
+      value: 'i=85',
       description:
         'The Apollotech B340 is an affordable wireless mouse with reliable connectivity, 12 months battery life and modern design',
       nodeType: ObjectNode.nodeType.FOLDER,
@@ -158,6 +159,7 @@ export const mockDataPointOPCUA: ValuesTree = {
         {
           id: 'ns=3;s=85/0:Simulation',
           name: 'Simulation',
+          value: 'ns=3;s=85/0:Simulation',
           description:
             'Andy shoes are designed to keeping in mind durability as well as trends, the most stylish range of shoes & sandals',
           nodeType: ObjectNode.nodeType.FOLDER,
@@ -166,6 +168,7 @@ export const mockDataPointOPCUA: ValuesTree = {
             {
               id: 'ns=3;i=1001',
               name: 'Constant',
+              value: 'ns=3;i=1001',
               description:
                 'New range of formal shirts are designed keeping you in mind. With fits and styling that will make you stand apart',
               nodeType: ObjectNode.nodeType.VALUE,
@@ -174,6 +177,7 @@ export const mockDataPointOPCUA: ValuesTree = {
             {
               id: 'ns=3;i=1002',
               name: 'Counter',
+              value: 'ns=3;i=1002',
               description: 'Carbonite web goalkeeper gloves are ergonomically designed to give easy fit',
               nodeType: ObjectNode.nodeType.VALUE,
               selectable: true,
@@ -181,6 +185,7 @@ export const mockDataPointOPCUA: ValuesTree = {
             {
               id: 'ns=3;i=1003',
               name: 'Random',
+              value: 'ns=3;i=1003',
               description:
                 'The automobile layout consists of a front-engine design, with transaxle-type transmissions mounted at the rear of the engine and four wheel drive',
               nodeType: ObjectNode.nodeType.VALUE,
@@ -189,6 +194,7 @@ export const mockDataPointOPCUA: ValuesTree = {
             {
               id: 'ns=3;i=1004',
               name: 'SawTooth',
+              value: 'ns=3;i=1004',
               description:
                 'Ergonomic executive chair upholstered in bonded black leather and PVC padded seat and back for all-day comfort and support',
               nodeType: ObjectNode.nodeType.VALUE,
@@ -197,6 +203,7 @@ export const mockDataPointOPCUA: ValuesTree = {
             {
               id: 'ns=3;i=1007',
               name: 'NewValues',
+              value: 'ns=3;i=1007',
               description:
                 'Andy shoes are designed to keeping in mind durability as well as trends, the most stylish range of shoes & sandals',
               nodeType: ObjectNode.nodeType.FOLDER,
@@ -205,6 +212,7 @@ export const mockDataPointOPCUA: ValuesTree = {
                 {
                   id: 'ns=3;i=1010',
                   name: 'Triangle',
+                  value: 'ns=3;i=1010',
                   description:
                     'The beautiful range of Apple Naturalé that has an exciting mix of natural ingredients. With the Goodness of 100% Natural Ingredients',
                   nodeType: ObjectNode.nodeType.VALUE,
@@ -213,6 +221,7 @@ export const mockDataPointOPCUA: ValuesTree = {
                 {
                   id: 'ns=3;i=1011',
                   name: 'Circle',
+                  value: 'ns=3;i=1011',
                   description:
                     'New range of formal shirts are designed keeping you in mind. With fits and styling that will make you stand apart',
                   nodeType: ObjectNode.nodeType.VALUE,
@@ -223,6 +232,7 @@ export const mockDataPointOPCUA: ValuesTree = {
             {
               id: 'ns=3;i=1005',
               name: 'Sinusoid',
+              value: 'ns=3;i=1005',
               description:
                 'The beautiful range of Apple Naturalé that has an exciting mix of natural ingredients. With the Goodness of 100% Natural Ingredients',
               nodeType: ObjectNode.nodeType.VALUE,
@@ -231,6 +241,7 @@ export const mockDataPointOPCUA: ValuesTree = {
             {
               id: 'ns=3;i=1006',
               name: 'Square',
+              value: 'ns=3;i=1006',
               description:
                 'New range of formal shirts are designed keeping you in mind. With fits and styling that will make you stand apart',
               nodeType: ObjectNode.nodeType.VALUE,

@@ -31,17 +31,17 @@ import java.util.stream.Stream;
 public class NodeTreeImpl implements NodeTree {
 
     private final Map<String, ObjectNode> nodes = new HashMap<>();
-    private final ObjectNode root = new ObjectNode("ROOT", "ROOT", "ROOT", NodeType.FOLDER, false);
+    private final ObjectNode root = new ObjectNode("ROOT", "ROOT", "ROOT", "ROOT", NodeType.FOLDER, false);
 
     @Override
     public void addNode(
             @NotNull final String id,
-            @NotNull final String name,
+            @NotNull final String name, @NotNull final String value,
             @NotNull final String description,
             @Nullable final String parentId,
             @NotNull NodeType nodeType,
             boolean selectable) {
-        final ObjectNode node = new ObjectNode(name, description, id, nodeType, selectable);
+        final ObjectNode node = new ObjectNode(name, description, value, id, nodeType, selectable);
         if (parentId != null) {
             final ObjectNode parentNode = nodes.get(parentId);
             if (parentNode != null) {
@@ -74,6 +74,9 @@ public class NodeTreeImpl implements NodeTree {
         @JsonProperty("name")
         private final @NotNull String name;
 
+        @JsonProperty("value")
+        private final @NotNull String value;
+
         @JsonProperty("description")
         private final @NotNull String description;
 
@@ -88,12 +91,13 @@ public class NodeTreeImpl implements NodeTree {
 
         public ObjectNode(
                 final @NotNull String name,
-                final @NotNull String description,
+                final @NotNull String description, final @NotNull String value,
                 final @NotNull String id,
                 final @NotNull NodeType nodeType,
                 final boolean selectable) {
             this.name = name;
             this.description = description;
+            this.value = value;
             this.id = id;
             this.nodeType = nodeType;
             this.selectable = selectable;
@@ -128,7 +132,8 @@ public class NodeTreeImpl implements NodeTree {
         }
 
         public @NotNull String toString(int indent) {
-            StringBuilder result = new StringBuilder(String.format("%s | %s | %s \n", id, name, description));
+            StringBuilder result =
+                    new StringBuilder(String.format("%s | %s | %s | %s\n", id, name, value, description));
 
             for (ObjectNode child : children) {
                 result.append(child.toString(++indent));

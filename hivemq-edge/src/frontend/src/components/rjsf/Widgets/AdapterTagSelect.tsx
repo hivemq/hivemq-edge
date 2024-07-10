@@ -25,7 +25,7 @@ const Option: ComponentType<OptionProps<INode<FlatObjectNode>, false, GroupBase<
 
   const [val] = props.getValue()
   return (
-    <chakraComponents.Option {...props} isSelected={val?.metadata?.id === id}>
+    <chakraComponents.Option {...props} isSelected={val?.metadata?.value === id}>
       <VStack alignItems="flex-start" width="inherit" gap={0}>
         <HStack flexWrap="nowrap" width="inherit" justifyContent="space-between">
           <Text fontWeight="bold" data-testid="dataPoint-name">
@@ -53,7 +53,7 @@ const Option: ComponentType<OptionProps<INode<FlatObjectNode>, false, GroupBase<
 const SingleValue = (props: SingleValueProps<INode<FlatObjectNode>>) => {
   return (
     <chakraComponents.SingleValue {...props}>
-      <Text>{props.data.metadata?.id}</Text>
+      <Text>{props.data.metadata?.value}</Text>
     </chakraComponents.SingleValue>
   )
 }
@@ -68,7 +68,7 @@ const AdapterTagSelect: FC<WidgetProps<unknown, RJSFSchema, AdapterContext>> = (
 
   const onChange = useCallback<(newValue: OnChangeValue<INode<FlatObjectNode>, false>) => void>(
     (newValue) => {
-      if (newValue) props.onChange(newValue.metadata?.id)
+      if (newValue) props.onChange(newValue.metadata?.value)
     },
     [props]
   )
@@ -116,12 +116,12 @@ const AdapterTagSelect: FC<WidgetProps<unknown, RJSFSchema, AdapterContext>> = (
         instanceId="dataPoint"
         isRequired={props.required}
         options={options}
-        value={options.find((e) => e.metadata?.id === props.value)}
+        value={options.find((e) => e.metadata?.value === props.value)}
         onChange={onChange}
         noOptionsMessage={noOptionsMessage}
         filterOption={createFilter({
           stringify: (option) => {
-            return `${option.data.metadata?.name || ''}${option.data.metadata?.id || ''}`
+            return `${option.data.metadata?.name || ''}${option.data.metadata?.value || ''}`
           },
         })}
         components={{

@@ -186,7 +186,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
             final NodeType nodeType = getNodeType(ref);
             output.getNodeTree()
                     .addNode(ref.getNodeId().toParseableString(),
-                            requireNonNullElse(name, ""),
+                            requireNonNullElse(name, ""), ref.getNodeId().toParseableString(),
                             requireNonNullElse(displayName, ""),
                             parent != null ? parent.getNodeId().toParseableString() : null,
                             nodeType != null ? nodeType : NodeType.VALUE,
