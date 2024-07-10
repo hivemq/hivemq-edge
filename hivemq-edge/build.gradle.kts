@@ -202,6 +202,7 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.vintageEngine)
 
     testImplementation(libs.mockito.junitJupiter)
 

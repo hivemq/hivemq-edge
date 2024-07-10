@@ -45,7 +45,7 @@ dependencies {
     testImplementation(libs.jackson.databind)
     testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.apache.commonsIO)
-    testImplementation(libs.mockito)
+    testImplementation(libs.mockito.junit)
     testImplementation(libs.junit.jupiter)
 }
 
