@@ -80,7 +80,7 @@ const AdapterTagSelect: FC<WidgetProps<unknown, RJSFSchema, AdapterContext>> = (
   }
 
   const flattenDataTree = getAdapterTreeView(data)
-  const options = flattenDataTree.filter((option) => option.parent !== null && option.metadata?.selectable === true)
+  const options = flattenDataTree.filter((option) => option.parent !== null)
 
   function noOptionsMessage(obj: { inputValue: string }) {
     const getErrorMessage = () => {
