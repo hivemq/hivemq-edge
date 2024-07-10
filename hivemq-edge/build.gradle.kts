@@ -15,7 +15,7 @@ plugins {
     `maven-publish`
     signing
     alias(libs.plugins.shadow)
-    alias(libs.plugins.utf8)
+    alias(libs.plugins.defaults)
     alias(libs.plugins.metadata)
     alias(libs.plugins.javadocLinks)
     alias(libs.plugins.githubRelease)
@@ -110,9 +110,9 @@ repositories {
 dependencies {
 
     //HiveMQ
-    api(libs.hivemq.extension.sdk)
-    api(libs.hivemq.edge.extension.sdk)
-    api(libs.hivemq.edge.adapter.sdk)
+    api(libs.hivemq.extensionSdk)
+    api(libs.hivemq.edge.extensionSdk)
+    api(libs.hivemq.edge.adapterSdk)
 
     // netty
     implementation(libs.netty.buffer)
@@ -128,8 +128,8 @@ dependencies {
     implementation(libs.logback.classic)
 
     // security
-    implementation(libs.bouncycastle.bcprov.jdk15on)
-    implementation(libs.bouncycastle.bcpkix.jdk15on)
+    implementation(libs.bouncycastle.prov)
+    implementation(libs.bouncycastle.pkix)
 
     // override transitive dependencies that have security vulnerabilities
     implementation(platform(libs.kotlin.bom))
@@ -143,13 +143,13 @@ dependencies {
     runtimeOnly(libs.jaxb.impl)
 
     // metrics
-    implementation(libs.dropwizard.metrics.core)
+    implementation(libs.dropwizard.metrics)
     implementation(libs.dropwizard.metrics.jmx)
     runtimeOnly(libs.dropwizard.metrics.logback)
     implementation(libs.dropwizard.metrics.jvm)
 
     // dependency injection
-    implementation((libs.dagger))
+    implementation(libs.dagger)
     annotationProcessor(libs.dagger.compiler)
 
     implementation(libs.javax.annotation.api)
@@ -168,14 +168,14 @@ dependencies {
     implementation(libs.jctools)
 
     //mqtt-sn codec
-    implementation(libs.mqtt.sn)
+    implementation(libs.mqtt.sn.codec)
     implementation(libs.hivemq.mqttClient)
 
     //JAX-RS + Http Connector + Serializers
-    implementation(libs.glassfish.jersey.container.jdk.http)
-    implementation(libs.glassfish.jersey.hk2)
-    implementation(libs.glassfish.jersey.media.json.jackson)
-    implementation(libs.glassfish.jersey.media.multipart)
+    implementation(libs.jersey.container.jdk.http)
+    implementation(libs.jersey.hk2)
+    implementation(libs.jersey.media.json.jackson)
+    implementation(libs.jersey.media.multipart)
 
     // Jackson
     implementation(libs.jackson.jaxrs.json.provider)
@@ -202,14 +202,13 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter)
-    testRuntimeOnly(libs.junit.jupiter.engine)
 
-    testImplementation(libs.mockito.junit)
+    testImplementation(libs.mockito.junitJupiter)
 
     testImplementation(libs.equalsVerifier)
     testImplementation(libs.concurrentUnit)
     testImplementation(libs.shrinkwrap.api)
-    testImplementation(libs.shrinkwrap.impl)
+    testRuntimeOnly(libs.shrinkwrap.impl)
     testImplementation(libs.byteBuddy)
     testImplementation(libs.wiremock.jre8.standalone)
     testImplementation(libs.javassist)

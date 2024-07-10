@@ -12,9 +12,9 @@ dropwizard-metrics = "4.2.26"
 equalsVerifier = "3.16.1"
 future-converter = "1.2.0"
 guava = "32.1.3-jre"
-hivemq-edge-adapter-sdk = "2024.5"
-hivemq-edge-extension-sdk = "2024.5"
-hivemq-extension-sdk = "4.30.0"
+hivemq-edge-adapterSdk = "2024.5"
+hivemq-edge-extensionSdk = "2024.5"
+hivemq-extensionSdk = "4.30.0"
 hivemq-mqttClient = "1.3.3"
 kotlin = "1.9.24"
 jackson = "2.17.1"
@@ -24,14 +24,14 @@ javassist = "3.30.2-GA"
 javax-annotation-api = "1.3.2"
 jaxb = "2.3.9"
 jctools = "4.0.5"
-jersey-jaxrs-sun = "2.43"
+jersey = "2.43"
 jose4j = "0.9.4"
 jsonSchemaValidator = "1.0.88"
 junit-jupiter = "5.10.3"
 junit = "4.13.2"
 logback = "1.5.6"
 mockito = "5.12.0"
-mqtt-sn = "838f51d691"
+mqtt-sn-codec = "838f51d691"
 netty = "4.1.111.Final"
 pmd = "6.55.0"
 shrinkwrap = "1.2.6"
@@ -49,25 +49,25 @@ apache-commonsLang = { module = "org.apache.commons:commons-lang3", version.ref 
 apache-commonsCompress = { module = "org.apache.commons:commons-compress", version.ref = "apache-commonsCompress" }
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
-bouncycastle-bcpkix-jdk15on = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
-bouncycastle-bcprov-jdk15on = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
+bouncycastle-pkix = { module = "org.bouncycastle:bcpkix-jdk15on", version.ref = "bouncycastle" }
+bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk15on", version.ref = "bouncycastle" }
 byteBuddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byteBuddy" }
 concurrentUnit = { module = "net.jodah:concurrentunit", version.ref = "concurrentUnit" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
-dropwizard-metrics-core = { module = "io.dropwizard.metrics:metrics-core", version.ref = "dropwizard-metrics" }
+dropwizard-metrics = { module = "io.dropwizard.metrics:metrics-core", version.ref = "dropwizard-metrics" }
 dropwizard-metrics-jmx = { module = "io.dropwizard.metrics:metrics-jmx", version.ref = "dropwizard-metrics" }
 dropwizard-metrics-jvm = { module = "io.dropwizard.metrics:metrics-jvm", version.ref = "dropwizard-metrics" }
 dropwizard-metrics-logback = { module = "io.dropwizard.metrics:metrics-logback", version.ref = "dropwizard-metrics" }
 equalsVerifier = { module = "nl.jqno.equalsverifier:equalsverifier", version.ref = "equalsVerifier" }
-glassfish-jersey-container-jdk-http = { module = "org.glassfish.jersey.containers:jersey-container-jdk-http", version.ref = "jersey-jaxrs-sun" }
-glassfish-jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey-jaxrs-sun" }
-glassfish-jersey-media-json-jackson = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref = "jersey-jaxrs-sun" }
-glassfish-jersey-media-multipart = { module = "org.glassfish.jersey.media:jersey-media-multipart", version.ref = "jersey-jaxrs-sun" }
+jersey-container-jdk-http = { module = "org.glassfish.jersey.containers:jersey-container-jdk-http", version.ref = "jersey" }
+jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jersey" }
+jersey-media-json-jackson = { module = "org.glassfish.jersey.media:jersey-media-json-jackson", version.ref = "jersey" }
+jersey-media-multipart = { module = "org.glassfish.jersey.media:jersey-media-multipart", version.ref = "jersey" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
-hivemq-edge-adapter-sdk = { module = "com.hivemq:hivemq-edge-adapter-sdk", version.ref = "hivemq-edge-adapter-sdk" }
-hivemq-edge-extension-sdk = { module = "com.hivemq:hivemq-edge-extension-sdk", version.ref = "hivemq-edge-extension-sdk" }
-hivemq-extension-sdk = { module = "com.hivemq:hivemq-extension-sdk", version.ref = "hivemq-extension-sdk" }
+hivemq-edge-adapterSdk = { module = "com.hivemq:hivemq-edge-adapter-sdk", version.ref = "hivemq-edge-adapterSdk" }
+hivemq-edge-extensionSdk = { module = "com.hivemq:hivemq-edge-extension-sdk", version.ref = "hivemq-edge-extensionSdk" }
+hivemq-extensionSdk = { module = "com.hivemq:hivemq-extension-sdk", version.ref = "hivemq-extensionSdk" }
 hivemq-mqttClient = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "hivemq-mqttClient" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
@@ -85,10 +85,9 @@ julToSlf4j = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 junit = { module = "junit:junit", version.ref = "junit" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-jupiter" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
-junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
-mockito-junit = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
-mqtt-sn = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn" }
+mockito-junitJupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
 netty-codec = { module = "io.netty:netty-codec", version.ref = "netty" }
 netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty" }
@@ -107,13 +106,11 @@ zeroAllocationHashing = { module = "net.openhft:zero-allocation-hashing", versio
 
 [plugins]
 defaults = { id = "io.github.sgtsilvio.gradle.defaults", version = "0.2.0" }
-utf8 = { id = "com.github.sgtsilvio.gradle.utf8", version = "0.1.0" }
 metadata = { id = "io.github.sgtsilvio.gradle.metadata", version = "0.6.0" }
 javadocLinks = { id = "io.github.sgtsilvio.gradle.javadoc-links", version = "0.8.0" }
 githubRelease = { id = "com.github.breadmoirai.github-release", version = "2.4.1" }
 versions = { id = "com.github.ben-manes.versions", version = "0.51.0" }
 license = { id = "com.github.hierynomus.license", version = "0.16.1" }
-node = { id = "com.github.node-gradle.node", version = "5.0.0" }
 shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
 spotbugs = { id = "com.github.spotbugs", version = "4.8.0" }
 forbiddenApis = { id = "de.thetaphi.forbiddenapis", version = "3.7" }

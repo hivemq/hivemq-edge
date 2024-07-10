@@ -4,7 +4,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
     java
-    alias(libs.plugins.utf8)
+    alias(libs.plugins.defaults)
     alias(libs.plugins.shadow)
     alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")
@@ -34,7 +34,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly(libs.hivemq.edge.adapter.sdk)
+    compileOnly(libs.hivemq.edge.adapterSdk)
     compileOnly(libs.apache.commonsIO)
     compileOnly(libs.slf4j.api)
     compileOnly(libs.jackson.databind)

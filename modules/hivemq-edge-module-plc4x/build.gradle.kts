@@ -5,7 +5,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
 plugins {
     java
-    alias(libs.plugins.utf8)
+    alias(libs.plugins.defaults)
     alias(libs.plugins.shadow)
     alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")

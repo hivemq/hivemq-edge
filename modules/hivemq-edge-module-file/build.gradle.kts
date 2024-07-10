@@ -24,7 +24,7 @@ repositories {
 
 dependencies {
     dependencies {
-        compileOnly(libs.hivemq.edge.adapter.sdk)
+        compileOnly(libs.hivemq.edge.adapterSdk)
         compileOnly(libs.apache.commonsIO)
         compileOnly(libs.jackson.databind)
         compileOnly(libs.slf4j.api)
@@ -32,8 +32,8 @@ dependencies {
 
     dependencies {
         testImplementation(libs.junit.jupiter)
-        testImplementation(libs.hivemq.edge.adapter.sdk)
-        testImplementation(libs.mockito.junit)
+        testImplementation(libs.hivemq.edge.adapterSdk)
+        testImplementation(libs.mockito)
         testImplementation(libs.jackson.databind)
     }
 
