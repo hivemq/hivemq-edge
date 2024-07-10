@@ -37,7 +37,6 @@ repositories {
 dependencies {
     compileOnly(libs.hivemq.edge.adapterSdk)
     compileOnly(libs.apache.commonsIO)
-    compileOnly(libs.slf4j.api)
     compileOnly(libs.jackson.databind)
     implementation(libs.digitalpetri.modbus.master.tcp)
 
