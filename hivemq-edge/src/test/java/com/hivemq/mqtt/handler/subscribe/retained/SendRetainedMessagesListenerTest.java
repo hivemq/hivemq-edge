@@ -21,6 +21,7 @@ import com.hivemq.bootstrap.ClientConnection;
 import com.hivemq.configuration.HivemqId;
 import com.hivemq.configuration.entity.mqtt.MqttConfigurationDefaults;
 import com.hivemq.configuration.service.MqttConfigurationService;
+import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.QoS;
 import com.hivemq.mqtt.message.mqtt5.Mqtt5RetainHandling;
 import com.hivemq.mqtt.message.publish.PUBLISH;
@@ -30,15 +31,11 @@ import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.clientsession.callback.SubscriptionResult;
 import com.hivemq.persistence.payload.PublishPayloadPersistence;
 import com.hivemq.persistence.retained.RetainedMessagePersistence;
-
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.embedded.EmbeddedChannel;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -51,30 +48,25 @@ import static com.google.common.collect.Lists.newArrayList;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.anyList;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("NullabilityAnnotations")
 public class SendRetainedMessagesListenerTest {
 
-    @Mock
-    private RetainedMessagePersistence retainedMessagePersistence;
-
-    private Set<Topic> ignoredTopics;
-
-    @Mock
-    private ChannelFuture channelFuture;
-
-    @Mock
-    private ClientQueuePersistence queuePersistence;
-
-    @Mock
-    private MqttConfigurationService mqttConfigurationService;
-
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        ignoredTopics = new LinkedHashSet<>();
-    }
+    private final @NotNull RetainedMessagePersistence retainedMessagePersistence = mock();
+    private final @NotNull Set<Topic> ignoredTopics = new LinkedHashSet<>();
+    private final @NotNull ChannelFuture channelFuture = mock();
+    private final @NotNull ClientQueuePersistence queuePersistence = mock();
+    private final @NotNull MqttConfigurationService mqttConfigurationService = mock();
 
     @Test
     public void test_no_retained_message_available() throws Exception {
@@ -197,15 +189,14 @@ public class SendRetainedMessagesListenerTest {
 
         channel.runPendingTasks();
 
-        final ArgumentCaptor<List<PUBLISH>> captor =
-                ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) ArrayList.class);
+        final ArgumentCaptor<List<PUBLISH>> captor = ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) List.class);
         verify(queuePersistence).add(eq("client"), eq(false), captor.capture(), eq(true), anyLong());
 
         final PUBLISH publish = captor.getValue().get(0);
         assertEquals("topic", publish.getTopic());
         assertEquals(QoS.EXACTLY_ONCE, publish.getQoS());
         assertArrayEquals("test".getBytes(UTF_8), publish.getPayload());
-        assertEquals(true, publish.isRetain());
+        assertTrue(publish.isRetain());
     }
 
     @Test
@@ -278,15 +269,14 @@ public class SendRetainedMessagesListenerTest {
 
         channel.runPendingTasks();
 
-        final ArgumentCaptor<List<PUBLISH>> captor =
-                ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) ArrayList.class);
+        final ArgumentCaptor<List<PUBLISH>> captor = ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) List.class);
         verify(queuePersistence).add(eq("client"), eq(false), captor.capture(), eq(true), anyLong());
 
         final PUBLISH publish = captor.getValue().get(0);
         assertEquals("topic", publish.getTopic());
         assertEquals(QoS.EXACTLY_ONCE, publish.getQoS());
         assertArrayEquals("test".getBytes(UTF_8), publish.getPayload());
-        assertEquals(true, publish.isRetain());
+        assertTrue(publish.isRetain());
     }
 
     @Test
@@ -314,21 +304,20 @@ public class SendRetainedMessagesListenerTest {
         channel.runPendingTasks();
         channel.runPendingTasks();
 
-        final ArgumentCaptor<List<PUBLISH>> captor =
-                ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) ArrayList.class);
+        final ArgumentCaptor<List<PUBLISH>> captor = ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) List.class);
         verify(queuePersistence).add(eq("client"), eq(false), captor.capture(), eq(true), anyLong());
 
         final PUBLISH publish = captor.getAllValues().get(0).get(0);
         assertEquals("topic", publish.getTopic());
         assertEquals(QoS.EXACTLY_ONCE, publish.getQoS());
         assertArrayEquals("test".getBytes(UTF_8), publish.getPayload());
-        assertEquals(true, publish.isRetain());
+        assertTrue(publish.isRetain());
 
         final PUBLISH publish2 = (PUBLISH) channel.outboundMessages().poll();
         assertEquals("topic2", publish2.getTopic());
         assertEquals(QoS.AT_MOST_ONCE, publish2.getQoS());
         assertArrayEquals("test".getBytes(UTF_8), publish2.getPayload());
-        assertEquals(true, publish2.isRetain());
+        assertTrue(publish2.isRetain());
     }
 
     @Test
@@ -472,8 +461,7 @@ public class SendRetainedMessagesListenerTest {
         channel.runPendingTasks();
         channel.runPendingTasks();
 
-        final ArgumentCaptor<List<PUBLISH>> captor =
-                ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) ArrayList.class);
+        final ArgumentCaptor<List<PUBLISH>> captor = ArgumentCaptor.forClass((Class<List<PUBLISH>>) (Class) List.class);
         verify(queuePersistence, timeout(5000).times(2)).add(eq("client"), eq(false),
                 captor.capture(), eq(true), anyLong());
 
@@ -481,13 +469,13 @@ public class SendRetainedMessagesListenerTest {
         assertEquals("topic", publish.getTopic());
         assertEquals(QoS.AT_LEAST_ONCE, publish.getQoS());
         assertArrayEquals("test".getBytes(UTF_8), publish.getPayload());
-        assertEquals(true, publish.isRetain());
+        assertTrue(publish.isRetain());
 
         final PUBLISH publish2 = captor.getAllValues().get(1).get(0);
         assertEquals("topic2", publish2.getTopic());
         assertEquals(QoS.AT_LEAST_ONCE, publish2.getQoS());
         assertArrayEquals("test".getBytes(UTF_8), publish2.getPayload());
-        assertEquals(true, publish2.isRetain());
+        assertTrue(publish2.isRetain());
     }
 
     private SendRetainedMessagesListener createListener(

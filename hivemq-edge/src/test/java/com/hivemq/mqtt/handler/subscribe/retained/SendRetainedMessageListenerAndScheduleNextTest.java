@@ -24,8 +24,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.DefaultEventLoop;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import util.TestChannelAttribute;
 
 import java.util.ArrayDeque;
@@ -33,24 +31,25 @@ import java.util.Queue;
 import java.util.concurrent.Executors;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Lukas Brandl
  */
 public class SendRetainedMessageListenerAndScheduleNextTest {
 
-    @Mock
-    private RetainedMessagesSender retainedMessagesSender;
-
-    @Mock
-    private Channel channel;
+    private RetainedMessagesSender retainedMessagesSender = mock();
+    private Channel channel = mock();
 
     private ClientConnection clientConnection;
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
         clientConnection = new ClientConnection(channel, null);
         when(channel.attr(ClientConnection.CHANNEL_ATTRIBUTE_NAME)).thenReturn(new TestChannelAttribute<>(clientConnection));
         when(channel.eventLoop()).thenReturn(new DefaultEventLoop(Executors.newSingleThreadExecutor()));
@@ -59,7 +58,7 @@ public class SendRetainedMessageListenerAndScheduleNextTest {
     @Test
     public void success() {
         when(channel.isActive()).thenReturn(true);
-        when(retainedMessagesSender.writeRetainedMessages(any(Channel.class), any(Topic.class))).thenReturn(
+        when(retainedMessagesSender.writeRetainedMessages(any(Channel.class), any(Topic[].class))).thenReturn(
                 Futures.immediateFuture(null));
         final Topic topic = new Topic("#", QoS.AT_LEAST_ONCE);
         final Queue<String> topics = new ArrayDeque<>();
@@ -70,8 +69,7 @@ public class SendRetainedMessageListenerAndScheduleNextTest {
                 new SendRetainedMessageListenerAndScheduleNext(topic, topics, channel, retainedMessagesSender, 25);
         listener.onSuccess(null);
 
-        verify(retainedMessagesSender, timeout(5000).times(4)).writeRetainedMessages(
-                eq(channel), any(Topic.class));
+        verify(retainedMessagesSender, timeout(5000).times(4)).writeRetainedMessages(eq(channel), any(Topic[].class));
     }
 
     @Test
@@ -112,7 +110,7 @@ public class SendRetainedMessageListenerAndScheduleNextTest {
     public void failure_no_more_message_id() {
         when(channel.isActive()).thenReturn(true);
         clientConnection.setClientId("client");
-        when(retainedMessagesSender.writeRetainedMessages(any(Channel.class), any(Topic.class))).thenReturn(
+        when(retainedMessagesSender.writeRetainedMessages(any(Channel.class), any(Topic[].class))).thenReturn(
                 Futures.immediateFuture(null));
         final Topic topic = new Topic("#", QoS.AT_LEAST_ONCE);
         final Queue<String> topics = new ArrayDeque<>();
@@ -123,7 +121,7 @@ public class SendRetainedMessageListenerAndScheduleNextTest {
                 new SendRetainedMessageListenerAndScheduleNext(topic, topics, channel, retainedMessagesSender, 25);
         listener.onFailure(new NoMessageIdAvailableException());
 
-        verify(retainedMessagesSender, timeout(5000).times(4)).writeRetainedMessages(
-                any(Channel.class), any(Topic.class));
+        verify(retainedMessagesSender, timeout(5000).times(4)).writeRetainedMessages(any(Channel.class),
+                any(Topic[].class));
     }
 }
