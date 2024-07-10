@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   '@chakra-ui/anatomy':
     specifier: ^2.2.2
@@ -153,7 +157,7 @@ dependencies:
     version: 18.2.0
   react-accessible-treeview:
     specifier: ^2.9.0
-    version: 2.9.0(classnames@2.5.1)(prop-types@15.8.1)(react-dom@18.2.0)(react@18.2.0)
+    version: 2.9.1(classnames@2.5.1)(prop-types@15.8.1)(react-dom@18.2.0)(react@18.2.0)
   react-dom:
     specifier: ^18.2.0
     version: 18.2.0(react@18.2.0)
@@ -177,7 +181,7 @@ dependencies:
     version: 6.11.2(react-dom@18.2.0)(react@18.2.0)
   reactflow:
     specifier: ^11.11.3
-    version: 11.11.3(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+    version: 11.11.4(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
   tippy.js:
     specifier: ^6.3.7
     version: 6.3.7
@@ -197,7 +201,7 @@ devDependencies:
     version: 2.4.1
   '@percy/cli':
     specifier: ^1.28.5
-    version: 1.28.7(typescript@5.0.4)
+    version: 1.28.9(typescript@5.0.4)
   '@percy/cypress':
     specifier: ^3.1.2
     version: 3.1.2(cypress@13.10.0)
@@ -296,7 +300,7 @@ devDependencies:
     version: 33.0.0(stylelint@15.6.2)
   stylelint-config-standard-scss:
     specifier: ^9.0.0
-    version: 9.0.0(postcss@8.4.38)(stylelint@15.6.2)
+    version: 9.0.0(postcss@8.4.39)(stylelint@15.6.2)
   typescript:
     specifier: ^5.0.4
     version: 5.0.4
@@ -2712,12 +2716,12 @@ packages:
     resolution: {integrity: sha512-U69T3ItWHvLwGg5eJ0n3I62nWuE6ilHlmz7zM0npLBRvPRd7e6NYmg54vvRtP5mZG7kZqZCFVdsTWo7BPtBujg==}
     dev: true
 
-  /@percy/cli-app@1.28.7(typescript@5.0.4):
-    resolution: {integrity: sha512-5Dgtx3m+eX2NPYrt11gOAhH0q4UYFORzOTkocELQZ6+9naKOi0PD9e9/T8A6yRQ5dbfMoNfi/xQ9tLoxCPcM5g==}
+  /@percy/cli-app@1.28.9(typescript@5.0.4):
+    resolution: {integrity: sha512-9FfOoWggxmK0YkHdJhQWMEVZe422jPuioe/p4P9uAOkgZNqVPDSCYYrrL6br7tNzOL8Rb90crMzo38xkQoFTPQ==}
     engines: {node: '>=14'}
     dependencies:
-      '@percy/cli-command': 1.28.7(typescript@5.0.4)
-      '@percy/cli-exec': 1.28.7(typescript@5.0.4)
+      '@percy/cli-command': 1.28.9(typescript@5.0.4)
+      '@percy/cli-exec': 1.28.9(typescript@5.0.4)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -2725,11 +2729,11 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@percy/cli-build@1.28.7(typescript@5.0.4):
-    resolution: {integrity: sha512-LXDXbE3G994K1Wovivukjbzj7wqENPa/A3WvveVdLqfTLepTcJZ3LvPV79BsgJgIMN2vksaeCxwIgjMn1vT8mQ==}
+  /@percy/cli-build@1.28.9(typescript@5.0.4):
+    resolution: {integrity: sha512-THcSEK2RG82fwbTtDZyW1OLHLqRrWhNXl0MrXkibYT+0E0n3Cy5V3nr6yvXtzWI8ppsoq0rhCeecXRBooBeSeA==}
     engines: {node: '>=14'}
     dependencies:
-      '@percy/cli-command': 1.28.7(typescript@5.0.4)
+      '@percy/cli-command': 1.28.9(typescript@5.0.4)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -2737,14 +2741,14 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@percy/cli-command@1.28.7(typescript@5.0.4):
-    resolution: {integrity: sha512-Rs66JVZLdb4D/+hPXNdd9Qi9+FA9xCgrzpmdKak8HzstcfsRdJ999J5exQZc7dM1N3Th76wrA5d4woCgDskYDQ==}
+  /@percy/cli-command@1.28.9(typescript@5.0.4):
+    resolution: {integrity: sha512-EYhhjPakL0JaOzgsKJjPqkTu70mq5U/Vy3j+qvYlGR1+fLEewyXp7JqrOyhWgztVl/XTbEpD+9jHl/+T3WnJxQ==}
     engines: {node: '>=14'}
     hasBin: true
     dependencies:
-      '@percy/config': 1.28.7(typescript@5.0.4)
-      '@percy/core': 1.28.7(typescript@5.0.4)
-      '@percy/logger': 1.28.7
+      '@percy/config': 1.28.9(typescript@5.0.4)
+      '@percy/core': 1.28.9(typescript@5.0.4)
+      '@percy/logger': 1.28.9
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -2752,11 +2756,11 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@percy/cli-config@1.28.7(typescript@5.0.4):
-    resolution: {integrity: sha512-26Wo9EYQt2uDROSjNyYMX8XuJ30IPIwR4JsNKO0DbQUBqq071to5AiaROXs2QLH0m2KGFyYavLxHJ54ZCDbMQQ==}
+  /@percy/cli-config@1.28.9(typescript@5.0.4):
+    resolution: {integrity: sha512-dceA86MJLexLS92ZFJSectMCcMfZ7FzU/4L1P4cAmNLxDikJVxjUWWDQTW+QxrA2UuPgR2ysT4nH9P3VWVYvhw==}
     engines: {node: '>=14'}
     dependencies:
-      '@percy/cli-command': 1.28.7(typescript@5.0.4)
+      '@percy/cli-command': 1.28.9(typescript@5.0.4)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -2764,11 +2768,12 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@percy/cli-exec@1.28.7(typescript@5.0.4):
-    resolution: {integrity: sha512-0HEOmMNexRbn09Ju3Etd5agEhBtgqNrT3eiRMcX4ThbQgOFkAQIll6IFfVqafujJHNL1SF+HjcyZmyoEF9tJOw==}
+  /@percy/cli-exec@1.28.9(typescript@5.0.4):
+    resolution: {integrity: sha512-5AtfqT8VEGXeTI+7fDONlcvFN/185dpfuCGKIzk4yJZmKMQayF/nDaC3W6yesODi8TfrzatKkMQU85mwRCi6dg==}
     engines: {node: '>=14'}
     dependencies:
-      '@percy/cli-command': 1.28.7(typescript@5.0.4)
+      '@percy/cli-command': 1.28.9(typescript@5.0.4)
+      '@percy/logger': 1.28.9
       cross-spawn: 7.0.3
       which: 2.0.2
     transitivePeerDependencies:
@@ -2778,11 +2783,11 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@percy/cli-snapshot@1.28.7(typescript@5.0.4):
-    resolution: {integrity: sha512-nWk2/sjIh8Vy6+T7BNwSVdtXUdR0cYpXJrbO1hfxRB56pUf8KFcG7GqUzOZ7QDHqlyQGH/posAjAoPmy8okyAQ==}
+  /@percy/cli-snapshot@1.28.9(typescript@5.0.4):
+    resolution: {integrity: sha512-05AEEbMTQoNwhpPN7pRQN5df/bArcwCWNL77sipiDotWpH7WaGJEV8kq5mSpIicfpUb+r/sDMjH+5BuuyG7J0A==}
     engines: {node: '>=14'}
     dependencies:
-      '@percy/cli-command': 1.28.7(typescript@5.0.4)
+      '@percy/cli-command': 1.28.9(typescript@5.0.4)
       yaml: 2.4.5
     transitivePeerDependencies:
       - bufferutil
@@ -2791,11 +2796,11 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@percy/cli-upload@1.28.7(typescript@5.0.4):
-    resolution: {integrity: sha512-hcIe9RGHDk+G+lanlLy1IrDRgODsTYzjmtPex9wEg4yo/JzubVwkF3r/0iQuT+srkELKUcTSJ1iX7/d0kK61uQ==}
+  /@percy/cli-upload@1.28.9(typescript@5.0.4):
+    resolution: {integrity: sha512-NX6x2hvQyuCjnrB8mpA3iKpUR3VMMrQsHVe4McSIh+WdaKhoHTIbbeGJitU/2V/Mm+usdnX+uQoPSItgMZPM1w==}
     engines: {node: '>=14'}
     dependencies:
-      '@percy/cli-command': 1.28.7(typescript@5.0.4)
+      '@percy/cli-command': 1.28.9(typescript@5.0.4)
       fast-glob: 3.3.2
       image-size: 1.1.1
     transitivePeerDependencies:
@@ -2805,20 +2810,20 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@percy/cli@1.28.7(typescript@5.0.4):
-    resolution: {integrity: sha512-FvvyTFTGuIiBsSs8epENGq2U62oKnzfXW6F80JFShaZ5ZjMc2t6riVq4EPEsBANstql+j4Y853tYe2aGVX9pbw==}
+  /@percy/cli@1.28.9(typescript@5.0.4):
+    resolution: {integrity: sha512-e13H13WVoyBBsdCc2gPQJMSfutDZkBV3iKwdpUsQoHVQwPYzLAgQZWthYPYDrdiQHLW07XMdBKYS6WPrJD+Pxw==}
     engines: {node: '>=14'}
     hasBin: true
     dependencies:
-      '@percy/cli-app': 1.28.7(typescript@5.0.4)
-      '@percy/cli-build': 1.28.7(typescript@5.0.4)
-      '@percy/cli-command': 1.28.7(typescript@5.0.4)
-      '@percy/cli-config': 1.28.7(typescript@5.0.4)
-      '@percy/cli-exec': 1.28.7(typescript@5.0.4)
-      '@percy/cli-snapshot': 1.28.7(typescript@5.0.4)
-      '@percy/cli-upload': 1.28.7(typescript@5.0.4)
-      '@percy/client': 1.28.7
-      '@percy/logger': 1.28.7
+      '@percy/cli-app': 1.28.9(typescript@5.0.4)
+      '@percy/cli-build': 1.28.9(typescript@5.0.4)
+      '@percy/cli-command': 1.28.9(typescript@5.0.4)
+      '@percy/cli-config': 1.28.9(typescript@5.0.4)
+      '@percy/cli-exec': 1.28.9(typescript@5.0.4)
+      '@percy/cli-snapshot': 1.28.9(typescript@5.0.4)
+      '@percy/cli-upload': 1.28.9(typescript@5.0.4)
+      '@percy/client': 1.28.9
+      '@percy/logger': 1.28.9
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -2826,20 +2831,20 @@ packages:
       - utf-8-validate
     dev: true
 
-  /@percy/client@1.28.7:
-    resolution: {integrity: sha512-3ocKEej268Xj3q98seUi88mtFcTYNy3F/zMTwk+pdnoWc1QVOGsCQ3elIS2X35hhBFgYw2i1bbuzmt7UdOK79A==}
+  /@percy/client@1.28.9:
+    resolution: {integrity: sha512-HSrtUSemrFIFVQSRA/hdGIg6rljzEZ2x26qNMHsnYmBEo5uwCm4b9ZOAX2gK/N/PagOz2W3YcJWBNnHnBm5mTg==}
     engines: {node: '>=14'}
     dependencies:
-      '@percy/env': 1.28.7
-      '@percy/logger': 1.28.7
+      '@percy/env': 1.28.9
+      '@percy/logger': 1.28.9
       pako: 2.1.0
     dev: true
 
-  /@percy/config@1.28.7(typescript@5.0.4):
-    resolution: {integrity: sha512-N8fZAj8ejgddxz4lzNIK9cCQdoIuISK7a/JyGAD5vY+CuZutCBM0zuN9g/Higv/LI78Sct69Qpik/+rLIyBZxA==}
+  /@percy/config@1.28.9(typescript@5.0.4):
+    resolution: {integrity: sha512-tPs302Y4ekDrnYVB+pUK5JQQPxAb6gmtMleDsBC60C6MK8Y47zNDHcKl3k+IHEQ3d2a2SkOMPDyIUZSuCosAJQ==}
     engines: {node: '>=14'}
     dependencies:
-      '@percy/logger': 1.28.7
+      '@percy/logger': 1.28.9
       ajv: 8.16.0
       cosmiconfig: 8.3.6(typescript@5.0.4)
       yaml: 2.4.5
@@ -2847,16 +2852,16 @@ packages:
       - typescript
     dev: true
 
-  /@percy/core@1.28.7(typescript@5.0.4):
-    resolution: {integrity: sha512-OOTVMHU+0O7Qh3TIL21fxX9H5ctRWPIG03IJsFpIXIIh2Wni5nf8tSUWroFwSSneZihxaA8ETQxCtJXBVe+JUA==}
+  /@percy/core@1.28.9(typescript@5.0.4):
+    resolution: {integrity: sha512-oWt5I1Lg4SpZJ1hoS/JQ0IfQL07VI2h9STiBvKsdyFRZwW4cl80bmDq+W/OAydw3ltNFV1IJN18d7CQxs9hlGg==}
     engines: {node: '>=14'}
     requiresBuild: true
     dependencies:
-      '@percy/client': 1.28.7
-      '@percy/config': 1.28.7(typescript@5.0.4)
-      '@percy/dom': 1.28.7
-      '@percy/logger': 1.28.7
-      '@percy/webdriver-utils': 1.28.7(typescript@5.0.4)
+      '@percy/client': 1.28.9
+      '@percy/config': 1.28.9(typescript@5.0.4)
+      '@percy/dom': 1.28.9
+      '@percy/logger': 1.28.9
+      '@percy/webdriver-utils': 1.28.9(typescript@5.0.4)
       content-disposition: 0.5.4
       cross-spawn: 7.0.3
       extract-zip: 2.0.1(supports-color@8.1.1)
@@ -2866,7 +2871,7 @@ packages:
       pako: 2.1.0
       path-to-regexp: 6.2.2
       rimraf: 3.0.2
-      ws: 8.17.1
+      ws: 8.18.0
       yaml: 2.4.5
     transitivePeerDependencies:
       - bufferutil
@@ -2884,19 +2889,19 @@ packages:
       cypress: 13.10.0
     dev: true
 
-  /@percy/dom@1.28.7:
-    resolution: {integrity: sha512-aYm/xTqNWaLodRdmWqiA0zekaUMkE8boJ1ApljO8KTKihv7eJWpgSDJT7m73xOd/JAplER5LSGjrUpnWLOTDYQ==}
+  /@percy/dom@1.28.9:
+    resolution: {integrity: sha512-geeFg6IUAjmuxX9yZIR+gA5eEkYjhADnAmhOuwuw13oBVApwMmhYfcw8poYKMuoVOFvtzhRjeaZRn8/IFZzmsQ==}
     dev: true
 
-  /@percy/env@1.28.7:
-    resolution: {integrity: sha512-ExpCDSm2bMwTlF7LOuE6dDB0QFa2VzpuFF/t9O0TyUgBgaiDZzcdsMQrLxDlUbuqjA8vc+vo8931x0i2sN5LBQ==}
+  /@percy/env@1.28.9:
+    resolution: {integrity: sha512-zxBtRdsUV2cagz3nvfvSD612UW9OVqyxmKoqmQxVL7NERDQD1KIm3Il4Vh/kAEOmP5bQ2cOnU/mb1GEUetfomA==}
     engines: {node: '>=14'}
     dependencies:
-      '@percy/logger': 1.28.7
+      '@percy/logger': 1.28.9
     dev: true
 
-  /@percy/logger@1.28.7:
-    resolution: {integrity: sha512-OktqjykPT3FMUKkwyafjQdRWMQ8jnXOOcSkvyVIT9P7cbU1USeRUWw8Z6+W1cLk50RdsimChnab6F/GRWRdBew==}
+  /@percy/logger@1.28.9:
+    resolution: {integrity: sha512-LOnW7S0Gix9EES15dX4bnzXHHzPpAPU+RZy1oYbmFOzCSgEQ+b3PSTu+wMo0AQqpwWuCNB2xu23KUfB9rSnZdg==}
     engines: {node: '>=14'}
     dev: true
 
@@ -2905,12 +2910,17 @@ packages:
     engines: {node: '>=14'}
     dev: true
 
-  /@percy/webdriver-utils@1.28.7(typescript@5.0.4):
-    resolution: {integrity: sha512-BviRMj/oHgdniHoz1nzInpIXl4JTk4vZ0+9azWntGCThITc/HhQE1sLDcHhZGYvviY+NQ4ofCcBSzZRu1z1GcQ==}
+  /@percy/sdk-utils@1.28.9:
+    resolution: {integrity: sha512-5Lq4ukqPiRe0/JtxpJvxpX3PuBkTZiFPiDIS/aIPlgVUenw94n8WIRSecrsAXprsUEcO0uUGrikXswyAwb5h0g==}
+    engines: {node: '>=14'}
+    dev: true
+
+  /@percy/webdriver-utils@1.28.9(typescript@5.0.4):
+    resolution: {integrity: sha512-/a26zcFLNWQpCvQ0K5ACuxyLEoDV75AFbfYE86PxFmzHEQk69IH4KjVlmg8DPTEDowNZZDHWSzuDEiRoNGmwxA==}
     engines: {node: '>=14'}
     dependencies:
-      '@percy/config': 1.28.7(typescript@5.0.4)
-      '@percy/sdk-utils': 1.28.7
+      '@percy/config': 1.28.9(typescript@5.0.4)
+      '@percy/sdk-utils': 1.28.9
     transitivePeerDependencies:
       - typescript
     dev: true
@@ -3013,13 +3023,13 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
     dev: false
 
-  /@reactflow/background@11.3.13(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-hkvpVEhgvfTDyCvdlitw4ioKCYLaaiRXnuEG+1QM3Np+7N1DiWF1XOv5I8AFyNoJL07yXEkbECUTsHvkBvcG5A==}
+  /@reactflow/background@11.3.14(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-Gewd7blEVT5Lh6jqrvOgd4G6Qk17eGKQfsDXgyRSqM+CTwDqRldG2LsWN4sNeno6sbqVIC2fZ+rAUBFA9ZEUDA==}
     peerDependencies:
       react: '>=17'
       react-dom: '>=17'
     dependencies:
-      '@reactflow/core': 11.11.3(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      '@reactflow/core': 11.11.4(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
       classcat: 5.0.5
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -3029,13 +3039,13 @@ packages:
       - immer
     dev: false
 
-  /@reactflow/controls@11.2.13(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-3xgEg6ALIVkAQCS4NiBjb7ad8Cb3D8CtA7Vvl4Hf5Ar2PIVs6FOaeft9s2iDZGtsWP35ECDYId1rIFVhQL8r+A==}
+  /@reactflow/controls@11.2.14(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-MiJp5VldFD7FrqaBNIrQ85dxChrG6ivuZ+dcFhPQUwOK3HfYgX2RHdBua+gx+40p5Vw5It3dVNp/my4Z3jF0dw==}
     peerDependencies:
       react: '>=17'
       react-dom: '>=17'
     dependencies:
-      '@reactflow/core': 11.11.3(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      '@reactflow/core': 11.11.4(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
       classcat: 5.0.5
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -3045,8 +3055,8 @@ packages:
       - immer
     dev: false
 
-  /@reactflow/core@11.11.3(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-+adHdUa7fJSEM93fWfjQwyWXeI92a1eLKwWbIstoCakHpL8UjzwhEh6sn+mN2h/59MlVI7Ehr1iGTt3MsfcIFA==}
+  /@reactflow/core@11.11.4(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-H4vODklsjAq3AMq6Np4LE12i1I4Ta9PrDHuBR9GmL8uzTt2l2jh4CiQbEMpvMDcp7xi4be0hgXj+Ysodde/i7Q==}
     peerDependencies:
       react: '>=17'
       react-dom: '>=17'
@@ -3067,13 +3077,13 @@ packages:
       - immer
     dev: false
 
-  /@reactflow/minimap@11.7.13(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-m2MvdiGSyOu44LEcERDEl1Aj6x//UQRWo3HEAejNU4HQTlJnYrSN8tgrYF8TxC1+c/9UdyzQY5VYgrTwW4QWdg==}
+  /@reactflow/minimap@11.7.14(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-mpwLKKrEAofgFJdkhwR5UQ1JYWlcAAL/ZU/bctBkuNTT1yqV+y0buoNVImsRehVYhJwffSWeSHaBR5/GJjlCSQ==}
     peerDependencies:
       react: '>=17'
       react-dom: '>=17'
     dependencies:
-      '@reactflow/core': 11.11.3(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      '@reactflow/core': 11.11.4(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
       '@types/d3-selection': 3.0.10
       '@types/d3-zoom': 3.0.8
       classcat: 5.0.5
@@ -3087,13 +3097,13 @@ packages:
       - immer
     dev: false
 
-  /@reactflow/node-resizer@2.2.13(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-X7ceQ2s3jFLgbkg03n2RYr4hm3jTVrzkW2W/8ANv/SZfuVmF8XJxlERuD8Eka5voKqLda0ywIZGAbw9GoHLfUQ==}
+  /@reactflow/node-resizer@2.2.14(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-fwqnks83jUlYr6OHcdFEedumWKChTHRGw/kbCxj0oqBd+ekfs+SIp4ddyNU0pdx96JIm5iNFS0oNrmEiJbbSaA==}
     peerDependencies:
       react: '>=17'
       react-dom: '>=17'
     dependencies:
-      '@reactflow/core': 11.11.3(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      '@reactflow/core': 11.11.4(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
       classcat: 5.0.5
       d3-drag: 3.0.0
       d3-selection: 3.0.0
@@ -3105,13 +3115,13 @@ packages:
       - immer
     dev: false
 
-  /@reactflow/node-toolbar@1.3.13(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-aknvNICO10uWdthFSpgD6ctY/CTBeJUMV9co8T9Ilugr08Nb89IQ4uD0dPmr031ewMQxixtYIkw+sSDDzd2aaQ==}
+  /@reactflow/node-toolbar@1.3.14(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-rbynXQnH/xFNu4P9H+hVqlEUafDCkEoCy0Dg9mG22Sg+rY/0ck6KkrAQrYrTgXusd+cEJOMK0uOOFCK2/5rSGQ==}
     peerDependencies:
       react: '>=17'
       react-dom: '>=17'
     dependencies:
-      '@reactflow/core': 11.11.3(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      '@reactflow/core': 11.11.4(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
       classcat: 5.0.5
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -3645,8 +3655,8 @@ packages:
       '@types/d3-dsv': 3.0.7
     dev: false
 
-  /@types/d3-force@3.0.9:
-    resolution: {integrity: sha512-IKtvyFdb4Q0LWna6ymywQsEYjK/94SGhPrMfEr1TIc5OBeziTi+1jcCvttts8e0UWZIxpasjnQk9MNk/3iS+kA==}
+  /@types/d3-force@3.0.10:
+    resolution: {integrity: sha512-ZYeSaCF3p73RdOKcjj+swRlZfnYpK1EbaDiYICEEp5Q6sUiqFaFQ9qgoshp5CzIyyb/yD09kD9o2zEltCexlgw==}
     dev: false
 
   /@types/d3-format@1.4.5:
@@ -3785,7 +3795,7 @@ packages:
       '@types/d3-dsv': 3.0.7
       '@types/d3-ease': 3.0.2
       '@types/d3-fetch': 3.0.7
-      '@types/d3-force': 3.0.9
+      '@types/d3-force': 3.0.10
       '@types/d3-format': 3.0.4
       '@types/d3-geo': 3.1.0
       '@types/d3-hierarchy': 3.1.7
@@ -8212,13 +8222,13 @@ packages:
       postcss: 8.4.38
     dev: true
 
-  /postcss-scss@4.0.9(postcss@8.4.38):
+  /postcss-scss@4.0.9(postcss@8.4.39):
     resolution: {integrity: sha512-AjKOeiwAitL/MXxQW2DliT28EKukvvbEWx3LBmJIRN8KfBGZbRTxNYW0kSqi1COiTZ57nZ9NW06S6ux//N1c9A==}
     engines: {node: '>=12.0'}
     peerDependencies:
       postcss: ^8.4.29
     dependencies:
-      postcss: 8.4.38
+      postcss: 8.4.39
     dev: true
 
   /postcss-selector-parser@6.1.0:
@@ -8240,6 +8250,15 @@ packages:
       nanoid: 3.3.7
       picocolors: 1.0.1
       source-map-js: 1.2.0
+
+  /postcss@8.4.39:
+    resolution: {integrity: sha512-0vzE+lAiG7hZl1/9I8yzKLx3aR9Xbof3fBHKunvMfOCYAtMhrsnccJY2iTURb9EZd5+pLuiNV9/c/GZJOHsgIw==}
+    engines: {node: ^10 || ^12 || >=14}
+    dependencies:
+      nanoid: 3.3.7
+      picocolors: 1.0.1
+      source-map-js: 1.2.0
+    dev: true
 
   /prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
@@ -8493,8 +8512,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /react-accessible-treeview@2.9.0(classnames@2.5.1)(prop-types@15.8.1)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-fzUQVtci4TPj0GWpxI6FRGeMTeCFBX/hiTZdO7LelZchviSTNDZzJ6AMWNJNlm8a4Y3uhgr7gTYftKOTHwCKkw==}
+  /react-accessible-treeview@2.9.1(classnames@2.5.1)(prop-types@15.8.1)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-UlmeFJtlh1SryN8kHLf4ICLlF4HeIpiacWwHh+7AzhmOmOs9vObXAjJWTiLpxP342TQ1QbCdSGq086Y8oD7NSw==}
     peerDependencies:
       classnames: ^2.2.6
       prop-types: ^15.7.2
@@ -8765,18 +8784,18 @@ packages:
     dependencies:
       loose-envify: 1.4.0
 
-  /reactflow@11.11.3(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-wusd1Xpn1wgsSEv7UIa4NNraCwH9syBtubBy4xVNXg3b+CDKM+sFaF3hnMx0tr0et4km9urIDdNvwm34QiZong==}
+  /reactflow@11.11.4(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-70FOtJkUWH3BAOsN+LU9lCrKoKbtOPnz2uq0CV2PLdNSwxTXOhCbsZr50GmZ+Rtw3jx8Uv7/vBFtCGixLfd4Og==}
     peerDependencies:
       react: '>=17'
       react-dom: '>=17'
     dependencies:
-      '@reactflow/background': 11.3.13(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
-      '@reactflow/controls': 11.2.13(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
-      '@reactflow/core': 11.11.3(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
-      '@reactflow/minimap': 11.7.13(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
-      '@reactflow/node-resizer': 2.2.13(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
-      '@reactflow/node-toolbar': 1.3.13(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      '@reactflow/background': 11.3.14(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      '@reactflow/controls': 11.2.14(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      '@reactflow/core': 11.11.4(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      '@reactflow/minimap': 11.7.14(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      '@reactflow/node-resizer': 2.2.14(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
+      '@reactflow/node-toolbar': 1.3.14(@types/react@18.0.28)(react-dom@18.2.0)(react@18.2.0)
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     transitivePeerDependencies:
@@ -9276,7 +9295,7 @@ packages:
     resolution: {integrity: sha512-Dj1Okke1C3uKKwQcetra4jSuk0DqbzbYtXipzFlFMZtowbF1x7BKJwB9AayVMyFARvU8EDrZdcax4At/452cAg==}
     dev: true
 
-  /stylelint-config-recommended-scss@11.0.0(postcss@8.4.38)(stylelint@15.6.2):
+  /stylelint-config-recommended-scss@11.0.0(postcss@8.4.39)(stylelint@15.6.2):
     resolution: {integrity: sha512-EDghTDU7aOv2LTsRZvcT1w8mcjUaMhuy+t38iV5I/0Qiu6ixdkRwhLEMul3K/fnB2v9Nwqvb3xpvJfPH+HduDw==}
     peerDependencies:
       postcss: ^8.3.3
@@ -9285,8 +9304,8 @@ packages:
       postcss:
         optional: true
     dependencies:
-      postcss: 8.4.38
-      postcss-scss: 4.0.9(postcss@8.4.38)
+      postcss: 8.4.39
+      postcss-scss: 4.0.9(postcss@8.4.39)
       stylelint: 15.6.2(typescript@5.0.4)
       stylelint-config-recommended: 12.0.0(stylelint@15.6.2)
       stylelint-scss: 4.7.0(stylelint@15.6.2)
@@ -9300,7 +9319,7 @@ packages:
       stylelint: 15.6.2(typescript@5.0.4)
     dev: true
 
-  /stylelint-config-standard-scss@9.0.0(postcss@8.4.38)(stylelint@15.6.2):
+  /stylelint-config-standard-scss@9.0.0(postcss@8.4.39)(stylelint@15.6.2):
     resolution: {integrity: sha512-yPKpJsrZn4ybuQZx/DkEHuCjw7pJginErE/47dFhCnrvD48IJ4UYec8tSiCuJWMA3HRjbIa3nh5ZeSauDGuVAg==}
     peerDependencies:
       postcss: ^8.3.3
@@ -9309,9 +9328,9 @@ packages:
       postcss:
         optional: true
     dependencies:
-      postcss: 8.4.38
+      postcss: 8.4.39
       stylelint: 15.6.2(typescript@5.0.4)
-      stylelint-config-recommended-scss: 11.0.0(postcss@8.4.38)(stylelint@15.6.2)
+      stylelint-config-recommended-scss: 11.0.0(postcss@8.4.39)(stylelint@15.6.2)
       stylelint-config-standard: 33.0.0(stylelint@15.6.2)
     dev: true
 
@@ -10120,8 +10139,8 @@ packages:
       utf-8-validate:
         optional: true
 
-  /ws@8.17.1:
-    resolution: {integrity: sha512-6XQFvXTkbfUOZOKKILFG1PDK2NDQs4azKQl26T0YS5CxqWLgXajbPZ+h4gZekJyRqFU8pvnbAbbs/3TgRPy+GQ==}
+  /ws@8.18.0:
+    resolution: {integrity: sha512-8VbfWfHLbbwu3+N6OKsOMpBdT4kXPDDB9cJk2bJ6mh9ucxdlnNvH1e+roYkKmN9Nxw2yjz7VzeO9oOz2zJ04Pw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -10229,7 +10248,3 @@ packages:
     engines: {node: '>=0.8'}
     hasBin: true
     dev: false
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
