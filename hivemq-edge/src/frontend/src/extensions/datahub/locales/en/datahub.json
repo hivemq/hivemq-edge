@@ -155,7 +155,9 @@
       "type_OPERATION": "Operation",
       "type_TRANSITION": "Transition",
       "type_FUNCTION": "JS Function",
-      "type_EVENT": "Event"
+      "type_EVENT": "Event",
+      "status_DRAFT": "DRAFT",
+      "status_MODIFIED": "MODIFIED"
     },
     "handles": {
       "validation_onSuccess": "onSuccess",
