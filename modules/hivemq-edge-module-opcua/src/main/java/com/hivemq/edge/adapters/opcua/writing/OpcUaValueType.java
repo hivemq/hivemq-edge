@@ -20,7 +20,8 @@ public enum OpcUaValueType {
     FLOAT(false),
     DOUBLE(true),
 
-    STRING(true);
+    STRING(true),
+    CUSTOM_STRUCT(false);
 
     private final boolean jacksonDefaultPrimitive;
 
