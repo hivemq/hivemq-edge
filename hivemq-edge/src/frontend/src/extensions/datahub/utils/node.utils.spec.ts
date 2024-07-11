@@ -15,6 +15,7 @@ import {
   isNodeHandleConnectable,
   isValidPolicyConnection,
   reduceIdsFrom,
+  renderResourceName,
 } from '@datahub/utils/node.utils.ts'
 import {
   BehaviorPolicyData,
@@ -22,11 +23,13 @@ import {
   DataPolicyData,
   DesignerStatus,
   OperationData,
+  ResourceStatus,
   SchemaType,
   StrategyType,
   TransitionData,
   ValidDropConnection,
 } from '@datahub/types.ts'
+import i18n from '@/config/i18n.config.ts'
 
 describe('getNodeId', () => {
   it('should return the initial state of the store', async () => {
@@ -655,6 +658,42 @@ describe('getConnectedNodeFrom', () => {
     'should return a $result.type with $node + $handle',
     ({ node, handle, result }) => {
       expect(getConnectedNodeFrom(node, handle)).toStrictEqual(result ? expect.objectContaining(result) : undefined)
+    }
+  )
+})
+
+interface ResourceNameTest {
+  name?: string
+  version?: ResourceStatus.DRAFT | number | ResourceStatus.MODIFIED
+  result: string
+}
+
+const resourceNameTestSuite: ResourceNameTest[] = [
+  {
+    name: 'test',
+    version: 1,
+    result: 'test:1',
+  },
+  {
+    version: 1,
+    result: '< not set >',
+  },
+  {
+    name: 'test',
+    result: '< not set >',
+  },
+  {
+    name: 'test',
+    version: ResourceStatus.DRAFT,
+    result: 'test:DRAFT',
+  },
+]
+
+describe('renderResourceName', () => {
+  it.each<ResourceNameTest>(resourceNameTestSuite)(
+    'should return $result with $name and $version',
+    ({ name, version, result }) => {
+      expect(renderResourceName(name, version, i18n.t)).toStrictEqual(result)
     }
   )
 })
