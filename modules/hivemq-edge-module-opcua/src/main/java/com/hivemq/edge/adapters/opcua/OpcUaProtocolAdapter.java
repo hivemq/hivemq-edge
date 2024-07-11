@@ -54,6 +54,7 @@ import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
+import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -400,7 +401,11 @@ public class OpcUaProtocolAdapter
         final NodeId nodeId = NodeId.parse(input.getWriteContext().getDestination());
         try {
             final Object opcUaObject = JsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(),
-                    input.getWriteContext().getType());
+                    input.getWriteContext().getType(),
+                    opcUaClient,
+                    ExpandedNodeId.parse(input.getWriteContext().getTypeNodeId())
+                            .toNodeId(opcUaClient.getNamespaceTable())
+                            .get());
             Variant variant = new Variant(opcUaObject);
             DataValue dataValue = new DataValue(variant, null, null);
             if (opcUaClient == null) {
