@@ -7,7 +7,7 @@ import { Card, CardBody } from '@chakra-ui/react'
 
 import { enumFromStringValue } from '@/utils/types.utils.ts'
 
-import { PanelProps, ResourceStatus, SchemaData, SchemaType } from '@datahub/types.ts'
+import { PanelProps, ResourceStatus, ResourceWorkingVersion, SchemaData, SchemaType } from '@datahub/types.ts'
 import { MOCK_JSONSCHEMA_SCHEMA, MOCK_PROTOBUF_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
 import { useGetAllSchemas } from '@datahub/api/hooks/DataHubSchemasService/useGetAllSchemas.tsx'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
@@ -37,7 +37,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
           setFormData({
             name: schema.id,
             type: enumFromStringValue(SchemaType, schema.type) || SchemaType.JSON,
-            version: schema.version || ResourceStatus.MODIFIED,
+            version: schema.version || ResourceWorkingVersion.MODIFIED,
             schemaSource: atob(schema.schemaDefinition),
             internalVersions: getSchemaFamilies(allSchemas?.items || [])[schema.id].versions,
             internalStatus: ResourceStatus.LOADED,
@@ -47,7 +47,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
             internalStatus: ResourceStatus.DRAFT,
             name: changeEvent.formData.name,
             type: SchemaType.JSON,
-            version: ResourceStatus.DRAFT,
+            version: ResourceWorkingVersion.DRAFT,
             schemaSource: MOCK_JSONSCHEMA_SCHEMA,
           })
         }
@@ -64,7 +64,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
       if (id?.includes('schemaSource') && formData && formData.internalStatus === ResourceStatus.LOADED) {
         setFormData({
           ...formData,
-          version: ResourceStatus.MODIFIED,
+          version: ResourceWorkingVersion.MODIFIED,
           internalStatus: ResourceStatus.MODIFIED,
         })
       }
@@ -128,7 +128,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
       name: {
         'ui:widget': 'datahub:schema-name',
         'ui:options': {
-          isDraft: schema?.version === ResourceStatus.DRAFT,
+          isDraft: schema?.version === ResourceWorkingVersion.DRAFT,
         },
       },
       version: {

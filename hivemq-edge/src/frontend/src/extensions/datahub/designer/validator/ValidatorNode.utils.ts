@@ -9,7 +9,7 @@ import {
   DataHubNodeType,
   DataPolicyData,
   DryRunResults,
-  ResourceStatus,
+  ResourceWorkingVersion,
   SchemaArguments,
   ValidatorData,
   WorkspaceState,
@@ -41,7 +41,8 @@ export function checkValidityPolicyValidator(
     arguments: {
       schemas: schemas.map<SchemaReference>((schema) => {
         const version =
-          schema.data.version === ResourceStatus.DRAFT || schema.data.version === ResourceStatus.MODIFIED
+          schema.data.version === ResourceWorkingVersion.DRAFT ||
+          schema.data.version === ResourceWorkingVersion.MODIFIED
             ? 'latest'
             : schema.data.version.toString()
         return { schemaId: schema.data.name, version }
