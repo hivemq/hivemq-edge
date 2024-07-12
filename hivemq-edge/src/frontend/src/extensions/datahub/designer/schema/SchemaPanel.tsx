@@ -132,6 +132,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
         },
       },
       version: {
+        'ui:widget': 'datahub:version',
         'ui:options': {
           readonly:
             internalStatus === ResourceStatus.DRAFT || internalStatus === ResourceStatus.MODIFIED || !internalStatus,
@@ -145,6 +146,7 @@ export const SchemaPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) => {
         },
       },
       schemaSource: {
+        'ui:widget': 'application/schema+json',
         'ui:options': {
           readonly: !internalStatus,
         },

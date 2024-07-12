@@ -51,6 +51,7 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
         },
       },
       sourceCode: {
+        'ui:widget': 'text/javascript',
         'ui:options': {
           // readonly: !internalStatus,
         },
