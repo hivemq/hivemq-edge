@@ -83,14 +83,6 @@ describe('FunctionPanel', () => {
 
     cy.get('#root_name-label + div').should('contain.text', 'my-script-id')
     cy.get('#root_version-label + div').should('contain.text', '1')
-
-    // // TODO[NVL] This is a bug. Fix it!
-    cy.get('#root_version-label').should('have.attr', 'data-invalid')
-    cy.get('#root_version-label + div').click()
-    cy.get('#root_version-label + div').find('[role="option"]').as('optionList2')
-    cy.get('@optionList2').eq(0).click()
-    cy.get('#root_version-label').should('not.have.attr', 'data-invalid')
-    // // TODO[NVL] This is a bug. Fix it!
   })
 
   // TODO[NVL] Weird import worker error

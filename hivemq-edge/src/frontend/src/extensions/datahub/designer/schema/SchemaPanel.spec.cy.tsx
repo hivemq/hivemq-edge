@@ -84,14 +84,6 @@ describe('SchemaPanel', () => {
     cy.get('#root_type-label + div').should('contain.text', 'PROTOBUF')
     cy.get('#root_version-label + div').should('contain.text', '1')
 
-    // TODO[NVL] This is a bug. Fix it!
-    cy.get('#root_version-label').should('have.attr', 'data-invalid')
-    cy.get('#root_version-label + div').click()
-    cy.get('#root_version-label + div').find('[role="option"]').as('optionList2')
-    cy.get('@optionList2').eq(0).click()
-    cy.get('#root_version-label').should('not.have.attr', 'data-invalid')
-    // TODO[NVL] This is a bug. Fix it!
-
     // modify the schema#
     // TODO[NVL] Triggering edit in Monaco not working
     // cy.get('@editor').type('this is fun')
