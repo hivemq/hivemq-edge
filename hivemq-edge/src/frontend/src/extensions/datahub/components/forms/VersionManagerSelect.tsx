@@ -1,10 +1,17 @@
 import { FocusEvent, useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { labelValue, WidgetProps } from '@rjsf/utils'
 import { getChakra } from '@rjsf/chakra-ui/lib/utils'
 import { OnChangeValue, Select } from 'chakra-react-select'
-import { useTranslation } from 'react-i18next'
 import { FormControl, FormLabel } from '@chakra-ui/react'
-import { ResourceStatus } from '@datahub/types.ts'
+
+import { ResourceStatus, ResourceWorkingVersion } from '@datahub/types.ts'
+
+interface VersionOption {
+  label: string
+  value: number
+  isLatest?: boolean
+}
 
 export const VersionManagerSelect = (props: WidgetProps) => {
   const { t } = useTranslation('datahub')
@@ -13,20 +20,28 @@ export const VersionManagerSelect = (props: WidgetProps) => {
 
   const selectOptions = useMemo(() => {
     const internalVersions = options.selectOptions as number[] | undefined
+    if (props.value === ResourceWorkingVersion.MODIFIED || props.value === ResourceWorkingVersion.DRAFT) {
+      return [
+        {
+          label: t('workspace.version.status', {
+            context: props.value === ResourceWorkingVersion.MODIFIED ? ResourceStatus.MODIFIED : 'DRAFT',
+          }),
+          value: props.value,
+        },
+      ]
+    }
     if (!internalVersions) return []
-    return internalVersions.map((versionNumber, index, row) => ({
-      label: t('workspace.version.display', { versionNumber, count: index + 1 === row.length ? 0 : 1 }),
-      value: versionNumber.toString(),
-    }))
-  }, [t, options.selectOptions])
 
-  const label = useMemo(() => {
-    if (props.value === ResourceStatus.MODIFIED || props.value === ResourceStatus.DRAFT)
-      return t('workspace.version.status', { context: props.value })
-    return props.value?.toString()
-  }, [props.value, t])
+    return internalVersions.map<VersionOption>((versionNumber, index, row) => {
+      return {
+        label: t('workspace.version.display', { versionNumber, count: index + 1 === row.length ? 0 : 1 }),
+        value: versionNumber,
+        isLatest: index + 1 === row.length,
+      }
+    })
+  }, [options.selectOptions, props.value, t])
 
-  const onChange = useCallback<(newValue: OnChangeValue<{ label: string; value: string }, false>) => void>(
+  const onChange = useCallback<(newValue: OnChangeValue<VersionOption, false>) => void>(
     (newValue) => {
       if (newValue) props.onChange(newValue.value)
     },
@@ -52,11 +67,11 @@ export const VersionManagerSelect = (props: WidgetProps) => {
         props.hideLabel || !props.label
       )}
 
-      <Select
+      <Select<VersionOption>
         inputId={props.id}
         isRequired={props.required}
         options={selectOptions}
-        value={{ label: label, value: props.value }}
+        value={selectOptions.find((e) => e.value === props.value)}
         onBlur={onBlur}
         onFocus={onFocus}
         onChange={onChange}
