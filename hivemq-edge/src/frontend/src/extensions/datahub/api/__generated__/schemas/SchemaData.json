@@ -16,7 +16,7 @@
     },
     "version": {
       "title": "Version",
-      "type": "string",
+      "type": "number",
       "format": "datahub:version"
     }
   },

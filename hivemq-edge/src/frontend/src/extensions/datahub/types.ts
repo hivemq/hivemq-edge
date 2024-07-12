@@ -163,8 +163,15 @@ export enum ResourceStatus {
   MODIFIED = 'MODIFIED',
 }
 
+// TODO[24146] Should be safe for incremental version number but better identification?
+export enum ResourceWorkingVersion {
+  DRAFT = 9 ** 9,
+  LOADED,
+  MODIFIED,
+}
+
 export interface ResourceState extends DataHubNodeData {
-  version: ResourceStatus.DRAFT | number | ResourceStatus.MODIFIED
+  version: number
   internalStatus?: ResourceStatus
   internalVersions?: number[]
 }
