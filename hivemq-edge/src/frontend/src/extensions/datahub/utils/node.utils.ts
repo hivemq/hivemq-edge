@@ -24,6 +24,8 @@ import {
 } from '../types.ts'
 import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
 import { DataPolicyValidator } from '@/api/__generated__'
+import { enumFromStringValue } from '@/utils/types.utils.ts'
+import type { TFunction } from 'i18next'
 
 export const getNodeId = (stub = 'node') => `${stub}_${uuidv4()}`
 
@@ -360,4 +362,17 @@ export const isNodeHandleConnectable = (handle: ConnectableHandleProps, node: No
     return toHandle.length < handle.isConnectable
   }
   return handle.isConnectable
+}
+
+export const renderResourceName = (
+  name: string | undefined,
+  version: ResourceStatus.DRAFT | number | ResourceStatus.MODIFIED | undefined,
+  t: TFunction
+) => {
+  if (!name || !version) return t('error.noSet.select', { ns: 'datahub' })
+
+  const isDraft = enumFromStringValue(ResourceStatus, version.toString())
+  const formatedVersion = !isDraft ? version : t('workspace.nodes.status', { context: version, ns: 'datahub' })
+
+  return `${name}:${formatedVersion}`
 }
