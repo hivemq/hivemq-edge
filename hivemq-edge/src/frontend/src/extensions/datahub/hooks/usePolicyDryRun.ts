@@ -79,7 +79,7 @@ export const usePolicyDryRun = () => {
         ...node.data,
         dryRunStatus: PolicyDryRunStatus.RUNNING,
       })
-      await mockDelay(100)
+      await mockDelay(DRYRUN_VALIDATION_DELAY)
     }
 
     for (const result of processedNodes) {
