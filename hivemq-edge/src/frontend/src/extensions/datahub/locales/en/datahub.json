@@ -267,6 +267,7 @@
   },
   "error": {
     "validation": {
+      "noNode": "Node is unknown",
       "protobuf": {
         "template": "// CANNOT DECODE THE PROTOBUF SOURCE - {{ source }}",
         "encoding": "The encoding of the PROTOBUF code into a Base64 descriptor cannot be validated."
@@ -308,6 +309,7 @@
       "noHandleConnected": "No $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to the \"{{ handle }}\" handle of $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
       "cardinality": "Too many $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) connected to $t(datahub:workspace.nodes.type, { 'context': '{{target}}' })",
       "notConfigured": "The $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) is not properly defined. The following properties are missing: {{ properties }}",
+      "notValidated": "The $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }) is not properly configured: {{ error }}",
       "internal": "Encountered an error while processing $t(datahub:workspace.nodes.type, { 'context': '{{source}}' }): {{ error }}"
     },
     "publish": {
