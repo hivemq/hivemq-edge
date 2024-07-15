@@ -82,6 +82,7 @@ describe('getNodePayload', () => {
     {
       type: DataHubNodeType.SCHEMA,
       expected: {
+        name: undefined,
         internalStatus: 'DRAFT',
         type: SchemaType.JSON,
         version: 'DRAFT',
