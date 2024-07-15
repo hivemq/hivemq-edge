@@ -12,6 +12,12 @@ import {
   PolicyDryRunStatus,
 } from '@datahub/types.ts'
 import {
+  checkValidityConfigurations,
+  isClientFilterNodeType,
+  isTopicFilterNodeType,
+} from '@datahub/utils/node.utils.ts'
+import { DRYRUN_VALIDATION_DELAY } from '@datahub/utils/datahub.utils.ts'
+import {
   checkValidityDataPolicy,
   checkValidityFilter,
   getSubFlow,
@@ -24,7 +30,6 @@ import {
 } from '@datahub/designer/behavior_policy/BehaviorPolicyNode.utils.ts'
 import { checkValidityTransitions } from '@datahub/designer/transition/TransitionNode.utils.ts'
 import { checkValidityPipeline } from '@datahub/designer/operation/OperationNode.utils.ts'
-import { isClientFilterNodeType, isTopicFilterNodeType } from '@datahub/utils/node.utils.ts'
 
 /* istanbul ignore next -- @preserve */
 const mockDelay = (ms = 100) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -50,11 +55,16 @@ export const usePolicyDryRun = () => {
 
   /* istanbul ignore next -- @preserve */
   const updateNodeStatus = async (results: DryRunResults<unknown>) => {
+    const getStatus = (): PolicyDryRunStatus => {
+      if (results.error) return PolicyDryRunStatus.FAILURE
+      if (results.node.data.dryRunStatus === PolicyDryRunStatus.FAILURE) return PolicyDryRunStatus.FAILURE
+      return PolicyDryRunStatus.SUCCESS
+    }
     onUpdateNodes<DataHubNodeData>(results.node.id, {
       ...results.node.data,
-      dryRunStatus: results.error ? PolicyDryRunStatus.FAILURE : PolicyDryRunStatus.SUCCESS,
+      dryRunStatus: getStatus(),
     })
-    await mockDelay(500)
+    await mockDelay(DRYRUN_VALIDATION_DELAY)
   }
 
   /* istanbul ignore next -- @preserve */
