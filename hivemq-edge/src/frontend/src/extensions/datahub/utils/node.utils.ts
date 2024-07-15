@@ -30,7 +30,7 @@ import {
 } from '../types.ts'
 import { DataPolicyValidator } from '@/api/__generated__'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
-import { CustomNodeJSONSchema } from '@datahub/designer/mappings.tsx'
+import { CustomNodeJSONSchema } from '@datahub/config/schemas.config.ts'
 import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
 export const getNodeId = (stub = 'node') => `${stub}_${uuidv4()}`

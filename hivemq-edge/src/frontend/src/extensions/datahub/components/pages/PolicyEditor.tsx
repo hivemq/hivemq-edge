@@ -22,7 +22,7 @@ import { CopyPasteListener } from '@datahub/components/controls/CopyPasteListene
 import CopyPasteStatus from '@datahub/components/controls/CopyPasteStatus.tsx'
 import DeleteListener from '@datahub/components/controls/DeleteListener.tsx'
 import ConnectionLine from '@datahub/components/nodes/ConnectionLine.tsx'
-import { CustomNodeTypes } from '@datahub/designer/mappings.tsx'
+import { CustomNodeTypes } from '@datahub/config/nodes.config.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { getConnectedNodeFrom, getNodeId, getNodePayload, isValidPolicyConnection } from '@datahub/utils/node.utils.ts'
 import { DesignerStatus } from '@datahub/types.ts'
