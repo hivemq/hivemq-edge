@@ -59,7 +59,7 @@ export const usePolicyDryRun = () => {
 
     const getStatus = (): PolicyDryRunStatus => {
       if (results.error) return PolicyDryRunStatus.FAILURE
-      if (results.node.data.dryRunStatus === PolicyDryRunStatus.FAILURE) return PolicyDryRunStatus.FAILURE
+      if (currentNode?.data.dryRunStatus === PolicyDryRunStatus.FAILURE) return PolicyDryRunStatus.FAILURE
       return PolicyDryRunStatus.SUCCESS
     }
     onUpdateNodes<DataHubNodeData>(results.node.id, {
