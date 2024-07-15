@@ -385,7 +385,7 @@ export const renderResourceName = (
 }
 
 export const validateNode = (newNode: Node) => {
-  if (!newNode.type) return { isValid: false, errors: 'sss' }
+  if (!newNode.type) return { isValid: false }
   const schema = CustomNodeJSONSchema[newNode.type]
   const validate = validator.ajv.compile(schema)
   const isValid = validate(newNode.data)
@@ -404,7 +404,7 @@ export const checkValidityConfigurations = (allNodes: Node[]) => {
         for (const error of nodeConfiguration.errors) {
           allConfigurations.push({
             node: node,
-            error: PolicyCheckErrors.internal(node, new Error(error.message)),
+            error: PolicyCheckErrors.notValidated(node, error.message as string),
           })
         }
     }
