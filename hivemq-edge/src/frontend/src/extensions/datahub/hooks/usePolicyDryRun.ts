@@ -55,6 +55,8 @@ export const usePolicyDryRun = () => {
 
   /* istanbul ignore next -- @preserve */
   const updateNodeStatus = async (results: DryRunResults<unknown>) => {
+    const currentNode = nodes.find((node) => node.id === results.node.id)
+
     const getStatus = (): PolicyDryRunStatus => {
       if (results.error) return PolicyDryRunStatus.FAILURE
       if (results.node.data.dryRunStatus === PolicyDryRunStatus.FAILURE) return PolicyDryRunStatus.FAILURE
