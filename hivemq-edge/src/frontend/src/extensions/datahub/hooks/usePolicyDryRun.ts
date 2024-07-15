@@ -148,25 +148,23 @@ export const usePolicyDryRun = () => {
 
     const allConfigurations = checkValidityConfigurations(allNodes)
 
-    // TODO[19240] This is wrong. Only if no errors
-    const behaviorPolicy = checkValidityBehaviorPolicy(behaviourPolicyNode, clients, model, behaviorPolicyTransitions)
-
-    // TODO[19240] Remove
-    /* istanbul ignore next -- @preserve */
-    console.log('[DatHub] Payloads', {
-      behaviorPolicy: behaviorPolicy.data,
-      resources: behaviorPolicy.resources?.map((e) => e.data),
-    })
-
-    return runPolicyChecks(allNodes, [
+    const processedNodes = [
+      ...allConfigurations,
       ...allConfigurations,
       clients,
       model,
       ...behaviorPolicyTransitions,
       ...(pipelines || []),
       ...(pipelineResources || []),
-      behaviorPolicy,
-    ])
+    ]
+
+    const hasError = processedNodes.some((e) => !!e.error)
+    if (!hasError) {
+      const behaviorPolicy = checkValidityBehaviorPolicy(behaviourPolicyNode, clients, model, behaviorPolicyTransitions)
+      processedNodes.push(behaviorPolicy)
+    }
+
+    return runPolicyChecks(allNodes, processedNodes)
   }
 
   return {
