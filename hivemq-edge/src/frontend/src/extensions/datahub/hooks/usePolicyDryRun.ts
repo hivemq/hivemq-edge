@@ -146,6 +146,8 @@ export const usePolicyDryRun = () => {
 
     const pipelineResources = pipelines?.reduce(onlyNonNullResources, [] as DryRunResults<Schema>[])
 
+    const allConfigurations = checkValidityConfigurations(allNodes)
+
     // TODO[19240] This is wrong. Only if no errors
     const behaviorPolicy = checkValidityBehaviorPolicy(behaviourPolicyNode, clients, model, behaviorPolicyTransitions)
 
@@ -157,6 +159,7 @@ export const usePolicyDryRun = () => {
     })
 
     return runPolicyChecks(allNodes, [
+      ...allConfigurations,
       clients,
       model,
       ...behaviorPolicyTransitions,
