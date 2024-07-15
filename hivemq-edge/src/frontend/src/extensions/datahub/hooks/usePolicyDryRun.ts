@@ -91,7 +91,16 @@ export const usePolicyDryRun = () => {
     const schemaResources = validators.reduce(onlyNonNullResources, [] as DryRunResults<Schema>[])
     const allResources = [...successResources, ...errorResources, ...schemaResources].reduce(onlyUniqueResources, [])
 
-    const processedNodes = [filter, ...validators, ...onSuccessPipeline, ...onErrorPipeline, ...allResources]
+    const allConfigurations = checkValidityConfigurations(allNodes)
+
+    const processedNodes = [
+      ...allConfigurations,
+      filter,
+      ...validators,
+      ...onSuccessPipeline,
+      ...onErrorPipeline,
+      ...allResources,
+    ]
     const hasError = processedNodes.some((e) => !!e.error)
 
     if (!hasError) {
