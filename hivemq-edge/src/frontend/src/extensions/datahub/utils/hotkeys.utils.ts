@@ -26,7 +26,7 @@ const mappedKeys: Record<string, string> = {
   ControlRight: 'ctrl',
 }
 
-export function mapKey(key: string): string {
+function mapKey(key: string): string {
   return (mappedKeys[key] || key)
     .trim()
     .toLowerCase()
@@ -48,7 +48,6 @@ export function parseHotkey(hotkey: string, combinationKey = '+'): KeyboardEvent
   }
 
   const singleCharKeys = keys.filter((k) => !reservedModifierKeywords.includes(k))
-
   return {
     ...modifiers,
     // Not supporting combined Hot Key. Take only the first one
