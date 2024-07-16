@@ -33,7 +33,8 @@
       "edit": "Edit",
       "view": "View",
       "download": "Download",
-      "delete": "Delete"
+      "delete": "Delete",
+      "copy": "Copy"
     },
     "tabs": {
       "policy": {
