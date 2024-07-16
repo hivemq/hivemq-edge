@@ -9,6 +9,10 @@ export interface ContextMenuProps<T extends HTMLElement> {
   menuButtonProps?: MenuButtonProps
 }
 
+/**
+ * From https://github.com/lukasbach/chakra-ui-contextmenu
+ * @deprecated Doesn't integrate well with React Flow (keyboard navigation) and ChakraUI (focus on first element)
+ */
 export function ContextMenu<T extends HTMLElement = HTMLElement>(props: ContextMenuProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
   const [isRendered, setIsRendered] = useState(false)
