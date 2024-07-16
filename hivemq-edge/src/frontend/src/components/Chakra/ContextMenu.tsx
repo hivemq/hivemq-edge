@@ -38,7 +38,7 @@ export function ContextMenu<T extends HTMLElement = HTMLElement>(props: ContextM
   }, [isOpen])
 
   useEventListener('contextmenu', (e) => {
-    if (targetRef.current?.contains(e.target as any) || e.target === targetRef.current) {
+    if (targetRef.current?.contains(e.target as never) || e.target === targetRef.current) {
       e.preventDefault()
       setIsOpen(true)
       setPosition([e.pageX, e.pageY])
