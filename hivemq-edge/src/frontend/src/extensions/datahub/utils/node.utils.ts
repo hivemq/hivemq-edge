@@ -1,8 +1,12 @@
 import { Connection, Edge, getConnectedEdges, getIncomers, getOutgoers, HandleProps, Node } from 'reactflow'
 import { v4 as uuidv4 } from 'uuid'
-import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
+import type { TFunction } from 'i18next'
+import validator from '@rjsf/validator-ajv8'
+import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
+
 import i18n from '@/config/i18n.config.ts'
 
+import { MOCK_JSONSCHEMA_SCHEMA } from '../__test-utils__/schema.mocks.ts'
 import {
   BehaviorPolicyData,
   ClientFilterData,
@@ -10,6 +14,7 @@ import {
   DataHubNodeType,
   DataPolicyData,
   DesignerStatus,
+  DryRunResults,
   FunctionData,
   OperationData,
   PolicyDryRunStatus,
@@ -22,14 +27,14 @@ import {
   ValidatorData,
   ValidDropConnection,
 } from '../types.ts'
-import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
 import { DataPolicyValidator } from '@/api/__generated__'
 import { enumFromStringValue } from '@/utils/types.utils.ts'
-import type { TFunction } from 'i18next'
+import { CustomNodeJSONSchema } from '@datahub/config/schemas.config.ts'
+import { PolicyCheckErrors } from '@datahub/designer/validation.errors.ts'
 
 export const getNodeId = (stub = 'node') => `${stub}_${uuidv4()}`
 
-export const getNodePayload = (type: string): DataHubNodeData => {
+export const getNodePayload = (type: string, getDraftName?: (type: DataHubNodeType) => string): DataHubNodeData => {
   if (type === DataHubNodeType.TOPIC_FILTER) {
     return {
       topics: ['topic/example/1'],
@@ -55,6 +60,7 @@ export const getNodePayload = (type: string): DataHubNodeData => {
   }
   if (type === DataHubNodeType.SCHEMA) {
     return {
+      name: getDraftName?.(DataHubNodeType.SCHEMA),
       type: SchemaType.JSON,
       schemaSource: MOCK_JSONSCHEMA_SCHEMA,
       internalStatus: ResourceStatus.DRAFT,
@@ -375,4 +381,31 @@ export const renderResourceName = (
   const formatedVersion = !isDraft ? version : t('workspace.nodes.status', { context: version, ns: 'datahub' })
 
   return `${name}:${formatedVersion}`
+}
+
+export const validateNode = (newNode: Node) => {
+  if (!newNode.type) return { isValid: false }
+  const schema = CustomNodeJSONSchema[newNode.type]
+  const validate = validator.ajv.compile(schema)
+  const isValid = validate(newNode.data)
+  return {
+    isValid,
+    errors: validate.errors,
+  }
+}
+
+export const checkValidityConfigurations = (allNodes: Node[]) => {
+  const allConfigurations: DryRunResults<unknown>[] = []
+  for (const node of allNodes) {
+    const nodeConfiguration = validateNode(node)
+    if (!nodeConfiguration.isValid && nodeConfiguration?.errors?.length) {
+      for (const error of nodeConfiguration.errors) {
+        allConfigurations.push({
+          node: node,
+          error: PolicyCheckErrors.notValidated(node, error.message as string),
+        })
+      }
+    }
+  }
+  return allConfigurations
 }
