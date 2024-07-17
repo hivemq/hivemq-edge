@@ -64,9 +64,11 @@ public class WriteTask {
             writeOutputFuture.whenComplete(new AfterWriteCallback(publish, queueId, writeOutput));
             return writeOutputFuture;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn(
+                    "Write invocation on adapter '{}' threw exception. Adapters should not throw Exceptions in the write method, but set them on the output object. ",
+                    protocolAdapter.getId());
+            return CompletableFuture.failedFuture(e);
         }
-        return null;
     }
 
     public class AfterWriteCallback implements BiConsumer<Boolean, Throwable> {
