@@ -62,7 +62,6 @@ const AdapterTagSelect: FC<WidgetProps<unknown, RJSFSchema, AdapterContext>> = (
   const { t } = useTranslation('components')
   const { formContext } = props
   const { isDiscoverable, adapterType, adapterId } = formContext || {}
-  if (!adapterType || !adapterId) throw new Error('The adapter has not been added to the form context')
   const { data, isLoading, isError } = useGetDataPoints(Boolean(isDiscoverable), adapterId)
   const chakraProps = getChakra({ uiSchema: props.uiSchema })
 
