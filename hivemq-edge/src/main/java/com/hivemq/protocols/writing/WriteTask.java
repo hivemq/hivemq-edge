@@ -59,9 +59,10 @@ public class WriteTask {
             final WritePayload writePayload = objectMapper.readValue(publish.getPayload(), payloadClass);
             final WriteInput writeInput = new WriteInputImpl<>(writePayload, writeContext);
             final WriteOutputImpl writeOutput = new WriteOutputImpl();
-            writeOutput.getFuture().whenComplete(new AfterWriteCallback(publish, queueId, writeOutput));
+            final CompletableFuture<Boolean> writeOutputFuture = writeOutput.getFuture();
             protocolAdapter.write(writeInput, writeOutput);
-            return writeOutput.getFuture();
+            writeOutputFuture.whenComplete(new AfterWriteCallback(publish, queueId, writeOutput));
+            return writeOutputFuture;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -85,25 +86,27 @@ public class WriteTask {
         @Override
         public void accept(final @Nullable Boolean aBoolean, final @Nullable Throwable throwable) {
             if (throwable != null) {
-                // TODO adapter event and adapter id in log
+                // TODO adapter event
                 if (writeOutput.canBeRetried()) {
-                    log.warn("Exception happened during the write, but the message consumption will be retried:",
+                    log.warn(
+                            "Exception happened during the write for adapter '{}', but the message consumption will be retried:",
+                            protocolAdapter.getId(),
                             throwable);
                     // reset the inflight marker so that we can consume the publish again on the next occasion
-                    clientQueuePersistence.removeInFlightMarker(queueId, publish.getUniqueId());
-
+                    removeInflightMarker(queueId, publish.getUniqueId(), publish.getQoS());
                 } else {
-                    log.warn("Exception happened during the write, message consumption can not be retried :",
+                    log.warn(
+                            "Exception happened during the write for adapter '{}', message consumption can not be retried :",
+                            protocolAdapter.getId(),
                             throwable);
+                    removeMessage(queueId, publish.getUniqueId(), publish.getQoS());
                     clientQueuePersistence.removeShared(queueId, publish.getUniqueId());
                 }
                 return;
             } else {
                 clientQueuePersistence.removeShared(queueId, publish.getUniqueId());
             }
-            System.err.println("throwable:" + throwable);
-            System.err.println("booleam:" + aBoolean);
-            if (publish.getOnwardQoS() != QoS.AT_MOST_ONCE) {
+            if (publish.getQoS() != QoS.AT_MOST_ONCE) {
                 //-- 15665 - > QoS 0 causes republishing
                 FutureUtils.addExceptionLogger(clientQueuePersistence.removeShared(queueId, publish.getUniqueId()));
             }

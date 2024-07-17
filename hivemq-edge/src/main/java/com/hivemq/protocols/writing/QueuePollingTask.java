@@ -25,7 +25,6 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.configuration.service.InternalConfigurations;
-import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingSampler;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.persistence.SingleWriterService;
@@ -56,7 +55,6 @@ public class QueuePollingTask implements Runnable {
     private final @NotNull NanoTimeProvider nanoTimeProvider;
     private final @NotNull WriteTask writeTask;
     private final @NotNull String queueId;
-    private final @NotNull SingleWriterService singleWriterService;
     private final @NotNull WriteContext writeContext;
     private final @NotNull AtomicInteger watchdogErrorCount = new AtomicInteger();
     private final @NotNull AtomicInteger applicationErrorCount = new AtomicInteger();
@@ -83,7 +81,6 @@ public class QueuePollingTask implements Runnable {
         this.writeTask =
                 new WriteTask(writingProtocolAdapter, clientQueuePersistence, singleWriterService, objectMapper);
         this.queueId = queueId;
-        this.singleWriterService = singleWriterService;
         this.writeContext = writeContext;
     }
 
@@ -142,9 +139,8 @@ public class QueuePollingTask implements Runnable {
 
     private void handleInterruptionException(final @NotNull Throwable throwable) {
         int errorCountTotal = watchdogErrorCount.incrementAndGet();
-        System.err.println("Interruption:");
-        throwable.printStackTrace();
-        // TODO log
+        log.warn("The write task for adapter '{}' did not finish within the timeout and got interrupted.",
+                writingProtocolAdapter.getId());
         // TODO notifyOnError(sampler, throwable, !stopBecauseOfTooManyErrors);
         reschedule(errorCountTotal);
     }
@@ -152,22 +148,11 @@ public class QueuePollingTask implements Runnable {
 
     private void handleExceptionDuringPolling(final @NotNull Throwable throwable) {
         int errorCountTotal = applicationErrorCount.incrementAndGet();
-        System.err.println("Exception:");
-        throwable.printStackTrace();
-
-        //TODO log and notify adapter
+        log.warn("During the write for adapter '{}' an exception was thrown: ",
+                writingProtocolAdapter.getId(),
+                throwable);
+        // TODO notifyOnError(sampler, throwable, !stopBecauseOfTooManyErrors);
         reschedule(errorCountTotal);
-    }
-
-    private void notifyOnError(
-            final @NotNull ProtocolAdapterPollingSampler sampler, final @NotNull Throwable t, boolean continuing) {
-        try {
-            sampler.error(t, continuing);
-        } catch (Throwable samplerError) {
-            if (log.isInfoEnabled()) {
-                log.info("Sampler Encountered Error In Notification", samplerError);
-            }
-        }
     }
 
     private void reschedule(int errorCountTotal) {
