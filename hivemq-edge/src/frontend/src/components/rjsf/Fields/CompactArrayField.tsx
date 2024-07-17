@@ -71,7 +71,14 @@ const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (
   const { t } = useTranslation('components')
   const { idSchema, registry, formData, schema, disabled, readonly } = props
   const uiOptions = getUiOptions(props.uiSchema)
-  const [rawData, setRawData] = useState<FormData>((formData || []) as FormData)
+  const [rawData, setRawData] = useState<FormData>([])
+
+  useEffect(() => {
+    const newData = formData as FormData | undefined
+    if (!newData || !newData.length) return
+
+    setRawData(formData as FormData)
+  }, [formData])
 
   const { items } = schema
   const { properties, maxItems, required } = items as JSONSchema7
@@ -101,9 +108,9 @@ const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (
   const isFull = maxItems !== undefined && rawData.length > maxItems - 1
 
   const columns = useMemo<ColumnDef<FormDataItem>[]>(() => {
-    const columns = columnTypes.map<ColumnDef<FormDataItem>>((a) => ({
-      header: a[1].title,
-      accessorKey: a[0],
+    const columns = columnTypes.map<ColumnDef<FormDataItem>>(([key, value]) => ({
+      header: value.title,
+      accessorKey: key,
     }))
     columns.push({
       header: t('rjsf.CompactArrayField.table.actions'),
