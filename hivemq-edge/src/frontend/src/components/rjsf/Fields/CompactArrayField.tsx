@@ -4,16 +4,7 @@ import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 import { JSONSchema7 } from 'json-schema'
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  RowData,
-  Table,
-  useReactTable,
-} from '@tanstack/react-table'
+import { ColumnDef, flexRender, getCoreRowModel, RowData, Table, useReactTable } from '@tanstack/react-table'
 import { Box, chakra as Chakra, Input } from '@chakra-ui/react'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
@@ -162,12 +153,11 @@ const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (
     meta: {
       updateData: (rowIndex, columnId, value) => {
         setRawData((old) => {
-          if (old.length === 0) return [{ [columnId]: value }]
+          if (old.length === 0) return old
 
-          const ret = [...old]
-          ret[rowIndex] = { ...ret[rowIndex], [columnId]: value }
-
-          return ret
+          const newData = [...old]
+          newData[rowIndex] = { ...newData[rowIndex], [columnId]: value }
+          return newData
         })
         // No access to "submit" event so need to store the data back in FormData
         props.onChange(rawData)
