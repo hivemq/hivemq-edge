@@ -16,8 +16,7 @@
     },
     "version": {
       "title": "Version",
-      "type": "string",
-      "format": "datahub:version"
+      "type": "number"
     }
   },
   "dependencies": {
@@ -29,8 +28,7 @@
               "enum": ["JSON"]
             },
             "schemaSource": {
-              "type": "string",
-              "format": "application/schema+json"
+              "type": "string"
             }
           }
         },

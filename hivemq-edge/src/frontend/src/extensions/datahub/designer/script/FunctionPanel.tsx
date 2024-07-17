@@ -5,7 +5,7 @@ import { UiSchema } from '@rjsf/utils'
 import { IChangeEvent } from '@rjsf/core/src/components/Form.tsx'
 
 import { MOCK_JAVASCRIPT_SCHEMA } from '@datahub/__test-utils__/schema.mocks.ts'
-import { FunctionData, PanelProps, ResourceStatus } from '@datahub/types.ts'
+import { FunctionData, PanelProps, ResourceStatus, ResourceWorkingVersion } from '@datahub/types.ts'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { useGetAllScripts } from '@datahub/api/hooks/DataHubScriptsService/useGetAllScripts.tsx'
 import { ReactFlowSchemaForm } from '@datahub/components/forms/ReactFlowSchemaForm.tsx'
@@ -39,7 +39,7 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
       name: {
         'ui:widget': 'datahub:function-name',
         'ui:options': {
-          isDraft: script?.version === ResourceStatus.DRAFT,
+          isDraft: script?.version === ResourceWorkingVersion.DRAFT,
         },
       },
       version: {
@@ -51,6 +51,7 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
         },
       },
       sourceCode: {
+        'ui:widget': 'text/javascript',
         'ui:options': {
           // readonly: !internalStatus,
         },
@@ -69,7 +70,7 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
           setFormData({
             name: selectedScript.id,
             type: 'Javascript',
-            version: selectedScript.version || ResourceStatus.MODIFIED,
+            version: selectedScript.version || ResourceWorkingVersion.MODIFIED,
             description: changeEvent.formData.description,
             sourceCode: atob(selectedScript.source),
             internalVersions: getScriptFamilies(allScripts?.items || [])[selectedScript.id].versions,
@@ -79,7 +80,7 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
           setFormData({
             name: changeEvent.formData.name,
             type: 'Javascript',
-            version: ResourceStatus.DRAFT,
+            version: ResourceWorkingVersion.DRAFT,
             sourceCode: MOCK_JAVASCRIPT_SCHEMA,
           })
         }
@@ -92,7 +93,7 @@ export const FunctionPanel: FC<PanelProps> = ({ selectedNode, onFormSubmit }) =>
       ) {
         setFormData({
           ...formData,
-          version: ResourceStatus.MODIFIED,
+          version: ResourceWorkingVersion.MODIFIED,
           internalStatus: ResourceStatus.MODIFIED,
         })
         return

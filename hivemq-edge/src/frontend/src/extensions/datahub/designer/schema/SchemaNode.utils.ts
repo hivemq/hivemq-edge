@@ -10,7 +10,7 @@ import {
   DataHubNodeType,
   DryRunResults,
   ResourceFamily,
-  ResourceStatus,
+  ResourceWorkingVersion,
   SchemaData,
   SchemaType,
 } from '@datahub/types.ts'
@@ -142,7 +142,7 @@ export function loadSchema(
         // @ts-ignore force undefined
         type: enumFromStringValue(SchemaType, schema.type),
         schemaSource: atob(schema.schemaDefinition),
-        version: schema.version || ResourceStatus.DRAFT,
+        version: schema.version || ResourceWorkingVersion.DRAFT,
         internalVersions: schema.version ? [schema.version] : undefined,
       },
     }

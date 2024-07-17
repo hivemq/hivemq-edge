@@ -14,7 +14,13 @@ import { useCreateSchema } from '@datahub/api/hooks/DataHubSchemasService/useCre
 import { useCreateScript } from '@datahub/api/hooks/DataHubScriptsService/useCreateScript.tsx'
 import useDataHubDraftStore from '@datahub/hooks/useDataHubDraftStore.ts'
 import { dataHubToastOption } from '@datahub/utils/toast.utils.ts'
-import { DataHubNodeType, DesignerStatus, DryRunResults, ResourceState, ResourceStatus } from '@datahub/types.ts'
+import {
+  DataHubNodeType,
+  DesignerStatus,
+  DryRunResults,
+  ResourceState,
+  ResourceWorkingVersion,
+} from '@datahub/types.ts'
 
 interface Mutate<T> {
   type: DataHubNodeType
@@ -32,7 +38,7 @@ const resourceReducer =
     if (!id) return accumulator
 
     const { version } = result.node.data as ResourceState
-    if (version !== ResourceStatus.DRAFT && version !== ResourceStatus.MODIFIED) return accumulator
+    if (version !== ResourceWorkingVersion.DRAFT && version !== ResourceWorkingVersion.MODIFIED) return accumulator
 
     const allIds = accumulator.map((resource) => resource.id)
     if (allIds.includes(id)) return accumulator

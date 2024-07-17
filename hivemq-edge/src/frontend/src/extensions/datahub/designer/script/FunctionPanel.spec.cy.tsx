@@ -33,7 +33,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ c
 describe('FunctionPanel', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/data-hub/scripts', { items: [{ ...mockScript, type: SchemaType.PROTOBUF }] }).as('getSchemas')
+    cy.intercept('/api/v1/data-hub/scripts', { items: [{ ...mockScript, type: SchemaType.PROTOBUF }] })
   })
 
   it('should render the fields for a Function node', () => {
@@ -69,7 +69,7 @@ describe('FunctionPanel', () => {
     cy.get('#root_name-label + div').should('contain.text', 'new-schema')
     cy.get('#root_version-label + div').should('contain.text', 'DRAFT')
     cy.get('div#root_sourceCode').should('contain.html', '&nbsp;*&nbsp;@param&nbsp;{Object}&nbsp;publish')
-    cy.get('div#root_sourceCode').find('div.monaco-mouse-cursor-text').as('editor')
+    cy.get('div#root_sourceCode').find('div.monaco-mouse-cursor-text')
     // TODO[NVL] this doesn't work
     // cy.get('@editor').click()
     // cy.get('@editor').type('{command}a rr', { delay: 50, waitForAnimations: true })
@@ -83,14 +83,6 @@ describe('FunctionPanel', () => {
 
     cy.get('#root_name-label + div').should('contain.text', 'my-script-id')
     cy.get('#root_version-label + div').should('contain.text', '1')
-
-    // // TODO[NVL] This is a bug. Fix it!
-    cy.get('#root_version-label').should('have.attr', 'data-invalid')
-    cy.get('#root_version-label + div').click()
-    cy.get('#root_version-label + div').find('[role="option"]').as('optionList2')
-    cy.get('@optionList2').eq(0).click()
-    cy.get('#root_version-label').should('not.have.attr', 'data-invalid')
-    // // TODO[NVL] This is a bug. Fix it!
   })
 
   // TODO[NVL] Weird import worker error

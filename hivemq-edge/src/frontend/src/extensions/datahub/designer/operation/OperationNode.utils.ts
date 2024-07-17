@@ -17,7 +17,7 @@ import {
   FunctionData,
   OperationData,
   PolicyOperationArguments,
-  ResourceStatus,
+  ResourceWorkingVersion,
   TransitionData,
   WorkspaceState,
 } from '@datahub/types.ts'
@@ -134,7 +134,8 @@ export function checkValidityTransformFunction(
     arguments: {
       schemaId: sourceDeserial.data.name,
       schemaVersion:
-        sourceDeserial.data.version === ResourceStatus.DRAFT || sourceDeserial.data.version === ResourceStatus.MODIFIED
+        sourceDeserial.data.version === ResourceWorkingVersion.DRAFT ||
+        sourceDeserial.data.version === ResourceWorkingVersion.MODIFIED
           ? 'latest'
           : sourceDeserial.data.version.toString(),
     } as PolicyOperationArguments,
@@ -156,7 +157,8 @@ export function checkValidityTransformFunction(
     arguments: {
       schemaId: sourceSerial.data.name,
       schemaVersion:
-        sourceSerial.data.version === ResourceStatus.DRAFT || sourceSerial.data.version === ResourceStatus.MODIFIED
+        sourceSerial.data.version === ResourceWorkingVersion.DRAFT ||
+        sourceSerial.data.version === ResourceWorkingVersion.MODIFIED
           ? 'latest'
           : sourceSerial.data.version.toString(),
     } as PolicyOperationArguments,

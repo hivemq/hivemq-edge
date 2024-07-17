@@ -19,6 +19,7 @@ import {
   OperationData,
   PolicyDryRunStatus,
   ResourceStatus,
+  ResourceWorkingVersion,
   SchemaData,
   SchemaType,
   StrategyType,
@@ -64,7 +65,7 @@ export const getNodePayload = (type: string, getDraftName?: (type: DataHubNodeTy
       type: SchemaType.JSON,
       schemaSource: MOCK_JSONSCHEMA_SCHEMA,
       internalStatus: ResourceStatus.DRAFT,
-      version: ResourceStatus.DRAFT,
+      version: ResourceWorkingVersion.DRAFT,
     } as SchemaData
   }
   return {}
