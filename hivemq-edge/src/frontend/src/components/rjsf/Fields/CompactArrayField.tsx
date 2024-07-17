@@ -182,20 +182,16 @@ const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (
             </Chakra.tr>
           ))}
         </Chakra.thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => {
-            return (
-              <Chakra.tr key={row.id}>
-                {row.getVisibleCells().map((cell) => {
-                  return (
-                    <Chakra.td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Chakra.td>
-                  )
-                })}
-              </Chakra.tr>
-            )
-          })}
-        </tbody>
-        <tfoot>
+        <Chakra.tbody>
+          {table.getRowModel().rows.map((row) => (
+            <Chakra.tr key={row.id}>
+              {row.getVisibleCells().map((cell) => {
+                return <Chakra.td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Chakra.td>
+              })}
+            </Chakra.tr>
+          ))}
+        </Chakra.tbody>
+        <Chakra.tfoot>
           {table.getFooterGroups().map((footerGroup) => (
             <Chakra.tr key={footerGroup.id}>
               {footerGroup.headers.map((header) => {
@@ -207,7 +203,7 @@ const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (
               })}
             </Chakra.tr>
           ))}
-        </tfoot>
+        </Chakra.tfoot>
       </Chakra.table>
     </>
   )
