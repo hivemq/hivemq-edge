@@ -237,7 +237,6 @@ public class OpcUaProtocolAdapter
 
     private @NotNull CompletableFuture<Void> createAllSubscriptions() {
         //noinspection ConstantValue
-        //noinspection ConstantValue
         if (adapterConfig.getSubscriptions() == null || adapterConfig.getSubscriptions().isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
