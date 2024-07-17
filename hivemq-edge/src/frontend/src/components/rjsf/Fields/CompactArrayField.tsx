@@ -85,6 +85,25 @@ const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (
     return Object.entries(properties) as [string, JSONSchema7][]
   }, [properties])
 
+  const getNewItem = useCallback(() => {
+    return Object.fromEntries(columnTypes.map(([columnId]) => [columnId, ''])) as FormDataItem
+  }, [columnTypes])
+
+  const onHandleAdd = () => {
+    const newData = getNewItem()
+    setRawData((old) => [...old, newData])
+  }
+
+  const onHandleDelete = (index: number) => {
+    setRawData((old) => {
+      const newData = [...old]
+      newData.splice(index, 1)
+      return newData
+    })
+  }
+
+  const isFull = maxItems !== undefined && rawData.length > maxItems - 1
+
   const columns = useMemo<ColumnDef<FormDataItem>[]>(() => {
     const columns = columnTypes.map<ColumnDef<FormDataItem>>((a) => ({
       header: a[1].title,
@@ -93,27 +112,31 @@ const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (
     columns.push({
       header: t('rjsf.CompactArrayField.table.actions'),
       id: 'actions',
-      cell: () => (
-        <IconButton
-          icon={<LuTrash2 />}
-          aria-label={t('rjsf.CompactArrayField.action.delete')}
-          size="sm"
-          isDisabled={disabled || readonly}
-          onClick={() => console.log('XX')}
-        />
-      ),
-      footer: () => (
-        <IconButton
-          icon={<LuPlus />}
-          aria-label={t('rjsf.CompactArrayField.action.add')}
-          size="sm"
-          isDisabled={disabled || readonly}
-          onClick={() => console.log('XX')}
-        />
-      ),
+      cell: (props) => {
+        return (
+          <IconButton
+            icon={<LuTrash2 />}
+            aria-label={t('rjsf.CompactArrayField.action.delete')}
+            size="sm"
+            isDisabled={disabled || readonly}
+            onClick={() => onHandleDelete(props.row.index)}
+          />
+        )
+      },
+      footer: () => {
+        return (
+          <IconButton
+            icon={<LuPlus />}
+            aria-label={t('rjsf.CompactArrayField.action.add')}
+            size="sm"
+            isDisabled={disabled || readonly || isFull}
+            onClick={onHandleAdd}
+          />
+        )
+      },
     })
     return columns
-  }, [columnTypes, disabled, readonly, t])
+  }, [columnTypes, disabled, isFull, onHandleAdd, readonly, t])
 
   const table = useReactTable({
     data: rawData,
