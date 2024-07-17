@@ -241,7 +241,7 @@ devDependencies:
     specifier: ^1.5.3
     version: 1.5.3(vitest@1.5.3)
   axe-core:
-    specifier: ^4.9.0
+    specifier: ^4.9.1
     version: 4.9.1
   cypress:
     specifier: ^13.10.0
