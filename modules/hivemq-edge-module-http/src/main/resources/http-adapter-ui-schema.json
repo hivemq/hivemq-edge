@@ -40,5 +40,8 @@
   "httpRequestBody": {
     "ui:widget": "textarea"
   },
+  "httpHeaders": {
+    "ui:field": "compactTable"
+  },
   "ui:order": ["id", "*"]
 }
