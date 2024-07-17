@@ -72,6 +72,16 @@
     }
   },
   "rjsf": {
+    "CompactArrayField": {
+      "action": {
+        "add": "Add item",
+        "delete": "Delete item"
+      },
+      "table": {
+        "actions": "Actions",
+        "cell": "value for property {{ column }} on row {{ row }}"
+      }
+    },
     "ArrayFieldItem": {
       "Buttons": {
         "expanded_true": "Collapse Item",
