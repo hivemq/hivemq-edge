@@ -54,7 +54,6 @@ import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
-import org.eclipse.milo.opcua.stack.core.types.builtin.ExpandedNodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
@@ -95,6 +94,7 @@ public class OpcUaProtocolAdapter
     private final @NotNull AdapterFactories adapterFactories;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private @Nullable OpcUaClient opcUaClient;
+    private @Nullable JsonToOpcUAConverter jsonToOpcUAConverter;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap = new ConcurrentHashMap<>();
 
     public OpcUaProtocolAdapter(
@@ -129,6 +129,11 @@ public class OpcUaProtocolAdapter
                         output.failStart(throwable, throwable.getMessage());
                     }
                 });
+                try {
+                    jsonToOpcUAConverter = JsonToOpcUAConverter.getInstance(opcUaClient);
+                } catch (UaException e) {
+                    log.error("Unable to create the converter for writing.", e);
+                }
             }).exceptionally(throwable -> {
                 log.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
                 stopInternal();
@@ -231,6 +236,7 @@ public class OpcUaProtocolAdapter
     }
 
     private @NotNull CompletableFuture<Void> createAllSubscriptions() {
+        //noinspection ConstantValue
         //noinspection ConstantValue
         if (adapterConfig.getSubscriptions() == null || adapterConfig.getSubscriptions().isEmpty()) {
             return CompletableFuture.completedFuture(null);
@@ -400,12 +406,13 @@ public class OpcUaProtocolAdapter
         final OpcUAWritePayload opcUAWritePayload = input.getWritePayload();
         final NodeId nodeId = NodeId.parse(input.getWriteContext().getDestination());
         try {
-            final Object opcUaObject = JsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(),
-                    input.getWriteContext().getType(),
-                    opcUaClient,
-                    ExpandedNodeId.parse(input.getWriteContext().getTypeNodeId())
-                            .toNodeId(opcUaClient.getNamespaceTable())
-                            .get());
+            if (jsonToOpcUAConverter == null) {
+                throw new IllegalStateException("Converter is null.");
+            }
+
+            final Object opcUaObject = jsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(),
+                    NodeId.parse(input.getWriteContext().getDestination()));
+
             Variant variant = new Variant(opcUaObject);
             DataValue dataValue = new DataValue(variant, null, null);
             if (opcUaClient == null) {
