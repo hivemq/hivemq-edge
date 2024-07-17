@@ -1,7 +1,7 @@
 import { FieldProps, getTemplate, getUiOptions } from '@rjsf/utils'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 
-import { FC, useEffect, useMemo, useState } from 'react'
+import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 import { JSONSchema7 } from 'json-schema'
 import {
@@ -36,9 +36,10 @@ interface CellEditProps {
   table: Table<FormDataItem>
   index: number
   columnId: string
+  isRequired?: boolean
 }
 
-const DefaultCell: FC<CellEditProps> = ({ table, initialValue, columnId, index }) => {
+const DefaultCell: FC<CellEditProps> = ({ table, initialValue, columnId, index, isRequired }) => {
   const { t } = useTranslation('components')
   // We need to keep and update the state of the cell normally
   const [value, setValue] = useState(initialValue)
@@ -55,6 +56,8 @@ const DefaultCell: FC<CellEditProps> = ({ table, initialValue, columnId, index }
 
   return (
     <Input
+      isRequired={isRequired}
+      isInvalid={isRequired && !value}
       value={value as string}
       onChange={(e) => setValue(e.target.value)}
       onBlur={onBlur}
@@ -64,13 +67,6 @@ const DefaultCell: FC<CellEditProps> = ({ table, initialValue, columnId, index }
   )
 }
 
-// Give our default column cell renderer editing superpowers!
-const defaultColumn: Partial<ColumnDef<FormDataItem>> = {
-  cell: ({ getValue, row: { index }, column: { id }, table }) => (
-    <DefaultCell initialValue={getValue<FormDataValue>()} table={table} index={index} columnId={id} />
-  ),
-}
-
 const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (props) => {
   const { t } = useTranslation('components')
   const { idSchema, registry, formData, schema, disabled, readonly } = props
@@ -78,7 +74,7 @@ const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (
   const [rawData, setRawData] = useState<FormData>((formData || []) as FormData)
 
   const { items } = schema
-  const { properties } = items as JSONSchema7
+  const { properties, maxItems, required } = items as JSONSchema7
 
   const columnTypes = useMemo(() => {
     if (!properties) return []
@@ -141,10 +137,20 @@ const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (
   const table = useReactTable({
     data: rawData,
     columns,
-    defaultColumn,
+    defaultColumn: {
+      cell: ({ getValue, row: { index }, column: { id }, table }) => {
+        return (
+          <DefaultCell
+            initialValue={getValue<FormDataValue>()}
+            table={table}
+            index={index}
+            columnId={id}
+            isRequired={required?.includes(id)}
+          />
+        )
+      },
+    },
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     debugTable: true,
     meta: {
       updateData: (rowIndex, columnId, value) => {
