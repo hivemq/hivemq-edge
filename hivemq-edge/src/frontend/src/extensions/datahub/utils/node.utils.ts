@@ -2,7 +2,6 @@ import { Connection, Edge, getConnectedEdges, getIncomers, getOutgoers, HandlePr
 import { v4 as uuidv4 } from 'uuid'
 import type { TFunction } from 'i18next'
 import validator from '@rjsf/validator-ajv8'
-import { isArray } from '@chakra-ui/utils'
 import { RiPassExpiredLine, RiPassPendingLine, RiPassValidLine } from 'react-icons/ri'
 
 import i18n from '@/config/i18n.config.ts'
@@ -399,14 +398,13 @@ export const checkValidityConfigurations = (allNodes: Node[]) => {
   const allConfigurations: DryRunResults<unknown>[] = []
   for (const node of allNodes) {
     const nodeConfiguration = validateNode(node)
-    if (!nodeConfiguration.isValid) {
-      if (nodeConfiguration.errors && isArray(nodeConfiguration?.errors))
-        for (const error of nodeConfiguration.errors) {
-          allConfigurations.push({
-            node: node,
-            error: PolicyCheckErrors.notValidated(node, error.message as string),
-          })
-        }
+    if (!nodeConfiguration.isValid && nodeConfiguration?.errors?.length) {
+      for (const error of nodeConfiguration.errors) {
+        allConfigurations.push({
+          node: node,
+          error: PolicyCheckErrors.notValidated(node, error.message as string),
+        })
+      }
     }
   }
   return allConfigurations
