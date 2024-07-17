@@ -402,7 +402,6 @@ public class OpcUaProtocolAdapter
     public void write(
             @NotNull final WriteInput<OpcUAWritePayload, OpcUAWriteContext> input,
             @NotNull final WriteOutput writeOutput) {
-        System.err.println("WRITE INVOCATION");
         final OpcUAWritePayload opcUAWritePayload = input.getWritePayload();
         final NodeId nodeId = NodeId.parse(input.getWriteContext().getDestination());
         try {
@@ -419,14 +418,12 @@ public class OpcUaProtocolAdapter
                 writeOutput.fail("Client is not connected.", true);
                 return;
             }
-            System.err.println("TRYING TO WRITE TO PLC");
             CompletableFuture<StatusCode> writeFuture = opcUaClient.writeValue(nodeId, dataValue);
             writeFuture.whenComplete((statusCode, throwable) -> {
                 if (throwable != null) {
                     writeOutput.fail(throwable, null, false);
                 } else {
                     log.info("Wrote '{}' to nodeId={}", variant, nodeId);
-                    System.err.println("WRITE FINISHED");
                     writeOutput.finish();
                 }
             });
