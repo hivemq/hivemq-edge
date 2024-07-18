@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.modbus;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
+import com.hivemq.adapter.sdk.api.config.WriteContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
@@ -38,6 +39,8 @@ import com.hivemq.edge.adapters.modbus.config.PollingContextImpl;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
+import com.hivemq.edge.adapters.modbus.writing.ModbusWriteContext;
+import com.hivemq.edge.adapters.modbus.writing.ModbusWritePayload;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -51,7 +54,8 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
-public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingContextImpl> {
+public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingContextImpl>,
+        WritingProtocolAdapter<ModbusWritePayload, ModbusWriteContext> {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -91,15 +95,16 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
                 modbusClient.disconnect();
             }
         } catch (Exception e) {
-                output.failStop(e, "Error encountered closing connection to Modbus device.");
-                return;
+            output.failStop(e, "Error encountered closing connection to Modbus device.");
+            return;
         }
         output.stoppedSuccessfully();
     }
 
     @Override
     public void poll(
-            final @NotNull PollingInput<PollingContextImpl> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<PollingContextImpl> pollingInput,
+            final @NotNull PollingOutput pollingOutput) {
 
         //-- If a previously linked job has terminally disconnected the client
         //-- we need to ensure any orphaned jobs tidy themselves up properly
@@ -117,7 +122,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
                             }
                         });
             } else {
-                pollingOutput.fail(new IllegalStateException("client not initialised"),"The client is not initialised.");
+                pollingOutput.fail(new IllegalStateException("client not initialised"),
+                        "The client is not initialised.");
             }
         } catch (Exception e) {
             pollingOutput.fail(e, null);
@@ -167,8 +173,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
         final NodeTree nodeTree = output.getNodeTree();
         if (input.getRootNode() == null) {
             nodeTree.addNode("holding-registers",
-                    "Holding Registers",
-                    "Holding Registers", "Holding Registers",
+                    "Holding Registers", "Holding Registers", "Holding Registers",
                     null,
                     NodeType.FOLDER,
                     false);
@@ -241,8 +246,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
         String parentNode = parent;
         if (groupIdx < count) {
             tree.addNode("grouping-" + startIdx,
-                    "Addresses " + startIdx + "-" + (startIdx + groupIdx - 1),
-                    "", "",
+                    "Addresses " + startIdx + "-" + (startIdx + groupIdx - 1), "", "",
                     parent,
                     NodeType.FOLDER,
                     false);
@@ -258,13 +262,49 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
                     true);
             if (i % groupIdx == 0 && i < count) {
                 tree.addNode("grouping-" + i,
-                        "Addresses " + (i + 1) + "-" + (i + groupIdx),
-                        "", "",
+                        "Addresses " + (i + 1) + "-" + (i + groupIdx), "", "",
                         parent,
                         NodeType.FOLDER,
                         false);
                 parentNode = "grouping-" + i;
             }
         }
+    }
+
+    @Override
+    public void write(
+            @NotNull final WriteInput<ModbusWritePayload, ModbusWriteContext> input,
+            @NotNull final WriteOutput writeOutput) {
+
+        final int destinationRegister = input.getWriteContext().getDestination();
+        final Object value = input.getWritePayload().getValue();
+        if (value instanceof Integer) {
+            modbusClient.writeSingleRegister(destinationRegister, (Integer) value)
+                    .whenComplete(((writeSingleRegisterResponse, throwable) -> {
+                        if (throwable != null) {
+                            writeOutput.fail(throwable, null, false);
+                        } else {
+                            writeOutput.finish();
+                        }
+                    }));
+        } else {
+            //TODO
+            byte[] serialized = new byte[0];
+            int quantity = serialized.length / 2;
+            modbusClient.writeMultipleRegister(destinationRegister, quantity, serialized);
+            writeOutput.fail("Integer as write payload for Modbus expected, but was tyte: " + value.getClass(), false);
+            return;
+        }
+
+    }
+
+    @Override
+    public @NotNull Class<ModbusWritePayload> getPayloadClass() {
+        return ModbusWritePayload.class;
+    }
+
+    @Override
+    public @NotNull List<? extends WriteContext> getWriteContexts() {
+        return adapterConfig.getWriteContexts();
     }
 }

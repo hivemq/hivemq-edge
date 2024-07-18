@@ -95,11 +95,11 @@ public class QueuePollingTask implements Runnable {
             final ListenableFuture<ImmutableList<PUBLISH>> publishesFuture = pollForQueue(queueId);
 
 
-            Futures.addCallback(publishesFuture, new FutureCallback<ImmutableList<PUBLISH>>() {
+            Futures.addCallback(publishesFuture, new FutureCallback<>() {
                 @Override
-                public void onSuccess(final ImmutableList<PUBLISH> publishes) {
+                public void onSuccess(final @NotNull ImmutableList<PUBLISH> publishes) {
                     if (publishes.isEmpty()) {
-                        // TODO we should backoff and go to a sleeping state until another message is available
+                        // TODO we should backoff and go to a sleeping state until another message is available, however we need a possibility to get notified of a new arrived publish first
                         reschedule(0);
                     } else if (publishes.size() == 1) {
                         final CompletableFuture<Boolean> writeFuture =
