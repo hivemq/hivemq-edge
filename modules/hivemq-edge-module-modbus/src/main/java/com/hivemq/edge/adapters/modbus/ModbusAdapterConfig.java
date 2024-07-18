@@ -24,6 +24,8 @@ import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.WriteContext;
+import com.hivemq.edge.adapters.modbus.writing.ModbusWriteContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -98,6 +100,10 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "Subscriptions", description = "Map your sensor data to MQTT Topics")
     private @NotNull List<PollingContextImpl> subscriptions = new ArrayList<>();
 
+    @JsonProperty("mqtt-to-modbus-mappings")
+    @ModuleConfigField(title = "MQTT to Modbus Mappings ", description = "Map your mqtt data to sensors")
+    private @NotNull List<ModbusWriteContext> writeContexts = new ArrayList<>();
+
     public ModbusAdapterConfig() {
     }
 
@@ -139,6 +145,10 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
     public int getTimeout() {
         return timeout;
+    }
+
+    public @NotNull List<? extends WriteContext> getWriteContexts() {
+        return writeContexts;
     }
 
     public static class PollingContextImpl implements PollingContext {

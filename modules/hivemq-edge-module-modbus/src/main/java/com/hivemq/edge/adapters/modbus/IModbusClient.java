@@ -16,7 +16,9 @@
 package com.hivemq.edge.adapters.modbus;
 
 
+import com.digitalpetri.modbus.responses.WriteSingleRegisterResponse;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -34,6 +36,11 @@ public interface IModbusClient {
     Short[] readHoldingRegisters(int startIdx, int count) throws ProtocolAdapterException;
 
     Short[] readInputRegisters(int startIdx, int count) throws ProtocolAdapterException;
+
+    CompletableFuture<WriteSingleRegisterResponse> writeSingleRegister(int address, int value);
+
+    @NotNull
+    CompletableFuture<WriteSingleRegisterResponse> writeMultipleRegister(int address, int quantity, byte[] bytes);
 
     boolean disconnect() throws ProtocolAdapterException ;
 }

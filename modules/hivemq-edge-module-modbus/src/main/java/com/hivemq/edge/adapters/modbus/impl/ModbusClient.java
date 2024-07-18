@@ -20,10 +20,13 @@ import com.digitalpetri.modbus.master.ModbusTcpMasterConfig;
 import com.digitalpetri.modbus.requests.ReadCoilsRequest;
 import com.digitalpetri.modbus.requests.ReadHoldingRegistersRequest;
 import com.digitalpetri.modbus.requests.ReadInputRegistersRequest;
+import com.digitalpetri.modbus.requests.WriteMultipleRegistersRequest;
+import com.digitalpetri.modbus.requests.WriteSingleRegisterRequest;
 import com.digitalpetri.modbus.responses.ModbusResponse;
 import com.digitalpetri.modbus.responses.ReadCoilsResponse;
 import com.digitalpetri.modbus.responses.ReadHoldingRegistersResponse;
 import com.digitalpetri.modbus.responses.ReadInputRegistersResponse;
+import com.digitalpetri.modbus.responses.WriteSingleRegisterResponse;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.edge.adapters.modbus.IModbusClient;
 import com.hivemq.edge.adapters.modbus.ModbusAdapterConfig;
@@ -112,7 +115,7 @@ public class ModbusClient implements IModbusClient {
         try {
             ModbusTcpMaster client = getOrCreateClient();
             CompletableFuture<ReadHoldingRegistersResponse> future =
-                    client.sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count, 125)), 0);
+                    client.sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count, 125)), 1);
             Short[] val = new Short[count];
             future.thenAccept(response -> {
                 try {
@@ -156,6 +159,27 @@ public class ModbusClient implements IModbusClient {
             return val;
         } catch (Exception e) {
             throw new ProtocolAdapterException(e);
+        }
+    }
+
+    @Override
+    public @NotNull CompletableFuture<WriteSingleRegisterResponse> writeSingleRegister(int address, int value) {
+        try {
+            final ModbusTcpMaster client = getOrCreateClient();
+            return client.sendRequest(new WriteSingleRegisterRequest(address, value), 1);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    @Override
+    public @NotNull CompletableFuture<WriteSingleRegisterResponse> writeMultipleRegister(
+            int address, int quantity, byte[] bytes) {
+        try {
+            final ModbusTcpMaster client = getOrCreateClient();
+            return client.sendRequest(new WriteMultipleRegistersRequest(address, quantity, bytes), 1);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
         }
     }
 
