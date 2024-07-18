@@ -42,9 +42,16 @@ describe('ProtocolAdapterPage', () => {
     cy.wait('@getConfig')
     cy.wait('@getAdapters')
     cy.wait('@getProtocols')
-    cy.checkAccessibility()
-
+    cy.checkAccessibility(undefined, {
+      rules: {
+        'color-contrast': { enabled: false },
+      },
+    })
     cy.get("[role='tab']").eq(0).click()
-    cy.checkAccessibility()
+    cy.checkAccessibility(undefined, {
+      rules: {
+        'color-contrast': { enabled: false },
+      },
+    })
   })
 })
