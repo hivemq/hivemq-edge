@@ -30,8 +30,8 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(
-            @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<OpcUaAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<OpcUaAdapterConfig> input) {
         return new OpcUaProtocolAdapter(adapterInformation, input);
     }
 
@@ -39,5 +39,4 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
     public @NotNull Class<OpcUaAdapterConfig> getConfigClass() {
         return OpcUaAdapterConfig.class;
     }
-
 }
