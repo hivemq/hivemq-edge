@@ -38,11 +38,9 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SuppressWarnings("NullabilityAnnotations")
 class OpcUaJsonPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
 
-
-    private static Stream<Arguments> provideBaseTypes() {
+    private static @NotNull Stream<Arguments> provideBaseTypes() {
         return Stream.of(Arguments.of("Boolean", Identifiers.Boolean, true, "true"),
                 Arguments.of("Byte", Identifiers.Byte, 0, "0"),
                 Arguments.of("Byte", Identifiers.Byte, 255, "255"),
@@ -88,13 +86,6 @@ class OpcUaJsonPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
             final @NotNull NodeId typeId,
             final @NotNull Object value,
             final @NotNull String jsonValue) throws Exception {
-
-        checkJsonAdapter(name, typeId, value, jsonValue);
-    }
-
-    private void checkJsonAdapter(
-            @NotNull String name, @NotNull NodeId typeId, @NotNull Object value, @NotNull String jsonValue)
-            throws Exception {
         final String nodeId =
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> value, 999);
 
@@ -106,5 +97,4 @@ class OpcUaJsonPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
         protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
         assertThat(new String(publish.getPayload())).contains("\"value\":" + jsonValue);
     }
-
 }

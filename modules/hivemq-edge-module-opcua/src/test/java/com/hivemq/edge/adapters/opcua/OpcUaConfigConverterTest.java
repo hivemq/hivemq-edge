@@ -34,6 +34,7 @@ import com.hivemq.configuration.reader.RestrictionConfigurator;
 import com.hivemq.configuration.reader.SecurityConfigurator;
 import com.hivemq.configuration.reader.UnsConfigurator;
 import com.hivemq.configuration.reader.UsageTrackingConfigurator;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -44,18 +45,14 @@ import java.util.List;
 import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 class OpcUaConfigConverterTest {
 
-    @TempDir
-    public File tempDir;
-
-
     @SuppressWarnings("unchecked")
     @Test
-    public void whenArbitraryField_thenMapCorrectlyFilled() throws IOException {
+    public void whenArbitraryField_thenMapCorrectlyFilled(@TempDir final @NotNull File tempDir) throws IOException {
         final File tempFile = new File(tempDir, "conf.xml");
         final BufferedWriter writer = Files.newWriter(tempFile, UTF_8);
         writer.write("<hivemq>\n" +
@@ -114,17 +111,14 @@ class OpcUaConfigConverterTest {
         final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
 
         final Map<String, Object> config = hiveMQConfigEntity.getProtocolAdapterConfig();
-        assertNotNull(config);
+        assertThat(config).isNotNull();
 
         final List<Map<String, Object>> adapters = (List<Map<String, Object>>) config.get("opc-ua-adapter");
         for (Map<String, Object> objectMap : adapters) {
             final ObjectMapper objectMapper = new ObjectMapper();
             final OpcUaAdapterConfig adapterConfig = objectMapper.convertValue(objectMap, OpcUaAdapterConfig.class);
 
-            assertNotNull(adapterConfig);
+            assertThat(adapterConfig).isNotNull();
         }
-
-
     }
-
 }

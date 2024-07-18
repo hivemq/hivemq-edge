@@ -33,7 +33,6 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("NullabilityAnnotations")
 class OpcUaProtocolAdapterAuthTest {
 
     @RegisterExtension
@@ -48,7 +47,7 @@ class OpcUaProtocolAdapterAuthTest {
 
     @Test
     @Timeout(10)
-    public void whenNoAuthAndNoSubscriptions_thenConnectSuccessfully() throws Exception {
+    public void whenNoAuthAndNoSubscriptions_thenConnectSuccessfully() {
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         final OpcUaProtocolAdapter protocolAdapter =
@@ -63,7 +62,7 @@ class OpcUaProtocolAdapterAuthTest {
 
     @Test
     @Timeout(10)
-    public void whenBasicAuthAndNoSubscriptions_thenConnectSuccessfully() throws Exception {
+    public void whenBasicAuthAndNoSubscriptions_thenConnectSuccessfully() {
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
         config.setAuth(new OpcUaAdapterConfig.Auth(new OpcUaAdapterConfig.BasicAuth("testuser", "testpass"), null));
         when(protocolAdapterInput.getConfig()).thenReturn(config);
@@ -79,7 +78,7 @@ class OpcUaProtocolAdapterAuthTest {
 
     @Test
     @Timeout(10)
-    public void whenTlsAndNoSubscriptions_thenConnectSuccessfully() throws Exception {
+    public void whenTlsAndNoSubscriptions_thenConnectSuccessfully() {
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
         config.setSecurity(new OpcUaAdapterConfig.Security(OpcUaAdapterConfig.SecPolicy.NONE));
         config.setTls(new OpcUaAdapterConfig.Tls(true, null, null));
@@ -97,7 +96,7 @@ class OpcUaProtocolAdapterAuthTest {
 
     @Test
     @Timeout(10)
-    public void whenCertAuthAndNoSubscriptions_thenConnectSuccessfully() throws Exception {
+    public void whenCertAuthAndNoSubscriptions_thenConnectSuccessfully() {
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
         config.setAuth(new OpcUaAdapterConfig.Auth(null, new OpcUaAdapterConfig.X509Auth()));
         when(protocolAdapterInput.getConfig()).thenReturn(config);

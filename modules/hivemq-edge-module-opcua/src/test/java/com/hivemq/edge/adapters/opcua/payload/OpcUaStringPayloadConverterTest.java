@@ -38,14 +38,13 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SuppressWarnings("NullabilityAnnotations")
 @Disabled("String payload conversion is disabled atm")
 class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
 
-    public static final String TEST_UUID = "b12776f9-bf9f-460a-9984-89c5ac1ea724";
-    public static final byte[] TEST_BYTES = {1, 2, 3, 4, 5};
+    public static final @NotNull String TEST_UUID = "b12776f9-bf9f-460a-9984-89c5ac1ea724";
+    public static final byte @NotNull [] TEST_BYTES = {1, 2, 3, 4, 5};
 
-    private static Stream<Arguments> provideBaseTypes() {
+    private static @NotNull Stream<Arguments> provideBaseTypes() {
         return Stream.of(Arguments.of("Boolean", Identifiers.Boolean, true, "true"),
                 Arguments.of("Byte", Identifiers.Byte, 0, "0"),
                 Arguments.of("Byte", Identifiers.Byte, 255, "255"),
@@ -81,13 +80,6 @@ class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest 
             final @NotNull NodeId typeId,
             final @NotNull Object serverValue,
             final @NotNull String expectedValue) throws Exception {
-
-        checkAdapterResult(name, typeId, serverValue, expectedValue);
-    }
-
-    private void checkAdapterResult(
-            @NotNull String name, @NotNull NodeId typeId, @NotNull Object serverValue, @NotNull String expectedValue)
-            throws Exception {
         final String nodeId =
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> serverValue, 999);
 
@@ -96,8 +88,8 @@ class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest 
                 protocolAdapter.getProtocolAdapterState().getConnectionStatus());
 
         final PUBLISH publish = expectAdapterPublish();
-        protocolAdapter.stop(new ProtocolAdapterStopInput() {}, new ProtocolAdapterStopOutputImpl());
+        protocolAdapter.stop(new ProtocolAdapterStopInput() {
+        }, new ProtocolAdapterStopOutputImpl());
         assertThat(new String(publish.getPayload())).contains(expectedValue);
     }
-
 }

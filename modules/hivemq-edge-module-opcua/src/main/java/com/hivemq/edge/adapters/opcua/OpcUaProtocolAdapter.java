@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
@@ -74,7 +73,8 @@ import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 public class OpcUaProtocolAdapter implements ProtocolAdapter {
-    private static final Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
+
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -83,7 +83,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private @Nullable OpcUaClient opcUaClient;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap = new ConcurrentHashMap<>();
-    private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -96,7 +95,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
     }
 
-
     @Override
     public @NotNull String getId() {
         return adapterConfig.getId();
@@ -104,7 +102,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
 
     @Override
     public void start(
-            @NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
             if (opcUaClient == null) {
                 createClient();
@@ -119,19 +117,19 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                     }
                 });
             }).exceptionally(throwable -> {
-                log.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
+                LOG.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
                 stopInternal();
                 output.failStart(throwable, throwable.getMessage());
                 return null;
             });
-        } catch (Exception e) {
-            log.error("Not able to start OPC-UA client for server {}", adapterConfig.getUri(), e);
+        } catch (final Exception e) {
+            LOG.error("Not able to start OPC-UA client for server {}", adapterConfig.getUri(), e);
             output.failStart(e, "Not able to start OPC-UA client for server " + adapterConfig.getUri());
         }
     }
 
     @Override
-    public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
+    public void stop(final @NotNull ProtocolAdapterStopInput input, final @NotNull ProtocolAdapterStopOutput output) {
         stopInternal().whenComplete((aVoid, t) -> {
             if (t != null) {
                 output.failStop(t, null);
@@ -148,18 +146,16 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
             } else {
                 subscriptionMap.clear();
                 try {
-                    return opcUaClient.disconnect().thenAccept(client -> {
-                        protocolAdapterState.setConnectionStatus(DISCONNECTED);
-                    });
+                    return opcUaClient.disconnect()
+                            .thenAccept(client -> protocolAdapterState.setConnectionStatus(DISCONNECTED));
                 } finally {
                     opcUaClient = null;
                 }
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return CompletableFuture.failedFuture(e);
         }
     }
-
 
     @Override
     public @NotNull CompletableFuture<Void> discoverValues(
@@ -180,13 +176,14 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
             browseRoot = parsedNodeId.get();
         }
 
-        return browse(0, opcUaClient, browseRoot, null, (ref, parent) -> {
+        return browse(opcUaClient, browseRoot, null, (ref, parent) -> {
             final String name = ref.getBrowseName() != null ? ref.getBrowseName().getName() : "";
             final String displayName = ref.getDisplayName() != null ? ref.getDisplayName().getText() : "";
             final NodeType nodeType = getNodeType(ref);
             output.getNodeTree()
                     .addNode(ref.getNodeId().toParseableString(),
-                            requireNonNullElse(name, ""), ref.getNodeId().toParseableString(),
+                            requireNonNullElse(name, ""),
+                            ref.getNodeId().toParseableString(),
                             requireNonNullElse(displayName, ""),
                             parent != null ? parent.getNodeId().toParseableString() : null,
                             nodeType != null ? nodeType : NodeType.VALUE,
@@ -199,8 +196,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         return adapterInformation;
     }
 
-    @NotNull
-    private OpcUaSubscriptionListener createSubscriptionListener() {
+    private @NotNull OpcUaSubscriptionListener createSubscriptionListener() {
         return new OpcUaSubscriptionListener(protocolAdapterMetricsService, adapterConfig.getId(), (subscription) -> {
             //re-create a subscription on failure
             final OpcUaAdapterConfig.Subscription subscriptionConfig =
@@ -209,13 +205,13 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                 try {
                     subscribeToNode(subscriptionConfig).get();
                 } catch (InterruptedException | ExecutionException e) {
-                    log.error("Not able to recreate OPC-UA subscription after transfer failure", e);
+                    LOG.error("Not able to recreate OPC-UA subscription after transfer failure", e);
                 }
             }
         });
     }
 
-    private CompletableFuture<Void> createAllSubscriptions() {
+    private @NotNull CompletableFuture<Void> createAllSubscriptions() {
         //noinspection ConstantValue
         if (adapterConfig.getSubscriptions() == null || adapterConfig.getSubscriptions().isEmpty()) {
             return CompletableFuture.completedFuture(null);
@@ -272,10 +268,9 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
 
     private @NotNull CompletableFuture<Void> subscribeToNode(final @NotNull OpcUaAdapterConfig.Subscription subscription) {
         try {
-
             final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
 
-            ReadValueId readValueId = new ReadValueId(NodeId.parse(subscription.getNode()),
+            final ReadValueId readValueId = new ReadValueId(NodeId.parse(subscription.getNode()),
                     AttributeId.Value.uid(),
                     null,
                     QualifiedName.NULL_VALUE);
@@ -295,7 +290,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                             this,
                             adapterFactories));
             return resultFuture;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             return CompletableFuture.failedFuture(e);
         }
     }
@@ -319,13 +314,12 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     }
 
     private @NotNull CompletableFuture<Void> browse(
-            int indent,
             final @NotNull OpcUaClient client,
             final @NotNull NodeId browseRoot,
             final @Nullable ReferenceDescription parent,
             final @NotNull BiConsumer<ReferenceDescription, ReferenceDescription> callback,
             final int depth) {
-        BrowseDescription browse = new BrowseDescription(browseRoot,
+        final BrowseDescription browse = new BrowseDescription(browseRoot,
                 BrowseDirection.Forward,
                 null,
                 true,
@@ -333,40 +327,34 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                 uint(BrowseResultMask.All.getValue()));
 
         try {
-            BrowseResult browseResult = client.browse(browse).get();
-            return handleBrowseResult(indent, client, parent, callback, depth, browseResult);
+            final BrowseResult browseResult = client.browse(browse).get();
+            return handleBrowseResult(client, parent, callback, depth, browseResult);
         } catch (InterruptedException | ExecutionException e) {
-            log.error("Browsing nodeId={} failed: {}", browseRoot, e.getMessage(), e);
+            LOG.error("Browsing nodeId={} failed: {}", browseRoot, e.getMessage(), e);
             return CompletableFuture.failedFuture(e);
         }
     }
 
-    @NotNull
-    private CompletableFuture<Void> handleBrowseResult(
-            int indent,
-            @NotNull OpcUaClient client,
-            @Nullable ReferenceDescription parent,
-            @NotNull BiConsumer<ReferenceDescription, ReferenceDescription> callback,
-            int depth,
-            BrowseResult browseResult) throws InterruptedException, ExecutionException {
-        ReferenceDescription[] references = browseResult.getReferences();
+    private @NotNull CompletableFuture<Void> handleBrowseResult(
+            final @NotNull OpcUaClient client,
+            final @Nullable ReferenceDescription parent,
+            final @NotNull BiConsumer<ReferenceDescription, ReferenceDescription> callback,
+            final int depth,
+            final BrowseResult browseResult) throws InterruptedException, ExecutionException {
+        final ReferenceDescription[] references = browseResult.getReferences();
 
         final ImmutableList.Builder<CompletableFuture<Void>> childFutures = ImmutableList.builder();
 
         if (references == null) {
             return CompletableFuture.completedFuture(null);
         }
-        for (ReferenceDescription rd : references) {
+
+        for (final ReferenceDescription rd : references) {
             callback.accept(rd, parent);
             // recursively browse to children
             if (depth > 1) {
                 final Optional<NodeId> childNodeId = rd.getNodeId().toNodeId(client.getNamespaceTable());
-                childNodeId.ifPresent(nodeId -> childFutures.add(browse(indent + 1,
-                        client,
-                        nodeId,
-                        rd,
-                        callback,
-                        depth - 1)));
+                childNodeId.ifPresent(nodeId -> childFutures.add(browse(client, nodeId, rd, callback, depth - 1)));
             }
         }
 
@@ -374,7 +362,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         if (continuationPoint != null && !continuationPoint.isNull()) {
             final BrowseResult nextBrowseResult =
                     Objects.requireNonNull(opcUaClient).browseNext(false, continuationPoint).get();
-            handleBrowseResult(indent, opcUaClient, parent, callback, depth, nextBrowseResult);
+            handleBrowseResult(opcUaClient, parent, callback, depth, nextBrowseResult);
         }
 
         return CompletableFuture.allOf(childFutures.build().toArray(new CompletableFuture[]{}));

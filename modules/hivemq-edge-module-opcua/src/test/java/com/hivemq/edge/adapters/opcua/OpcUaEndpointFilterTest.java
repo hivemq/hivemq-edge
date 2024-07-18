@@ -33,13 +33,11 @@ import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.BASIC2
 import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.BASIC256SHA256;
 import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.DEFAULT;
 import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.NONE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class OpcUaEndpointFilterTest {
 
-    private final List<String> allUris = convertToUri(List.of(NONE,
+    private final @NotNull List<String> allUris = convertToUri(List.of(NONE,
             BASIC128RSA15,
             BASIC256,
             BASIC256SHA256,
@@ -53,8 +51,8 @@ class OpcUaEndpointFilterTest {
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));
 
-        assertTrue(result.isPresent());
-        assertEquals(BASIC256SHA256.getSecurityPolicy().getUri(), result.get().getSecurityPolicyUri());
+        assertThat(result.isPresent()).isTrue();
+        assertThat(BASIC256SHA256.getSecurityPolicy().getUri()).isEqualTo(result.get().getSecurityPolicyUri());
     }
 
     @Test
@@ -64,7 +62,7 @@ class OpcUaEndpointFilterTest {
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));
 
-        assertFalse(result.isPresent());
+        assertThat(result.isPresent()).isFalse();
     }
 
     @Test
@@ -75,7 +73,7 @@ class OpcUaEndpointFilterTest {
         final Optional<EndpointDescription> result =
                 opcUaEndpointFilter.apply(convertToEndpointDescription(convertToUri(List.of(NONE))));
 
-        assertFalse(result.isPresent());
+        assertThat(result.isPresent()).isFalse();
     }
 
     @Test
@@ -84,8 +82,8 @@ class OpcUaEndpointFilterTest {
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));
 
-        assertTrue(result.isPresent());
-        assertEquals(NONE.getSecurityPolicy().getUri(), result.get().getSecurityPolicyUri());
+        assertThat(result.isPresent()).isTrue();
+        assertThat(NONE.getSecurityPolicy().getUri()).isEqualTo(result.get().getSecurityPolicyUri());
     }
 
     @NotNull
@@ -104,18 +102,17 @@ class OpcUaEndpointFilterTest {
         return endpointList;
     }
 
-    private @NotNull List<String> convertToUri(@NotNull List<OpcUaAdapterConfig.SecPolicy> policies) {
+    private @NotNull List<String> convertToUri(final @NotNull List<OpcUaAdapterConfig.SecPolicy> policies) {
         return policies.stream()
                 .map(secPolicy -> secPolicy.getSecurityPolicy().getUri())
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    private @NotNull String convertToUri(@NotNull OpcUaAdapterConfig.SecPolicy policy) {
+    private @NotNull String convertToUri(final @NotNull OpcUaAdapterConfig.SecPolicy policy) {
         return policy.getSecurityPolicy().getUri();
     }
 
-    @NotNull
-    private OpcUaAdapterConfig getConfig() {
+    private @NotNull OpcUaAdapterConfig getConfig() {
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("id", "opc.tcp://127.0.0.1:49320");
         config.setTls(new OpcUaAdapterConfig.Tls(true, new OpcUaAdapterConfig.Keystore("path", null, null), null));
         return config;
