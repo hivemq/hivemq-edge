@@ -1,5 +1,4 @@
 import { RegistryWidgetsType, UiSchema } from '@rjsf/utils'
-import AdapterTagSelect from '@/components/rjsf/Widgets/AdapterTagSelect.tsx'
 
 export const getRequiredUiSchema = (uiSchema: UiSchema | undefined, isNewAdapter: boolean): UiSchema => {
   const { ['ui:submitButtonOptions']: submitButtonOptions, id, ...rest } = uiSchema || {}
@@ -19,5 +18,6 @@ export const getRequiredUiSchema = (uiSchema: UiSchema | undefined, isNewAdapter
 }
 
 export const adapterJSFWidgets: RegistryWidgetsType = {
-  'discovery:tagBrowser': AdapterTagSelect,
+  // @ts-ignore [24369] Turn discovery browser off (and replace by regular text input)
+  'discovery:tagBrowser': 'text',
 }
