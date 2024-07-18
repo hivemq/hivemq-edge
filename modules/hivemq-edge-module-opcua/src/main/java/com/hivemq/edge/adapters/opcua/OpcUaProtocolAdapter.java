@@ -73,7 +73,7 @@ import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
 public class OpcUaProtocolAdapter implements ProtocolAdapter {
-    private static final Logger LOG = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
+    private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaAdapterConfig adapterConfig;
@@ -117,13 +117,13 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                     }
                 });
             }).exceptionally(throwable -> {
-                LOG.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
+                log.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
                 stopInternal();
                 output.failStart(throwable, throwable.getMessage());
                 return null;
             });
         } catch (final Exception e) {
-            LOG.error("Not able to start OPC-UA client for server {}", adapterConfig.getUri(), e);
+            log.error("Not able to start OPC-UA client for server {}", adapterConfig.getUri(), e);
             output.failStart(e, "Not able to start OPC-UA client for server " + adapterConfig.getUri());
         }
     }
@@ -205,7 +205,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                 try {
                     subscribeToNode(subscriptionConfig).get();
                 } catch (InterruptedException | ExecutionException e) {
-                    LOG.error("Not able to recreate OPC-UA subscription after transfer failure", e);
+                    log.error("Not able to recreate OPC-UA subscription after transfer failure", e);
                 }
             }
         });
@@ -330,7 +330,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
             final BrowseResult browseResult = client.browse(browse).get();
             return handleBrowseResult(client, parent, callback, depth, browseResult);
         } catch (InterruptedException | ExecutionException e) {
-            LOG.error("Browsing nodeId={} failed: {}", browseRoot, e.getMessage(), e);
+            log.error("Browsing nodeId={} failed: {}", browseRoot, e.getMessage(), e);
             return CompletableFuture.failedFuture(e);
         }
     }
