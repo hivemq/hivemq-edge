@@ -307,11 +307,9 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
         CompletableFuture<WriteMultipleRegistersResponse> future =
                 modbusClient.writeMultipleRegister(destinationRegister, offset, convert);
         future.whenComplete(((writeSingleRegisterResponse, throwable) -> {
-            System.err.println("COMPLETED");
             if (throwable != null) {
                 writeOutput.fail(throwable, null, false);
             } else {
-                System.err.println(future);
                 writeOutput.finish();
             }
         }));
