@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
+import com.digitalpetri.modbus.responses.WriteMultipleRegistersResponse;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.WriteContext;
@@ -23,6 +24,7 @@ import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
+import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -39,6 +41,7 @@ import com.hivemq.edge.adapters.modbus.config.PollingContextImpl;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
+import com.hivemq.edge.adapters.modbus.writing.ConvertibleDataType;
 import com.hivemq.edge.adapters.modbus.writing.ModbusWriteContext;
 import com.hivemq.edge.adapters.modbus.writing.ModbusWritePayload;
 import org.jetbrains.annotations.NotNull;
@@ -51,6 +54,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
@@ -172,8 +176,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
         //-- Do the discovery of registers and coils, only for root level
         final NodeTree nodeTree = output.getNodeTree();
         if (input.getRootNode() == null) {
-            nodeTree.addNode("holding-registers",
-                    "Holding Registers", "Holding Registers", "Holding Registers",
+            nodeTree.addNode("holding-registers", "Holding Registers", "Holding Registers", "Holding Registers",
                     null,
                     NodeType.FOLDER,
                     false);
@@ -245,8 +248,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
 
         String parentNode = parent;
         if (groupIdx < count) {
-            tree.addNode("grouping-" + startIdx,
-                    "Addresses " + startIdx + "-" + (startIdx + groupIdx - 1), "", "",
+            tree.addNode("grouping-" + startIdx, "Addresses " + startIdx + "-" + (startIdx + groupIdx - 1), "", "",
                     parent,
                     NodeType.FOLDER,
                     false);
@@ -261,8 +263,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
                     NodeType.VALUE,
                     true);
             if (i % groupIdx == 0 && i < count) {
-                tree.addNode("grouping-" + i,
-                        "Addresses " + (i + 1) + "-" + (i + groupIdx), "", "",
+                tree.addNode("grouping-" + i, "Addresses " + (i + 1) + "-" + (i + groupIdx), "", "",
                         parent,
                         NodeType.FOLDER,
                         false);
@@ -276,26 +277,44 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
             @NotNull final WriteInput<ModbusWritePayload, ModbusWriteContext> input,
             @NotNull final WriteOutput writeOutput) {
 
+        if (!modbusClient.isConnected()) {
+            try {
+                modbusClient.connect().thenRun(() -> protocolAdapterState.setConnectionStatus(CONNECTED)).get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            } catch (ProtocolAdapterException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         final int destinationRegister = input.getWriteContext().getDestination();
         final Object value = input.getWritePayload().getValue();
-        if (value instanceof Integer) {
-            modbusClient.writeSingleRegister(destinationRegister, (Integer) value)
-                    .whenComplete(((writeSingleRegisterResponse, throwable) -> {
-                        if (throwable != null) {
-                            writeOutput.fail(throwable, null, false);
-                        } else {
-                            writeOutput.finish();
-                        }
-                    }));
-        } else {
-            //TODO
-            byte[] serialized = new byte[0];
-            int quantity = serialized.length / 2;
-            modbusClient.writeMultipleRegister(destinationRegister, quantity, serialized);
-            writeOutput.fail("Integer as write payload for Modbus expected, but was tyte: " + value.getClass(), false);
+        final int offset = input.getWriteContext().getOffset();
+        final ConvertibleDataType inputDataType = input.getWriteContext().getConvertibleDataType();
+        final byte[] convert = inputDataType.convert(value);
+        if (convert.length != offset * 2) {
+            // the converted byte array is bigger than the amount of registers we have (each register stores 16bit/2Byte)
+            writeOutput.fail(String.format(
+                    "The serialized data needs '%d' bytes to be stored, but '%d' registers were specified, which can store '%d' bytes. The serialized byte array must have exactly this size.",
+                    convert.length,
+                    offset,
+                    2 * offset), false);
             return;
         }
 
+        CompletableFuture<WriteMultipleRegistersResponse> future =
+                modbusClient.writeMultipleRegister(destinationRegister, offset, convert);
+        future.whenComplete(((writeSingleRegisterResponse, throwable) -> {
+            System.err.println("COMPLETED");
+            if (throwable != null) {
+                writeOutput.fail(throwable, null, false);
+            } else {
+                System.err.println(future);
+                writeOutput.finish();
+            }
+        }));
     }
 
     @Override

@@ -39,6 +39,20 @@ public class ModbusWriteContext implements WriteContext {
                        required = true)
     private int destination;
 
+    @JsonProperty("offset")
+    @ModuleConfigField(title = "Offset in the Registers",
+                       description = "The amount of registers that hold the serialized 16-bit chunks. F.e. a Short would fit into a single register (opffset=1), while a Integer needs two (offset=2).",
+                       defaultValue = "1",
+                       required = true)
+    private int offset = 1;
+
+    @JsonProperty("dataType")
+    @ModuleConfigField(title = "Input Data Type which will be converted",
+                       description = "As registers in Modbus are 16 bit, more complex data types need to be serialized before they can be written to modbus.",
+                       required = true)
+    private ConvertibleDataType convertibleDataType;
+
+
     @Override
     public @Nullable String getSourceMqttTopic() {
         return source;
@@ -56,5 +70,13 @@ public class ModbusWriteContext implements WriteContext {
 
     public int getDestination() {
         return destination;
+    }
+
+    public int getOffset() {
+        return offset;
+    }
+
+    public ConvertibleDataType getConvertibleDataType() {
+        return convertibleDataType;
     }
 }

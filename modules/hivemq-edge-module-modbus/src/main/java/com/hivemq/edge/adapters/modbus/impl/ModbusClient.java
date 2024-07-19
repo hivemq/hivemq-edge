@@ -26,6 +26,7 @@ import com.digitalpetri.modbus.responses.ModbusResponse;
 import com.digitalpetri.modbus.responses.ReadCoilsResponse;
 import com.digitalpetri.modbus.responses.ReadHoldingRegistersResponse;
 import com.digitalpetri.modbus.responses.ReadInputRegistersResponse;
+import com.digitalpetri.modbus.responses.WriteMultipleRegistersResponse;
 import com.digitalpetri.modbus.responses.WriteSingleRegisterResponse;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.edge.adapters.modbus.IModbusClient;
@@ -37,6 +38,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -45,25 +48,28 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ModbusClient implements IModbusClient {
 
-    static Logger log = LoggerFactory.getLogger(ModbusClient.class.getName());
+    static @NotNull Logger log = LoggerFactory.getLogger(ModbusClient.class.getName());
     private final @NotNull ModbusAdapterConfig adapterConfig;
     private final Object lock = new Object();
-    private ModbusTcpMaster modbusClient;
-    private AtomicBoolean connected = new AtomicBoolean(false);
+
+    private @NotNull ModbusTcpMaster modbusClient;
+
+    private @NotNull AtomicBoolean connected = new AtomicBoolean(false);
 
     public ModbusClient(final @NotNull ModbusAdapterConfig adapterConfig) {
         this.adapterConfig = adapterConfig;
     }
 
-    private ModbusTcpMaster getOrCreateClient() {
+
+    private @NotNull ModbusTcpMaster getOrCreateClient() {
         if (modbusClient == null) {
             synchronized (lock) {
                 if (modbusClient == null) {
-                    ModbusTcpMasterConfig config = new ModbusTcpMasterConfig.Builder(adapterConfig.getHost()).
-                            setPort(adapterConfig.getPort()).
-                            setInstanceId(adapterConfig.getId()).
-                            setTimeout(Duration.ofMillis(adapterConfig.getTimeout())).
-                            build();
+                    ModbusTcpMasterConfig config =
+                            new ModbusTcpMasterConfig.Builder(adapterConfig.getHost()).setPort(adapterConfig.getPort())
+                                    .setInstanceId(adapterConfig.getId())
+                                    .setTimeout(Duration.ofMillis(adapterConfig.getTimeout()))
+                                    .build();
                     modbusClient = new ModbusTcpMaster(config);
                 }
             }
@@ -76,6 +82,7 @@ public class ModbusClient implements IModbusClient {
         return connected.get();
     }
 
+    @NotNull
     @Override
     public CompletableFuture connect() {
         ModbusTcpMaster client = getOrCreateClient();
@@ -85,6 +92,7 @@ public class ModbusClient implements IModbusClient {
         return CompletableFuture.completedFuture(null);
     }
 
+    @NotNull
     @Override
     public Boolean[] readCoils(int startIdx, int count) throws ProtocolAdapterException {
         try {
@@ -110,8 +118,9 @@ public class ModbusClient implements IModbusClient {
         }
     }
 
+
     @Override
-    public Short[] readHoldingRegisters(int startIdx, int count) throws ProtocolAdapterException {
+    public Short @NotNull [] readHoldingRegisters(int startIdx, int count) throws ProtocolAdapterException {
         try {
             ModbusTcpMaster client = getOrCreateClient();
             CompletableFuture<ReadHoldingRegistersResponse> future =
@@ -135,8 +144,9 @@ public class ModbusClient implements IModbusClient {
         }
     }
 
+
     @Override
-    public Short[] readInputRegisters(int startIdx, int count) throws ProtocolAdapterException {
+    public Short @NotNull [] readInputRegisters(int startIdx, int count) throws ProtocolAdapterException {
 
         try {
             ModbusTcpMaster client = getOrCreateClient();
@@ -173,11 +183,20 @@ public class ModbusClient implements IModbusClient {
     }
 
     @Override
-    public @NotNull CompletableFuture<WriteSingleRegisterResponse> writeMultipleRegister(
-            int address, int quantity, byte[] bytes) {
+    public @NotNull CompletableFuture<WriteMultipleRegistersResponse> writeMultipleRegister(
+            int address, int quantity, byte @NotNull [] bytes) {
         try {
             final ModbusTcpMaster client = getOrCreateClient();
+            System.err.println("WRITE INVOKED");
+
+            System.err.println(quantity + Arrays.toString(bytes));
+
+            final byte[] mockedBytes = new byte[4];
+            new Random().nextBytes(mockedBytes);
+
             return client.sendRequest(new WriteMultipleRegistersRequest(address, quantity, bytes), 1);
+            //  return client.sendRequest(new WriteSingleRegisterRequest(address, 1), 1);
+
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
@@ -191,7 +210,7 @@ public class ModbusClient implements IModbusClient {
             try {
                 modbusClient.disconnect().get();
                 return true;
-            } catch(Exception e){
+            } catch (Exception e) {
                 //error disconnecting
             }
         }
