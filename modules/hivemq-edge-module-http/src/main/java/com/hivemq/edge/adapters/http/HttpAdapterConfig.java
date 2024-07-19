@@ -44,7 +44,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     public static final @NotNull String HTML_MIME_TYPE = "text/html";
-    public static final @NotNull  String PLAIN_MIME_TYPE = "text/plain";
+    public static final @NotNull String PLAIN_MIME_TYPE = "text/plain";
     public static final @NotNull String JSON_MIME_TYPE = "application/json";
     public static final String XML_MIME_TYPE = "application/xml";
     public static final String YAML_MIME_TYPE = "application/yaml";
@@ -100,8 +100,10 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     private int maxPollingErrorsBeforeRemoval = 10;
 
     @JsonProperty("url")
-    @ModuleConfigField(title = "URL", description = "The url of the http request you would like to make",
-                       format = ModuleConfigField.FieldType.URI, required = true)
+    @ModuleConfigField(title = "URL",
+                       description = "The url of the http request you would like to make",
+                       format = ModuleConfigField.FieldType.URI,
+                       required = true)
     private @NotNull String url;
 
     @JsonProperty(value = "destination", required = true)

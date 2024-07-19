@@ -64,8 +64,8 @@ public class HttpData implements ProtocolAdapterDataSample {
         return contentType;
     }
 
-    public int getHttpStatusCode() {
-        return httpStatusCode;
+    public boolean isSuccessStatusCode() {
+        return httpStatusCode >= 200 && httpStatusCode <= 299;
     }
 
     @Override
@@ -86,12 +86,12 @@ public class HttpData implements ProtocolAdapterDataSample {
     }
 
     @Override
-    public void addDataPoint(@NotNull final DataPoint dataPoint) {
+    public void addDataPoint(final @NotNull DataPoint dataPoint) {
         dataPoints.add(dataPoint);
     }
 
     @Override
-    public void setDataPoints(@NotNull List<DataPoint> list) {
+    public void setDataPoints(final @NotNull List<DataPoint> list) {
         this.dataPoints = list;
     }
 
