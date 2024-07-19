@@ -149,7 +149,7 @@ public class JsonToOpcUAConverter {
         if (builtinDataType == BuiltinDataType.ExtensionObject) {
             final String namespaceURI = fieldType.getTypeName().getNamespaceURI();
             final ExpandedNodeId expandedNodeId = new ExpandedNodeId.Builder().setNamespaceUri(namespaceURI)
-                    .setIdentifier("DataType." + fieldType.getTypeName().getLocalPart())
+                    .setIdentifier(fieldType.getTypeName().getLocalPart())
                     .build();
 
 
