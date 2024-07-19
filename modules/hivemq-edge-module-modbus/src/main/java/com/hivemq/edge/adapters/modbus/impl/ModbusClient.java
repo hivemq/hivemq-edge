@@ -38,8 +38,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -187,16 +185,7 @@ public class ModbusClient implements IModbusClient {
             int address, int quantity, byte @NotNull [] bytes) {
         try {
             final ModbusTcpMaster client = getOrCreateClient();
-            System.err.println("WRITE INVOKED");
-
-            System.err.println(quantity + Arrays.toString(bytes));
-
-            final byte[] mockedBytes = new byte[4];
-            new Random().nextBytes(mockedBytes);
-
             return client.sendRequest(new WriteMultipleRegistersRequest(address, quantity, bytes), 1);
-            //  return client.sendRequest(new WriteSingleRegisterRequest(address, 1), 1);
-
         } catch (Exception e) {
             return CompletableFuture.failedFuture(e);
         }
