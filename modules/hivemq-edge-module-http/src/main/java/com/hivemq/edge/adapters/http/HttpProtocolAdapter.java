@@ -52,7 +52,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -187,7 +186,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
 
     @Override
     public int getPollingIntervalMillis() {
-        return adapterConfig.getPollingIntervalMillis();
+        return (int) adapterConfig.getPollingInterval().toMillis();
     }
 
     @Override
@@ -201,7 +200,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
             HttpClient.Builder builder = HttpClient.newBuilder();
             builder.version(HttpClient.Version.HTTP_1_1)
                     .followRedirects(HttpClient.Redirect.NORMAL)
-                    .connectTimeout(Duration.ofSeconds(config.getHttpConnectTimeout()));
+                    .connectTimeout(config.getHttpConnectTimeout());
             if (config.isAllowUntrustedCertificates()) {
                 builder.sslContext(createTrustAllContext());
             }
@@ -237,11 +236,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
     protected @NotNull CompletableFuture<HttpData> executeInternal(
             @NotNull final HttpAdapterConfig config, @NotNull final HttpRequest.Builder builder) {
         builder.uri(URI.create(config.getUrl()));
-        //-- Ensure we apply a reasonable timeout so we don't hang threads
-        Integer timeout = config.getHttpConnectTimeout();
-        timeout = timeout == null ? HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS : timeout;
-        timeout = Math.max(timeout, HttpAdapterConstants.MAX_TIMEOUT_SECONDS);
-        builder.timeout(Duration.ofSeconds(timeout));
+        builder.timeout(adapterConfig.getHttpConnectTimeout());
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
         if (config.getHttpHeaders() != null && !config.getHttpHeaders().isEmpty()) {
             config.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));

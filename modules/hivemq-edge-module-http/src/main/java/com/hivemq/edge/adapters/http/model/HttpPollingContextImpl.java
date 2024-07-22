@@ -15,8 +15,6 @@
  */
 package com.hivemq.edge.adapters.http.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
@@ -27,59 +25,50 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HttpPollingContextImpl implements PollingContext {
+@SuppressWarnings("FieldCanBeLocal")
+public final class HttpPollingContextImpl implements PollingContext {
 
-    @JsonProperty(value = "destination", required = true)
     @ModuleConfigField(title = "Destination Topic",
                        description = "The topic to publish data on",
                        required = true,
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
-    protected @Nullable String destination;
+    private final @NotNull String destination;
 
-    @JsonProperty(value = "qos", required = true)
     @ModuleConfigField(title = "QoS",
                        description = "MQTT Quality of Service level",
                        required = true,
                        numberMin = 0,
                        numberMax = 2,
                        defaultValue = "0")
-    protected int qos = 0;
+    private final int qos;
 
-    @JsonProperty(value = "messageHandlingOptions")
     @ModuleConfigField(title = "Message Handling Options",
                        description = "This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample",
                        enumDisplayValues = {
                                "MQTT Message Per Device Tag",
                                "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
                        defaultValue = "MQTTMessagePerTag")
-    protected @NotNull MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
+    private final @NotNull MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
 
-    @JsonProperty(value = "includeTimestamp")
     @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
                        description = "Include the unix timestamp of the sample time in the resulting MQTT message",
                        defaultValue = "true")
-    protected @NotNull Boolean includeTimestamp = Boolean.TRUE;
+    private final boolean includeTimestamp = true;
 
-    @JsonProperty(value = "includeTagNames")
     @ModuleConfigField(title = "Include Tag Names In Publish?",
                        description = "Include the names of the tags in the resulting MQTT publish",
                        defaultValue = "false")
-    protected @NotNull Boolean includeTagNames = Boolean.FALSE;
+    private final boolean includeTagNames = false;
 
-    @JsonProperty(value = "userProperties")
     @ModuleConfigField(title = "User Properties",
                        description = "Arbitrary properties to associate with the subscription",
                        arrayMaxItems = 10)
     private @NotNull List<UserProperty> userProperties = new ArrayList<>();
 
-    public HttpPollingContextImpl() {
-    }
-
-    @JsonCreator
     public HttpPollingContextImpl(
-            @JsonProperty("destination") @Nullable final String destination,
-            @JsonProperty("qos") final int qos,
-            @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {
+            final @NotNull String destination,
+            final int qos,
+            final @Nullable List<UserProperty> userProperties) {
         this.destination = destination;
         this.qos = qos;
         if (userProperties != null) {
@@ -88,7 +77,7 @@ public class HttpPollingContextImpl implements PollingContext {
     }
 
     @Override
-    public @Nullable String getDestinationMqttTopic() {
+    public @NotNull String getDestinationMqttTopic() {
         return destination;
     }
 
