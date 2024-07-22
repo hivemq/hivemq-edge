@@ -17,7 +17,6 @@ package com.hivemq.edge.adapters.http;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
@@ -84,7 +83,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
     private final @NotNull HttpPollingContextImpl pollingContext;
 
     private volatile @Nullable HttpClient httpClient = null;
-    private final @NotNull Object lock = new Object();
     private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
 
     public HttpProtocolAdapter(
@@ -109,21 +107,18 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
             final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
         try {
             protocolAdapterState.setConnectionStatus(STATELESS);
-            synchronized (lock) {
-                if (httpClient == null) {
-                    if (HttpUtils.validHttpOrHttpsUrl(adapterConfig.getUrl())) {
-                        //initialize client
-                        final HttpClient.Builder builder = HttpClient.newBuilder();
-                        builder.version(HttpClient.Version.HTTP_1_1)
-                                .followRedirects(HttpClient.Redirect.NORMAL)
-                                .connectTimeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeout()));
-                        if (adapterConfig.isAllowUntrustedCertificates()) {
-                            builder.sslContext(createTrustAllContext());
-                        }
-                        httpClient = builder.build();
-                    } else {
-                        protocolAdapterState.setErrorConnectionStatus(null, "Invalid URL supplied");
+            if (httpClient == null) {
+                if (HttpUtils.validHttpOrHttpsUrl(adapterConfig.getUrl())) {
+                    final HttpClient.Builder builder = HttpClient.newBuilder();
+                    builder.version(HttpClient.Version.HTTP_1_1)
+                            .followRedirects(HttpClient.Redirect.NORMAL)
+                            .connectTimeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeout()));
+                    if (adapterConfig.isAllowUntrustedCertificates()) {
+                        builder.sslContext(createTrustAllContext());
                     }
+                    httpClient = builder.build();
+                } else {
+                    protocolAdapterState.setErrorConnectionStatus(null, "Invalid URL supplied");
                 }
             }
             output.startedSuccessfully();
@@ -220,7 +215,8 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
                         if (responseContentType == null) {
                             responseContentType = PLAIN_MIME_TYPE;
                         }
-                        final String base64 = Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
+                        final String base64 =
+                                Base64.getEncoder().encodeToString(bodyData.getBytes(StandardCharsets.UTF_8));
                         payloadData = String.format(BASE64_ENCODED_VALUE, responseContentType, base64);
                     }
                 }
@@ -251,9 +247,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
             }
 
             if (data.isSuccessStatusCode() || !adapterConfig.isHttpPublishSuccessStatusCodeOnly()) {
-                for (final DataPoint dataPoint : data.getDataPoints()) {
-                    pollingOutput.addDataPoint(dataPoint);
-                }
+                data.getDataPoints().forEach(pollingOutput::addDataPoint);
             }
             pollingOutput.finish();
         });
