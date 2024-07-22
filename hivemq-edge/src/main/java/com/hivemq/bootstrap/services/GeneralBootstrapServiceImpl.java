@@ -33,18 +33,21 @@ public class GeneralBootstrapServiceImpl implements GeneralBootstrapService {
     private final @NotNull SystemInformation systemInformation;
     private final @NotNull ConfigurationService configurationService;
     private final @NotNull HivemqId hivemqId;
+    private final @NotNull EdgeCoreFactoryService edgeCoreFactoryService;
 
     public GeneralBootstrapServiceImpl(
             final @NotNull ShutdownHooks shutdownHooks,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull SystemInformation systemInformation,
             final @NotNull ConfigurationService configurationService,
-            final @NotNull HivemqId hivemqId) {
+            final @NotNull HivemqId hivemqId,
+            final @NotNull EdgeCoreFactoryService edgeCoreFactoryService) {
         this.shutdownHooks = shutdownHooks;
         this.metricRegistry = metricRegistry;
         this.systemInformation = systemInformation;
         this.configurationService = configurationService;
         this.hivemqId = hivemqId;
+        this.edgeCoreFactoryService = edgeCoreFactoryService;
     }
 
     @Override
@@ -70,6 +73,11 @@ public class GeneralBootstrapServiceImpl implements GeneralBootstrapService {
     @Override
     public @NotNull HivemqId getHivemqId() {
         return hivemqId;
+    }
+
+    @Override
+    public @NotNull EdgeCoreFactoryService edgeCoreFactoryService() {
+        return edgeCoreFactoryService;
     }
 
 

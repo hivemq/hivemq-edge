@@ -16,6 +16,7 @@
 package com.hivemq.bootstrap.services;
 
 import com.codahale.metrics.MetricRegistry;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.bootstrap.ioc.Persistences;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
@@ -100,6 +101,11 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     }
 
     @Override
+    public @NotNull EventService eventService() {
+        return delegate.eventService();
+    }
+
+    @Override
     public @NotNull ProtocolAdapterManager protocolAdapterManager() {
         return protocolAdapterManager;
     }
@@ -107,6 +113,11 @@ public class AfterHiveMQStartBootstrapServiceImpl implements AfterHiveMQStartBoo
     @Override
     public @NotNull ModulesAndExtensionsService modulesAndExtensionsService() {
         return modulesAndExtensionsService;
+    }
+
+    @Override
+    public @NotNull EdgeCoreFactoryService edgeCoreFactoryService() {
+        return delegate.edgeCoreFactoryService();
     }
 
     public static @NotNull AfterHiveMQStartBootstrapService decorate(
