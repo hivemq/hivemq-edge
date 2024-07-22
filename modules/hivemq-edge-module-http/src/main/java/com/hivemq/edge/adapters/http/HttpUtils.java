@@ -20,11 +20,11 @@ import org.jetbrains.annotations.NotNull;
 import java.net.URL;
 
 public class HttpUtils {
-    public static boolean validHttpOrHttpsUrl(@NotNull final String url){
+    public static boolean validHttpOrHttpsUrl(final @NotNull String url) {
         try {
             new URL(url);
             return true;
-        } catch(Exception e){
+        } catch (Exception e) {
             return false;
         }
     }

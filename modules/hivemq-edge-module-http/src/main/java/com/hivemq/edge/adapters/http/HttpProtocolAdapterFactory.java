@@ -33,8 +33,8 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(
-            @NotNull final ProtocolAdapterInformation adapterInformation,
-            @NotNull final ProtocolAdapterInput<HttpAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            final @NotNull ProtocolAdapterInput<HttpAdapterConfig> input) {
         return new HttpProtocolAdapter(adapterInformation, input);
     }
 
