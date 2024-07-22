@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -72,7 +73,7 @@ public class TestHttpAdapterConfig {
         mapper = ProtocolAdapterUtils.createProtocolAdapterMapper(mapper);
         HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
         HttpAdapterConfig config = httpProtocolAdapterFactory.convertConfigObject(mapper, map);
-        assertNull(config.getHttpHeaders(), "Header array should be null to match coercion");
+        assertTrue(config.getHttpHeaders().isEmpty(), "Header array should be null to match coercion");
     }
 
     @Test
