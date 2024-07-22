@@ -7,12 +7,13 @@
     },
     {
       "id": "subFields",
-      "title": "Subscription",
+      "title" : "Read",
+      "description" : "Test",
       "properties": ["subscriptions"]
     },
     {
       "id" : "mqttToOpcUAFields",
-      "title" : "Mqtt to OpcUA",
+      "title" : "Write",
       "properties" : [
         "mqtt-to-opcua-mappings"
       ]

@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.bootstrap.services;
+package com.hivemq.bootstrap.factories;
 
-import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.bootstrap.ioc.Persistences;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extensions.core.HandlerService;
-import com.hivemq.extensions.core.RestComponentsService;
+import com.hivemq.mqtt.topic.tree.LocalTopicTree;
+import com.hivemq.persistence.SingleWriterService;
+import com.hivemq.protocols.writing.NanoTimeProvider;
+import com.hivemq.protocols.writing.ProtocolAdapterWritingService;
 
-public interface CompleteBootstrapService extends PersistenceBootstrapService {
-
-    @NotNull Persistences persistences();
-
-    @NotNull RestComponentsService restComponentsService();
-
-    @NotNull HandlerService handlerService();
+public interface WritingServiceFactory {
 
     @NotNull
-    EventService eventService();
+    ProtocolAdapterWritingService build(
+            @NotNull ObjectMapper objectMapper,
+            @NotNull LocalTopicTree localTopicTree,
+            @NotNull NanoTimeProvider nanoTimeProvider,
+            @NotNull SingleWriterService singleWriterService);
 }

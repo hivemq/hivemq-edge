@@ -56,10 +56,11 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     private @NotNull Boolean overrideUri = false;
 
     @JsonProperty("subscriptions")
+    @ModuleConfigField(title = "MQTT to OPC Mappings ", description = "Map your sensor data to MQTT Topics")
     private @NotNull List<Subscription> subscriptions = new ArrayList<>();
 
     @JsonProperty("mqtt-to-opcua-mappings")
-    @ModuleConfigField(title = "MQTT to OPC Mappings ", description = "Map your sensor data to MQTT Topics")
+    @ModuleConfigField(title = "MQTT to OPC Mappings ", description = "Map your mqtt publishes to sensor data")
     private @NotNull List<OpcUAWriteContext> writeContexts = new ArrayList<>();
 
     @JsonProperty("auth")
