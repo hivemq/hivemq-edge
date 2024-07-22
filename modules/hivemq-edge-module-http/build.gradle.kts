@@ -42,11 +42,12 @@ dependencies {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation(libs.jackson.databind)
-    testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.apache.commonsIO)
-    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.assertj)
+    testImplementation(libs.hivemq.edge.adapterSdk)
+    testImplementation(libs.jackson.databind)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.mockito.junitJupiter)
 }
 
 tasks.test {
