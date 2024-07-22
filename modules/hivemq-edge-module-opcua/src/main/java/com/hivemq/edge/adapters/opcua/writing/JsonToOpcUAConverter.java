@@ -1,5 +1,6 @@
 package com.hivemq.edge.adapters.opcua.writing;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.io.BaseEncoding;
 import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.milo.opcua.binaryschema.AbstractCodec;
@@ -24,15 +25,16 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.XmlElement;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.opcfoundation.opcua.binaryschema.FieldType;
 
 import java.lang.reflect.Field;
-import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,6 +45,7 @@ public class JsonToOpcUAConverter {
 
     private final @NotNull OpcUaClient client;
     private final @NotNull DataTypeTree tree;
+    private String localPart;
 
     public JsonToOpcUAConverter(final @NotNull OpcUaClient client) throws UaException {
         this.client = client;
@@ -55,41 +58,43 @@ public class JsonToOpcUAConverter {
 
 
     public @Nullable Object convertToOpcUAValue(
-            final @NotNull Object value, final @NotNull NodeId destinationNodeId) {
+            final @NotNull JsonNode rootNode, final @NotNull NodeId destinationNodeId) throws ConversionException {
         try {
             final NodeId dataTypeNodeId = getDataTypeNodeId(destinationNodeId);
+            if (dataTypeNodeId == null) {
+                throw new ConversionException("No dataType-nodeId was found for the destination nodeId " +
+                        destinationNodeId +
+                        "'");
+            }
+
             final DataTypeTree.DataType dataType = tree.getDataType(dataTypeNodeId);
             if (dataType == null) {
-                // TODO we were not able to find the information on the encoding
-                throw new IllegalArgumentException();
+                throw new ConversionException("No data type was found in the DataTypeTree for node id '" +
+                        dataTypeNodeId +
+                        "'");
             }
             final BuiltinDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
             if (builtinType != BuiltinDataType.ExtensionObject) {
-                return parsetoOpcUAObject(builtinType, value, null);
+                return parsetoOpcUAObject(builtinType, rootNode, null);
             }
-
 
             final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
             if (binaryEncodingId == null) {
-                // TODO potentially there could be other encodings be present
-                throw new IllegalArgumentException();
+                throw new ConversionException("No encoding was present for data type: '" + dataType.toString() + "'");
             }
 
-
-            // TODO needs a check
-            final LinkedHashMap rootNode = (LinkedHashMap) value;
             final Map<String, FieldType> fields = getStructureInformation(binaryEncodingId);
             final Struct.Builder builder = Struct.builder("CustomStruct"); // apparently the name is not important
 
             for (final Map.Entry<String, FieldType> entry : fields.entrySet()) {
                 final String key = entry.getKey();
                 final FieldType fieldType = entry.getValue();
-                final Object jsonNode = rootNode.get(key);
+                final JsonNode jsonNode = rootNode.get(key);
                 if (jsonNode == null) {
-                    //TODO handle missing field in json
-                    throw new IllegalArgumentException();
+                    throw new ConversionException("Expected field '" +
+                            key +
+                            "' to be present in the json, but field was not present.");
                 }
-
                 final Object parsed = parseToOpcUACompatibleObject(jsonNode, fieldType);
                 builder.addMember(key, parsed);
             }
@@ -97,12 +102,8 @@ public class JsonToOpcUAConverter {
                     builder.build(),
                     binaryEncodingId,
                     OpcUaDefaultBinaryEncoding.getInstance());
-
-
         } catch (UaException e) {
-            throw new IllegalArgumentException("Unknown type");
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new ConversionException("Unknown type");
         }
     }
 
@@ -112,25 +113,22 @@ public class JsonToOpcUAConverter {
         return variableNode.getDataType();
     }
 
-    private @NotNull BuiltinDataType mapToBuildInDataType(final @NotNull FieldType fieldType) {
+    private @NotNull BuiltinDataType mapToBuildInDataType(final @NotNull FieldType fieldType)
+            throws ConversionException {
         final String namespaceURI = fieldType.getTypeName().getNamespaceURI();
         boolean isStandard = namespaceURI.startsWith("http://opcfoundation.org/");
         if (isStandard) {
-            switch (fieldType.getTypeName().getLocalPart()) {
-                // TODO get all the cases
-                case ("UInt32"):
-                    return BuiltinDataType.UInt32;
-                case ("String"):
-                    return BuiltinDataType.String;
-                case ("Boolean"):
-                    return BuiltinDataType.Boolean;
-                case ("Structure"):
-                    return BuiltinDataType.ExtensionObject;
+            localPart = fieldType.getTypeName().getLocalPart();
+            try {
+                return BuiltinDataType.valueOf(localPart);
+            } catch (IllegalArgumentException e) {
+                throw new ConversionException(e.getMessage());
             }
         } else {
             final DataTypeCodec dataTypeCodec =
                     client.getDynamicDataTypeManager().getCodec(namespaceURI, fieldType.getTypeName().getLocalPart());
             if (dataTypeCodec instanceof GenericEnumCodec) {
+                // enum are encoded as integers
                 return BuiltinDataType.Int32;
             } else if (dataTypeCodec instanceof GenericStructCodec) {
                 return BuiltinDataType.ExtensionObject;
@@ -141,7 +139,7 @@ public class JsonToOpcUAConverter {
 
 
     private @Nullable Object parseToOpcUACompatibleObject(
-            final @NotNull Object jsonNode, final @NotNull FieldType fieldType) {
+            final @NotNull JsonNode jsonNode, final @NotNull FieldType fieldType) throws ConversionException {
         final BuiltinDataType builtinDataType = mapToBuildInDataType(fieldType);
 
         client.getStaticDataTypeManager().getDataTypeDictionary(fieldType.getTypeName().getNamespaceURI());
@@ -155,15 +153,18 @@ public class JsonToOpcUAConverter {
 
             final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
             if (optionalDataTypeId.isEmpty()) {
-                // TODO
-                throw new IllegalArgumentException();
+                throw new ConversionException("Expanded node id '" +
+                        expandedNodeId +
+                        "' could not be parsed to node id.");
             }
 
             final NodeId dataTypeId = optionalDataTypeId.get();
             final DataTypeTree.DataType dataType = tree.getDataType(dataTypeId);
 
             if (dataType == null) {
-                throw new IllegalArgumentException();
+                throw new ConversionException("No data type was found in the DataTypeTree for node id '" +
+                        dataTypeId +
+                        "'");
             }
 
             final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
@@ -175,243 +176,219 @@ public class JsonToOpcUAConverter {
     @Nullable
     Object parsetoOpcUAObject(
             final @NotNull BuiltinDataType builtinDataType,
-            final @NotNull Object value, final @Nullable NodeId binaryEncodingId) {
+            final @NotNull JsonNode jsonNode,
+            final @Nullable NodeId binaryEncodingId) throws ConversionException {
         switch (builtinDataType) {
             case Boolean:
-                if (value instanceof String) {
-                    return Boolean.valueOf((String) value);
-                } else if (value instanceof Boolean) {
-                    return value;
+                if (jsonNode.isBoolean()) {
+                    return jsonNode.asBoolean();
                 } else {
-                    throw createException(value, builtinDataType.name());
+                    throw createException(jsonNode, builtinDataType.name());
                 }
             case Byte:
+                if (jsonNode.isTextual()) {
+                    final byte[] decoded = Base64.getDecoder().decode(jsonNode.asText());
+                    if (decoded.length > 1) {
+                        throw new ConversionException(
+                                "Single byte was expected to be encoded, but multiple bytes were encoded in '" +
+                                        jsonNode.asText() +
+                                        "'.");
+                    } else if (decoded.length == 0) {
+                        throw new ConversionException(
+                                "Single byte was expected to be encoded, but no bytes were encoded in '" +
+                                        jsonNode.asText() +
+                                        "'.");
+                    } else {
+                        return UByte.valueOf(decoded[0]);
+                    }
+                }
+                throw createException(jsonNode, builtinDataType.name());
             case SByte:
-                if (value instanceof String) {
-                    return Byte.valueOf((String) value);
-                } else if (value instanceof Byte) {
-                    return value;
-                } else if (value instanceof Integer) {
-                    return value;
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isTextual()) {
+                    final byte[] decoded = Base64.getDecoder().decode(jsonNode.asText());
+                    if (decoded.length > 1) {
+                        throw new ConversionException(
+                                "Single byte was expected to be encoded, but multiple bytes were encoded in '" +
+                                        jsonNode.asText() +
+                                        "'.");
+                    } else if (decoded.length == 0) {
+                        throw new ConversionException(
+                                "Single byte was expected to be encoded, but no bytes were encoded in '" +
+                                        jsonNode.asText() +
+                                        "'.");
+                    } else {
+                        return decoded[0];
+                    }
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case UInt16:
+                if (jsonNode.isShort()) {
+                    return UShort.valueOf(jsonNode.intValue());
+                }
+                throw createException(jsonNode, builtinDataType.name());
             case UInt32:
-                if (value instanceof String) {
-                    return UInteger.valueOf((String) value);
-                } else if (value instanceof Integer) {
-                    return UInteger.valueOf((Integer) value);
-                } else if (value instanceof Long) {
-                    return UInteger.valueOf((Long) value);
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isInt()) {
+                    return UInteger.valueOf(jsonNode.intValue());
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case Int16:
-                if (value instanceof String) {
-                    return Short.valueOf((String) value);
-                } else if (value instanceof Short) {
-                    return value;
-                } else if (value instanceof Integer) {
-                    // todo if it is a long in the json, it is a problem as it does not fit in Integer
-                    return value;
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isShort()) {
+                    return jsonNode.shortValue();
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case Int32:
-                if (value instanceof String) {
-                    return Integer.valueOf((String) value);
-                } else if (value instanceof Integer) {
-                    return value;
-                } else if (value instanceof Long) {
-                    // todo if it is a long in the json, it is a problem as it does not fit in Integer
-                    return value;
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isInt()) {
+                    return jsonNode.intValue();
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case Int64:
-                if (value instanceof String) {
-                    return Long.valueOf((String) value);
-                } else if (value instanceof Integer) {
-                    return value;
-                } else if (value instanceof Long) {
-                    return value;
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isLong()) {
+                    return jsonNode.longValue();
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case UInt64:
-                if (value instanceof String) {
-                    return ULong.valueOf((String) value);
-                } else if (value instanceof Integer) {
-                    return ULong.valueOf((Integer) value);
-                } else if (value instanceof Long) {
-                    return ULong.valueOf((Long) value);
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isLong()) {
+                    return ULong.valueOf(jsonNode.asLong());
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case Float:
-                if (value instanceof String) {
-                    return Float.valueOf((String) value);
-                } else if (value instanceof Integer) {
-                    return Float.valueOf((Integer) value);
-                } else if (value instanceof Long) {
-                    return Float.valueOf((Long) value);
-                } else if (value instanceof Float) {
-                    return value;
-                } else if (value instanceof Double) {
-                    return value;
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isFloat()) {
+                    return jsonNode.floatValue();
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case Double:
-                if (value instanceof String) {
-                    return Double.valueOf((String) value);
-                } else if (value instanceof Integer) {
-                    return Double.valueOf((Integer) value);
-                } else if (value instanceof Long) {
-                    return Double.valueOf((Long) value);
-                } else if (value instanceof Float) {
-                    return value;
-                } else if (value instanceof Double) {
-                    return value;
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isDouble()) {
+                    return jsonNode.asDouble();
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case String:
-                if (value instanceof String) {
-                    return value;
-                } else {
-                    throw createException(value, "String");
+                if (jsonNode.isTextual()) {
+                    return jsonNode.asText();
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case DateTime:
-                if (value instanceof String) {
-                    return DateTimeFormatter.ISO_INSTANT.parse((String) value);
-                } else if (value instanceof Long) {
-                    return new DateTime((Long) value);
-                } else if (value instanceof Integer) {
-                    return new DateTime((Integer) value);
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isLong()) {
+                    return new DateTime(jsonNode.asInt());
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case Guid:
-                if (value instanceof String) {
-                    return UUID.fromString((String) value);
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isTextual()) {
+                    return UUID.fromString(jsonNode.asText());
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case ByteString:
-                if (value instanceof String) {
-                    return ByteString.of(BaseEncoding.base64().decode((String) value));
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isTextual()) {
+                    return ByteString.of(BaseEncoding.base64().decode(jsonNode.asText()));
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case XmlElement:
-                if (value instanceof String) {
-                    return XmlElement.of((String) value);
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isTextual()) {
+                    return XmlElement.of(jsonNode.asText());
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case NodeId:
-                if (value instanceof String) {
+                if (jsonNode.isTextual()) {
                     try {
-                        return NodeId.parse((String) value);
+                        return NodeId.parse(jsonNode.asText());
                     } catch (UaRuntimeException e) {
-                        //TODO handle
+                        throw new ConversionException("NodeId could not be parsed from '" +
+                                jsonNode.asText() +
+                                "': " +
+                                e.getMessage());
                     }
-                } else {
-                    throw createException(value, builtinDataType.name());
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case ExpandedNodeId:
-                if (value instanceof String) {
+                if (jsonNode.isTextual()) {
                     try {
-                        return ExpandedNodeId.parse((String) value);
+                        return ExpandedNodeId.parse(jsonNode.asText());
                     } catch (UaRuntimeException e) {
-                        //TODO handle
+                        throw new ConversionException("ExpandedNodeId could not be parsed from '" +
+                                jsonNode.asText() +
+                                "': " +
+                                e.getMessage());
                     }
-                } else {
-                    throw createException(value, builtinDataType.name());
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case StatusCode:
-                if (value instanceof Integer) {
-                    return new StatusCode((Integer) value);
-                } else {
-                    throw createException(value, builtinDataType.name());
+                if (jsonNode.isInt()) {
+                    return new StatusCode(jsonNode.asInt());
                 }
+                throw createException(jsonNode, builtinDataType.name());
             case QualifiedName:
                 // qualified name needs two fields, so it needs to be own object in the JSON
-                if (value instanceof LinkedHashMap) {
-                    final LinkedHashMap rootNode = (LinkedHashMap) value;
-                    final Object namespaceIndex = rootNode.get("namespaceIndex");
-                    final Object name = rootNode.get("");
-                    if (namespaceIndex instanceof Integer) {
-                        if (name instanceof String) {
-                            return new QualifiedName((Integer) namespaceIndex, (String) name);
-                        } else {
-                            throw createException(namespaceIndex, "String");
-                        }
-                    } else {
-                        throw createException(namespaceIndex, "Integer");
-                    }
-                } else {
-                    // TODO value is not an json object (LinkedHashMap)
-                    throw createException(value, "LinkedHashMap");
+                if (!jsonNode.has("namespaceIndex")) {
+                    throw new ConversionException("Field 'namespaceIndex' was not found.");
                 }
+                final JsonNode namespaceIndexNode = jsonNode.get("namespaceIndex");
+                if (!namespaceIndexNode.isInt()) {
+                    throw createException(namespaceIndexNode, "Integer");
+                }
+
+                if (!jsonNode.has("name")) {
+                    throw new ConversionException("Field 'name' was not found.");
+                }
+                final JsonNode nameNode = jsonNode.get("name");
+                if (!nameNode.isTextual()) {
+                    throw createException(nameNode, "String");
+                }
+                return new QualifiedName(namespaceIndexNode.asInt(), nameNode.asText());
             case LocalizedText:
-                if (value instanceof String) {
-                    return LocalizedText.english((String) value);
-                } else {
-                    throw createException(value, "LocalizedText");
+                if (jsonNode.isTextual()) {
+                    return LocalizedText.english(jsonNode.asText());
                 }
+                throw createException(jsonNode, "LocalizedText");
             case DataValue:
                 // DataValue is too complex for now
+                // TODO implement
                 throw new NotImplementedException();
             case Variant:
+                // TODO implement
                 // Variant is too complex for now
                 throw new NotImplementedException();
             case DiagnosticInfo:
+                // TODO implement
                 // DiagnosticInfo is too complex for now
                 throw new NotImplementedException();
             case ExtensionObject:
-                try {
-                    if (binaryEncodingId == null) {
-                        throw new UnsupportedOperationException(
-                                "Structs embedded in other structs are currently not supported.");
-                    }
-
-                    final LinkedHashMap rootNode = (LinkedHashMap) value;
-                    final Map<String, FieldType> fields = getStructureInformation(binaryEncodingId);
-                    final Struct.Builder builder =
-                            Struct.builder("CustomStruct"); // apparently the name is not important
-
-                    for (final Map.Entry<String, FieldType> entry : fields.entrySet()) {
-                        final String key = entry.getKey();
-                        final FieldType fieldType = entry.getValue();
-                        final Object jsonNode = rootNode.get(key);
-                        if (jsonNode == null) {
-                            //TODO handle missing field in json
-                            throw new IllegalArgumentException();
-                        }
-
-                        final Object parsed = parseToOpcUACompatibleObject(jsonNode, fieldType);
-                        builder.addMember(key, parsed);
-                    }
-                    return builder.build();
-                } catch (NoSuchFieldException | IllegalAccessException e) {
-                    throw new RuntimeException(e);
+                if (binaryEncodingId == null) {
+                    throw new ConversionException("Binary encoding id was null for nested struct. ");
                 }
 
+                final Map<String, FieldType> fields = getStructureInformation(binaryEncodingId);
+                final Struct.Builder builder = Struct.builder("CustomStruct"); // apparently the name is not important
+
+                for (final Map.Entry<String, FieldType> entry : fields.entrySet()) {
+                    final String key = entry.getKey();
+                    final FieldType fieldType = entry.getValue();
+                    final JsonNode nestedObjectNode = jsonNode.get(key);
+                    if (nestedObjectNode == null) {
+                        throw new ConversionException("No nested json was found for key '" + key + "'.");
+                    }
+                    final Object parsed = parseToOpcUACompatibleObject(nestedObjectNode, fieldType);
+                    builder.addMember(key, parsed);
+                }
+                return builder.build();
         }
-        return null;
+        throw createException(jsonNode, builtinDataType.name());
     }
 
 
     private @NotNull Map<String, FieldType> getStructureInformation(final @NotNull NodeId binaryEncodingId)
-            throws NoSuchFieldException, IllegalAccessException {
-        final DataTypeCodec dataTypeCodec =
-                client.getDynamicSerializationContext().getDataTypeManager().getCodec(binaryEncodingId);
-        final Field f = AbstractCodec.class.getDeclaredField("fields"); //NoSuchFieldException
-        f.setAccessible(true);
-        return (Map<String, FieldType>) f.get(dataTypeCodec);
+            throws ConversionException {
+        try {
+            final DataTypeCodec dataTypeCodec =
+                    client.getDynamicSerializationContext().getDataTypeManager().getCodec(binaryEncodingId);
+            final Field f = AbstractCodec.class.getDeclaredField("fields"); //NoSuchFieldException
+            f.setAccessible(true);
+            return (Map<String, FieldType>) f.get(dataTypeCodec);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            if (e.getMessage() != null) {
+                throw new ConversionException("Unable to find information on fields in the codec: " + e.getMessage());
+            } else {
+                throw new ConversionException("Unable to find information on fields in the codec.");
+            }
+        }
     }
 
     private static @NotNull IllegalArgumentException createException(

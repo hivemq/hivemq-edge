@@ -42,6 +42,7 @@ import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
 import com.hivemq.edge.adapters.opcua.config.OpcUAWriteContext;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.writing.ConversionException;
 import com.hivemq.edge.adapters.opcua.writing.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.writing.OpcUAWritePayload;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
@@ -408,8 +409,14 @@ public class OpcUaProtocolAdapter
                 throw new IllegalStateException("Converter is null.");
             }
 
-            final Object opcUaObject = jsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(),
-                    NodeId.parse(input.getWriteContext().getDestination()));
+            final Object opcUaObject;
+            try {
+                opcUaObject = jsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(),
+                        NodeId.parse(input.getWriteContext().getDestination()));
+            } catch (ConversionException e) {
+                writeOutput.fail(e.getMessage(), false);
+                return;
+            }
 
             Variant variant = new Variant(opcUaObject);
             DataValue dataValue = new DataValue(variant, null, null);

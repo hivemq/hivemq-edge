@@ -1,23 +1,24 @@
 package com.hivemq.edge.adapters.opcua.writing;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.writing.WritePayload;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class OpcUAWritePayload implements WritePayload {
+
     @JsonProperty("value")
     @ModuleConfigField(title = "Value", description = "The value that should be written", required = true)
-    private @NotNull Object value;
-
+    private @NotNull JsonNode value;
 
     public OpcUAWritePayload(
-            final @NotNull @JsonProperty("value") Object value) {
+            final @NotNull @JsonProperty("value") JsonNode value) {
         this.value = value;
     }
 
-    public @NotNull Object getValue() {
+    public @NotNull JsonNode getValue() {
         return value;
     }
 
