@@ -16,64 +16,32 @@
 package com.hivemq.edge.adapters.http;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
+import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 
+import static com.hivemq.edge.adapters.http.HttpAdapterConfig.HttpContentType.JSON;
+import static com.hivemq.edge.adapters.http.HttpAdapterConfig.HttpMethod.GET;
+import static com.hivemq.edge.adapters.http.HttpAdapterConstants.*;
+import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 
-@JsonPropertyOrder({
-        "url",
-        "destination",
-        "qos",
-        "httpRequestMethod",
-        "httpConnectTimeout",
-        "httpRequestBodyContentType",
-        "httpRequestBody",
-        "assertResponseIsJson",
-        "httpPublishSuccessStatusCodeOnly",
-        "httpHeaders"})
 public class HttpAdapterConfig implements ProtocolAdapterConfig {
-
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     public static final @NotNull String HTML_MIME_TYPE = "text/html";
     public static final @NotNull String PLAIN_MIME_TYPE = "text/plain";
     public static final @NotNull String JSON_MIME_TYPE = "application/json";
-    public static final String XML_MIME_TYPE = "application/xml";
-    public static final String YAML_MIME_TYPE = "application/yaml";
+    public static final @NotNull String XML_MIME_TYPE = "application/xml";
+    public static final @NotNull String YAML_MIME_TYPE = "application/yaml";
 
-    public enum HttpMethod {
-        GET,
-        POST,
-        PUT
-    }
-
-    public enum HttpContentType {
-        JSON(JSON_MIME_TYPE),
-        PLAIN(PLAIN_MIME_TYPE),
-        HTML(HTML_MIME_TYPE),
-        XML(XML_MIME_TYPE),
-        YAML(YAML_MIME_TYPE);
-
-        HttpContentType(final @NotNull String contentType) {
-            this.contentType = contentType;
-        }
-
-        final @NotNull String contentType;
-
-        public @NotNull String getContentType() {
-            return contentType;
-        }
-    }
-
-    @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",
                        description = "Unique identifier for this protocol adapter",
                        format = ModuleConfigField.FieldType.IDENTIFIER,
@@ -81,98 +49,119 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        stringPattern = ID_REGEX,
                        stringMinLength = 1,
                        stringMaxLength = 1024)
-    protected @NotNull String id;
+    private final @NotNull String id;
 
-    @JsonProperty("pollingIntervalMillis")
-    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
     @ModuleConfigField(title = "Polling Interval [ms]",
                        description = "Time in millisecond that this endpoint will be polled",
                        numberMin = 1,
                        required = true,
                        defaultValue = "1000")
-    private int pollingIntervalMillis = 1000; //1 second
+    private final @NotNull Duration pollingIntervalMillis;
 
-    @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
                        description = "Max. errors polling the endpoint before the polling daemon is stopped",
                        numberMin = 3,
                        defaultValue = "10")
-    private int maxPollingErrorsBeforeRemoval = 10;
+    private final int maxPollingErrorsBeforeRemoval;
 
-    @JsonProperty("url")
     @ModuleConfigField(title = "URL",
                        description = "The url of the http request you would like to make",
                        format = ModuleConfigField.FieldType.URI,
                        required = true)
-    private @NotNull String url;
+    private final @NotNull String url;
 
-    @JsonProperty(value = "destination", required = true)
     @ModuleConfigField(title = "Destination Topic",
                        description = "The topic to publish data on",
                        required = true,
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
-    private @Nullable String destination;
+    private final @NotNull String destination;
 
-    @JsonProperty(value = "qos", required = true)
     @ModuleConfigField(title = "QoS",
                        description = "MQTT Quality of Service level",
                        required = true,
                        numberMin = 0,
                        numberMax = 2,
                        defaultValue = "0")
-    private int qos = 0;
+    private final int qos;
 
-    @JsonProperty("httpRequestMethod")
     @ModuleConfigField(title = "Http Method",
                        description = "Http method associated with the request",
                        defaultValue = "GET")
-    private @NotNull HttpAdapterConfig.HttpMethod httpRequestMethod = HttpAdapterConfig.HttpMethod.GET;
+    private final @NotNull HttpAdapterConfig.HttpMethod httpRequestMethod;
 
-    @JsonProperty("httpRequestBodyContentType")
     @ModuleConfigField(title = "Http Request Content Type",
                        description = "Content Type associated with the request",
                        defaultValue = "JSON")
-    private @NotNull HttpAdapterConfig.HttpContentType httpRequestBodyContentType = HttpContentType.JSON;
+    private final @NotNull HttpAdapterConfig.HttpContentType httpRequestBodyContentType;
 
-    @JsonProperty("httpRequestBody")
     @ModuleConfigField(title = "Http Request Body", description = "The body to include in the HTTP request")
-    private @NotNull String httpRequestBody;
+    private final @Nullable String httpRequestBody;
 
-    @JsonProperty("httpConnectTimeout")
     @ModuleConfigField(title = "Http Connection Timeout",
                        description = "Timeout (in second) to wait for the HTTP Request to complete",
                        required = true,
-                       defaultValue = HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS + "")
-    private @NotNull Integer httpConnectTimeout = HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
+                       defaultValue = DEFAULT_TIMEOUT_SECONDS + "")
+    private final @NotNull Duration httpConnectTimeout;
 
-    @JsonProperty("httpHeaders")
     @ModuleConfigField(title = "HTTP Headers", description = "HTTP headers to be added to your requests")
-    private @NotNull List<HttpHeader> httpHeaders = new ArrayList<>();
+    private final @NotNull List<HttpHeader> httpHeaders;
 
-    @JsonProperty("httpPublishSuccessStatusCodeOnly")
     @ModuleConfigField(title = "Only publish data when HTTP response code is successful ( 200 - 299 )",
                        defaultValue = "true",
                        format = ModuleConfigField.FieldType.BOOLEAN)
-    private boolean httpPublishSuccessStatusCodeOnly = true;
+    private final boolean httpPublishSuccessStatusCodeOnly;
 
-    @JsonProperty("allowUntrustedCertificates")
     @ModuleConfigField(title = "Allow the adapter to read from untrusted SSL sources (for example expired certificates).",
                        defaultValue = "false",
                        format = ModuleConfigField.FieldType.BOOLEAN)
-    private boolean allowUntrustedCertificates = false;
+    private final boolean allowUntrustedCertificates;
 
-    @JsonProperty("assertResponseIsJson")
     @ModuleConfigField(title = "Assert JSON Response?",
                        description = "Always attempt to parse the body of the response as JSON data, regardless of the Content-Type on the response.",
                        defaultValue = "false",
                        format = ModuleConfigField.FieldType.BOOLEAN)
-    private boolean assertResponseIsJson = false;
+    private final boolean assertResponseIsJson;
 
-    public HttpAdapterConfig() {
-    }
-
-    public HttpAdapterConfig(final @NotNull String adapterId) {
-        this.id = adapterId;
+    @JsonCreator
+    public HttpAdapterConfig(
+            @JsonProperty(value = "id", required = true) final @NotNull String id,
+            @JsonProperty("pollingIntervalMillis") @JsonAlias("publishingInterval") final @Nullable Integer pollingIntervalMillis,
+            @JsonProperty("maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
+            @JsonProperty(value = "url", required = true) final @NotNull String url,
+            @JsonProperty(value = "destination", required = true) final @NotNull String destination,
+            @JsonProperty("qos") final @Nullable Integer qos,
+            @JsonProperty("httpRequestMethod") final @Nullable HttpMethod httpRequestMethod,
+            @JsonProperty("httpRequestBodyContentType") final @Nullable HttpContentType httpRequestBodyContentType,
+            @JsonProperty("httpRequestBody") final @Nullable String httpRequestBody,
+            @JsonProperty("httpConnectTimeout") final @Nullable Integer httpConnectTimeout,
+            @JsonProperty("httpHeaders") final @Nullable List<HttpHeader> httpHeaders,
+            @JsonProperty("httpPublishSuccessStatusCodeOnly") final @Nullable Boolean httpPublishSuccessStatusCodeOnly,
+            @JsonProperty("allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates,
+            @JsonProperty("assertResponseIsJson") final @Nullable Boolean assertResponseIsJson) {
+        this.id = id;
+        if (pollingIntervalMillis != null) {
+            this.pollingIntervalMillis = Duration.ofMillis(pollingIntervalMillis);
+        } else {
+            this.pollingIntervalMillis = Duration.ofSeconds(1);
+        }
+        this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
+        this.url = url;
+        this.destination = destination;
+        this.qos = Objects.requireNonNullElse(qos, 0);
+        this.httpRequestMethod = Objects.requireNonNullElse(httpRequestMethod, GET);
+        this.httpRequestBodyContentType = Objects.requireNonNullElse(httpRequestBodyContentType, JSON);
+        this.httpRequestBody = httpRequestBody;
+        if (httpConnectTimeout != null) {
+            //-- Ensure we apply a reasonable timeout, so we don't hang threads
+            this.httpConnectTimeout =
+                    Duration.ofSeconds(Math.max(httpConnectTimeout, MAX_TIMEOUT_SECONDS));
+        } else {
+            this.httpConnectTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
+        }
+        this.httpHeaders = Objects.requireNonNullElseGet(httpHeaders, List::of);
+        this.httpPublishSuccessStatusCodeOnly = Objects.requireNonNullElse(httpPublishSuccessStatusCodeOnly, true);
+        this.allowUntrustedCertificates = Objects.requireNonNullElse(allowUntrustedCertificates, false);
+        this.assertResponseIsJson = Objects.requireNonNullElse(assertResponseIsJson, false);
     }
 
     public boolean isHttpPublishSuccessStatusCodeOnly() {
@@ -195,11 +184,11 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
         return httpRequestBodyContentType;
     }
 
-    public @NotNull String getHttpRequestBody() {
+    public @Nullable String getHttpRequestBody() {
         return httpRequestBody;
     }
 
-    public @NotNull Integer getHttpConnectTimeout() {
+    public @NotNull Duration getHttpConnectTimeout() {
         return httpConnectTimeout;
     }
 
@@ -224,7 +213,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
         return id;
     }
 
-    public int getPollingIntervalMillis() {
+    public @NotNull Duration getPollingInterval() {
         return pollingIntervalMillis;
     }
 
@@ -234,18 +223,15 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
 
     public static class HttpHeader {
 
-        @JsonProperty("name")
         @ModuleConfigField(title = "Http Header Name", description = "The name of the HTTP header")
-        private @NotNull String name;
+        private final @NotNull String name;
 
-        @JsonProperty("value")
         @ModuleConfigField(title = "Http Header Value", description = "The value of the HTTP header")
-        private @NotNull String value;
+        private final @NotNull String value;
 
-        public HttpHeader() {
-        }
-
-        public HttpHeader(@NotNull final String name, @NotNull final String value) {
+        @JsonCreator
+        public HttpHeader(
+                @JsonProperty("name") final @NotNull String name, @JsonProperty("value") final @NotNull String value) {
             this.name = name;
             this.value = value;
         }
@@ -256,6 +242,30 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
 
         public @NotNull String getValue() {
             return value;
+        }
+    }
+
+    public enum HttpMethod {
+        GET,
+        POST,
+        PUT
+    }
+
+    public enum HttpContentType {
+        JSON(JSON_MIME_TYPE),
+        PLAIN(PLAIN_MIME_TYPE),
+        HTML(HTML_MIME_TYPE),
+        XML(XML_MIME_TYPE),
+        YAML(YAML_MIME_TYPE);
+
+        HttpContentType(final @NotNull String contentType) {
+            this.contentType = contentType;
+        }
+
+        final @NotNull String contentType;
+
+        public @NotNull String getContentType() {
+            return contentType;
         }
     }
 }
