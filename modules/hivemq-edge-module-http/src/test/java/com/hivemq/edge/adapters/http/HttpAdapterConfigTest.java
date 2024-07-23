@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Map;
 
 import static com.hivemq.edge.adapters.http.HttpAdapterConfig.HttpContentType.JSON;
@@ -53,11 +54,11 @@ public class HttpAdapterConfigTest {
 
         assertThat(config.getQos()).isEqualTo(0);
         assertThat(config.getHttpRequestMethod()).isEqualTo(GET);
-        assertThat(config.getHttpConnectTimeout()).isEqualTo(5);
+        assertThat(config.getHttpConnectTimeout()).isEqualTo(Duration.ofSeconds(5));
         assertThat(config.getHttpRequestBodyContentType()).isEqualTo(JSON);
         assertThat(config.isHttpPublishSuccessStatusCodeOnly()).isTrue();
         assertThat(config.getHttpHeaders()).isEmpty();
-        assertThat(config.getPollingIntervalMillis()).isEqualTo(1000);
+        assertThat(config.getPollingInterval()).isEqualTo(Duration.ofSeconds(1));
         assertThat(config.getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(config.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
         assertThat(config.getDestination()).isEqualTo("my/destination");
@@ -78,11 +79,11 @@ public class HttpAdapterConfigTest {
 
         assertThat(config.getQos()).isEqualTo(0);
         assertThat(config.getHttpRequestMethod()).isEqualTo(POST);
-        assertThat(config.getHttpConnectTimeout()).isEqualTo(1337);
+        assertThat(config.getHttpConnectTimeout()).isEqualTo(Duration.ofSeconds(1337));
         assertThat(config.getHttpRequestBodyContentType()).isEqualTo(YAML);
         assertThat(config.isHttpPublishSuccessStatusCodeOnly()).isTrue();
-        assertThat(config.getHttpHeaders()).isNull();
-        assertThat(config.getPollingIntervalMillis()).isEqualTo(1773);
+        assertThat(config.getHttpHeaders()).isEmpty();
+        assertThat(config.getPollingInterval()).isEqualTo(Duration.ofMillis(1773));
         assertThat(config.getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
         assertThat(config.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
         assertThat(config.getDestination()).isEqualTo("my/destination");
@@ -105,7 +106,7 @@ public class HttpAdapterConfigTest {
 
         assertThat(config.getQos()).isEqualTo(0);
         assertThat(config.getHttpRequestMethod()).isEqualTo(POST);
-        assertThat(config.getHttpConnectTimeout()).isEqualTo(1337);
+        assertThat(config.getHttpConnectTimeout()).isEqualTo(Duration.ofSeconds(1337));
         assertThat(config.getHttpRequestBodyContentType()).isEqualTo(YAML);
         assertThat(config.isHttpPublishSuccessStatusCodeOnly()).isTrue();
         assertThat(config.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
@@ -115,7 +116,7 @@ public class HttpAdapterConfigTest {
             assertThat(header2.getName()).isEqualTo("foo 2");
             assertThat(header2.getValue()).isEqualTo("bar 2");
         });
-        assertThat(config.getPollingIntervalMillis()).isEqualTo(1773);
+        assertThat(config.getPollingInterval()).isEqualTo(Duration.ofMillis(1773));
         assertThat(config.getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
         assertThat(config.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
         assertThat(config.getDestination()).isEqualTo("my/destination");

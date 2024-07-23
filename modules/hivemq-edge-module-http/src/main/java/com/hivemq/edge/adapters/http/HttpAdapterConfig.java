@@ -29,8 +29,8 @@ import java.util.Objects;
 
 import static com.hivemq.edge.adapters.http.HttpAdapterConfig.HttpContentType.JSON;
 import static com.hivemq.edge.adapters.http.HttpAdapterConfig.HttpMethod.GET;
-import static com.hivemq.edge.adapters.http.HttpAdapterConstants.*;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
+import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
 
 public class HttpAdapterConfig implements ProtocolAdapterConfig {
 
@@ -153,8 +153,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
         this.httpRequestBody = httpRequestBody;
         if (httpConnectTimeout != null) {
             //-- Ensure we apply a reasonable timeout, so we don't hang threads
-            this.httpConnectTimeout =
-                    Duration.ofSeconds(Math.max(httpConnectTimeout, MAX_TIMEOUT_SECONDS));
+            this.httpConnectTimeout = Duration.ofSeconds(Math.max(httpConnectTimeout, MAX_TIMEOUT_SECONDS));
         } else {
             this.httpConnectTimeout = Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS);
         }
