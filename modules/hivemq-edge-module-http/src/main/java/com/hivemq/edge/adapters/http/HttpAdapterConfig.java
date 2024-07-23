@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.http;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
@@ -31,6 +32,20 @@ import static com.hivemq.edge.adapters.http.HttpAdapterConfig.HttpMethod.GET;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
 
+@JsonPropertyOrder({
+        "url",
+        "destination",
+        "qos",
+        "httpRequestMethod",
+        "httpConnectTimeout",
+        "httpRequestBodyContentType",
+        "httpRequestBody",
+        "assertResponseIsJson",
+        "httpPublishSuccessStatusCodeOnly",
+        "httpHeaders",
+        "id",
+        "allowUntrustedCertificates"
+})
 public class HttpAdapterConfig implements ProtocolAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
@@ -40,31 +55,6 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     public static final @NotNull String JSON_MIME_TYPE = "application/json";
     public static final @NotNull String XML_MIME_TYPE = "application/xml";
     public static final @NotNull String YAML_MIME_TYPE = "application/yaml";
-
-    @ModuleConfigField(title = "Identifier",
-                       description = "Unique identifier for this protocol adapter",
-                       format = ModuleConfigField.FieldType.IDENTIFIER,
-                       required = true,
-                       stringPattern = ID_REGEX,
-                       stringMinLength = 1,
-                       stringMaxLength = 1024)
-    private final @NotNull String id;
-
-    @JsonProperty("pollingIntervalMillis")
-    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
-    @ModuleConfigField(title = "Polling Interval [ms]",
-                       description = "Time in millisecond that this endpoint will be polled",
-                       numberMin = 1,
-                       required = true,
-                       defaultValue = "1000")
-    private final int pollingIntervalMillis;
-
-    @JsonProperty("maxPollingErrorsBeforeRemoval")
-    @ModuleConfigField(title = "Max. Polling Errors",
-                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
-                       numberMin = 3,
-                       defaultValue = "10")
-    private final int maxPollingErrorsBeforeRemoval;
 
     @JsonProperty("url")
     @ModuleConfigField(title = "URL",
@@ -95,6 +85,13 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        defaultValue = "GET")
     private final @NotNull HttpAdapterConfig.HttpMethod httpRequestMethod;
 
+    @JsonProperty("httpConnectTimeout")
+    @ModuleConfigField(title = "Http Connection Timeout",
+                       description = "Timeout (in second) to wait for the HTTP Request to complete",
+                       required = true,
+                       defaultValue = DEFAULT_TIMEOUT_SECONDS + "")
+    private final int httpConnectTimeoutSeconds;
+
     @JsonProperty("httpRequestBodyContentType")
     @ModuleConfigField(title = "Http Request Content Type",
                        description = "Content Type associated with the request",
@@ -105,16 +102,12 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "Http Request Body", description = "The body to include in the HTTP request")
     private final @Nullable String httpRequestBody;
 
-    @JsonProperty("httpConnectTimeout")
-    @ModuleConfigField(title = "Http Connection Timeout",
-                       description = "Timeout (in second) to wait for the HTTP Request to complete",
-                       required = true,
-                       defaultValue = DEFAULT_TIMEOUT_SECONDS + "")
-    private final int httpConnectTimeoutSeconds;
-
-    @JsonProperty("httpHeaders")
-    @ModuleConfigField(title = "HTTP Headers", description = "HTTP headers to be added to your requests")
-    private final @NotNull List<HttpHeader> httpHeaders;
+    @JsonProperty("assertResponseIsJson")
+    @ModuleConfigField(title = "Assert JSON Response?",
+                       description = "Always attempt to parse the body of the response as JSON data, regardless of the Content-Type on the response.",
+                       defaultValue = "false",
+                       format = ModuleConfigField.FieldType.BOOLEAN)
+    private final boolean assertResponseIsJson;
 
     @JsonProperty("httpPublishSuccessStatusCodeOnly")
     @ModuleConfigField(title = "Only publish data when HTTP response code is successful ( 200 - 299 )",
@@ -122,18 +115,41 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean httpPublishSuccessStatusCodeOnly;
 
+    @JsonProperty("httpHeaders")
+    @ModuleConfigField(title = "HTTP Headers", description = "HTTP headers to be added to your requests")
+    private final @NotNull List<HttpHeader> httpHeaders;
+
+    @JsonProperty(value = "id", required = true)
+    @ModuleConfigField(title = "Identifier",
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    private final @NotNull String id;
+
+    @JsonProperty("pollingIntervalMillis")
+    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
+    @ModuleConfigField(title = "Polling Interval [ms]",
+                       description = "Time in millisecond that this endpoint will be polled",
+                       numberMin = 1,
+                       required = true,
+                       defaultValue = "1000")
+    private final int pollingIntervalMillis;
+
+    @JsonProperty("maxPollingErrorsBeforeRemoval")
+    @ModuleConfigField(title = "Max. Polling Errors",
+                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
+                       numberMin = 3,
+                       defaultValue = "10")
+    private final int maxPollingErrorsBeforeRemoval;
+
     @JsonProperty("allowUntrustedCertificates")
     @ModuleConfigField(title = "Allow the adapter to read from untrusted SSL sources (for example expired certificates).",
                        defaultValue = "false",
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean allowUntrustedCertificates;
-
-    @JsonProperty("assertResponseIsJson")
-    @ModuleConfigField(title = "Assert JSON Response?",
-                       description = "Always attempt to parse the body of the response as JSON data, regardless of the Content-Type on the response.",
-                       defaultValue = "false",
-                       format = ModuleConfigField.FieldType.BOOLEAN)
-    private final boolean assertResponseIsJson;
 
     @JsonCreator
     public HttpAdapterConfig(
