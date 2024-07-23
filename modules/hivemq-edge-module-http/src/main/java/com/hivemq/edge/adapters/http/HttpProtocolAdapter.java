@@ -153,9 +153,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
         builder.timeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
-        if (!adapterConfig.getHttpHeaders().isEmpty()) {
-            adapterConfig.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
-        }
+        adapterConfig.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
 
         switch (adapterConfig.getHttpRequestMethod()) {
             case GET:
