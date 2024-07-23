@@ -48,7 +48,7 @@ public class HttpAdapterConfigTest {
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
-        Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
         final HttpAdapterConfig config =
@@ -74,7 +74,7 @@ public class HttpAdapterConfigTest {
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
-        Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
         final HttpAdapterConfig config =
@@ -134,23 +134,39 @@ public class HttpAdapterConfigTest {
         final HttpHeader httpHeader1 = new HttpHeader("foo 1", "bar 1");
         final HttpHeader httpHeader2 = new HttpHeader("foo 2", "bar 2");
 
-        final HttpAdapterConfig httpAdapterConfig = new HttpAdapterConfig("my-protocol-adapter",
-                1337,
-                11,
-                "http://192.168.0.02:777/?asdasd=asdasd",
+        final HttpAdapterConfig httpAdapterConfig = new HttpAdapterConfig("http://192.168.0.02:777/?asdasd=asdasd",
                 "my/destination",
                 0,
                 POST,
+                1773,
                 YAML,
                 "my-body",
-                1773,
-                List.of(httpHeader1, httpHeader2),
-                false,
                 true,
-                true);
+                false,
+                List.of(httpHeader2, httpHeader1),
+                "my-protocol-adapter",
+                11,
+                true,
+                1337);
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
         final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
+
+        assertThat(config.entrySet()).satisfiesExactly( //
+                (it) -> assertThat(it.getKey()).isEqualTo("url"),
+                (it) -> assertThat(it.getKey()).isEqualTo("destination"),
+                (it) -> assertThat(it.getKey()).isEqualTo("qos"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestMethod"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeout"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestBodyContentType"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestBody"),
+                (it) -> assertThat(it.getKey()).isEqualTo("assertResponseIsJson"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpPublishSuccessStatusCodeOnly"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpHeaders"),
+                (it) -> assertThat(it.getKey()).isEqualTo("id"),
+                (it) -> assertThat(it.getKey()).isEqualTo("maxPollingErrorsBeforeRemoval"),
+                (it) -> assertThat(it.getKey()).isEqualTo("allowUntrustedCertificates"),
+                (it) -> assertThat(it.getKey()).isEqualTo("pollingIntervalMillis"));
 
         assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
         assertThat(config.get("pollingIntervalMillis")).isEqualTo(1337);
@@ -176,10 +192,7 @@ public class HttpAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_defaults() {
-        final HttpAdapterConfig httpAdapterConfig = new HttpAdapterConfig("my-protocol-adapter",
-                null,
-                null,
-                "http://192.168.0.02:777/?asdasd=asdasd",
+        final HttpAdapterConfig httpAdapterConfig = new HttpAdapterConfig("http://192.168.0.02:777/?asdasd=asdasd",
                 "my/destination",
                 null,
                 null,
@@ -189,10 +202,29 @@ public class HttpAdapterConfigTest {
                 null,
                 null,
                 null,
+                "my-protocol-adapter",
+                null,
+                null,
                 null);
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
         final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
+
+        assertThat(config.entrySet()).satisfiesExactly( //
+                (it) -> assertThat(it.getKey()).isEqualTo("url"),
+                (it) -> assertThat(it.getKey()).isEqualTo("destination"),
+                (it) -> assertThat(it.getKey()).isEqualTo("qos"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestMethod"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeout"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestBodyContentType"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestBody"),
+                (it) -> assertThat(it.getKey()).isEqualTo("assertResponseIsJson"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpPublishSuccessStatusCodeOnly"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpHeaders"),
+                (it) -> assertThat(it.getKey()).isEqualTo("id"),
+                (it) -> assertThat(it.getKey()).isEqualTo("maxPollingErrorsBeforeRemoval"),
+                (it) -> assertThat(it.getKey()).isEqualTo("allowUntrustedCertificates"),
+                (it) -> assertThat(it.getKey()).isEqualTo("pollingIntervalMillis"));
 
         assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
         assertThat(config.get("pollingIntervalMillis")).isEqualTo(1000);

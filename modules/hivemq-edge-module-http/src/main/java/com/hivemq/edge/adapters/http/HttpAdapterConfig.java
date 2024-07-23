@@ -44,8 +44,9 @@ import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SEC
         "httpPublishSuccessStatusCodeOnly",
         "httpHeaders",
         "id",
-        "allowUntrustedCertificates"
-})
+        "maxPollingErrorsBeforeRemoval",
+        "allowUntrustedCertificates",
+        "pollingIntervalMillis"})
 public class HttpAdapterConfig implements ProtocolAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
@@ -129,15 +130,6 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        stringMaxLength = 1024)
     private final @NotNull String id;
 
-    @JsonProperty("pollingIntervalMillis")
-    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
-    @ModuleConfigField(title = "Polling Interval [ms]",
-                       description = "Time in millisecond that this endpoint will be polled",
-                       numberMin = 1,
-                       required = true,
-                       defaultValue = "1000")
-    private final int pollingIntervalMillis;
-
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
                        description = "Max. errors polling the endpoint before the polling daemon is stopped",
@@ -151,22 +143,31 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean allowUntrustedCertificates;
 
+    @JsonProperty("pollingIntervalMillis")
+    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
+    @ModuleConfigField(title = "Polling Interval [ms]",
+                       description = "Time in millisecond that this endpoint will be polled",
+                       numberMin = 1,
+                       required = true,
+                       defaultValue = "1000")
+    private final int pollingIntervalMillis;
+
     @JsonCreator
     public HttpAdapterConfig(
-            @JsonProperty(value = "id", required = true) final @NotNull String id,
-            @JsonProperty("pollingIntervalMillis") @JsonAlias("publishingInterval") final @Nullable Integer pollingIntervalMillis,
-            @JsonProperty("maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty(value = "url", required = true) final @NotNull String url,
             @JsonProperty(value = "destination", required = true) final @NotNull String destination,
             @JsonProperty("qos") final @Nullable Integer qos,
             @JsonProperty("httpRequestMethod") final @Nullable HttpMethod httpRequestMethod,
+            @JsonProperty("httpConnectTimeout") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty("httpRequestBodyContentType") final @Nullable HttpContentType httpRequestBodyContentType,
             @JsonProperty("httpRequestBody") final @Nullable String httpRequestBody,
-            @JsonProperty("httpConnectTimeout") final @Nullable Integer httpConnectTimeoutSeconds,
-            @JsonProperty("httpHeaders") final @Nullable List<HttpHeader> httpHeaders,
+            @JsonProperty("assertResponseIsJson") final @Nullable Boolean assertResponseIsJson,
             @JsonProperty("httpPublishSuccessStatusCodeOnly") final @Nullable Boolean httpPublishSuccessStatusCodeOnly,
+            @JsonProperty("httpHeaders") final @Nullable List<HttpHeader> httpHeaders,
+            @JsonProperty(value = "id", required = true) final @NotNull String id,
+            @JsonProperty("maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty("allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates,
-            @JsonProperty("assertResponseIsJson") final @Nullable Boolean assertResponseIsJson) {
+            @JsonProperty("pollingIntervalMillis") @JsonAlias("publishingInterval") final @Nullable Integer pollingIntervalMillis) {
         this.id = id;
         if (pollingIntervalMillis != null) {
             this.pollingIntervalMillis = pollingIntervalMillis;
