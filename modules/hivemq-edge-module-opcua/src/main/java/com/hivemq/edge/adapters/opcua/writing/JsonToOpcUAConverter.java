@@ -283,7 +283,7 @@ public class JsonToOpcUAConverter {
                 throw createException(jsonNode, builtinDataType.name());
             case DateTime:
                 if (jsonNode.isLong()) {
-                    return new DateTime(jsonNode.asInt());
+                    return new DateTime(jsonNode.asLong());
                 }
                 throw createException(jsonNode, builtinDataType.name());
             case Guid:
