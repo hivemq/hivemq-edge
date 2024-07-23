@@ -35,12 +35,52 @@ import static com.hivemq.edge.adapters.http.HttpAdapterConfig.HttpMethod.GET;
 import static com.hivemq.edge.adapters.http.HttpAdapterConfig.HttpMethod.POST;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 @SuppressWarnings("unchecked")
 public class HttpAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
+
+    @Test
+    public void convertConfigObject_urlNull_exception() throws Exception {
+        final URL resource = getClass().getResource("/http-config-url-null.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
+        assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'url'");
+    }
+
+    @Test
+    public void convertConfigObject_destinationNull_exception() throws Exception {
+        final URL resource = getClass().getResource("/http-config-destination-null.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
+        assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'destination'");
+    }
+
+    @Test
+    public void convertConfigObject_idNull_exception() throws Exception {
+        final URL resource = getClass().getResource("/http-config-id-null.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
+        assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'id'");
+    }
 
     @Test
     public void convertConfigObject_defaults() throws Exception {

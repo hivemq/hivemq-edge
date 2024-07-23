@@ -64,17 +64,16 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        required = true)
     private final @NotNull String url;
 
-    @JsonProperty(value = "destination", required = true)
+    @JsonProperty(value = "destination")
     @ModuleConfigField(title = "Destination Topic",
                        description = "The topic to publish data on",
                        required = true,
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
     private final @NotNull String destination;
 
-    @JsonProperty(value = "qos", required = true)
+    @JsonProperty(value = "qos")
     @ModuleConfigField(title = "QoS",
                        description = "MQTT Quality of Service level",
-                       required = true,
                        numberMin = 0,
                        numberMax = 2,
                        defaultValue = "0")
@@ -89,7 +88,6 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     @JsonProperty("httpConnectTimeout")
     @ModuleConfigField(title = "Http Connection Timeout",
                        description = "Timeout (in second) to wait for the HTTP Request to complete",
-                       required = true,
                        defaultValue = DEFAULT_TIMEOUT_SECONDS + "")
     private final int httpConnectTimeoutSeconds;
 
@@ -120,7 +118,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "HTTP Headers", description = "HTTP headers to be added to your requests")
     private final @NotNull List<HttpHeader> httpHeaders;
 
-    @JsonProperty(value = "id", required = true)
+    @JsonProperty(value = "id")
     @ModuleConfigField(title = "Identifier",
                        description = "Unique identifier for this protocol adapter",
                        format = ModuleConfigField.FieldType.IDENTIFIER,
@@ -148,7 +146,6 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "Polling Interval [ms]",
                        description = "Time in millisecond that this endpoint will be polled",
                        numberMin = 1,
-                       required = true,
                        defaultValue = "1000")
     private final int pollingIntervalMillis;
 
