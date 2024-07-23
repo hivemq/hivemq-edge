@@ -10,7 +10,7 @@ For information on how the HiveMQ Community is organized and how contributions w
 
 We recommend that you use the [IntelliJ](https://www.jetbrains.com/idea/download/) IDE for all development on HiveMQ CE.
 It will automate your process as much as possible.
-Java version 11 is required to build and run HiveMQ Edge (we recommend OpenJDK 11).
+Java version 11 is required to build and run HiveMQ Edge (for example [Azul Zulu JDK](https://www.azul.com/downloads/)).
 You can check your installed Java version by entering `java -version` on the command line.
 
 First you need to [fork](https://help.github.com/en/articles/fork-a-repo) HiveMQ Edge [repository](https://github.com/hivemq/hivemq-edge).
