@@ -35,9 +35,6 @@ import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMap
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-/**
- * @author Simon L Johnson
- */
 public class HttpAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
