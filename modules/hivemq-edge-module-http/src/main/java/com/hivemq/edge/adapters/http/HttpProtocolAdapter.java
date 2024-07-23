@@ -112,7 +112,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
                     final HttpClient.Builder builder = HttpClient.newBuilder();
                     builder.version(HttpClient.Version.HTTP_1_1)
                             .followRedirects(HttpClient.Redirect.NORMAL)
-                            .connectTimeout(adapterConfig.getHttpConnectTimeout());
+                            .connectTimeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeoutSeconds()));
                     if (adapterConfig.isAllowUntrustedCertificates()) {
                         builder.sslContext(createTrustAllContext());
                     }
@@ -150,10 +150,10 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         builder.uri(URI.create(adapterConfig.getUrl()));
-        builder.timeout(adapterConfig.getHttpConnectTimeout());
+        builder.timeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
-        if (adapterConfig.getHttpHeaders() != null && !adapterConfig.getHttpHeaders().isEmpty()) {
+        if (!adapterConfig.getHttpHeaders().isEmpty()) {
             adapterConfig.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
         }
 
@@ -256,7 +256,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
 
     @Override
     public int getPollingIntervalMillis() {
-        return (int) adapterConfig.getPollingInterval().toMillis();
+        return adapterConfig.getPollingIntervalMillis();
     }
 
     @Override
