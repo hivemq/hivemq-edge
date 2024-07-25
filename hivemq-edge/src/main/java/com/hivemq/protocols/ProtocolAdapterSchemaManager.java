@@ -29,7 +29,6 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,8 +46,8 @@ public class ProtocolAdapterSchemaManager {
     private @Nullable JsonSchema schema;
 
     public ProtocolAdapterSchemaManager(
-            @NotNull final ObjectMapper objectMapper,
-            @NotNull final Class<? extends ProtocolAdapterConfig> configBean) {
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Class<? extends ProtocolAdapterConfig> configBean) {
         this.objectMapper = objectMapper;
         this.configBean = configBean;
         this.customConfigSchemaGenerator = new CustomConfigSchemaGenerator();
@@ -63,27 +62,16 @@ public class ProtocolAdapterSchemaManager {
 
     public synchronized @NotNull JsonSchema generateSchema() {
         if (schema == null) {
-            JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+            final JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
             schema = factory.getSchema(generateSchemaNode());
             schema.initializeValidators();
         }
         return schema;
     }
 
-    public @NotNull List<ProtocolAdapterValidationFailure> validateJsonDocument(final byte @NotNull [] jsonDocument)
-            throws IOException {
-        JsonSchema schema = generateSchema();
-        Preconditions.checkNotNull(jsonDocument);
-        JsonNode node = objectMapper.readTree(jsonDocument);
-        return schema.validate(node)
-                .stream()
-                .map(ProtocolAdapterSchemaManager::convertMessage)
-                .collect(Collectors.toList());
-    }
-
-    public @NotNull List<ProtocolAdapterValidationFailure> validateObject(@NotNull final Object o) {
+    public @NotNull List<ProtocolAdapterValidationFailure> validateObject(final @NotNull Object o) {
         Preconditions.checkNotNull(o);
-        JsonNode node;
+        final JsonNode node;
         if (o instanceof JsonNode) {
             node = (JsonNode) o;
         } else {
@@ -96,9 +84,9 @@ public class ProtocolAdapterSchemaManager {
     }
 
 
-    static ProtocolAdapterValidationFailure convertMessage(ValidationMessage validationMessage) {
+    static ProtocolAdapterValidationFailure convertMessage(final @NotNull ValidationMessage validationMessage) {
         return new ProtocolAdapterValidationFailureImpl(validationMessage.getMessage(),
-                validationMessage.getPath(),
+                validationMessage.getEvaluationPath().toString(),
                 validationMessage.getClass());
     }
 
