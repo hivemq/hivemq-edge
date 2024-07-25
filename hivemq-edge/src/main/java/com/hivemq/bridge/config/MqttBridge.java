@@ -33,6 +33,7 @@ public class MqttBridge {
     private final @Nullable String username;
     private final @Nullable String password;
     private final @Nullable BridgeTls bridgeTls;
+    private final @Nullable BridgeWebsocketConfig bridgeWebsocketConfig;
     private final @NotNull List<RemoteSubscription> remoteSubscriptions;
     private final @NotNull List<LocalSubscription> localSubscriptions;
     private final boolean loopPreventionEnabled;
@@ -50,6 +51,7 @@ public class MqttBridge {
             final @Nullable String username,
             final @Nullable String password,
             final @Nullable BridgeTls bridgeTls,
+            final @Nullable BridgeWebsocketConfig bridgeWebsocketConfig,
             final @NotNull List<RemoteSubscription> remoteSubscriptions,
             final @NotNull List<LocalSubscription> localSubscriptions,
             final boolean loopPreventionEnabled,
@@ -65,6 +67,7 @@ public class MqttBridge {
         this.username = username;
         this.password = password;
         this.bridgeTls = bridgeTls;
+        this.bridgeWebsocketConfig = bridgeWebsocketConfig;
         this.remoteSubscriptions = remoteSubscriptions;
         this.localSubscriptions = localSubscriptions;
         this.loopPreventionEnabled = loopPreventionEnabled;
@@ -108,6 +111,10 @@ public class MqttBridge {
         return password;
     }
 
+    public @Nullable BridgeWebsocketConfig getBridgeWebsocketConfig() {
+        return bridgeWebsocketConfig;
+    }
+
     public @Nullable BridgeTls getBridgeTls() {
         return bridgeTls;
     }
@@ -143,6 +150,7 @@ public class MqttBridge {
         private @Nullable String username = null;
         private @Nullable String password = null;
         private @Nullable BridgeTls bridgeTls = null;
+        private @Nullable BridgeWebsocketConfig bridgeWebsocketConfig = null;
         private @NotNull List<RemoteSubscription> remoteSubscriptions = List.of();
         private @NotNull List<LocalSubscription> localSubscriptions = List.of();
         private boolean loopPreventionEnabled = true;
@@ -199,6 +207,11 @@ public class MqttBridge {
             return this;
         }
 
+        public @NotNull Builder withWebsocketConfiguration(final @Nullable BridgeWebsocketConfig bridgeWebsocketConfig) {
+            this.bridgeWebsocketConfig = bridgeWebsocketConfig;
+            return this;
+        }
+
         public @NotNull Builder withRemoteSubscriptions(final @NotNull List<RemoteSubscription> remoteSubscriptions) {
             this.remoteSubscriptions = remoteSubscriptions;
             return this;
@@ -235,6 +248,7 @@ public class MqttBridge {
                     username,
                     password,
                     bridgeTls,
+                    bridgeWebsocketConfig,
                     remoteSubscriptions,
                     localSubscriptions,
                     loopPreventionEnabled,
@@ -288,6 +302,9 @@ public class MqttBridge {
             return false;
         }
         if (!Objects.equals(bridgeTls, that.bridgeTls)) {
+            return false;
+        }
+        if (!Objects.equals(bridgeWebsocketConfig, that.bridgeWebsocketConfig)) {
             return false;
         }
         if (!remoteSubscriptions.equals(that.remoteSubscriptions)) {

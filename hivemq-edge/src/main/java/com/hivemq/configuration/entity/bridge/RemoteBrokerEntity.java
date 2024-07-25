@@ -38,6 +38,9 @@ public class RemoteBrokerEntity {
     private @Nullable BridgeAuthenticationEntity authentication;
 
     @XmlElementRef
+    private @Nullable BridgeWebsocketConfigurationEntity bridgeWebsocketConfig;
+
+    @XmlElementRef
     private @Nullable BridgeTlsEntity tls;
 
     public int getPort() {
@@ -54,6 +57,14 @@ public class RemoteBrokerEntity {
 
     public @Nullable BridgeAuthenticationEntity getAuthentication() {
         return authentication;
+    }
+
+    public @Nullable BridgeWebsocketConfigurationEntity getBridgeWebsocketConfig() {
+        return bridgeWebsocketConfig;
+    }
+
+    public void setBridgeWebsocketConfig(final @Nullable BridgeWebsocketConfigurationEntity bridgeWebsocketConfig) {
+        this.bridgeWebsocketConfig = bridgeWebsocketConfig;
     }
 
     public @Nullable BridgeTlsEntity getTls() {
