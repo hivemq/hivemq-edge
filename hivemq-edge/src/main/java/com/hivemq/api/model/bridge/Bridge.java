@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.core.TlsConfiguration;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.bridge.config.BridgeTls;
+import com.hivemq.bridge.config.BridgeWebsocketConfig;
 import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
@@ -141,6 +142,10 @@ public class Bridge {
     @Schema(description = "tlsConfiguration associated with the bridge", nullable = true)
     private final @Nullable TlsConfiguration tlsConfiguration;
 
+    @JsonProperty("websocketConfiguration")
+    @Schema(description = "websocketConfiguration associated with the bridge", nullable = true)
+    private final @Nullable WebsocketConfiguration websocketConfiguration;
+
     @JsonProperty("status")
     @Schema(description = "status associated with the bridge", nullable = true)
     private final @Nullable Status status;
@@ -155,18 +160,19 @@ public class Bridge {
     public Bridge(
             @NotNull @JsonProperty("id") final String id,
             @NotNull @JsonProperty("host") final String host,
-            @NotNull @JsonProperty("port") final int port,
+            @JsonProperty("port") final int port,
             @NotNull @JsonProperty("clientId") final String clientId,
-            @NotNull @JsonProperty("keepAlive") final int keepAlive,
-            @NotNull @JsonProperty("sessionExpiry") final int sessionExpiry,
-            @NotNull @JsonProperty("cleanStart") final boolean cleanStart,
+            @JsonProperty("keepAlive") final int keepAlive,
+            @JsonProperty("sessionExpiry") final int sessionExpiry,
+            @JsonProperty("cleanStart") final boolean cleanStart,
             @Nullable @JsonProperty("username") final String username,
             @Nullable @JsonProperty("password") final String password,
-            @NotNull @JsonProperty("loopPreventionEnabled") final boolean loopPreventionEnabled,
-            @NotNull @JsonProperty("loopPreventionHopCount") final int loopPreventionHopCount,
+            @JsonProperty("loopPreventionEnabled") final boolean loopPreventionEnabled,
+            @JsonProperty("loopPreventionHopCount") final int loopPreventionHopCount,
             @NotNull @JsonProperty("remoteSubscriptions") final List<BridgeSubscription> remoteSubscriptions,
             @NotNull @JsonProperty("localSubscriptions") final List<LocalBridgeSubscription> localSubscriptions,
             @Nullable @JsonProperty("tlsConfiguration") final TlsConfiguration tlsConfiguration,
+            @Nullable @JsonProperty("websocketConfiguration") final WebsocketConfiguration websocketConfiguration,
             @Nullable @JsonProperty("status") final Status status,
             @Nullable @JsonProperty("persist") final Boolean persist) {
         this.id = id;
@@ -183,6 +189,7 @@ public class Bridge {
         this.remoteSubscriptions = remoteSubscriptions;
         this.localSubscriptions = localSubscriptions;
         this.tlsConfiguration = tlsConfiguration;
+        this.websocketConfiguration = websocketConfiguration;
         this.status = status;
         this.persist = persist != null ? persist : true; // true is default
     }
@@ -243,12 +250,16 @@ public class Bridge {
         return localSubscriptions;
     }
 
-    public TlsConfiguration getTlsConfiguration() {
+    public @Nullable TlsConfiguration getTlsConfiguration() {
         return tlsConfiguration;
     }
 
     public boolean isPersist() {
         return persist;
+    }
+
+    public @Nullable WebsocketConfiguration getWebsocketConfiguration() {
+        return websocketConfiguration;
     }
 
     public static class BridgeSubscription {
@@ -403,6 +414,7 @@ public class Bridge {
                         .map(Bridge::convertLocalSubscription)
                         .collect(Collectors.toList()),
                 convertTls(mqttBridge.getBridgeTls()),
+                convertWebsocketConfig(mqttBridge.getBridgeWebsocketConfig()),
                 status,
                 mqttBridge.isPersist());
         return bridge;
@@ -465,5 +477,14 @@ public class Bridge {
                 tls.isVerifyHostname(),
                 tls.getHandshakeTimeout());
         return tlsConfiguration;
+    }
+
+    public static @Nullable WebsocketConfiguration convertWebsocketConfig(final @Nullable BridgeWebsocketConfig bridgeWebsocketConfig) {
+        if (bridgeWebsocketConfig == null) {
+            return null;
+        }
+        return new WebsocketConfiguration(true,
+                bridgeWebsocketConfig.getPath(),
+                bridgeWebsocketConfig.getSubProtocol());
     }
 }
