@@ -32,11 +32,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class HttpData implements ProtocolAdapterDataSample {
 
-    private final String requestUrl;
-    private final String contentType;
-    private int httpStatusCode;
+    private final @NotNull String requestUrl;
+    private final @NotNull String contentType;
+    private final int httpStatusCode;
     private final @NotNull DataPointFactory dataPointFactory;
-    protected @NotNull PollingContext pollingContext;
+    private final @NotNull PollingContext pollingContext;
 
     //-- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
@@ -56,11 +56,11 @@ public class HttpData implements ProtocolAdapterDataSample {
     }
 
 
-    public String getRequestUrl() {
+    public @NotNull String getRequestUrl() {
         return requestUrl;
     }
 
-    public String getContentType() {
+    public @NotNull String getContentType() {
         return contentType;
     }
 

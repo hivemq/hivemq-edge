@@ -112,7 +112,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
                     final HttpClient.Builder builder = HttpClient.newBuilder();
                     builder.version(HttpClient.Version.HTTP_1_1)
                             .followRedirects(HttpClient.Redirect.NORMAL)
-                            .connectTimeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeout()));
+                            .connectTimeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeoutSeconds()));
                     if (adapterConfig.isAllowUntrustedCertificates()) {
                         builder.sslContext(createTrustAllContext());
                     }
@@ -150,16 +150,10 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         builder.uri(URI.create(adapterConfig.getUrl()));
-        //-- Ensure we apply a reasonable timeout so we don't hang threads
-        Integer timeout = adapterConfig.getHttpConnectTimeout();
-        timeout = timeout == null ? HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS : timeout;
-        timeout = Math.max(timeout, HttpAdapterConstants.MAX_TIMEOUT_SECONDS);
-        builder.timeout(Duration.ofSeconds(timeout));
+        builder.timeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
-        if (adapterConfig.getHttpHeaders() != null && !adapterConfig.getHttpHeaders().isEmpty()) {
-            adapterConfig.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
-        }
+        adapterConfig.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
 
         switch (adapterConfig.getHttpRequestMethod()) {
             case GET:

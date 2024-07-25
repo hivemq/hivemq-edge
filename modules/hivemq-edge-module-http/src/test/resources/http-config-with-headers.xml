@@ -23,6 +23,7 @@
             <httpRequestMethod>POST</httpRequestMethod>
             <httpConnectTimeout>1337</httpConnectTimeout>
             <httpRequestBodyContentType>YAML</httpRequestBodyContentType>
+            <httpRequestBody>my-body</httpRequestBody>
             <httpPublishSuccessStatusCodeOnly>true</httpPublishSuccessStatusCodeOnly>
             <httpHeaders>
                 <httpHeader>
