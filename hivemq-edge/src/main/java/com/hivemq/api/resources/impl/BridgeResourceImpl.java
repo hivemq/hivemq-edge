@@ -22,6 +22,7 @@ import com.hivemq.api.model.ApiConstants;
 import com.hivemq.api.model.ApiErrorMessages;
 import com.hivemq.api.model.bridge.Bridge;
 import com.hivemq.api.model.bridge.BridgeList;
+import com.hivemq.api.model.bridge.WebsocketConfiguration;
 import com.hivemq.api.model.core.TlsConfiguration;
 import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
@@ -31,6 +32,7 @@ import com.hivemq.api.resources.BridgeApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.bridge.BridgeService;
 import com.hivemq.bridge.config.BridgeTls;
+import com.hivemq.bridge.config.BridgeWebsocketConfig;
 import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
@@ -345,15 +347,19 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                         1)
                 .withSessionExpiry(bridge.getSessionExpiry())
                 .withLocalSubscriptions(bridge.getLocalSubscriptions() != null ?
-                        bridge.getLocalSubscriptions().stream().map(BridgeResourceImpl::unconvertLocal)
+                        bridge.getLocalSubscriptions()
+                                .stream()
+                                .map(BridgeResourceImpl::unconvertLocal)
                                 .collect(Collectors.toList()) :
                         List.of())
                 .withRemoteSubscriptions(bridge.getRemoteSubscriptions() != null ?
                         bridge.getRemoteSubscriptions()
-                                .stream().map(BridgeResourceImpl::unconvertRemote)
+                                .stream()
+                                .map(BridgeResourceImpl::unconvertRemote)
                                 .collect(Collectors.toList()) :
                         List.of())
                 .withBridgeTls(convertTls(bridge.getTlsConfiguration()))
+                .withWebsocketConfiguration(convertWebsocketConfig(bridge.getWebsocketConfiguration()))
                 .persist(bridge.isPersist());
         return builder.build();
     }
@@ -366,9 +372,12 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 subscription.getExcludes() == null ? List.of() : subscription.getExcludes(),
                 subscription.getCustomUserProperties() != null ?
                         subscription.getCustomUserProperties()
-                                .stream().map(BridgeResourceImpl::convertProperty)
+                                .stream()
+                                .map(BridgeResourceImpl::convertProperty)
                                 .collect(Collectors.toList()) :
-                        List.of(), subscription.isPreserveRetain(), subscription.getMaxQoS(),
+                        List.of(),
+                subscription.isPreserveRetain(),
+                subscription.getMaxQoS(),
                 subscription.getQueueLimit());
     }
 
@@ -378,7 +387,8 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
                 subscription.getDestination(),
                 subscription.getCustomUserProperties() != null ?
                         subscription.getCustomUserProperties()
-                                .stream().map(BridgeResourceImpl::convertProperty)
+                                .stream()
+                                .map(BridgeResourceImpl::convertProperty)
                                 .collect(Collectors.toList()) :
                         List.of(),
                 subscription.isPreserveRetain(),
@@ -394,16 +404,25 @@ public class BridgeResourceImpl extends AbstractApi implements BridgeApi {
             return null;
         }
 
-        tls.getCipherSuites();
-        tls.getProtocols();
         return new BridgeTls(tls.getKeystorePath(),
                 tls.getKeystorePassword(),
                 tls.getPrivateKeyPassword(),
                 tls.getTruststorePath(),
-                tls.getTruststorePassword(), tls.getProtocols(), tls.getCipherSuites(),
+                tls.getTruststorePassword(),
+                tls.getProtocols(),
+                tls.getCipherSuites(),
                 tls.getKeystoreType(),
                 tls.getTruststoreType(),
                 tls.isVerifyHostname(),
                 Math.max(10, tls.getHandshakeTimeout()));
+    }
+
+    public static @Nullable BridgeWebsocketConfig convertWebsocketConfig(final @Nullable WebsocketConfiguration websocketConfiguration) {
+        if (websocketConfiguration == null || !websocketConfiguration.isEnabled()) {
+            return null;
+        }
+
+        return new BridgeWebsocketConfig(websocketConfiguration.getServerPath(),
+                websocketConfiguration.getSubProtocol());
     }
 }

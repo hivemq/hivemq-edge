@@ -698,6 +698,15 @@
                                                 <xs:documentation>Default: 1883</xs:documentation>
                                             </xs:annotation>
                                         </xs:element>
+                                        <xs:element name="websocket" minOccurs="0">
+                                            <xs:complexType>
+                                                <xs:all>
+                                                    <xs:element name="enabled" type="xs:boolean"/>
+                                                    <xs:element name="server-path" type="xs:string" minOccurs="0"/>
+                                                    <xs:element name="subprotocol" type="xs:string" minOccurs="0"/>
+                                                </xs:all>
+                                            </xs:complexType>
+                                        </xs:element>
                                         <xs:element name="mqtt" minOccurs="0">
                                             <xs:complexType>
                                                 <xs:all>
