@@ -30,7 +30,7 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
 
     @Override
     public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<SimulationAdapterConfig> input) {
-        return new SimulationProtocolAdapter(adapterInformation, input);
+        return new SimulationProtocolAdapter(adapterInformation, input, TimeWaiter.INSTANCE);
     }
 
     @Override

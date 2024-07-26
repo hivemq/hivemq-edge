@@ -74,6 +74,20 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
                        defaultValue = "1000")
     private int maxValue = 1000;
 
+    @JsonProperty("minDelay")
+    @ModuleConfigField(title = "Minimum of delay",
+                       description = "Minimum of artificial delay before the polling method generates a value",
+                       numberMin = 0,
+                       defaultValue = "0")
+    private int minDelay = 0;
+
+    @JsonProperty("maxDelay")
+    @ModuleConfigField(title = "Maximum of delay",
+                       description = "Maximum of artificial delay before the polling method generates a value",
+                       numberMin = 0,
+                       defaultValue = "0")
+    private int maxDelay = 0;
+
     public SimulationAdapterConfig() {
     }
 
@@ -99,5 +113,13 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
 
     public int getMaxPollingErrorsBeforeRemoval() {
         return maxPollingErrorsBeforeRemoval;
+    }
+
+    public int getMaxDelay() {
+        return maxDelay;
+    }
+
+    public int getMinDelay() {
+        return minDelay;
     }
 }
