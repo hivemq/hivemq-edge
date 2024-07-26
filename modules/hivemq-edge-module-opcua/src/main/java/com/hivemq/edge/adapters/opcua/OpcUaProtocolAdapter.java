@@ -15,6 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
@@ -43,6 +45,8 @@ import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
 import com.hivemq.edge.adapters.opcua.config.OpcUAWriteContext;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.writing.ConversionException;
+import com.hivemq.edge.adapters.opcua.writing.JsonSchemaGenerationException;
+import com.hivemq.edge.adapters.opcua.writing.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.writing.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.writing.OpcUAWritePayload;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
@@ -96,6 +100,7 @@ public class OpcUaProtocolAdapter
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private @Nullable OpcUaClient opcUaClient;
     private @Nullable JsonToOpcUAConverter jsonToOpcUAConverter;
+    private @Nullable JsonSchemaGenerator jsonSchemaGenerator;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap = new ConcurrentHashMap<>();
 
     public OpcUaProtocolAdapter(
@@ -132,6 +137,7 @@ public class OpcUaProtocolAdapter
                 });
                 try {
                     jsonToOpcUAConverter = JsonToOpcUAConverter.getInstance(opcUaClient);
+                    jsonSchemaGenerator = JsonSchemaGenerator.getInstance(opcUaClient, new ObjectMapper());
                 } catch (UaException e) {
                     log.error("Unable to create the converter for writing.", e);
                 }
@@ -416,6 +422,15 @@ public class OpcUaProtocolAdapter
             } catch (ConversionException e) {
                 writeOutput.fail(e.getMessage(), false);
                 return;
+            }
+
+            try {
+                assert jsonSchemaGenerator != null;
+                final JsonNode jsonSchema =
+                        jsonSchemaGenerator.getJsonSchema(NodeId.parse(input.getWriteContext().getDestination()));
+                System.err.println(jsonSchema.toPrettyString());
+            } catch (JsonSchemaGenerationException e) {
+                log.error("Error while creation of JsonSchema: ", e);
             }
 
             Variant variant = new Variant(opcUaObject);
