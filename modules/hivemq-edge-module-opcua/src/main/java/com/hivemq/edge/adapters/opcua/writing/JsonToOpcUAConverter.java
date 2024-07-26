@@ -60,7 +60,6 @@ public class JsonToOpcUAConverter {
 
     private final @NotNull OpcUaClient client;
     private final @NotNull DataTypeTree tree;
-    private String localPart;
 
     public JsonToOpcUAConverter(final @NotNull OpcUaClient client) throws UaException {
         this.client = client;
@@ -133,7 +132,7 @@ public class JsonToOpcUAConverter {
         final String namespaceURI = fieldType.getTypeName().getNamespaceURI();
         boolean isStandard = namespaceURI.startsWith("http://opcfoundation.org/");
         if (isStandard) {
-            localPart = fieldType.getTypeName().getLocalPart();
+            String localPart = fieldType.getTypeName().getLocalPart();
             try {
                 return BuiltinDataType.valueOf(localPart);
             } catch (IllegalArgumentException e) {
