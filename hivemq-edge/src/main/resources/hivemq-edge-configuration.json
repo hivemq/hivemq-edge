@@ -149,6 +149,25 @@
         "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-plc4x/src/main/resources/httpd/images/eip-icon.png",
         "external" : true
       }
+    },
+    {
+      "id" : "file_input",
+      "version" : "2024.6 (ALPHA)",
+      "name" : "File Input Adapter",
+      "description" : "This adapter polls and publishes the content of files on regular basis.",
+      "author" : "HiveMQ",
+      "documentationLink" : {
+        "url" : "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html",
+        "external" : true
+      },
+      "provisioningLink" : {
+        "url" : "https://github.com/hivemq/hivemq-edge/releases",
+        "external" : true
+      },
+      "logoUrl" : {
+        "url" : "https://raw.githubusercontent.com/hivemq/hivemq-edge/master/modules/hivemq-edge-module-file/src/main/resources/httpd/images/file.png",
+        "external" : true
+      }
     }
   ],
   "properties" : {  }
