@@ -40,11 +40,15 @@ describe('NodeGroup', () => {
         'have.text',
         'Are you sure you want to delete this group? The adapters inside the group will revert to their original state.'
       )
-    cy.get("[role='alertdialog']").find('button').eq(0).should('have.text', 'Cancel').click()
+    cy.get("[role='alertdialog']").find('button').eq(0).as('cancelBtn')
+    cy.get('@cancelBtn').should('have.text', 'Cancel')
+    cy.get('@cancelBtn').click()
     cy.get("[role='alertdialog']").should('not.exist')
 
     cy.getByTestId('node-group-toolbar-ungroup').click()
-    cy.get("[role='alertdialog']").find('button').eq(1).should('have.text', 'Delete').click()
+    cy.get("[role='alertdialog']").find('button').eq(1).as('deleteBtn')
+    cy.get('@deleteBtn').should('have.text', 'Delete')
+    cy.get('@deleteBtn').click()
     cy.get("[role='alertdialog']").should('not.exist')
   })
 

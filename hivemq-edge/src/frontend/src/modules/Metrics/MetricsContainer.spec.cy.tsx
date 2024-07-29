@@ -10,7 +10,7 @@ import { mockBridgeId } from '@/api/hooks/useGetBridges/__handlers__'
 describe('MetricsContainer', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
-    cy.intercept('/api/v1/metrics', { items: MOCK_METRICS } as MetricList).as('getMetrics')
+    cy.intercept('/api/v1/metrics', { items: MOCK_METRICS } as MetricList)
   })
 
   it('should render the collapsible component', () => {
