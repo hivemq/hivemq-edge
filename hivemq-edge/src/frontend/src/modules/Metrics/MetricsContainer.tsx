@@ -40,7 +40,7 @@ export interface MetricSpecStorage {
 // TODO[NVL] Should go to some kind of reusable routine, with verification
 const defaultColorSchemes = ['blue', 'green', 'orange', 'pink', 'purple', 'red', 'teal', 'yellow', 'cyan']
 
-const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultChartType }) => {
+const MetricsContainer: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultChartType }) => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { addMetrics, getMetricsFor, removeMetrics } = useMetricsStore()
@@ -144,4 +144,4 @@ const Metrics: FC<MetricsProps> = ({ nodeId, adapterIDs, initMetrics, defaultCha
   )
 }
 
-export default Metrics
+export default MetricsContainer
