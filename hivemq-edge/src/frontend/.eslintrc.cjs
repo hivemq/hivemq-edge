@@ -4,6 +4,7 @@ module.exports = {
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
+    'plugin:react/jsx-runtime',
     'plugin:react-hooks/recommended',
     'plugin:cypress/recommended',
     'plugin:@tanstack/eslint-plugin-query/recommended',
@@ -12,7 +13,6 @@ module.exports = {
   parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
   plugins: ['react-refresh', 'cypress'],
   rules: {
-    'react/react-in-jsx-scope': 0,
     'react/prop-types': 0,
     'react/jsx-curly-brace-presence': ['error', { props: 'never', children: 'never' }],
     'react-refresh/only-export-components': 'warn',
