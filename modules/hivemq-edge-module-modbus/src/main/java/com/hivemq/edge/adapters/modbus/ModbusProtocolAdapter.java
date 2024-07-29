@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.digitalpetri.modbus.responses.WriteMultipleRegistersResponse;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.WriteContext;
@@ -323,5 +324,11 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
     @Override
     public @NotNull List<? extends WriteContext> getWriteContexts() {
         return adapterConfig.getWriteContexts();
+    }
+
+    @Override
+    public @NotNull JsonNode createJsonSchema(@NotNull final WriteContext writeContext) {
+        // TODO needs implementation
+        return null;
     }
 }
