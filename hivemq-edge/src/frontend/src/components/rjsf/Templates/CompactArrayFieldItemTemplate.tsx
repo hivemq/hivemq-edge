@@ -32,6 +32,7 @@ export const CompactArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (pr
         <ButtonGroup isAttached size="sm" orientation="horizontal" ml={2}>
           {(hasMoveUp || hasMoveDown) && (
             <MoveUpButton
+              data-testid="compact-up-item"
               disabled={disabled || readonly || !hasMoveUp}
               onClick={onArrowUpClick}
               uiSchema={uiSchema}
@@ -40,6 +41,7 @@ export const CompactArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (pr
           )}
           {(hasMoveUp || hasMoveDown) && (
             <MoveDownButton
+              data-testid="compact-down-item"
               disabled={disabled || readonly || !hasMoveDown}
               onClick={onArrowDownClick}
               uiSchema={uiSchema}
@@ -47,10 +49,17 @@ export const CompactArrayFieldItemTemplate: FC<ArrayFieldTemplateItemType> = (pr
             />
           )}
           {hasCopy && (
-            <CopyButton disabled={disabled || readonly} onClick={onCopyClick} uiSchema={uiSchema} registry={registry} />
+            <CopyButton
+              data-testid="compact-copy-item"
+              disabled={disabled || readonly}
+              onClick={onCopyClick}
+              uiSchema={uiSchema}
+              registry={registry}
+            />
           )}
           {hasRemove && (
             <RemoveButton
+              data-testid="compact-delete-item"
               disabled={disabled || readonly}
               onClick={onRemoveClick}
               uiSchema={uiSchema}

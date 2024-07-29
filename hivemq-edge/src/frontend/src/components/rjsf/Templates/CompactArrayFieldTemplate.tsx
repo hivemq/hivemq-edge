@@ -61,6 +61,7 @@ export const CompactArrayFieldTemplate: FC<ArrayFieldTemplateProps<unknown, RJSF
         {canAdd && (
           <HStack justifyContent="end" mt={2}>
             <AddButton
+              data-testid="compact-add-item"
               className="array-item-add"
               onClick={onAddClick}
               disabled={disabled || readonly}
