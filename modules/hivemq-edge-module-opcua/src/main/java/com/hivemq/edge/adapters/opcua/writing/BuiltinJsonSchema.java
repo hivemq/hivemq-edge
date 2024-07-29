@@ -24,6 +24,10 @@ public class BuiltinJsonSchema {
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private final @NotNull HashMap<BuiltinDataType, JsonNode> classToJsonSchema = new HashMap<>();
 
+    private static final String MINIMUM_KEY_WORD = "minimum";
+    private static final String MAXIMUM_KEY_WORD = "maximum";
+    public static final String INTEGER_DATA_TYPE = "integer";
+
 
     private BuiltinJsonSchema() {
         try {
@@ -106,8 +110,7 @@ public class BuiltinJsonSchema {
         final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
         final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
         final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
-        rootNode.set("§id", new TextNode(id));
-        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2020-12/schema"));
+        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2019-09/schema"));
         rootNode.set("title", new TextNode(title));
         rootNode.set("type", new TextNode("object"));
         rootNode.set("properties", propertiesNode);
@@ -134,44 +137,44 @@ public class BuiltinJsonSchema {
                 nestedPropertiesNode.set("type", new TextNode("string"));
                 return;
             case Int16:
-                nestedPropertiesNode.set("type", new TextNode("integer"));
+                nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
                 return;
             case UInt16:
-                nestedPropertiesNode.set("type", new TextNode("integer"));
-                nestedPropertiesNode.set("min", new IntNode(UShort.MIN.intValue()));
-                nestedPropertiesNode.set("max", new LongNode(UShort.MAX.intValue()));
+                nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new IntNode(UShort.MIN.intValue()));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new LongNode(UShort.MAX.intValue()));
                 return;
             case StatusCode:
             case Int32:
-                nestedPropertiesNode.set("type", new TextNode("integer"));
-                nestedPropertiesNode.set("min", new LongNode(Integer.MIN_VALUE));
-                nestedPropertiesNode.set("max", new LongNode(Integer.MAX_VALUE));
+                nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new LongNode(Integer.MIN_VALUE));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new LongNode(Integer.MAX_VALUE));
                 return;
             case UInt32:
-                nestedPropertiesNode.set("type", new TextNode("integer"));
-                nestedPropertiesNode.set("min", new LongNode(UInteger.MIN_VALUE));
-                nestedPropertiesNode.set("max", new LongNode(UInteger.MAX_VALUE));
+                nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new LongNode(UInteger.MIN_VALUE));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new LongNode(UInteger.MAX_VALUE));
                 return;
             case DateTime:
             case Int64:
-                nestedPropertiesNode.set("type", new TextNode("integer"));
-                nestedPropertiesNode.set("min", new LongNode(Long.MIN_VALUE));
-                nestedPropertiesNode.set("max", new LongNode(Long.MAX_VALUE));
+                nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new LongNode(Long.MIN_VALUE));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new LongNode(Long.MAX_VALUE));
                 return;
             case UInt64:
-                nestedPropertiesNode.set("type", new TextNode("integer"));
-                nestedPropertiesNode.set("min", new BigIntegerNode(ULong.MIN_VALUE));
-                nestedPropertiesNode.set("max", new BigIntegerNode(ULong.MAX_VALUE));
+                nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new BigIntegerNode(ULong.MIN_VALUE));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new BigIntegerNode(ULong.MAX_VALUE));
                 return;
             case Float:
                 nestedPropertiesNode.set("type", new TextNode("number"));
-                nestedPropertiesNode.set("min", new FloatNode(Float.MIN_VALUE));
-                nestedPropertiesNode.set("max", new FloatNode(Float.MAX_VALUE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new FloatNode(Float.MIN_VALUE));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new FloatNode(Float.MAX_VALUE));
                 return;
             case Double:
                 nestedPropertiesNode.set("type", new TextNode("number"));
-                nestedPropertiesNode.set("min", new DoubleNode(Double.MIN_VALUE));
-                nestedPropertiesNode.set("max", new DoubleNode(Double.MAX_VALUE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new DoubleNode(Double.MIN_VALUE));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new DoubleNode(Double.MAX_VALUE));
                 return;
             case String:
             case Guid:
@@ -188,7 +191,7 @@ public class BuiltinJsonSchema {
                 final ObjectNode innerProperties = objectMapper.createObjectNode();
 
                 final ObjectNode namespaceIndexNode = objectMapper.createObjectNode();
-                namespaceIndexNode.set("type", new TextNode("integer"));
+                namespaceIndexNode.set("type", new TextNode(INTEGER_DATA_TYPE));
                 innerProperties.set("namespaceIndex", namespaceIndexNode);
 
                 final ObjectNode nameNode = objectMapper.createObjectNode();
