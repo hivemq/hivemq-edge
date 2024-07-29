@@ -27,10 +27,10 @@ describe('NodeGroup', () => {
       .should('exist')
       .should('have.attr', 'aria-label', 'Open the overview panel')
 
-    cy.getByTestId('node-group-toolbar-expand').should('exist').should('have.text', 'Collapse group')
+    cy.getByTestId('node-group-toolbar-expand').should('have.attr', 'aria-label', 'Collapse group')
 
     cy.getByTestId('node-group-toolbar-expand').click()
-    cy.getByTestId('node-group-toolbar-expand').should('have.text', 'Expand group')
+    cy.getByTestId('node-group-toolbar-expand').should('have.attr', 'aria-label', 'Expand group')
 
     cy.getByTestId('node-group-toolbar-ungroup').click()
     cy.get("[role='alertdialog']").find('header').should('have.text', 'Ungroup the adapters')
@@ -52,10 +52,11 @@ describe('NodeGroup', () => {
     cy.injectAxe()
     cy.mountWithProviders(
       <CustomNodeTesting
-        nodes={[{ ...MOCK_NODE_GROUP, position: { x: 0, y: 0 } }]}
+        nodes={[{ ...MOCK_NODE_GROUP, position: { x: 100, y: 100 } }]}
         nodeTypes={{ [NodeTypes.CLUSTER_NODE]: NodeGroup }}
       />
     )
+    cy.get("[role='button']").click({ force: true })
     cy.checkAccessibility()
     cy.percySnapshot('Component: NodeGroup')
   })
