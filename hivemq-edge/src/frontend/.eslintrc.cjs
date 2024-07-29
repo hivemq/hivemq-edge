@@ -8,6 +8,7 @@ module.exports = {
     'plugin:react-hooks/recommended',
     'plugin:cypress/recommended',
     'plugin:@tanstack/eslint-plugin-query/recommended',
+    'plugin:deprecation/recommended',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
@@ -18,6 +19,7 @@ module.exports = {
     'react-refresh/only-export-components': 'warn',
     '@typescript-eslint/ban-ts-comment': 0,
     '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }],
+    'deprecation/deprecation': 0,
   },
   ignorePatterns: ['**/__generated__/*'],
 }
