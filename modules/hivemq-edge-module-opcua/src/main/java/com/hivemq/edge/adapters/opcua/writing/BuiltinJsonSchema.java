@@ -28,56 +28,64 @@ public class BuiltinJsonSchema {
     private BuiltinJsonSchema() {
         try {
             classToJsonSchema.put(BuiltinDataType.Boolean,
-                    createSimpleJsonSchema("Boolean", " Boolean JsonSchema", "Boolean"));
-            final JsonNode byteJsonSchema = createSimpleJsonSchema("Byte", " Byte JsonSchema", "String");
+                    createJsonSchemaForBuiltinType("Boolean", " Boolean JsonSchema", BuiltinDataType.Boolean));
+            final JsonNode byteJsonSchema =
+                    createJsonSchemaForBuiltinType("Byte", " Byte JsonSchema", BuiltinDataType.String);
             classToJsonSchema.put(BuiltinDataType.SByte, byteJsonSchema);
             classToJsonSchema.put(BuiltinDataType.Byte, byteJsonSchema);
 
 
             classToJsonSchema.put(BuiltinDataType.UInt64,
-                    createSimpleJsonSchemaForIntegers("Integer", "UInt64 JsonSchema", BuiltinDataType.UInt64));
+                    createJsonSchemaForBuiltinType("Integer", "UInt64 JsonSchema", BuiltinDataType.UInt64));
             classToJsonSchema.put(BuiltinDataType.UInt32,
-                    createSimpleJsonSchemaForIntegers("Integer", "UInt32 JsonSchema", BuiltinDataType.UInt32));
+                    createJsonSchemaForBuiltinType("Integer", "UInt32 JsonSchema", BuiltinDataType.UInt32));
             classToJsonSchema.put(BuiltinDataType.UInt16,
-                    createSimpleJsonSchemaForIntegers("Integer", "UInt16 JsonSchema", BuiltinDataType.UInt16));
+                    createJsonSchemaForBuiltinType("Integer", "UInt16 JsonSchema", BuiltinDataType.UInt16));
 
 
             classToJsonSchema.put(BuiltinDataType.Int64,
-                    createSimpleJsonSchemaForIntegers("Integer", "Int64 JsonSchema", BuiltinDataType.Int64));
+                    createJsonSchemaForBuiltinType("Integer", "Int64 JsonSchema", BuiltinDataType.Int64));
             classToJsonSchema.put(BuiltinDataType.Int32,
-                    createSimpleJsonSchemaForIntegers("Integer", "Int32 JsonSchema", BuiltinDataType.Int32));
+                    createJsonSchemaForBuiltinType("Integer", "Int32 JsonSchema", BuiltinDataType.Int32));
             classToJsonSchema.put(BuiltinDataType.Int16,
-                    createSimpleJsonSchemaForIntegers("Integer", "Int16 JsonSchema", BuiltinDataType.Int16));
+                    createJsonSchemaForBuiltinType("Integer", "Int16 JsonSchema", BuiltinDataType.Int16));
 
             classToJsonSchema.put(BuiltinDataType.Float,
-                    createSimpleJsonSchemaForIntegers("Float", " Float JsonSchema", BuiltinDataType.Float));
+                    createJsonSchemaForBuiltinType("Float", " Float JsonSchema", BuiltinDataType.Float));
             classToJsonSchema.put(BuiltinDataType.Double,
-                    createSimpleJsonSchemaForIntegers("Double", " Double JsonSchema", BuiltinDataType.Double));
+                    createJsonSchemaForBuiltinType("Double", " Double JsonSchema", BuiltinDataType.Double));
             classToJsonSchema.put(BuiltinDataType.String,
-                    createSimpleJsonSchema("String", " String JsonSchema", "string"));
+                    createJsonSchemaForBuiltinType("String", " String JsonSchema", BuiltinDataType.String));
 
             classToJsonSchema.put(BuiltinDataType.DateTime,
-                    createSimpleJsonSchemaForIntegers("DateTime", "DateTime JsonSchema", BuiltinDataType.DateTime));
+                    createJsonSchemaForBuiltinType("DateTime", "DateTime JsonSchema", BuiltinDataType.DateTime));
 
-            classToJsonSchema.put(BuiltinDataType.Guid, createSimpleJsonSchema("Guid", " Guid JsonSchema", "string"));
+            classToJsonSchema.put(BuiltinDataType.Guid,
+                    createJsonSchemaForBuiltinType("Guid", " Guid JsonSchema", BuiltinDataType.String));
             classToJsonSchema.put(BuiltinDataType.ByteString,
-                    createSimpleJsonSchema("ByteString", " ByteString JsonSchema", "string"));
+                    createJsonSchemaForBuiltinType("ByteString", " ByteString JsonSchema", BuiltinDataType.String));
             classToJsonSchema.put(BuiltinDataType.XmlElement,
-                    createSimpleJsonSchema("XmlElement", " XmlElement JsonSchema", "string"));
+                    createJsonSchemaForBuiltinType("XmlElement", " XmlElement JsonSchema", BuiltinDataType.String));
 
-            classToJsonSchema.put(BuiltinDataType.QualifiedName, createSimpleJsonSchemaForQualifiedName());
+            classToJsonSchema.put(BuiltinDataType.QualifiedName,
+                    createJsonSchemaForBuiltinType("QualifiedName",
+                            "QualifiedName JsonSchema",
+                            BuiltinDataType.QualifiedName));
 
             classToJsonSchema.put(BuiltinDataType.NodeId,
-                    createSimpleJsonSchema("NodeId", " XmlElement NodeId", "string"));
+                    createJsonSchemaForBuiltinType("NodeId", " XmlElement NodeId", BuiltinDataType.String));
             classToJsonSchema.put(BuiltinDataType.ExpandedNodeId,
-                    createSimpleJsonSchema("ExpandedNodeId", " ExpandedNodeId JsonSchema", "string"));
+                    createJsonSchemaForBuiltinType("ExpandedNodeId",
+                            " ExpandedNodeId JsonSchema",
+                            BuiltinDataType.String));
 
-            classToJsonSchema.put(BuiltinDataType.StatusCode,
-                    createSimpleJsonSchemaForIntegers("StatusCode",
+            classToJsonSchema.put(BuiltinDataType.StatusCode, createJsonSchemaForBuiltinType("StatusCode",
                             " StatusCode JsonSchema",
                             BuiltinDataType.StatusCode));
             classToJsonSchema.put(BuiltinDataType.LocalizedText,
-                    createSimpleJsonSchema("LocalizedText", " LocalizedText JsonSchema", "string"));
+                    createJsonSchemaForBuiltinType("LocalizedText",
+                            " LocalizedText JsonSchema",
+                            BuiltinDataType.String));
         } catch (JsonSchemaGenerationException jsonSchemaGenerationException) {
             throw new RuntimeException(jsonSchemaGenerationException);
         }
@@ -92,78 +100,26 @@ public class BuiltinJsonSchema {
     }
 
 
-    private @NotNull JsonNode createSimpleJsonSchemaForIntegers(
+    private @NotNull JsonNode createJsonSchemaForBuiltinType(
             final @NotNull String id, final @NotNull String title, final @NotNull BuiltinDataType builtinDataType)
             throws JsonSchemaGenerationException {
         final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
         final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
         final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
-
-
         rootNode.set("§id", new TextNode(id));
         rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2020-12/schema"));
         rootNode.set("title", new TextNode(title));
         rootNode.set("type", new TextNode("object"));
         rootNode.set("properties", propertiesNode);
-
-
         propertiesNode.set("value", valueNode);
         populatePropertiesForBuiltinType(valueNode, builtinDataType, OBJECT_MAPPER);
 
+        final ArrayNode requiredAttributes = OBJECT_MAPPER.createArrayNode();
+        requiredAttributes.add("value");
+        rootNode.set("required", requiredAttributes);
 
         return rootNode;
     }
-
-
-    private @NotNull JsonNode createSimpleJsonSchema(
-            final @NotNull String id, final @NotNull String title, final @NotNull String dataType) {
-        final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
-        rootNode.set("§id", new TextNode(id));
-        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2020-12/schema"));
-        rootNode.set("title", new TextNode(title));
-        rootNode.set("type", new TextNode("object"));
-
-        final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
-        valueNode.set("type", new TextNode(dataType));
-
-        final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
-        propertiesNode.set("value", valueNode);
-        rootNode.set("properties", propertiesNode);
-
-        final ArrayNode requiredProperties = OBJECT_MAPPER.createArrayNode();
-        requiredProperties.add("value");
-        rootNode.set("required", requiredProperties);
-
-        return rootNode;
-    }
-
-
-    private @NotNull JsonNode createSimpleJsonSchemaForQualifiedName() {
-        final ObjectNode rootNode = OBJECT_MAPPER.createObjectNode();
-        rootNode.set("§id", new TextNode("QualifiedName"));
-        rootNode.set("$schema", new TextNode("https://json-schema.org/draft/2020-12/schema"));
-        rootNode.set("title", new TextNode("QualifiedName JsonSchema"));
-        rootNode.set("type", new TextNode("object"));
-
-        final ObjectNode valueNode = OBJECT_MAPPER.createObjectNode();
-        final ObjectNode innerProperties = OBJECT_MAPPER.createObjectNode();
-
-        final ObjectNode namespaceIndexNode = OBJECT_MAPPER.createObjectNode();
-        namespaceIndexNode.set("type", new TextNode("Integer"));
-
-        final ObjectNode nameNode = OBJECT_MAPPER.createObjectNode();
-        nameNode.set("type", new TextNode("String"));
-
-        valueNode.set("type", new TextNode("object"));
-        valueNode.set("properties", innerProperties);
-
-        final ObjectNode propertiesNode = OBJECT_MAPPER.createObjectNode();
-        propertiesNode.set("value", valueNode);
-        rootNode.set("properties", propertiesNode);
-
-        return rootNode;
-    }
-
 
     public static void populatePropertiesForBuiltinType(
             final @NotNull ObjectNode nestedPropertiesNode,
@@ -230,15 +186,20 @@ public class BuiltinJsonSchema {
                 nestedPropertiesNode.set("type", new TextNode("object"));
 
                 final ObjectNode innerProperties = objectMapper.createObjectNode();
-                nestedPropertiesNode.set("properties", innerProperties);
 
                 final ObjectNode namespaceIndexNode = objectMapper.createObjectNode();
-                namespaceIndexNode.set("type", new TextNode("Integer"));
+                namespaceIndexNode.set("type", new TextNode("integer"));
                 innerProperties.set("namespaceIndex", namespaceIndexNode);
 
                 final ObjectNode nameNode = objectMapper.createObjectNode();
-                nameNode.set("type", new TextNode("String"));
+                nameNode.set("type", new TextNode("string"));
                 innerProperties.set("name", nameNode);
+
+                nestedPropertiesNode.set("properties", innerProperties);
+                final ArrayNode requiredAttributes = OBJECT_MAPPER.createArrayNode();
+                requiredAttributes.add("name");
+                requiredAttributes.add("namespaceIndex");
+                nestedPropertiesNode.set("required", requiredAttributes);
                 return;
             case ExtensionObject:
             case DataValue:

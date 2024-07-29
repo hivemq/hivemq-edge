@@ -22,4 +22,6 @@ public interface ProtocolAdapterWritingService {
     String FORWARDER_PREFIX = "adapter-forwarder#";
 
     void startWriting(@NotNull WritingProtocolAdapter<?, ?> writingProtocolAdapter);
+
+    void stopWriting(@NotNull WritingProtocolAdapter<?, ?> writingProtocolAdapter);
 }

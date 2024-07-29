@@ -98,9 +98,9 @@ public class OpcUaProtocolAdapter
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull AdapterFactories adapterFactories;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-    private @Nullable OpcUaClient opcUaClient;
-    private @Nullable JsonToOpcUAConverter jsonToOpcUAConverter;
-    private @Nullable JsonSchemaGenerator jsonSchemaGenerator;
+    private volatile @Nullable OpcUaClient opcUaClient;
+    private volatile @Nullable JsonToOpcUAConverter jsonToOpcUAConverter;
+    private volatile @Nullable JsonSchemaGenerator jsonSchemaGenerator;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap = new ConcurrentHashMap<>();
 
     public OpcUaProtocolAdapter(
@@ -128,6 +128,12 @@ public class OpcUaProtocolAdapter
             }
             opcUaClient.connect().thenAccept(uaClient -> {
                 opcUaClient.getSubscriptionManager().addSubscriptionListener(createSubscriptionListener());
+                try {
+                    jsonToOpcUAConverter = JsonToOpcUAConverter.getInstance(opcUaClient);
+                    jsonSchemaGenerator = JsonSchemaGenerator.getInstance(opcUaClient, new ObjectMapper());
+                } catch (UaException e) {
+                    log.error("Unable to create the converter for writing.", e);
+                }
                 createAllSubscriptions().whenComplete((unused, throwable) -> {
                     if (throwable == null) {
                         output.startedSuccessfully();
@@ -135,12 +141,7 @@ public class OpcUaProtocolAdapter
                         output.failStart(throwable, throwable.getMessage());
                     }
                 });
-                try {
-                    jsonToOpcUAConverter = JsonToOpcUAConverter.getInstance(opcUaClient);
-                    jsonSchemaGenerator = JsonSchemaGenerator.getInstance(opcUaClient, new ObjectMapper());
-                } catch (UaException e) {
-                    log.error("Unable to create the converter for writing.", e);
-                }
+
             }).exceptionally(throwable -> {
                 log.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
                 stopInternal();
@@ -274,7 +275,6 @@ public class OpcUaProtocolAdapter
                 new OpcUaClientConfigurator(adapterConfig));
         //Decoding a struct with custom DataType requires a DataTypeManager, so we register one that updates each time a session is activated.
         opcUaClient.addSessionInitializer(new DataTypeDictionarySessionInitializer(new GenericBsdParser()));
-
         //-- Seems to be not connection monitoring hook, use the session activity listener
         opcUaClient.addSessionActivityListener(new SessionActivityListener() {
             @Override
@@ -424,15 +424,6 @@ public class OpcUaProtocolAdapter
                 return;
             }
 
-            try {
-                assert jsonSchemaGenerator != null;
-                final JsonNode jsonSchema =
-                        jsonSchemaGenerator.getJsonSchema(NodeId.parse(input.getWriteContext().getDestination()));
-                System.err.println(jsonSchema.toPrettyString());
-            } catch (JsonSchemaGenerationException e) {
-                log.error("Error while creation of JsonSchema: ", e);
-            }
-
             Variant variant = new Variant(opcUaObject);
             DataValue dataValue = new DataValue(variant, null, null);
             if (opcUaClient == null) {
@@ -462,4 +453,21 @@ public class OpcUaProtocolAdapter
     public @NotNull List<? extends WriteContext> getWriteContexts() {
         return adapterConfig.getWriteContexts();
     }
+
+    @Override
+    public @NotNull JsonNode createJsonSchema(final @NotNull WriteContext writeContext) {
+        final OpcUAWriteContext opcUAWriteContext = (OpcUAWriteContext) writeContext;
+
+        try {
+            assert jsonSchemaGenerator != null;
+            final JsonNode jsonSchema =
+                    jsonSchemaGenerator.getJsonSchema(NodeId.parse(opcUAWriteContext.getDestination()));
+            return jsonSchema;
+        } catch (JsonSchemaGenerationException e) {
+            log.error("Error while creation of JsonSchema: ", e);
+            //TODO
+            return null;
+        }
+    }
+
 }

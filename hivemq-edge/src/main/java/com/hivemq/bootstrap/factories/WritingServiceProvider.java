@@ -70,5 +70,10 @@ public class WritingServiceProvider {
         public void startWriting(@NotNull final WritingProtocolAdapter<?, ?> writingProtocolAdapter) {
             log.warn("No bidirectional module is currently installed. Writing to PLCs is currently not supported.");
         }
+
+        @Override
+        public void stopWriting(@NotNull final WritingProtocolAdapter<?, ?> writingProtocolAdapter) {
+            // NOOP as nothing was started.
+        }
     }
 }
