@@ -55,6 +55,7 @@ const MonitoringEdge: FC<EdgeProps> = (props) => {
           <ObservabilityEdgeCTA source={source} style={style} onClick={handleOpenObservability} />
           {policyRoutes && (
             <DataPolicyEdgeCTA
+              data-testid="policy-panel-trigger"
               style={style}
               policyRoutes={policyRoutes}
               onClickPolicy={handleShowPolicy}

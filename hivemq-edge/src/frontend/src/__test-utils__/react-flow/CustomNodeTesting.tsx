@@ -1,6 +1,7 @@
-import ReactFlow, { Edge, EdgeTypes, Node, NodeTypes } from 'reactflow'
 import { FC } from 'react'
-import { Box } from '@chakra-ui/react'
+import { useLocation } from 'react-router-dom'
+import ReactFlow, { Edge, EdgeTypes, Node, NodeTypes } from 'reactflow'
+import { Code, VStack } from '@chakra-ui/react'
 
 import 'reactflow/dist/style.css'
 
@@ -12,8 +13,11 @@ interface MockReactFlowProps {
 }
 
 export const CustomNodeTesting: FC<MockReactFlowProps> = ({ nodeTypes, nodes, edges, edgeTypes }) => {
+  const { pathname } = useLocation()
+
   return (
-    <Box w="90vw" h="90vh">
+    <VStack w="90vw" h="90vh" gap={3}>
+      <Code data-testid="test-navigate-pathname">{pathname}</Code>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -26,6 +30,6 @@ export const CustomNodeTesting: FC<MockReactFlowProps> = ({ nodeTypes, nodes, ed
         autoPanOnConnect={false}
         nodesConnectable={false}
       />
-    </Box>
+    </VStack>
   )
 }
