@@ -1,5 +1,5 @@
 import { FC, useMemo, useState } from 'react'
-import { Box, HStack, Image, Skeleton, Text, useDisclosure, useTheme } from '@chakra-ui/react'
+import { Box, HStack, Image, Skeleton, Text, useColorModeValue, useDisclosure, useToken } from '@chakra-ui/react'
 import { ColumnDef, Row } from '@tanstack/react-table'
 import { useTranslation } from 'react-i18next'
 import { DateTime } from 'luxon'
@@ -59,7 +59,7 @@ const ProtocolAdapters: FC = () => {
   const navigate = useNavigate()
   const { state } = useLocation()
   const { successToast, errorToast } = useEdgeToast()
-  const { colors } = useTheme()
+  const selectedActiveAdapterColor = useToken('colors', useColorModeValue('blue.50', 'blue.900'))
 
   const { data: allAdapters, isError: isErrorAllAdapters, error: errorAllAdapters } = useGetAdapterTypes()
   const { data: adapters, isLoading, isError, error } = useListProtocolAdapters()
@@ -239,7 +239,9 @@ const ProtocolAdapters: FC = () => {
         columns={columns}
         getRowStyles={(row: Row<Adapter>) => {
           const { selectedActiveAdapter } = (state || {}) as AdapterNavigateState
-          return row.original.id === selectedActiveAdapter?.adapterId ? { backgroundColor: colors.blue[50] } : {}
+          return row.original.id === selectedActiveAdapter?.adapterId
+            ? { backgroundColor: selectedActiveAdapterColor }
+            : {}
         }}
       />
 
