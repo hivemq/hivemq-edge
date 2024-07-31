@@ -1,0 +1,36 @@
+<hivemq>
+    <protocol-adapters>
+        <modbus>
+            <id>my-modbus-protocol-adapter</id>
+            <pollingIntervalMillis>10</pollingIntervalMillis>
+            <maxPollingErrorsBeforeRemoval>9</maxPollingErrorsBeforeRemoval>
+            <port>1234</port>
+            <host>my.modbus-server.com</host>
+            <publishChangedDataOnly>false</publishChangedDataOnly>
+            <subscriptions>
+                <subscription>
+                    <destination>my/topic</destination>
+                    <qos>1</qos>
+                    <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                    <addressRange>
+                        <startIdx>11</startIdx>
+                        <endIdx>13</endIdx>
+                    </addressRange>
+<!--                    <userProperties>--> TODO: https://hivemq.kanbanize.com/ctrl_board/57/cards/24704/details/
+<!--                        <userProperty>-->
+<!--                            <name>my-name</name>-->
+<!--                            <value>my-value1</value>-->
+<!--                        </userProperty>-->
+<!--                        <userProperty>-->
+<!--                            <name>my-name</name>-->
+<!--                            <value>my-value2</value>-->
+<!--                        </userProperty>-->
+<!--                    </userProperties>-->
+                    <includeTagNames>true</includeTagNames>
+                    <includeTimestamp>false</includeTimestamp>
+                </subscription>
+            </subscriptions>
+            <timeout>1337</timeout>
+        </modbus>
+    </protocol-adapters>
+</hivemq>

@@ -32,6 +32,9 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.edge.adapters.modbus.config.AddressRange;
+import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.PollingContextImpl;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
@@ -48,7 +51,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
-public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapterConfig.PollingContextImpl> {
+public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingContextImpl> {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -57,7 +60,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapt
     private final @NotNull AdapterFactories adapterFactories;
 
     private volatile @Nullable IModbusClient modbusClient;
-    private final @NotNull Map<ModbusAdapterConfig.PollingContextImpl, List<DataPoint>> lastSamples = new HashMap<>();
+    private final @NotNull Map<PollingContextImpl, List<DataPoint>> lastSamples = new HashMap<>();
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -96,7 +99,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapt
 
     @Override
     public void poll(
-            final @NotNull PollingInput<ModbusAdapterConfig.PollingContextImpl> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<PollingContextImpl> pollingInput, final @NotNull PollingOutput pollingOutput) {
 
         //-- If a previously linked job has terminally disconnected the client
         //-- we need to ensure any orphaned jobs tidy themselves up properly
@@ -122,7 +125,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapt
     }
 
     @Override
-    public @NotNull List<ModbusAdapterConfig.PollingContextImpl> getPollingContexts() {
+    public @NotNull List<PollingContextImpl> getPollingContexts() {
         return new ArrayList<>(adapterConfig.getSubscriptions());
     }
 
@@ -197,8 +200,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapt
     }
 
     private void calculateDelta(@NotNull ModBusData modBusData, @NotNull PollingOutput pollingOutput) {
-        ModbusAdapterConfig.PollingContextImpl subscription =
-                (ModbusAdapterConfig.PollingContextImpl) modBusData.getPollingContext();
+        PollingContextImpl subscription =
+                (PollingContextImpl) modBusData.getPollingContext();
 
         List<DataPoint> previousSampleDataPoints = lastSamples.put(subscription, modBusData.getDataPoints());
         List<DataPoint> currentSamplePoints = modBusData.getDataPoints();
@@ -217,8 +220,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapt
 
     protected @NotNull ModBusData readRegisters(@NotNull final PollingContext sub) {
         try {
-            ModbusAdapterConfig.PollingContextImpl subscription = (ModbusAdapterConfig.PollingContextImpl) sub;
-            ModbusAdapterConfig.AddressRange addressRange = subscription.getAddressRange();
+            PollingContextImpl subscription = (PollingContextImpl) sub;
+            AddressRange addressRange = subscription.getAddressRange();
             Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
                     addressRange.endIdx - addressRange.startIdx);
             ModBusData data = new ModBusData(subscription, adapterFactories.dataPointFactory());

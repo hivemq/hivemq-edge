@@ -26,7 +26,7 @@ import com.digitalpetri.modbus.responses.ReadHoldingRegistersResponse;
 import com.digitalpetri.modbus.responses.ReadInputRegistersResponse;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.edge.adapters.modbus.IModbusClient;
-import com.hivemq.edge.adapters.modbus.ModbusAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
 import org.jetbrains.annotations.NotNull;
