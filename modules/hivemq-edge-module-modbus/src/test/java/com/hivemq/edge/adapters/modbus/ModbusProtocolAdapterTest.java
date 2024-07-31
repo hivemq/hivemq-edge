@@ -23,6 +23,7 @@ import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.api.mqtt.PublishReturnCode;
+import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
@@ -44,7 +45,8 @@ import static org.mockito.Mockito.when;
 
 class ModbusProtocolAdapterTest {
 
-    private final @NotNull ModbusAdapterConfig adapterConfig = new ModbusAdapterConfig("adapterId");
+    private final @NotNull ModbusAdapterConfig adapterConfig =
+            new ModbusAdapterConfig("adapterId", 1000, 10, 532, "my.host.com", 1000, true, List.of());
     private final @NotNull ModbusProtocolAdapter adapter =
             new ModbusProtocolAdapter(ModbusProtocolAdapterInformation.INSTANCE, adapterConfig, mock());
     private final @NotNull ProtocolAdapterPublishService publishService = mock(ProtocolAdapterPublishService.class);
@@ -91,19 +93,20 @@ class ModbusProtocolAdapterTest {
 
         AdapterDataUtils.mergeChangedSamples(data1.getDataPoints(), data2.getDataPoints());
 
-        Assertions.assertEquals(777, ((DataPoint)data1.getDataPoints().get(5)).getTagValue(), "Merged data should contain new value");
+        Assertions.assertEquals(777,
+                ((DataPoint) data1.getDataPoints().get(5)).getTagValue(),
+                "Merged data should contain new value");
     }
 
-    protected static ModBusData createSampleData(final int registerCount){
-        final PollingContext pollingContext =
-                new PollingContextImpl("topic", 2, List.of());
-        final ModBusData data = new ModBusData(pollingContext,  new DataPointFactory() {
+    protected static ModBusData createSampleData(final int registerCount) {
+        final PollingContext pollingContext = new PollingContextImpl("topic", 2, List.of());
+        final ModBusData data = new ModBusData(pollingContext, new DataPointFactory() {
             @Override
             public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
                 return new DataPointImpl(tagName, tagValue);
             }
         });
-        for (int i = 0; i < registerCount; i++){
+        for (int i = 0; i < registerCount; i++) {
             data.addDataPoint("register-" + i, i);
         }
         return data;

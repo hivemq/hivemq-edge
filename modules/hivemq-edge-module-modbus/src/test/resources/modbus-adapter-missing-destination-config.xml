@@ -1,0 +1,17 @@
+<hivemq>
+    <protocol-adapters>
+        <modbus>
+            <id>my-modbus-protocol-adapter</id>
+            <port>1234</port>
+            <host>my.modbus-server.com</host>
+            <subscriptions>
+                <subscription>
+                    <addressRange>
+                        <startIdx>11</startIdx>
+                        <endIdx>13</endIdx>
+                    </addressRange>
+                </subscription>
+            </subscriptions>
+        </modbus>
+    </protocol-adapters>
+</hivemq>

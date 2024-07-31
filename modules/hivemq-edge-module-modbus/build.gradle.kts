@@ -47,6 +47,7 @@ dependencies {
     testImplementation(libs.mockito.junitJupiter)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.guava)
+    testImplementation(libs.assertj)
 
 }
 
