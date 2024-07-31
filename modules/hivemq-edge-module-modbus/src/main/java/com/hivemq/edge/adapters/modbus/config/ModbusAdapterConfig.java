@@ -79,8 +79,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
                        description = "Time (in milliseconds) to await a connection before the client gives up",
                        numberMin = 1000,
                        numberMax = 15000,
-                       defaultValue = "5000",
-                       required = true)
+                       defaultValue = "5000")
     private final int timeout;
 
     @JsonProperty("publishChangedDataOnly")

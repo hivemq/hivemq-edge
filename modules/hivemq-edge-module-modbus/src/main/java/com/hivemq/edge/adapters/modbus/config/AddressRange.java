@@ -11,14 +11,16 @@ public class AddressRange {
     @ModuleConfigField(title = "Start Index",
                        description = "The Starting Index (Incl.) of the Address Range",
                        numberMin = 0,
-                       numberMax = ModbusAdapterConfig.PORT_MAX)
+                       numberMax = ModbusAdapterConfig.PORT_MAX,
+                       required = true)
     public final int startIdx;
 
     @JsonProperty("endIdx")
     @ModuleConfigField(title = "End Index",
                        description = "The Finishing Index (Excl.) of the Address Range",
                        numberMin = 1,
-                       numberMax = ModbusAdapterConfig.PORT_MAX)
+                       numberMax = ModbusAdapterConfig.PORT_MAX,
+                       required = true)
     public final int endIdx;
 
     public AddressRange(
