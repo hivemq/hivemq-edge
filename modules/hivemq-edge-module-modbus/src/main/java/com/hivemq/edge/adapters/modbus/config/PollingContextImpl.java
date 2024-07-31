@@ -69,12 +69,12 @@ public class PollingContextImpl implements PollingContext {
     @JsonCreator
     public PollingContextImpl(
             @JsonProperty(value = "destination", required = true) final @NotNull String destination,
-            @JsonProperty(value = "qos") final @Nullable Integer qos,
-            @JsonProperty(value = "messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
-            @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
-            @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
+            @JsonProperty("qos") final @Nullable Integer qos,
+            @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
+            @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
+            @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty("userProperties") final @Nullable List<UserProperty> userProperties,
-            @JsonProperty("addressRange") final @NotNull AddressRange addressRange) {
+            @JsonProperty(value = "addressRange", required = true) final @NotNull AddressRange addressRange) {
         this.destination = destination;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
