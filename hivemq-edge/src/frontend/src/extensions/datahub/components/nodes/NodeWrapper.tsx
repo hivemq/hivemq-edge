@@ -63,15 +63,13 @@ export const NodeWrapper: FC<NodeWrapperProps> = ({ selected, children, route, w
   }
 
   const isDryRun = data.dryRunStatus !== undefined && data.dryRunStatus !== PolicyDryRunStatus.IDLE
-  const isToolbarEnabled = import.meta.env.VITE_FLAG_DATAHUB_SHOW_TOOLBAR === 'true'
 
   return (
     <>
-      {isToolbarEnabled && (
-        <NodeToolbar isVisible={selected && isSingleSelect} position={Position.Top} offset={8}>
-          <NodeDatahubToolbar onCopy={onHandleCopy} onDelete={onHandleDelete} onEdit={onHandleEdit} />
-        </NodeToolbar>
-      )}
+      <NodeToolbar isVisible={selected && isSingleSelect} position={Position.Top} offset={8}>
+        <NodeDatahubToolbar onCopy={onHandleCopy} onDelete={onHandleDelete} onEdit={onHandleEdit} />
+      </NodeToolbar>
+
       <Card
         variant="elevated"
         {...(data.dryRunStatus === PolicyDryRunStatus.FAILURE ? { ...errorStyle } : {})}

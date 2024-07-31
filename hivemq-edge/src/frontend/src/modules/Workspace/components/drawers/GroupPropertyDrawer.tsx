@@ -12,7 +12,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 
-import Metrics from '@/modules/Metrics/Metrics.tsx'
+import MetricsContainer from '@/modules/Metrics/MetricsContainer.tsx'
 
 import { Group, NodeTypes } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
@@ -74,7 +74,7 @@ const GroupPropertyDrawer: FC<GroupPropertyDrawerProps> = ({
               }}
             />
           )}
-          <Metrics
+          <MetricsContainer
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}
             adapterIDs={adapterIDs.map((e) => e?.data.id)}

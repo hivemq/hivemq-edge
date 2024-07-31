@@ -25,7 +25,7 @@ import { Adapter, Bridge } from '@/api/__generated__'
 import { DeviceTypes } from '@/api/types/api-devices.ts'
 import ConnectionController from '@/components/ConnectionController/ConnectionController.tsx'
 import EventLogTable from '@/modules/EventLog/components/table/EventLogTable.tsx'
-import Metrics from '@/modules/Metrics/Metrics.tsx'
+import MetricsContainer from '@/modules/Metrics/MetricsContainer.tsx'
 import { ChartType } from '@/modules/Metrics/types.ts'
 
 import { NodeTypes } from '../../types.ts'
@@ -53,7 +53,7 @@ const NodePropertyDrawer: FC<NodePropertyDrawerProps> = ({ nodeId, isOpen, selec
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           <NodeNameCard selectedNode={selectedNode} />
-          <Metrics
+          <MetricsContainer
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}
             adapterIDs={[selectedNode.data.id]}

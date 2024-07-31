@@ -18,6 +18,7 @@ const ObservabilityEdgeCTA: FC<ObservabilityEdgeCtaProps> = ({ source, style, on
   return (
     <ButtonGroup>
       <IconButton
+        data-testid="observability-panel-trigger"
         aria-label={t('workspace.observability.aria-label', { device: source })}
         variant={colorMode === 'light' ? 'outline' : 'solid'}
         icon={<Icon as={LuBarChartBig} boxSize={6} />}

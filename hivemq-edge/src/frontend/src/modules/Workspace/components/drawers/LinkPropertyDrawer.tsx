@@ -4,7 +4,7 @@ import { Node } from 'reactflow'
 import { Box, Drawer, DrawerBody, DrawerCloseButton, DrawerContent, DrawerHeader, Text } from '@chakra-ui/react'
 
 import { Adapter, Bridge } from '@/api/__generated__'
-import Metrics from '@/modules/Metrics/Metrics.tsx'
+import MetricsContainer from '@/modules/Metrics/MetricsContainer.tsx'
 
 import { getDefaultMetricsFor } from '../../utils/nodes-utils.ts'
 import { NodeTypes } from '../../types.ts'
@@ -35,7 +35,7 @@ const LinkPropertyDrawer: FC<LinkPropertyDrawerProps> = ({ nodeId, isOpen, selec
           </Box>
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
-          <Metrics
+          <MetricsContainer
             nodeId={nodeId}
             type={selectedNode.type as NodeTypes}
             adapterIDs={[selectedNode.data.id]}

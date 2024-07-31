@@ -10,8 +10,8 @@ import {
   NodeResetChange,
   EdgeRemoveChange,
 } from 'reactflow'
-import { Box, Button, ButtonGroup, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
-import { LuPanelRightOpen } from 'react-icons/lu'
+import { Box, ButtonGroup, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
+import { LuExpand, LuPanelRightOpen, LuShrink } from 'react-icons/lu'
 import { ImUngroup } from 'react-icons/im'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
@@ -72,26 +72,31 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
         aria-label={t('workspace.grouping.toolbar.aria-label', { id })}
         style={{ display: 'flex', gap: '12px' }}
       >
-        <ButtonGroup size="sm" isAttached variant="outline" colorScheme="gray">
-          <Button data-testid="node-group-toolbar-expand" onClick={handleToggle}>
-            {!data.isOpen ? t('workspace.grouping.command.expand') : t('workspace.grouping.command.collapse')}
-          </Button>
+        <ButtonGroup size="sm" variant="outline" colorScheme="gray">
+          <IconButton
+            data-testid="node-group-toolbar-expand"
+            icon={<Icon as={data.isOpen ? LuShrink : LuExpand} boxSize={5} />}
+            aria-label={
+              !data.isOpen ? t('workspace.grouping.command.expand') : t('workspace.grouping.command.collapse')
+            }
+            onClick={handleToggle}
+          />
           <IconButton
             data-testid="node-group-toolbar-ungroup"
             icon={<Icon as={ImUngroup} boxSize={5} />}
             aria-label={t('workspace.grouping.command.ungroup')}
             onClick={onConfirmUngroup}
           />
+          <IconButton
+            size="sm"
+            variant="solid"
+            colorScheme="gray"
+            data-testid="node-group-toolbar-panel"
+            icon={<Icon as={LuPanelRightOpen} boxSize={5} />}
+            aria-label={t('workspace.grouping.command.overview')}
+            onClick={onContextMenu}
+          />
         </ButtonGroup>
-        <IconButton
-          size="sm"
-          variant="solid"
-          colorScheme="gray"
-          data-testid="node-group-toolbar-panel"
-          icon={<Icon as={LuPanelRightOpen} boxSize={5} />}
-          aria-label={t('workspace.grouping.command.overview')}
-          onClick={onContextMenu}
-        />
       </NodeToolbar>
       {selected && (
         <NodeResizer

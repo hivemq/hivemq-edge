@@ -27,6 +27,7 @@ const DataPolicyEdgeCTA: FC<DataPolicyIconsProps> = ({ policyRoutes, style, onCl
     <ButtonGroup isAttached data-testid="reactFlow-edge-policy-group">
       {showNode.map((route) => (
         <IconButton
+          data-testid="policy-panel-trigger"
           key={route}
           aria-label={t('workspace.datahub.aria-label')}
           variant={colorMode === 'light' ? 'outline' : 'solid'}
@@ -39,6 +40,7 @@ const DataPolicyEdgeCTA: FC<DataPolicyIconsProps> = ({ policyRoutes, style, onCl
       ))}
       {moreElements > 0 && (
         <IconButton
+          data-testid="policy-panel-list"
           aria-label={t('workspace.datahub.list')}
           variant={colorMode === 'light' ? 'outline' : 'solid'}
           icon={<Text>+{moreElements}</Text>}

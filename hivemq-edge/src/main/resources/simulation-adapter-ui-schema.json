@@ -26,8 +26,8 @@
     "ui:disabled": false
   },
   "subscriptions": {
+    "ui:batchMode": true,
     "items": {
-      "ui:batchMode": true,
       "ui:order": [ "destination", "qos", "*"],
       "ui:collapsable": {
         "titleKey": "destination"
