@@ -1,6 +1,6 @@
 [versions]
 apache-commonsIO = "2.16.1"
-assertj = "3.25.3"
+assertj = "3.26.3"
 guava = "32.1.3-jre"
 hivemq-edge-adapterSdk = "2024.5"
 jackson = "2.17.1"
