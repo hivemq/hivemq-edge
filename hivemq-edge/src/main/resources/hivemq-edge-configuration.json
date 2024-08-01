@@ -157,7 +157,7 @@
       "description" : "This adapter polls and publishes the content of files on regular basis.",
       "author" : "HiveMQ",
       "documentationLink" : {
-        "url" : "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#eip-adapter",
+        "url" : "https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#file-adapter",
         "external" : true
       },
       "provisioningLink" : {
