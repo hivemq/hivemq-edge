@@ -1,6 +1,6 @@
 [versions]
-assertj = "3.25.3"
-apache-commonsLang = "3.14.0"
+assertj = "3.26.3"
+apache-commonsLang = "3.15.0"
 apache-commonsIO = "2.16.1"
 awaitility = "4.2.1"
 hivemq-edge-adapterSdk = "2024.5"
