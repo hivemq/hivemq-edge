@@ -43,6 +43,7 @@ import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.adapters.modbus.writing.ConvertibleDataType;
+import com.hivemq.edge.adapters.modbus.writing.ModbusJsonSchemaGenerator;
 import com.hivemq.edge.adapters.modbus.writing.ModbusWriteContext;
 import com.hivemq.edge.adapters.modbus.writing.ModbusWritePayload;
 import org.jetbrains.annotations.NotNull;
@@ -328,7 +329,6 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusAdapt
 
     @Override
     public @NotNull JsonNode createJsonSchema(@NotNull final WriteContext writeContext) {
-        // TODO needs implementation
-        return null;
+        return ModbusJsonSchemaGenerator.createJsonSchema(((ModbusWriteContext) writeContext).getConvertibleDataType());
     }
 }
