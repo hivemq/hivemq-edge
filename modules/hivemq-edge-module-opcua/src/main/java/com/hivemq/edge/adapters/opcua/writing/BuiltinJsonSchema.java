@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.FloatNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ShortNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType;
 import org.eclipse.milo.opcua.stack.core.UaException;
@@ -138,6 +139,8 @@ public class BuiltinJsonSchema {
                 return;
             case Int16:
                 nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
+                nestedPropertiesNode.set(MINIMUM_KEY_WORD, new ShortNode(Short.MIN_VALUE));
+                nestedPropertiesNode.set(MAXIMUM_KEY_WORD, new ShortNode(Short.MAX_VALUE));
                 return;
             case UInt16:
                 nestedPropertiesNode.set("type", new TextNode(INTEGER_DATA_TYPE));
