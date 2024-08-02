@@ -20,12 +20,17 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.opcfoundation.opcua.binaryschema.FieldType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
 
 public class JsonSchemaGenerator {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger("com.hivemq.edge.write.JsonSchemaGenerator");
+
 
     private final @NotNull OpcUaClient client;
     private final @NotNull DataTypeTree tree;
@@ -150,6 +155,7 @@ public class JsonSchemaGenerator {
                     .build();
             final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
             if (optionalDataTypeId.isEmpty()) {
+
                 throw new JsonSchemaGenerationException("Expanded node id '" +
                         expandedNodeId +
                         "' could not be parsed to node id.");
