@@ -387,7 +387,7 @@ public class ProtocolAdapterManager {
 
             final ProtocolAdapter internalAdapter = adapter.getAdapter();
             if (internalAdapter instanceof WritingProtocolAdapter) {
-                protocolAdapterWritingService.stopWriting((WritingProtocolAdapter) adapter);
+                protocolAdapterWritingService.stopWriting((WritingProtocolAdapter) internalAdapter);
             }
 
             final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
