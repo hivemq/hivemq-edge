@@ -81,6 +81,24 @@
         </triggeringPolicy>
     </appender>
 
+    <!-- appender for the script events of HiveMQ Data Hub -->
+    <appender name="WRITE-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${hivemq.log.folder}/write.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%-24(%d)- %msg%n%ex</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${hivemq.log.folder}/write-%i.log.gz</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>5</maxIndex>
+        </rollingPolicy>
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>100MB</maxFileSize>
+            <checkIncrement>10000</checkIncrement>
+        </triggeringPolicy>
+    </appender>
+
     <logger name="event.client-connected" level="DEBUG" additivity="false">
         <appender-ref ref="EVENT-FILE"/>
     </logger>
@@ -113,6 +131,18 @@
     <logger name="script-event-off" level="OFF" additivity="false">
         <appender-ref ref="SCRIPT-FILE"/>
     </logger>
+
+
+    <!-- loggers for the writing functionality in the PoC -->
+    <logger name="com.hivemq.edge.write" level="${HIVEMQ_WRITE_LOG_LEVEL:-DEBUG}" additivity="false">
+        <appender-ref ref="WRITE-FILE"/>
+    </logger>
+
+
+    <logger name="script-event-off" level="OFF" additivity="false">
+        <appender-ref ref="SCRIPT-FILE"/>
+    </logger>
+
 
     <logger name="jetbrains.exodus" level="WARN"/>
     <logger name="com.google.common.util.concurrent.Futures.CombinedFuture" level="OFF"/>

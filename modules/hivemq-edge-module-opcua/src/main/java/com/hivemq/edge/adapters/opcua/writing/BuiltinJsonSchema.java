@@ -17,12 +17,16 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 
 public class BuiltinJsonSchema {
 
     private static final @NotNull ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final @NotNull Logger log = LoggerFactory.getLogger("com.hivemq.edge.write.BuiltinJsonSchema");
+
     private final @NotNull HashMap<BuiltinDataType, JsonNode> classToJsonSchema = new HashMap<>();
 
     private static final String MINIMUM_KEY_WORD = "minimum";
@@ -92,6 +96,8 @@ public class BuiltinJsonSchema {
                             " LocalizedText JsonSchema",
                             BuiltinDataType.String));
         } catch (JsonSchemaGenerationException jsonSchemaGenerationException) {
+            log.error("Exception while initializing the JsonSchema for the builtin types:",
+                    jsonSchemaGenerationException);
             throw new RuntimeException(jsonSchemaGenerationException);
         }
     }

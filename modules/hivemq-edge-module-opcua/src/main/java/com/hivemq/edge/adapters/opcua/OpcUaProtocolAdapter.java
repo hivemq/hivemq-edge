@@ -92,6 +92,8 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 public class OpcUaProtocolAdapter
         implements ProtocolAdapter, WritingProtocolAdapter<OpcUAWritePayload, OpcUAWriteContext> {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
+    private static final @NotNull Logger writingLog = LoggerFactory.getLogger("com.hivemq.edge.write.opcua");
+
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -409,7 +411,9 @@ public class OpcUaProtocolAdapter
             @NotNull final WriteInput<OpcUAWritePayload, OpcUAWriteContext> input,
             @NotNull final WriteOutput writeOutput) {
         final OpcUAWritePayload opcUAWritePayload = input.getWritePayload();
-        final NodeId nodeId = NodeId.parse(input.getWriteContext().getDestination());
+        final OpcUAWriteContext writeContext = input.getWriteContext();
+        final NodeId nodeId = NodeId.parse(writeContext.getDestination());
+        log.debug("Write for opcua is invoked with payload '{}' and context '{}' ", opcUAWritePayload, writeContext);
         try {
             if (jsonToOpcUAConverter == null) {
                 throw new IllegalStateException("Converter is null.");
@@ -418,7 +422,7 @@ public class OpcUaProtocolAdapter
             final Object opcUaObject;
             try {
                 opcUaObject = jsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(),
-                        NodeId.parse(input.getWriteContext().getDestination()));
+                        NodeId.parse(writeContext.getDestination()));
             } catch (ConversionException e) {
                 writeOutput.fail(e.getMessage(), false);
                 return;
@@ -427,15 +431,19 @@ public class OpcUaProtocolAdapter
             Variant variant = new Variant(opcUaObject);
             DataValue dataValue = new DataValue(variant, null, null);
             if (opcUaClient == null) {
+                log.warn("Client is not connected.");
                 writeOutput.fail("Client is not connected.", true);
                 return;
             }
             CompletableFuture<StatusCode> writeFuture = opcUaClient.writeValue(nodeId, dataValue);
             writeFuture.whenComplete((statusCode, throwable) -> {
                 if (throwable != null) {
+                    writingLog.error("Exception while writing to opcua node '{}'",
+                            writeContext.getDestination(),
+                            throwable);
                     writeOutput.fail(throwable, null, false);
                 } else {
-                    log.info("Wrote '{}' to nodeId={}", variant, nodeId);
+                    writingLog.info("Wrote '{}' to nodeId={}", variant, nodeId);
                     writeOutput.finish();
                 }
             });
@@ -455,7 +463,7 @@ public class OpcUaProtocolAdapter
     }
 
     @Override
-    public @NotNull JsonNode createJsonSchema(final @NotNull WriteContext writeContext) {
+    public @Nullable JsonNode createJsonSchema(final @NotNull WriteContext writeContext) {
         final OpcUAWriteContext opcUAWriteContext = (OpcUAWriteContext) writeContext;
 
         try {
@@ -465,7 +473,6 @@ public class OpcUaProtocolAdapter
             return jsonSchema;
         } catch (JsonSchemaGenerationException e) {
             log.error("Error while creation of JsonSchema: ", e);
-            //TODO
             return null;
         }
     }

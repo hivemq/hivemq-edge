@@ -54,4 +54,10 @@ public class OpcUAWritePayload implements WritePayload {
     public int hashCode() {
         return value.hashCode();
     }
+
+
+    @Override
+    public @NotNull String toString() {
+        return "OpcUAWritePayload{" + "value=" + value + '}';
+    }
 }

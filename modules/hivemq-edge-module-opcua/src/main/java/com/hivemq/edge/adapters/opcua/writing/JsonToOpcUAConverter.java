@@ -47,6 +47,8 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.opcfoundation.opcua.binaryschema.FieldType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.Base64;
@@ -56,6 +58,8 @@ import java.util.UUID;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class JsonToOpcUAConverter {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger("com.hivemq.edge.write.JsonToOpcUAConverter");
 
 
     private final @NotNull OpcUaClient client;
@@ -73,31 +77,51 @@ public class JsonToOpcUAConverter {
 
     public @Nullable Object convertToOpcUAValue(
             final @NotNull JsonNode rootNode, final @NotNull NodeId destinationNodeId) throws ConversionException {
+        log.debug("Convert json '{}' to opcua compatible object for destination nodeId '{}'.",
+                rootNode,
+                destinationNodeId);
+
         try {
             final NodeId dataTypeNodeId = getDataTypeNodeId(destinationNodeId);
             if (dataTypeNodeId == null) {
+                log.warn("No dataType-nodeId was found for the destination nodeId '{}'.", destinationNodeId);
                 throw new ConversionException("No dataType-nodeId was found for the destination nodeId " +
                         destinationNodeId +
                         "'");
             }
+            log.debug("Destination NodeId '{}' has DataType NodeId '{}'.", destinationNodeId, dataTypeNodeId);
 
             final DataTypeTree.DataType dataType = tree.getDataType(dataTypeNodeId);
             if (dataType == null) {
+                log.warn("No data type was found in the DataTypeTree for dataType with nodeId '{}'.", dataTypeNodeId);
                 throw new ConversionException("No data type was found in the DataTypeTree for node id '" +
                         dataTypeNodeId +
                         "'");
             }
+            log.debug("DataType NodeId '{}' represents data type '{}'.", dataTypeNodeId, dataType);
+
             final BuiltinDataType builtinType = tree.getBuiltinType(dataType.getNodeId());
+            log.debug(
+                    "Destination Node '{}' has DataType NodeId '{}' representing DataType '{}' with builtin type '{}'. The Json '{}' is parsed to this.",
+                    destinationNodeId,
+                    dataTypeNodeId,
+                    dataType,
+                    builtinType,
+                    rootNode);
+
             if (builtinType != BuiltinDataType.ExtensionObject) {
                 return parsetoOpcUAObject(builtinType, rootNode, null);
             }
 
             final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
             if (binaryEncodingId == null) {
-                throw new ConversionException("No encoding was present for data type: '" + dataType.toString() + "'");
+                log.warn("No encoding was present for data type: '{}'.", dataType);
+                throw new ConversionException("No encoding was present for data type: '" + dataType + "'");
             }
+            log.debug("DataType '{}' has binary encoding id '{}'.", dataType, binaryEncodingId);
 
             final Map<String, FieldType> fields = getStructureInformation(binaryEncodingId);
+            log.debug("Found fields '{}' for binary encoding id '{}'.", fields, binaryEncodingId);
             final Struct.Builder builder = Struct.builder("CustomStruct"); // apparently the name is not important
 
             for (final Map.Entry<String, FieldType> entry : fields.entrySet()) {
@@ -105,10 +129,14 @@ public class JsonToOpcUAConverter {
                 final FieldType fieldType = entry.getValue();
                 final JsonNode jsonNode = rootNode.get(key);
                 if (jsonNode == null) {
+                    log.warn("Expected field '{}' to be present in the json '{}', but field was not present.",
+                            key,
+                            rootNode);
                     throw new ConversionException("Expected field '" +
                             key +
                             "' to be present in the json, but field was not present.");
                 }
+                log.debug("Parsing '{}' for field type '{}'", jsonNode, fieldType);
                 final Object parsed = parseToOpcUACompatibleObject(jsonNode, fieldType);
                 builder.addMember(key, parsed);
             }
@@ -167,6 +195,7 @@ public class JsonToOpcUAConverter {
 
             final Optional<NodeId> optionalDataTypeId = expandedNodeId.toNodeId(client.getNamespaceTable());
             if (optionalDataTypeId.isEmpty()) {
+                log.warn("Expanded node id '{}}' could not be parsed to node id.", expandedNodeId);
                 throw new ConversionException("Expanded node id '" +
                         expandedNodeId +
                         "' could not be parsed to node id.");
@@ -176,12 +205,22 @@ public class JsonToOpcUAConverter {
             final DataTypeTree.DataType dataType = tree.getDataType(dataTypeId);
 
             if (dataType == null) {
+                log.warn("No data type was found in the DataTypeTree for dataType with nodeId '{}'.", dataTypeId);
                 throw new ConversionException("No data type was found in the DataTypeTree for node id '" +
                         dataTypeId +
                         "'");
             }
 
             final NodeId binaryEncodingId = dataType.getBinaryEncodingId();
+            log.debug(
+                    "FieldType '{}' with ExpandedNodeId '{}' resolved to DataType NodeId '{}' representing DataType '{}', which has BinaryEncodingId '{}' and represents the builtin type '{}'. The Json '{}' is parsed to this.",
+                    fieldType,
+                    expandedNodeId,
+                    dataTypeId,
+                    dataType,
+                    binaryEncodingId,
+                    builtinDataType,
+                    jsonNode);
             return parsetoOpcUAObject(builtinDataType, jsonNode, binaryEncodingId);
         }
         return parsetoOpcUAObject(builtinDataType, jsonNode, null);
@@ -407,6 +446,10 @@ public class JsonToOpcUAConverter {
 
     private static @NotNull IllegalArgumentException createException(
             Object value, final @NotNull String intendedClass) {
+        log.warn("Can not convert '{}' of class '{}}' to '{}'..",
+                value,
+                value.getClass().getSimpleName(),
+                intendedClass);
         throw new IllegalArgumentException("Can not convert '" +
                 value +
                 "' of class '" +
