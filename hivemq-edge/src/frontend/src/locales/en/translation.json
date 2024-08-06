@@ -343,8 +343,14 @@
     "websocket": {
       "description": "Websocket configuration associated with the bridge",
       "enabled": { "label": "Enabled", "helper": "If Websockets are used" },
-      "serverPath": { "label": "Server Path", "helper": "The server path from the config" },
-      "subProtocol": { "label": "Subprotocol", "helper": "The Subprotocol from the config" }
+      "serverPath": {
+        "label": "Server Path",
+        "helper": "The server path used by the bridge client. This must be setup as path at the remote broker."
+      },
+      "subProtocol": {
+        "label": "Sub-protocol",
+        "helper": "The sub-protocol used by the bridge client. This must be supported by the remote broker"
+      }
     },
     "noDataWarning": {
       "title": "No bridges currently installed",
