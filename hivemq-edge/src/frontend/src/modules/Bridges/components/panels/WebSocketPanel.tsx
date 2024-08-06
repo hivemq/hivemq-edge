@@ -25,10 +25,9 @@ const WebSocketPanel: FC<BridgePanelType> = ({ form }) => {
       </FormControl>
 
       <FormControl as="fieldset" variant="hivemq">
-        <FormLabel htmlFor="serverPath" data-testid="form-websocket-serverPath">
-          {t('bridge.websocket.serverPath.label')}
-        </FormLabel>
+        <FormLabel htmlFor="serverPath">{t('bridge.websocket.serverPath.label')}</FormLabel>
         <Input
+          data-testid="form-websocket-serverPath"
           autoFocus
           id="serverPath"
           type="text"
@@ -40,10 +39,9 @@ const WebSocketPanel: FC<BridgePanelType> = ({ form }) => {
       </FormControl>
 
       <FormControl as="fieldset" variant="hivemq">
-        <FormLabel htmlFor="subProtocol" data-testid="form-websocket-subProtocol">
-          {t('bridge.websocket.subProtocol.label')}
-        </FormLabel>
+        <FormLabel htmlFor="subProtocol">{t('bridge.websocket.subProtocol.label')}</FormLabel>
         <Input
+          data-testid="form-websocket-subProtocol"
           autoFocus
           id="subProtocol"
           type="text"
