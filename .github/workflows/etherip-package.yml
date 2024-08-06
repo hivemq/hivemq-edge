@@ -25,4 +25,4 @@ jobs:
           distribution: 'adopt'
           java-version: '11'
       - name: Build and Publish
-        run: mvn package deploy:deploy-file -Durl=https://maven.pkg.github.com/hivemq/etherip -DrepositoryId=github -Dfile=target/etherip-1.0.0.jar -DpomFile=pom.xml -Dtoken=GH_TOKEN
+        run: mvn package deploy:deploy-file -Durl=https://maven.pkg.github.com/hivemq/hivemq-edge -DrepositoryId=github -Dfile=target/etherip-1.0.0.jar -DpomFile=pom.xml -Dtoken=GH_TOKEN
