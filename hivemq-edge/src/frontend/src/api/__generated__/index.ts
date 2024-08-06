@@ -80,6 +80,7 @@ export type { TlsConfiguration } from './models/TlsConfiguration';
 export { TypeIdentifier } from './models/TypeIdentifier';
 export type { UsernamePasswordCredentials } from './models/UsernamePasswordCredentials';
 export type { ValuesTree } from './models/ValuesTree';
+export type { WebsocketConfiguration } from './models/WebsocketConfiguration';
 
 export { $Adapter } from './schemas/$Adapter';
 export { $AdaptersList } from './schemas/$AdaptersList';
@@ -151,6 +152,7 @@ export { $TlsConfiguration } from './schemas/$TlsConfiguration';
 export { $TypeIdentifier } from './schemas/$TypeIdentifier';
 export { $UsernamePasswordCredentials } from './schemas/$UsernamePasswordCredentials';
 export { $ValuesTree } from './schemas/$ValuesTree';
+export { $WebsocketConfiguration } from './schemas/$WebsocketConfiguration';
 
 export { AuthenticationService } from './services/AuthenticationService';
 export { AuthenticationEndpointService } from './services/AuthenticationEndpointService';
