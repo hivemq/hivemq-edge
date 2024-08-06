@@ -5164,10 +5164,15 @@ components:
       properties:
         enabled:
           type: boolean
+          default: false
           description: If Websockets are used
         serverPath:
           type: string
-          description: The server path from the config
+          default: /mqtt
+          description: The server path used by the bridge client. This must be setup
+            as path at the remote broker
         subProtocol:
           type: string
-          description: The subProtocol from the config
+          default: mqtt
+          description: The sub-protocol used by the bridge client. This must be supported
+            by the remote broker
