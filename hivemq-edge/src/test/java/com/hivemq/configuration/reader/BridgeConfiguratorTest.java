@@ -72,6 +72,155 @@ public class BridgeConfiguratorTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void whenMinimalWebsocketConfigRemoteSubs_thenDefaultsSet() throws IOException {
+        final String contents = "" +
+                "<hivemq>\n" +
+                "<mqtt-bridges>\n" +
+                "    <mqtt-bridge>\n" +
+                "        <id>test-bridge</id>\n" +
+                "        <remote-broker>\n" +
+                "           <host>testhost</host>\n" +
+                "           <websocket>" +
+                "               <enabled>true</enabled>" +
+                "           </websocket>" +
+                "        </remote-broker>\n" +
+                "        <remote-subscriptions>\n" +
+                "            <remote-subscription>\n" +
+                "                <filters>\n" +
+                "                    <mqtt-topic-filter>machine-types/1/#</mqtt-topic-filter>\n" +
+                "                </filters>\n" +
+                "            </remote-subscription>\n" +
+                "        </remote-subscriptions>\n" +
+                "    </mqtt-bridge>\n" +
+                "</mqtt-bridges>" +
+                "</hivemq>";
+
+        Files.write(contents.getBytes(UTF_8), xmlFile);
+
+        reader.applyConfig();
+
+        final List<MqttBridge> bridges = bridgeConfigurationService.getBridges();
+
+        assertEquals(1, bridges.size());
+        final MqttBridge mqttBridge = bridges.get(0);
+        assertEquals("testhost", mqttBridge.getHost());
+        assertEquals(1883, mqttBridge.getPort());
+        assertNotNull(mqttBridge.getBridgeWebsocketConfig());
+        assertEquals("/mqtt", mqttBridge.getBridgeWebsocketConfig().getPath());
+        assertEquals("mqtt", mqttBridge.getBridgeWebsocketConfig().getSubProtocol());
+        assertEquals(60, mqttBridge.getKeepAlive());
+        assertEquals(3600, mqttBridge.getSessionExpiry());
+        assertNull(mqttBridge.getBridgeTls());
+        assertEquals("test-bridge", mqttBridge.getClientId());
+        assertEquals("test-bridge", mqttBridge.getId());
+        assertEquals(1, mqttBridge.getRemoteSubscriptions().size());
+        final RemoteSubscription remoteSubscription = mqttBridge.getRemoteSubscriptions().get(0);
+        assertEquals(1, remoteSubscription.getFilters().size());
+        assertEquals("machine-types/1/#", remoteSubscription.getFilters().get(0));
+
+    }
+
+    @Test
+    public void whenSpecificWebsocketConfigRemoteSubs_thenSpecificsSet() throws IOException {
+        final String contents = "" +
+                "<hivemq>\n" +
+                "<mqtt-bridges>\n" +
+                "    <mqtt-bridge>\n" +
+                "        <id>test-bridge</id>\n" +
+                "        <remote-broker>\n" +
+                "           <host>testhost</host>\n" +
+                "           <websocket>" +
+                "               <enabled>true</enabled>" +
+                "               <server-path>/test</server-path>" +
+                "               <subprotocol>hansi</subprotocol>" +
+                "           </websocket>" +
+                "        </remote-broker>\n" +
+                "        <remote-subscriptions>\n" +
+                "            <remote-subscription>\n" +
+                "                <filters>\n" +
+                "                    <mqtt-topic-filter>machine-types/1/#</mqtt-topic-filter>\n" +
+                "                </filters>\n" +
+                "            </remote-subscription>\n" +
+                "        </remote-subscriptions>\n" +
+                "    </mqtt-bridge>\n" +
+                "</mqtt-bridges>" +
+                "</hivemq>";
+
+        Files.write(contents.getBytes(UTF_8), xmlFile);
+
+        reader.applyConfig();
+
+        final List<MqttBridge> bridges = bridgeConfigurationService.getBridges();
+
+        assertEquals(1, bridges.size());
+        final MqttBridge mqttBridge = bridges.get(0);
+        assertEquals("testhost", mqttBridge.getHost());
+        assertEquals(1883, mqttBridge.getPort());
+        assertNotNull(mqttBridge.getBridgeWebsocketConfig());
+        assertEquals("/test", mqttBridge.getBridgeWebsocketConfig().getPath());
+        assertEquals("hansi", mqttBridge.getBridgeWebsocketConfig().getSubProtocol());
+        assertEquals(60, mqttBridge.getKeepAlive());
+        assertEquals(3600, mqttBridge.getSessionExpiry());
+        assertNull(mqttBridge.getBridgeTls());
+        assertEquals("test-bridge", mqttBridge.getClientId());
+        assertEquals("test-bridge", mqttBridge.getId());
+        assertEquals(1, mqttBridge.getRemoteSubscriptions().size());
+        final RemoteSubscription remoteSubscription = mqttBridge.getRemoteSubscriptions().get(0);
+        assertEquals(1, remoteSubscription.getFilters().size());
+        assertEquals("machine-types/1/#", remoteSubscription.getFilters().get(0));
+
+    }
+
+    @Test
+    public void whenWebsocketConfigDisabledRemoteSubs_thenConfigNull() throws IOException {
+        final String contents = "" +
+                "<hivemq>\n" +
+                "<mqtt-bridges>\n" +
+                "    <mqtt-bridge>\n" +
+                "        <id>test-bridge</id>\n" +
+                "        <remote-broker>\n" +
+                "           <host>testhost</host>\n" +
+                "           <websocket>" +
+                "               <enabled>false</enabled>" +
+                "               <server-path>/mqtt</server-path>" +
+                "               <subprotocol>mqtt</subprotocol>" +
+                "           </websocket>" +
+                "        </remote-broker>\n" +
+                "        <remote-subscriptions>\n" +
+                "            <remote-subscription>\n" +
+                "                <filters>\n" +
+                "                    <mqtt-topic-filter>machine-types/1/#</mqtt-topic-filter>\n" +
+                "                </filters>\n" +
+                "            </remote-subscription>\n" +
+                "        </remote-subscriptions>\n" +
+                "    </mqtt-bridge>\n" +
+                "</mqtt-bridges>" +
+                "</hivemq>";
+
+        Files.write(contents.getBytes(UTF_8), xmlFile);
+
+        reader.applyConfig();
+
+        final List<MqttBridge> bridges = bridgeConfigurationService.getBridges();
+
+        assertEquals(1, bridges.size());
+        final MqttBridge mqttBridge = bridges.get(0);
+        assertEquals("testhost", mqttBridge.getHost());
+        assertEquals(1883, mqttBridge.getPort());
+        assertNull(mqttBridge.getBridgeWebsocketConfig());
+        assertEquals(60, mqttBridge.getKeepAlive());
+        assertEquals(3600, mqttBridge.getSessionExpiry());
+        assertNull(mqttBridge.getBridgeTls());
+        assertEquals("test-bridge", mqttBridge.getClientId());
+        assertEquals("test-bridge", mqttBridge.getId());
+        assertEquals(1, mqttBridge.getRemoteSubscriptions().size());
+        final RemoteSubscription remoteSubscription = mqttBridge.getRemoteSubscriptions().get(0);
+        assertEquals(1, remoteSubscription.getFilters().size());
+        assertEquals("machine-types/1/#", remoteSubscription.getFilters().get(0));
+
+    }
+
+    @Test
     public void whenMinimalConfigWithForwarded_thenDefaultsSet() throws IOException {
         final String contents = "" +
                 "<hivemq>\n" +

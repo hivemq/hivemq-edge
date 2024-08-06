@@ -17,6 +17,7 @@ package com.hivemq.configuration.reader;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.bridge.config.BridgeTls;
+import com.hivemq.bridge.config.BridgeWebsocketConfig;
 import com.hivemq.bridge.config.CustomUserProperty;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
@@ -24,6 +25,7 @@ import com.hivemq.bridge.config.RemoteSubscription;
 import com.hivemq.configuration.entity.bridge.BridgeAuthenticationEntity;
 import com.hivemq.configuration.entity.bridge.BridgeMqttEntity;
 import com.hivemq.configuration.entity.bridge.BridgeTlsEntity;
+import com.hivemq.configuration.entity.bridge.BridgeWebsocketConfigurationEntity;
 import com.hivemq.configuration.entity.bridge.CustomUserPropertyEntity;
 import com.hivemq.configuration.entity.bridge.ForwardedTopicEntity;
 import com.hivemq.configuration.entity.bridge.LoopPreventionEntity;
@@ -111,6 +113,12 @@ public class BridgeConfigurator {
             final BridgeTls bridgeTls = convertTls(remoteBroker.getTls());
             if (bridgeTls != null) {
                 builder.withBridgeTls(bridgeTls);
+            }
+
+            final BridgeWebsocketConfig bridgeWebsocketConfig =
+                    convertWebsocketConfig(remoteBroker.getBridgeWebsocketConfig());
+            if(bridgeWebsocketConfig != null) {
+                builder.withWebsocketConfiguration(bridgeWebsocketConfig);
             }
 
             if (remoteBroker.getAuthentication() != null &&
@@ -218,6 +226,14 @@ public class BridgeConfigurator {
             }
         }
         return builder.build();
+    }
+
+    private @Nullable BridgeWebsocketConfig convertWebsocketConfig(final @Nullable BridgeWebsocketConfigurationEntity websocketConfiguration) {
+        if(websocketConfiguration == null || !websocketConfiguration.isEnabled()) {
+            return null;
+        }
+        return new BridgeWebsocketConfig(websocketConfiguration.getServerPath(),
+                websocketConfiguration.getSubProtocol());
     }
 
     private @Nullable BridgeTls convertTls(final @Nullable BridgeTlsEntity tls) {
