@@ -11,11 +11,11 @@ export const $WebsocketConfiguration = {
         },
         serverPath: {
             type: 'string',
-            description: `The server path from the config`,
+            description: `The server path used by the bridge client. This must be setup as path at the remote broker`,
         },
         subProtocol: {
             type: 'string',
-            description: `The subProtocol from the config`,
+            description: `The sub-protocol used by the bridge client. This must be supported by the remote broker`,
         },
     },
     isNullable: true,
