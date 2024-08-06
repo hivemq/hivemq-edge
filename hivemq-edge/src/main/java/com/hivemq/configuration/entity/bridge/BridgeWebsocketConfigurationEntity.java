@@ -37,11 +37,11 @@ public class BridgeWebsocketConfigurationEntity {
     @XmlElement(name = "enabled")
     private boolean enabled = false;
 
-    @XmlElement(name = "server-path", required = false)
-    private @Nullable String serverPath = "/mqtt";
+    @XmlElement(name = "server-path")
+    private @NotNull String serverPath = "/mqtt";
 
-    @XmlElement(name = "subprotocol", required = false)
-    private @Nullable String subProtocol = "mqttv5";
+    @XmlElement(name = "subprotocol")
+    private @NotNull String subProtocol = "mqtt";
 
     public boolean isEnabled() {
         return enabled;

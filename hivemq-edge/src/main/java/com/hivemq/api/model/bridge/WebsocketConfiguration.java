@@ -15,7 +15,7 @@ public class WebsocketConfiguration {
     @Schema(description = "The server path from the config")
     private final @NotNull String serverPath;
 
-    @JsonProperty(value = "subProtocol", defaultValue = "mqttv5")
+    @JsonProperty(value = "subProtocol", defaultValue = "mqtt")
     @Schema(description = "The subProtocol from the config")
     private final @NotNull String subProtocol;
 
