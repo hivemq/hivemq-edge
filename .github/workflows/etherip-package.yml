@@ -24,13 +24,6 @@ jobs:
           java-version: '11'
       - uses: whelk-io/maven-settings-xml-action@9dc09b23833fa9aa7f27b63db287951856f3433d # v3.0.0
         with:
-          repositories: >
-            [
-              {
-                  "id": "github",
-                  "url": "https://maven.pkg.github.com/hivemq/hivemq-edge"
-              }
-            ]
           servers: >
             [
               {
@@ -40,4 +33,4 @@ jobs:
               }
             ]
       - name: Build and Publish
-        run: mvn package deploy:deploy-file -DrepositoryId=github -Dfile=target/etherip-1.0.0.jar -DpomFile=pom.xml
+        run: mvn package deploy:deploy-file -Durl=https://maven.pkg.github.com/hivemq/hivemq-edge -DrepositoryId=github -Dfile=target/etherip-1.0.0.jar -DpomFile=pom.xml
