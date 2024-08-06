@@ -1,0 +1,28 @@
+name: CI Check
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.ref }}-check
+  cancel-in-progress: true
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+        with:
+          repository: 'ornl-epics/etherip'
+      - name: Setup Java
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # v4
+        with:
+          distribution: 'adopt'
+          java-version: '11'
+      - name: Build and Publish
+        run: mvn package deploy:deploy-file -Durl=https://maven.pkg.github.com/hivemq/etherip -DrepositoryId=github -Dfile=target/etherip-1.0.0.jar -DpomFile=pom.xml -Dtoken=GH_TOKEN
