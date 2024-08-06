@@ -7,6 +7,7 @@ import type { BridgeSubscription } from './BridgeSubscription';
 import type { LocalBridgeSubscription } from './LocalBridgeSubscription';
 import type { Status } from './Status';
 import type { TlsConfiguration } from './TlsConfiguration';
+import type { WebsocketConfiguration } from './WebsocketConfiguration';
 
 export type Bridge = {
     /**
@@ -67,5 +68,6 @@ export type Bridge = {
      * The username value associated the the MQTT connection.
      */
     username?: string | null;
+    websocketConfiguration?: WebsocketConfiguration;
 };
 

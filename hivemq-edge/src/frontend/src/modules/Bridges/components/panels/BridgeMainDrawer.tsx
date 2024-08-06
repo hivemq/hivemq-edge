@@ -29,6 +29,7 @@ import SubscriptionsPanel from '../panels/SubscriptionsPanel.tsx'
 import SecurityPanel from '../panels/SecurityPanel.tsx'
 import PersistencePanel from '../panels/PersistencePanel.tsx'
 import { useBridgeSetup } from '../../hooks/useBridgeConfig.tsx'
+import WebSocketPanel from '@/modules/Bridges/components/panels/WebSocketPanel.tsx'
 
 interface BridgeMainDrawerProps {
   isNewBridge?: boolean
@@ -90,6 +91,7 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
                   <Tab>{t('bridge.drawer.connection')}</Tab>
                   <Tab>{t('bridge.drawer.broker')}</Tab>
                   <Tab>{t('bridge.drawer.security')}</Tab>
+                  <Tab>{t('bridge.drawer.websocket')}</Tab>
                   {hasPersistence && <Tab>{t('bridge.drawer.persistence')}</Tab>}
                 </TabList>
 
@@ -120,6 +122,10 @@ const BridgeMainDrawer: FC<BridgeMainDrawerProps> = ({
 
                   <TabPanel>
                     <SecurityPanel form={form} />
+                  </TabPanel>
+
+                  <TabPanel>
+                    <WebSocketPanel form={form} />
                   </TabPanel>
 
                   {hasPersistence && (
