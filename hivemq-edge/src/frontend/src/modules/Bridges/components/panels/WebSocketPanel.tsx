@@ -15,7 +15,9 @@ const WebSocketPanel: FC<BridgePanelType> = ({ form }) => {
     <FormControl variant="hivemq" flexGrow={1} display="flex" flexDirection="column" gap={4} as="fieldset">
       <Text>{t('bridge.websocket.description')}</Text>
       <FormControl isInvalid={!!errors.websocketConfiguration?.enabled}>
-        <Checkbox {...register('websocketConfiguration.enabled')}>{t('bridge.websocket.enabled.label')}</Checkbox>
+        <Checkbox {...register('websocketConfiguration.enabled')} data-testid="form-websocket-enabled">
+          {t('bridge.websocket.enabled.label')}
+        </Checkbox>
         <FormHelperText>{t('bridge.websocket.enabled.helper')}</FormHelperText>
         <FormErrorMessage>
           {errors.websocketConfiguration?.enabled && errors.websocketConfiguration.enabled.message}
@@ -23,7 +25,9 @@ const WebSocketPanel: FC<BridgePanelType> = ({ form }) => {
       </FormControl>
 
       <FormControl as="fieldset" variant="hivemq">
-        <FormLabel htmlFor="serverPath">{t('bridge.websocket.serverPath.label')}</FormLabel>
+        <FormLabel htmlFor="serverPath" data-testid="form-websocket-serverPath">
+          {t('bridge.websocket.serverPath.label')}
+        </FormLabel>
         <Input
           autoFocus
           id="serverPath"
@@ -35,7 +39,9 @@ const WebSocketPanel: FC<BridgePanelType> = ({ form }) => {
       </FormControl>
 
       <FormControl as="fieldset" variant="hivemq">
-        <FormLabel htmlFor="subProtocol">{t('bridge.websocket.subProtocol.label')}</FormLabel>
+        <FormLabel htmlFor="subProtocol" data-testid="form-websocket-subProtocol">
+          {t('bridge.websocket.subProtocol.label')}
+        </FormLabel>
         <Input
           autoFocus
           id="subProtocol"
