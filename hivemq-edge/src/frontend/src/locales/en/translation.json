@@ -340,6 +340,12 @@
         "helper": "Select to store MQTT Traffic greater than QoS 0 on disk."
       }
     },
+    "websocket": {
+      "description": "Websocket configuration associated with the bridge",
+      "enabled": { "label": "Enabled", "helper": "If Websockets are used" },
+      "serverPath": { "label": "Server Path", "helper": "The server path from the config" },
+      "subProtocol": { "label": "Subprotocols", "helper": "The subProtocol from the config" }
+    },
     "noDataWarning": {
       "title": "No bridges currently installed",
       "description": "Configure Bridges to start sending data to your enterprise MQTT broker."
@@ -353,7 +359,8 @@
       "connection": "Connection details",
       "broker": "Broker Configuration",
       "security": "Security",
-      "persistence": "Persistence"
+      "persistence": "Persistence",
+      "websocket": "Websocket"
     },
     "stepper": {
       "description": "Create a new bridge to a broker",
