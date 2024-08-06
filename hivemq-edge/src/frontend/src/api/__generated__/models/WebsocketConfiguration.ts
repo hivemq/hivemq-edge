@@ -12,11 +12,11 @@ export type WebsocketConfiguration = {
      */
     enabled?: boolean;
     /**
-     * The server path from the config
+     * The server path used by the bridge client. This must be setup as path at the remote broker
      */
     serverPath?: string;
     /**
-     * The subProtocol from the config
+     * The sub-protocol used by the bridge client. This must be supported by the remote broker
      */
     subProtocol?: string;
 };
