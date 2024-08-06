@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.modules.api.adapters;
+package com.hivemq.util;
 
-import com.hivemq.adapter.sdk.api.ProtocolAdapter;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
- * The Polling Service allows Protocol Adapters to use a centrally managed and tracked Scheduler
- * which means all processes can be managed via API / UX.
- *
- * @author Simon L Johnson
+ * Simple Wrapper used to have an easier time in unit tests when nano time is used in methods and we want to control/mock it.
  */
-public interface ProtocolAdapterPollingService {
+@Singleton
+public class NanoTimeProvider {
 
-    void schedulePolling(@NotNull ProtocolAdapter adapter, @NotNull ProtocolAdapterPollingSampler input);
+    @Inject
+    NanoTimeProvider(){}
 
-    void stopPollingForAdapterInstance(@NotNull ProtocolAdapter adapter);
+    public long nanoTime(){
+        return System.nanoTime();
+    }
+
 }

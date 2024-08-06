@@ -21,8 +21,8 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.impl.events.EventServiceDelegateImpl;
 import com.hivemq.edge.impl.events.InMemoryEventImpl;
 import com.hivemq.edge.modules.adapters.impl.ModuleServicesImpl;
-import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPollingServiceImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishServiceImpl;
+import com.hivemq.edge.modules.adapters.impl.polling.ProtocolAdapterPollingServiceImpl;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.edge.modules.api.events.EventListener;
 import com.hivemq.edge.modules.api.events.EventStore;
@@ -35,6 +35,7 @@ import dagger.multibindings.ElementsIntoSet;
 import javax.inject.Singleton;
 import java.util.Set;
 
+@SuppressWarnings("unused")
 @Module
 public abstract class ModulesModule {
 
@@ -61,7 +62,7 @@ public abstract class ModulesModule {
     @Provides
     @ElementsIntoSet
     @Singleton
-    static Set<EventListener> provideEventListeners() {
+    static @NotNull Set<EventListener> provideEventListeners() {
         //TODO register event listeners here
         return Set.of();
     }
