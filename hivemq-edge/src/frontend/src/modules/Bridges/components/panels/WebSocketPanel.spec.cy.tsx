@@ -35,12 +35,17 @@ describe('WebSocketPanel', () => {
     cy.viewport(800, 800)
   })
 
-  it('should render properly', () => {
+  it.only('should render properly', () => {
     const mockOnSubmit = cy.stub().as('onSubmit')
     cy.mountWithProviders(<TestingComponent onSubmit={mockOnSubmit} defaultValues={mockBridge} />)
 
+    cy.getByTestId('form-websocket-serverPath').should('have.value', '/mqtt')
+    cy.getByTestId('form-websocket-subProtocol').should('have.value', 'mqtt')
+
     cy.getByTestId('form-websocket-enabled').click()
+    cy.getByTestId('form-websocket-serverPath').clear()
     cy.getByTestId('form-websocket-serverPath').type('1234')
+    cy.getByTestId('form-websocket-subProtocol').clear()
     cy.getByTestId('form-websocket-subProtocol').type('5678')
 
     cy.getByTestId('form-submit').click()
