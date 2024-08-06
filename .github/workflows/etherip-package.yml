@@ -1,4 +1,4 @@
-name: CI Check
+name: Publish EtherIP
 
 on:
   workflow_dispatch:
