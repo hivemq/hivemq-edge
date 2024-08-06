@@ -29,7 +29,6 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
@@ -82,7 +81,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
         final int minDelay = adapterConfig.getMinDelay();
         final int maxDelay = adapterConfig.getMaxDelay();
 
-        CompletableFuture.runAsync(() -> {
+        new Thread(() -> {
             if (minDelay > maxDelay) {
                 pollingOutput.fail(String.format(
                         "The configured min '%d' delay was bigger than the max delay '%d'. Simulator Adapter will not publish a value.",
@@ -112,7 +111,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
                             .nextDouble(Math.min(adapterConfig.getMinValue(), adapterConfig.getMaxValue()),
                                     Math.max(adapterConfig.getMinValue() + 1, adapterConfig.getMaxValue())));
             pollingOutput.finish();
-        });
+        }).start();
     }
 
     @Override
