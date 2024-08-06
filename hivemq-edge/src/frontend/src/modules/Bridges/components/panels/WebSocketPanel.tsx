@@ -32,7 +32,8 @@ const WebSocketPanel: FC<BridgePanelType> = ({ form }) => {
           autoFocus
           id="serverPath"
           type="text"
-          autoComplete="name"
+          autoComplete="serverPath"
+          defaultValue="/mqtt"
           {...register('websocketConfiguration.serverPath')}
         />
         <FormHelperText>{t('bridge.websocket.serverPath.helper')}</FormHelperText>
@@ -46,7 +47,8 @@ const WebSocketPanel: FC<BridgePanelType> = ({ form }) => {
           autoFocus
           id="subProtocol"
           type="text"
-          autoComplete="name"
+          autoComplete="subProtocol"
+          defaultValue="mqtt"
           {...register('websocketConfiguration.subProtocol')}
         />
         <FormHelperText>{t('bridge.websocket.subProtocol.helper')}</FormHelperText>
