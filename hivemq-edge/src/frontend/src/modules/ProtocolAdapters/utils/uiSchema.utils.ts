@@ -1,4 +1,5 @@
-import { RegistryWidgetsType, UiSchema } from '@rjsf/utils'
+import { RegistryFieldsType, RegistryWidgetsType, UiSchema } from '@rjsf/utils'
+import CompactArrayField from '@/components/rjsf/Fields/CompactArrayField.tsx'
 
 export const getRequiredUiSchema = (uiSchema: UiSchema | undefined, isNewAdapter: boolean): UiSchema => {
   const { ['ui:submitButtonOptions']: submitButtonOptions, id, ...rest } = uiSchema || {}
@@ -21,3 +22,5 @@ export const adapterJSFWidgets: RegistryWidgetsType = {
   // @ts-ignore [24369] Turn discovery browser off (and replace by regular text input)
   'discovery:tagBrowser': 'text',
 }
+
+export const adapterJSFFields: RegistryFieldsType = { compactTable: CompactArrayField }
