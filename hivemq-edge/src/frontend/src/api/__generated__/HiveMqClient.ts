@@ -53,7 +53,7 @@ export class HiveMqClient {
     constructor(config?: Partial<OpenAPIConfig>, HttpRequest: HttpRequestConstructor = AxiosHttpRequest) {
         this.request = new HttpRequest({
             BASE: config?.BASE ?? '',
-            VERSION: config?.VERSION ?? '2024.6',
+            VERSION: config?.VERSION ?? '2024.7',
             WITH_CREDENTIALS: config?.WITH_CREDENTIALS ?? false,
             CREDENTIALS: config?.CREDENTIALS ?? 'include',
             TOKEN: config?.TOKEN,
