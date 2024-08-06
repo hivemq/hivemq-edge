@@ -7,16 +7,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public class WebsocketConfiguration {
 
-    @JsonProperty("enabled")
-    @Schema(description = "If Websockets are used")
+    @JsonProperty(value = "enabled", defaultValue = "false")
+    @Schema(description = "If Websockets are used", defaultValue = "false")
     private final boolean enabled;
 
     @JsonProperty(value = "serverPath", defaultValue = "/mqtt")
-    @Schema(description = "The server path from the config")
+    @Schema(description = "The server path used by the bridge client. This must be setup as path at the remote broker", defaultValue = "/mqtt")
     private final @NotNull String serverPath;
 
     @JsonProperty(value = "subProtocol", defaultValue = "mqtt")
-    @Schema(description = "The subProtocol from the config")
+    @Schema(description = "The sub-protocol used by the bridge client. This must be supported by the remote broker", defaultValue = "mqtt")
     private final @NotNull String subProtocol;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
