@@ -21,6 +21,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.hivemq.edge.adapters.opcua.CustomStructType;
 import org.eclipse.milo.opcua.binaryschema.Struct;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
@@ -146,13 +147,38 @@ public class OpcUaJsonPayloadConverter {
             }
             holder.add(fieldName, localizedText);
         } else if (value instanceof ExtensionObject) {
+
+            NodeId dataTypeId = CustomStructType.TYPE_ID
+                    .toNodeId(opcUaClient.getNamespaceTable())
+                    .orElseThrow(() -> new IllegalStateException("namespace not found"));
+
+            NodeId binaryEncodingId = CustomStructType.BINARY_ENCODING_ID
+                    .toNodeId(opcUaClient.getNamespaceTable())
+                    .orElseThrow(() -> new IllegalStateException("namespace not found"));
+
+            // Register codec with the opcUaClient's DataTypeManager instance.
+            // We need to register it by both its encodingId and its dataTypeId because it may be
+            // looked up by either depending on the context.
+
+            opcUaClient.getDynamicDataTypeManager().registerCodec(
+                    binaryEncodingId,
+                    new CustomStructType.Codec().asBinaryCodec()
+            );
+
+            opcUaClient.getDynamicDataTypeManager().registerCodec(
+                    new QualifiedName(dataTypeId.getNamespaceIndex(), "CustomStructType"),
+                    dataTypeId,
+                    new CustomStructType.Codec().asBinaryCodec()
+            );
+
+
             if (!reversibleMode) {
                 try {
                     final Object decodedValue =
                             ((ExtensionObject) value).decode(opcUaClient.getDynamicSerializationContext());
                     convertValue(decodedValue, holder, reversibleMode, fieldName, opcUaClient);
                 } catch (Throwable t) {
-                    log.debug("Not able to decode body of OPC-UA ExtensionObject, using undecoded body value instead",
+                    log.warn("Not able to decode body of OPC-UA ExtensionObject, using undecoded body value instead",
                             t);
                     convertValue(((ExtensionObject) value).getBody(), holder, reversibleMode, fieldName, opcUaClient);
                 }
