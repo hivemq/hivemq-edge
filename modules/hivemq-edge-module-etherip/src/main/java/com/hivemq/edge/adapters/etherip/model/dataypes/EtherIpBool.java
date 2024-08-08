@@ -7,8 +7,8 @@ public class EtherIpBool implements EtherIpDataType {
     private final String tagAddress;
 
     public EtherIpBool(final String tagAddress, final Number value) {
-        //Values of 0 are true, all other values are treated as false
-        this.value = value.intValue() == 0;
+        //Values of 0 are false, all other values are treated as true
+        this.value = value.intValue() != 0;
         this.tagAddress = tagAddress;
     }
 

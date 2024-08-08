@@ -37,7 +37,7 @@ public class EtherIpPollingProtocolAdapterIT {
     public static Stream<Arguments> tagsToExpectedValues() {
         return Stream.of(
                 Arguments.of(TAG_INT, EtherIpDataTypes.DATA_TYPE.INT, TAG_INT + ":INT", 3),
-                Arguments.of(TAG_BOOL, EtherIpDataTypes.DATA_TYPE.BOOL, TAG_BOOL + ":BOOL", true),
+                Arguments.of(TAG_BOOL, EtherIpDataTypes.DATA_TYPE.BOOL, TAG_BOOL + ":BOOL", false),
                 Arguments.of(TAG_PROGRAM_BOOL_TRUE, EtherIpDataTypes.DATA_TYPE.BOOL, TAG_PROGRAM_BOOL_TRUE + ":BOOL", true),
                 Arguments.of(TAG_PROGRAM_BOOL_FALSE, EtherIpDataTypes.DATA_TYPE.BOOL, TAG_PROGRAM_BOOL_FALSE + ":BOOL", false),
                 Arguments.of(TAG_STRING, EtherIpDataTypes.DATA_TYPE.STRING, TAG_STRING + ":STRING", "test"),
