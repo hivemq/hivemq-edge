@@ -1,3 +1,2 @@
-com.hivemq.edge.adapters.etherip.types.siemens.S7ProtocolAdapterFactory
-com.hivemq.edge.adapters.etherip.types.ads.ADSProtocolAdapterFactory
-com.hivemq.edge.adapters.etherip.EIPProtocolAdapterFactory
+com.hivemq.edge.adapters.etherip.EtherIpProtocolAdapterFactory
+

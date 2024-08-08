@@ -41,12 +41,12 @@ public class EtherIpProtocolAdapterInformation implements ProtocolAdapterInforma
 
     @Override
     public @NotNull String getProtocolName() {
-        return "Ethernet/IP CIP";
+        return "Ethernet/IP CIP 2";
     }
 
     @Override
     public @NotNull String getProtocolId() {
-        return "ethernet-ip";
+        return "ethernet-ip-2";
     }
 
     @Override
