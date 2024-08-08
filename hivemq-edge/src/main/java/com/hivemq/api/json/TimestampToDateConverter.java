@@ -35,6 +35,7 @@ import java.util.Locale;
 
 public class TimestampToDateConverter {
 
+    public static final @NotNull ZoneId ZONE_ID_UTC = ZoneId.of("UTC");
     public static final DateTimeFormatter DATE_FORMAT_OUTBOUND =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.US);
 

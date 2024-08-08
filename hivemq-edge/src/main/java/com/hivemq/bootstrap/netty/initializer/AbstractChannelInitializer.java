@@ -24,7 +24,6 @@ import com.hivemq.configuration.service.InternalConfigurations;
 import com.hivemq.configuration.service.RestrictionsConfigurationService;
 import com.hivemq.configuration.service.entity.Listener;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.handler.connect.MessageBarrier;
 import com.hivemq.mqtt.handler.publish.PublishFlushHandler;
 import com.hivemq.security.exception.SslException;
@@ -109,7 +108,7 @@ public abstract class AbstractChannelInitializer<T extends Channel> extends Chan
         ch.pipeline()
                 .addLast(MQTT_MESSAGE_BARRIER, new MessageBarrier(channelDependencies.getMqttServerDisconnector()));
 
-        final @Nullable HandlerPackage handlerPackage = channelDependencies.getHandlerProvider().get();
+        final HandlerPackage handlerPackage = channelDependencies.getHandlerProvider().get();
         if (handlerPackage != null) {
             ch.pipeline().addLast(handlerPackage.getHandlerName(), handlerPackage.getHandler());
         }

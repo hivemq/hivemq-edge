@@ -6,8 +6,6 @@ on:
 concurrency:
   group: ${{ github.ref }}-check
   cancel-in-progress: true
-env:
-  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -24,5 +22,15 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: '11'
+      - uses: whelk-io/maven-settings-xml-action@9dc09b23833fa9aa7f27b63db287951856f3433d # v3.0.0
+        with:
+          servers: >
+            [
+              {
+                "id":"github",
+                "username":"${{ github.actor }}",
+                "password":"${{ secrets.GITHUB_TOKEN }}"
+              }
+            ]
       - name: Build and Publish
-        run: mvn package deploy:deploy-file -Durl=https://maven.pkg.github.com/hivemq/etherip -DrepositoryId=github -Dfile=target/etherip-1.0.0.jar -DpomFile=pom.xml -Dtoken=GH_TOKEN
+        run: mvn package deploy:deploy-file -Durl=https://maven.pkg.github.com/hivemq/hivemq-edge -DrepositoryId=github -Dfile=target/etherip-1.0.0.jar -DpomFile=pom.xml

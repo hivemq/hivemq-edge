@@ -37,6 +37,9 @@
         "startIdx": {
           "ui:widget": "discovery:tagBrowser"
         }
+      },
+      "userProperties": {
+        "ui:field": "compactTable"
       }
     }
   }
