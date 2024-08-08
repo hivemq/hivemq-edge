@@ -36,6 +36,9 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.writing.WriteInput;
+import com.hivemq.adapter.sdk.api.writing.WriteOutput;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.modbus.config.AddressRange;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.PollingContextImpl;
@@ -174,7 +177,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
 
     @Override
     public void discoverValues(
-            @NotNull ProtocolAdapterDiscoveryInput input, @NotNull ProtocolAdapterDiscoveryOutput output) {
+            final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
         //-- Do the discovery of registers and coils, only for root level
         final NodeTree nodeTree = output.getNodeTree();
         if (input.getRootNode() == null) {
@@ -213,9 +216,9 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
         PollingContextImpl subscription =
                 (PollingContextImpl) modBusData.getPollingContext();
 
-        List<DataPoint> previousSampleDataPoints = lastSamples.put(subscription, modBusData.getDataPoints());
-        List<DataPoint> currentSamplePoints = modBusData.getDataPoints();
-        List<DataPoint> delta = AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
+        final List<DataPoint> previousSampleDataPoints = lastSamples.put(subscription, modBusData.getDataPoints());
+        final List<DataPoint> currentSamplePoints = modBusData.getDataPoints();
+        final List<DataPoint> delta = AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
         if (log.isTraceEnabled()) {
             log.trace("Calculating change data old {} samples, new {} sample, delta {}",
                     previousSampleDataPoints != null ? previousSampleDataPoints.size() : 0,
@@ -228,13 +231,13 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
         }
     }
 
-    protected @NotNull ModBusData readRegisters(@NotNull final PollingContext sub) {
+    protected @NotNull ModBusData readRegisters(final @NotNull PollingContext sub) {
         try {
-            PollingContextImpl subscription = (PollingContextImpl) sub;
-            AddressRange addressRange = subscription.getAddressRange();
-            Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
+            final PollingContextImpl subscription = (PollingContextImpl) sub;
+            final AddressRange addressRange = subscription.getAddressRange();
+            final Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
                     addressRange.endIdx - addressRange.startIdx);
-            ModBusData data = new ModBusData(subscription, adapterFactories.dataPointFactory());
+            final ModBusData data = new ModBusData(subscription, adapterFactories.dataPointFactory());
             //add data point per register
             for (int i = 0; i < registers.length; i++) {
                 data.addDataPoint("register-" + (addressRange.startIdx + i), registers[i]);
@@ -276,17 +279,13 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
 
     @Override
     public void write(
-            @NotNull final WriteInput<ModbusWritePayload, ModbusWriteContext> input,
-            @NotNull final WriteOutput writeOutput) {
+            final @NotNull WriteInput<ModbusWritePayload, ModbusWriteContext> input,
+            final @NotNull WriteOutput writeOutput) {
 
         if (!modbusClient.isConnected()) {
             try {
                 modbusClient.connect().thenRun(() -> protocolAdapterState.setConnectionStatus(CONNECTED)).get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e);
-            } catch (ProtocolAdapterException e) {
+            } catch (final InterruptedException | ExecutionException | ProtocolAdapterException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -306,7 +305,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
             return;
         }
 
-        CompletableFuture<WriteMultipleRegistersResponse> future =
+        final CompletableFuture<WriteMultipleRegistersResponse> future =
                 modbusClient.writeMultipleRegister(destinationRegister, offset, convert);
         future.whenComplete(((writeSingleRegisterResponse, throwable) -> {
             if (throwable != null) {

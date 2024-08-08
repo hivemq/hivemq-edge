@@ -20,6 +20,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.config.WriteContext;
+import com.hivemq.edge.adapters.modbus.writing.ModbusWriteContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -92,6 +94,11 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "Subscriptions", description = "Map your sensor data to MQTT Topics")
     private final @NotNull List<PollingContextImpl> subscriptions;
 
+
+    @JsonProperty("mqtt-to-modbus-mappings")
+    @ModuleConfigField(title = "MQTT to Modbus Mappings ", description = "Map your mqtt data to sensors")
+    private final @NotNull List<ModbusWriteContext> writeContexts;
+
     @JsonCreator
     public ModbusAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
@@ -101,7 +108,8 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "timeout") final @Nullable Integer timeout,
             @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
-            @JsonProperty(value = "subscriptions") final @Nullable List<PollingContextImpl> subscriptions
+            @JsonProperty(value = "subscriptions") final @Nullable List<PollingContextImpl> subscriptions,
+            @JsonProperty(value = "mqtt-to-modbus-mappings") final @Nullable List<ModbusWriteContext> modbusWriteContexts
     ) {
         this.id = id;
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
@@ -111,6 +119,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         this.timeout = Objects.requireNonNullElse(timeout, 5000);
         this.publishChangedDataOnly = Objects.requireNonNullElse(publishChangedDataOnly, true);
         this.subscriptions = Objects.requireNonNullElse(subscriptions, List.of());
+        this.writeContexts = Objects.requireNonNullElse(modbusWriteContexts, List.of());
     }
 
     public @NotNull String getId() {
@@ -143,5 +152,9 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
 
     public int getTimeout() {
         return timeout;
+    }
+
+    public @NotNull List<ModbusWriteContext> getWriteContexts() {
+        return writeContexts;
     }
 }
