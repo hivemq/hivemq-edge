@@ -16,7 +16,6 @@
 package com.hivemq.edge.adapters.etherip;
 
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
@@ -28,13 +27,14 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.etherip.model.EtherIpAdapterConfig;
+import com.hivemq.edge.adapters.etherip.model.EtherIpDataType;
+import com.hivemq.edge.adapters.etherip.model.EtherIpDataTypeFactory;
 import etherip.EtherNetIP;
 import etherip.types.CIPData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -74,8 +74,6 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
             etherNetIP.connectTcp();
             this.etherNetIP = etherNetIP;
             output.startedSuccessfully();
-
-
             protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
             protocolAdapterState.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
         } catch (final Exception e) {
@@ -124,11 +122,10 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
         try {
             final CIPData evt = etherNetIP.readTag(pollingInput.getPollingContext().getTagAddress());
 
-            final List<Object> dataPoints = handleResult(evt, tagAddress);
-
             // FIXME check for
             // adapterConfig.getPublishChangedDataOnly()
-            dataPoints.stream().filter(Objects::nonNull).forEach(it -> pollingOutput.addDataPoint(tagAddress, it));
+            handleResult(evt, tagAddress)
+                    .forEach(it -> pollingOutput.addDataPoint(tagAddress, it.getValue()));
 
             pollingOutput.finish();
         } catch (Exception e) {
@@ -137,63 +134,15 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
         }
     }
 
-    private List<Object> handleResult(final CIPData evt, final String tagAddress) {
-        if (evt.isNumeric()) {
-            return handleNumeric(evt, tagAddress);
-        } else {
-            return handleString(evt, tagAddress);
-        }
+    private List<EtherIpDataType> handleResult(final CIPData evt, final String tagAddress) {
+        return EtherIpDataTypeFactory
+                .fromTagAddressAndCipData(tagAddress, evt)
+                .map(List::of)
+                .orElseGet( () -> {
+                    LOG.warn("Unable to parse tag {}, type {} not supported", tagAddress, evt.getType());
+                    return List.of();
+                });
     }
-
-    private List<Object> handleString(
-            @NotNull final CIPData evt, @NotNull final String tagAddress) {
-        try {
-            return List.of(evt.getString());
-        } catch (final Exception exception) {
-            LOG.error("Unable to process tag '{}' of type string.", tagAddress, exception);
-        }
-        return null;
-    }
-
-    private List<Object> handleNumeric(final CIPData evt, final String tagAddress) {
-        Object result = null;
-        if (evt.getElementCount() > 1) {
-            LOG.warn("Only one element per result is supported: {}", tagAddress);
-        } else {
-            final CIPData.Type dataType = evt.getType();
-
-            try {
-                final Number number = evt.getNumber(0);
-                LOG.debug("Got value {} for type {} for tag address {}", number, dataType, tagAddress);
-                switch (dataType) {
-                    case BOOL:
-                    case SINT:
-                    case INT:
-                        result = number.intValue();
-                        break;
-                    case DINT:
-                        result = number.longValue();
-                        break;
-                    case REAL:
-                        result = number.doubleValue();
-                        break;
-                    case BITS:
-                        LOG.error("Data type BITS is not supported, yet: {} ", tagAddress);
-                        break;
-                    case STRUCT:
-                        LOG.error("Data type STRUCT is not supported, yet: {} ", tagAddress);
-                        break;
-                    case STRUCT_STRING:
-                        LOG.trace("This should not be reached, since the type is a number type: {}", tagAddress);
-                        break;
-                }
-            } catch (final Exception exception) {
-                LOG.error("Unable to process tag '{}' of type numeric.", tagAddress, exception);
-            }
-        }
-        return List.of(result);
-    }
-
 
     @Override
     public @NotNull List<EtherIpAdapterConfig.PollingContextImpl> getPollingContexts() {

@@ -65,12 +65,22 @@ dependencies {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform{
+        excludeTags("requiresVpn")
+    }
     testLogging {
         events = setOf(STARTED, PASSED, FAILED, SKIPPED, STANDARD_ERROR)
         exceptionFormat = TestExceptionFormat.FULL
     }
 }
+
+tasks.register<Test>("vpnTests") {
+    useJUnitPlatform {
+        includeTags("requiresVpn")
+    }
+    shouldRunAfter("test")
+}
+
 
 tasks.register<Copy>("copyAllDependencies") {
     shouldRunAfter("assemble")
