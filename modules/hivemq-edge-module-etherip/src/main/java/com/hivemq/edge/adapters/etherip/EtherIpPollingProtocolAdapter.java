@@ -30,6 +30,7 @@ import com.hivemq.edge.adapters.etherip.model.EtherIpAdapterConfig;
 import com.hivemq.edge.adapters.etherip.model.EtherIpDataType;
 import com.hivemq.edge.adapters.etherip.model.EtherIpDataTypeFactory;
 import etherip.EtherNetIP;
+import etherip.data.CipException;
 import etherip.types.CIPData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -128,6 +129,14 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
                     .forEach(it -> pollingOutput.addDataPoint(tagAddress, it.getValue()));
 
             pollingOutput.finish();
+        } catch (CipException e) {
+            if (e.getStatusCode() == 0x04) {
+                LOG.warn("Tag '{}' doesn't exist on device.", tagAddress, e);
+                pollingOutput.fail(e, "Tag '" + tagAddress + "'  doesn't exist on device");
+            } else {
+                LOG.warn("Problem accessing tag '{}' on device.", tagAddress, e);
+                pollingOutput.fail(e, "Problem accessing tag '" + tagAddress + "' on device.");
+            }
         } catch (Exception e) {
             LOG.warn("An exception occurred while reading tag '{}'.", tagAddress, e);
             pollingOutput.fail(e, "An exception occurred while reading tag '" + tagAddress + "'.");

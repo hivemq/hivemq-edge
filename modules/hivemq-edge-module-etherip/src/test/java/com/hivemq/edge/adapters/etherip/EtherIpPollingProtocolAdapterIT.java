@@ -7,9 +7,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.edge.adapters.etherip.model.EtherIpAdapterConfig;
 import com.hivemq.edge.adapters.etherip.model.EtherIpDataTypes;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.assertj.core.api.InstanceOfAssertFactory;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -27,26 +25,28 @@ import static org.mockito.Mockito.when;
 @Tag(TAG_REQUIRES_VPN)
 public class EtherIpPollingProtocolAdapterIT {
 
-    private static String TAG_PRORGAM = "program:MainProgram.test_tag";
-    private static String TAG_INT = "dev_int_tag";
-    private static String TAG_BOOL = "dev_bool_tag";
-    private static String TAG_REAL = "dev_real_tag";
-    private static String TAG_STRING = "dev_string_tag";
+    private static String TAG_INT = "at_int_tag";
+    private static String TAG_BOOL = "at_bool_tag";
+    private static String TAG_PROGRAM_BOOL_TRUE = "program:MainProgram.dev_bool_tag_t";
+    private static String TAG_PROGRAM_BOOL_FALSE = "program:MainProgram.dev_bool_tag_f";
+    private static String TAG_REAL = "at_real_tag";
+    private static String TAG_STRING = "at_string_tag";
 
     private static final String HOST = "172.16.10.60";
 
-    public static Stream<Arguments> provideStringsForIsBlank() {
+    public static Stream<Arguments> tagsToExpectedValues() {
         return Stream.of(
                 Arguments.of(TAG_INT, EtherIpDataTypes.DATA_TYPE.INT, TAG_INT + ":INT", 3),
                 Arguments.of(TAG_BOOL, EtherIpDataTypes.DATA_TYPE.BOOL, TAG_BOOL + ":BOOL", true),
+                Arguments.of(TAG_PROGRAM_BOOL_TRUE, EtherIpDataTypes.DATA_TYPE.BOOL, TAG_PROGRAM_BOOL_TRUE + ":BOOL", true),
+                Arguments.of(TAG_PROGRAM_BOOL_FALSE, EtherIpDataTypes.DATA_TYPE.BOOL, TAG_PROGRAM_BOOL_FALSE + ":BOOL", false),
                 Arguments.of(TAG_STRING, EtherIpDataTypes.DATA_TYPE.STRING, TAG_STRING + ":STRING", "test"),
-                Arguments.of(TAG_PRORGAM, EtherIpDataTypes.DATA_TYPE.DINT, TAG_PRORGAM + ":DINT", 17L),
                 Arguments.of(TAG_REAL, EtherIpDataTypes.DATA_TYPE.REAL, TAG_REAL + ":REAL", 5.59)
         );
     }
 
     @ParameterizedTest
-    @MethodSource("provideStringsForIsBlank")
+    @MethodSource("tagsToExpectedValues")
     public void test_parameterized(String tagAddress, EtherIpDataTypes.DATA_TYPE tagType, String expectedName, Object expectedValue) {
         EtherIpAdapterConfig config = mock(EtherIpAdapterConfig.class);
         when(config.getHost()).thenReturn(HOST);
