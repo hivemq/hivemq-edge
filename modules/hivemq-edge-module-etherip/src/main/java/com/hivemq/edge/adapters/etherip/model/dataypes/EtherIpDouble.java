@@ -2,6 +2,8 @@ package com.hivemq.edge.adapters.etherip.model.dataypes;
 
 import com.hivemq.edge.adapters.etherip.model.EtherIpDataType;
 
+import java.util.Objects;
+
 public class EtherIpDouble implements EtherIpDataType {
     private final Double value;
     private final String tagAddress;
@@ -19,5 +21,18 @@ public class EtherIpDouble implements EtherIpDataType {
     @Override
     public String getTagAdress() {
         return tagAddress;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        EtherIpDouble that = (EtherIpDouble) o;
+        return Objects.equals(value, that.value) && Objects.equals(tagAddress, that.tagAddress);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value, tagAddress);
     }
 }

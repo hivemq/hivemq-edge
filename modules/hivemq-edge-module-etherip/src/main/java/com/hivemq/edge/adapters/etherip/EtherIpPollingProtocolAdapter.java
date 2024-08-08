@@ -37,7 +37,8 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<EtherIpAdapterConfig.PollingContextImpl> {
@@ -52,6 +53,8 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
     protected final @NotNull AdapterFactories adapterFactories;
     private volatile @Nullable EtherNetIP etherNetIP;
 
+    private final Map<String, EtherIpDataType> lastSeenValues;
+
     public EtherIpPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterInput<EtherIpAdapterConfig> input) {
@@ -59,6 +62,7 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.adapterFactories = input.adapterFactories();
+        this.lastSeenValues = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -123,10 +127,19 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
         try {
             final CIPData evt = etherNetIP.readTag(pollingInput.getPollingContext().getTagAddress());
 
-            // FIXME check for
-            // adapterConfig.getPublishChangedDataOnly()
-            handleResult(evt, tagAddress)
-                    .forEach(it -> pollingOutput.addDataPoint(tagAddress, it.getValue()));
+            if(adapterConfig.getPublishChangedDataOnly()) {
+                handleResult(evt, tagAddress)
+                        .forEach(it -> {
+                            if(!lastSeenValues.containsKey(tagAddress) || !lastSeenValues.get(tagAddress).equals(it)) {
+                                pollingOutput.addDataPoint(tagAddress, it.getValue());
+                                lastSeenValues.put(tagAddress, it);
+                            }
+                        });
+            } else {
+                handleResult(evt, tagAddress)
+                        .forEach(it -> pollingOutput.addDataPoint(tagAddress, it.getValue()));
+            }
+
 
             pollingOutput.finish();
         } catch (CipException e) {

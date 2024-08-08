@@ -8,6 +8,7 @@ import com.hivemq.edge.adapters.etherip.model.EtherIpAdapterConfig;
 import com.hivemq.edge.adapters.etherip.model.EtherIpDataTypes;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -19,6 +20,7 @@ import static com.hivemq.edge.adapters.etherip.Constants.TAG_REQUIRES_VPN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.withPrecision;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -78,15 +80,86 @@ public class EtherIpPollingProtocolAdapterIT {
 
         assertThat(captorName.getAllValues()).first().isEqualTo(expectedName);
         if (expectedValue instanceof Double) {
-            assertThat(captorValue.getAllValues())
-                    .first()
+            assertThat(captorValue.getValue())
                     .isInstanceOf(Double.class)
                     .asInstanceOf(InstanceOfAssertFactories.DOUBLE)
                     .isEqualTo((Double) expectedValue, withPrecision(2d));
         } else {
-            assertThat(captorValue.getAllValues())
-                    .first()
+            assertThat(captorValue.getValue())
                     .isEqualTo(expectedValue);
         }
+    }
+
+    @Test
+    public void test_PublishChangedDataOnly_False() {
+        EtherIpAdapterConfig config = mock(EtherIpAdapterConfig.class);
+        when(config.getHost()).thenReturn(HOST);
+        when(config.getSlot()).thenReturn(0);
+
+        ProtocolAdapterInput<EtherIpAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
+        when(inputMock.getConfig()).thenReturn(config);
+
+        EtherIpAdapterConfig.EIPPollingContextImpl ctx = mock(EtherIpAdapterConfig.EIPPollingContextImpl.class);
+        when(ctx.getTagAddress()).thenReturn(TAG_INT);
+        when(ctx.getDataType()).thenReturn(EtherIpDataTypes.DATA_TYPE.INT);
+
+        PollingInput<EtherIpAdapterConfig.PollingContextImpl> input = mock(PollingInput.class);
+        when(input.getPollingContext()).thenReturn(ctx);
+
+        PollingOutput output = mock(PollingOutput.class);
+
+        EtherIpPollingProtocolAdapter adapter = new EtherIpPollingProtocolAdapter(
+                new EtherIpProtocolAdapterInformation(),
+                inputMock);
+
+        adapter.start(null, mock(ProtocolAdapterStartOutput.class));
+
+        ArgumentCaptor<String> captorName = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> captorValue = ArgumentCaptor.forClass(Object.class);
+
+        adapter.poll(input, output);
+        adapter.poll(input, output);
+        verify(output, times(2)).addDataPoint(captorName.capture(), captorValue.capture());
+
+        assertThat(captorName.getAllValues()).allMatch(n -> n.equals(TAG_INT + ":INT"));
+        assertThat(captorValue.getAllValues()).allMatch(v -> v.equals(3));
+    }
+
+    @Test
+    public void test_PublishChangedDataOnly_True() {
+        EtherIpAdapterConfig config = mock(EtherIpAdapterConfig.class);
+        when(config.getHost()).thenReturn(HOST);
+        when(config.getSlot()).thenReturn(0);
+        when(config.getPublishChangedDataOnly()).thenReturn(true);
+
+        ProtocolAdapterInput<EtherIpAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
+        when(inputMock.getConfig()).thenReturn(config);
+
+        EtherIpAdapterConfig.EIPPollingContextImpl ctx = mock(EtherIpAdapterConfig.EIPPollingContextImpl.class);
+        when(ctx.getTagAddress()).thenReturn(TAG_INT);
+        when(ctx.getDataType()).thenReturn(EtherIpDataTypes.DATA_TYPE.INT);
+
+        PollingInput<EtherIpAdapterConfig.PollingContextImpl> input = mock(PollingInput.class);
+        when(input.getPollingContext()).thenReturn(ctx);
+
+        PollingOutput output = mock(PollingOutput.class);
+
+        EtherIpPollingProtocolAdapter adapter = new EtherIpPollingProtocolAdapter(
+                new EtherIpProtocolAdapterInformation(),
+                inputMock);
+
+        adapter.start(null, mock(ProtocolAdapterStartOutput.class));
+
+        ArgumentCaptor<String> captorName = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> captorValue = ArgumentCaptor.forClass(Object.class);
+
+        adapter.poll(input, output);
+        adapter.poll(input, output);
+        verify(output, times(1)).addDataPoint(captorName.capture(), captorValue.capture());
+
+        assertThat(captorName.getAllValues()).hasSize(1);
+        assertThat(captorName.getValue()).isEqualTo(TAG_INT + ":INT");
+        assertThat(captorValue.getAllValues()).hasSize(1);
+        assertThat(captorValue.getValue()).isEqualTo(3);
     }
 }
