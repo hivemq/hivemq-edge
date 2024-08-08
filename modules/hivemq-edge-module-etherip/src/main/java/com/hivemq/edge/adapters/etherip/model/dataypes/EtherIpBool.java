@@ -1,10 +1,10 @@
 package com.hivemq.edge.adapters.etherip.model.dataypes;
 
-import com.hivemq.edge.adapters.etherip.model.EtherIpDataType;
+import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
 
 import java.util.Objects;
 
-public class EtherIpBool implements EtherIpDataType {
+public class EtherIpBool implements EtherIpValue {
     private final Boolean value;
     private final String tagAddress;
 

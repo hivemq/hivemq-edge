@@ -12,10 +12,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
-public class EtherIpDataTypeFactory {
-    private static final Logger log = LoggerFactory.getLogger(EtherIpDataType.class);
+public class EtherIpValueFactory {
+    private static final Logger log = LoggerFactory.getLogger(EtherIpValue.class);
 
-    public static Optional<EtherIpDataType> fromTagAddressAndCipData(@NotNull String tagAddress, @NotNull CIPData cipData) {
+    public static Optional<EtherIpValue> fromTagAddressAndCipData(@NotNull String tagAddress, @NotNull CIPData cipData) {
         CIPData.Type dataType = cipData.getType();
 
         try {

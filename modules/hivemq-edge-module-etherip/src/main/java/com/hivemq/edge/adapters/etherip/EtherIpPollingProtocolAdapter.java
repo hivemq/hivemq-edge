@@ -27,8 +27,8 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.etherip.model.EtherIpAdapterConfig;
-import com.hivemq.edge.adapters.etherip.model.EtherIpDataType;
-import com.hivemq.edge.adapters.etherip.model.EtherIpDataTypeFactory;
+import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
+import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
 import etherip.EtherNetIP;
 import etherip.data.CipException;
 import etherip.types.CIPData;
@@ -53,7 +53,7 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
     protected final @NotNull AdapterFactories adapterFactories;
     private volatile @Nullable EtherNetIP etherNetIP;
 
-    private final Map<String, EtherIpDataType> lastSeenValues;
+    private final Map<String, EtherIpValue> lastSeenValues;
 
     public EtherIpPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -156,8 +156,8 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
         }
     }
 
-    private List<EtherIpDataType> handleResult(final CIPData evt, final String tagAddress) {
-        return EtherIpDataTypeFactory
+    private List<EtherIpValue> handleResult(final CIPData evt, final String tagAddress) {
+        return EtherIpValueFactory
                 .fromTagAddressAndCipData(tagAddress, evt)
                 .map(List::of)
                 .orElseGet( () -> {
