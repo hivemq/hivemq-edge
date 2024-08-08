@@ -15,10 +15,13 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.WriteContext;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
@@ -32,10 +35,20 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.writing.WriteInput;
+import com.hivemq.adapter.sdk.api.writing.WriteOutput;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
+import com.hivemq.edge.adapters.opcua.config.OpcUAWriteContext;
+import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.writing.ConversionException;
+import com.hivemq.edge.adapters.opcua.writing.JsonSchemaGenerationException;
+import com.hivemq.edge.adapters.opcua.writing.JsonSchemaGenerator;
+import com.hivemq.edge.adapters.opcua.writing.JsonToOpcUAConverter;
+import com.hivemq.edge.adapters.opcua.writing.OpcUAWritePayload;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
@@ -45,8 +58,11 @@ import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
+import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
+import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
@@ -59,6 +75,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -72,8 +89,10 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
 import static java.util.Objects.requireNonNullElse;
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-public class OpcUaProtocolAdapter implements ProtocolAdapter {
+public class OpcUaProtocolAdapter
+        implements ProtocolAdapter, WritingProtocolAdapter<OpcUAWritePayload, OpcUAWriteContext> {
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapter.class);
+    private static final @NotNull Logger writingLog = LoggerFactory.getLogger("com.hivemq.edge.write.opcua");
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull OpcUaAdapterConfig adapterConfig;
@@ -81,7 +100,9 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull AdapterFactories adapterFactories;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-    private @Nullable OpcUaClient opcUaClient;
+    private volatile @Nullable OpcUaClient opcUaClient;
+    private volatile @Nullable JsonToOpcUAConverter jsonToOpcUAConverter;
+    private volatile @Nullable JsonSchemaGenerator jsonSchemaGenerator;
     private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap = new ConcurrentHashMap<>();
 
     public OpcUaProtocolAdapter(
@@ -109,6 +130,12 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
             }
             opcUaClient.connect().thenAccept(uaClient -> {
                 opcUaClient.getSubscriptionManager().addSubscriptionListener(createSubscriptionListener());
+                try {
+                    jsonToOpcUAConverter = JsonToOpcUAConverter.getInstance(opcUaClient);
+                    jsonSchemaGenerator = JsonSchemaGenerator.getInstance(opcUaClient, new ObjectMapper());
+                } catch (UaException e) {
+                    log.error("Unable to create the converter for writing.", e);
+                }
                 createAllSubscriptions().whenComplete((unused, throwable) -> {
                     if (throwable == null) {
                         output.startedSuccessfully();
@@ -116,6 +143,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                         output.failStart(throwable, throwable.getMessage());
                     }
                 });
+
             }).exceptionally(throwable -> {
                 log.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
                 stopInternal();
@@ -249,7 +277,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                 new OpcUaClientConfigurator(adapterConfig));
         //Decoding a struct with custom DataType requires a DataTypeManager, so we register one that updates each time a session is activated.
         opcUaClient.addSessionInitializer(new DataTypeDictionarySessionInitializer(new GenericBsdParser()));
-
         //-- Seems to be not connection monitoring hook, use the session activity listener
         opcUaClient.addSessionActivityListener(new SessionActivityListener() {
             @Override
@@ -378,4 +405,76 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     public @NotNull ProtocolAdapterState getProtocolAdapterState() {
         return protocolAdapterState;
     }
+
+    @Override
+    public void write(
+            @NotNull final WriteInput<OpcUAWritePayload, OpcUAWriteContext> input,
+            @NotNull final WriteOutput writeOutput) {
+        final OpcUAWritePayload opcUAWritePayload = input.getWritePayload();
+        final OpcUAWriteContext writeContext = input.getWriteContext();
+        final NodeId nodeId = NodeId.parse(writeContext.getDestination());
+        log.debug("Write for opcua is invoked with payload '{}' and context '{}' ", opcUAWritePayload, writeContext);
+        try {
+            if (jsonToOpcUAConverter == null) {
+                throw new IllegalStateException("Converter is null.");
+            }
+
+            final Object opcUaObject;
+            try {
+                opcUaObject = jsonToOpcUAConverter.convertToOpcUAValue(opcUAWritePayload.getValue(),
+                        NodeId.parse(writeContext.getDestination()));
+            } catch (ConversionException e) {
+                writeOutput.fail(e.getMessage(), false);
+                return;
+            }
+
+            Variant variant = new Variant(opcUaObject);
+            DataValue dataValue = new DataValue(variant, null, null);
+            if (opcUaClient == null) {
+                log.warn("Client is not connected.");
+                writeOutput.fail("Client is not connected.", true);
+                return;
+            }
+            CompletableFuture<StatusCode> writeFuture = opcUaClient.writeValue(nodeId, dataValue);
+            writeFuture.whenComplete((statusCode, throwable) -> {
+                if (throwable != null) {
+                    writingLog.error("Exception while writing to opcua node '{}'",
+                            writeContext.getDestination(),
+                            throwable);
+                    writeOutput.fail(throwable, null, false);
+                } else {
+                    writingLog.info("Wrote '{}' to nodeId={}", variant, nodeId);
+                    writeOutput.finish();
+                }
+            });
+        } catch (IllegalArgumentException illegalArgumentException) {
+            writeOutput.fail(illegalArgumentException, null, false);
+        }
+    }
+
+    @Override
+    public @NotNull Class<OpcUAWritePayload> getPayloadClass() {
+        return OpcUAWritePayload.class;
+    }
+
+    @Override
+    public @NotNull List<? extends WriteContext> getWriteContexts() {
+        return adapterConfig.getWriteContexts();
+    }
+
+    @Override
+    public @Nullable JsonNode createJsonSchema(final @NotNull WriteContext writeContext) {
+        final OpcUAWriteContext opcUAWriteContext = (OpcUAWriteContext) writeContext;
+
+        try {
+            assert jsonSchemaGenerator != null;
+            final JsonNode jsonSchema =
+                    jsonSchemaGenerator.getJsonSchema(NodeId.parse(opcUAWriteContext.getDestination()));
+            return jsonSchema;
+        } catch (JsonSchemaGenerationException e) {
+            log.error("Error while creation of JsonSchema: ", e);
+            return null;
+        }
+    }
+
 }

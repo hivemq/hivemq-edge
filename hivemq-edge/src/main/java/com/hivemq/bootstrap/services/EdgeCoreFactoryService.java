@@ -15,20 +15,19 @@
  */
 package com.hivemq.bootstrap.services;
 
-import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.bootstrap.ioc.Persistences;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extensions.core.HandlerService;
-import com.hivemq.extensions.core.RestComponentsService;
+import com.hivemq.bootstrap.factories.WritingServiceFactory;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public interface CompleteBootstrapService extends PersistenceBootstrapService {
+public class EdgeCoreFactoryService {
 
-    @NotNull Persistences persistences();
+    private @Nullable WritingServiceFactory writingServiceFactory;
 
-    @NotNull RestComponentsService restComponentsService();
+    public void provideWritingServiceFactory(final @NotNull WritingServiceFactory writingServiceFactory) {
+        this.writingServiceFactory = writingServiceFactory;
+    }
 
-    @NotNull HandlerService handlerService();
-
-    @NotNull
-    EventService eventService();
+    public @Nullable WritingServiceFactory getWritingServiceFactory() {
+        return writingServiceFactory;
+    }
 }

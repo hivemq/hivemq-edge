@@ -13,22 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.bootstrap.services;
+package com.hivemq.protocols.writing;
 
-import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.bootstrap.ioc.Persistences;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extensions.core.HandlerService;
-import com.hivemq.extensions.core.RestComponentsService;
 
-public interface CompleteBootstrapService extends PersistenceBootstrapService {
+public interface ProtocolAdapterWritingService {
+    String FORWARDER_PREFIX = "adapter-forwarder#";
 
-    @NotNull Persistences persistences();
+    void startWriting(@NotNull WritingProtocolAdapter<?, ?> writingProtocolAdapter);
 
-    @NotNull RestComponentsService restComponentsService();
-
-    @NotNull HandlerService handlerService();
-
-    @NotNull
-    EventService eventService();
+    void stopWriting(@NotNull WritingProtocolAdapter<?, ?> writingProtocolAdapter);
 }

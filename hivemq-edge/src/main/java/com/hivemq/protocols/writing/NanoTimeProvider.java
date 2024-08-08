@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.bootstrap.services;
+package com.hivemq.protocols.writing;
 
-import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.bootstrap.ioc.Persistences;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extensions.core.HandlerService;
-import com.hivemq.extensions.core.RestComponentsService;
 
-public interface CompleteBootstrapService extends PersistenceBootstrapService {
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
-    @NotNull Persistences persistences();
+/**
+ * Simple Wrapper used to have an easier time in unit tests when nano time is used in methods and we want to
+ * control/mock it.
+ */
+@Singleton
+public class NanoTimeProvider {
 
-    @NotNull RestComponentsService restComponentsService();
+    @Inject
+    NanoTimeProvider() {
+    }
 
-    @NotNull HandlerService handlerService();
+    public long nanoTime() {
+        return System.nanoTime();
+    }
 
-    @NotNull
-    EventService eventService();
 }

@@ -14,6 +14,13 @@
       "id": "publishing",
       "title": "Publishing",
       "properties": ["maxPollingErrorsBeforeRemoval", "publishChangedDataOnly", "pollingIntervalMillis"]
+    },
+    {
+      "id" : "mqttToModbusFields",
+      "title" : "Mqtt to Modbus",
+      "properties" : [
+        "mqtt-to-modbus-mappings"
+      ]
     }
   ],
   "id": {

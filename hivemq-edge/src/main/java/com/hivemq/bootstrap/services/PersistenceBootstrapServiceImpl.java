@@ -71,6 +71,11 @@ public class PersistenceBootstrapServiceImpl implements PersistenceBootstrapServ
     }
 
     @Override
+    public @NotNull EdgeCoreFactoryService edgeCoreFactoryService() {
+        return delegate.edgeCoreFactoryService();
+    }
+
+    @Override
     public @NotNull PersistencesService persistenceService() {
         return persistencesService;
     }

@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.bootstrap.services;
+package com.hivemq.bootstrap.ioc;
 
-import com.hivemq.adapter.sdk.api.events.EventService;
-import com.hivemq.bootstrap.ioc.Persistences;
+import com.hivemq.bootstrap.factories.WritingServiceProvider;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extensions.core.HandlerService;
-import com.hivemq.extensions.core.RestComponentsService;
+import com.hivemq.protocols.writing.ProtocolAdapterWritingService;
+import dagger.Module;
+import dagger.Provides;
 
-public interface CompleteBootstrapService extends PersistenceBootstrapService {
+import javax.inject.Singleton;
 
-    @NotNull Persistences persistences();
+@Module
+public abstract class AdapterModule {
 
-    @NotNull RestComponentsService restComponentsService();
+    @Provides
+    @Singleton
+    static @NotNull ProtocolAdapterWritingService adapterWritingService(final WritingServiceProvider writingServiceProvider) {
+        return writingServiceProvider.get();
+    }
 
-    @NotNull HandlerService handlerService();
-
-    @NotNull
-    EventService eventService();
 }

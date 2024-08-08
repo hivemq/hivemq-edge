@@ -35,6 +35,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -49,6 +50,7 @@ import com.hivemq.edge.modules.adapters.simulation.SimulationProtocolAdapterFact
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterPollingService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.protocols.writing.ProtocolAdapterWritingService;
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +65,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -82,6 +85,8 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics;
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
+    private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
+    private final @NotNull ExecutorService executorService;
 
     private final @NotNull Object lock = new Object();
 
@@ -97,7 +102,9 @@ public class ProtocolAdapterManager {
             final @NotNull VersionProvider versionProvider,
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
             final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
+            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
+            final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService,
+            final @NotNull ExecutorService executorService) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
@@ -109,6 +116,8 @@ public class ProtocolAdapterManager {
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetrics = protocolAdapterMetrics;
         this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
+        this.protocolAdapterWritingService = protocolAdapterWritingService;
+        this.executorService = executorService;
     }
 
 
@@ -236,11 +245,14 @@ public class ProtocolAdapterManager {
                     eventService), output);
             startFuture = output.getStartFuture();
         }
-        return startFuture.<Void>thenApply(startedSuccessfuly -> {
+        return startFuture.<Void>thenApplyAsync(startedSuccessfuly -> {
             if (!startedSuccessfuly) {
                 handleStartupError(protocolAdapterWrapper, output);
             } else {
                 schedulePolling(protocolAdapterWrapper);
+                if(protocolAdapterWrapper.getAdapter() instanceof  WritingProtocolAdapter) {
+                    protocolAdapterWritingService.startWriting((WritingProtocolAdapter) protocolAdapterWrapper.getAdapter());
+                }
                 protocolAdapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
                 eventService.createAdapterEvent(protocolAdapterWrapper.getId(),
                                 protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId())
@@ -259,7 +271,7 @@ public class ProtocolAdapterManager {
 
             }
             return null;
-        }).exceptionally(throwable -> {
+        }, executorService).exceptionally(throwable -> {
             output.failStart(throwable, output.getMessage());
             handleStartupError(protocolAdapterWrapper, output);
             return null;
@@ -367,12 +379,19 @@ public class ProtocolAdapterManager {
         Preconditions.checkNotNull(id);
         Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapterInstance = getAdapterById(id);
         if (adapterInstance.isPresent()) {
-            protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterInstance.get()
+            final ProtocolAdapterWrapper<? extends ProtocolAdapter> adapter = adapterInstance.get();
+            protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapter
                     .getAdapterInformation()
                     .getProtocolId());
-            protocolAdapterPollingService.stopPollingForAdapterInstance(adapterInstance.get());
+            protocolAdapterPollingService.stopPollingForAdapterInstance(adapter);
+
+            final ProtocolAdapter internalAdapter = adapter.getAdapter();
+            if (internalAdapter instanceof WritingProtocolAdapter) {
+                protocolAdapterWritingService.stopWriting((WritingProtocolAdapter) internalAdapter);
+            }
+
             final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
-            adapterInstance.get().stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
+            adapter.stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
 
             // FIXME: We need to adapt the whole flow to async
             try {
@@ -387,11 +406,11 @@ public class ProtocolAdapterManager {
                 try {
                     synchronized (lock) {
                         //ensure the instance releases any hard state
-                        adapterInstance.get().destroy();
+                        adapter.destroy();
                         Map<String, Object> mainMap =
                                 configurationService.protocolAdapterConfigurationService().getAllConfigs();
                         List<Map<String, ?>> adapterList =
-                                getAdapterListForType(adapterInstance.get().getAdapterInformation().getProtocolId());
+                                getAdapterListForType(adapter.getAdapterInformation().getProtocolId());
                         if (adapterList != null) {
                             if (adapterList.removeIf(instance -> id.equals(instance.get("id")))) {
                                 configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
@@ -400,9 +419,8 @@ public class ProtocolAdapterManager {
                     }
                     return true;
                 } finally {
-                    final String adapterId = adapterInstance.get().getId();
-                    eventService.createAdapterEvent(adapterId,
-                                    adapterInstance.get().getProtocolAdapterInformation().getProtocolId())
+                    final String adapterId = adapter.getId();
+                    eventService.createAdapterEvent(adapterId, adapter.getProtocolAdapterInformation().getProtocolId())
                             .withSeverity(Event.SEVERITY.WARN)
                             .withMessage(String.format("Adapter '%s' was deleted from the system permanently.",
                                     adapterId))

@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.opcua.client;
 
 import com.google.common.collect.ImmutableList;
-import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.security.CertificateTrustListManager;
 import com.hivemq.edge.adapters.opcua.util.KeystoreUtil;
 import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfig;

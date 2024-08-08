@@ -34,4 +34,7 @@ public interface GeneralBootstrapService {
     @NotNull ConfigurationService configurationService();
 
     @NotNull HivemqId getHivemqId();
+
+    @NotNull
+    EdgeCoreFactoryService edgeCoreFactoryService();
 }

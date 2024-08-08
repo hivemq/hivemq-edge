@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;

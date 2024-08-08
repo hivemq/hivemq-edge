@@ -19,6 +19,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.mqtt.message.dropping.MessageDroppedService;
 import com.hivemq.persistence.ScheduledCleanUpService;
 import com.hivemq.persistence.clientqueue.ClientQueueLocalPersistence;
+import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
 import com.hivemq.persistence.connection.ConnectionPersistence;
 import com.hivemq.persistence.local.ClientSessionLocalPersistence;
 import com.hivemq.persistence.local.ClientSessionSubscriptionLocalPersistence;
@@ -31,6 +32,7 @@ import javax.inject.Inject;
 public class Persistences {
 
     private final @NotNull ClientQueueLocalPersistence clientQueueLocalPersistence;
+    private final @NotNull ClientQueuePersistence clientQueuePersistence;
     private final @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence;
     private final @NotNull PublishPayloadPersistence payloadPersistence;
     private final @NotNull ClientSessionSubscriptionLocalPersistence clientSessionSubscriptionLocalPersistence;
@@ -43,6 +45,7 @@ public class Persistences {
     @Inject
     public Persistences(
             final @NotNull ClientQueueLocalPersistence clientQueueLocalPersistence,
+            final @NotNull ClientQueuePersistence clientQueuePersistence,
             final @NotNull ClientSessionLocalPersistence clientSessionLocalPersistence,
             final @NotNull PublishPayloadPersistence payloadPersistence,
             final @NotNull ClientSessionSubscriptionLocalPersistence clientSessionSubscriptionLocalPersistence,
@@ -52,6 +55,7 @@ public class Persistences {
             final @NotNull ScheduledCleanUpService scheduledCleanUpService,
             final @NotNull MessageDroppedService messageDroppedService) {
         this.clientQueueLocalPersistence = clientQueueLocalPersistence;
+        this.clientQueuePersistence = clientQueuePersistence;
         this.clientSessionLocalPersistence = clientSessionLocalPersistence;
         this.payloadPersistence = payloadPersistence;
         this.clientSessionSubscriptionLocalPersistence = clientSessionSubscriptionLocalPersistence;
@@ -92,5 +96,9 @@ public class Persistences {
 
     public @NotNull PublishPayloadPersistence payloadPersistence() {
         return payloadPersistence;
+    }
+
+    public @NotNull ClientQueuePersistence clientQueuePersistence() {
+        return clientQueuePersistence;
     }
 }
