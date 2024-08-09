@@ -29,7 +29,7 @@ const MonitoringEdge: FC<EdgeProps> = (props) => {
   }, [policies])
 
   const handleOpenObservability = () => {
-    navigate(`/edge-flow/link/${id}`)
+    navigate(`/workspace/link/${id}`)
   }
 
   const handleShowPolicy = (route: string) => {

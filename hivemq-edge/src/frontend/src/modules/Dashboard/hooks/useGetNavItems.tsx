@@ -22,7 +22,7 @@ const useGetNavItems = (): { data: NavLinksBlockType[]; isSuccess: boolean } => 
     ? [
         {
           icon: <WorkspaceIcon boxSize={4} />,
-          href: '/edge-flow',
+          href: '/workspace',
           label: t('translation:navigation.gateway.routes.workspace'),
         },
       ]
