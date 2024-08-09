@@ -66,7 +66,7 @@ export const routes = createBrowserRouter(
           ],
         },
         {
-          path: 'edge-flow/',
+          path: 'workspace/',
           element: <EdgeFlowPage />,
           children: [
             {

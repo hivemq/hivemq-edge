@@ -7,6 +7,7 @@ import logo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'
 
 const NodeEdge: FC<NodeProps> = () => {
   const { t } = useTranslation()
+  const { onContextMenu } = useContextMenu(props.id, props.selected, '/workspace/edge')
 
   return (
     <>

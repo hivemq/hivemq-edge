@@ -26,7 +26,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
   const { colors } = useTheme()
   const { onToggleGroup, onNodesChange, onEdgesChange, nodes, edges } = useWorkspaceStore()
   const { isOpen: isConfirmUngroupOpen, onOpen: onConfirmUngroupOpen, onClose: onConfirmUngroupClose } = useDisclosure()
-  const { onContextMenu } = useContextMenu(id, selected, '/edge-flow/group')
+  const { onContextMenu } = useContextMenu(id, selected, '/workspace/group')
   const { colorMode } = useColorMode()
   const isLight = colorMode === 'light'
 

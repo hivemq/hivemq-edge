@@ -38,7 +38,7 @@ const NodePanelController: FC = () => {
   useEffect(() => {
     if (!nodes.length) return
     // if (!selectedNode || !nodeId) {
-    //   navigate('/edge-flow', { replace: true })
+    //   navigate('/workspace', { replace: true })
     //   return
     // }
     onOpen()
@@ -46,7 +46,7 @@ const NodePanelController: FC = () => {
 
   const handleClose = () => {
     onClose()
-    navigate('/edge-flow')
+    navigate('/workspace')
   }
 
   const handleEditEntity = () => {
