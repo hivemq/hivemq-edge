@@ -699,7 +699,8 @@
     },
     "device": {
       "type_ADAPTER_NODE": "adapter",
-      "type_BRIDGE_NODE": "bridge"
+      "type_BRIDGE_NODE": "bridge",
+      "type_EDGE_NODE": "edge"
     },
     "layout": {
       "HORIZONTAL": "Horizontal",
@@ -735,6 +736,7 @@
       "header_ADAPTER_NODE": "Adapter Overview",
       "header_BRIDGE_NODE": "Bridge Overview",
       "header_CLUSTER_NODE": "Group Overview",
+      "header_EDGE_NODE": "Edge Overview",
       "modify_ADAPTER_NODE": "Modify the adapter",
       "modify_BRIDGE_NODE": "Modify the bridge",
       "eventLog": {
