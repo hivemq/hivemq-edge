@@ -93,7 +93,7 @@ const ProtocolAdapters: FC = () => {
     }
 
     const handleViewWorkspace = (adapterId: string, type: string) => {
-      if (adapterId) navigate(`/edge-flow`, { state: { selectedAdapter: { adapterId, type } } })
+      if (adapterId) navigate(`/workspace`, { state: { selectedAdapter: { adapterId, type } } })
     }
 
     const handleExport = (adapterId: string, type: string) => {
