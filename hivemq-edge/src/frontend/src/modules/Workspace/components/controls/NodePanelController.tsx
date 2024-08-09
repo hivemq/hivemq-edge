@@ -11,6 +11,7 @@ import { EdgeTypes, Group, NodeTypes } from '@/modules/Workspace/types.ts'
 const NodePropertyDrawer = lazy(() => import('../drawers/NodePropertyDrawer.tsx'))
 const LinkPropertyDrawer = lazy(() => import('../drawers/LinkPropertyDrawer.tsx'))
 const GroupPropertyDrawer = lazy(() => import('../drawers/GroupPropertyDrawer.tsx'))
+const EdgePropertyDrawer = lazy(() => import('../drawers/EdgePropertyDrawer.tsx'))
 
 const NodePanelController: FC = () => {
   const navigate = useNavigate()
@@ -24,6 +25,8 @@ const NodePanelController: FC = () => {
   const selectedNode = nodes.find(
     (e) => e.id === nodeId && (e.type === NodeTypes.BRIDGE_NODE || e.type === NodeTypes.ADAPTER_NODE)
   ) as Node<Bridge | Adapter> | undefined
+
+  const selectedEdge = nodes.find((e) => e.id === nodeId && e.type === NodeTypes.EDGE_NODE)
 
   const selectedLinkSource = nodes.find((e) => {
     const link = edges.find((e) => e.id === nodeId && e.type === EdgeTypes.REPORT_EDGE)
@@ -84,6 +87,15 @@ const NodePanelController: FC = () => {
           nodeId={nodeId}
           nodes={nodes}
           selectedNode={selectedLinkSource as Node<Group>}
+          isOpen={isOpen}
+          onClose={handleClose}
+          onEditEntity={handleEditEntity}
+        />
+      )}
+      {selectedEdge && (
+        <EdgePropertyDrawer
+          nodeId={nodeId}
+          selectedNode={selectedEdge}
           isOpen={isOpen}
           onClose={handleClose}
           onEditEntity={handleEditEntity}
