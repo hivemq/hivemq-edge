@@ -68,3 +68,8 @@ export interface WorkspaceAction {
   onToggleGroup: (node: Pick<Node<Group, NodeTypes.CLUSTER_NODE>, 'id' | 'data'>, show: boolean) => void
   onGroupSetData: (id: string, node: Pick<Group, 'title' | 'colorScheme'>) => void
 }
+
+export interface TopicTreeMetadata {
+  label: string
+  count: number
+}
