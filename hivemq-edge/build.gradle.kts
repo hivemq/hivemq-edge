@@ -96,18 +96,6 @@ repositories {
     exclusiveContent {
         forRepository {
             maven {
-                name = "hivemqCommons"
-                url = uri("https://maven.pkg.github.com/hivemq/hivemq-commons")
-                credentials(PasswordCredentials::class)
-            }
-        }
-        filter {
-            includeGroup("com.hivemq.commons")
-        }
-    }
-    exclusiveContent {
-        forRepository {
-            maven {
                 url = uri("https://jitpack.io")
             }
         }
