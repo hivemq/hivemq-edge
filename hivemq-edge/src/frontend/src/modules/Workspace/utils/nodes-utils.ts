@@ -21,7 +21,6 @@ export const createEdgeNode = (label: string, positionStorage?: Record<string, X
     id: IdStubs.EDGE_NODE,
     type: NodeTypes.EDGE_NODE,
     data: { label: label },
-    draggable: false,
     position: positionStorage?.[IdStubs.EDGE_NODE] ?? POS_EDGE,
   }
   return nodeEdge
