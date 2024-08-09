@@ -4,11 +4,17 @@ import { extendTheme } from '@chakra-ui/react'
 
 import components from './components'
 import colors from './foundations/colors.ts'
+import treeView from '@/modules/Theme/globals/treeview.ts'
 
 const themeHiveMQ = extendTheme({
   fonts: {
     heading: `'Roboto', sans-serif`,
     body: `'Roboto', sans-serif`,
+  },
+  styles: {
+    global: {
+      ...treeView,
+    },
   },
 
   // fontSizes: {
