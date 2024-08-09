@@ -32,25 +32,13 @@ repositories {
             includeGroup("com.github.simon622")
         }
     }
-    exclusiveContent {
-        forRepository {
-            maven {
-                name = "etherip"
-                url = uri("https://maven.pkg.github.com/hivemq/hivemq-edge")
-                credentials(PasswordCredentials::class)
-            }
-        }
-        filter {
-            includeModule("org.epics", "etherip")
-        }
-    }
 }
 
 dependencies {
     compileOnly(libs.hivemq.edge.adapterSdk)
     compileOnly(libs.apache.commonsIO)
     compileOnly(libs.apache.commonsLang)
-    implementation(libs.etherip)
+    implementation(files("libs/etherip-1.0.0.jar"))
     implementation(libs.jackson.databind)
     implementation(libs.slf4j.api)
 }

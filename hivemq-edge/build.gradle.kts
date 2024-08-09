@@ -108,18 +108,6 @@ repositories {
     exclusiveContent {
         forRepository {
             maven {
-                name = "etherip"
-                url = uri("https://maven.pkg.github.com/hivemq/hivemq-edge")
-                credentials(PasswordCredentials::class)
-            }
-        }
-        filter {
-            includeModule("org.epics", "etherip")
-        }
-    }
-    exclusiveContent {
-        forRepository {
-            maven {
                 url = uri("https://jitpack.io")
             }
         }
