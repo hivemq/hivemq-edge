@@ -15,8 +15,6 @@ mockito-junitJupiter = { module = "org.mockito:mockito-junit-jupiter", version.r
 plc4j-api = { module = "org.apache.plc4x:plc4j-api", version.ref = "apache-plc4x" }
 plc4j-s7 = { module = "org.apache.plc4x:plc4j-driver-s7", version.ref = "apache-plc4x" }
 plc4j-ads = { module = "org.apache.plc4x:plc4j-driver-ads", version.ref = "apache-plc4x" }
-plc4j-eip = { module = "org.apache.plc4x:plc4j-driver-eip", version.ref = "apache-plc4x" }
-plc4j-ab-eth = { module = "org.apache.plc4x:plc4j-driver-ab-eth", version.ref = "apache-plc4x" }
 plc4j-transport-raw-socket = { module = "org.apache.plc4x:plc4j-transport-raw-socket", version.ref = "apache-plc4x" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
