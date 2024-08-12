@@ -18,6 +18,7 @@ interface EdgeTopics {
 export interface EdgeTopicsOptions {
   publishOnly?: boolean
   branchOnly?: boolean
+  useOrigin?: boolean
 }
 
 const defaultOptions: EdgeTopicsOptions = { publishOnly: true, branchOnly: false }
@@ -60,8 +61,9 @@ export const useGetEdgeTopics = (options?: EdgeTopicsOptions): EdgeTopics => {
   const data = useMemo<string[]>(() => {
     const _options = { ...defaultOptions, ...options }
 
-    // return mergeAllTopics(adapters, bridges).filter(filterTopicsBy(_options)).sort()
-    return mergeAllTopics(adapterTypes, adapters, bridges).reduce<string[]>(reduceTopicsBy(_options), []).sort()
+    return mergeAllTopics(adapterTypes, adapters, bridges, options?.useOrigin)
+      .reduce<string[]>(reduceTopicsBy(_options), [])
+      .sort()
   }, [adapterTypes, adapters, bridges, options])
 
   return {
