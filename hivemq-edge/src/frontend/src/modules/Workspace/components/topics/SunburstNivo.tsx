@@ -35,7 +35,7 @@ const SunburstNivo: FC<SunburstNivoProps> = ({ data, onSelect }) => {
       cornerRadius={25}
       borderWidth={2}
       // borderColor={{ theme: 'background' }}
-      colors={{ scheme: 'accent' }}
+      colors={{ scheme: 'category10' }}
       childColor={{
         from: 'color',
         modifiers: [['brighter', 0.15]],
