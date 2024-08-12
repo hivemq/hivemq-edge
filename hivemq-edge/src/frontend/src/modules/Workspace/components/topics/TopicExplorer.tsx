@@ -9,6 +9,8 @@ import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUn
 import { useSetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useSetUnifiedNamespace.ts'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
 import { type TopicTreeMetadata } from '@/modules/Workspace/types.ts'
 import SunburstNivo from '@/modules/Workspace/components/topics/SunburstNivo.tsx'
 import SunburstReCharts from '@/modules/Workspace/components/topics/SunburstReCharts.tsx'
@@ -18,29 +20,31 @@ type SUNBURST_CHART = 'nivo' | 'recharts' | 'treeview'
 
 interface TopicSunburstProps {
   onSelect?: (topic: string) => void
-  // data: HierarchyNode<any>
-  data: string[]
 }
 
-const TopicExplorer: FC<TopicSunburstProps> = ({ data }) => {
+const TopicExplorer: FC<TopicSunburstProps> = () => {
   const [chart, setChart] = useState<SUNBURST_CHART>('treeview')
   const { data: uns } = useGetUnifiedNamespace()
   const { mutateAsync } = useSetUnifiedNamespace()
+  const [useOrigin, setUseOrigin] = useState(false)
+  const { data, isLoading } = useGetEdgeTopics({ publishOnly: false, useOrigin: useOrigin })
 
   const unsPrefix = useMemo(() => {
     if (!uns || !uns.enabled) return ''
     return (
-      [uns.enterprise, uns.site, uns.area, uns.productionLine, uns.workCell].filter((e) => Boolean(e)).join('.') + '/'
+      [uns.enterprise, uns.site, uns.area, uns.productionLine, uns.workCell].filter((e) => Boolean(e)).join('/') + '/'
     )
   }, [uns])
 
   const treeData = useMemo(() => {
     const metadata = data.map<TopicTreeMetadata>((e) => {
-      const lb = e === '#' ? e : unsPrefix + e
+      const lb = e.includes('#') ? e : unsPrefix + e
       return { label: lb, count: 1 }
     })
     return stratify<{ label: string; count: number }>().path((d) => d.label)(metadata)
   }, [data, unsPrefix])
+
+  if (isLoading) return <LoaderSpinner />
 
   return (
     <Card size="sm" w="100%" h="100%">
@@ -66,15 +70,23 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ data }) => {
           />
         </ButtonGroup>
         <FormControl display="flex" alignItems="center">
-          <FormLabel htmlFor="email-alerts" mb="0">
-            Use UNS
-          </FormLabel>
+          <FormLabel htmlFor="email-alerts">UNS</FormLabel>
           <Switch
             id="email-alerts"
             isChecked={uns?.enabled}
             onChange={() => {
               if (!uns) return
               mutateAsync({ requestBody: { ...uns, enabled: !uns.enabled } })
+            }}
+          />
+        </FormControl>
+        <FormControl display="flex" alignItems="center">
+          <FormLabel htmlFor="email-22">Adapter UNS</FormLabel>
+          <Switch
+            id="email-22"
+            isChecked={useOrigin}
+            onChange={() => {
+              setUseOrigin((e) => !e)
             }}
           />
         </FormControl>
