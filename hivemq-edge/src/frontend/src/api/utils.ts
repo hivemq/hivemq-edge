@@ -5,6 +5,7 @@ export const QUERY_KEYS = {
   CONNECTION_STATUS: 'connection.status',
   DISCOVERY_POINTS: 'discovery.points',
   DISCOVERY_SCHEMAS: 'discovery.schemas',
+  DISCOVERY_TOPICS: 'discovery.topics',
   PROTOCOLS: 'protocols',
   ADAPTERS: 'adapters',
   UNIFIED_NAMESPACE: 'unified.namespace',
