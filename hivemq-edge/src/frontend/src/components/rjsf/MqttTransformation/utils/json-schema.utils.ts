@@ -10,7 +10,6 @@ export const getPropertyListFrom = (schema: RJSFSchema): FlatJSONSchema7[] => {
   if (!properties) return []
   const list: FlatJSONSchema7[] = []
 
-  // for (const property of Object.values(properties)) {
   for (const [key, property] of Object.entries(properties)) {
     const { type, description, title, $ref: ref } = property as JSONSchema7
     if (ref) {
@@ -22,12 +21,9 @@ export const getPropertyListFrom = (schema: RJSFSchema): FlatJSONSchema7[] => {
           const { properties: subs } = definitions[defName] as JSONSchema7
           if (subs)
             for (const [key, value] of Object.entries(subs)) {
-              console.log('XXXXXX dd', key, value)
               const { type: type2, title: title2 } = value as JSONSchema7
               list.push({ title: title2 || key, type: type2, path: [title || ''] })
             }
-          //     const { type: type2, title: title2 } = property2 as JSONSchema7
-          //   }
         }
       }
     } else {
@@ -37,7 +33,6 @@ export const getPropertyListFrom = (schema: RJSFSchema): FlatJSONSchema7[] => {
         if (items) {
           const { properties: subs } = items as FlatJSONSchema7
           if (subs)
-            // for (const property2 of Object.values(subs)) {
             for (const [key, value] of Object.entries(subs)) {
               const { type: type2, title: title2 } = value as JSONSchema7
               list.push({ title: title2 || key, type: type2, path: [title || ''] })
