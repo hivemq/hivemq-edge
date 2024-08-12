@@ -13,7 +13,6 @@ import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
 import { type TopicTreeMetadata } from '@/modules/Workspace/types.ts'
 import SunburstNivo from '@/modules/Workspace/components/topics/SunburstNivo.tsx'
-import SunburstReCharts from '@/modules/Workspace/components/topics/SunburstReCharts.tsx'
 import TreeView from '@/modules/Workspace/components/topics/TreeView.tsx'
 import { useGetTopicSamples } from '@/api/hooks/useTopicOntology/useGetTopicSamples.tsx'
 
@@ -99,7 +98,6 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
       <CardBody onClick={() => onSelect?.(undefined)}>
         {chart === 'nivo' && <SunburstNivo data={treeData} onSelect={onHandleSelect} />}
         {chart === 'treeview' && <TreeView data={treeData} onSelect={onSelect} />}
-        {chart === 'recharts' && <SunburstReCharts data={treeData} />}
       </CardBody>
     </Card>
   )
