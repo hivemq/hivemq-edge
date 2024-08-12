@@ -13,9 +13,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 
-import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
 import TopicExplorer from '@/modules/Workspace/components/topics/TopicExplorer.tsx'
-import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
 interface NodePropertyDrawerProps {
   nodeId: string
@@ -27,7 +25,6 @@ interface NodePropertyDrawerProps {
 
 const EdgePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode, onClose }) => {
   const { t } = useTranslation()
-  const { data, isLoading } = useGetEdgeTopics({ publishOnly: false })
 
   return (
     <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} variant="hivemq">
@@ -39,7 +36,7 @@ const EdgePropertyDrawer: FC<NodePropertyDrawerProps> = ({ isOpen, selectedNode,
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           <HStack w="100%" h="600px" alignItems="flex-start">
-            {isLoading ? <LoaderSpinner /> : <TopicExplorer data={data} />}
+            <TopicExplorer />
           </HStack>
         </DrawerBody>
         <DrawerFooter borderTopWidth="1px"></DrawerFooter>
