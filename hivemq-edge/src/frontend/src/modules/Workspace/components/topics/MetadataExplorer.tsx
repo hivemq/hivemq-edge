@@ -25,7 +25,7 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
       <CardBody>
         {isLoading && <LoaderSpinner />}
         {!isLoading && data && (
-          <Box h={200} overflowY="scroll">
+          <Box h={200} overflowY="scroll" tabIndex={0}>
             <JsonSchemaBrowser schema={data} />
           </Box>
         )}
