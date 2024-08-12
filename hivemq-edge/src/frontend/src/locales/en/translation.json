@@ -740,6 +740,25 @@
     "datahub": {
       "aria-label": "Open the Data Hub policy",
       "list": "Show all the policies"
+    },
+    "topicWheel": {
+      "control": {
+        "treeview": "Topic Tree View",
+        "sunburst": "Topic Wheel",
+        "uns": "UNS",
+        "origin": "Adapter"
+      },
+      "topicSampler": {
+        "title": "The device is using a wildcard to subscribe to topics, they are therefore not known at configuration.",
+        "description": "You can trigger a short monitoring of the relevant MQTT traffic in order to extract a snapshot of the MQTT topics involved. They will be temporarily added to the Topic Wheel.",
+        "sampler": {
+          "cta": "Get Topic Samples",
+          "loader": "Monitoring MQTT traffic"
+        }
+      },
+      "metadata": {
+        "sample": "Load samples"
+      }
     }
   },
   "modals": {

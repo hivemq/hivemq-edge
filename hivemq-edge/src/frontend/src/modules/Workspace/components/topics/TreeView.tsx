@@ -15,8 +15,6 @@ const TreeView: FC<TreeViewProps> = ({ data }) => {
   return (
     <ReactTreeView
       data={flattenTree(data)}
-      // className="basic"
-      aria-label="basic example tree"
       nodeRenderer={({ element, getNodeProps, level, isBranch, isExpanded }) => {
         return (
           <HStack {...getNodeProps()} marginLeft={8 * (level - 1)}>
