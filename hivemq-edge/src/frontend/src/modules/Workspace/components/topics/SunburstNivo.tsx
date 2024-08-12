@@ -1,5 +1,6 @@
 import { type FC, type MouseEvent } from 'react'
-import { type ComputedDatum, ResponsiveSunburst } from '@nivo/sunburst'
+import { useTranslation } from 'react-i18next'
+import { ResponsiveSunburst, type ComputedDatum, type SunburstCustomLayerProps } from '@nivo/sunburst'
 import { type HierarchyNode } from 'd3-hierarchy'
 import { Badge, HStack } from '@chakra-ui/react'
 
@@ -22,6 +23,18 @@ const TopicTooltip = (props: ComputedDatum<unknown>) => {
   )
 }
 
+const CenteredMetric: FC<SunburstCustomLayerProps<unknown>> = ({ centerX, centerY }) => {
+  const { t } = useTranslation()
+  // const total = nodes.reduce((total, datum) => total + datum.value, 0)
+  return (
+    <>
+      <text x={centerX} y={centerY} textAnchor="middle" dominantBaseline="central">
+        {t('branding.appName')}
+      </text>
+    </>
+  )
+}
+
 /**
  * TODO[25055] The Nivo widget is interactive (onSelect) but not accessible (lacks tab-index and relevant aria attributes)
  */
@@ -34,7 +47,7 @@ const SunburstNivo: FC<SunburstNivoProps> = ({ data, onSelect }) => {
       value="data.count"
       cornerRadius={25}
       borderWidth={2}
-      // borderColor={{ theme: 'background' }}
+      // TODO[25055] Import from ChakraUI theme
       colors={{ scheme: 'category10' }}
       childColor={{
         from: 'color',
@@ -49,6 +62,7 @@ const SunburstNivo: FC<SunburstNivoProps> = ({ data, onSelect }) => {
       onClick={(data, evt) => {
         onSelect?.(data.id.toString(), evt)
       }}
+      layers={['arcs', 'arcLabels', CenteredMetric]}
     />
   )
 }
