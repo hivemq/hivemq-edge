@@ -15,6 +15,7 @@ import { type TopicTreeMetadata } from '@/modules/Workspace/types.ts'
 import SunburstNivo from '@/modules/Workspace/components/topics/SunburstNivo.tsx'
 import SunburstReCharts from '@/modules/Workspace/components/topics/SunburstReCharts.tsx'
 import TreeView from '@/modules/Workspace/components/topics/TreeView.tsx'
+import { useGetTopicSamples } from '@/api/hooks/useTopicOntology/useGetTopicSamples.tsx'
 
 type SUNBURST_CHART = 'nivo' | 'recharts' | 'treeview'
 
@@ -28,6 +29,7 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
   const { mutateAsync } = useSetUnifiedNamespace()
   const [useOrigin, setUseOrigin] = useState(false)
   const { data, isLoading } = useGetEdgeTopics({ publishOnly: false, useOrigin: useOrigin })
+  const { data: topicSamples } = useGetTopicSamples()
 
   const unsPrefix = useMemo(() => {
     if (!uns || !uns.enabled) return ''
@@ -37,12 +39,12 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
   }, [uns])
 
   const treeData = useMemo(() => {
-    const metadata = data.map<TopicTreeMetadata>((e) => {
+    const metadata = [...data, ...(topicSamples || [])].map<TopicTreeMetadata>((e) => {
       const lb = e.includes('#') ? e : unsPrefix + e
       return { label: lb, count: 1 }
     })
     return stratify<{ label: string; count: number }>().path((d) => d.label)(metadata)
-  }, [data, unsPrefix])
+  }, [data, topicSamples, unsPrefix])
 
   if (isLoading) return <LoaderSpinner />
 
