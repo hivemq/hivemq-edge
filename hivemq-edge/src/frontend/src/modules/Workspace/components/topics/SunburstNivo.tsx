@@ -1,6 +1,6 @@
-import { FC } from 'react'
-import { ComputedDatum, ResponsiveSunburst } from '@nivo/sunburst'
-import { HierarchyNode } from 'd3-hierarchy'
+import { type FC, type MouseEvent } from 'react'
+import { type ComputedDatum, ResponsiveSunburst } from '@nivo/sunburst'
+import { type HierarchyNode } from 'd3-hierarchy'
 import { Badge, HStack } from '@chakra-ui/react'
 
 import Topic from '@/components/MQTT/Topic.tsx'
@@ -8,6 +8,7 @@ import { TopicTreeMetadata } from '@/modules/Workspace/types.ts'
 
 interface SunburstNivoProps {
   data: HierarchyNode<TopicTreeMetadata>
+  onSelect?: (topic: string, event: MouseEvent) => void
 }
 
 const TopicTooltip = (props: ComputedDatum<unknown>) => {
@@ -21,7 +22,10 @@ const TopicTooltip = (props: ComputedDatum<unknown>) => {
   )
 }
 
-const SunburstNivo: FC<SunburstNivoProps> = ({ data }) => {
+/**
+ * TODO[25055] The Nivo widget is interactive (onSelect) but not accessible (lacks tab-index and relevant aria attributes)
+ */
+const SunburstNivo: FC<SunburstNivoProps> = ({ data, onSelect }) => {
   return (
     <ResponsiveSunburst
       data={data}
@@ -42,6 +46,9 @@ const SunburstNivo: FC<SunburstNivoProps> = ({ data }) => {
       arcLabel={(e) => e.id.toString().split('/').slice(-1).join('')}
       tooltip={TopicTooltip}
       isInteractive={true}
+      onClick={(data, evt) => {
+        onSelect?.(data.id.toString(), evt)
+      }}
     />
   )
 }
