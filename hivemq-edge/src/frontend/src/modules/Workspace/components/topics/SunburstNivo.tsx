@@ -2,10 +2,12 @@ import { FC } from 'react'
 import { ComputedDatum, ResponsiveSunburst } from '@nivo/sunburst'
 import { HierarchyNode } from 'd3-hierarchy'
 import { Badge, HStack } from '@chakra-ui/react'
+
 import Topic from '@/components/MQTT/Topic.tsx'
+import { TopicTreeMetadata } from '@/modules/Workspace/types.ts'
 
 interface SunburstNivoProps {
-  data: HierarchyNode<any>
+  data: HierarchyNode<TopicTreeMetadata>
 }
 
 const TopicTooltip = (props: ComputedDatum<unknown>) => {
