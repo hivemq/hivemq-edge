@@ -4,6 +4,7 @@ export const QUERY_KEYS = {
   BRIDGES: 'bridges',
   CONNECTION_STATUS: 'connection.status',
   DISCOVERY_POINTS: 'discovery.points',
+  DISCOVERY_SCHEMAS: 'discovery.schemas',
   PROTOCOLS: 'protocols',
   ADAPTERS: 'adapters',
   UNIFIED_NAMESPACE: 'unified.namespace',
