@@ -1,9 +1,9 @@
 import { type FC, useMemo, useState, type MouseEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { stratify } from 'd3-hierarchy'
 import { ButtonGroup, Card, CardBody, CardHeader, FormControl, FormLabel, HStack, Switch } from '@chakra-ui/react'
 import { LuFolderTree } from 'react-icons/lu'
 import { TbChartDonutFilled } from 'react-icons/tb'
-import { PiChartDonutFill } from 'react-icons/pi'
 
 import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUnifiedNamespace.ts'
 import { useSetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useSetUnifiedNamespace.ts'
@@ -24,6 +24,7 @@ interface TopicSunburstProps {
 }
 
 const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
+  const { t } = useTranslation()
   const [chart, setChart] = useState<SUNBURST_CHART>('treeview')
   const { data: uns } = useGetUnifiedNamespace()
   const { mutateAsync } = useSetUnifiedNamespace()
@@ -59,38 +60,35 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
         <ButtonGroup isAttached>
           <IconButton
             icon={<LuFolderTree />}
-            aria-label="ffdfd"
+            aria-label={t('workspace.topicWheel.control.treeview')}
             isDisabled={chart === 'treeview'}
             onClick={() => setChart('treeview')}
           />
           <IconButton
             icon={<TbChartDonutFilled />}
-            aria-label="ffdfd"
+            aria-label={t('workspace.topicWheel.control.sunburst')}
             isDisabled={chart === 'nivo'}
             onClick={() => setChart('nivo')}
           />
-          <IconButton
-            icon={<PiChartDonutFill />}
-            aria-label="ffdfd"
-            isDisabled={chart === 'recharts'}
-            onClick={() => setChart('recharts')}
-          />
         </ButtonGroup>
         <FormControl display="flex" alignItems="center">
-          <FormLabel htmlFor="email-alerts">UNS</FormLabel>
+          <FormLabel htmlFor="control-uns" mb={0}>
+            {t('workspace.topicWheel.control.uns')}
+          </FormLabel>
           <Switch
-            id="email-alerts"
+            id="control-uns"
             isChecked={uns?.enabled}
             onChange={() => {
-              if (!uns) return
-              mutateAsync({ requestBody: { ...uns, enabled: !uns.enabled } })
+              if (uns) mutateAsync({ requestBody: { ...uns, enabled: !uns.enabled } })
             }}
           />
         </FormControl>
         <FormControl display="flex" alignItems="center">
-          <FormLabel htmlFor="email-22">Adapter UNS</FormLabel>
+          <FormLabel htmlFor="control-origin" mb={0}>
+            {t('workspace.topicWheel.control.origin')}
+          </FormLabel>
           <Switch
-            id="email-22"
+            id="control-origin"
             isChecked={useOrigin}
             onChange={() => {
               setUseOrigin((e) => !e)
@@ -100,8 +98,8 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
       </CardHeader>
       <CardBody onClick={() => onSelect?.(undefined)}>
         {chart === 'nivo' && <SunburstNivo data={treeData} onSelect={onHandleSelect} />}
-        {chart === 'recharts' && <SunburstReCharts data={treeData} />}
         {chart === 'treeview' && <TreeView data={treeData} onSelect={onSelect} />}
+        {chart === 'recharts' && <SunburstReCharts data={treeData} />}
       </CardBody>
     </Card>
   )
