@@ -1,4 +1,4 @@
-import { type FC, useMemo, useState } from 'react'
+import { type FC, useMemo, useState, type MouseEvent } from 'react'
 import { stratify } from 'd3-hierarchy'
 import { ButtonGroup, Card, CardBody, CardHeader, FormControl, FormLabel, HStack, Switch } from '@chakra-ui/react'
 import { LuFolderTree } from 'react-icons/lu'
@@ -19,10 +19,10 @@ import TreeView from '@/modules/Workspace/components/topics/TreeView.tsx'
 type SUNBURST_CHART = 'nivo' | 'recharts' | 'treeview'
 
 interface TopicSunburstProps {
-  onSelect?: (topic: string) => void
+  onSelect?: (topic: string | undefined) => void
 }
 
-const TopicExplorer: FC<TopicSunburstProps> = () => {
+const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
   const [chart, setChart] = useState<SUNBURST_CHART>('treeview')
   const { data: uns } = useGetUnifiedNamespace()
   const { mutateAsync } = useSetUnifiedNamespace()
@@ -46,8 +46,13 @@ const TopicExplorer: FC<TopicSunburstProps> = () => {
 
   if (isLoading) return <LoaderSpinner />
 
+  const onHandleSelect = (topic: string, event: MouseEvent) => {
+    onSelect?.(topic)
+    event.stopPropagation()
+  }
+
   return (
-    <Card size="sm" w="100%" h="100%">
+    <Card size="sm" w="100%" h="500px">
       <CardHeader as={HStack} gap={10}>
         <ButtonGroup isAttached>
           <IconButton
@@ -91,10 +96,10 @@ const TopicExplorer: FC<TopicSunburstProps> = () => {
           />
         </FormControl>
       </CardHeader>
-      <CardBody>
-        {chart === 'nivo' && <SunburstNivo data={treeData} />}
+      <CardBody onClick={() => onSelect?.(undefined)}>
+        {chart === 'nivo' && <SunburstNivo data={treeData} onSelect={onHandleSelect} />}
         {chart === 'recharts' && <SunburstReCharts data={treeData} />}
-        {chart === 'treeview' && <TreeView data={treeData} />}
+        {chart === 'treeview' && <TreeView data={treeData} onSelect={onSelect} />}
       </CardBody>
     </Card>
   )
