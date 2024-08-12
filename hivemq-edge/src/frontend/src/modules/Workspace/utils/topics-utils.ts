@@ -115,7 +115,8 @@ export const discoverAdapterTopics = (protocol: ProtocolAdapter, instance: Gener
 export const mergeAllTopics = (
   types: ProtocolAdaptersList | undefined,
   adapters: Adapter[] | undefined,
-  bridges: Bridge[] | undefined
+  bridges: Bridge[] | undefined,
+  withOrigin = false
 ) => {
   const data: string[] = []
   if (bridges) {
@@ -123,7 +124,8 @@ export const mergeAllTopics = (
       const { local, remote } = getBridgeTopics(cur)
       acc.push(...local.map((topicFilter) => topicFilter.topic))
       acc.push(...remote.map((topicFilter) => topicFilter.topic))
-      return acc
+      // TODO[25055] The  data structure needs refactoring
+      return withOrigin ? acc.map((e) => `${cur.id}/${e}`) : acc
     }, [])
     data.push(...bridgeTopics)
   }
@@ -133,9 +135,7 @@ export const mergeAllTopics = (
       /* istanbul ignore next -- @preserve */
       if (!type) return acc
       const topics = discoverAdapterTopics(type, cur.config as GenericObjectType)
-      acc.push(...topics)
-      // const topics = getAdapterTopics(cur)
-      // acc.push(...topics.map((e) => e.topic))
+      acc.push(...(withOrigin ? topics.map((e) => `${e} @ ${cur.id}`) : topics))
       return acc
     }, [])
     data.push(...adapterTopics)
