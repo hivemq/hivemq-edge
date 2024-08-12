@@ -1,13 +1,14 @@
-import { FC } from 'react'
+import { type FC } from 'react'
 import ReactTreeView, { flattenTree } from 'react-accessible-treeview'
 import { Box, HStack, Icon, Text } from '@chakra-ui/react'
 import { LuChevronDown, LuChevronRight } from 'react-icons/lu'
 
 import Topic from '@/components/MQTT/Topic.tsx'
-import { SunburstData } from 'recharts/types/chart/SunburstChart'
+import { type SunburstData } from 'recharts/types/chart/SunburstChart'
 
 interface TreeViewProps {
   data: SunburstData
+  onSelect?: (topic: string) => void
 }
 
 const TreeView: FC<TreeViewProps> = ({ data }) => {
