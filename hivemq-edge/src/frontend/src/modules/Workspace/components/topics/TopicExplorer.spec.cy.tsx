@@ -7,9 +7,9 @@ describe('TopicExplorer', () => {
   beforeEach(() => {
     cy.viewport(600, 600)
     cy.intercept('api/v1/management/uns/isa95', mockISA95ApiBean)
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocols')
-    cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
-    cy.intercept('/api/v1/management/bridges', { items: [mockBridge] }).as('getConfig3')
+    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
+    cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] })
+    cy.intercept('/api/v1/management/bridges', { items: [mockBridge] })
   })
 
   it('should render properly', () => {
