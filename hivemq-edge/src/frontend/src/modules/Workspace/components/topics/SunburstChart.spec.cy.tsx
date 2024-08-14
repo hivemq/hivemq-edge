@@ -26,7 +26,7 @@ describe('SunburstChart', () => {
     cy.mountWithProviders(<SunburstChart data={MOCK_STRATIFY_TOPICS} />, { wrapper: Wrapper })
 
     cy.get('svg').as('sunburstChart')
-    cy.get('@sunburstChart').find('g g:first-child > path').as('segments')
+    cy.get('@sunburstChart').find('g g:first-child > path')
     cy.get('@sunburstChart').find('g g:nth-child(2) > g').as('labels')
     cy.get('@labels').eq(0).should('contain.text', 'r1')
     cy.get('@labels').eq(1).should('contain.text', 'r2')
