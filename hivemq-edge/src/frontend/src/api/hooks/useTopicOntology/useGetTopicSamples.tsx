@@ -9,6 +9,9 @@ interface PostTopicSamplesProps {
   topic: string
 }
 
+/**
+ * @deprecated This is a mock
+ */
 export const useGetTopicSamples = () => {
   return useQuery<string[], ApiError>({
     queryKey: [QUERY_KEYS.DISCOVERY_TOPICS],
@@ -19,6 +22,9 @@ export const useGetTopicSamples = () => {
   })
 }
 
+/**
+ * @deprecated This is a mock
+ */
 export const usePostTopicSamples = () => {
   const queryClient = useQueryClient()
 
