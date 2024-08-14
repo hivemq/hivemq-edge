@@ -38,7 +38,7 @@ const CenteredMetric: FC<SunburstCustomLayerProps<unknown>> = ({ centerX, center
 /**
  * TODO[25055] The Nivo widget is interactive (onSelect) but not accessible (lacks tab-index and relevant aria attributes)
  */
-const SunburstNivo: FC<SunburstNivoProps> = ({ data, onSelect }) => {
+const SunburstChart: FC<SunburstNivoProps> = ({ data, onSelect }) => {
   return (
     <ResponsiveSunburst
       data={data}
@@ -67,4 +67,4 @@ const SunburstNivo: FC<SunburstNivoProps> = ({ data, onSelect }) => {
   )
 }
 
-export default SunburstNivo
+export default SunburstChart

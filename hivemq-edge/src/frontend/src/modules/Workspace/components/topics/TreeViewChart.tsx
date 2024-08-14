@@ -11,7 +11,7 @@ interface TreeViewProps {
   onSelect?: (topic: string) => void
 }
 
-const TreeView: FC<TreeViewProps> = ({ data }) => {
+const TreeViewChart: FC<TreeViewProps> = ({ data }) => {
   return (
     <ReactTreeView
       data={flattenTree(data)}
@@ -36,4 +36,4 @@ const TreeView: FC<TreeViewProps> = ({ data }) => {
   )
 }
 
-export default TreeView
+export default TreeViewChart
