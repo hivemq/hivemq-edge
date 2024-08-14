@@ -24,7 +24,6 @@ describe('createEdgeNode', () => {
       data: {
         label: 'test',
       },
-      draggable: false,
       id: IdStubs.EDGE_NODE,
       position: {
         x: 300,
