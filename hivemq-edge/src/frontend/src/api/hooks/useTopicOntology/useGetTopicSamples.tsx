@@ -33,7 +33,7 @@ export const usePostTopicSamples = () => {
       await new Promise((resolve) => setTimeout(resolve, 800))
       return undefined
     },
-    onMutate: () => {
+    onSuccess: () => {
       queryClient.setQueryData<string[]>([QUERY_KEYS.DISCOVERY_TOPICS], (old) => {
         return Array.from(new Set([...MOCK_MQTT_TOPIC_SAMPLES, ...(old || [])]))
       })
