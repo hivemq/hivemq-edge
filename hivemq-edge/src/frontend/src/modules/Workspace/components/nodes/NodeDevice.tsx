@@ -19,13 +19,13 @@ const NodeDevice: FC<NodeProps<ProtocolAdapter>> = ({ selected, data }) => {
         borderTopRadius={30}
       >
         <VStack>
-          <HStack w="100%" justifyContent="flex-end" gap={1}>
-            {capabilities?.map((e) => (
-              <Icon key={e} boxSize={4} as={deviceCapabilityIcon[e]} />
+          <HStack w="100%" justifyContent="flex-end" gap={1} data-testid="device-capabilities">
+            {capabilities?.map((capability) => (
+              <Icon key={capability} boxSize={4} as={deviceCapabilityIcon[capability]} data-type={capability} />
             ))}
           </HStack>
-          <HStack w="100%">
-            <Icon as={deviceCategoryIcon[category?.name || 'SIMULATION']} />
+          <HStack w="100%" data-testid="device-description">
+            <Icon as={deviceCategoryIcon[category?.name || 'SIMULATION']} data-type={category?.name} />
             <Text>{data.protocol}</Text>
           </HStack>
         </VStack>

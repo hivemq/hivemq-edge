@@ -1,7 +1,7 @@
 import { NodeProps, Position } from 'reactflow'
-import { mockAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
-import { Listener } from '@/api/__generated__'
+import { Listener, ProtocolAdapter } from '@/api/__generated__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
 import { Group, NodeTypes } from '@/modules/Workspace/types.ts'
 
@@ -51,5 +51,12 @@ export const MOCK_NODE_GROUP: NodeProps<Group> = {
   type: NodeTypes.CLUSTER_NODE,
   sourcePosition: Position.Bottom,
   data: { childrenNodeIds: ['idAdapter', 'idBridge'], title: 'The group title', isOpen: true },
+  ...MOCK_DEFAULT_NODE,
+}
+
+export const MOCK_NODE_DEVICE: NodeProps<ProtocolAdapter> = {
+  id: 'idDevice',
+  type: NodeTypes.DEVICE_NODE,
+  data: mockProtocolAdapter,
   ...MOCK_DEFAULT_NODE,
 }
