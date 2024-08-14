@@ -1,7 +1,7 @@
 import { RJSFSchema } from '@rjsf/utils'
 import { JSONSchema7 } from 'json-schema'
 
-interface FlatJSONSchema7 extends JSONSchema7 {
+export interface FlatJSONSchema7 extends JSONSchema7 {
   path: string[]
 }
 
