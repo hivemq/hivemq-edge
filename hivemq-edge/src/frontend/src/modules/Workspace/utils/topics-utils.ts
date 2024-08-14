@@ -1,9 +1,10 @@
 import { Adapter, Bridge, BridgeSubscription, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { GenericObjectType, RJSFSchema } from '@rjsf/utils'
 import { JSONSchema7 } from 'json-schema'
+import { stratify } from 'd3-hierarchy'
 
 import { CustomFormat } from '@/api/types/json-schema.ts'
-import { TopicFilter } from '../types.ts'
+import { TopicFilter, type TopicTreeMetadata } from '../types.ts'
 
 export const TOPIC_PATH_ITEMS_TOKEN = '*'
 
@@ -142,4 +143,23 @@ export const mergeAllTopics = (
   }
 
   return Array.from(new Set(data))
+}
+
+export const toTreeMetadata = (
+  topics: string[],
+  unsPrefix?: string,
+  sum?: (t: string) => number
+): TopicTreeMetadata[] => {
+  return topics.map<TopicTreeMetadata>((topic) => {
+    let label = topic
+    // TODO This might not be the only wildcard to take care ofß
+    if (unsPrefix && !topic.includes('#')) {
+      label = unsPrefix.concat(topic)
+    }
+    return { label: label, count: sum ? sum(topic) : 1 }
+  })
+}
+
+export const stratifyTopicTree = (topics: TopicTreeMetadata[]) => {
+  return stratify<TopicTreeMetadata>().path((d) => d.label)(topics)
 }
