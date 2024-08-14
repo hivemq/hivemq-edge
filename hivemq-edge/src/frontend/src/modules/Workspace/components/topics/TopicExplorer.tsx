@@ -1,6 +1,5 @@
 import { type FC, useMemo, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { stratify } from 'd3-hierarchy'
 import { ButtonGroup, Card, CardBody, CardHeader, FormControl, FormLabel, HStack, Switch } from '@chakra-ui/react'
 import { LuFolderTree } from 'react-icons/lu'
 import { TbChartDonutFilled } from 'react-icons/tb'
@@ -14,6 +13,7 @@ import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
 import SunburstChart from '@/modules/Workspace/components/topics/SunburstChart.tsx'
 import TreeViewChart from '@/modules/Workspace/components/topics/TreeViewChart.tsx'
 import { useGetTopicSamples } from '@/api/hooks/useTopicOntology/useGetTopicSamples.tsx'
+import { stratifyTopicTree, toTreeMetadata } from '@/modules/Workspace/utils/topics-utils.ts'
 
 type SUNBURST_CHART = 'nivo' | 'recharts' | 'treeview'
 
@@ -24,26 +24,28 @@ interface TopicSunburstProps {
 const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
   const { t } = useTranslation()
   const [chart, setChart] = useState<SUNBURST_CHART>('treeview')
-  const { data: uns } = useGetUnifiedNamespace()
-  const { mutateAsync } = useSetUnifiedNamespace()
   const [useOrigin, setUseOrigin] = useState(false)
-  const { data, isLoading } = useGetEdgeTopics({ publishOnly: false, useOrigin: useOrigin })
+  const { mutateAsync } = useSetUnifiedNamespace()
+  const { data: uns } = useGetUnifiedNamespace()
+  const { data: topics, isLoading } = useGetEdgeTopics({ publishOnly: false, useOrigin: useOrigin })
   const { data: topicSamples } = useGetTopicSamples()
 
   const unsPrefix = useMemo(() => {
     if (!uns || !uns.enabled) return ''
     return (
-      [uns.enterprise, uns.site, uns.area, uns.productionLine, uns.workCell].filter((e) => Boolean(e)).join('/') + '/'
+      [uns.enterprise, uns.site, uns.area, uns.productionLine, uns.workCell]
+        .filter((segment) => Boolean(segment))
+        .join('/') + '/'
     )
   }, [uns])
 
-  const treeData = useMemo(() => {
-    const metadata = [...data, ...(topicSamples || [])].map<TopicTreeMetadata>((e) => {
-      const lb = e.includes('#') ? e : unsPrefix + e
-      return { label: lb, count: 1 }
-    })
-    return stratify<{ label: string; count: number }>().path((d) => d.label)(metadata)
-  }, [data, topicSamples, unsPrefix])
+  const sunburstData = useMemo(() => {
+    if (isLoading) return stratifyTopicTree([{ label: 'root', count: 1 }])
+
+    const edgeTopics = toTreeMetadata(topics, unsPrefix)
+    const remoteTopics = toTreeMetadata(topicSamples || [])
+    return stratifyTopicTree([...edgeTopics, ...remoteTopics])
+  }, [isLoading, topicSamples, topics, unsPrefix])
 
   if (isLoading) return <LoaderSpinner />
 
