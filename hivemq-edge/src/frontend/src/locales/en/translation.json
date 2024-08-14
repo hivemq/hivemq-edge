@@ -660,7 +660,6 @@
         "showTopics": "Topics",
         "showStatus": "Status indicators",
         "showMonitoringOnEdge": "Observability from the links",
-        "showHosts": "Hosts",
         "showGateway": "Gateways"
       },
       "layout": {

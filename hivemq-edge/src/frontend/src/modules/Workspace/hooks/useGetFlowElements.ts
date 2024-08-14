@@ -53,10 +53,9 @@ const useGetFlowElements = () => {
       )
       nodes.push(nodeBridge)
       edges.push(edgeConnector)
-      if (options.showHosts) {
-        nodes.push(nodeHost)
-        edges.push(hostConnector)
-      }
+
+      nodes.push(nodeHost)
+      edges.push(hostConnector)
     })
 
     adapters.forEach((adapter, incAdapterNb) => {
