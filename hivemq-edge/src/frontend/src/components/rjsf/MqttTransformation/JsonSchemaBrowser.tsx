@@ -22,7 +22,11 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = (props) => {
           const TypeIcon = DataTypeIcon[(property.type || 'null') as JSONSchema7TypeName satisfies JSONSchema7TypeName]
 
           return (
-            <ListItem key={[...property.path, property.title].join('-')} ml={(property?.path?.length || 0) * 8}>
+            <ListItem
+              key={[...property.path, property.title].join('-')}
+              ml={(property?.path?.length || 0) * 8}
+              data-type={property.type as string}
+            >
               <ListIcon as={TypeIcon as IconType} color="green.500" />
               <Tooltip label={[...property.path, property.title].join('/')} placement="top" isDisabled>
                 <Badge>{[property.title].join(' . ')}</Badge>
