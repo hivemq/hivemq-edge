@@ -71,24 +71,24 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
             onClick={() => setChart('nivo')}
           />
         </ButtonGroup>
-        <FormControl display="flex" alignItems="center">
-          <FormLabel htmlFor="control-uns" mb={0}>
+        <FormControl display="flex" alignItems="center" data-testid="form-control-uns">
+          <FormLabel htmlFor="switch-uns" mb={0}>
             {t('workspace.topicWheel.control.uns')}
           </FormLabel>
           <Switch
-            id="control-uns"
+            id="switch-uns"
             isChecked={uns?.enabled}
             onChange={() => {
               if (uns) mutateAsync({ requestBody: { ...uns, enabled: !uns.enabled } })
             }}
           />
         </FormControl>
-        <FormControl display="flex" alignItems="center">
-          <FormLabel htmlFor="control-origin" mb={0}>
+        <FormControl display="flex" alignItems="center" data-testid="form-control-origin">
+          <FormLabel htmlFor="switch-origin" mb={0}>
             {t('workspace.topicWheel.control.origin')}
           </FormLabel>
           <Switch
-            id="control-origin"
+            id="switch-origin"
             isChecked={useOrigin}
             onChange={() => {
               setUseOrigin((e) => !e)
