@@ -16,7 +16,7 @@ const TopicSampler: FC<TopicSamplerProps> = ({ topic }) => {
       <CardHeader as={HStack} justifyContent="space-between">
         <Heading size="md">{topic}</Heading>
       </CardHeader>
-      <CardBody>
+      <CardBody data-testid="sampler-warning">
         <Text>{t('workspace.topicWheel.topicSampler.title')} </Text>
         <Text>{t('workspace.topicWheel.topicSampler.description')} </Text>
       </CardBody>
