@@ -13,6 +13,7 @@ import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.ts'
 import { TopicFilter } from '../../types.ts'
+import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) => {
   const { data: protocols } = useGetAdapterTypes()
@@ -25,6 +26,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
   }, [adapter.config, adapterProtocol])
   const { onContextMenu } = useContextMenu(id, selected, '/workspace/node')
 
+  const HACK_BIDIRECTIONAL = isBidirectional(adapterProtocol)
   return (
     <>
       <NodeWrapper
@@ -50,6 +52,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
         </VStack>
       </NodeWrapper>
       <Handle type="source" position={Position.Bottom} id="Bottom" isConnectable={false} />
+      {HACK_BIDIRECTIONAL && <Handle type="source" position={Position.Top} id="Top" isConnectable={false} />}
     </>
   )
 }
