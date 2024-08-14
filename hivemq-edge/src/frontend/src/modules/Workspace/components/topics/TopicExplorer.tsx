@@ -11,9 +11,8 @@ import { useSetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useSetUn
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
-import { type TopicTreeMetadata } from '@/modules/Workspace/types.ts'
-import SunburstNivo from '@/modules/Workspace/components/topics/SunburstNivo.tsx'
-import TreeView from '@/modules/Workspace/components/topics/TreeView.tsx'
+import SunburstChart from '@/modules/Workspace/components/topics/SunburstChart.tsx'
+import TreeViewChart from '@/modules/Workspace/components/topics/TreeViewChart.tsx'
 import { useGetTopicSamples } from '@/api/hooks/useTopicOntology/useGetTopicSamples.tsx'
 
 type SUNBURST_CHART = 'nivo' | 'recharts' | 'treeview'
@@ -96,8 +95,8 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
         </FormControl>
       </CardHeader>
       <CardBody onClick={() => onSelect?.(undefined)}>
-        {chart === 'nivo' && <SunburstNivo data={treeData} onSelect={onHandleSelect} />}
-        {chart === 'treeview' && <TreeView data={treeData} onSelect={onSelect} />}
+        {chart === 'nivo' && <SunburstChart data={sunburstData} onSelect={onHandleSelect} />}
+        {chart === 'treeview' && <TreeViewChart data={sunburstData} onSelect={onSelect} />}
       </CardBody>
     </Card>
   )
