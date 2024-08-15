@@ -22,7 +22,7 @@ describe('useGetAdapterInfo', () => {
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
     })
-    expect(result.current.isDiscoverable).toBeFalsy()
+    expect(result.current.isDiscoverable).toBeTruthy()
     expect(result.current.adapter).toStrictEqual(
       expect.objectContaining({
         id: 'my-adapter',
