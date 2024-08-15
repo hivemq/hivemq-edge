@@ -31,7 +31,7 @@ describe('TopicSampler', () => {
     cy.get('h2').should('contain.text', 'this/is/a/topic')
     cy.getByTestId('sampler-warning').should(
       'contain.text',
-      'The device is using a wildcard to subscribe to topics, they are therefore not known at configuration.'
+      "The device is using a wildcard to subscribe to topics, they are therefore not known during it's configuration."
     )
     cy.get('button').should('contain.text', 'Get Topic Samples')
 
