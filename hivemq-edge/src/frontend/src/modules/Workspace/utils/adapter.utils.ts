@@ -25,11 +25,7 @@ export const deviceCategoryIcon: Record<string, IconType> = {
   SIMULATION: AiFillExperiment,
 }
 
-// https://stackoverflow.com/questions/41253310/typescript-retrieve-element-type-information-from-array-type
-type ArrayElement<ArrayType extends readonly unknown[]> = ArrayType extends readonly (infer ElementType)[]
-  ? ElementType
-  : never
-
+type ArrayElement<ArrayType extends Array<unknown>> = ArrayType[number]
 type CapabilitiesArray = NonNullable<ProtocolAdapter['capabilities']>
 type CapabilityType = ArrayElement<CapabilitiesArray> | 'WRITE'
 
