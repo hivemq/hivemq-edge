@@ -11,14 +11,14 @@ interface ReactFlowTestingConfig {
   initialState?: Optional<WorkspaceState, 'nodes' | 'edges'>
 }
 
-interface MockStoreWrapperProps {
+interface ReactFlowTestingProps {
   children: ReactNode
   dashboard?: ReactNode
   showDashboard?: boolean
   config: ReactFlowTestingConfig
 }
 
-export const ReactFlowTesting: FC<MockStoreWrapperProps> = ({ children, dashboard, showDashboard = false, config }) => {
+export const ReactFlowTesting: FC<ReactFlowTestingProps> = ({ children, dashboard, showDashboard = false, config }) => {
   const { reset, onAddNodes, onAddEdges } = useWorkspaceStore()
 
   useEffect(() => {
