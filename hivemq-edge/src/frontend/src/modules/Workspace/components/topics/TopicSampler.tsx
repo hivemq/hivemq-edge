@@ -7,6 +7,11 @@ interface TopicSamplerProps {
   topic: string
 }
 
+/**
+ * @deprecated This is a mock, will need to be replaced
+ */
+const MOCK_ADAPTER = 'MOCK_ADAPTER'
+
 const TopicSampler: FC<TopicSamplerProps> = ({ topic }) => {
   const { t } = useTranslation()
   const topicSampler = usePostTopicSamples()
@@ -22,7 +27,7 @@ const TopicSampler: FC<TopicSamplerProps> = ({ topic }) => {
       </CardBody>
       <CardFooter>
         <Button
-          onClick={() => topicSampler.mutateAsync({ adapter: 'sss', topic: 'ss' })}
+          onClick={() => topicSampler.mutateAsync({ adapter: MOCK_ADAPTER, topic: topic })}
           isLoading={topicSampler.isPending}
           loadingText={t('workspace.topicWheel.topicSampler.sampler.loader')}
         >
