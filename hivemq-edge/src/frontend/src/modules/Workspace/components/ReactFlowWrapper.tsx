@@ -22,6 +22,7 @@ import {
   NodeGroup,
   NodeListener,
   NodeHost,
+  NodeDevice,
 } from '@/modules/Workspace/components/nodes'
 
 const ReactFlowWrapper = () => {
@@ -35,6 +36,7 @@ const ReactFlowWrapper = () => {
       [NodeTypes.BRIDGE_NODE]: NodeBridge,
       [NodeTypes.LISTENER_NODE]: NodeListener,
       [NodeTypes.HOST_NODE]: NodeHost,
+      [NodeTypes.DEVICE_NODE]: NodeDevice,
     }),
     []
   )

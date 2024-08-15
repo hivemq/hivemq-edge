@@ -8,6 +8,7 @@ import { Adapter, Bridge, Status, Listener, ProtocolAdapter } from '@/api/__gene
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
+import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
 
@@ -190,7 +191,44 @@ export const createAdapterNode = (
     },
   }
 
-  return { nodeAdapter, edgeConnector }
+  let nodeDevice: Node<ProtocolAdapter, NodeTypes.DEVICE_NODE> | undefined = undefined
+  let deviceConnector: Edge | undefined = undefined
+
+  const HACK_BIDIRECTIONAL = isBidirectional(type)
+  if (HACK_BIDIRECTIONAL) {
+    const idBAdapterDevice = `${IdStubs.DEVICE_NODE}@${idAdapter}`
+    nodeDevice = {
+      id: idBAdapterDevice,
+      type: NodeTypes.DEVICE_NODE,
+      targetPosition: Position.Top,
+      data: type,
+      position: positionStorage?.[idBAdapterDevice] ?? {
+        x: nodeAdapter.position.x + 48,
+        y: nodeAdapter.position.y - 250,
+      },
+    }
+
+    deviceConnector = {
+      id: `${IdStubs.CONNECTOR}-${IdStubs.DEVICE_NODE}@${idAdapter}`,
+      target: idBAdapterDevice,
+      sourceHandle: 'Top',
+      source: idAdapter,
+      focusable: false,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        width: 20,
+        height: 20,
+        color: getThemeForStatus(theme, adapter.status),
+      },
+      animated: isConnected && !!topics.length,
+      style: {
+        strokeWidth: isConnected ? 1.5 : 0.5,
+        stroke: getThemeForStatus(theme, adapter.status),
+      },
+    }
+  }
+
+  return { nodeAdapter, edgeConnector, nodeDevice, deviceConnector }
 }
 
 export const getDefaultMetricsFor = (node: Node): string[] => {
