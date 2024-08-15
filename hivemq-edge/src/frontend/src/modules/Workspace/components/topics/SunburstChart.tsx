@@ -47,7 +47,7 @@ const SunburstChart: FC<SunburstNivoProps> = ({ data, onSelect }) => {
       value="data.count"
       cornerRadius={25}
       borderWidth={2}
-      // TODO[25055] Import from ChakraUI theme
+      // TODO[THEME] Import from the ChakraUI Theme
       colors={{ scheme: 'category10' }}
       childColor={{
         from: 'color',
