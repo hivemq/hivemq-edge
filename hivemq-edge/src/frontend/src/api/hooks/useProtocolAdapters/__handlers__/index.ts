@@ -112,6 +112,7 @@ export const mockProtocolAdapter: ProtocolAdapter = {
   configSchema: mockJSONSchema,
   uiSchema: mockUISchema,
   installed: true,
+  capabilities: ['READ', 'DISCOVER'],
   category: {
     description: 'Industrial, typically field bus protocols.',
     displayName: 'Industrial',
