@@ -11,13 +11,16 @@ interface TreeViewProps {
   onSelect?: (topic: string) => void
 }
 
+// TODO[THEME] Import from the ChakraUI Theme
+const THEME_VISUAL_TABULATOR_SPACING = 8
+
 const TreeViewChart: FC<TreeViewProps> = ({ data }) => {
   return (
     <ReactTreeView
       data={flattenTree(data)}
       nodeRenderer={({ element, getNodeProps, level, isBranch, isExpanded }) => {
         return (
-          <HStack {...getNodeProps()} marginLeft={8 * (level - 1)}>
+          <HStack {...getNodeProps()} marginLeft={THEME_VISUAL_TABULATOR_SPACING * (level - 1)}>
             {isBranch && (
               <>
                 <Icon as={isExpanded ? LuChevronDown : LuChevronRight} />
