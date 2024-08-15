@@ -53,16 +53,15 @@ const useGetFlowElements = () => {
       )
       nodes.push(nodeBridge)
       edges.push(edgeConnector)
-      if (options.showHosts) {
-        nodes.push(nodeHost)
-        edges.push(hostConnector)
-      }
+
+      nodes.push(nodeHost)
+      edges.push(hostConnector)
     })
 
     adapters.forEach((adapter, incAdapterNb) => {
       const type = adapterTypes?.items?.find((e) => e.id === adapter.type)
 
-      const { nodeAdapter, edgeConnector } = createAdapterNode(
+      const { nodeAdapter, edgeConnector, nodeDevice, deviceConnector } = createAdapterNode(
         type as ProtocolAdapter,
         adapter,
         incAdapterNb,
@@ -71,6 +70,11 @@ const useGetFlowElements = () => {
       )
       nodes.push(nodeAdapter)
       edges.push(edgeConnector)
+
+      if (nodeDevice && deviceConnector) {
+        nodes.push(nodeDevice)
+        edges.push(deviceConnector)
+      }
     })
 
     setNodes([nodeEdge, ...applyLayout(nodes, groups)])

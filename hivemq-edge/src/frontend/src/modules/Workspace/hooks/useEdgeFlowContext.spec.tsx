@@ -24,7 +24,6 @@ describe('useEdgeFlowContext', () => {
     const { result } = renderHook(() => useEdgeFlowContext(), { wrapper })
     expect(result.current.options).toEqual<EdgeFlowOptions>({
       showGateway: false,
-      showHosts: false,
       showTopics: true,
       showStatus: true,
     })

@@ -3,7 +3,6 @@ import { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange,
 export interface EdgeFlowOptions {
   showTopics: boolean
   showStatus: boolean
-  showHosts: boolean
   showGateway: boolean
 }
 
@@ -24,6 +23,7 @@ export enum NodeTypes {
   LISTENER_NODE = 'LISTENER_NODE',
   CLUSTER_NODE = 'CLUSTER_NODE',
   HOST_NODE = 'HOST_NODE',
+  DEVICE_NODE = 'DEVICE_NODE',
 }
 
 export enum EdgeTypes {
@@ -35,6 +35,7 @@ export enum IdStubs {
   BRIDGE_NODE = 'bridge',
   ADAPTER_NODE = 'adapter',
   HOST_NODE = 'host',
+  DEVICE_NODE = 'device',
   GROUP_NODE = 'group',
   LISTENER_NODE = 'listener',
   CONNECTOR = 'connect',
