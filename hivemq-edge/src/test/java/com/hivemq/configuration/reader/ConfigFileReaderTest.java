@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -169,5 +170,62 @@ public class ConfigFileReaderTest {
                 testnodeList.get(0));
 
         assertEquals(Map.of("boolval", "true", "listvals", List.of("entry3")), testnodeList.get(1));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void whenUserProperties_thenMapCorrectlyFilled() throws IOException {
+        final File tempFile = new File(tempDir, "conf.xml");
+        final BufferedWriter writer = Files.newWriter(tempFile, UTF_8);
+        writer.write("<hivemq>\n" +
+                "    <protocol-adapters>\n" +
+                "        <test-node>\n" +
+                "            <userProperties>\n" +
+                "                <userProperty>\n" +
+                "                    <name>my-name</name>\n" +
+                "                    <value>my-value1</value>\n" +
+                "                </userProperty>\n" +
+                "                <userProperty>\n" +
+                "                    <name>my-name</name>\n" +
+                "                    <value>my-value2</value>\n" +
+                "                </userProperty>\n" +
+                "            </userProperties>" +
+                "        </test-node>\n" +
+                "    </protocol-adapters>\n" +
+                "</hivemq>");
+        writer.close();
+        final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
+        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
+                mock(RestrictionConfigurator.class),
+                mock(SecurityConfigurator.class),
+                mock(MqttConfigurator.class),
+                mock(ListenerConfigurator.class),
+                mock(PersistenceConfigurator.class),
+                mock(MqttsnConfigurator.class),
+                mock(BridgeConfigurator.class),
+                mock(ApiConfigurator.class),
+                mock(UnsConfigurator.class),
+                mock(DynamicConfigConfigurator.class),
+                mock(UsageTrackingConfigurator.class),
+                mock(ProtocolAdapterConfigurator.class),
+                mock(ModuleConfigurator.class),
+                mock(InternalConfigurator.class));
+        final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
+
+        final Map<String, Object> config = hiveMQConfigEntity.getProtocolAdapterConfig();
+
+        assertNotNull(config);
+        System.out.println(config);
+        assertEquals(1, config.keySet().size());
+
+        final List<Map<String, String>> testnode = (List<Map<String, String>>) ((Map<String, Object>) config.get("test-node")).get("userProperties");
+
+        assertThat(testnode).satisfiesExactly(userProperty1 -> {
+            assertThat(userProperty1.get("name")).isEqualTo("my-name");
+            assertThat(userProperty1.get("value")).isEqualTo("my-value1");
+        }, userProperty2 -> {
+            assertThat(userProperty2.get("name")).isEqualTo("my-name");
+            assertThat(userProperty2.get("value")).isEqualTo("my-value2");
+        });
     }
 }
