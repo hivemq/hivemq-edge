@@ -234,4 +234,69 @@ public class ConfigFileReaderTest {
         final String afterReload = FileUtils.readFileToString(tempFile, UTF_8);
         assertThat(afterReload).contains("userProperty");
     }
+
+    /**
+     * Checks the downwards compatability for 'userPropertie'.
+     */
+    @SuppressWarnings({"unchecked", "SpellCheckingInspection"})
+    @Test
+    public void whenUserPropertie_thenMapCorrectlyFilled() throws Exception {
+        final File tempFile = new File(tempDir, "conf.xml");
+        FileUtils.writeStringToFile(tempFile,
+                "<hivemq>\n" +
+                        "    <protocol-adapters>\n" +
+                        "        <test-node>\n" +
+                        "            <userProperties>\n" +
+                        "                <userPropertie>\n" +
+                        "                    <name>my-name</name>\n" +
+                        "                    <value>my-value1</value>\n" +
+                        "                </userPropertie>\n" +
+                        "                <userPropertie>\n" +
+                        "                    <name>my-name</name>\n" +
+                        "                    <value>my-value2</value>\n" +
+                        "                </userPropertie>\n" +
+                        "            </userProperties>" +
+                        "        </test-node>\n" +
+                        "    </protocol-adapters>\n" +
+                        "</hivemq>",
+                UTF_8);
+
+        final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
+        final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
+                mock(RestrictionConfigurator.class),
+                mock(SecurityConfigurator.class),
+                mock(MqttConfigurator.class),
+                mock(ListenerConfigurator.class),
+                mock(PersistenceConfigurator.class),
+                mock(MqttsnConfigurator.class),
+                mock(BridgeConfigurator.class),
+                mock(ApiConfigurator.class),
+                mock(UnsConfigurator.class),
+                mock(DynamicConfigConfigurator.class),
+                mock(UsageTrackingConfigurator.class),
+                mock(ProtocolAdapterConfigurator.class),
+                mock(ModuleConfigurator.class),
+                mock(InternalConfigurator.class));
+        final HiveMQConfigEntity hiveMQConfigEntity = configFileReader.applyConfig();
+
+        final Map<String, Object> config = hiveMQConfigEntity.getProtocolAdapterConfig();
+
+        assertNotNull(config);
+        System.out.println(config);
+        assertEquals(1, config.keySet().size());
+
+        final List<Map<String, String>> userProperties1 =
+                (List<Map<String, String>>) ((Map<String, Object>) config.get("test-node")).get("userProperties");
+        assertThat(userProperties1).satisfiesExactly(userProperty1 -> {
+            assertThat(userProperty1.get("name")).isEqualTo("my-name");
+            assertThat(userProperty1.get("value")).isEqualTo("my-value1");
+        }, userProperty2 -> {
+            assertThat(userProperty2.get("name")).isEqualTo("my-name");
+            assertThat(userProperty2.get("value")).isEqualTo("my-value2");
+        });
+
+        configFileReader.writeConfig();
+        final String afterReload = FileUtils.readFileToString(tempFile, UTF_8);
+        assertThat(afterReload).contains("userProperty");
+    }
 }
