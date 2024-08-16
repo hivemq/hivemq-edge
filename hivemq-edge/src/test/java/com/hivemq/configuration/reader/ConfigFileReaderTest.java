@@ -18,6 +18,7 @@ package com.hivemq.configuration.reader;
 import com.google.common.io.Files;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.exceptions.UnrecoverableException;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -174,26 +175,27 @@ public class ConfigFileReaderTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void whenUserProperties_thenMapCorrectlyFilled() throws IOException {
+    public void whenUserProperties_thenMapCorrectlyFilled() throws Exception {
         final File tempFile = new File(tempDir, "conf.xml");
-        final BufferedWriter writer = Files.newWriter(tempFile, UTF_8);
-        writer.write("<hivemq>\n" +
-                "    <protocol-adapters>\n" +
-                "        <test-node>\n" +
-                "            <userProperties>\n" +
-                "                <userProperty>\n" +
-                "                    <name>my-name</name>\n" +
-                "                    <value>my-value1</value>\n" +
-                "                </userProperty>\n" +
-                "                <userProperty>\n" +
-                "                    <name>my-name</name>\n" +
-                "                    <value>my-value2</value>\n" +
-                "                </userProperty>\n" +
-                "            </userProperties>" +
-                "        </test-node>\n" +
-                "    </protocol-adapters>\n" +
-                "</hivemq>");
-        writer.close();
+        FileUtils.writeStringToFile(tempFile,
+                "<hivemq>\n" +
+                        "    <protocol-adapters>\n" +
+                        "        <test-node>\n" +
+                        "            <userProperties>\n" +
+                        "                <userProperty>\n" +
+                        "                    <name>my-name</name>\n" +
+                        "                    <value>my-value1</value>\n" +
+                        "                </userProperty>\n" +
+                        "                <userProperty>\n" +
+                        "                    <name>my-name</name>\n" +
+                        "                    <value>my-value2</value>\n" +
+                        "                </userProperty>\n" +
+                        "            </userProperties>" +
+                        "        </test-node>\n" +
+                        "    </protocol-adapters>\n" +
+                        "</hivemq>",
+                UTF_8);
+
         final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
         final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
                 mock(RestrictionConfigurator.class),
@@ -218,14 +220,18 @@ public class ConfigFileReaderTest {
         System.out.println(config);
         assertEquals(1, config.keySet().size());
 
-        final List<Map<String, String>> testnode = (List<Map<String, String>>) ((Map<String, Object>) config.get("test-node")).get("userProperties");
-
-        assertThat(testnode).satisfiesExactly(userProperty1 -> {
+        final List<Map<String, String>> userProperties1 =
+                (List<Map<String, String>>) ((Map<String, Object>) config.get("test-node")).get("userProperties");
+        assertThat(userProperties1).satisfiesExactly(userProperty1 -> {
             assertThat(userProperty1.get("name")).isEqualTo("my-name");
             assertThat(userProperty1.get("value")).isEqualTo("my-value1");
         }, userProperty2 -> {
             assertThat(userProperty2.get("name")).isEqualTo("my-name");
             assertThat(userProperty2.get("value")).isEqualTo("my-value2");
         });
+
+        configFileReader.writeConfig();
+        final String afterReload = FileUtils.readFileToString(tempFile, UTF_8);
+        assertThat(afterReload).contains("userProperty");
     }
 }
