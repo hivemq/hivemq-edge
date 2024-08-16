@@ -55,11 +55,13 @@ public class ModbusAdapterConfigTest {
             assertThat(subscription.getIncludeTimestamp()).isFalse();
             assertThat(subscription.getIncludeTagNames()).isTrue();
 
-//            TODO: https://hivemq.kanbanize.com/ctrl_board/57/cards/24704/details/
-//            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
-//                assertThat(userProperty.getName()).isEqualTo("my-name");
-//                assertThat(userProperty.getValue()).isEqualTo("my-value");
-//            });
+            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty1 -> {
+                assertThat(userProperty1.getName()).isEqualTo("my-name");
+                assertThat(userProperty1.getValue()).isEqualTo("my-value1");
+            }, userProperty2 -> {
+                assertThat(userProperty2.getName()).isEqualTo("my-name");
+                assertThat(userProperty2.getValue()).isEqualTo("my-value2");
+            });
 
             assertThat(subscription.getAddressRange().startIdx).isEqualTo(11);
             assertThat(subscription.getAddressRange().endIdx).isEqualTo(13);
@@ -238,13 +240,8 @@ public class ModbusAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_defaults() {
-        final PollingContextImpl pollingContext = new PollingContextImpl("my/destination",
-                null,
-                null,
-                null,
-                null,
-                null,
-                new AddressRange(1, 2));
+        final PollingContextImpl pollingContext =
+                new PollingContextImpl("my/destination", null, null, null, null, null, new AddressRange(1, 2));
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
                 null,
