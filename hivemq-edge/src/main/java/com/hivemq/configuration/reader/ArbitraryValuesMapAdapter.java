@@ -86,7 +86,16 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
         }
         else if (value instanceof List) {
             List list = (List) value;
-            if(parentName != null && currentKeyName.endsWith("s")){
+            if ("userProperties".equals(currentKeyName)) {
+                final List children = new ArrayList();
+                readChildren("userProperty", list, children, currentKeyName);
+                final ElementMap elementMap = new ElementMap();
+                elementMap.elements = children;
+                if (!children.isEmpty()){
+                    // add the plural
+                    currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
+                }
+            } else if (currentKeyName != null && currentKeyName.endsWith("s") || "userProperties".equals(parentName)) {
                 List children = new ArrayList();
                 readChildren(shortName(currentKeyName), list, children, currentKeyName);
                 ElementMap elementMap = new ElementMap();
@@ -151,7 +160,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
 
         //if child name is plural of parent name, we expect the value to be a list
         //This obviously does not cover irregular plurals, but 'userProperties' is used very often, so we specially check for it.
-        if (parentName != null && (parentName.equals(node.getLocalName() + "s") || parentName.equals("userProperties"))) {
+        if ((node.getLocalName() + "s").equals(parentName) || "userProperties".equals(parentName)) {
             //check for single key maps
             if ((value instanceof Map) && ((Map) value).keySet().size() == 1) {
                 replaceWithList(map, ((Map<?, ?>) value).values().stream().findFirst().get(), parentName);
