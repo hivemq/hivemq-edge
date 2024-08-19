@@ -49,8 +49,8 @@ describe('TopicSampler', () => {
       .should('have.attr', 'data-loading')
 
     cy.getByTestId('sampler-listing').find('li').should('have.length', 5)
-    cy.getByTestId('sampler-listing').find('li').eq(0).should('have.text', 'broker1/topic1/segment1')
-    cy.getByTestId('sampler-listing').find('li').eq(4).should('have.text', 'broker4/topic1/segment2')
+    cy.getByTestId('sampler-listing').find('li').eq(0).should('have.text', 'tmp/broker1/topic1/segment1')
+    cy.getByTestId('sampler-listing').find('li').eq(4).should('have.text', 'tmp/broker4/topic1/segment2')
   })
 
   it('should be accessible', () => {
