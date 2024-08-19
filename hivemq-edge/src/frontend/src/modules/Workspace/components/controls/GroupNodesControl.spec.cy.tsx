@@ -25,24 +25,24 @@ const Wrapper: React.JSXElementConstructor<{ children: React.ReactNode; showDash
       showDashboard={showDashboard}
       dashboard={
         <Stack direction="column">
-          {nodes.map((e) => (
+          {nodes.map((node) => (
             <Checkbox
               size="sm"
-              key={e.id}
-              isChecked={e.selected}
+              key={node.id}
+              isChecked={node.selected}
               onChange={() => {
-                onNodesChange([{ id: e.id, type: 'select', selected: !e.selected }])
+                onNodesChange([{ id: node.id, type: 'select', selected: !node.selected }])
               }}
               data-testid="node-checked"
             >
               <Text as="span" data-testid="node-type">
-                {e.type}
+                {node.type}
               </Text>{' '}
               <Text as="span" data-testid="node-group">
-                {e.parentNode || e.parentId ? 'Grouped' : ''}
+                {node.parentNode || node.parentId ? 'Grouped' : ''}
               </Text>{' '}
               <Text as="span" data-testid="node-id">
-                ({e.id})
+                ({node.id})
               </Text>
             </Checkbox>
           ))}

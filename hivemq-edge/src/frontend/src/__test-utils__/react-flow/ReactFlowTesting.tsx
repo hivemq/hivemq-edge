@@ -29,15 +29,15 @@ export const ReactFlowTesting: FC<ReactFlowTestingProps> = ({ children, dashboar
     const { initialState } = config
     if (initialState?.nodes)
       onAddNodes(
-        initialState.nodes.map((n) => ({
-          item: n,
+        initialState.nodes.map((node) => ({
+          item: node,
           type: 'add',
         }))
       )
     if (initialState?.edges)
       onAddEdges(
-        initialState.edges.map((e) => ({
-          item: e,
+        initialState.edges.map((edge) => ({
+          item: edge,
           type: 'add',
         }))
       )
