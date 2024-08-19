@@ -57,7 +57,7 @@ const useGetFlowElements = () => {
       const { nodeBridge, edgeConnector, nodeHost, hostConnector } = createBridgeNode(
         bridge,
         incBridgeNb,
-        bridges.length,
+        bridges.length + clients.length,
         theme
       )
       nodes.push(nodeBridge)
@@ -86,8 +86,13 @@ const useGetFlowElements = () => {
       }
     })
 
-    clients.forEach((client) => {
-      const { nodeClient, clientConnector } = createClientNode(client, bridges.length, theme)
+    clients.forEach((client, incClient) => {
+      const { nodeClient, clientConnector } = createClientNode(
+        client,
+        bridges.length + incClient,
+        bridges.length + clients.length,
+        theme
+      )
       nodes.push(nodeClient)
       edges.push(clientConnector)
     })

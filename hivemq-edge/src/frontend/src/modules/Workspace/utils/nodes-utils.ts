@@ -234,7 +234,8 @@ export const createAdapterNode = (
 
 export const createClientNode = (
   client: BrokerClient,
-  deltaX: number,
+  nbClient: number,
+  maxClient: number,
   theme: Partial<WithCSSVar<Dict>>,
   positionStorage?: Record<string, XYPosition>
 ) => {
@@ -247,7 +248,7 @@ export const createClientNode = (
     sourcePosition: Position.Bottom,
     data: client.config,
     position: positionStorage?.[idClient] ?? {
-      x: POS_EDGE.x + POS_NODE_INC.x * deltaX,
+      x: POS_EDGE.x + POS_NODE_INC.x * (nbClient - (maxClient - 1) / 2),
       y: POS_EDGE.y + POS_NODE_INC.y,
     },
   }
