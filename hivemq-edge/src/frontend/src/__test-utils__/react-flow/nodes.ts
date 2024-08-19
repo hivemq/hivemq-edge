@@ -1,7 +1,9 @@
 import { NodeProps, Position } from 'reactflow'
+import { Listener, ProtocolAdapter } from '@/api/__generated__'
+import { BrokerClientConfiguration } from '@/api/types/api-broker-client.ts'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
-import { Listener, ProtocolAdapter } from '@/api/__generated__'
+import { mockClientSubscription } from '@/api/hooks/useClientSubscriptions/__handlers__'
 import { mockMqttListener } from '@/api/hooks/useGateway/__handlers__'
 import { Group, NodeTypes } from '@/modules/Workspace/types.ts'
 
@@ -58,5 +60,13 @@ export const MOCK_NODE_DEVICE: NodeProps<ProtocolAdapter> = {
   id: 'idDevice',
   type: NodeTypes.DEVICE_NODE,
   data: mockProtocolAdapter,
+  ...MOCK_DEFAULT_NODE,
+}
+
+export const MOCK_NODE_CLIENT: NodeProps<BrokerClientConfiguration> = {
+  id: 'idBridge',
+  type: NodeTypes.BRIDGE_NODE,
+  sourcePosition: Position.Bottom,
+  data: mockClientSubscription.config,
   ...MOCK_DEFAULT_NODE,
 }

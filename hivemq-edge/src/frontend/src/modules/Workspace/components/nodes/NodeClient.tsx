@@ -21,7 +21,7 @@ const NodeClient: FC<NodeProps<BrokerClientConfiguration>> = ({ selected, data }
           )}
           <HStack w="100%">
             <Image aria-label="client" boxSize="20px" objectFit="scale-down" src={logo} />
-            <Text flex={1} data-testid="adapter-node-name">
+            <Text flex={1} data-testid="client-node-name">
               {data.id}
             </Text>
           </HStack>
