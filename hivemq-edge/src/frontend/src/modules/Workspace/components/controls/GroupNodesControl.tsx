@@ -1,31 +1,30 @@
-import { FC, useState } from 'react'
-import { Edge, MarkerType, Node, Panel, useOnSelectionChange } from 'reactflow'
+import { FC, useEffect, useState } from 'react'
+import { Edge, MarkerType, Node, Panel } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { Icon, useTheme } from '@chakra-ui/react'
 import { ImMakeGroup } from 'react-icons/im'
 
 import { Adapter, Status } from '@/api/__generated__'
-import { EdgeTypes, Group, IdStubs, NodeTypes } from '../../types.ts'
-import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
-import { getThemeForStatus } from '../../utils/status-utils.ts'
-import { getGroupLayout } from '../../utils/group.utils.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import { EdgeTypes, Group, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
+import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
+import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 
 const GroupNodesControl: FC = () => {
   const { t } = useTranslation()
-  const { onInsertGroupNode } = useWorkspaceStore()
+  const { onInsertGroupNode, nodes } = useWorkspaceStore()
   const [currentSelection, setCurrentSelection] = useState<Node[]>([])
   const theme = useTheme()
 
-  useOnSelectionChange({
-    onChange: ({ nodes }) => {
-      if (nodes.length >= 2)
-        setCurrentSelection(() =>
-          nodes.filter((node) => node.type === NodeTypes.ADAPTER_NODE && node.parentNode === undefined)
-        )
-      else setCurrentSelection([])
-    },
-  })
+  useEffect(() => {
+    const selectedNodes = nodes.filter((node) => node.selected)
+    if (selectedNodes.length >= 2)
+      setCurrentSelection(() =>
+        selectedNodes.filter((node) => node.type === NodeTypes.ADAPTER_NODE && node.parentNode === undefined)
+      )
+    else setCurrentSelection([])
+  }, [nodes])
 
   const onCreateGroup = () => {
     const groupId = `${IdStubs.GROUP_NODE}@${currentSelection.map((e) => e.data.id).join('+')}`
