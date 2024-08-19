@@ -7,7 +7,7 @@ export type BrokerClient = {
   /**
    * The configuration of the client subscriptions
    */
-  config?: BrokerClientConfiguration
+  config: BrokerClientConfiguration
 
   /**
    * The broker client id, must be unique and only contain alpha numeric characters with spaces and hyphens.
