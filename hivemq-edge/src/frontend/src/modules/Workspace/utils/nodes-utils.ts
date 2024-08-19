@@ -239,8 +239,7 @@ export const createClientNode = (
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idClient = `${IdStubs.CLIENT_NODE}@${client.id}`
-  const isConnected = true
-  const topics = ['test/1'] //discoverAdapterTopics(type, adapter.config as GenericObjectType)
+  const isConnected = Boolean(client.config.subscription?.length)
 
   const nodeClient: Node<BrokerClientConfiguration, NodeTypes.CLIENT_NODE> = {
     id: idClient,
@@ -259,17 +258,16 @@ export const createClientNode = (
     targetHandle: 'Bottom',
     source: idClient,
     focusable: false,
-    type: EdgeTypes.REPORT_EDGE,
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 20,
       height: 20,
-      color: getThemeForStatus(theme, undefined),
+      color: theme.colors.status.connected[500],
     },
-    animated: isConnected && !!topics.length,
+    animated: isConnected,
     style: {
       strokeWidth: isConnected ? 1.5 : 0.5,
-      stroke: getThemeForStatus(theme, undefined),
+      stroke: theme.colors.status.connected[500],
     },
   }
 
