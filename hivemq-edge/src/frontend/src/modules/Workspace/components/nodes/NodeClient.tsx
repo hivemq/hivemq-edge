@@ -6,16 +6,14 @@ import logo from '@/assets/hivemq/01-hivemq-bee.svg'
 
 import { BrokerClientConfiguration } from '@/api/types/api-broker-client.ts'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
-import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import TopicsContainer from '@/modules/Workspace/components/parts/TopicsContainer.tsx'
 import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.ts'
 
-const NodeClient: FC<NodeProps<BrokerClientConfiguration>> = ({ id, selected, data }) => {
+const NodeClient: FC<NodeProps<BrokerClientConfiguration>> = ({ selected, data }) => {
   const { options } = useEdgeFlowContext()
 
   return (
     <>
-      <ContextualToolbar id={id} />
       <NodeWrapper isSelected={selected} p={3} borderBottomRadius={30}>
         <VStack>
           {options.showTopics && data.subscription && (
