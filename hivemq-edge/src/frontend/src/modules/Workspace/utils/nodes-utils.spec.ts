@@ -12,11 +12,13 @@ import { IdStubs, NodeTypes } from '../types.ts'
 import {
   createAdapterNode,
   createBridgeNode,
+  createClientNode,
   createEdgeNode,
   createListenerNode,
   getDefaultMetricsFor,
 } from './nodes-utils.ts'
 import { MOCK_NODE_ADAPTER, MOCK_NODE_BRIDGE, MOCK_NODE_EDGE } from '@/__test-utils__/react-flow/nodes.ts'
+import { mockClientSubscription } from '@/api/hooks/useClientSubscriptions/__handlers__'
 
 describe('createEdgeNode', () => {
   it('should create a default Edge node', async () => {
@@ -205,5 +207,121 @@ describe('getDefaultMetricsFor', () => {
     expect(getDefaultMetricsFor({ ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } })).toStrictEqual([
       'com.hivemq.edge.protocol-adapters.simulation.my-adapter.read.publish.success.count',
     ])
+  })
+})
+
+describe('createClientNode', () => {
+  it('should create a default client node', async () => {
+    const actual = createClientNode(mockClientSubscription, 1, 2, MOCK_THEME)
+    const expected: {
+      nodeClient: Node<Bridge, NodeTypes.CLIENT_NODE>
+      clientConnector: Edge
+    } = {
+      nodeClient: expect.objectContaining({
+        data: {
+          id: 'my-first-client',
+          subscription: [
+            {
+              destination: 'test/topic/1',
+              maxQoS: 0,
+            },
+          ],
+        },
+        id: 'client@my-first-client',
+        position: {
+          x: 426.5,
+          y: 500,
+        },
+        sourcePosition: 'bottom',
+        type: NodeTypes.CLIENT_NODE,
+      }),
+      clientConnector: expect.objectContaining({
+        animated: true,
+        focusable: false,
+        id: 'connect-edge-client@my-first-client',
+        source: 'client@my-first-client',
+        target: 'edge',
+        targetHandle: 'Bottom',
+      }),
+    }
+
+    expect(actual).toStrictEqual(expect.objectContaining(expected))
+  })
+
+  it('should create an Adapter node with stored location', async () => {
+    const actual = createClientNode(mockClientSubscription, 1, 2, MOCK_THEME, MOCK_LOCAL_STORAGE)
+    const expected: {
+      nodeClient: Node<Bridge, NodeTypes.ADAPTER_NODE>
+      clientConnector: Edge
+    } = {
+      nodeClient: expect.objectContaining({
+        id: 'client@my-first-client',
+        position: {
+          x: 426.5,
+          y: 500,
+        },
+      }),
+      clientConnector: expect.objectContaining({}),
+    }
+
+    expect(actual).toStrictEqual(expect.objectContaining(expected))
+  })
+})
+
+describe('createClientNode', () => {
+  it('should create a default client node', async () => {
+    const actual = createClientNode(mockClientSubscription, 1, 2, MOCK_THEME)
+    const expected: {
+      nodeClient: Node<Bridge, NodeTypes.CLIENT_NODE>
+      clientConnector: Edge
+    } = {
+      nodeClient: expect.objectContaining({
+        data: {
+          id: 'my-first-client',
+          subscription: [
+            {
+              destination: 'test/topic/1',
+              maxQoS: 0,
+            },
+          ],
+        },
+        id: 'client@my-first-client',
+        position: {
+          x: 426.5,
+          y: 500,
+        },
+        sourcePosition: 'bottom',
+        type: NodeTypes.CLIENT_NODE,
+      }),
+      clientConnector: expect.objectContaining({
+        animated: true,
+        focusable: false,
+        id: 'connect-edge-client@my-first-client',
+        source: 'client@my-first-client',
+        target: 'edge',
+        targetHandle: 'Bottom',
+      }),
+    }
+
+    expect(actual).toStrictEqual(expect.objectContaining(expected))
+  })
+
+  it('should create an Adapter node with stored location', async () => {
+    const actual = createClientNode(mockClientSubscription, 1, 2, MOCK_THEME, MOCK_LOCAL_STORAGE)
+    const expected: {
+      nodeClient: Node<Bridge, NodeTypes.ADAPTER_NODE>
+      clientConnector: Edge
+    } = {
+      nodeClient: expect.objectContaining({
+        id: 'client@my-first-client',
+        position: {
+          x: 426.5,
+          y: 500,
+        },
+      }),
+      clientConnector: expect.objectContaining({}),
+    }
+
+    expect(actual).toStrictEqual(expect.objectContaining(expected))
   })
 })
