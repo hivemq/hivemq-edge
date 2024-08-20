@@ -118,7 +118,7 @@ public class ModbusClient {
                 try {
                     final ByteBuf buf = response.getRegisters();
                     return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + count),
-                            convert(buf, dataType));
+                            convert(buf, dataType, count));
                 } finally {
                     ReferenceCountUtil.release(response);
                 }
@@ -170,7 +170,7 @@ public class ModbusClient {
     }
 
     private @NotNull Object convert(
-            final @NotNull ByteBuf buffi, final @NotNull ModbusDataType dataType) {
+            final @NotNull ByteBuf buffi, final @NotNull ModbusDataType dataType, final int count) {
         switch (dataType) {
             case INT_16:
                 return buffi.readShort();
@@ -185,7 +185,9 @@ public class ModbusClient {
             case FLOAT_32:
                 return buffi.readFloat();
             case UTF_8:
-                return new String(buffi.array(), StandardCharsets.UTF_8);
+                final byte[] bytes = new byte[count * 2];
+                buffi.readBytes(bytes);
+                return new String(bytes, StandardCharsets.UTF_8);
         }
         throw new RuntimeException("implement");
     }
