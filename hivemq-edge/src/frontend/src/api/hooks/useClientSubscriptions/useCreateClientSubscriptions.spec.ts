@@ -5,7 +5,7 @@ import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.t
 import { useCreateClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useCreateClientSubscriptions.ts'
 import { mockClientSubscription } from '@/api/hooks/useClientSubscriptions/__handlers__'
 
-describe('useListProtocolAdapters', () => {
+describe('useCreateClientSubscriptions', () => {
   it('should load the data', async () => {
     const { result } = renderHook(() => useCreateClientSubscriptions(), { wrapper })
     await waitFor(() => {
@@ -21,7 +21,7 @@ describe('useListProtocolAdapters', () => {
       expect(result.current.data).toStrictEqual(
         expect.objectContaining({
           id: 'fake-id',
-          requestBody: mockClientSubscription.config,
+          config: mockClientSubscription.config,
         })
       )
     })
