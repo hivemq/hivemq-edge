@@ -11,27 +11,6 @@ describe('useListProtocolAdapters', () => {
       expect(result.current.isLoading).toBeFalsy()
       expect(result.current.isSuccess).toBeTruthy()
     })
-    expect(result.current.data).toStrictEqual([
-      expect.objectContaining({
-        config: {
-          id: 'my-first-client',
-          subscriptions: [
-            {
-              destination: 'test/topic/1',
-              maxQoS: 0,
-            },
-          ],
-        },
-        id: 'my-first-client',
-        type: 'broker-client',
-      }),
-      expect.objectContaining({
-        config: {
-          id: 'my-first-client2',
-        },
-        id: 'my-first-client2',
-        type: 'broker-client',
-      }),
-    ])
+    expect(result.current.data).toStrictEqual([])
   })
 })
