@@ -6,7 +6,7 @@ import { BrokerClient, BrokerClientConfiguration } from '@/api/types/api-broker-
 
 interface CreateProtocolAdapterProps {
   id: string
-  requestBody: BrokerClientConfiguration
+  config: BrokerClientConfiguration
 }
 
 /**
@@ -16,15 +16,15 @@ export const useCreateClientSubscriptions = () => {
   const queryClient = useQueryClient()
 
   return useMutation<CreateProtocolAdapterProps, ApiError, CreateProtocolAdapterProps>({
-    mutationFn: async ({ id, requestBody }: CreateProtocolAdapterProps) => {
+    mutationFn: async ({ id, config }: CreateProtocolAdapterProps) => {
       await new Promise((resolve) => setTimeout(resolve, 800))
-      return { id, requestBody }
+      return { id, config }
     },
     onSuccess: (data) => {
       queryClient.setQueryData<BrokerClient[]>([QUERY_KEYS.CLIENTS], (old) => {
         const newClient: BrokerClient = {
           config: {
-            ...data.requestBody,
+            ...data.config,
             id: data.id,
           },
           id: data.id,

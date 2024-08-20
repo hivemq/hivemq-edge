@@ -13,7 +13,7 @@ describe('useListProtocolAdapters', () => {
     })
 
     act(() => {
-      result.current.mutateAsync({ id: 'fake-id', requestBody: mockClientSubscription.config })
+      result.current.mutateAsync({ id: 'fake-id', config: mockClientSubscription.config })
     })
 
     await waitFor(() => {
