@@ -14,6 +14,7 @@ import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.ts'
 import { TopicFilter } from '../../types.ts'
 import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
+import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) => {
   const { data: protocols } = useGetAdapterTypes()
@@ -29,6 +30,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
   const HACK_BIDIRECTIONAL = isBidirectional(adapterProtocol)
   return (
     <>
+      <ContextualToolbar id={id} />
       <NodeWrapper
         isSelected={selected}
         onDoubleClick={onContextMenu}

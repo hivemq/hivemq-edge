@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import logo from '@/assets/edge/05-icon-industrial-hivemq-edge.svg'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
+import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 
 const NodeEdge: FC<NodeProps> = (props) => {
   const { t } = useTranslation()
@@ -13,6 +14,7 @@ const NodeEdge: FC<NodeProps> = (props) => {
 
   return (
     <>
+      <ContextualToolbar id={props.id} />
       <NodeWrapper
         isSelected={props.selected}
         onDoubleClick={onContextMenu}
@@ -43,6 +45,13 @@ const NodeEdge: FC<NodeProps> = (props) => {
           id="SRight"
           isConnectable={false}
           style={{ top: '60%', left: '-3px', minWidth: 0, minHeight: 0, width: 0, height: 0 }}
+        />
+        <Handle
+          type="target"
+          position={Position.Right}
+          id="clientHandle"
+          isConnectable={false}
+          style={{ top: '60%', right: '-3px', minWidth: 0, minHeight: 0, width: 0, height: 0 }}
         />
       </NodeWrapper>
     </>
