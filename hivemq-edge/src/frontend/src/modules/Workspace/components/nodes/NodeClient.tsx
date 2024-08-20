@@ -16,8 +16,8 @@ const NodeClient: FC<NodeProps<BrokerClientConfiguration>> = ({ selected, data }
     <>
       <NodeWrapper isSelected={selected} p={3} borderBottomRadius={30}>
         <VStack>
-          {options.showTopics && data.subscription && (
-            <TopicsContainer topics={data.subscription?.map((e) => ({ topic: e.destination }))} />
+          {options.showTopics && data.subscriptions && (
+            <TopicsContainer topics={data.subscriptions?.map((e) => ({ topic: e.destination }))} />
           )}
           <HStack w="100%">
             <Image aria-label="client" boxSize="20px" objectFit="scale-down" src={logo} />

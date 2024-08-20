@@ -24,7 +24,7 @@ export type BrokerClientConfiguration = {
    * The broker client id, must be unique and only contain alpha numeric characters with spaces and hyphens.
    */
   id: string
-  subscription?: BrokerClientSubscription[]
+  subscriptions?: BrokerClientSubscription[]
 }
 
 export type BrokerClientSubscription = {

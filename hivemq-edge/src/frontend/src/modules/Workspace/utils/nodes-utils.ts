@@ -240,7 +240,7 @@ export const createClientNode = (
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idClient = `${IdStubs.CLIENT_NODE}@${client.id}`
-  const isConnected = Boolean(client.config.subscription?.length)
+  const isConnected = Boolean(client.config.subscriptions?.length)
 
   const nodeClient: Node<BrokerClientConfiguration, NodeTypes.CLIENT_NODE> = {
     id: idClient,

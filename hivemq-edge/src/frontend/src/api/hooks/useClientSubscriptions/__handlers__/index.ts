@@ -4,7 +4,7 @@ import maxQoS = BrokerClientSubscription.maxQoS
 export const mockClientSubscription: BrokerClient = {
   config: {
     id: 'my-first-client',
-    subscription: [{ destination: 'test/topic/1', maxQoS: maxQoS._0 }],
+    subscriptions: [{ destination: 'test/topic/1', maxQoS: maxQoS._0 }],
   },
   id: 'my-first-client',
   type: 'broker-client',
