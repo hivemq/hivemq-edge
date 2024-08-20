@@ -15,7 +15,7 @@ describe('useListProtocolAdapters', () => {
       expect.objectContaining({
         config: {
           id: 'my-first-client',
-          subscription: [
+          subscriptions: [
             {
               destination: 'test/topic/1',
               maxQoS: 0,
