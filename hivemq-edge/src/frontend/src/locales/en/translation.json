@@ -755,6 +755,12 @@
           "loader": "Monitoring MQTT traffic"
         }
       },
+      "topicFilter": {
+        "title": "This topic has been discovered from traffic. You can add it to a topic filter in the workspace.",
+        "filter": {
+          "cta": "Add Topic Filter"
+        }
+      },
       "metadata": {
         "sample": "Load samples"
       }
