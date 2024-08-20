@@ -48,9 +48,9 @@ describe('useGetFlowElements', () => {
   })
 
   it.each<[Partial<EdgeFlowOptions>, number, number]>([
-    [{}, 6, 5],
-    [{ showGateway: true }, 7, 6],
-    [{ showGateway: false }, 6, 5],
+    [{}, 4, 3],
+    [{ showGateway: true }, 5, 4],
+    [{ showGateway: false }, 4, 3],
   ])('should consider %s for %s nodes and %s edges', async (defaults, countNode, countEdge) => {
     const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
       <SimpleWrapper>

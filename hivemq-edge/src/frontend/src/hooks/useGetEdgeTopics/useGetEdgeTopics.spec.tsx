@@ -99,7 +99,7 @@ describe('useGetEdgeTopics', () => {
       expect(result.current.isLoading).toBeFalsy()
     })
     expect(result.current).toStrictEqual({
-      data: ['test/topic/1'], // This is a mock, missing persistence from backend
+      data: [],
       error: null,
       isError: false,
       isLoading: false,
@@ -118,7 +118,7 @@ describe('useGetEdgeTopics', () => {
 
     expect(result.current).toStrictEqual(
       expect.objectContaining({
-        data: ['root/topic/ref/1', 'test/topic/1'], // This is a mock, missing persistence from backend
+        data: ['root/topic/ref/1'],
       })
     )
   })
@@ -134,7 +134,7 @@ describe('useGetEdgeTopics', () => {
 
     expect(result.current).toStrictEqual(
       expect.objectContaining({
-        data: ['#', 'root/topic/ref/1', 'test/topic/1'], // This is a mock, missing persistence from backend
+        data: ['#', 'root/topic/ref/1'],
       })
     )
   })
@@ -161,7 +161,6 @@ describe('useGetEdgeTopics', () => {
           'a/valid/topic/opc-ua-client/1',
           'a/valid/topic/opc-ua-client/2',
           'root/topic/ref/1',
-          'test/topic/1', // This is a mock, missing persistence from backend
         ],
       })
     )
