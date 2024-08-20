@@ -44,7 +44,6 @@ public class ModBusData  {
         this.pollingContext = pollingContext;
     }
 
-
     @JsonIgnore
     public @NotNull PollingContext getPollingContext() {
         return pollingContext;

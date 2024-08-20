@@ -15,22 +15,49 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import com.hivemq.edge.adapters.modbus.config.AddressRange;
-import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
+import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
+import com.hivemq.edge.modules.config.impl.PollingContextImpl;
+import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ModbusProtocolAdapterTest {
+
+    private final @NotNull ModbusAdapterConfig adapterConfig =
+            new ModbusAdapterConfig("adapterId", 1000, 10, 532, "my.host.com", 1000, true, List.of());
+    private final @NotNull ModbusProtocolAdapter adapter =
+            new ModbusProtocolAdapter(ModbusProtocolAdapterInformation.INSTANCE, adapterConfig, mock());
+    private final @NotNull ProtocolAdapterPublishService publishService = mock(ProtocolAdapterPublishService.class);
+    private final @NotNull ModuleServices moduleServices = mock(ModuleServices.class);
+    private final @NotNull ProtocolAdapterPublishBuilderImpl.SendCallback sendCallback =
+            mock(ProtocolAdapterPublishBuilderImpl.SendCallback.class);
+    private final @NotNull ArgumentCaptor<PUBLISH> publishArgumentCaptor = ArgumentCaptor.forClass(PUBLISH.class);
+
+    @BeforeEach
+    void setUp() {
+        when(moduleServices.adapterPublishService()).thenReturn(publishService);
+        when(moduleServices.eventService()).thenReturn(mock(EventService.class));
+        //noinspection unchecked
+        when(sendCallback.onPublishSend(publishArgumentCaptor.capture(), any(), any(ImmutableMap.class))).thenReturn(
+                CompletableFuture.completedFuture(PublishReturnCode.DELIVERED));
+        final ProtocolAdapterPublishBuilderImpl protocolAdapterPublishBuilder =
+                new ProtocolAdapterPublishBuilderImpl("hivemq", sendCallback);
+        protocolAdapterPublishBuilder.withAdapter(adapter);
+        when(publishService.createPublish()).thenReturn(protocolAdapterPublishBuilder);
+    }
 
     @Test
     void test_deltaSamples() {
