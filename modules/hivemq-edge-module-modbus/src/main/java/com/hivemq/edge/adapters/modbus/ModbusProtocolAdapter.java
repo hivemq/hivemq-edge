@@ -59,7 +59,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull AdapterFactories adapterFactories;
 
-    private volatile @Nullable IModbusClient modbusClient;
+    private volatile @Nullable ModbusClient modbusClient;
     private final @NotNull Map<ModbusToMqttMapping, List<DataPoint>> lastSamples = new HashMap<>();
 
     public ModbusProtocolAdapter(
@@ -140,14 +140,14 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     }
 
 
-    private @NotNull IModbusClient initConnection() {
+    private @NotNull ModbusClient initConnection() {
         if (modbusClient == null) {
             synchronized (lock) {
                 if (modbusClient == null) {
                     if (log.isTraceEnabled()) {
                         log.trace("Creating new instance of Modbus Client with {}.", adapterConfig);
                     }
-                    modbusClient = new ModbusClient(adapterConfig);
+                    modbusClient = new ModbusClient(adapterConfig, adapterFactories.dataPointFactory());
                 }
             }
         }
@@ -218,17 +218,14 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
         }
     }
 
-    protected @NotNull ModBusData readRegisters(@NotNull final PollingContext sub) {
+    protected @NotNull ModBusData readRegisters(final @NotNull PollingContextImpl subscription) {
         try {
             ModbusToMqttMapping subscription = (ModbusToMqttMapping) sub;
             AddressRange addressRange = subscription.getAddressRange();
-            Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
-                    addressRange.endIdx - addressRange.startIdx);
-            ModBusData data = new ModBusData(subscription, adapterFactories.dataPointFactory());
-            //add data point per register
-            for (int i = 0; i < registers.length; i++) {
-                data.addDataPoint("register-" + (addressRange.startIdx + i), registers[i]);
-            }
+            final DataPoint dataPoint = modbusClient.readHoldingRegisters(addressRange.startIdx,
+                    addressRange.endIdx - addressRange.startIdx, subscription.getDataType());
+            ModBusData data = new ModBusData(subscription);
+            data.addDataPoint(dataPoint);
             return data;
         } catch (Exception e) {
             throw new RuntimeException(e);

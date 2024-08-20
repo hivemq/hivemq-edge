@@ -24,15 +24,16 @@ import com.digitalpetri.modbus.responses.ModbusResponse;
 import com.digitalpetri.modbus.responses.ReadCoilsResponse;
 import com.digitalpetri.modbus.responses.ReadHoldingRegistersResponse;
 import com.digitalpetri.modbus.responses.ReadInputRegistersResponse;
+import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
-import com.hivemq.edge.adapters.modbus.IModbusClient;
+import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
+import com.hivemq.edge.adapters.modbus.config.DataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,27 +41,30 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author Simon L Johnson
  */
-public class ModbusClient implements IModbusClient {
+public class ModbusClient {
 
-    static Logger log = LoggerFactory.getLogger(ModbusClient.class.getName());
     private final @NotNull ModbusAdapterConfig adapterConfig;
+    private final @NotNull DataPointFactory dataPointFactory;
+
     private final Object lock = new Object();
     private ModbusTcpMaster modbusClient;
     private AtomicBoolean connected = new AtomicBoolean(false);
 
-    public ModbusClient(final @NotNull ModbusAdapterConfig adapterConfig) {
+    public ModbusClient(
+            final @NotNull ModbusAdapterConfig adapterConfig, final @NotNull DataPointFactory dataPointFactory) {
         this.adapterConfig = adapterConfig;
+        this.dataPointFactory = dataPointFactory;
     }
 
     private ModbusTcpMaster getOrCreateClient() {
         if (modbusClient == null) {
             synchronized (lock) {
                 if (modbusClient == null) {
-                    ModbusTcpMasterConfig config = new ModbusTcpMasterConfig.Builder(adapterConfig.getHost()).
-                            setPort(adapterConfig.getPort()).
-                            setInstanceId(adapterConfig.getId()).
-                            setTimeout(Duration.ofMillis(adapterConfig.getTimeoutMillis())).
-                            build();
+                    ModbusTcpMasterConfig config =
+                            new ModbusTcpMasterConfig.Builder(adapterConfig.getHost()).setPort(adapterConfig.getPort())
+                                    .setInstanceId(adapterConfig.getId())
+                                    .setTimeout(Duration.ofMillis(adapterConfig.getTimeoutMillis()))
+                                    .build();
                     modbusClient = new ModbusTcpMaster(config);
                 }
             }
@@ -68,12 +72,10 @@ public class ModbusClient implements IModbusClient {
         return modbusClient;
     }
 
-    @Override
     public boolean isConnected() {
         return connected.get();
     }
 
-    @Override
     public CompletableFuture connect() {
         ModbusTcpMaster client = getOrCreateClient();
         if (!connected.get()) {
@@ -82,7 +84,6 @@ public class ModbusClient implements IModbusClient {
         return CompletableFuture.completedFuture(null);
     }
 
-    @Override
     public Boolean[] readCoils(int startIdx, int count) throws ProtocolAdapterException {
         try {
             ModbusTcpMaster client = getOrCreateClient();
@@ -107,32 +108,27 @@ public class ModbusClient implements IModbusClient {
         }
     }
 
-    @Override
-    public Short[] readHoldingRegisters(int startIdx, int count) throws ProtocolAdapterException {
+    public @NotNull DataPoint readHoldingRegisters(int startIdx, int count, final @NotNull DataType dataType)
+            throws ProtocolAdapterException {
         try {
             ModbusTcpMaster client = getOrCreateClient();
             CompletableFuture<ReadHoldingRegistersResponse> future =
                     client.sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count, 125)), 0);
-            Short[] val = new Short[count];
-            future.thenAccept(response -> {
+            return future.thenApply(response -> {
                 try {
-                    ByteBuf buf = response.getRegisters();
-                    //2 bytes per register BE
-                    int idx = 0;
-                    while (buf.isReadable()) {
-                        val[idx++] = buf.readShort();
-                    }
+                    final ByteBuf buf = response.getRegisters();
+                    return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + count),
+                            convert(buf, dataType));
                 } finally {
                     ReferenceCountUtil.release(response);
                 }
             }).get();
-            return val;
+
         } catch (Exception e) {
             throw new ProtocolAdapterException(e);
         }
     }
 
-    @Override
     public Short[] readInputRegisters(int startIdx, int count) throws ProtocolAdapterException {
 
         try {
@@ -159,7 +155,6 @@ public class ModbusClient implements IModbusClient {
         }
     }
 
-    @Override
     public boolean disconnect() {
         //-- If the client is manually disconnected before connection established ensure we still call into the client
         //-- to shut it all down.
@@ -167,10 +162,31 @@ public class ModbusClient implements IModbusClient {
             try {
                 modbusClient.disconnect().get();
                 return true;
-            } catch(Exception e){
+            } catch (Exception e) {
                 //error disconnecting
             }
         }
         return false;
+    }
+
+    private @NotNull Object convert(
+            final @NotNull ByteBuf buffi, final @NotNull DataType dataType) {
+        switch (dataType) {
+            case INT16:
+                return buffi.readShort();
+            case UINT16:
+                return Short.toUnsignedInt(buffi.readShort());
+            case INT32:
+                return buffi.readInt();
+            case UINT32:
+                return Integer.toUnsignedLong(buffi.readInt());
+            case INT64:
+                return buffi.readLong();
+            case FLOAT32:
+                return buffi.readFloat();
+            case UTF_8:
+                return new String(buffi.array(), StandardCharsets.UTF_8);
+        }
+        throw new RuntimeException("implement");
     }
 }

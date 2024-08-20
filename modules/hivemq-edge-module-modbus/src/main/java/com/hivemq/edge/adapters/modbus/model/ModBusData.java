@@ -34,18 +34,14 @@ public class ModBusData  {
         INPUT_REGISTERS,
         HOLDING_REGISTERS,
     }
-
-    private final DataPointFactory dataPointFactory;
     protected @NotNull PollingContext pollingContext;
 
     //-- Handle multiple tags in the same sample
     protected @NotNull List<DataPoint> dataPoints = new CopyOnWriteArrayList<>();
 
     public ModBusData(
-            final @NotNull PollingContext pollingContext,
-            final @NotNull DataPointFactory dataPointFactory) {
+            final @NotNull PollingContext pollingContext) {
         this.pollingContext = pollingContext;
-        this.dataPointFactory = dataPointFactory;
     }
 
 
@@ -54,8 +50,8 @@ public class ModBusData  {
         return pollingContext;
     }
 
-    public void addDataPoint(final @NotNull String tagName, final @NotNull Object tagValue) {
-        dataPoints.add(dataPointFactory.create(tagName, tagValue));
+    public void addDataPoint(final @NotNull DataPoint tagValue) {
+        dataPoints.add(tagValue);
     }
 
 

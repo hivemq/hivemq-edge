@@ -26,8 +26,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
+import static java.util.Objects.*;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -81,6 +83,11 @@ public class ModbusToMqttMapping implements PollingContext {
                        required = true)
     private final @NotNull AddressRange addressRange;
 
+    @JsonProperty("dataType")
+    @ModuleConfigField(title = "Data TYpe",
+                       description = "Define how the read registers are interpreted")
+    private final @NotNull DataType dataType;
+
     @JsonCreator
     public ModbusToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
@@ -89,7 +96,8 @@ public class ModbusToMqttMapping implements PollingContext {
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
-            @JsonProperty(value = "addressRange", required = true) final @NotNull AddressRange addressRange) {
+            @JsonProperty(value = "addressRange", required = true) final @NotNull AddressRange addressRange,
+            @JsonProperty(value = "dataType") final @Nullable DataType dataType) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
@@ -97,6 +105,7 @@ public class ModbusToMqttMapping implements PollingContext {
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.addressRange = addressRange;
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
+        this.dataType = requireNonNullElse(dataType, DataType.INT16);
     }
 
     public @NotNull AddressRange getAddressRange() {
@@ -131,5 +140,9 @@ public class ModbusToMqttMapping implements PollingContext {
     @Override
     public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
+    }
+
+    public @NotNull DataType getDataType() {
+        return dataType;
     }
 }
