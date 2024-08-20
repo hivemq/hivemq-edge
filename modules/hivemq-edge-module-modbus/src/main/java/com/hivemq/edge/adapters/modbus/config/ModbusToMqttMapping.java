@@ -26,10 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Objects;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
-import static java.util.Objects.*;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -86,7 +84,7 @@ public class ModbusToMqttMapping implements PollingContext {
     @JsonProperty("dataType")
     @ModuleConfigField(title = "Data TYpe",
                        description = "Define how the read registers are interpreted")
-    private final @NotNull DataType dataType;
+    private final @NotNull ModbusDataType dataType;
 
     @JsonCreator
     public ModbusToMqttMapping(
@@ -97,7 +95,7 @@ public class ModbusToMqttMapping implements PollingContext {
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
             @JsonProperty(value = "addressRange", required = true) final @NotNull AddressRange addressRange,
-            @JsonProperty(value = "dataType") final @Nullable DataType dataType) {
+            @JsonProperty(value = "dataType") final @Nullable ModbusDataType dataType) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
@@ -105,7 +103,7 @@ public class ModbusToMqttMapping implements PollingContext {
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.addressRange = addressRange;
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
-        this.dataType = requireNonNullElse(dataType, DataType.INT16);
+        this.dataType = requireNonNullElse(dataType, ModbusDataType.INT_16);
     }
 
     public @NotNull AddressRange getAddressRange() {
@@ -142,7 +140,7 @@ public class ModbusToMqttMapping implements PollingContext {
         return userProperties;
     }
 
-    public @NotNull DataType getDataType() {
+    public @NotNull ModbusDataType getDataType() {
         return dataType;
     }
 }

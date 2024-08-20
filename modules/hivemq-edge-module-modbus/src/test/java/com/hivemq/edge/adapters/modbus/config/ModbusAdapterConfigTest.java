@@ -21,6 +21,7 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.modbus.config.AddressRange;
+import com.hivemq.edge.adapters.modbus.config.DataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.PollingContextImpl;
 import org.jetbrains.annotations.NotNull;
@@ -231,7 +232,7 @@ public class ModbusAdapterConfigTest {
                 true,
                 List.of(new MqttUserProperty("my-name", "my-value")),
                 new AddressRange(1, 2),
-                DataType.UINT16);
+                ModbusDataType.UINT_16);
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
                 14,
@@ -267,7 +268,7 @@ public class ModbusAdapterConfigTest {
                 assertThat(addressRange.get("startIdx")).isEqualTo(1);
                 assertThat(addressRange.get("endIdx")).isEqualTo(2);
             });
-            assertThat(subscription.get("dataType")).isEqualTo("UINT16");
+            assertThat(subscription.get("dataType")).isEqualTo("UINT_16");
         });
     }
 
@@ -320,6 +321,7 @@ public class ModbusAdapterConfigTest {
                 assertThat(addressRange.get("startIdx")).isEqualTo(1);
                 assertThat(addressRange.get("endIdx")).isEqualTo(2);
             });
+            assertThat(subscription.get("dataType")).isEqualTo("INT_16");
         });
     }
 

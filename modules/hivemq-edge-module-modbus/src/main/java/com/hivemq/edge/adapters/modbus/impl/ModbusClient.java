@@ -27,7 +27,7 @@ import com.digitalpetri.modbus.responses.ReadInputRegistersResponse;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import com.hivemq.edge.adapters.modbus.config.DataType;
+import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
@@ -108,7 +108,7 @@ public class ModbusClient {
         }
     }
 
-    public @NotNull DataPoint readHoldingRegisters(int startIdx, int count, final @NotNull DataType dataType)
+    public @NotNull DataPoint readHoldingRegisters(int startIdx, int count, final @NotNull ModbusDataType dataType)
             throws ProtocolAdapterException {
         try {
             ModbusTcpMaster client = getOrCreateClient();
@@ -170,19 +170,19 @@ public class ModbusClient {
     }
 
     private @NotNull Object convert(
-            final @NotNull ByteBuf buffi, final @NotNull DataType dataType) {
+            final @NotNull ByteBuf buffi, final @NotNull ModbusDataType dataType) {
         switch (dataType) {
-            case INT16:
+            case INT_16:
                 return buffi.readShort();
-            case UINT16:
+            case UINT_16:
                 return Short.toUnsignedInt(buffi.readShort());
-            case INT32:
+            case INT_32:
                 return buffi.readInt();
-            case UINT32:
+            case UINT_32:
                 return Integer.toUnsignedLong(buffi.readInt());
-            case INT64:
+            case INT_64:
                 return buffi.readLong();
-            case FLOAT32:
+            case FLOAT_32:
                 return buffi.readFloat();
             case UTF_8:
                 return new String(buffi.array(), StandardCharsets.UTF_8);
