@@ -11,6 +11,9 @@ import { EdgeTypes, Group, IdStubs, NodeTypes } from '@/modules/Workspace/types.
 import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 
+/**
+ * @deprecated Not in used anymore
+ */
 const GroupNodesControl: FC = () => {
   const { t } = useTranslation()
   const { onInsertGroupNode, nodes } = useWorkspaceStore()
