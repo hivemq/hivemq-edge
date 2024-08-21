@@ -44,20 +44,12 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
                        stringMaxLength = 1024)
     private final @NotNull String id;
 
-    @JsonProperty("pollingIntervalMillis")
-    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
-    @ModuleConfigField(title = "Polling Interval [ms]",
-                       description = "Time in millisecond that this endpoint will be polled",
-                       numberMin = 1,
+    @JsonProperty("host")
+    @ModuleConfigField(title = "Host",
+                       description = "IP Address or hostname of the device you wish to connect to",
                        required = true,
-                       defaultValue = "1000")
-    private final int pollingIntervalMillis;
-
-    @JsonProperty("maxPollingErrorsBeforeRemoval")
-    @ModuleConfigField(title = "Max. Polling Errors",
-                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
-                       defaultValue = "10")
-    private final int maxPollingErrorsBeforeRemoval;
+                       format = ModuleConfigField.FieldType.HOSTNAME)
+    private final @NotNull String host;
 
     @JsonProperty("port")
     @ModuleConfigField(title = "Port",
@@ -67,13 +59,6 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
                        numberMax = PORT_MAX)
     private final int port;
 
-    @JsonProperty("host")
-    @ModuleConfigField(title = "Host",
-                       description = "IP Address or hostname of the device you wish to connect to",
-                       required = true,
-                       format = ModuleConfigField.FieldType.HOSTNAME)
-    private final @NotNull String host;
-
     @JsonProperty("timeout")
     @ModuleConfigField(title = "Timeout",
                        description = "Time (in milliseconds) to await a connection before the client gives up",
@@ -82,66 +67,43 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
                        defaultValue = "5000")
     private final int timeout;
 
-    @JsonProperty("publishChangedDataOnly")
-    @ModuleConfigField(title = "Only publish data items that have changed since last poll",
-                       defaultValue = "true",
-                       format = ModuleConfigField.FieldType.BOOLEAN)
-    private final boolean publishChangedDataOnly;
-
-    @JsonProperty("subscriptions")
-    @ModuleConfigField(title = "Subscriptions", description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<PollingContextImpl> subscriptions;
+    @JsonProperty("modbusToMqtt")
+    @ModuleConfigField(title = "Modbus To MQTT Config",
+                       description = "The configuration for a data stream from Modbus to MQTT",
+                       required = true)
+    private final @NotNull ModbusToMQTTConfig modbusToMQTTConfig;
 
     @JsonCreator
     public ModbusAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
-            @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
-            @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "timeout") final @Nullable Integer timeout,
-            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
-            @JsonProperty(value = "subscriptions") final @Nullable List<PollingContextImpl> subscriptions
-    ) {
+            @JsonProperty(value = "modbusToMqtt") final @NotNull ModbusToMQTTConfig modbusToMQTTConfig) {
         this.id = id;
-        this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
-        this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
         this.port = port;
         this.host = host;
         this.timeout = Objects.requireNonNullElse(timeout, 5000);
-        this.publishChangedDataOnly = Objects.requireNonNullElse(publishChangedDataOnly, true);
-        this.subscriptions = Objects.requireNonNullElse(subscriptions, List.of());
+        this.modbusToMQTTConfig = modbusToMQTTConfig;
     }
 
     public @NotNull String getId() {
         return id;
     }
 
-    public int getPollingIntervalMillis() {
-        return pollingIntervalMillis;
-    }
-
-    public int getMaxPollingErrorsBeforeRemoval() {
-        return maxPollingErrorsBeforeRemoval;
-    }
-
-    public boolean getPublishChangedDataOnly() {
-        return publishChangedDataOnly;
+    public @NotNull String getHost() {
+        return host;
     }
 
     public int getPort() {
         return port;
     }
 
-    public @NotNull String getHost() {
-        return host;
-    }
-
-    public @NotNull List<PollingContextImpl> getSubscriptions() {
-        return subscriptions;
-    }
-
     public int getTimeout() {
         return timeout;
+    }
+
+    public @NotNull ModbusToMQTTConfig getModbusToMQTTConfig() {
+        return modbusToMQTTConfig;
     }
 }

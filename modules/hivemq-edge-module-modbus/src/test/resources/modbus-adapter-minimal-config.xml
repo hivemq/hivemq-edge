@@ -4,15 +4,15 @@
             <id>my-modbus-protocol-adapter</id>
             <port>1234</port>
             <host>my.modbus-server.com</host>
-            <subscriptions>
-                <subscription>
+            <modbus-to-mqtt-mappings>
+                <modbus-to-mqtt-mapping>
                     <destination>my/topic</destination>
                     <addressRange>
                         <startIdx>11</startIdx>
                         <endIdx>13</endIdx>
                     </addressRange>
-                </subscription>
-            </subscriptions>
+                </modbus-to-mqtt-mapping>
+            </modbus-to-mqtt-mappings>
         </modbus>
     </protocol-adapters>
 </hivemq>

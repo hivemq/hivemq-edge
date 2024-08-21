@@ -24,6 +24,7 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusToMQTTConfig;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
@@ -45,8 +46,11 @@ import static org.mockito.Mockito.when;
 
 class ModbusProtocolAdapterTest {
 
-    private final @NotNull ModbusAdapterConfig adapterConfig =
-            new ModbusAdapterConfig("adapterId", 1000, 10, 532, "my.host.com", 1000, true, List.of());
+    private final @NotNull ModbusAdapterConfig adapterConfig = new ModbusAdapterConfig("adapterId",
+            532,
+            "my.host.com",
+            1000,
+            new ModbusToMQTTConfig(1000, 10, true, List.of()));
     private final @NotNull ModbusProtocolAdapter adapter =
             new ModbusProtocolAdapter(ModbusProtocolAdapterInformation.INSTANCE, adapterConfig, mock());
     private final @NotNull ProtocolAdapterPublishService publishService = mock(ProtocolAdapterPublishService.class);
