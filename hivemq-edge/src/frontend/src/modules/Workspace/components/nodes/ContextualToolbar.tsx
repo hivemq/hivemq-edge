@@ -98,14 +98,14 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
         isVisible={Boolean(mainNodes?.id === id)}
         position={Position.Right}
         role="toolbar"
-        aria-label="### Right panel !! ####"
+        aria-label={t('workspace.toolbar.container.right')}
       >
         <ButtonGroup size="sm" variant="solid" colorScheme="blue" orientation="vertical">
           <IconButton
             size="sm"
             data-testid="node-group-toolbar-panel"
             icon={<Icon as={LuPanelRightOpen} boxSize={5} />}
-            aria-label={t('workspace.grouping.command.overview')}
+            aria-label={t('workspace.toolbar.command.overview')}
             onClick={onOpenPanel}
           />
         </ButtonGroup>
@@ -115,7 +115,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
           isVisible={Boolean(mainNodes?.id === id)}
           position={Position.Left}
           role="toolbar"
-          aria-label="### Left panel !! ####"
+          aria-label={t('workspace.toolbar.container.left')}
           style={{ display: 'flex', gap: '4px', flexDirection: 'column' }}
         >
           {children}
@@ -124,7 +124,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
               <IconButton
                 data-testid="node-group-toolbar-group"
                 icon={<Icon as={ImMakeGroup} boxSize={5} />}
-                aria-label={t('workspace.grouping.command.group')}
+                aria-label={t('workspace.toolbar.command.group')}
                 onClick={onCreateGroup}
               />
             </ButtonGroup>

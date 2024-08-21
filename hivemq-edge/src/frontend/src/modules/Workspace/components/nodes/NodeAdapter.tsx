@@ -34,18 +34,18 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
     <>
       <ContextualToolbar id={id} onOpenPanel={onContextMenu}>
         <ButtonGroup size="sm" variant="solid" colorScheme="blue" orientation="vertical" isAttached>
-          <IconButton
-            icon={<Icon as={deviceCapabilityIcon['READ']} boxSize={5} />}
-            aria-label={t('### Inward Subscriptions ###')}
-            // onClick={onCreateGroup}
-          />
           {HACK_BIDIRECTIONAL && (
             <IconButton
               icon={<Icon as={deviceCapabilityIcon['WRITE']} boxSize={5} />}
-              aria-label={t('### Outward Subscriptions ###')}
+              aria-label={t('workspace.toolbar.command.subscriptions.outward')}
               // onClick={onCreateGroup}
             />
           )}
+          <IconButton
+            icon={<Icon as={deviceCapabilityIcon['READ']} boxSize={5} />}
+            aria-label={t('workspace.toolbar.command.subscriptions.inward')}
+            // onClick={onCreateGroup}
+          />
         </ButtonGroup>
       </ContextualToolbar>
       <NodeWrapper
