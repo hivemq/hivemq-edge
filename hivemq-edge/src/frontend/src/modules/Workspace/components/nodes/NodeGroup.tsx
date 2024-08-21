@@ -43,17 +43,17 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
     // TODO[NVL] Create a store action
     onToggleGroup({ id, data }, true)
     onNodesChange(
-      nodes.map((e) => {
-        if (data.childrenNodeIds.includes(e.id)) {
+      nodes.map((node) => {
+        if (data.childrenNodeIds.includes(node.id)) {
           return {
             item: {
-              ...e,
+              ...node,
               parentNode: undefined,
-              position: { x: e.position.x + props.xPos, y: e.position.y + props.yPos },
+              position: { x: node.position.x + props.xPos, y: node.position.y + props.yPos },
             },
             type: 'reset',
           } as NodeResetChange
-        } else return { item: e, type: 'reset' } as NodeResetChange
+        } else return { item: node, type: 'reset' } as NodeResetChange
       })
     )
     onNodesChange([{ id, type: 'remove' } as NodeRemoveChange])

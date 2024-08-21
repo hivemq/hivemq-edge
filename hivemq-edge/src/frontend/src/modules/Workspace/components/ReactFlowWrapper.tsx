@@ -23,6 +23,7 @@ import {
   NodeListener,
   NodeHost,
   NodeDevice,
+  NodeClient,
 } from '@/modules/Workspace/components/nodes'
 
 const ReactFlowWrapper = () => {
@@ -34,6 +35,7 @@ const ReactFlowWrapper = () => {
       [NodeTypes.EDGE_NODE]: NodeEdge,
       [NodeTypes.ADAPTER_NODE]: NodeAdapter,
       [NodeTypes.BRIDGE_NODE]: NodeBridge,
+      [NodeTypes.CLIENT_NODE]: NodeClient,
       [NodeTypes.LISTENER_NODE]: NodeListener,
       [NodeTypes.HOST_NODE]: NodeHost,
       [NodeTypes.DEVICE_NODE]: NodeDevice,
@@ -43,8 +45,8 @@ const ReactFlowWrapper = () => {
   const { nodes, edges, onNodesChange, onEdgesChange, onAddNodes, onAddEdges } = useWorkspaceStore()
 
   useEffect(() => {
-    if (newNodes.length) onAddNodes(newNodes.map((e) => ({ item: e, type: 'add' })))
-    if (newEdges.length) onAddEdges(newEdges.map((e) => ({ item: e, type: 'add' })))
+    if (newNodes.length) onAddNodes(newNodes.map((node) => ({ item: node, type: 'add' })))
+    if (newEdges.length) onAddEdges(newEdges.map((edge) => ({ item: edge, type: 'add' })))
   }, [newEdges, newNodes, onAddEdges, onAddNodes])
 
   const edgeTypes = useMemo(

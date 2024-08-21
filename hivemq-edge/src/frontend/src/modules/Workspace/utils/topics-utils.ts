@@ -1,9 +1,10 @@
-import { Adapter, Bridge, BridgeSubscription, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { GenericObjectType, RJSFSchema } from '@rjsf/utils'
 import { JSONSchema7 } from 'json-schema'
 import { stratify } from 'd3-hierarchy'
 
+import { Adapter, Bridge, BridgeSubscription, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { CustomFormat } from '@/api/types/json-schema.ts'
+import { BrokerClient } from '@/api/types/api-broker-client.ts'
 import { TopicFilter, type TopicTreeMetadata } from '../types.ts'
 
 export const TOPIC_PATH_ITEMS_TOKEN = '*'
@@ -117,6 +118,7 @@ export const mergeAllTopics = (
   types: ProtocolAdaptersList | undefined,
   adapters: Adapter[] | undefined,
   bridges: Bridge[] | undefined,
+  clients: BrokerClient[] | undefined,
   withOrigin = false
 ) => {
   const data: string[] = []
@@ -140,6 +142,12 @@ export const mergeAllTopics = (
       return acc
     }, [])
     data.push(...adapterTopics)
+  }
+  if (clients) {
+    for (const client of clients) {
+      const subs = client.config.subscriptions?.map((subs) => subs.destination)
+      data.push(...(subs || []))
+    }
   }
 
   return Array.from(new Set(data))
