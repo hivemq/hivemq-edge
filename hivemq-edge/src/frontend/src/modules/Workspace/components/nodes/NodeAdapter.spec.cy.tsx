@@ -1,19 +1,30 @@
 /// <reference types="cypress" />
 
 import { mockReactFlow } from '@/__test-utils__/react-flow/providers.tsx'
+import { CustomNodeTesting } from '@/__test-utils__/react-flow/CustomNodeTesting.tsx'
 import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'
 import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 
 import { mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { formatTopicString } from '@/components/MQTT/topic-utils.ts'
+import { NodeTypes } from '@/modules/Workspace/types.ts'
 
 import NodeAdapter from './NodeAdapter.tsx'
 
 describe('NodeAdapter', () => {
   beforeEach(() => {
     cy.viewport(400, 400)
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
+    cy.intercept('/api/v1/management/protocol-adapters/types', {
+      items: [
+        mockProtocolAdapter,
+        {
+          ...mockProtocolAdapter,
+          id: 'opc-ua-client',
+          capabilities: ['READ', 'DISCOVER', 'WRITE'],
+        },
+      ],
+    })
   })
 
   it('should render properly', () => {
@@ -25,6 +36,83 @@ describe('NodeAdapter', () => {
       .should('be.visible')
       .should('contain.text', formatTopicString(MOCK_TOPIC_REF1))
       .should('contain.text', formatTopicString(MOCK_TOPIC_REF2))
+  })
+
+  it('should render the selected adapter properly', () => {
+    cy.mountWithProviders(
+      <CustomNodeTesting
+        nodes={[{ ...MOCK_NODE_ADAPTER, position: { x: 50, y: 100 }, selected: true }]}
+        nodeTypes={{ [NodeTypes.ADAPTER_NODE]: NodeAdapter }}
+      />
+    )
+    cy.getByTestId('adapter-node-name').should('contain', MOCK_ADAPTER_ID)
+    cy.get('[role="toolbar"] button').should('have.length', 2)
+    cy.get('[role="toolbar"] button').eq(0).should('have.attr', 'aria-label', 'Open the overview panel')
+    cy.get('[role="toolbar"] button').eq(1).should('have.attr', 'aria-label', 'Inward subscriptions')
+  })
+
+  it('should render the toolbar for bi-directional adapter', () => {
+    cy.mountWithProviders(
+      <CustomNodeTesting
+        nodes={[
+          {
+            ...MOCK_NODE_ADAPTER,
+            position: { x: 50, y: 100 },
+            selected: true,
+            data: { ...MOCK_NODE_ADAPTER.data, type: 'opc-ua-client' },
+          },
+        ]}
+        nodeTypes={{ [NodeTypes.ADAPTER_NODE]: NodeAdapter }}
+      />
+    )
+    cy.getByTestId('adapter-node-name').should('contain', MOCK_ADAPTER_ID)
+    cy.get('[role="toolbar"] button').should('have.length', 3)
+    cy.get('[role="toolbar"] button').eq(0).should('have.attr', 'aria-label', 'Open the overview panel')
+    cy.get('[role="toolbar"] button').eq(1).should('have.attr', 'aria-label', 'Outward subscriptions')
+    cy.get('[role="toolbar"] button').eq(2).should('have.attr', 'aria-label', 'Inward subscriptions')
+  })
+
+  it('should render the toolbar for multiple selected', () => {
+    cy.mountWithProviders(
+      <CustomNodeTesting
+        nodes={[
+          {
+            ...MOCK_NODE_ADAPTER,
+            position: { x: 50, y: 100 },
+            selected: true,
+          },
+          {
+            ...MOCK_NODE_ADAPTER,
+            id: 'idAdapter2',
+            position: { x: 0, y: 0 },
+            selected: true,
+            hidden: true,
+          },
+          {
+            ...MOCK_NODE_ADAPTER,
+            id: 'idAdapter3',
+            position: { x: 0, y: 0 },
+            selected: true,
+            hidden: true,
+          },
+        ]}
+        nodeTypes={{ [NodeTypes.ADAPTER_NODE]: NodeAdapter }}
+      />
+    )
+    cy.getByTestId('adapter-node-name').should('contain', MOCK_ADAPTER_ID)
+    cy.get('[role="toolbar"] button').should('have.length', 3)
+    cy.get('[role="toolbar"] button').eq(0).should('have.attr', 'aria-label', 'Open the overview panel')
+    cy.get('[role="toolbar"] button').eq(1).should('have.attr', 'aria-label', 'Inward subscriptions')
+    cy.get('[role="toolbar"] button').eq(2).should('have.attr', 'aria-label', 'Group the selected adapters')
+  })
+
+  it('should render the toolbar properly', () => {
+    cy.mountWithProviders(
+      <CustomNodeTesting
+        nodes={[{ ...MOCK_NODE_ADAPTER, position: { x: 50, y: 100 }, selected: true }]}
+        nodeTypes={{ [NodeTypes.ADAPTER_NODE]: NodeAdapter }}
+      />
+    )
   })
 
   it('should be accessible', () => {

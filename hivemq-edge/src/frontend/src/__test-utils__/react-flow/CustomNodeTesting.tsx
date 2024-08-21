@@ -5,6 +5,7 @@ import { Code, VStack } from '@chakra-ui/react'
 
 import 'reactflow/dist/style.css'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import { EdgeFlowProvider } from '@/modules/Workspace/hooks/FlowContext.tsx'
 
 interface MockReactFlowProps {
   nodeTypes?: NodeTypes
@@ -37,20 +38,22 @@ export const CustomNodeTesting: FC<MockReactFlowProps> = ({ nodeTypes, nodes, ed
   }, [])
 
   return (
-    <VStack w="90vw" h="90vh" gap={3}>
-      <Code data-testid="test-navigate-pathname">{pathname}</Code>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        // fitView
-        // nodesDraggable={false}
-        zoomOnScroll={false}
-        panOnDrag={false}
-        autoPanOnConnect={false}
-        nodesConnectable={false}
-      />
-    </VStack>
+    <EdgeFlowProvider>
+      <VStack w="90vw" h="90vh" gap={3}>
+        <Code data-testid="test-navigate-pathname">{pathname}</Code>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          // fitView
+          // nodesDraggable={false}
+          zoomOnScroll={false}
+          panOnDrag={false}
+          autoPanOnConnect={false}
+          nodesConnectable={false}
+        />
+      </VStack>
+    </EdgeFlowProvider>
   )
 }
