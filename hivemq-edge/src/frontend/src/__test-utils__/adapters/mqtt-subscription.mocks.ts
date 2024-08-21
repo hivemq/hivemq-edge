@@ -107,9 +107,9 @@ export const MOCK_MQTT_SCHEMA_PLAIN: RJSFSchema = {
   },
 }
 export const MOCK_MQTT_TOPIC_SAMPLES = [
-  'broker1/topic1/segment1',
-  'broker1/topic1/segment2',
-  'broker1/topic1/segment2/leaf1',
-  'broker2/topic1',
-  'broker4/topic1/segment2',
+  'tmp/broker1/topic1/segment1',
+  'tmp/broker1/topic1/segment2',
+  'tmp/broker1/topic1/segment2/leaf1',
+  'tmp/broker2/topic1',
+  'tmp/broker4/topic1/segment2',
 ]
