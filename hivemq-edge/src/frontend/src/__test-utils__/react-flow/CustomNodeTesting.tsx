@@ -1,9 +1,10 @@
-import { FC } from 'react'
+import { FC, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import ReactFlow, { Edge, EdgeTypes, Node, NodeTypes } from 'reactflow'
 import { Code, VStack } from '@chakra-ui/react'
 
 import 'reactflow/dist/style.css'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 
 interface MockReactFlowProps {
   nodeTypes?: NodeTypes
@@ -14,6 +15,26 @@ interface MockReactFlowProps {
 
 export const CustomNodeTesting: FC<MockReactFlowProps> = ({ nodeTypes, nodes, edges, edgeTypes }) => {
   const { pathname } = useLocation()
+  const { reset, onAddNodes, onAddEdges } = useWorkspaceStore()
+
+  useEffect(() => {
+    reset()
+    onAddNodes(
+      nodes.map((node) => ({
+        item: node,
+        type: 'add',
+      }))
+    )
+    if (edges)
+      onAddEdges(
+        edges.map((edge) => ({
+          item: edge,
+          type: 'add',
+        }))
+      )
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <VStack w="90vw" h="90vh" gap={3}>
@@ -24,7 +45,7 @@ export const CustomNodeTesting: FC<MockReactFlowProps> = ({ nodeTypes, nodes, ed
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         // fitView
-        nodesDraggable={false}
+        // nodesDraggable={false}
         zoomOnScroll={false}
         panOnDrag={false}
         autoPanOnConnect={false}
