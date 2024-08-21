@@ -104,6 +104,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
         borderStyle="solid"
         onDoubleClick={onContextMenu}
         onContextMenu={onContextMenu}
+        data-groupopen={data.isOpen}
       >
         <Text m={2} colorScheme="black">
           {data.title}
