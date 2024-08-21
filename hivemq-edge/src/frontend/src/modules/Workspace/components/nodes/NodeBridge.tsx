@@ -22,7 +22,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
 
   return (
     <>
-      <ContextualToolbar id={id} />
+      <ContextualToolbar id={id} onOpenPanel={onContextMenu} />
       <NodeWrapper isSelected={selected} onDoubleClick={onContextMenu} onContextMenu={onContextMenu} p={3}>
         <VStack>
           {options.showTopics && <TopicsContainer topics={topics.remote} />}
