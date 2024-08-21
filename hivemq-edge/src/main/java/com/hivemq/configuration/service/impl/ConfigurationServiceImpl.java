@@ -148,7 +148,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     @Override
-    public UsageTrackingConfigurationService usageTrackingConfiguration() {
+    public @NotNull UsageTrackingConfigurationService usageTrackingConfiguration() {
         return usageTrackingConfigurationService;
     }
 
@@ -180,14 +180,14 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.configFileReaderWriter = configFileReaderWriter;
     }
 
-    public <T> @NotNull T proxy(final @NotNull Class<? extends T> type,
-                                final @NotNull Object instance,
+    public <T> @NotNull T proxy(final @NotNull Class<T> type,
+                                final @NotNull T instance,
                                 final @Nullable Class<?>...ifs) {
 
         if(configFileReaderWriter == null){
             //-- This is the initial loading phase from the XML through the configurators
             // --back to the config services, so do not proxy this else it will lead to a loop
-            return (T) instance;
+            return instance;
         } else {
             InvocationHandler handler = (proxyIn, method, args) -> {
                 boolean mutator = method.getName().startsWith("set") ||
@@ -199,7 +199,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
                     return method.invoke(instance, args);
                 } finally {
                     if(mutator){
-                        flush();
+                        flush(configFileReaderWriter);
                     }
                     presentLock.unlock();
                 }
@@ -207,12 +207,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             Class<?>[] allInterfaces = Stream.concat(Stream.of(type), Stream.of(ifs))
                     .distinct()
                     .toArray(Class<?>[]::new);
-            return (T) Proxy.newProxyInstance(
-                    type.getClassLoader(), allInterfaces, handler);
+            //noinspection unchecked
+            return (T) Proxy.newProxyInstance(type.getClassLoader(), allInterfaces, handler);
         }
     }
 
-    private void flush() {
+    private void flush(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
         if(log.isTraceEnabled()){
             log.trace("flushing configuration changes to entity layer");
         }

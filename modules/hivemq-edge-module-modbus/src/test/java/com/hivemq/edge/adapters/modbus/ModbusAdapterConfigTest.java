@@ -7,6 +7,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.modbus.config.AddressRange;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusToMQTTConfig;
 import com.hivemq.edge.adapters.modbus.config.PollingContextImpl;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -42,14 +43,30 @@ public class ModbusAdapterConfigTest {
                 modbusProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("modbus"));
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter");
-        assertThat(config.getPollingIntervalMillis()).isEqualTo(10);
-        assertThat(config.getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
+        assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(10);
+        assertThat(config.getModbusToMQTTConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
         assertThat(config.getPort()).isEqualTo(1234);
         assertThat(config.getHost()).isEqualTo("my.modbus-server.com");
         assertThat(config.getTimeout()).isEqualTo(1337);
-        assertThat(config.getPublishChangedDataOnly()).isFalse();
-        assertThat(config.getSubscriptions()).satisfiesExactly(subscription -> {
-            assertThat(subscription.getDestinationMqttTopic()).isEqualTo("my/topic");
+        assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isFalse();
+        assertThat(config.getModbusToMQTTConfig().getMappings()).satisfiesExactly(subscription -> {
+            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
+            assertThat(subscription.getQos()).isEqualTo(1);
+            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+            assertThat(subscription.getIncludeTimestamp()).isFalse();
+            assertThat(subscription.getIncludeTagNames()).isTrue();
+
+//            TODO: https://hivemq.kanbanize.com/ctrl_board/57/cards/24704/details/
+//            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
+//                assertThat(userProperty.getName()).isEqualTo("my-name");
+//                assertThat(userProperty.getValue()).isEqualTo("my-value");
+//            });
+
+            assertThat(subscription.getAddressRange().startIdx).isEqualTo(11);
+            assertThat(subscription.getAddressRange().endIdx).isEqualTo(13);
+        });
+        assertThat(config.getModbusToMQTTConfig().getMappings()).satisfiesExactly(subscription -> {
+            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
             assertThat(subscription.getQos()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isFalse();
@@ -81,14 +98,14 @@ public class ModbusAdapterConfigTest {
                 modbusProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("modbus"));
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter");
-        assertThat(config.getPollingIntervalMillis()).isEqualTo(1000);
-        assertThat(config.getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
+        assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(1000);
+        assertThat(config.getModbusToMQTTConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(config.getPort()).isEqualTo(1234);
         assertThat(config.getHost()).isEqualTo("my.modbus-server.com");
         assertThat(config.getTimeout()).isEqualTo(5000);
-        assertThat(config.getPublishChangedDataOnly()).isTrue();
-        assertThat(config.getSubscriptions()).satisfiesExactly(subscription -> {
-            assertThat(subscription.getDestinationMqttTopic()).isEqualTo("my/topic");
+        assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isTrue();
+        assertThat(config.getModbusToMQTTConfig().getMappings()).satisfiesExactly(subscription -> {
+            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
             assertThat(subscription.getQos()).isEqualTo(0);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(subscription.getIncludeTimestamp()).isTrue();
@@ -201,13 +218,10 @@ public class ModbusAdapterConfigTest {
                 new AddressRange(1, 2));
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
-                12,
-                13,
                 14,
                 "my.host.com",
                 15,
-                true,
-                List.of(pollingContext));
+                new ModbusToMQTTConfig(12, 13, true, List.of(pollingContext)));
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
         final Map<String, Object> config =
@@ -221,7 +235,7 @@ public class ModbusAdapterConfigTest {
         assertThat(config.get("timeout")).isEqualTo(15);
         assertThat(config.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat((List<Map<String, Object>>) config.get("subscriptions")).satisfiesExactly((subscription) -> {
+        assertThat((List<Map<String, Object>>) config.get("modbus-to-mqtt-mappings")).satisfiesExactly((subscription) -> {
             assertThat(subscription.get("destination")).isEqualTo("my/destination");
             assertThat(subscription.get("qos")).isEqualTo(1);
             assertThat(subscription.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
@@ -244,13 +258,10 @@ public class ModbusAdapterConfigTest {
                 new PollingContextImpl("my/destination", null, null, null, null, null, new AddressRange(1, 2));
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
-                null,
-                null,
                 13,
                 "my.host.com",
                 null,
-                null,
-                List.of(pollingContext));
+                new ModbusToMQTTConfig(null, null, null, List.of(pollingContext)));
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
         final Map<String, Object> config =
@@ -264,7 +275,7 @@ public class ModbusAdapterConfigTest {
         assertThat(config.get("timeout")).isEqualTo(5000);
         assertThat(config.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat((List<Map<String, Object>>) config.get("subscriptions")).satisfiesExactly((subscription) -> {
+        assertThat((List<Map<String, Object>>) config.get("modbus-to-mqtt-mappings")).satisfiesExactly((subscription) -> {
             assertThat(subscription.get("destination")).isEqualTo("my/destination");
             assertThat(subscription.get("qos")).isEqualTo(0);
             assertThat(subscription.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");

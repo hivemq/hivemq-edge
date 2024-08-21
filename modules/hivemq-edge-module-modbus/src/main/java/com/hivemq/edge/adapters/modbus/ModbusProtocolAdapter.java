@@ -126,17 +126,17 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
 
     @Override
     public @NotNull List<PollingContextImpl> getPollingContexts() {
-        return new ArrayList<>(adapterConfig.getSubscriptions());
+        return new ArrayList<>(adapterConfig.getModbusToMQTTConfig().getMappings());
     }
 
     @Override
     public int getPollingIntervalMillis() {
-        return adapterConfig.getPollingIntervalMillis();
+        return adapterConfig.getModbusToMQTTConfig().getPollingIntervalMillis();
     }
 
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
-        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+        return adapterConfig.getModbusToMQTTConfig().getMaxPollingErrorsBeforeRemoval();
     }
 
 
@@ -188,7 +188,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
         if (log.isTraceEnabled()) {
             log.trace("Captured ModBus data with {} data points.", modBusData.getDataPoints().size());
         }
-        if (!adapterConfig.getPublishChangedDataOnly()) {
+        if (!adapterConfig.getModbusToMQTTConfig().getPublishChangedDataOnly()) {
             modBusData.getDataPoints().forEach(pollingOutput::addDataPoint);
             if (log.isTraceEnabled()) {
                 log.trace("Publishing data with {} samples", modBusData.getDataPoints().size());

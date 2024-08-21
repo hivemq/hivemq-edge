@@ -70,7 +70,7 @@ public interface ProtocolAdaptersApi {
                responses = {
                        @ApiResponse(responseCode = "200",
                                     description = "Success")})
-    Response addAdapter(
+    @NotNull Response addAdapter(
             @NotNull @Parameter(name = "adapterType",
                                 description = "The adapter type.",
                                 required = true,
@@ -177,7 +177,7 @@ public interface ProtocolAdaptersApi {
 
 
     @GET
-    @Path("/adapters/{adapterId:  ([a-zA-Z_0-9\\-])*}/discover")
+    @Path("/adapters/{adapterId: ([a-zA-Z_0-9\\-])*}/discover")
     @Operation(summary = "Discover a list of available data points",
                operationId = "discoverDataPoints",
                description = "Obtain a list of available values accessible via this protocol adapter.",
@@ -222,7 +222,7 @@ public interface ProtocolAdaptersApi {
                                                                               summary = "Example connection status",
                                                                               value = ApiBodyExamples.EXAMPLE_CONNECTION_STATUS_JSON)
                                                        }))})
-    Response getStatus(@Parameter(name = "adapterId",
+    @NotNull Response getStatus(@Parameter(name = "adapterId",
                                             description = "The name of the adapter to query.",
                                             required = true,
                                             in = ParameterIn.PATH)
@@ -244,12 +244,12 @@ public interface ProtocolAdaptersApi {
                                                                               summary = "Adapter Connection Transition Result",
                                                                               value = ApiBodyExamples.EXAMPLE_STATUS_TRANSITION_RESULT)
                                                        }))})
-    Response changeStatus(
+    @NotNull Response changeStatus(
             @Parameter(name = "adapterId",
                        description = "The id of the adapter whose runtime status will change.",
                        required = true,
                        in = ParameterIn.PATH)
-            final @PathParam("adapterId") String adapterId,
+            final @PathParam("adapterId") @NotNull String adapterId,
             @Parameter(name = "command",
                        description = "The command to transition the adapter runtime status.",
                        required = true,
@@ -272,6 +272,6 @@ public interface ProtocolAdaptersApi {
                                                                               summary = "Example connection status",
                                                                               value = ApiBodyExamples.EXAMPLE_CONNECTION_STATUS_LIST_JSON)
                                                        }))})
-    Response status();
+    @NotNull Response status();
 
 }
