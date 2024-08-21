@@ -4,6 +4,7 @@ import { ApiError } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { useListBridges } from '@/api/hooks/useGetBridges/useListBridges.ts'
+import { useListClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useListClientSubscriptions.ts'
 
 import { mergeAllTopics } from '@/modules/Workspace/utils/topics-utils.ts'
 
@@ -57,20 +58,27 @@ export const useGetEdgeTopics = (options?: EdgeTopicsOptions): EdgeTopics => {
     isError: isBridgeError,
     error: bridgeError,
   } = useListBridges()
+  const {
+    data: clients,
+    isLoading: isClientLoading,
+    isSuccess: isClientSuccess,
+    isError: isClientError,
+    error: clientError,
+  } = useListClientSubscriptions()
 
   const data = useMemo<string[]>(() => {
     const _options = { ...defaultOptions, ...options }
 
-    return mergeAllTopics(adapterTypes, adapters, bridges, options?.useOrigin)
+    return mergeAllTopics(adapterTypes, adapters, bridges, clients, options?.useOrigin)
       .reduce<string[]>(reduceTopicsBy(_options), [])
       .sort()
-  }, [adapterTypes, adapters, bridges, options])
+  }, [adapterTypes, adapters, bridges, options, clients])
 
   return {
     data: data,
-    isSuccess: isAdapterTypeSuccess && isAdapterSuccess && isBridgeSuccess,
-    isLoading: isBridgeLoading || isAdapterLoading || isAdapterTypesLoading,
-    isError: isBridgeError || isAdapterError || isAdapterTypesError,
-    error: adapterTypesError || adapterError || bridgeError,
+    isSuccess: isAdapterTypeSuccess && isAdapterSuccess && isBridgeSuccess && isClientSuccess,
+    isLoading: isBridgeLoading || isAdapterLoading || isAdapterTypesLoading || isClientLoading,
+    isError: isBridgeError || isAdapterError || isAdapterTypesError || isClientError,
+    error: adapterTypesError || adapterError || bridgeError || clientError,
   }
 }

@@ -9,6 +9,7 @@ import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
+import { BrokerClient, BrokerClientConfiguration } from '@/api/types/api-broker-client.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
 
@@ -229,6 +230,49 @@ export const createAdapterNode = (
   }
 
   return { nodeAdapter, edgeConnector, nodeDevice, deviceConnector }
+}
+
+export const createClientNode = (
+  client: BrokerClient,
+  nbClient: number,
+  maxClient: number,
+  theme: Partial<WithCSSVar<Dict>>,
+  positionStorage?: Record<string, XYPosition>
+) => {
+  const idClient = `${IdStubs.CLIENT_NODE}@${client.id}`
+  const isConnected = Boolean(client.config.subscriptions?.length)
+
+  const nodeClient: Node<BrokerClientConfiguration, NodeTypes.CLIENT_NODE> = {
+    id: idClient,
+    type: NodeTypes.CLIENT_NODE,
+    sourcePosition: Position.Bottom,
+    data: client.config,
+    position: positionStorage?.[idClient] ?? {
+      x: POS_EDGE.x + POS_NODE_INC.x * (nbClient - (maxClient - 1) / 2),
+      y: POS_EDGE.y + POS_NODE_INC.y,
+    },
+  }
+
+  const clientConnector: Edge = {
+    id: `${IdStubs.CONNECTOR}-${IdStubs.EDGE_NODE}-${idClient}`,
+    target: IdStubs.EDGE_NODE,
+    targetHandle: 'Bottom',
+    source: idClient,
+    focusable: false,
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: theme.colors.status.connected[500],
+    },
+    animated: isConnected,
+    style: {
+      strokeWidth: isConnected ? 1.5 : 0.5,
+      stroke: theme.colors.status.connected[500],
+    },
+  }
+
+  return { nodeClient, clientConnector }
 }
 
 export const getDefaultMetricsFor = (node: Node): string[] => {
