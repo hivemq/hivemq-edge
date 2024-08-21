@@ -51,7 +51,6 @@ describe('useGetFlowElements', () => {
     [{}, 4, 3],
     [{ showGateway: true }, 5, 4],
     [{ showGateway: false }, 4, 3],
-    [{ showGateway: true }, 5, 4],
   ])('should consider %s for %s nodes and %s edges', async (defaults, countNode, countEdge) => {
     const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
       <SimpleWrapper>
