@@ -83,7 +83,7 @@ public class ModbusToMqttMapping implements PollingContext {
     private final @NotNull AddressRange addressRange;
 
     @JsonProperty("dataType")
-    @ModuleConfigField(title = "Data TYpe", description = "Define how the read registers are interpreted")
+    @ModuleConfigField(title = "Data Type", description = "Define how the read registers are interpreted", defaultValue = "INT_16")
     private final @NotNull ModbusDataType dataType;
 
     @JsonCreator
