@@ -22,6 +22,7 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -82,8 +83,7 @@ public class ModbusToMqttMapping implements PollingContext {
     private final @NotNull AddressRange addressRange;
 
     @JsonProperty("dataType")
-    @ModuleConfigField(title = "Data TYpe",
-                       description = "Define how the read registers are interpreted")
+    @ModuleConfigField(title = "Data TYpe", description = "Define how the read registers are interpreted")
     private final @NotNull ModbusDataType dataType;
 
     @JsonCreator
@@ -95,7 +95,7 @@ public class ModbusToMqttMapping implements PollingContext {
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
             @JsonProperty(value = "addressRange", required = true) final @NotNull AddressRange addressRange,
-            @JsonProperty(value = "dataType") final @Nullable ModbusDataType dataType) {
+            @JsonProperty(value = "dataType") final @Nullable ModbusDataType dataType) throws ProtocolAdapterException {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
@@ -104,6 +104,42 @@ public class ModbusToMqttMapping implements PollingContext {
         this.addressRange = addressRange;
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
         this.dataType = requireNonNullElse(dataType, ModbusDataType.INT_16);
+
+        final int registerCount = addressRange.endIdx - addressRange.startIdx;
+        switch (this.dataType) {
+            case INT_16:
+            case UINT_16:
+                if (registerCount != 1) {
+                    throw new ProtocolAdapterException("The data type " +
+                            this.dataType +
+                            " needs exactly 1 register, but " +
+                            registerCount +
+                            " registers were configured.");
+                }
+                break;
+            case INT_32:
+            case UINT_32:
+            case FLOAT_32:
+                if (registerCount != 2) {
+                    throw new ProtocolAdapterException("The data type " +
+                            this.dataType +
+                            " needs exactly 2 registers, but " +
+                            registerCount +
+                            " registers were configured.");
+                }
+                break;
+            case INT_64:
+                if (registerCount != 4) {
+                    throw new ProtocolAdapterException("The data type " +
+                            this.dataType +
+                            " needs exactly 4 registers, but " +
+                            registerCount +
+                            " registers were configured.");
+                }
+                break;
+            case UTF_8:
+            default:
+        }
     }
 
     public @NotNull AddressRange getAddressRange() {

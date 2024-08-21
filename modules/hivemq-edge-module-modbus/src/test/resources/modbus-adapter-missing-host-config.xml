@@ -27,6 +27,7 @@
                         <startIdx>11</startIdx>
                         <endIdx>13</endIdx>
                     </addressRange>
+                    <dataType>INT_32</dataType>
                 </subscription>
             </subscriptions>
         </modbus>

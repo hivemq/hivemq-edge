@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.modbus.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -128,7 +129,7 @@ public class ModbusAdapterConfigTest {
             assertThat(subscription.getIncludeTagNames()).isFalse();
             assertThat(subscription.getUserProperties()).isEmpty();
             assertThat(subscription.getAddressRange().startIdx).isEqualTo(11);
-            assertThat(subscription.getAddressRange().endIdx).isEqualTo(13);
+            assertThat(subscription.getAddressRange().endIdx).isEqualTo(12);
         });
     }
 
@@ -224,7 +225,46 @@ public class ModbusAdapterConfigTest {
     }
 
     @Test
-    public void unconvertConfigObject_full_valid() {
+    public void convertConfigObject_wrongRegisterRange_INT_16_exception() throws Exception {
+        final URL resource = getClass().getResource("/modbus-adapter-wrong-register-count-INT_16.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("modbus"))).hasMessageContaining("The data type INT_16 needs exactly 1 register, but 2 registers were configured.");
+    }
+
+    @Test
+    public void convertConfigObject_wrongRegisterRange_INT_32_exception() throws Exception {
+        final URL resource = getClass().getResource("/modbus-adapter-wrong-register-count-INT_32.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("modbus"))).hasMessageContaining("The data type INT_32 needs exactly 2 registers, but 5 registers were configured.");
+    }
+
+    @Test
+    public void convertConfigObject_wrongRegisterRange_INT_64_exception() throws Exception {
+        final URL resource = getClass().getResource("/modbus-adapter-wrong-register-count-INT_64.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("modbus"))).hasMessageContaining("The data type INT_64 needs exactly 4 registers, but 5 registers were configured.");
+    }
+
+    @Test
+    public void unconvertConfigObject_full_valid() throws Exception {
         final ModbusToMqttMapping pollingContext = new ModbusToMqttMapping("my/destination",
                 1,
                 MQTTMessagePerSubscription,
@@ -274,10 +314,13 @@ public class ModbusAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_defaults() {
-        final ModbusToMqttMapping pollingContext =
-                new ModbusToMqttMapping("my/destination", null, null, null, null, null, new AddressRange(1, 2));
-        final ModbusToMqttMapping pollingContext2 =
-                new ModbusToMqttMapping("my/destination/2", null, null, null, null, null, new AddressRange(1, 2),
+        final PollingContextImpl pollingContext = new PollingContextImpl("my/destination",
+                null,
+                null,
+                null,
+                null,
+                null,
+                new AddressRange(1, 2),
                 null);
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
