@@ -390,7 +390,7 @@ public class ProtocolAdapterManager {
                         adapterInstance.get().destroy();
                         Map<String, Object> mainMap =
                                 configurationService.protocolAdapterConfigurationService().getAllConfigs();
-                        List<Map<String, ?>> adapterList =
+                        List<Map<String, Object>> adapterList =
                                 getAdapterListForType(adapterInstance.get().getAdapterInformation().getProtocolId());
                         if (adapterList != null) {
                             if (adapterList.removeIf(instance -> id.equals(instance.get("id")))) {
@@ -506,7 +506,7 @@ public class ProtocolAdapterManager {
                     createAdapterInstance(adapterType, config, versionProvider.getVersion());
 
             //-- Write the protocol adapter back to the main config (through the proxy)
-            List<Map<String, ?>> adapterList = getAdapterListForType(adapterType);
+            List<Map<String, Object>> adapterList = getAdapterListForType(adapterType);
             Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
             adapterList.add(config);
             configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
@@ -514,16 +514,14 @@ public class ProtocolAdapterManager {
         }
     }
 
-    protected @NotNull List<Map<String, ?>> getAdapterListForType(final @NotNull String adapterType) {
+    protected @NotNull List<Map<String, Object>> getAdapterListForType(final @NotNull String adapterType) {
 
         Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
-        List<Map<String, ?>> adapterList = null;
+        List<Map<String, Object>> adapterList;
         Object o = mainMap.get(adapterType);
         if (o instanceof Map || o instanceof String || o == null) {
-            if (adapterList == null) {
-                adapterList = new ArrayList<>();
-            }
-            if (o != null && o instanceof Map) {
+            adapterList = new ArrayList<>();
+            if (o instanceof Map) {
                 adapterList.add((Map) o);
             }
             mainMap.put(adapterType, adapterList);

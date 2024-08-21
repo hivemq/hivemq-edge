@@ -124,7 +124,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             final @NotNull ProtocolAdapterDataSample sample, final @NotNull PollingContext pollingContext) {
         Preconditions.checkNotNull(sample);
         Preconditions.checkNotNull(pollingContext);
-        Preconditions.checkNotNull(pollingContext.getDestinationMqttTopic());
+        Preconditions.checkNotNull(pollingContext.getMqttTopic());
 
         Preconditions.checkArgument(pollingContext.getQos() <= 2 && pollingContext.getQos() >= 0,
                 "QoS needs to be a valid QoS value (0,1,2)");
@@ -141,7 +141,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
             for (byte[] json : jsonPayloadsAsBytes) {
                 final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
-                        .withTopic(pollingContext.getDestinationMqttTopic())
+                        .withTopic(pollingContext.getMqttTopic())
                         .withQoS(pollingContext.getQos())
                         .withPayload(json)
                         .withAdapter(protocolAdapter);
@@ -155,7 +155,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                                 .withTimestamp(System.currentTimeMillis())
                                 .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
                                         adapterId,
-                                        pollingContext.getDestinationMqttTopic()))
+                                        pollingContext.getMqttTopic()))
                                 .withPayload(Payload.ContentType.JSON, new String(json, StandardCharsets.UTF_8))
                                 .fire();
                     }

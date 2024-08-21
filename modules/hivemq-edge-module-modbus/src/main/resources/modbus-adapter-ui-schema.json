@@ -7,8 +7,8 @@
     },
     {
       "id": "subFields",
-      "title": "Subscription",
-      "properties": ["subscriptions"]
+      "title": "Modbus 2 MQTT",
+      "properties": ["mappings"]
     },
     {
       "id": "publishing",
@@ -23,12 +23,12 @@
     "ui:widget": "updown"
   },
   "ui:order": ["id", "host", "port", "*"],
-  "subscriptions": {
+  "mappings": {
     "ui:batchMode": true,
     "items": {
-      "ui:order": ["destination", "addressRange", "qos", "*", "userProperties"],
+      "ui:order": ["mqttTopic", "addressRange", "qos", "*", "userProperties"],
       "ui:collapsable": {
-        "titleKey": "destination"
+        "titleKey": "mqttTopic"
       },
       "addressRange": {
         "endIdx": {

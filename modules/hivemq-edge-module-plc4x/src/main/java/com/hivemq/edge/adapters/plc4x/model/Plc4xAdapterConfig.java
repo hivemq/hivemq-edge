@@ -231,7 +231,7 @@ public class Plc4xAdapterConfig implements ProtocolAdapterConfig {
         }
 
         @Override
-        public @Nullable String getDestinationMqttTopic() {
+        public @Nullable String getMqttTopic() {
             return destination;
         }
 

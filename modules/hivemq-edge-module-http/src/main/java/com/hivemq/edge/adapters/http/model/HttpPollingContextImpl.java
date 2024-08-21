@@ -77,7 +77,7 @@ public final class HttpPollingContextImpl implements PollingContext {
     }
 
     @Override
-    public @NotNull String getDestinationMqttTopic() {
+    public @NotNull String getMqttTopic() {
         return destination;
     }
 

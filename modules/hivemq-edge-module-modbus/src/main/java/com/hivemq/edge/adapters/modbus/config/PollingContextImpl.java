@@ -3,6 +3,7 @@ package com.hivemq.edge.adapters.modbus.config;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
@@ -18,12 +19,12 @@ import static java.util.Objects.requireNonNullElseGet;
 
 public class PollingContextImpl implements PollingContext {
 
-    @JsonProperty(value = "destination", required = true)
-    @ModuleConfigField(title = "Destination Topic",
+    @JsonProperty(value = "mqttTopic", required = true)
+    @ModuleConfigField(title = "Destination MQTT Topic",
                        description = "The topic to publish data on",
                        required = true,
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
-    private final @NotNull String destination;
+    private final @NotNull String mqttTopic;
 
     @JsonProperty(value = "qos", required = true)
     @ModuleConfigField(title = "QoS",
@@ -68,14 +69,14 @@ public class PollingContextImpl implements PollingContext {
 
     @JsonCreator
     public PollingContextImpl(
-            @JsonProperty(value = "destination", required = true) final @NotNull String destination,
+            @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty("qos") final @Nullable Integer qos,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty("userProperties") final @Nullable List<UserProperty> userProperties,
             @JsonProperty(value = "addressRange", required = true) final @NotNull AddressRange addressRange) {
-        this.destination = destination;
+        this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
@@ -89,8 +90,8 @@ public class PollingContextImpl implements PollingContext {
     }
 
     @Override
-    public @Nullable String getDestinationMqttTopic() {
-        return destination;
+    public @NotNull String getMqttTopic() {
+        return mqttTopic;
     }
 
     @Override
