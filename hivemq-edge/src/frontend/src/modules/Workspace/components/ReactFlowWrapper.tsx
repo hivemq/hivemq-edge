@@ -45,8 +45,8 @@ const ReactFlowWrapper = () => {
   const { nodes, edges, onNodesChange, onEdgesChange, onAddNodes, onAddEdges } = useWorkspaceStore()
 
   useEffect(() => {
-    if (newNodes.length) onAddNodes(newNodes.map((e) => ({ item: e, type: 'add' })))
-    if (newEdges.length) onAddEdges(newEdges.map((e) => ({ item: e, type: 'add' })))
+    if (newNodes.length) onAddNodes(newNodes.map((node) => ({ item: node, type: 'add' })))
+    if (newEdges.length) onAddEdges(newEdges.map((edge) => ({ item: edge, type: 'add' })))
   }, [newEdges, newNodes, onAddEdges, onAddNodes])
 
   const edgeTypes = useMemo(

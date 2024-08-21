@@ -17,7 +17,7 @@ export const useDeleteClientSubscriptions = () => {
     },
     onSuccess: (data) => {
       queryClient.setQueryData<BrokerClient[]>([QUERY_KEYS.CLIENTS], (old) => {
-        const newClients = old?.filter((e) => e.id === data)
+        const newClients = old?.filter((client) => client.id === data)
 
         return [...(newClients || [])]
       })

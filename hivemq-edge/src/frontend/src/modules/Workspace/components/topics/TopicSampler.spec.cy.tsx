@@ -11,8 +11,8 @@ const Wrapper: FC<PropsWithChildren> = ({ children }) => {
       <VStack alignItems="flex-start">
         <Text data-testid="sampler-loader">{isLoading ? 'loading' : 'loaded'}</Text>
         <ul data-testid="sampler-listing">
-          {data?.map((e, i) => (
-            <li key={`${e}-${i}`}>{e}</li>
+          {data?.map((topic, index) => (
+            <li key={`${topic}-${index}`}>{topic}</li>
           ))}
         </ul>
       </VStack>

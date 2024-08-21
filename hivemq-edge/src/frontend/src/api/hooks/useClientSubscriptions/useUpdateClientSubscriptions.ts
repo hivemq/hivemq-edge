@@ -22,7 +22,7 @@ export const useUpdateClientSubscriptions = () => {
     },
     onSuccess: (data) => {
       queryClient.setQueryData<BrokerClient[]>([QUERY_KEYS.CLIENTS], (old) => {
-        const index = old?.findIndex((e) => e.id === data.id)
+        const index = old?.findIndex((client) => client.id === data.id)
         if (index !== undefined && old) {
           old[index].config = data.config
         }
