@@ -19,6 +19,7 @@ import {
   mergeAllTopics,
 } from './topics-utils.ts'
 import { mockJSONSchema } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { mockClientSubscriptionsList } from '@/api/hooks/useClientSubscriptions/__handlers__'
 
 describe('getBridgeTopics', () => {
   it('should extract topics from a Bridge', async () => {
@@ -134,11 +135,12 @@ describe('discoverAdapterTopics', () => {
 })
 
 describe('mergeAllTopics', () => {
-  it('should extract every topics from all bridges and adapters', async () => {
+  it('should extract every topics from all clients, bridges and adapters', async () => {
     const actual = mergeAllTopics(
       { items: [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS] },
       [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
-      [mockBridge, mockBridge]
+      [mockBridge, mockBridge],
+      mockClientSubscriptionsList
     )
 
     expect(actual).toStrictEqual([
@@ -147,11 +149,12 @@ describe('mergeAllTopics', () => {
       'a/valid/topic/opc-ua-client/1',
       'a/valid/topic/opc-ua-client/2',
       'a/valid/topic/modbus/1',
+      'test/topic/1',
     ])
   })
 
   it('should extract every topics from all bridges', async () => {
-    const actual = mergeAllTopics(undefined, undefined, [mockBridge, mockBridge])
+    const actual = mergeAllTopics(undefined, undefined, [mockBridge, mockBridge], undefined)
 
     expect(actual).toStrictEqual(['#', 'root/topic/ref/1'])
   })
@@ -160,6 +163,7 @@ describe('mergeAllTopics', () => {
     const actual = mergeAllTopics(
       { items: [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS] },
       [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
+      undefined,
       undefined
     )
 
@@ -171,7 +175,7 @@ describe('mergeAllTopics', () => {
   })
 
   it('should not extract any topic!', async () => {
-    const actual = mergeAllTopics(undefined, undefined, undefined)
+    const actual = mergeAllTopics(undefined, undefined, undefined, undefined)
 
     expect(actual).toStrictEqual([])
   })
