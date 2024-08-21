@@ -8,6 +8,7 @@ export const QUERY_KEYS = {
   DISCOVERY_TOPICS: 'discovery.topics',
   PROTOCOLS: 'protocols',
   ADAPTERS: 'adapters',
+  CLIENTS: 'broker-clients',
   UNIFIED_NAMESPACE: 'unified.namespace',
   FRONTEND_CONFIGURATION: 'frontend.configuration',
   FRONTEND_NOTIFICATION: 'frontend.notification',
