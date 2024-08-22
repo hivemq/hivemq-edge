@@ -1,0 +1,15 @@
+<hivemq>
+    <protocol-adapters>
+        <file>
+            <id>my-file-protocol-adapter</id>
+            <fileToMqtt>
+                <fileToMqttMappings>
+                    <fileToMqttMapping>
+                        <mqttTopic>my/topic</mqttTopic>
+                        <filePath>path/to/file1</filePath>
+                    </fileToMqttMapping>
+                </fileToMqttMappings>
+            </fileToMqtt>
+        </file>
+    </protocol-adapters>
+</hivemq>

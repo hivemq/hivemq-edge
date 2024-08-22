@@ -1,0 +1,15 @@
+<hivemq>
+    <protocol-adapters>
+        <file>
+            <id>my-file-protocol-adapter</id>
+            <fileToMqtt>
+                <fileToMqttMappings>
+                    <fileToMqttMapping>
+                        <filePath>path/to/file1</filePath>
+                        <contentType>BINARY</contentType>
+                    </fileToMqttMapping>
+                </fileToMqttMappings>
+            </fileToMqtt>
+        </file>
+    </protocol-adapters>
+</hivemq>
