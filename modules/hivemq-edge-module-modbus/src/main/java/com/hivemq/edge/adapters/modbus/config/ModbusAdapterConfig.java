@@ -79,7 +79,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "timeout") final @Nullable Integer timeout,
-            @JsonProperty(value = "modbusToMqtt") final @NotNull ModbusToMQTTConfig modbusToMQTTConfig) {
+            @JsonProperty(value = "modbusToMqtt", required = true) final @NotNull ModbusToMQTTConfig modbusToMQTTConfig) {
         this.id = id;
         this.port = port;
         this.host = host;
