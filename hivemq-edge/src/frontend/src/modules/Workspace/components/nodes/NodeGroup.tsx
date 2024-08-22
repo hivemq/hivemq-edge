@@ -9,7 +9,7 @@ import {
   NodeResetChange,
   EdgeRemoveChange,
 } from 'reactflow'
-import { Box, ButtonGroup, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
+import { Box, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
 import { LuExpand, LuShrink } from 'react-icons/lu'
 import { ImUngroup } from 'react-icons/im'
 
@@ -20,6 +20,7 @@ import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
+import WorkspaceButtonGroup from '@/modules/Workspace/components/parts/WorkspaceButtonGroup.tsx'
 
 const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()
@@ -65,7 +66,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
   return (
     <>
       <ContextualToolbar id={id} onOpenPanel={onContextMenu}>
-        <ButtonGroup size="sm" variant="solid" colorScheme="blue" orientation="vertical">
+        <WorkspaceButtonGroup isAttached={false}>
           <IconButton
             data-testid="node-group-toolbar-expand"
             icon={<Icon as={data.isOpen ? LuShrink : LuExpand} boxSize={5} />}
@@ -80,7 +81,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
             aria-label={t('workspace.grouping.command.ungroup')}
             onClick={onConfirmUngroup}
           />
-        </ButtonGroup>
+        </WorkspaceButtonGroup>
       </ContextualToolbar>
       {selected && (
         <NodeResizer

@@ -1,7 +1,7 @@
 import { type FC, MouseEventHandler, useMemo } from 'react'
 import { NodeToolbar, type NodeProps, type NodeToolbarProps, Position, Node, Edge, MarkerType } from 'reactflow'
 import { useTranslation } from 'react-i18next'
-import { ButtonGroup, Icon, useTheme } from '@chakra-ui/react'
+import { useTheme } from '@chakra-ui/react'
 import { LuPanelRightOpen } from 'react-icons/lu'
 import { ImMakeGroup } from 'react-icons/im'
 
@@ -11,6 +11,7 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
+import WorkspaceButtonGroup from '@/modules/Workspace/components/parts/WorkspaceButtonGroup.tsx'
 
 type SelectedNodeProps = Pick<NodeProps, 'id'> & Pick<NodeToolbarProps, 'position'>
 interface ContextualToolbarProps extends SelectedNodeProps {
@@ -100,15 +101,15 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
         role="toolbar"
         aria-label={t('workspace.toolbar.container.right')}
       >
-        <ButtonGroup size="sm" variant="solid" colorScheme="blue" orientation="vertical">
+        <WorkspaceButtonGroup>
           <IconButton
             size="sm"
             data-testid="node-group-toolbar-panel"
-            icon={<Icon as={LuPanelRightOpen} boxSize={5} />}
+            icon={<LuPanelRightOpen />}
             aria-label={t('workspace.toolbar.command.overview')}
             onClick={onOpenPanel}
           />
-        </ButtonGroup>
+        </WorkspaceButtonGroup>
       </NodeToolbar>
       {(children || isGroupable) && (
         <NodeToolbar
@@ -120,14 +121,14 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
         >
           {children}
           {isGroupable && (
-            <ButtonGroup size="sm" variant="solid" colorScheme="blue" orientation="vertical">
+            <WorkspaceButtonGroup>
               <IconButton
                 data-testid="node-group-toolbar-group"
-                icon={<Icon as={ImMakeGroup} boxSize={5} />}
+                icon={<ImMakeGroup />}
                 aria-label={t('workspace.toolbar.command.group')}
                 onClick={onCreateGroup}
               />
-            </ButtonGroup>
+            </WorkspaceButtonGroup>
           )}
         </NodeToolbar>
       )}

@@ -1,7 +1,7 @@
 import { FC, useMemo } from 'react'
 import { Handle, NodeProps, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
-import { Box, ButtonGroup, HStack, Icon, Image, Text, VStack } from '@chakra-ui/react'
+import { Box, HStack, Icon, Image, Text, VStack } from '@chakra-ui/react'
 
 import { type TopicFilter } from '@/modules/Workspace/types.ts'
 import { type Adapter } from '@/api/__generated__'
@@ -16,6 +16,7 @@ import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualTo
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import TopicsContainer from '@/modules/Workspace/components/parts/TopicsContainer.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
+import WorkspaceButtonGroup from '@/modules/Workspace/components/parts/WorkspaceButtonGroup.tsx'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) => {
   const { t } = useTranslation()
@@ -33,20 +34,20 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
   return (
     <>
       <ContextualToolbar id={id} onOpenPanel={onContextMenu}>
-        <ButtonGroup size="sm" variant="solid" colorScheme="blue" orientation="vertical" isAttached>
+        <WorkspaceButtonGroup>
           {HACK_BIDIRECTIONAL && (
             <IconButton
-              icon={<Icon as={deviceCapabilityIcon['WRITE']} boxSize={5} />}
+              icon={<Icon as={deviceCapabilityIcon['WRITE']} />}
               aria-label={t('workspace.toolbar.command.subscriptions.outward')}
               // onClick={onCreateGroup}
             />
           )}
           <IconButton
-            icon={<Icon as={deviceCapabilityIcon['READ']} boxSize={5} />}
+            icon={<Icon as={deviceCapabilityIcon['READ']} />}
             aria-label={t('workspace.toolbar.command.subscriptions.inward')}
             // onClick={onCreateGroup}
           />
-        </ButtonGroup>
+        </WorkspaceButtonGroup>
       </ContextualToolbar>
       <NodeWrapper
         isSelected={selected}
