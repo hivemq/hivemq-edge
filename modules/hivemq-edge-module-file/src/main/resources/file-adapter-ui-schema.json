@@ -28,7 +28,6 @@
     "ui:order" : [
       "maxPollingErrorsBeforeRemoval",
       "pollingIntervalMillis",
-      "publishChangedDataOnly",
       "fileToMqttMappings",
       "*"
     ],
