@@ -17,11 +17,11 @@ describe('EventDrawer', () => {
 
     cy.get('[data-status]').should('contain.text', 'INFO')
     cy.getByTestId('event-title-created').should('contain.text', 'Created')
-    cy.getByTestId('event-value-created').should('contain.text', 'Friday, 13 October 2023 at 11:51:24.234')
+    cy.getByTestId('event-value-created').should('contain.text', 'Friday 13 October 2023 at 11:51:24.234')
     cy.getByTestId('event-title-source').should('contain.text', 'Source')
     cy.getByTestId('event-value-source').should('contain.text', 'BRIDGE-0')
     cy.getByTestId('event-title-associatedObject').should('contain.text', 'Associated Object')
-    cy.getByTestId('event-value-associatedObject').should('contain.text', 'BRIDGE-0')
+    cy.getByTestId('event-value-associatedObject').should('contain.text', 'BRIDGE-100')
 
     cy.getByTestId('event-value-message').should('contain.text', 'Lorem ipsum dolor sit amet')
     cy.getByTestId('event-title-payload').should('contain.text', 'Payload')
