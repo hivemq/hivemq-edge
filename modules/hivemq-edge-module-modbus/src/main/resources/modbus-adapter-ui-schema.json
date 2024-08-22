@@ -1,41 +1,64 @@
 {
-  "ui:tabs": [
+  "ui:tabs" : [
     {
-      "id": "coreFields",
-      "title": "Settings",
-      "properties": ["id", "port", "host", "timeout"]
+      "id" : "coreFields",
+      "title" : "Connection",
+      "properties" : [
+        "id",
+        "port",
+        "host",
+        "timeout"
+      ]
     },
     {
-      "id": "subFields",
-      "title": "Modbus 2 MQTT",
-      "properties": ["mappings"]
-    },
-    {
-      "id": "publishing",
-      "title": "Publishing",
-      "properties": ["maxPollingErrorsBeforeRemoval", "publishChangedDataOnly", "pollingIntervalMillis"]
+      "id" : "subFields",
+      "title" : "Modbus 2 MQTT",
+      "properties" : [
+        "modbusToMqtt"
+      ]
     }
   ],
-  "id": {
-    "ui:disabled": false
+  "id" : {
+    "ui:disabled" : false
   },
-  "port": {
-    "ui:widget": "updown"
+  "port" : {
+    "ui:widget" : "updown"
   },
-  "ui:order": ["id", "host", "port", "*"],
-  "mappings": {
-    "ui:batchMode": true,
-    "items": {
-      "ui:order": ["mqttTopic", "addressRange", "qos", "*", "userProperties"],
-      "ui:collapsable": {
-        "titleKey": "mqttTopic"
-      },
-      "addressRange": {
-        "endIdx": {
-          "ui:widget": "discovery:tagBrowser"
+  "ui:order" : [
+    "id",
+    "host",
+    "port",
+    "*"
+  ],
+  "modbusToMqtt" : {
+    "ui:batchMode" : true,
+    "ui:order" : [
+      "maxPollingErrorsBeforeRemoval",
+      "pollingIntervalMillis",
+      "publishChangedDataOnly",
+      "modbusToMqttMappings",
+      "*"
+    ],
+    "modbusToMqttMappings" : {
+      "ui:batchMode" : true,
+      "items": {
+        "ui:order" : [
+          "mqttTopic",
+          "qos",
+          "addressRange",
+          "*",
+          "userProperties"
+        ],
+        "ui:collapsable" : {
+          "titleKey" : "mqttTopic"
         },
-        "startIdx": {
-          "ui:widget": "discovery:tagBrowser"
+        "addressRange" : {
+          "endIdx" : {
+            "ui:widget" : "discovery:tagBrowser"
+          },
+          "startIdx" : {
+            "ui:widget" : "discovery:tagBrowser"
+          }
         }
       }
     }
