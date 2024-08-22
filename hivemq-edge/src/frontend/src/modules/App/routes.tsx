@@ -70,7 +70,7 @@ export const routes = createBrowserRouter(
           element: <EdgeFlowPage />,
           children: [
             {
-              path: ':nodeType/:nodeId',
+              path: ':nodeType/:device?/:adapter?/:nodeId',
               element: <NodePanelController />,
             },
           ],
