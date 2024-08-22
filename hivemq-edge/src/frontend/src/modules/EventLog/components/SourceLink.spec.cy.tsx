@@ -16,10 +16,12 @@ describe('SourceLink', () => {
   })
 
   it('should render the adapter component', () => {
-    cy.mountWithProviders(<SourceLink source={mockEdgeEvent(5)[1].source} />)
+    cy.mountWithProviders(
+      <SourceLink source={mockEdgeEvent(5)[1].source} type={mockEdgeEvent(5)[1].associatedObject} />
+    )
 
     cy.get('a').should('contain.text', 'ADAPTER-1')
-    cy.get('a').should('have.attr', 'href', '/protocol-adapters/ADAPTER-1')
+    cy.get('a').should('have.attr', 'href', '/protocol-adapters/edit/ADAPTER-101/ADAPTER-1')
   })
 
   it('should render the adapter type component', () => {

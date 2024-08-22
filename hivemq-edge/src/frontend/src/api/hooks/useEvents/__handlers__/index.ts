@@ -49,7 +49,7 @@ export const mockEdgeEvent = (n = maxEvents): Event[] =>
     payload: contentType[x % 3],
 
     source: makeID(sourceKeys[x % sourceKeys.length] as TypeIdentifier.type, x),
-    associatedObject: makeID(sourceKeys[x % sourceKeys.length] as TypeIdentifier.type, x),
+    associatedObject: makeID(sourceKeys[x % sourceKeys.length] as TypeIdentifier.type, x + 100),
     created: DateTime.fromISO('2023-10-13T11:51:24.234')
       .plus({ minutes: x % 100 })
       .toISO({ format: 'basic' }) as string,
