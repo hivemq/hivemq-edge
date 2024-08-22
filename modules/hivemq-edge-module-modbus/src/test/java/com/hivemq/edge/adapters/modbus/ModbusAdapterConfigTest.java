@@ -64,9 +64,8 @@ public class ModbusAdapterConfigTest {
 
             assertThat(subscription.getAddressRange().startIdx).isEqualTo(11);
             assertThat(subscription.getAddressRange().endIdx).isEqualTo(13);
-        });
-        assertThat(config.getModbusToMQTTConfig().getMappings()).satisfiesExactly(subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
+        }, subscription -> {
+            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
             assertThat(subscription.getQos()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isFalse();
@@ -114,6 +113,19 @@ public class ModbusAdapterConfigTest {
             assertThat(subscription.getAddressRange().startIdx).isEqualTo(11);
             assertThat(subscription.getAddressRange().endIdx).isEqualTo(13);
         });
+    }
+
+    @Test
+    public void convertConfigObject_modbusToMqttMissing_exception() throws Exception {
+        final URL resource = getClass().getResource("/modbus-adapter-missing-modbusToMqtt-config.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'modbusToMqtt'");
     }
 
     @Test
@@ -165,7 +177,7 @@ public class ModbusAdapterConfigTest {
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'destination'");
+                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
 
     @Test
@@ -228,24 +240,28 @@ public class ModbusAdapterConfigTest {
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 
         assertThat(config.get("id")).isEqualTo("my-modbus-adapter");
-        assertThat(config.get("pollingIntervalMillis")).isEqualTo(12);
-        assertThat(config.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
         assertThat(config.get("port")).isEqualTo(14);
         assertThat(config.get("host")).isEqualTo("my.host.com");
         assertThat(config.get("timeout")).isEqualTo(15);
-        assertThat(config.get("publishChangedDataOnly")).isEqualTo(true);
+        final Map<String, Object> modbusToMqtt = (Map<String, Object>) config.get("modbusToMqtt");
+        assertThat(modbusToMqtt.get("pollingIntervalMillis")).isEqualTo(12);
+        assertThat(modbusToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
+        assertThat(modbusToMqtt.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat((List<Map<String, Object>>) config.get("modbus-to-mqtt-mappings")).satisfiesExactly((subscription) -> {
-            assertThat(subscription.get("destination")).isEqualTo("my/destination");
-            assertThat(subscription.get("qos")).isEqualTo(1);
-            assertThat(subscription.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
-            assertThat(subscription.get("includeTimestamp")).isEqualTo(false);
-            assertThat(subscription.get("includeTagNames")).isEqualTo(true);
-            assertThat((List<Map<String, Object>>) subscription.get("userProperties")).satisfiesExactly((userProperty) -> {
+        assertThat((List<Map<String, Object>>) modbusToMqtt.get("modbusToMqttMappings")).satisfiesExactly((mappings) -> {
+
+            Map<String, Object> mapping = (Map<String, Object>) mappings.get("modbusToMqttMapping");
+
+            assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
+            assertThat(mapping.get("qos")).isEqualTo(1);
+            assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
+            assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
+            assertThat(mapping.get("includeTagNames")).isEqualTo(true);
+            assertThat((List<Map<String, Object>>) mapping.get("userProperties")).satisfiesExactly((userProperty) -> {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");
                 assertThat(userProperty.get("value")).isEqualTo("my-value");
             });
-            assertThat((Map<String, Object>) subscription.get("addressRange")).satisfies((addressRange) -> {
+            assertThat((Map<String, Object>) mapping.get("addressRange")).satisfies((addressRange) -> {
                 assertThat(addressRange.get("startIdx")).isEqualTo(1);
                 assertThat(addressRange.get("endIdx")).isEqualTo(2);
             });
@@ -256,33 +272,51 @@ public class ModbusAdapterConfigTest {
     public void unconvertConfigObject_defaults() {
         final PollingContextImpl pollingContext =
                 new PollingContextImpl("my/destination", null, null, null, null, null, new AddressRange(1, 2));
+        final PollingContextImpl pollingContext2 =
+                new PollingContextImpl("my/destination/2", null, null, null, null, null, new AddressRange(1, 2));
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
                 13,
                 "my.host.com",
                 null,
-                new ModbusToMQTTConfig(null, null, null, List.of(pollingContext)));
+                new ModbusToMQTTConfig(null, null, null, List.of(pollingContext, pollingContext2)));
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
         final Map<String, Object> config =
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 
         assertThat(config.get("id")).isEqualTo("my-modbus-adapter");
-        assertThat(config.get("pollingIntervalMillis")).isEqualTo(1000);
-        assertThat(config.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
         assertThat(config.get("port")).isEqualTo(13);
         assertThat(config.get("host")).isEqualTo("my.host.com");
         assertThat(config.get("timeout")).isEqualTo(5000);
-        assertThat(config.get("publishChangedDataOnly")).isEqualTo(true);
+        final Map<String, Object> modbusToMqtt = (Map<String, Object>) config.get("modbusToMqtt");
+        assertThat(modbusToMqtt.get("pollingIntervalMillis")).isEqualTo(1000);
+        assertThat(modbusToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
+        assertThat(modbusToMqtt.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat((List<Map<String, Object>>) config.get("modbus-to-mqtt-mappings")).satisfiesExactly((subscription) -> {
-            assertThat(subscription.get("destination")).isEqualTo("my/destination");
-            assertThat(subscription.get("qos")).isEqualTo(0);
-            assertThat(subscription.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
-            assertThat(subscription.get("includeTimestamp")).isEqualTo(true);
-            assertThat(subscription.get("includeTagNames")).isEqualTo(false);
-            assertThat((List<Map<String, Object>>) subscription.get("userProperties")).isEmpty();
-            assertThat((Map<String, Object>) subscription.get("addressRange")).satisfies((addressRange) -> {
+        assertThat(((List<Map<String, Object>>) modbusToMqtt.get("modbusToMqttMappings"))).satisfiesExactly(mappings -> {
+
+            Map<String, Object> mapping = (Map<String, Object>) mappings.get("modbusToMqttMapping");
+            assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
+            assertThat(mapping.get("qos")).isEqualTo(0);
+            assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
+            assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
+            assertThat(mapping.get("includeTagNames")).isEqualTo(false);
+            assertThat((List<Map<String, Object>>) mapping.get("userProperties")).isEmpty();
+            assertThat((Map<String, Object>) mapping.get("addressRange")).satisfies((addressRange) -> {
+                assertThat(addressRange.get("startIdx")).isEqualTo(1);
+                assertThat(addressRange.get("endIdx")).isEqualTo(2);
+            });
+        }, mappings -> {
+
+            Map<String, Object> mapping = (Map<String, Object>) mappings.get("modbusToMqttMapping");
+            assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination/2");
+            assertThat(mapping.get("qos")).isEqualTo(0);
+            assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
+            assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
+            assertThat(mapping.get("includeTagNames")).isEqualTo(false);
+            assertThat((List<Map<String, Object>>) mapping.get("userProperties")).isEmpty();
+            assertThat((Map<String, Object>) mapping.get("addressRange")).satisfies((addressRange) -> {
                 assertThat(addressRange.get("startIdx")).isEqualTo(1);
                 assertThat(addressRange.get("endIdx")).isEqualTo(2);
             });

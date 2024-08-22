@@ -1,0 +1,9 @@
+<hivemq>
+    <protocol-adapters>
+        <modbus>
+            <id>my-modbus-protocol-adapter</id>
+            <port>1234</port>
+            <host>my.modbus-server.com</host>
+        </modbus>
+    </protocol-adapters>
+</hivemq>
