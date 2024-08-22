@@ -26,16 +26,20 @@ import com.hivemq.edge.adapters.file.payload.FileJsonPayloadCreator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
+import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
+import static java.util.Objects.requireNonNullElse;
 
 public class FilePollingContext implements PollingContext {
-    @JsonProperty(value = "destination", required = true)
-    @ModuleConfigField(title = "Destination Topic",
+
+    @JsonProperty(value = "mqttTopic", required = true)
+    @ModuleConfigField(title = "Destination MQTT Topic",
                        description = "The topic to publish data on",
                        required = true,
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
-    protected @Nullable String destination;
+    private final @NotNull String mqttTopic;
 
     @JsonProperty(value = "qos", required = true)
     @ModuleConfigField(title = "QoS",
@@ -44,7 +48,7 @@ public class FilePollingContext implements PollingContext {
                        numberMin = 0,
                        numberMax = 2,
                        defaultValue = "0")
-    protected int qos = 0;
+    private final int qos;
 
     @JsonProperty(value = "messageHandlingOptions")
     @ModuleConfigField(title = "Message Handling Options",
@@ -53,31 +57,31 @@ public class FilePollingContext implements PollingContext {
                                "MQTT Message Per Device Tag",
                                "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
                        defaultValue = "MQTTMessagePerTag")
-    protected @NotNull MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
+    private final @NotNull MessageHandlingOptions messageHandlingOptions;
 
     @JsonProperty(value = "includeTimestamp")
     @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
                        description = "Include the unix timestamp of the sample time in the resulting MQTT message",
                        defaultValue = "true")
-    protected @NotNull Boolean includeTimestamp = Boolean.TRUE;
+    private final boolean includeTimestamp;
 
     @JsonProperty(value = "includeTagNames")
     @ModuleConfigField(title = "Include Tag Names In Publish?",
                        description = "Include the names of the tags in the resulting MQTT publish",
                        defaultValue = "false")
-    protected @NotNull Boolean includeTagNames = Boolean.FALSE;
+    private final boolean includeTagNames;
 
     @JsonProperty(value = "userProperties")
     @ModuleConfigField(title = "User Properties",
                        description = "Arbitrary properties to associate with the subscription",
                        arrayMaxItems = 10)
-    private @NotNull List<UserProperty> userProperties = new ArrayList<>();
+    private final @NotNull List<UserProperty> userProperties;
 
     @JsonProperty(value = "filePath", required = true)
     @ModuleConfigField(title = "The file path",
                        description = "The absolute path to the file that should be scraped.",
                        required = true)
-    protected @NotNull String filePath;
+    private final @NotNull String filePath;
 
     @JsonProperty(value = "contentType", required = true)
     @ModuleConfigField(title = "Content Type",
@@ -89,24 +93,27 @@ public class FilePollingContext implements PollingContext {
                                "application/xml",
                                "text/csv"},
                        required = true)
-    protected @NotNull ContentType contentType;
+    private final @NotNull ContentType contentType;
 
     @JsonCreator
     public FilePollingContext(
-            @JsonProperty("destination") @Nullable final String destination,
+            @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty("qos") final int qos,
-            @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties,
-            @JsonProperty("filePath") @NotNull String filePath,
-            @JsonProperty("contentType") @NotNull ContentType contentType) {
-        this.destination = destination;
+            @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
+            @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
+            @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
+            @JsonProperty("userProperties") final @Nullable List<UserProperty> userProperties,
+            @JsonProperty("filePath") final @NotNull String filePath,
+            @JsonProperty("contentType") final @NotNull ContentType contentType) {
+        this.mqttTopic = mqttTopic;
         this.qos = qos;
+        this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
+        this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
+        this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.contentType = contentType;
-        if (userProperties != null) {
-            this.userProperties = userProperties;
-        }
+        this.userProperties = Objects.requireNonNullElse(userProperties, List.of());
         this.filePath = filePath;
     }
-
 
     public @NotNull String getFilePath() {
         return filePath;
@@ -114,7 +121,7 @@ public class FilePollingContext implements PollingContext {
 
     @Override
     public @Nullable String getMqttTopic() {
-        return destination;
+        return mqttTopic;
     }
 
     @Override

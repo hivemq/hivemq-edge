@@ -1,0 +1,31 @@
+<hivemq>
+    <protocol-adapters>
+        <file>
+            <id>my-file-protocol-adapter</id>
+            <fileToMqtt>
+                <pollingIntervalMillis>10</pollingIntervalMillis>
+                <maxPollingErrorsBeforeRemoval>9</maxPollingErrorsBeforeRemoval>
+                <fileToMqttMappings>
+                    <fileToMqttMapping>
+                        <mqttTopic>my/topic</mqttTopic>
+                        <qos>1</qos>
+                        <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                        <includeTagNames>true</includeTagNames>
+                        <includeTimestamp>false</includeTimestamp>
+                        <filePath>path/to/file1</filePath>
+                        <contentType>BINARY</contentType>
+                    </fileToMqttMapping>
+                    <fileToMqttMapping>
+                        <mqttTopic>my/topic/2</mqttTopic>
+                        <qos>1</qos>
+                        <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                        <includeTagNames>true</includeTagNames>
+                        <includeTimestamp>false</includeTimestamp>
+                        <filePath>path/to/file2</filePath>
+                        <contentType>TEXT_CSV</contentType>
+                    </fileToMqttMapping>
+                </fileToMqttMappings>
+            </fileToMqtt>
+        </file>
+    </protocol-adapters>
+</hivemq>

@@ -16,71 +16,44 @@
 package com.hivemq.edge.adapters.file.config;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-
-
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
-@JsonPropertyOrder({
-        "url",
-        "destination"})
 public class FileAdapterConfig implements ProtocolAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
     @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",
-            description = "Unique identifier for this protocol adapter",
-            format = ModuleConfigField.FieldType.IDENTIFIER,
-            required = true,
-            stringPattern = ID_REGEX,
-            stringMinLength = 1,
-            stringMaxLength = 1024)
-    protected @NotNull String id;
+                       description = "Unique identifier for this protocol adapter",
+                       format = ModuleConfigField.FieldType.IDENTIFIER,
+                       required = true,
+                       stringPattern = ID_REGEX,
+                       stringMinLength = 1,
+                       stringMaxLength = 1024)
+    private final @NotNull String id;
 
-    @JsonProperty("pollingIntervalMillis")
-    @ModuleConfigField(title = "Polling Interval [ms]",
-            description = "Time in millisecond that this endpoint will be polled",
-            numberMin = 1,
-            required = true,
-            defaultValue = "1000")
-    private int pollingIntervalMillis = 1000;
+    @JsonProperty("fileToMqtt")
+    @ModuleConfigField(title = "File To MQTT Config",
+                       description = "The configuration for a data stream from File to MQTT",
+                       required = true)
+    private final @NotNull FileToMqttConfig fileToMqttConfig;
 
-    @JsonProperty("maxPollingErrorsBeforeRemoval")
-    @ModuleConfigField(title = "Max. Polling Errors",
-            description = "Max. errors polling the endpoint before the polling daemon is stopped",
-            numberMin = 3,
-            defaultValue = "10")
-    private int maxPollingErrorsBeforeRemoval = 10;
-
-
-    @JsonProperty("subscriptions")
-    @ModuleConfigField(title = "subscription", description = "Map your file content to an MQTT Topic")
-    private @NotNull List<FilePollingContext> pollingContexts = new ArrayList<>();
-
-    public FileAdapterConfig() {
+    public FileAdapterConfig(
+            @JsonProperty(value = "id", required = true) final @NotNull String id,
+            @JsonProperty(value = "fileToMqtt", required = true) final @NotNull FileToMqttConfig fileToMqttConfig) {
+        this.id = id;
+        this.fileToMqttConfig = fileToMqttConfig;
     }
-
 
     @Override
     public @NotNull String getId() {
         return id;
     }
 
-    public int getPollingIntervalMillis() {
-        return pollingIntervalMillis;
-    }
-
-    public int getMaxPollingErrorsBeforeRemoval() {
-        return maxPollingErrorsBeforeRemoval;
-    }
-
-    public @NotNull List<FilePollingContext> getPollingContexts() {
-        return pollingContexts;
+    public @NotNull FileToMqttConfig getFileToMqttConfig() {
+        return fileToMqttConfig;
     }
 }
