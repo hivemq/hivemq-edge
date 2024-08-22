@@ -28,6 +28,7 @@ public class ModbusToMQTTConfig {
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
                        description = "Max. errors polling the endpoint before the polling daemon is stopped",
+                       numberMin = 1,
                        defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
 
