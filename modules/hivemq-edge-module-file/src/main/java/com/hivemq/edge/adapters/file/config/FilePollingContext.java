@@ -98,15 +98,15 @@ public class FilePollingContext implements PollingContext {
     @JsonCreator
     public FilePollingContext(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
-            @JsonProperty("qos") final int qos,
+            @JsonProperty("qos") final @Nullable Integer qos,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty("userProperties") final @Nullable List<UserProperty> userProperties,
-            @JsonProperty("filePath") final @NotNull String filePath,
-            @JsonProperty("contentType") final @NotNull ContentType contentType) {
+            @JsonProperty(value = "filePath", required = true) final @NotNull String filePath,
+            @JsonProperty(value = "contentType", required = true) final @NotNull ContentType contentType) {
         this.mqttTopic = mqttTopic;
-        this.qos = qos;
+        this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
         this.includeTagNames = requireNonNullElse(includeTagNames, false);

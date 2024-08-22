@@ -1,47 +1,51 @@
 {
-  "ui:tabs": [
+  "ui:tabs" : [
     {
-      "id": "coreFields",
-      "title": "Settings",
-      "properties": [
-        "id"
+      "id" : "coreFields",
+      "title" : "Connection",
+      "properties" : [
+        "id",
+        "timeout"
       ]
     },
     {
-      "id": "subFields",
-      "title": "Subscription",
-      "properties": [
-        "subscriptions"
-      ]
-    },
-    {
-      "id": "publishing",
-      "title": "Publishing",
-      "properties": [
-        "maxPollingErrorsBeforeRemoval",
-        "pollingIntervalMillis"
+      "id" : "subFields",
+      "title" : "File 2 MQTT",
+      "properties" : [
+        "fileToMqtt"
       ]
     }
   ],
-  "port": {
-    "ui:widget": "updown"
+  "id" : {
+    "ui:disabled" : false
   },
-  "ui:order": [
+  "ui:order" : [
     "id",
     "*"
   ],
-  "subscriptions": {
-    "ui:batchMode": true,
-    "items": {
-      "ui:order": [
-        "destination",
-        "qos",
-        "filePath",
-        "*",
-        "userProperties"
-      ],
-      "ui:collapsable": {
-        "titleKey": "destination"
+  "fileToMqtt" : {
+    "ui:batchMode" : true,
+    "ui:order" : [
+      "maxPollingErrorsBeforeRemoval",
+      "pollingIntervalMillis",
+      "publishChangedDataOnly",
+      "fileToMqttMappings",
+      "*"
+    ],
+    "fileToMqttMappings" : {
+      "ui:batchMode" : true,
+      "items": {
+        "ui:order" : [
+          "mqttTopic",
+          "qos",
+          "*",
+          "userProperties",
+          "filePath",
+          "dataType"
+        ],
+        "ui:collapsable" : {
+          "titleKey" : "mqttTopic"
+        }
       }
     }
   }
