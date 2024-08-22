@@ -52,7 +52,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePo
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.pollingContext = adapterConfig.getPollingContexts();
+        this.pollingContext = adapterConfig.getFileToMqttConfig().getMappings();
     }
 
     @Override
@@ -120,11 +120,11 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePo
 
     @Override
     public int getPollingIntervalMillis() {
-        return adapterConfig.getPollingIntervalMillis();
+        return adapterConfig.getFileToMqttConfig().getPollingIntervalMillis();
     }
 
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
-        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+        return adapterConfig.getFileToMqttConfig().getMaxPollingErrorsBeforeRemoval();
     }
 }

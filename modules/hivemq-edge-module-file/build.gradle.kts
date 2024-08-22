@@ -20,23 +20,33 @@ java {
 
 repositories {
     mavenCentral()
+    exclusiveContent {
+        forRepository {
+            maven {
+                url = uri("https://jitpack.io")
+            }
+        }
+        filter {
+            includeGroup("com.github.simon622.mqtt-sn")
+            includeGroup("com.github.simon622")
+        }
+    }
 }
 
 dependencies {
-    dependencies {
-        compileOnly(libs.hivemq.edge.adapterSdk)
-        compileOnly(libs.apache.commonsIO)
-        compileOnly(libs.jackson.databind)
-        compileOnly(libs.slf4j.api)
-    }
+    compileOnly(libs.hivemq.edge.adapterSdk)
+    compileOnly(libs.apache.commonsIO)
+    compileOnly(libs.jackson.databind)
+    compileOnly(libs.slf4j.api)
 
-    dependencies {
-        testImplementation(libs.junit.jupiter)
-        testImplementation(libs.hivemq.edge.adapterSdk)
-        testImplementation(libs.mockito)
-        testImplementation(libs.jackson.databind)
-    }
 
+    testImplementation(libs.hivemq.edge)
+    testImplementation(libs.jackson.databind)
+    testImplementation(libs.hivemq.edge.adapterSdk)
+    testImplementation(libs.apache.commonsIO)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj)
+    testImplementation(libs.mockito.junitJupiter)
 }
 
 tasks.test {
