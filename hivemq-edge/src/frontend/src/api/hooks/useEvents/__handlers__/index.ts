@@ -4,6 +4,7 @@ import { Event, EventList, Payload, TypeIdentifier } from '@/api/__generated__'
 import { DateTime } from 'luxon'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 
+const MOCK_ID_SHIFT = 100
 const makeID = (type: TypeIdentifier.type, inc: number): TypeIdentifier => ({
   identifier: `${type}-${inc}`,
   type: type,
@@ -49,7 +50,7 @@ export const mockEdgeEvent = (n = maxEvents): Event[] =>
     payload: contentType[x % 3],
 
     source: makeID(sourceKeys[x % sourceKeys.length] as TypeIdentifier.type, x),
-    associatedObject: makeID(sourceKeys[x % sourceKeys.length] as TypeIdentifier.type, x + 100),
+    associatedObject: makeID(sourceKeys[x % sourceKeys.length] as TypeIdentifier.type, x + MOCK_ID_SHIFT),
     created: DateTime.fromISO('2023-10-13T11:51:24.234')
       .plus({ minutes: x % 100 })
       .toISO({ format: 'basic' }) as string,
