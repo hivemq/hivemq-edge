@@ -27,21 +27,23 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
   const selectedNodes = nodes.filter((node) => node.selected)
   const selectedGroupCandidates = useMemo(() => {
     // TODO[NVL] Should the grouping only be available if ALL nodes match the filter ?
-    const adapters = selectedNodes.filter((e) => e.type === NodeTypes.ADAPTER_NODE && !e.parentId && !e.parentNode)
+    const adapters = selectedNodes.filter(
+      (node) => node.type === NodeTypes.ADAPTER_NODE && !node.parentId && !node.parentNode
+    )
     return adapters.length >= 2 ? adapters : undefined
   }, [selectedNodes])
 
   const onCreateGroup = () => {
     if (!selectedGroupCandidates) return
 
-    const groupId = `${IdStubs.GROUP_NODE}@${selectedGroupCandidates.map((e) => e.data.id).join('+')}`
+    const groupId = `${IdStubs.GROUP_NODE}@${selectedGroupCandidates.map((node) => node.data.id).join('+')}`
     const groupTitle = t('workspace.grouping.untitled')
     const rect = getGroupLayout(selectedGroupCandidates)
     const newGroupNode: Node<Group, NodeTypes.CLUSTER_NODE> = {
       id: groupId,
       type: NodeTypes.CLUSTER_NODE,
       data: {
-        childrenNodeIds: selectedGroupCandidates.map((e) => e.id),
+        childrenNodeIds: selectedGroupCandidates.map((node) => node.id),
         title: groupTitle,
         isOpen: true,
         colorScheme: 'red',
@@ -54,11 +56,13 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
     }
 
     const groupStatus: Status = {
-      runtime: selectedGroupCandidates.every((e: Node<Adapter>) => e.data.status?.runtime === Status.runtime.STARTED)
+      runtime: selectedGroupCandidates.every(
+        (node: Node<Adapter>) => node.data.status?.runtime === Status.runtime.STARTED
+      )
         ? Status.runtime.STARTED
         : Status.runtime.STOPPED,
       connection: selectedGroupCandidates.every(
-        (e: Node<Adapter>) => e.data.status?.connection === Status.connection.CONNECTED
+        (node: Node<Adapter>) => node.data.status?.connection === Status.connection.CONNECTED
       )
         ? Status.connection.CONNECTED
         : Status.connection.DISCONNECTED,
