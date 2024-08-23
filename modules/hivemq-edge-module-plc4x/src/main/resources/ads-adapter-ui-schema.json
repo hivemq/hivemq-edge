@@ -13,12 +13,12 @@
       "id" : "subFields",
       "title" : "ADS To MQTT",
       "properties" : [
-        "plc4xToMqtt"
+        "adsToMqtt"
       ]
     },
     {
       "id" : "ads",
-      "title" : "ADS",
+      "title" : "ADS Device",
       "properties" : [
         "sourceAmsPort",
         "targetAmsPort",
@@ -39,22 +39,24 @@
     "port",
     "*"
   ],
-  "plc4xToMqtt" : {
+  "adsToMqtt" : {
     "ui:batchMode" : true,
     "ui:order" : [
-      "plc4xToMqttMappings",
+      "adsToMqttMappings",
       "maxPollingErrorsBeforeRemoval",
       "pollingIntervalMillis",
       "publishChangedDataOnly",
       "*"
     ],
-    "plc4xToMqttMappings" : {
+    "adsToMqttMappings" : {
       "ui:batchMode" : true,
       "items" : {
         "ui:order" : [
+          "tagName",
+          "tagAddress",
+          "dataType",
           "mqttTopic",
           "qos",
-          "node",
           "*"
         ],
         "ui:collapsable" : {
