@@ -294,7 +294,7 @@ public class EtherIpAdapterConfig implements ProtocolAdapterConfig {
         }
 
         @Override
-        public @Nullable String getDestinationMqttTopic() {
+        public @Nullable String getMqttTopic() {
             return destination;
         }
 
