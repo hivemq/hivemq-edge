@@ -15,11 +15,15 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xToMqttConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
 
@@ -41,70 +45,96 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
                        numberMin = PORT_MIN,
                        numberMax = PORT_MAX,
                        defaultValue = "102")
-    private int port = 102;
+    private final int port;
 
     @JsonProperty(value = "controllerType", required = true)
     @ModuleConfigField(title = "S7 Controller Type",
-                       description = "Http method associated with the request",
-                       required = true)
-    private @NotNull S7AdapterConfig.ControllerType controllerType = ControllerType.S7_300;
+                       description = "The type of the S7 Controller",
+                       required = true,
+                       defaultValue = "S7_300")
+    private final @NotNull S7AdapterConfig.ControllerType controllerType;
 
     @JsonProperty("remoteRack")
     @ModuleConfigField(title = "Remote Rack",
                        description = "Rack value for the remote main CPU (PLC).",
                        defaultValue = "0")
-    private @NotNull Integer remoteRack = 0;
+    private final @NotNull Integer remoteRack;
 
     @JsonProperty("remoteRack2")
     @ModuleConfigField(title = "Remote Rack 2",
                        description = "Rack value for the remote secondary CPU (PLC).",
                        defaultValue = "0")
-    private @NotNull Integer remoteRack2 = 0;
+    private final @NotNull Integer remoteRack2;
 
     @JsonProperty("remoteSlot")
     @ModuleConfigField(title = "Remote Slot",
                        description = "Slot value for the remote main CPU (PLC).",
                        defaultValue = "0")
-    private @NotNull Integer remoteSlot = 0;
+    private final @NotNull Integer remoteSlot;
 
     @JsonProperty("remoteSlot2")
     @ModuleConfigField(title = "Remote Slot 2",
                        description = "Slot value for the remote secondary CPU (PLC).",
                        defaultValue = "0")
-    private @NotNull Integer remoteSlot2 = 0;
+    private final @NotNull Integer remoteSlot2;
 
     @JsonProperty("remoteTsap")
     @ModuleConfigField(title = "Remote TSAP",
                        description = "Remote TSAP value. The TSAP (Transport Services Access Point) mechanism is used as a further addressing level in the S7 PLC network. Usually only required for PLC from the LOGO series.",
                        defaultValue = "0")
-    private @NotNull Integer remoteTsap = 0;
+    private final @NotNull Integer remoteTsap;
 
+    @JsonProperty("s7ToMqtt")
+    @ModuleConfigField(title = "S7 To MQTT Config",
+                       description = "The configuration for a data stream from S7 to MQTT",
+                       required = true)
+    private final @NotNull S7ToMqttConfig s7ToMqttConfig;
 
-    public S7AdapterConfig() {
-        super(null, 0, null);
+    @JsonCreator
+    public S7AdapterConfig(
+            @JsonProperty(value = "id", required = true) final @NotNull String id,
+            @JsonProperty(value = "port", required = true) final int port,
+            @JsonProperty(value = "host", required = true) final @NotNull String host,
+            @JsonProperty(value = "controllerType", required = true) final @NotNull ControllerType controllerType,
+            @JsonProperty(value = "remoteRack") final @Nullable Integer remoteRack,
+            @JsonProperty(value = "remoteRack2") final @Nullable Integer remoteRack2,
+            @JsonProperty(value = "remoteSlot") final @Nullable Integer remoteSlot,
+            @JsonProperty(value = "remoteSlot2") final @Nullable Integer remoteSlot2,
+            @JsonProperty(value = "remoteTsap") final @Nullable Integer remoteTsap,
+            @JsonProperty(value = "s7ToMqtt", required = true) final @NotNull S7ToMqttConfig s7ToMqttConfig) {
+        super(id, port, host);
+        this.port = port;
+        this.controllerType = controllerType;
+        this.remoteRack = Objects.requireNonNullElse(remoteRack, 0);
+        this.remoteRack2 = Objects.requireNonNullElse(remoteRack2, 0);
+        this.remoteSlot = Objects.requireNonNullElse(remoteSlot, 0);
+        this.remoteSlot2 = Objects.requireNonNullElse(remoteSlot2, 0);
+        this.remoteTsap = Objects.requireNonNullElse(remoteTsap, 0);
+        this.s7ToMqttConfig = s7ToMqttConfig;
+
     }
 
     public int getPort() {
         return port;
     }
 
-    public Integer getRemoteRack() {
+    public @NotNull Integer getRemoteRack() {
         return remoteRack;
     }
 
-    public Integer getRemoteRack2() {
+    public @NotNull Integer getRemoteRack2() {
         return remoteRack2;
     }
 
-    public Integer getRemoteSlot() {
+    public @NotNull Integer getRemoteSlot() {
         return remoteSlot;
     }
 
-    public Integer getRemoteSlot2() {
+    public @NotNull Integer getRemoteSlot2() {
         return remoteSlot2;
     }
 
-    public Integer getRemoteTsap() {
+    public @NotNull Integer getRemoteTsap() {
         return remoteTsap;
     }
 
@@ -114,6 +144,6 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
 
     @Override
     public @NotNull Plc4xToMqttConfig getPlc4xToMqttConfig() {
-        return null;
+        return s7ToMqttConfig;
     }
 }

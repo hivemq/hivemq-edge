@@ -1,29 +1,25 @@
 {
-  "ui:tabs": [
+  "ui:tabs" : [
     {
-      "id": "coreFields",
-      "title": "Core Fields",
-      "properties": ["id", "port", "host"]
-    },
-    {
-      "id": "subFields",
-      "title": "Subscription",
-      "properties": ["subscriptions"]
-    },
-
-    {
-      "id": "publishing",
-      "title": "Publishing",
-      "properties": [
-        "maxPollingErrorsBeforeRemoval",
-        "pollingIntervalMillis",
-        "publishChangedDataOnly"
+      "id" : "coreFields",
+      "title" : "Core Fields",
+      "properties" : [
+        "id",
+        "host",
+        "port"
       ]
     },
     {
-      "id": "s7advanced",
-      "title": "S7 Device",
-      "properties": [
+      "id" : "subFields",
+      "title" : "S7 To MQTT",
+      "properties" : [
+        "s7ToMqtt"
+      ]
+    },
+    {
+      "id" : "s7",
+      "title" : "S7 Device",
+      "properties" : [
         "controllerType",
         "remoteRack",
         "remoteSlot",
@@ -33,18 +29,41 @@
       ]
     }
   ],
-  "id": {
-    "ui:disabled": false
+  "id" : {
+    "ui:disabled" : false
   },
-  "port": {
-    "ui:widget": "updown"
+  "port" : {
+    "ui:widget" : "updown"
   },
-  "subscriptions": {
-    "ui:batchMode": true,
-    "items": {
-      "ui:order": ["node", "mqtt-topic", "destination", "qos", "*"],
-      "ui:collapsable": {
-        "titleKey": "destination"
+  "ui:order" : [
+    "id",
+    "host",
+    "port",
+    "*"
+  ],
+  "s7ToMqtt" : {
+    "ui:batchMode" : true,
+    "ui:order" : [
+      "s7ToMqttMappings",
+      "maxPollingErrorsBeforeRemoval",
+      "pollingIntervalMillis",
+      "publishChangedDataOnly",
+      "*"
+    ],
+    "s7ToMqttMappings" : {
+      "ui:batchMode" : true,
+      "items" : {
+        "ui:order" : [
+          "tagName",
+          "tagAddress",
+          "dataType",
+          "mqttTopic",
+          "qos",
+          "*"
+        ],
+        "ui:collapsable" : {
+          "titleKey" : "mqttTopic"
+        }
       }
     }
   }
