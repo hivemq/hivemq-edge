@@ -1,5 +1,6 @@
 package com.hivemq.edge.adapters.opcua.config;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.Nullable;
@@ -22,6 +23,7 @@ public class Tls {
                        description = "Truststore wich contains the trusted server certificates or trusted intermediates.")
     private final @Nullable Truststore truststore;
 
+    @JsonCreator
     public Tls(
             @JsonProperty("enabled") final @Nullable Boolean enabled,
             @JsonProperty("keystore") final @Nullable Keystore keystore,
