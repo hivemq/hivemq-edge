@@ -1,5 +1,6 @@
 package com.hivemq.edge.adapters.opcua.config;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
@@ -14,6 +15,7 @@ public class Truststore {
     @ModuleConfigField(title = "Truststore password", description = "Password to open the truststore.")
     private final @NotNull String password;
 
+    @JsonCreator
     public Truststore(
             @JsonProperty(value = "path", required = true) final @NotNull String path,
             @JsonProperty(value = "password", required = true) final @NotNull String password) {
