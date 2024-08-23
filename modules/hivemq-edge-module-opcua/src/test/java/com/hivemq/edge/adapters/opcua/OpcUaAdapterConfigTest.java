@@ -28,6 +28,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Map;
 
+import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC128RSA15;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -50,12 +51,18 @@ class OpcUaAdapterConfigTest {
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
-        assertThat(config.getOpcuaToMqttConfig()).isNotNull();
+        assertThat(config.getOverrideUri()).isTrue();
+        assertThat(config.getSecurity()).satisfies(security -> {
+            assertThat(security.getPolicy()).isEqualTo(BASIC128RSA15);
+        });
 
         assertThat(config.getAuth()).satisfies(auth -> {
             assertThat(auth.getBasicAuth()).isNotNull();
             assertThat(auth.getBasicAuth().getUsername()).isEqualTo("edge");
             assertThat(auth.getBasicAuth().getPassword()).isEqualTo("password");
+
+            assertThat(auth.getX509Auth()).isNotNull();
+            assertThat(auth.getX509Auth().isEnabled()).isTrue();
         });
 
         assertThat(config.getTls()).satisfies(tls -> {
@@ -71,6 +78,7 @@ class OpcUaAdapterConfigTest {
             assertThat(tls.getTruststore().getPassword()).isEqualTo("truststore-password");
         });
 
+        assertThat(config.getOpcuaToMqttConfig()).isNotNull();
         assertThat(config.getOpcuaToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/#");
