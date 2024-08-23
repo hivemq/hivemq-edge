@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.modbus;
 
 import com.google.common.collect.ImmutableMap;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.events.EventService;
@@ -23,13 +24,14 @@ import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.api.mqtt.PublishReturnCode;
+import com.hivemq.edge.adapters.modbus.config.AddressRange;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMQTTConfig;
+import com.hivemq.edge.adapters.modbus.config.PollingContextImpl;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterPublishBuilderImpl;
-import com.hivemq.edge.modules.config.impl.PollingContextImpl;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
@@ -103,7 +105,13 @@ class ModbusProtocolAdapterTest {
     }
 
     protected static ModBusData createSampleData(final int registerCount) {
-        final PollingContext pollingContext = new PollingContextImpl("topic", 2, List.of());
+        final PollingContext pollingContext = new PollingContextImpl("topic",
+                2,
+                MessageHandlingOptions.MQTTMessagePerSubscription,
+                true,
+                false,
+                List.of(),
+                new AddressRange(1, 2));
         final ModBusData data = new ModBusData(pollingContext, new DataPointFactory() {
             @Override
             public @NotNull DataPoint create(final @NotNull String tagName, final @NotNull Object tagValue) {
