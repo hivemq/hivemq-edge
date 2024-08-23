@@ -36,6 +36,8 @@ import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
+import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttMapping;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
@@ -82,7 +84,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     private final @NotNull AdapterFactories adapterFactories;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private @Nullable OpcUaClient opcUaClient;
-    private final @NotNull Map<UInteger, OpcUaAdapterConfig.Subscription> subscriptionMap = new ConcurrentHashMap<>();
+    private final @NotNull Map<UInteger, OpcuaToMqttMapping> subscriptionMap = new ConcurrentHashMap<>();
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -205,8 +207,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     private @NotNull OpcUaSubscriptionListener createSubscriptionListener() {
         return new OpcUaSubscriptionListener(protocolAdapterMetricsService, adapterConfig.getId(), (subscription) -> {
             //re-create a subscription on failure
-            final OpcUaAdapterConfig.Subscription subscriptionConfig =
-                    subscriptionMap.get(subscription.getSubscriptionId());
+            final OpcuaToMqttMapping subscriptionConfig = subscriptionMap.get(subscription.getSubscriptionId());
             if (subscriptionConfig != null) {
                 try {
                     subscribeToNode(subscriptionConfig).get();
@@ -219,14 +220,16 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
 
     private @NotNull CompletableFuture<Void> createAllSubscriptions() {
         //noinspection ConstantValue
-        if (adapterConfig.getSubscriptions() == null || adapterConfig.getSubscriptions().isEmpty()) {
+        if (adapterConfig.getOpcuaToMqttConfig() == null ||
+                adapterConfig.getOpcuaToMqttConfig().getMappings() == null ||
+                adapterConfig.getOpcuaToMqttConfig().getMappings().isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
 
         final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
         final ImmutableList.Builder<CompletableFuture<Void>> subscribeFutures = ImmutableList.builder();
 
-        for (OpcUaAdapterConfig.Subscription subscription : adapterConfig.getSubscriptions()) {
+        for (final OpcuaToMqttMapping subscription : adapterConfig.getOpcuaToMqttConfig().getMappings()) {
             subscribeFutures.add(subscribeToNode(subscription));
         }
 
@@ -272,7 +275,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         });
     }
 
-    private @NotNull CompletableFuture<Void> subscribeToNode(final @NotNull OpcUaAdapterConfig.Subscription subscription) {
+    private @NotNull CompletableFuture<Void> subscribeToNode(final @NotNull OpcuaToMqttMapping subscription) {
         try {
             final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
 

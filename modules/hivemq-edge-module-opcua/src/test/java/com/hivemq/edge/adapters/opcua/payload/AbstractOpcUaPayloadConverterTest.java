@@ -26,10 +26,12 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
-import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.PayloadMode;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
+import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.PayloadMode;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.mqtt.message.QoS;
@@ -71,26 +73,33 @@ abstract class AbstractOpcUaPayloadConverterTest {
     private final @NotNull EventService eventService = mock();
 
 
-
     @BeforeEach
     public void before() {
         when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
                 "id",
-               "protocolId"));
+                "protocolId"));
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
         when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
         when(adapterPublishService.createPublish()).thenReturn(adapterPublishBuilder);
         when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
-        when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event->{}));
+        when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event -> {}));
         when(moduleServices.eventService()).thenReturn(eventService);
     }
 
     @NotNull
     protected OpcUaProtocolAdapter createAndStartAdapter(
             final @NotNull String subcribedNodeId, final PayloadMode payloadMode) throws Exception {
-        final OpcUaAdapterConfig config =
-                new OpcUaAdapterConfig("test-" + UUID.randomUUID(), opcUaServerExtension.getServerUri());
-        config.setSubscriptions(List.of(new OpcUaAdapterConfig.Subscription(subcribedNodeId, "topic")));
+
+        final OpcuaToMqttConfig opcuaToMqttConfig =
+                new OpcuaToMqttConfig(List.of(new OpcuaToMqttMapping(subcribedNodeId, "topic", null, null, null, null)));
+        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test-" + UUID.randomUUID(),
+                opcUaServerExtension.getServerUri(),
+                false,
+                null,
+                null,
+                opcuaToMqttConfig,
+                null);
+
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);

@@ -15,7 +15,8 @@
  */
 package com.hivemq.edge.adapters.opcua.client;
 
-import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.eclipse.milo.opcua.stack.core.util.EndpointUtil;
@@ -57,8 +58,8 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
                     adapterConfig.getId());
             return false;
         }).min((o1, o2) -> {
-            final OpcUaAdapterConfig.SecPolicy policy1 = OpcUaAdapterConfig.SecPolicy.forUri(o1.getSecurityPolicyUri());
-            final OpcUaAdapterConfig.SecPolicy policy2 = OpcUaAdapterConfig.SecPolicy.forUri(o2.getSecurityPolicyUri());
+            final SecPolicy policy1 = SecPolicy.forUri(o1.getSecurityPolicyUri());
+            final SecPolicy policy2 = SecPolicy.forUri(o2.getSecurityPolicyUri());
             if (policy1 == null) {
                 return -1;
             }

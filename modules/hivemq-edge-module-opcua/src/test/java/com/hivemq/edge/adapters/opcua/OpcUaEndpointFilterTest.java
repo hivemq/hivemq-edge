@@ -16,6 +16,10 @@
 package com.hivemq.edge.adapters.opcua;
 
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
+import com.hivemq.edge.adapters.opcua.config.Keystore;
+import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.SecPolicy;
+import com.hivemq.edge.adapters.opcua.config.Tls;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -26,13 +30,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.AES128_SHA256_RSAOAEP;
-import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.AES256_SHA256_RSAPSS;
-import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.BASIC128RSA15;
-import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.BASIC256;
-import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.BASIC256SHA256;
-import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.DEFAULT;
-import static com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig.SecPolicy.NONE;
+import static com.hivemq.edge.adapters.opcua.config.SecPolicy.AES128_SHA256_RSAOAEP;
+import static com.hivemq.edge.adapters.opcua.config.SecPolicy.AES256_SHA256_RSAPSS;
+import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC128RSA15;
+import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC256;
+import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC256SHA256;
+import static com.hivemq.edge.adapters.opcua.config.SecPolicy.DEFAULT;
+import static com.hivemq.edge.adapters.opcua.config.SecPolicy.NONE;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class OpcUaEndpointFilterTest {
@@ -46,8 +50,16 @@ class OpcUaEndpointFilterTest {
 
     @Test
     public void whenSingleEndpointConfigSet_thenPickCorrectEndpoint() {
+        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("id",
+                "opc.tcp://127.0.0.1:49320",
+                false,
+                null,
+                new Tls(true, new Keystore("path", null, null), null),
+                null,
+                null);
+
         final String configUri = convertToUri(BASIC256SHA256);
-        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, getConfig());
+        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, config);
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));
 
@@ -57,8 +69,15 @@ class OpcUaEndpointFilterTest {
 
     @Test
     public void whenSingleEndpointConfigSetAndNoKeystorePresent_thenPickNoEndpoint() {
+        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("id", "opc.tcp://127.0.0.1:49320",
+                false,
+                null,
+                null,
+                null,
+                null);
+
         final String configUri = convertToUri(BASIC256SHA256);
-        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, new OpcUaAdapterConfig());
+        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, config);
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));
 
@@ -68,7 +87,13 @@ class OpcUaEndpointFilterTest {
     @Test
     public void whenSingleEndpointConfigSetAndNotAvailOnServer_thenPickNoEndpoint() {
         final String configUri = convertToUri(BASIC256SHA256);
-        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, getConfig());
+        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("id", "opc.tcp://127.0.0.1:49320",
+                false,
+                null,
+                null,
+                null,
+                null);
+        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(configUri, config);
 
         final Optional<EndpointDescription> result =
                 opcUaEndpointFilter.apply(convertToEndpointDescription(convertToUri(List.of(NONE))));
@@ -78,7 +103,13 @@ class OpcUaEndpointFilterTest {
 
     @Test
     public void whenDefaultEndpointConfigSet_thenPickMatchingEndpoint() {
-        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(convertToUri(DEFAULT), getConfig());
+        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("id", "opc.tcp://127.0.0.1:49320",
+                false,
+                null,
+                null,
+                null,
+                null);
+        final OpcUaEndpointFilter opcUaEndpointFilter = new OpcUaEndpointFilter(convertToUri(DEFAULT), config);
 
         final Optional<EndpointDescription> result = opcUaEndpointFilter.apply(convertToEndpointDescription(allUris));
 
@@ -102,19 +133,14 @@ class OpcUaEndpointFilterTest {
         return endpointList;
     }
 
-    private @NotNull List<String> convertToUri(final @NotNull List<OpcUaAdapterConfig.SecPolicy> policies) {
+    private @NotNull List<String> convertToUri(final @NotNull List<SecPolicy> policies) {
         return policies.stream()
                 .map(secPolicy -> secPolicy.getSecurityPolicy().getUri())
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    private @NotNull String convertToUri(final @NotNull OpcUaAdapterConfig.SecPolicy policy) {
+    private @NotNull String convertToUri(final @NotNull SecPolicy policy) {
         return policy.getSecurityPolicy().getUri();
     }
 
-    private @NotNull OpcUaAdapterConfig getConfig() {
-        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("id", "opc.tcp://127.0.0.1:49320");
-        config.setTls(new OpcUaAdapterConfig.Tls(true, new OpcUaAdapterConfig.Keystore("path", null, null), null));
-        return config;
-    }
 }

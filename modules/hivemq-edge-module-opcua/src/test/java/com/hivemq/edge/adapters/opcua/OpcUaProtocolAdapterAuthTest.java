@@ -20,6 +20,13 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.edge.adapters.opcua.config.Auth;
+import com.hivemq.edge.adapters.opcua.config.BasicAuth;
+import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.SecPolicy;
+import com.hivemq.edge.adapters.opcua.config.Security;
+import com.hivemq.edge.adapters.opcua.config.Tls;
+import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,13 +49,17 @@ class OpcUaProtocolAdapterAuthTest {
 
     @BeforeEach
     void setUp() {
-        when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(), "id", "protocolId"));
+        when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
+                "id",
+                "protocolId"));
     }
 
     @Test
     @Timeout(10)
     public void whenNoAuthAndNoSubscriptions_thenConnectSuccessfully() {
-        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
+        final OpcUaAdapterConfig config =
+                new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri(), false, null, null, null, null);
+
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
@@ -63,8 +74,10 @@ class OpcUaProtocolAdapterAuthTest {
     @Test
     @Timeout(10)
     public void whenBasicAuthAndNoSubscriptions_thenConnectSuccessfully() {
-        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
-        config.setAuth(new OpcUaAdapterConfig.Auth(new OpcUaAdapterConfig.BasicAuth("testuser", "testpass"), null));
+        final Auth auth = new Auth(new BasicAuth("testuser", "testpass"), null);
+        final OpcUaAdapterConfig config =
+                new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri(), false, auth, null, null, null);
+
         when(protocolAdapterInput.getConfig()).thenReturn(config);
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
@@ -79,9 +92,11 @@ class OpcUaProtocolAdapterAuthTest {
     @Test
     @Timeout(10)
     public void whenTlsAndNoSubscriptions_thenConnectSuccessfully() {
-        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
-        config.setSecurity(new OpcUaAdapterConfig.Security(OpcUaAdapterConfig.SecPolicy.NONE));
-        config.setTls(new OpcUaAdapterConfig.Tls(true, null, null));
+        final Security security = new Security(SecPolicy.NONE);
+        final Tls tls = new Tls(true, null, null);
+        final OpcUaAdapterConfig config =
+                new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri(), false, null, tls, null, security);
+
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 
         final OpcUaProtocolAdapter protocolAdapter =
@@ -97,8 +112,10 @@ class OpcUaProtocolAdapterAuthTest {
     @Test
     @Timeout(10)
     public void whenCertAuthAndNoSubscriptions_thenConnectSuccessfully() {
-        final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri());
-        config.setAuth(new OpcUaAdapterConfig.Auth(null, new OpcUaAdapterConfig.X509Auth()));
+        final Auth auth = new Auth(null, new X509Auth(true));
+        final OpcUaAdapterConfig config =
+                new OpcUaAdapterConfig("test", opcUaServerExtension.getServerUri(), false, auth, null, null, null);
+
         when(protocolAdapterInput.getConfig()).thenReturn(config);
 
         final OpcUaProtocolAdapter protocolAdapter =
