@@ -58,7 +58,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
         ? Status.runtime.STARTED
         : Status.runtime.STOPPED,
       connection: selectedGroupCandidates.every(
-        (e: Node<Adapter>) => e.data.status?.connection !== Status.connection.CONNECTED
+        (e: Node<Adapter>) => e.data.status?.connection === Status.connection.CONNECTED
       )
         ? Status.connection.CONNECTED
         : Status.connection.DISCONNECTED,
