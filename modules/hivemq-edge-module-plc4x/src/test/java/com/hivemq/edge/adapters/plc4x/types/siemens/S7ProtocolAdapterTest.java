@@ -15,11 +15,17 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xPollingContext;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -100,29 +106,25 @@ public class S7ProtocolAdapterTest {
         }
 
         @Override
-        public @NotNull String createTagAddressForSubscription(final @NotNull Plc4xAdapterConfig.PollingContextImpl subscription) {
+        public @NotNull String createTagAddressForSubscription(final @NotNull Plc4xPollingContext subscription) {
             return super.createTagAddressForSubscription(subscription);
         }
     }
 
-    private static class S7TestSub extends Plc4xAdapterConfig.PollingContextImpl {
+    private static class S7TestSub extends Plc4xPollingContext {
 
-        private final String address;
-        private final Plc4xDataType.DATA_TYPE type;
-
-        public S7TestSub(final String address, final Plc4xDataType.DATA_TYPE type) {
-            this.address = address;
-            this.type = type;
-        }
-
-        @Override
-        public String getTagAddress() {
-            return address;
-        }
-
-        @Override
-        public Plc4xDataType.DATA_TYPE getDataType() {
-            return type;
+        public S7TestSub(
+                final @NotNull String tagAddress,
+                final Plc4xDataType.@NotNull DATA_TYPE dataType) {
+            super("mqttTopic",
+                    1,
+                    MessageHandlingOptions.MQTTMessagePerTag,
+                    true,
+                    true,
+                    "tag",
+                    tagAddress,
+                    dataType,
+                    List.of());
         }
     }
 }

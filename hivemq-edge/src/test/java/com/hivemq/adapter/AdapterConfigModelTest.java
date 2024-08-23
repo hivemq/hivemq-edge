@@ -15,6 +15,7 @@
  */
 package com.hivemq.adapter;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,11 +25,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.config.UserProperty;
-import com.hivemq.edge.modules.config.impl.PollingContextImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -58,7 +60,7 @@ public class AdapterConfigModelTest {
 
         AdapterConfiguration entity = new AdapterConfiguration();
         entity.subscriptions = new ArrayList<>();
-        entity.subscriptions.add(new PollingContextImpl("some/path",1,List.of(new UserProperty("propertyName", "propertyValue"))));
+        entity.subscriptions.add(new TestContext("some/path",1,List.of(new UserProperty("propertyName", "propertyValue"))));
         String marhslaled = mapper.writeValueAsString(entity);
         System.err.println(marhslaled);
 
@@ -100,6 +102,94 @@ public class AdapterConfigModelTest {
         @Override
         public @NotNull String getId() {
             return "id";
+        }
+    }
+
+    private static class TestContext implements PollingContext {
+
+        @JsonProperty(value = "destination", required = true)
+        @ModuleConfigField(title = "Destination Topic",
+                           description = "The topic to publish data on",
+                           required = true,
+                           format = ModuleConfigField.FieldType.MQTT_TOPIC)
+        protected @Nullable String destination;
+
+        @JsonProperty(value = "qos", required = true)
+        @ModuleConfigField(title = "QoS",
+                           description = "MQTT Quality of Service level",
+                           required = true,
+                           numberMin = 0,
+                           numberMax = 2,
+                           defaultValue = "0")
+        protected int qos = 0;
+
+        @JsonProperty(value = "messageHandlingOptions")
+        @ModuleConfigField(title = "Message Handling Options",
+                           description = "This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample",
+                           enumDisplayValues = {
+                                   "MQTT Message Per Device Tag",
+                                   "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
+                           defaultValue = "MQTTMessagePerTag")
+        protected @NotNull MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
+
+        @JsonProperty(value = "includeTimestamp")
+        @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
+                           description = "Include the unix timestamp of the sample time in the resulting MQTT message",
+                           defaultValue = "true")
+        protected @NotNull Boolean includeTimestamp = Boolean.TRUE;
+
+        @JsonProperty(value = "includeTagNames")
+        @ModuleConfigField(title = "Include Tag Names In Publish?",
+                           description = "Include the names of the tags in the resulting MQTT publish",
+                           defaultValue = "false")
+        protected @NotNull Boolean includeTagNames = Boolean.FALSE;
+
+        @JsonProperty(value = "userProperties")
+        @ModuleConfigField(title = "User Properties",
+                           description = "Arbitrary properties to associate with the subscription",
+                           arrayMaxItems = 10)
+        private @NotNull List<UserProperty> userProperties = new ArrayList<>();
+
+        @JsonCreator
+        public TestContext(
+                @JsonProperty("destination") @Nullable final String destination,
+                @JsonProperty("qos") final int qos,
+                @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {
+            this.destination = destination;
+            this.qos = qos;
+            if (userProperties != null) {
+                this.userProperties = userProperties;
+            }
+        }
+
+        @Override
+        public @Nullable String getMqttTopic() {
+            return destination;
+        }
+
+        @Override
+        public int getQos() {
+            return qos;
+        }
+
+        @Override
+        public @NotNull MessageHandlingOptions getMessageHandlingOptions() {
+            return messageHandlingOptions;
+        }
+
+        @Override
+        public @NotNull Boolean getIncludeTimestamp() {
+            return includeTimestamp;
+        }
+
+        @Override
+        public @NotNull Boolean getIncludeTagNames() {
+            return includeTagNames;
+        }
+
+        @Override
+        public @NotNull List<UserProperty> getUserProperties() {
+            return userProperties;
         }
     }
 }

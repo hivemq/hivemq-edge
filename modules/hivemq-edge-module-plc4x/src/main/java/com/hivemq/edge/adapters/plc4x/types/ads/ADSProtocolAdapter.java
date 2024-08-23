@@ -18,7 +18,7 @@ package com.hivemq.edge.adapters.plc4x.types.ads;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xPollingContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -27,10 +27,12 @@ import java.util.Map;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, Plc4xAdapterConfig.PollingContextImpl> {
+public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, Plc4xPollingContext> {
 
-    static final String SOURCE_AMS_NET_ID = "sourceAmsNetId", SOURCE_AMS_PORT = "sourceAmsPort", TARGET_AMS_PORT =
-            "targetAmsPort", TARGET_AMS_NET_ID = "targetAmsNetId";
+    private static final @NotNull String SOURCE_AMS_NET_ID = "sourceAmsNetId";
+    private static final @NotNull String SOURCE_AMS_PORT = "sourceAmsPort";
+    private static final @NotNull String TARGET_AMS_PORT = "targetAmsPort";
+    private static final @NotNull String TARGET_AMS_NET_ID = "targetAmsNetId";
 
     public ADSProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -49,7 +51,7 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, P
     }
 
     @Override
-    protected @NotNull String createTagAddressForSubscription(final Plc4xAdapterConfig.PollingContextImpl subscription) {
+    protected @NotNull String createTagAddressForSubscription(final Plc4xPollingContext subscription) {
         return subscription.getTagAddress();
     }
 
@@ -62,15 +64,5 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, P
         map.put(TARGET_AMS_PORT, nullSafe(config.getTargetAmsPort()));
         map.put(TARGET_AMS_NET_ID, nullSafe(config.getTargetAmsNetId()));
         return map;
-    }
-
-    @Override
-    public int getPollingIntervalMillis() {
-        return adapterConfig.getPollingIntervalMillis();
-    }
-
-    @Override
-    public int getMaxPollingErrorsBeforeRemoval() {
-        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
     }
 }

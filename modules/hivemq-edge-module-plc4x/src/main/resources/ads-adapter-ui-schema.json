@@ -1,42 +1,65 @@
 {
-  "ui:tabs": [
+  "ui:tabs" : [
     {
-      "id": "coreFields",
-      "title": "Core Fields",
-      "properties": ["id", "port", "host"]
-    },
-    {
-      "id": "subFields",
-      "title": "Subscription",
-      "properties": ["subscriptions"]
-    },
-    {
-      "id": "publishing",
-      "title": "Publishing",
-      "properties": [
-        "maxPollingErrorsBeforeRemoval",
-        "pollingIntervalMillis",
-        "publishChangedDataOnly"
+      "id" : "coreFields",
+      "title" : "Core Fields",
+      "properties" : [
+        "id",
+        "host",
+        "port"
       ]
     },
     {
-      "id": "ads",
-      "title": "ADS",
-      "properties": ["sourceAmsPort", "targetAmsPort", "sourceAmsNetId", "targetAmsNetId"]
+      "id" : "subFields",
+      "title" : "ADS To MQTT",
+      "properties" : [
+        "plc4xToMqtt"
+      ]
+    },
+    {
+      "id" : "ads",
+      "title" : "ADS",
+      "properties" : [
+        "sourceAmsPort",
+        "targetAmsPort",
+        "sourceAmsNetId",
+        "targetAmsNetId"
+      ]
     }
   ],
-  "id": {
-    "ui:disabled": false
+  "id" : {
+    "ui:disabled" : false
   },
-  "port": {
-    "ui:widget": "updown"
+  "port" : {
+    "ui:widget" : "updown"
   },
-  "subscriptions": {
-    "ui:batchMode": true,
-    "items": {
-      "ui:order": ["node", "mqtt-topic", "destination", "qos", "*"],
-      "ui:collapsable": {
-        "titleKey": "destination"
+  "ui:order" : [
+    "id",
+    "host",
+    "port",
+    "*"
+  ],
+  "plc4xToMqtt" : {
+    "ui:batchMode" : true,
+    "ui:order" : [
+      "plc4xToMqttMappings",
+      "maxPollingErrorsBeforeRemoval",
+      "pollingIntervalMillis",
+      "publishChangedDataOnly",
+      "*"
+    ],
+    "plc4xToMqttMappings" : {
+      "ui:batchMode" : true,
+      "items" : {
+        "ui:order" : [
+          "mqttTopic",
+          "qos",
+          "node",
+          "*"
+        ],
+        "ui:collapsable" : {
+          "titleKey" : "mqttTopic"
+        }
       }
     }
   }

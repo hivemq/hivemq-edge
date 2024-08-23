@@ -50,6 +50,7 @@ dependencies {
     testImplementation(libs.apache.commonsIO)
     testImplementation(libs.mockito.junitJupiter)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.assertj)
 }
 
 tasks.test {
