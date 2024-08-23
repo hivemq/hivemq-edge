@@ -23,8 +23,9 @@ import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.edge.adapters.opcua.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
+import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.PayloadMode;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaStringPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
@@ -46,7 +47,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
     public static final byte[] EMTPY_BYTES = new byte[]{};
 
-    private final @NotNull OpcUaAdapterConfig.Subscription subscription;
+    private final @NotNull OpcuaToMqttMapping subscription;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull OpcUaClient opcUaClient;
     private final @NotNull NodeId nodeId;
@@ -58,7 +59,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
     private final @NotNull AtomicBoolean firstMessageReceived = new AtomicBoolean(false);
 
     public OpcUaDataValueConsumer(
-            final @NotNull OpcUaAdapterConfig.Subscription subscription,
+            final @NotNull OpcuaToMqttMapping subscription,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull OpcUaClient opcUaClient,
             final @NotNull NodeId nodeId,
@@ -82,16 +83,14 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
     public void accept(final @NotNull DataValue dataValue) {
         try {
 
-            final @NotNull byte[] convertedPayload = convertPayload(dataValue, OpcUaAdapterConfig.PayloadMode.JSON);
+            final @NotNull byte[] convertedPayload = convertPayload(dataValue, PayloadMode.JSON);
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
                     .withTopic(subscription.getMqttTopic())
                     .withPayload(convertedPayload)
                     .withQoS(subscription.getQos())
                     .withContextInformation("opcua-node-id", nodeId.toParseableString());
 
-            if (subscription.getMessageExpiryInterval() != null) {
-                publishBuilder.withMessageExpiryInterval(subscription.getMessageExpiryInterval());
-            }
+            publishBuilder.withMessageExpiryInterval(subscription.getMessageExpiryInterval());
 
             try {
 
@@ -132,7 +131,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
     }
 
     private @NotNull byte @NotNull [] convertPayload(
-            DataValue dataValue, final @NotNull OpcUaAdapterConfig.PayloadMode payloadMode) {
+            DataValue dataValue, final @NotNull PayloadMode payloadMode) {
         //null value, emtpy buffer
         if (dataValue.getValue().getValue() == null) {
             return EMTPY_BYTES;
