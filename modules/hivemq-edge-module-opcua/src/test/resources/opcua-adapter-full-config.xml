@@ -3,11 +3,15 @@
         <opc-ua-client>
             <id>simulation-server-2</id>
             <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
+            <overrideUri>true</overrideUri>
             <auth>
                 <basic>
                     <username>edge</username>
                     <password>password</password>
                 </basic>
+                <x509>
+                    <enabled>true</enabled>
+                </x509>
             </auth>
             <tls>
                 <enabled>true</enabled>
@@ -16,11 +20,14 @@
                     <password>keystore-password</password>
                     <private-key-password>private-key-password</private-key-password>
                 </keystore>
-                <keystore>
+                <truststore>
                     <path>path/to/truststore</path>
                     <password>truststore-password</password>
-                </keystore>
+                </truststore>
             </tls>
+            <security>
+                <policy>BASIC128RSA15</policy>
+            </security>
             <opcuaToMqtt>
                 <opcuaToMqttMappings>
                     <opcuaToMqttMapping>
