@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xPollingContext;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +46,7 @@ import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.WSTRI
 /**
  * @author HiveMQ Adapter Generator
  */
-public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig, Plc4xAdapterConfig.PollingContextImpl> {
+public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig, Plc4xPollingContext> {
 
     private static final Logger log = LoggerFactory.getLogger(S7ProtocolAdapter.class);
 
@@ -114,7 +115,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig, Plc
         map.put(REMOTE_TSAP, nullSafe(config.getRemoteTsap()));
 
         //ping if polling interval greater than default read timeout - 1s grace
-        if (config.getPollingIntervalMillis() >= 7000) {
+        if (config.getPlc4xToMqttConfig().getPollingIntervalMillis() >= 7000) {
             map.put(PING, "true");
             map.put(PING_TIME, "4");
         }
@@ -122,7 +123,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig, Plc
     }
 
     @Override
-    protected @NotNull String createTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull PollingContextImpl subscription) {
+    protected @NotNull String createTagAddressForSubscription(final Plc4xPollingContext subscription) {
         final String formattedAddress =
                 String.format("%s%s%s", subscription.getTagAddress(), ":", subscription.getDataType());
 

@@ -15,13 +15,18 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.ads;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xToMqttConfig;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 
-public class ADSAdapterConfig extends Plc4xAdapterConfig {
+public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
@@ -33,7 +38,7 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig {
                        numberMin = PORT_MIN,
                        numberMax = PORT_MAX,
                        defaultValue = "48898")
-    private int port = 48898;
+    private final int port;
 
     @ModuleConfigField(title = "Target AMS Port",
                        description = "The AMS port number on the device to connect to",
@@ -41,7 +46,7 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig {
                        numberMin = PORT_MIN,
                        numberMax = PORT_MAX,
                        defaultValue = "851")
-    private int targetAmsPort = 851;
+    private final int targetAmsPort;
 
     @ModuleConfigField(title = "Source AMS Port",
                        description = "The local AMS port number used by HiveMQ Edge",
@@ -49,21 +54,47 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig {
                        numberMin = PORT_MIN,
                        numberMax = PORT_MAX,
                        defaultValue = "48898")
-    private int sourceAmsPort = 48898;
+    private final int sourceAmsPort;
 
     @JsonProperty("sourceAmsNetId")
     @ModuleConfigField(title = "Source Ams Net Id",
                        required = true,
                        stringPattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
                        description = "The AMS Net ID used by HiveMQ Edge")
-    private @NotNull String sourceAmsNetId = "";
+    private final @NotNull String sourceAmsNetId;
 
     @JsonProperty("targetAmsNetId")
     @ModuleConfigField(title = "Target Ams Net Id",
                        required = true,
                        stringPattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
                        description = "The AMS Net ID of the device to connect to")
-    private @NotNull String targetAmsNetId = "";
+    private final @NotNull String targetAmsNetId;
+
+    @JsonProperty("adsToMqtt")
+    @ModuleConfigField(title = "ADS To MQTT Config",
+                       description = "The configuration for a data stream from ADS to MQTT",
+                       required = true)
+    private final @NotNull ADSToMqttConfig adsToMqttConfig;
+
+    @JsonCreator
+    public ADSAdapterConfig(
+            @JsonProperty(value = "id", required = true) final @NotNull String id,
+            @JsonProperty(value = "port", required = true) final int port,
+            @JsonProperty(value = "host", required = true) final @NotNull String host,
+            @JsonProperty(value = "targetAmsPort", required = true) final int targetAmsPort,
+            @JsonProperty(value = "sourceAmsPort", required = true) final int sourceAmsPort,
+            @JsonProperty(value = "targetAmsNetId", required = true) final @NotNull String targetAmsNetId,
+            @JsonProperty(value = "sourceAmsNetId", required = true) final @NotNull String sourceAmsNetId,
+            @JsonProperty(value = "adsToMqtt", required = true) final @NotNull ADSToMqttConfig adsToMqttConfig) {
+        super(id, port, host);
+        this.port = port;
+        this.targetAmsPort = targetAmsPort;
+        this.sourceAmsPort = sourceAmsPort;
+        this.sourceAmsNetId = sourceAmsNetId;
+        this.targetAmsNetId = targetAmsNetId;
+        this.adsToMqttConfig = adsToMqttConfig;
+
+    }
 
     @Override
     public int getPort() {
@@ -78,12 +109,16 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig {
         return targetAmsPort;
     }
 
-    public String getSourceAmsNetId() {
+    public @NotNull String getSourceAmsNetId() {
         return sourceAmsNetId;
     }
 
-    public String getTargetAmsNetId() {
+    public @NotNull String getTargetAmsNetId() {
         return targetAmsNetId;
     }
 
+    @Override
+    public @NotNull ADSToMqttConfig getPlc4xToMqttConfig() {
+        return adsToMqttConfig;
+    }
 }

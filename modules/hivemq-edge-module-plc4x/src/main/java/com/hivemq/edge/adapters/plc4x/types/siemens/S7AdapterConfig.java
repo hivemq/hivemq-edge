@@ -18,9 +18,10 @@ package com.hivemq.edge.adapters.plc4x.types.siemens;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 
-public class S7AdapterConfig extends Plc4xAdapterConfig {
+public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
 
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
@@ -80,6 +81,7 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
 
 
     public S7AdapterConfig() {
+        super(null, 0, null);
     }
 
     public int getPort() {
@@ -110,4 +112,8 @@ public class S7AdapterConfig extends Plc4xAdapterConfig {
         return controllerType;
     }
 
+    @Override
+    public @NotNull Plc4xToMqttConfig getPlc4xToMqttConfig() {
+        return null;
+    }
 }

@@ -31,6 +31,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xPollingContext;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.messages.PlcReadResponse;
@@ -58,7 +59,8 @@ import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionSt
  *
  * @author Simon L Johnson
  */
-public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig, C extends Plc4xAdapterConfig.PollingContextImpl> implements PollingProtocolAdapter<C> {
+public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C extends Plc4xPollingContext>
+        implements PollingProtocolAdapter<C> {
 
     protected static final String TAG_ADDRESS_TYPE_SEP = ":";
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -87,8 +89,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig, C exten
     @Override
     public void poll(final @NotNull PollingInput pollingInput, @NotNull final PollingOutput pollingOutput) {
         if (connection != null && connection.isConnected()) {
-            connection.read((Plc4xAdapterConfig.PollingContextImpl) pollingInput.getPollingContext())
-                    .thenApply(response -> processReadResponse((Plc4xAdapterConfig.PollingContextImpl) pollingInput.getPollingContext(),
+            connection.read((Plc4xPollingContext) pollingInput.getPollingContext())
+                    .thenApply(response -> processReadResponse((Plc4xPollingContext) pollingInput.getPollingContext(),
                             response))
                     .thenApply(data -> captureDataSample(data, pollingInput.getPollingContext()))
                     .whenComplete((sample, t) -> handleDataAndExceptions(sample, t, pollingOutput));
@@ -112,7 +114,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig, C exten
     @Override
     public @NotNull List<C> getPollingContexts() {
         if (getReadType() == ReadType.Read) {
-            return (List<C>) adapterConfig.getSubscriptions();
+            return (List<C>) adapterConfig.getPlc4xToMqttConfig().getMappings();
         } else {
             return List.of();
         }
@@ -190,17 +192,17 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig, C exten
             }
 
             @Override
-            protected @NotNull String getTagAddressForSubscription(final Plc4xAdapterConfig.@NotNull PollingContextImpl subscription) {
-                return createTagAddressForSubscription(subscription);
+            protected @NotNull String getTagAddressForSubscription(final Plc4xPollingContext context) {
+                return createTagAddressForSubscription(context);
             }
         };
     }
 
     protected void subscribeAllInternal(@NotNull final Plc4xConnection<T> connection) throws RuntimeException {
-        if (adapterConfig.getSubscriptions() != null) {
-            for (Plc4xAdapterConfig.PollingContextImpl subscription : adapterConfig.getSubscriptions()) {
+        if (adapterConfig.getPlc4xToMqttConfig().getMappings() != null) {
+            for (Plc4xPollingContext mapping : adapterConfig.getPlc4xToMqttConfig().getMappings()) {
                 try {
-                    subscribeInternal(connection, subscription);
+                    subscribeInternal(connection, mapping);
                 } catch (Plc4xException e) {
                     throw new RuntimeException(e);
                 }
@@ -209,8 +211,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig, C exten
     }
 
     protected @NotNull CompletableFuture<?> subscribeInternal(
-            final @NotNull Plc4xConnection<T> connection,
-            final @NotNull Plc4xAdapterConfig.PollingContextImpl subscription) throws Plc4xException {
+            final @NotNull Plc4xConnection<T> connection, final @NotNull Plc4xPollingContext subscription)
+            throws Plc4xException {
         if (subscription != null) {
             switch (getReadType()) {
                 case Subscribe:
@@ -230,9 +232,9 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig, C exten
     protected ProtocolAdapterDataSample captureDataSample(
             final @NotNull ProtocolAdapterDataSample data, final @NotNull PollingContext pollingContext) {
         boolean publishData = true;
-        if (adapterConfig.getPublishChangedDataOnly()) {
+        if (adapterConfig.getPlc4xToMqttConfig().getPublishChangedDataOnly()) {
             ProtocolAdapterDataSample previousSample =
-                    lastSamples.put(((Plc4xAdapterConfig.PollingContextImpl) pollingContext).getTagAddress(), data);
+                    lastSamples.put(((Plc4xPollingContext) pollingContext).getTagAddress(), data);
             if (previousSample != null) {
                 List<DataPoint> dataPoints = previousSample.getDataPoints();
                 publishData = !dataPoints.equals(data.getDataPoints());
@@ -264,7 +266,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig, C exten
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(@NotNull final Plc4xAdapterConfig.PollingContextImpl subscription) {
+    protected @NotNull String createTagAddressForSubscription(@NotNull final Plc4xPollingContext subscription) {
         return String.format("%s%s%s", subscription.getTagAddress(), TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
     }
 
@@ -292,8 +294,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig, C exten
     }
 
     protected @NotNull ProtocolAdapterDataSample processReadResponse(
-            final @NotNull Plc4xAdapterConfig.PollingContextImpl subscription,
-            final @NotNull PlcReadResponse readEvent) {
+            final @NotNull Plc4xPollingContext subscription, final @NotNull PlcReadResponse readEvent) {
         //it is possible that the read response does not contain any values at all, leading to unexpected error states, especially with EIP adapter
         if (!(readEvent instanceof DefaultPlcReadResponse) ||
                 ((DefaultPlcReadResponse) readEvent).getValues().containsKey(subscription.getTagName())) {
@@ -310,8 +311,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig, C exten
     }
 
     protected @NotNull ProtocolAdapterDataSample processPlcFieldData(
-            final @NotNull Plc4xAdapterConfig.PollingContextImpl subscription,
-            final @NotNull List<Pair<String, PlcValue>> l) {
+            final @NotNull Plc4xPollingContext subscription, final @NotNull List<Pair<String, PlcValue>> l) {
         ProtocolAdapterDataSample data = new Plc4xDataSample<>(adapterFactories.dataPointFactory());
         //-- For every tag value associated with the sample, write a data point to be published
         if (!l.isEmpty()) {
@@ -322,11 +322,11 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig, C exten
 
     @Override
     public int getPollingIntervalMillis() {
-        return adapterConfig.getPollingIntervalMillis();
+        return adapterConfig.getPlc4xToMqttConfig().getPollingIntervalMillis();
     }
 
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
-        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+        return adapterConfig.getPlc4xToMqttConfig().getMaxPollingErrorsBeforeRemoval();
     }
 }

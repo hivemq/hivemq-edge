@@ -2,7 +2,7 @@
   "ui:tabs" : [
     {
       "id" : "coreFields",
-      "title" : "Connection",
+      "title" : "Core Fields",
       "properties" : [
         "id",
         "port",
@@ -12,7 +12,7 @@
     },
     {
       "id" : "subFields",
-      "title" : "Modbus 2 MQTT",
+      "title" : "Modbus To MQTT",
       "properties" : [
         "modbusToMqtt"
       ]
@@ -33,10 +33,10 @@
   "modbusToMqtt" : {
     "ui:batchMode" : true,
     "ui:order" : [
+      "modbusToMqttMappings",
       "maxPollingErrorsBeforeRemoval",
       "pollingIntervalMillis",
       "publishChangedDataOnly",
-      "modbusToMqttMappings",
       "*"
     ],
     "modbusToMqttMappings" : {
