@@ -18,7 +18,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
   const { t } = useTranslation()
   const topics = getBridgeTopics(bridge)
   const { options } = useEdgeFlowContext()
-  const { onContextMenu } = useContextMenu(id, selected, '/edge-flow/node/bridge')
+  const { onContextMenu } = useContextMenu(id, selected, '/workspace/node/bridge')
 
   return (
     <>
