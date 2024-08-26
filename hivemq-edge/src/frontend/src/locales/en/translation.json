@@ -662,8 +662,7 @@
       "zoomIn": "Zoom in",
       "zoomIOut": "Zoom out",
       "fitView": "Fit to the canvas",
-      "toggleInteractivity": "Lock the canvas",
-      "group": "Group the selected entities"
+      "toggleInteractivity": "Lock the canvas"
     },
     "configuration": {
       "header": "Workspace configuration",
@@ -704,6 +703,21 @@
     "layout": {
       "HORIZONTAL": "Horizontal",
       "CIRCLE_PACKING": "Circle Packing"
+    },
+    "toolbar": {
+      "container": {
+        "left": "First Toolbar",
+        "right": "Second Toolbar"
+      },
+      "command": {
+        "overview": "Open the overview panel",
+        "group": "Group the selected adapters",
+        "subscriptions": {
+          "common": "Manage subscriptions of the device",
+          "inward": "Inward subscriptions",
+          "outward": "Outward subscriptions"
+        }
+      }
     },
     "grouping": {
       "toolbar": {

@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { Handle, Position, NodeProps } from 'reactflow'
+import { Handle, NodeProps, Position } from 'reactflow'
 import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
 import { useTranslation } from 'react-i18next'
 
@@ -12,6 +12,7 @@ import TopicsContainer from '../parts/TopicsContainer.tsx'
 import { getBridgeTopics } from '../../utils/topics-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.ts'
+import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 
 const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
   const { t } = useTranslation()
@@ -21,6 +22,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
 
   return (
     <>
+      <ContextualToolbar id={id} onOpenPanel={onContextMenu} />
       <NodeWrapper isSelected={selected} onDoubleClick={onContextMenu} onContextMenu={onContextMenu} p={3}>
         <VStack>
           {options.showTopics && <TopicsContainer topics={topics.remote} />}
