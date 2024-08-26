@@ -13,7 +13,6 @@ import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import StatusListener from '@/modules/Workspace/components/controls/StatusListener.tsx'
 import CanvasControls from '@/modules/Workspace/components/controls/CanvasControls.tsx'
 import SelectionListener from '@/modules/Workspace/components/controls/SelectionListener.tsx'
-import GroupNodesControl from '@/modules/Workspace/components/controls/GroupNodesControl.tsx'
 import MonitoringEdge from '@/modules/Workspace/components/edges/MonitoringEdge.tsx'
 import {
   NodeAdapter,
@@ -71,7 +70,6 @@ const ReactFlowWrapper = () => {
       deleteKeyCode={null}
     >
       <Box role="toolbar" aria-label={t('workspace.controls.aria-label')} aria-controls="edge-workspace-canvas">
-        <GroupNodesControl />
         <SelectionListener />
         <StatusListener />
         <Background />
