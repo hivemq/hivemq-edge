@@ -15,7 +15,7 @@ public class Keystore {
     @ModuleConfigField(title = "Keystore password", description = "Password to open the keystore.")
     private final @NotNull String password;
 
-    @JsonProperty("private-key-password")
+    @JsonProperty("privateKeyPassword")
     @ModuleConfigField(title = "Private key password", description = "Password to access the private key.")
     private final @NotNull String privateKeyPassword;
 
@@ -23,7 +23,7 @@ public class Keystore {
     public Keystore(
             @JsonProperty(value = "path", required = true) final @NotNull String path,
             @JsonProperty(value = "password", required = true) final @NotNull String password,
-            @JsonProperty(value = "private-key-password", required = true) final @NotNull String privateKeyPassword) {
+            @JsonProperty(value = "privateKeyPassword", required = true) final @NotNull String privateKeyPassword) {
         this.path = path;
         this.password = password;
         this.privateKeyPassword = privateKeyPassword;

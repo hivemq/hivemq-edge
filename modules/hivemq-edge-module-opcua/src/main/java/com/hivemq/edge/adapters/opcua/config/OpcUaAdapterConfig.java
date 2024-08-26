@@ -68,7 +68,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
 
     public OpcUaAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
-            @JsonProperty("uri") final @NotNull String uri,
+            @JsonProperty(value = "uri", required = true) final @NotNull String uri,
             @JsonProperty("overrideUri") final Boolean overrideUri,
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
