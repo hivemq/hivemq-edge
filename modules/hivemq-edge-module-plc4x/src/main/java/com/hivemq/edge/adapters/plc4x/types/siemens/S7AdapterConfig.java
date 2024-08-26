@@ -114,6 +114,7 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
 
     }
 
+    @Override
     public int getPort() {
         return port;
     }
@@ -138,7 +139,7 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
         return remoteTsap;
     }
 
-    public ControllerType getControllerType() {
+    public @NotNull ControllerType getControllerType() {
         return controllerType;
     }
 
