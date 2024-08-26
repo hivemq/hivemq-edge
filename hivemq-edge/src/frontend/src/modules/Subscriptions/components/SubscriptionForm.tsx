@@ -19,7 +19,6 @@ interface SubscriptionFormProps {
 // TODO[NVL] Should replicate the config from the adapter form; share component?
 const SubscriptionForm: FC<SubscriptionFormProps> = ({ id, type }) => {
   const { inwardManager, outwardManager } = useSubscriptionManager(id)
-  console.log('XXXXXX subscriptionSchema', type, inwardManager)
 
   const subscriptionManager = type === 'inward' ? inwardManager : outwardManager
 
