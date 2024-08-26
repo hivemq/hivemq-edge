@@ -63,6 +63,7 @@ More Protocol adapters will be added to the project over time.
 * Beckhoff ADS
 * Allen-Bradley Ethernet/IP
 * HTTP
+* File-input
 * and many more
 
 
