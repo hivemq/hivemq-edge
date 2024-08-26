@@ -4,7 +4,7 @@ export interface SubscriptionManagerType {
   schema: RJSFSchema
   formData: { subscriptions: Record<string, unknown> }
   uiSchema: UiSchema
-  onSubmit?: (data: any) => void
+  onSubmit?: (data: unknown) => void
 }
 
 /**
