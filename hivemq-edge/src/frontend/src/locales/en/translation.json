@@ -737,6 +737,7 @@
       "header_BRIDGE_NODE": "Bridge Overview",
       "header_CLUSTER_NODE": "Group Overview",
       "header_EDGE_NODE": "Edge Overview",
+      "header_DEVICE_NODE": "Device Overview",
       "modify_ADAPTER_NODE": "Modify the adapter",
       "modify_BRIDGE_NODE": "Modify the bridge",
       "eventLog": {
