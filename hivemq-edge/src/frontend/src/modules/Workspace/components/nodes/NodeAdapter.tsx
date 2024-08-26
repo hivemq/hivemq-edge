@@ -1,21 +1,25 @@
 import { FC, useMemo } from 'react'
 import { Handle, NodeProps, Position } from 'reactflow'
-import { Box, HStack, Image, Text, VStack } from '@chakra-ui/react'
+import { useTranslation } from 'react-i18next'
+import { Box, HStack, Icon, Image, Text, VStack } from '@chakra-ui/react'
 
-import { Adapter } from '@/api/__generated__'
+import { type TopicFilter } from '@/modules/Workspace/types.ts'
+import { type Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
+import IconButton from '@/components/Chakra/IconButton.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
-
-import NodeWrapper from '../parts/NodeWrapper.tsx'
-import TopicsContainer from '../parts/TopicsContainer.tsx'
-import { discoverAdapterTopics } from '../../utils/topics-utils.ts'
-import { CONFIG_ADAPTER_WIDTH } from '../../utils/nodes-utils.ts'
-import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
-import { useContextMenu } from '../../hooks/useContextMenu.ts'
-import { TopicFilter } from '../../types.ts'
-import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
+import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.ts'
+import { discoverAdapterTopics } from '@/modules/Workspace/utils/topics-utils.ts'
+import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
+import { deviceCapabilityIcon, isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
+import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
+import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
+import TopicsContainer from '@/modules/Workspace/components/parts/TopicsContainer.tsx'
+import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
+import WorkspaceButtonGroup from '@/modules/Workspace/components/parts/WorkspaceButtonGroup.tsx'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) => {
+  const { t } = useTranslation()
   const { data: protocols } = useGetAdapterTypes()
   const adapterProtocol = protocols?.items?.find((e) => e.id === adapter.type)
   const { options } = useEdgeFlowContext()
@@ -29,6 +33,22 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
   const HACK_BIDIRECTIONAL = isBidirectional(adapterProtocol)
   return (
     <>
+      <ContextualToolbar id={id} onOpenPanel={onContextMenu}>
+        <WorkspaceButtonGroup>
+          {HACK_BIDIRECTIONAL && (
+            <IconButton
+              icon={<Icon as={deviceCapabilityIcon['WRITE']} />}
+              aria-label={t('workspace.toolbar.command.subscriptions.outward')}
+              // onClick={onCreateGroup}
+            />
+          )}
+          <IconButton
+            icon={<Icon as={deviceCapabilityIcon['READ']} />}
+            aria-label={t('workspace.toolbar.command.subscriptions.inward')}
+            // onClick={onCreateGroup}
+          />
+        </WorkspaceButtonGroup>
+      </ContextualToolbar>
       <NodeWrapper
         isSelected={selected}
         onDoubleClick={onContextMenu}
