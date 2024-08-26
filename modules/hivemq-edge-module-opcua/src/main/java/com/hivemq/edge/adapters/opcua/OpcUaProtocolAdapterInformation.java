@@ -44,7 +44,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull String getProtocolId() {
-        return "opc-ua-client";
+        return "opcua";
     }
 
     @Override
