@@ -8,6 +8,7 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import { type SubscriptionManagerType } from '@/modules/Subscriptions/types.ts'
+import { MOCK_OUTWARD_SUBSCRIPTION_OPCUA } from '@/modules/Subscriptions/utils/subscription.utils.ts'
 import { getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
 
 export const useSubscriptionManager = (id: string) => {
@@ -64,7 +65,11 @@ export const useSubscriptionManager = (id: string) => {
 
     if (!['opc-ua-client'].includes(selectedProtocol.id || '')) return undefined
 
-    return undefined
+    return {
+      schema: MOCK_OUTWARD_SUBSCRIPTION_OPCUA.schema || {},
+      formData: { subscriptions: [] },
+      uiSchema: MOCK_OUTWARD_SUBSCRIPTION_OPCUA.uiSchema || {},
+    }
   }, [device])
 
   return { inwardManager, outwardManager }
