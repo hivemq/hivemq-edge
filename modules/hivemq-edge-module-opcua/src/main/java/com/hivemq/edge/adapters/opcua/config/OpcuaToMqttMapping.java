@@ -16,21 +16,21 @@ public class OpcuaToMqttMapping {
                        required = true)
     private final @NotNull String node;
 
-    @JsonProperty("mqtt-topic")
+    @JsonProperty("mqttTopic")
     @ModuleConfigField(title = "Destination MQTT topic",
                        description = "The MQTT topic to publish to",
                        format = ModuleConfigField.FieldType.MQTT_TOPIC,
                        required = true)
     private final @NotNull String mqttTopic;
 
-    @JsonProperty("publishing-interval")
+    @JsonProperty("publishingInterval")
     @ModuleConfigField(title = "OPC UA publishing interval [ms]",
                        description = "OPC UA publishing interval in milliseconds for this subscription on the server",
                        numberMin = 1,
                        defaultValue = "1000")
     private final int publishingInterval;
 
-    @JsonProperty("server-queue-size")
+    @JsonProperty("serverQueueSize")
     @ModuleConfigField(title = "OPC UA server queue size",
                        description = "OPC UA queue size for this subscription on the server",
                        numberMin = 1,
@@ -45,7 +45,7 @@ public class OpcuaToMqttMapping {
                        defaultValue = "0")
     private final int qos;
 
-    @JsonProperty("message-expiry-interval")
+    @JsonProperty("messageExpiryInterval")
     @ModuleConfigField(title = "MQTT message expiry interval [s]",
                        description = "Time in seconds until a MQTT message expires",
                        numberMin = 1,
@@ -55,11 +55,11 @@ public class OpcuaToMqttMapping {
     @JsonCreator
     public OpcuaToMqttMapping(
             @JsonProperty(value = "node", required = true) final @NotNull String node,
-            @JsonProperty(value = "mqtt-topic", required = true) final @NotNull String mqttTopic,
-            @JsonProperty("publishing-interval") final @Nullable Integer publishingInterval,
-            @JsonProperty("server-queue-size") final @Nullable Integer serverQueueSize,
+            @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
+            @JsonProperty("publishingInterval") final @Nullable Integer publishingInterval,
+            @JsonProperty("serverQueueSize") final @Nullable Integer serverQueueSize,
             @JsonProperty("qos") final @Nullable Integer qos,
-            @JsonProperty("message-expiry-interval") final @Nullable Long messageExpiryInterval) {
+            @JsonProperty("messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
         this.node = node;
         this.mqttTopic = mqttTopic;
         this.publishingInterval = requireNonNullElse(publishingInterval, 1000);
