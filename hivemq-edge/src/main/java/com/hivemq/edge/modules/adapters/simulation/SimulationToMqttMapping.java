@@ -21,20 +21,23 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.UserProperty;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
-import com.hivemq.extension.sdk.api.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class SimulationPollingContext implements PollingContext {
+import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
+import static java.util.Objects.requireNonNullElse;
+import static java.util.Objects.requireNonNullElseGet;
 
-    @JsonProperty(value = "destination", required = true)
-    @ModuleConfigField(title = "Destination Topic",
+public class SimulationToMqttMapping implements PollingContext {
+
+    @JsonProperty(value = "mqttTopic", required = true)
+    @ModuleConfigField(title = "Destination MQTT Topic",
                        description = "The topic to publish data on",
                        required = true,
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
-    protected @Nullable String destination;
+    private final @NotNull String mqttTopic;
 
     @JsonProperty(value = "qos", required = true)
     @ModuleConfigField(title = "QoS",
@@ -43,7 +46,7 @@ public class SimulationPollingContext implements PollingContext {
                        numberMin = 0,
                        numberMax = 2,
                        defaultValue = "0")
-    protected int qos = 0;
+    private final int qos;
 
     @JsonProperty(value = "messageHandlingOptions")
     @ModuleConfigField(title = "Message Handling Options",
@@ -52,44 +55,45 @@ public class SimulationPollingContext implements PollingContext {
                                "MQTT Message Per Device Tag",
                                "MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)"},
                        defaultValue = "MQTTMessagePerTag")
-    protected @NotNull MessageHandlingOptions messageHandlingOptions = MessageHandlingOptions.MQTTMessagePerTag;
+    private final @NotNull MessageHandlingOptions messageHandlingOptions;
 
     @JsonProperty(value = "includeTimestamp")
     @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
                        description = "Include the unix timestamp of the sample time in the resulting MQTT message",
                        defaultValue = "true")
-    protected @NotNull Boolean includeTimestamp = Boolean.TRUE;
+    private final boolean includeTimestamp;
 
     @JsonProperty(value = "includeTagNames")
     @ModuleConfigField(title = "Include Tag Names In Publish?",
                        description = "Include the names of the tags in the resulting MQTT publish",
                        defaultValue = "false")
-    protected @NotNull Boolean includeTagNames = Boolean.FALSE;
+    private final boolean includeTagNames;
 
     @JsonProperty(value = "userProperties")
     @ModuleConfigField(title = "User Properties",
                        description = "Arbitrary properties to associate with the subscription",
                        arrayMaxItems = 10)
-    private @NotNull List<UserProperty> userProperties = new ArrayList<>();
-
-    public SimulationPollingContext() {
-    }
+    private final @NotNull List<UserProperty> userProperties;
 
     @JsonCreator
-    public SimulationPollingContext(
-            @JsonProperty("destination") @Nullable final String destination,
-            @JsonProperty("qos") final int qos,
-            @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {
-        this.destination = destination;
-        this.qos = qos;
-        if (userProperties != null) {
-            this.userProperties = userProperties;
-        }
+    public SimulationToMqttMapping(
+            @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
+            @JsonProperty(value = "qos") final @Nullable Integer qos,
+            @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
+            @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
+            @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
+            @JsonProperty("userProperties") final @Nullable List<UserProperty> userProperties) {
+        this.mqttTopic = mqttTopic;
+        this.qos = requireNonNullElse(qos, 0);
+        this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
+        this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
+        this.includeTagNames = requireNonNullElse(includeTagNames, false);
+        this.userProperties = requireNonNullElseGet(userProperties, List::of);
     }
 
     @Override
-    public @Nullable String getMqttTopic() {
-        return destination;
+    public @NotNull String getMqttTopic() {
+        return mqttTopic;
     }
 
     @Override
