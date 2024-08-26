@@ -31,12 +31,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
 
-public class EtherIpProtocolAdapterInformation implements ProtocolAdapterInformation {
+public class EipProtocolAdapterInformation implements ProtocolAdapterInformation {
 
-    public static final ProtocolAdapterInformation INSTANCE = new EtherIpProtocolAdapterInformation();
-    private static final @NotNull Logger log = LoggerFactory.getLogger(EtherIpProtocolAdapterInformation.class);
+    public static final @NotNull ProtocolAdapterInformation INSTANCE = new EipProtocolAdapterInformation();
+    private static final @NotNull Logger log = LoggerFactory.getLogger(EipProtocolAdapterInformation.class);
 
-    protected EtherIpProtocolAdapterInformation() {
+    private EipProtocolAdapterInformation() {
     }
 
     @Override

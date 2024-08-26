@@ -2,26 +2,17 @@
   "ui:tabs": [
     {
       "id": "coreFields",
-      "title": "Core Fields",
+      "title": "Connection",
       "properties": ["id", "port", "host"]
     },
     {
       "id": "subFields",
-      "title": "Subscription",
-      "properties": ["subscriptions"]
-    },
-    {
-      "id": "publishing",
-      "title": "Publishing",
-      "properties": [
-        "maxPollingErrorsBeforeRemoval",
-        "pollingIntervalMillis",
-        "publishChangedDataOnly"
-      ]
+      "title": "EIP to MQTT",
+      "properties": ["eipToMqtt"]
     },
     {
       "id": "eip",
-      "title": "Ethernet IP",
+      "title": "EIP Device",
       "properties": ["slot", "backplane"]
     }
   ],
@@ -31,12 +22,35 @@
   "port": {
     "ui:widget": "updown"
   },
-  "subscriptions": {
-    "ui:batchMode": true,
-    "items": {
-      "ui:order": ["node",  "mqtt-topic", "destination", "qos", "*"],
-      "ui:collapsable": {
-        "titleKey": "destination"
+  "ui:order" : [
+    "id",
+    "host",
+    "port",
+    "*"
+  ],
+  "eipToMqtt" : {
+    "ui:batchMode" : true,
+    "ui:order" : [
+      "eipToMqttMappings",
+      "maxPollingErrorsBeforeRemoval",
+      "pollingIntervalMillis",
+      "publishChangedDataOnly",
+      "*"
+    ],
+    "eipToMqttMappings" : {
+      "ui:batchMode" : true,
+      "items" : {
+        "ui:order" : [
+          "tagName",
+          "tagAddress",
+          "dataType",
+          "mqttTopic",
+          "qos",
+          "*"
+        ],
+        "ui:collapsable" : {
+          "titleKey" : "mqttTopic"
+        }
       }
     }
   }

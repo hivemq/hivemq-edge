@@ -1,0 +1,20 @@
+<hivemq>
+    <protocol-adapters>
+        <eip>
+            <id>my-eip-protocol-adapter</id>
+            <port>1234</port>
+            <host>my.eip-server.com</host>
+            <eipToMqtt>
+                <eipToMqttMappings>
+                    <eipToMqttMapping>
+                        <mqttTopic>my/topic</mqttTopic>
+                        <qos>1</qos>
+                        <tagName>tag-name</tagName>
+                        <tagAddress>tag-address</tagAddress>
+                        <dataType>BOOL</dataType>
+                    </eipToMqttMapping>
+                </eipToMqttMappings>
+            </eipToMqtt>
+        </eip>
+    </protocol-adapters>
+</hivemq>
