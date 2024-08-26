@@ -80,7 +80,7 @@ export const MOCK_OUTWARD_SUBSCRIPTION_OPCUA: MockSubscription = {
       items: {
         'mqtt-topic': {
           items: {
-            'ui:options': { create: false, multiple: true },
+            'ui:options': { create: false, multiple: false },
           },
         },
       },

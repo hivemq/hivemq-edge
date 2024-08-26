@@ -25,7 +25,14 @@ export const TopicInputTemplate: FC<BaseInputTemplateProps> = (props) => {
     >
       <FormLabel htmlFor={id}>{label}</FormLabel>
       {!multiple && (
-        <SingleTopicCreatableSelect isLoading={isLoading} options={data} id={id} value={value} onChange={onChange} />
+        <SingleTopicCreatableSelect
+          isLoading={isLoading}
+          options={data}
+          id={id}
+          value={value}
+          onChange={onChange}
+          isCreatable={Boolean(create !== false)}
+        />
       )}
       {multiple && (
         <MultiTopicsCreatableSelect
@@ -33,7 +40,7 @@ export const TopicInputTemplate: FC<BaseInputTemplateProps> = (props) => {
           id={id}
           value={value}
           onChange={onChange}
-          isCreatable={Boolean(create)}
+          isCreatable={Boolean(create !== false)}
         />
       )}
     </FormControl>
