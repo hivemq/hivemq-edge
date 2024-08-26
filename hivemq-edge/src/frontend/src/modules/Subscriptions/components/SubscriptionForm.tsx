@@ -1,5 +1,6 @@
-import { type FC } from 'react'
+import { type FC, useCallback } from 'react'
 import Form from '@rjsf/chakra-ui'
+import { type IChangeEvent } from '@rjsf/core'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
@@ -22,6 +23,15 @@ const SubscriptionForm: FC<SubscriptionFormProps> = ({ id, type }) => {
 
   const subscriptionManager = type === 'inward' ? inwardManager : outwardManager
 
+  const onFormSubmit = useCallback(
+    (data: IChangeEvent) => {
+      const subscriptions = data.formData?.subscriptions
+      subscriptionManager?.onSubmit?.(subscriptions)
+      console.log('XXXXXXX', subscriptions)
+    },
+    [subscriptionManager]
+  )
+
   if (!subscriptionManager)
     return <ErrorMessage type="Subscriptions" message={`Cannot extract the ${type} subscriptions`} />
 
@@ -31,7 +41,7 @@ const SubscriptionForm: FC<SubscriptionFormProps> = ({ id, type }) => {
       schema={subscriptionManager.schema}
       uiSchema={subscriptionManager.uiSchema}
       liveValidate
-      // onSubmit={onValidate}
+      onSubmit={onFormSubmit}
       validator={customFormatsValidator}
       showErrorList="bottom"
       onError={(errors) => console.log('XXXXXXX', errors)}
