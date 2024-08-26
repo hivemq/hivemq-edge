@@ -37,7 +37,7 @@ import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttMapping;
 import org.eclipse.milo.opcua.binaryschema.GenericBsdParser;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
@@ -84,7 +84,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     private final @NotNull AdapterFactories adapterFactories;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private @Nullable OpcUaClient opcUaClient;
-    private final @NotNull Map<UInteger, OpcuaToMqttMapping> subscriptionMap = new ConcurrentHashMap<>();
+    private final @NotNull Map<UInteger, OpcUaToMqttMapping> subscriptionMap = new ConcurrentHashMap<>();
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -119,14 +119,14 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                     }
                 });
             }).exceptionally(throwable -> {
-                log.error("Not able to connect and subscribe to OPC-UA server {}", adapterConfig.getUri(), throwable);
+                log.error("Not able to connect and subscribe to OPC UA server {}", adapterConfig.getUri(), throwable);
                 stopInternal();
                 output.failStart(throwable, throwable.getMessage());
                 return null;
             });
         } catch (final Exception e) {
-            log.error("Not able to start OPC-UA client for server {}", adapterConfig.getUri(), e);
-            output.failStart(e, "Not able to start OPC-UA client for server " + adapterConfig.getUri());
+            log.error("Not able to start OPC UA client for server {}", adapterConfig.getUri(), e);
+            output.failStart(e, "Not able to start OPC UA client for server " + adapterConfig.getUri());
         }
     }
 
@@ -207,12 +207,12 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     private @NotNull OpcUaSubscriptionListener createSubscriptionListener() {
         return new OpcUaSubscriptionListener(protocolAdapterMetricsService, adapterConfig.getId(), (subscription) -> {
             //re-create a subscription on failure
-            final OpcuaToMqttMapping subscriptionConfig = subscriptionMap.get(subscription.getSubscriptionId());
+            final OpcUaToMqttMapping subscriptionConfig = subscriptionMap.get(subscription.getSubscriptionId());
             if (subscriptionConfig != null) {
                 try {
                     subscribeToNode(subscriptionConfig).get();
                 } catch (InterruptedException | ExecutionException e) {
-                    log.error("Not able to recreate OPC-UA subscription after transfer failure", e);
+                    log.error("Not able to recreate OPC UA subscription after transfer failure", e);
                 }
             }
         });
@@ -229,7 +229,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
         final ImmutableList.Builder<CompletableFuture<Void>> subscribeFutures = ImmutableList.builder();
 
-        for (final OpcuaToMqttMapping subscription : adapterConfig.getOpcuaToMqttConfig().getMappings()) {
+        for (final OpcUaToMqttMapping subscription : adapterConfig.getOpcuaToMqttConfig().getMappings()) {
             subscribeFutures.add(subscribeToNode(subscription));
         }
 
@@ -275,7 +275,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         });
     }
 
-    private @NotNull CompletableFuture<Void> subscribeToNode(final @NotNull OpcuaToMqttMapping subscription) {
+    private @NotNull CompletableFuture<Void> subscribeToNode(final @NotNull OpcUaToMqttMapping subscription) {
         try {
             final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
 

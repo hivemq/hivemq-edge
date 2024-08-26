@@ -53,7 +53,7 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
                 //if security policy is not 'None', then skip the policy if no keystore is available
                 return true;
             }
-            log.warn("OPC-UA Security policy '{}' for protocol adapter '{}' requires a keystore, cannot connect.",
+            log.warn("OPC UA Security policy '{}' for protocol adapter '{}' requires a keystore, cannot connect.",
                     policyUri,
                     adapterConfig.getId());
             return false;
