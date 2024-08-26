@@ -2,7 +2,9 @@ import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
 
 export interface SubscriptionManagerType {
   schema: RJSFSchema
-  formData: { subscriptions: Record<string, unknown> }
+  // TODO[NVL] Needs to align the types for the subscriptions
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  formData: { subscriptions: Record<string, any> }
   uiSchema: UiSchema
   onSubmit?: (data: unknown) => void
 }
