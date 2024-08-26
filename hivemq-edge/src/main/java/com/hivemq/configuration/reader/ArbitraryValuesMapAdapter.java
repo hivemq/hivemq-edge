@@ -151,11 +151,6 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
 
         //if child name is plural of parent name, we expect the value to be a list
         if (parentName != null && parentName.equals(node.getLocalName() + "s")) {
-            //check for single key maps
-            if ((value instanceof Map) && ((Map) value).keySet().size() == 1) {
-                replaceWithList(map, ((Map<?, ?>) value).values().stream().findFirst().get(), parentName);
-                return;
-            }
             replaceWithList(map, value, parentName);
             return;
         }
