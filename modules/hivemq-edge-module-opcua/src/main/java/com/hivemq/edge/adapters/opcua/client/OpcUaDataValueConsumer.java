@@ -24,7 +24,7 @@ import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
-import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.PayloadMode;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaJsonPayloadConverter;
 import com.hivemq.edge.adapters.opcua.payload.OpcUaStringPayloadConverter;
@@ -47,7 +47,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
     public static final byte[] EMTPY_BYTES = new byte[]{};
 
-    private final @NotNull OpcuaToMqttMapping subscription;
+    private final @NotNull OpcUaToMqttMapping subscription;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull OpcUaClient opcUaClient;
     private final @NotNull NodeId nodeId;
@@ -59,7 +59,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
     private final @NotNull AtomicBoolean firstMessageReceived = new AtomicBoolean(false);
 
     public OpcUaDataValueConsumer(
-            final @NotNull OpcuaToMqttMapping subscription,
+            final @NotNull OpcUaToMqttMapping subscription,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull OpcUaClient opcUaClient,
             final @NotNull NodeId nodeId,
@@ -126,7 +126,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
             });
 
         } catch (Exception e) {
-            log.error("Error on creating MQTT publish from OPC-UA subscription for adapter {}", adapterId, e);
+            log.error("Error on creating MQTT publish from OPC UA subscription for adapter {}", adapterId, e);
         }
     }
 

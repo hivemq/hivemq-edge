@@ -38,15 +38,15 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     private final @NotNull String id;
 
     @JsonProperty("uri")
-    @ModuleConfigField(title = "OPC-UA Server URI",
-                       description = "URI of the OPC-UA server to connect to",
+    @ModuleConfigField(title = "OPC UA Server URI",
+                       description = "URI of the OPC UA server to connect to",
                        format = ModuleConfigField.FieldType.URI,
                        required = true)
     private final @NotNull String uri;
 
     @JsonProperty("overrideUri")
     @ModuleConfigField(title = "Override server returned endpoint URI",
-                       description = "Overrides the endpoint URI returned from the OPC-UA server with the hostname and port from the specified URI.",
+                       description = "Overrides the endpoint URI returned from the OPC UA server with the hostname and port from the specified URI.",
                        format = ModuleConfigField.FieldType.BOOLEAN,
                        defaultValue = "false")
     private final boolean overrideUri;
@@ -64,7 +64,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "OpcUA To MQTT Config",
                        description = "The configuration for a data stream from OpcUA to MQTT",
                        required = true)
-    private final @Nullable OpcuaToMqttConfig opcuaToMqttConfig;
+    private final @Nullable OpcUaToMqttConfig opcuaToMqttConfig;
 
     public OpcUaAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
@@ -72,7 +72,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty("overrideUri") final Boolean overrideUri,
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
-            @JsonProperty("opcuaToMqtt") final @Nullable OpcuaToMqttConfig opcuaToMqttConfig,
+            @JsonProperty("opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty("security") final @Nullable Security security) {
         this.id = id;
         this.uri = uri;
@@ -103,7 +103,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
         return security;
     }
 
-    public @Nullable OpcuaToMqttConfig getOpcuaToMqttConfig() {
+    public @Nullable OpcUaToMqttConfig getOpcuaToMqttConfig() {
         return opcuaToMqttConfig;
     }
 

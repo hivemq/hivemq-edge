@@ -152,7 +152,7 @@ public class OpcUaJsonPayloadConverter {
                             ((ExtensionObject) value).decode(opcUaClient.getDynamicSerializationContext());
                     convertValue(decodedValue, holder, reversibleMode, fieldName, opcUaClient);
                 } catch (Throwable t) {
-                    log.debug("Not able to decode body of OPC-UA ExtensionObject, using undecoded body value instead",
+                    log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead",
                             t);
                     convertValue(((ExtensionObject) value).getBody(), holder, reversibleMode, fieldName, opcUaClient);
                 }
@@ -202,7 +202,7 @@ public class OpcUaJsonPayloadConverter {
         } else {
             //fallback, best effort
             if (log.isTraceEnabled()) {
-                log.trace("No explicit converter for OPC-UA type " +
+                log.trace("No explicit converter for OPC UA type " +
                         value.getClass().getSimpleName() +
                         " falling back to best effort json");
             }
