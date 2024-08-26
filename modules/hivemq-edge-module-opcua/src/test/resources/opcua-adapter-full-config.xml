@@ -1,6 +1,6 @@
 <hivemq>
     <protocol-adapters>
-        <opc-ua-client>
+        <opcua>
             <id>simulation-server-2</id>
             <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
             <overrideUri>true</overrideUri>
@@ -18,7 +18,7 @@
                 <keystore>
                     <path>path/to/keystore</path>
                     <password>keystore-password</password>
-                    <private-key-password>private-key-password</private-key-password>
+                    <privateKeyPassword>private-key-password</privateKeyPassword>
                 </keystore>
                 <truststore>
                     <path>path/to/truststore</path>
@@ -32,22 +32,22 @@
                 <opcuaToMqttMappings>
                     <opcuaToMqttMapping>
                         <node>ns=1;i=1004</node>
-                        <mqtt-topic>test/blubb/#</mqtt-topic>
-                        <publishing-interval>12</publishing-interval>
-                        <server-queue-size>13</server-queue-size>
+                        <mqttTopic>test/blubb/#</mqttTopic>
+                        <publishingInterval>12</publishingInterval>
+                        <serverQueueSize>13</serverQueueSize>
                         <qos>1</qos>
-                        <message-expiry-interval>15</message-expiry-interval>
+                        <messageExpiryInterval>15</messageExpiryInterval>
                     </opcuaToMqttMapping>
                     <opcuaToMqttMapping>
                         <node>ns=2;i=1004</node>
-                        <mqtt-topic>test/blubbb/#</mqtt-topic>
-                        <publishing-interval>13</publishing-interval>
-                        <server-queue-size>14</server-queue-size>
+                        <mqttTopic>test/blubbb/#</mqttTopic>
+                        <publishingInterval>13</publishingInterval>
+                        <serverQueueSize>14</serverQueueSize>
                         <qos>2</qos>
-                        <message-expiry-interval>16</message-expiry-interval>
+                        <messageExpiryInterval>16</messageExpiryInterval>
                     </opcuaToMqttMapping>
                 </opcuaToMqttMappings>
             </opcuaToMqtt>
-        </opc-ua-client>
+        </opcua>
     </protocol-adapters>
 </hivemq>
