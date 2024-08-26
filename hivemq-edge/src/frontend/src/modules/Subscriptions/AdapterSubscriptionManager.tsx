@@ -39,7 +39,7 @@ const AdapterSubscriptionManager: FC<AdapterSubscriptionManagerProps> = ({ type 
   }, [isValid, onOpen])
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size={isExpanded ? 'full' : 'sm'} onClose={handleClose} variant="hivemq">
+    <Drawer isOpen={isOpen} placement="right" size={isExpanded ? 'full' : 'md'} onClose={handleClose} variant="hivemq">
       <DrawerOverlay />
       <DrawerContent>
         <DrawerCloseButton />
