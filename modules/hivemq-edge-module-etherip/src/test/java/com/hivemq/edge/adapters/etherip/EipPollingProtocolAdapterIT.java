@@ -4,9 +4,11 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
-import com.hivemq.edge.adapters.etherip.model.EtherIpAdapterConfig;
-import com.hivemq.edge.adapters.etherip.model.EtherIpDataTypes;
+import com.hivemq.edge.adapters.etherip.model.EipAdapterConfig;
+import com.hivemq.edge.adapters.etherip.model.EipDataType;
+import com.hivemq.edge.adapters.etherip.model.EipPollingContext;
 import org.assertj.core.api.InstanceOfAssertFactories;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,49 +27,49 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @Tag(TAG_REQUIRES_VPN)
-public class EtherIpPollingProtocolAdapterIT {
+public class EipPollingProtocolAdapterIT {
 
-    private static String TAG_INT = "at_int_tag";
-    private static String TAG_BOOL = "at_bool_tag";
-    private static String TAG_PROGRAM_BOOL_TRUE = "program:MainProgram.dev_bool_tag_t";
-    private static String TAG_PROGRAM_BOOL_FALSE = "program:MainProgram.dev_bool_tag_f";
-    private static String TAG_REAL = "at_real_tag";
-    private static String TAG_STRING = "at_string_tag";
+    private static final @NotNull String TAG_INT = "at_int_tag";
+    private static final @NotNull String TAG_BOOL = "at_bool_tag";
+    private static final @NotNull String TAG_PROGRAM_BOOL_TRUE = "program:MainProgram.dev_bool_tag_t";
+    private static final @NotNull String TAG_PROGRAM_BOOL_FALSE = "program:MainProgram.dev_bool_tag_f";
+    private static final @NotNull String TAG_REAL = "at_real_tag";
+    private static final @NotNull String TAG_STRING = "at_string_tag";
 
-    private static final String HOST = "172.16.10.60";
+    private static final @NotNull String HOST = "172.16.10.60";
 
     public static Stream<Arguments> tagsToExpectedValues() {
         return Stream.of(
-                Arguments.of(TAG_INT, EtherIpDataTypes.DATA_TYPE.INT, TAG_INT + ":INT", 3),
-                Arguments.of(TAG_BOOL, EtherIpDataTypes.DATA_TYPE.BOOL, TAG_BOOL + ":BOOL", false),
-                Arguments.of(TAG_PROGRAM_BOOL_TRUE, EtherIpDataTypes.DATA_TYPE.BOOL, TAG_PROGRAM_BOOL_TRUE + ":BOOL", true),
-                Arguments.of(TAG_PROGRAM_BOOL_FALSE, EtherIpDataTypes.DATA_TYPE.BOOL, TAG_PROGRAM_BOOL_FALSE + ":BOOL", false),
-                Arguments.of(TAG_STRING, EtherIpDataTypes.DATA_TYPE.STRING, TAG_STRING + ":STRING", "test"),
-                Arguments.of(TAG_REAL, EtherIpDataTypes.DATA_TYPE.REAL, TAG_REAL + ":REAL", 5.59)
+                Arguments.of(TAG_INT, EipDataType.INT, TAG_INT + ":INT", 3),
+                Arguments.of(TAG_BOOL, EipDataType.BOOL, TAG_BOOL + ":BOOL", false),
+                Arguments.of(TAG_PROGRAM_BOOL_TRUE, EipDataType.BOOL, TAG_PROGRAM_BOOL_TRUE + ":BOOL", true),
+                Arguments.of(TAG_PROGRAM_BOOL_FALSE, EipDataType.BOOL, TAG_PROGRAM_BOOL_FALSE + ":BOOL", false),
+                Arguments.of(TAG_STRING, EipDataType.STRING, TAG_STRING + ":STRING", "test"),
+                Arguments.of(TAG_REAL, EipDataType.REAL, TAG_REAL + ":REAL", 5.59)
         );
     }
 
     @ParameterizedTest
     @MethodSource("tagsToExpectedValues")
-    public void test_parameterized(String tagAddress, EtherIpDataTypes.DATA_TYPE tagType, String expectedName, Object expectedValue) {
-        EtherIpAdapterConfig config = mock(EtherIpAdapterConfig.class);
+    public void test_parameterized(@NotNull String tagAddress, @NotNull EipDataType tagType, @NotNull String expectedName, @NotNull Object expectedValue) {
+        EipAdapterConfig config = mock(EipAdapterConfig.class);
         when(config.getHost()).thenReturn(HOST);
         when(config.getSlot()).thenReturn(0);
 
-        ProtocolAdapterInput<EtherIpAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
+        ProtocolAdapterInput<EipAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
         when(inputMock.getConfig()).thenReturn(config);
 
-        EtherIpAdapterConfig.EIPPollingContextImpl ctx = mock(EtherIpAdapterConfig.EIPPollingContextImpl.class);
+        EipPollingContext ctx = mock(EipPollingContext.class);
         when(ctx.getTagAddress()).thenReturn(tagAddress);
         when(ctx.getDataType()).thenReturn(tagType);
 
-        PollingInput<EtherIpAdapterConfig.PollingContextImpl> input = mock(PollingInput.class);
+        PollingInput<EipPollingContext> input = mock(PollingInput.class);
         when(input.getPollingContext()).thenReturn(ctx);
 
         PollingOutput output = mock(PollingOutput.class);
 
-        EtherIpPollingProtocolAdapter adapter = new EtherIpPollingProtocolAdapter(
-                new EtherIpProtocolAdapterInformation(),
+        EipPollingProtocolAdapter adapter = new EipPollingProtocolAdapter(
+                EipProtocolAdapterInformation.INSTANCE,
                 inputMock);
 
         adapter.start(null, mock(ProtocolAdapterStartOutput.class));
@@ -92,24 +94,24 @@ public class EtherIpPollingProtocolAdapterIT {
 
     @Test
     public void test_PublishChangedDataOnly_False() {
-        EtherIpAdapterConfig config = mock(EtherIpAdapterConfig.class);
+        EipAdapterConfig config = mock(EipAdapterConfig.class);
         when(config.getHost()).thenReturn(HOST);
         when(config.getSlot()).thenReturn(0);
 
-        ProtocolAdapterInput<EtherIpAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
+        ProtocolAdapterInput<EipAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
         when(inputMock.getConfig()).thenReturn(config);
 
-        EtherIpAdapterConfig.EIPPollingContextImpl ctx = mock(EtherIpAdapterConfig.EIPPollingContextImpl.class);
+        EipPollingContext ctx = mock(EipPollingContext.class);
         when(ctx.getTagAddress()).thenReturn(TAG_INT);
-        when(ctx.getDataType()).thenReturn(EtherIpDataTypes.DATA_TYPE.INT);
+        when(ctx.getDataType()).thenReturn(EipDataType.INT);
 
-        PollingInput<EtherIpAdapterConfig.PollingContextImpl> input = mock(PollingInput.class);
+        PollingInput<EipPollingContext> input = mock(PollingInput.class);
         when(input.getPollingContext()).thenReturn(ctx);
 
         PollingOutput output = mock(PollingOutput.class);
 
-        EtherIpPollingProtocolAdapter adapter = new EtherIpPollingProtocolAdapter(
-                new EtherIpProtocolAdapterInformation(),
+        EipPollingProtocolAdapter adapter = new EipPollingProtocolAdapter(
+                EipProtocolAdapterInformation.INSTANCE,
                 inputMock);
 
         adapter.start(null, mock(ProtocolAdapterStartOutput.class));
@@ -127,28 +129,28 @@ public class EtherIpPollingProtocolAdapterIT {
 
     @Test
     public void test_PublishChangedDataOnly_True() {
-        EtherIpAdapterConfig config = mock(EtherIpAdapterConfig.class);
+        EipAdapterConfig config = mock(EipAdapterConfig.class);
         when(config.getHost()).thenReturn(HOST);
         when(config.getSlot()).thenReturn(0);
-        when(config.getPublishChangedDataOnly()).thenReturn(true);
+        when(config.getEipToMqttConfig().getPublishChangedDataOnly()).thenReturn(true);
 
-        ProtocolAdapterInput<EtherIpAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
+        ProtocolAdapterInput<EipAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
         when(inputMock.getConfig()).thenReturn(config);
 
-        EtherIpAdapterConfig.EIPPollingContextImpl ctx = mock(EtherIpAdapterConfig.EIPPollingContextImpl.class);
+        EipPollingContext ctx = mock(EipPollingContext.class);
         when(ctx.getTagAddress()).thenReturn(TAG_INT);
-        when(ctx.getDataType()).thenReturn(EtherIpDataTypes.DATA_TYPE.INT);
+        when(ctx.getDataType()).thenReturn(EipDataType.INT);
 
-        PollingInput<EtherIpAdapterConfig.PollingContextImpl> input = mock(PollingInput.class);
+        PollingInput<EipPollingContext> input = mock(PollingInput.class);
         when(input.getPollingContext()).thenReturn(ctx);
 
         PollingOutput output = mock(PollingOutput.class);
 
-        EtherIpPollingProtocolAdapter adapter = new EtherIpPollingProtocolAdapter(
-                new EtherIpProtocolAdapterInformation(),
+        EipPollingProtocolAdapter adapter = new EipPollingProtocolAdapter(
+                EipProtocolAdapterInformation.INSTANCE,
                 inputMock);
 
-        adapter.start(null, mock(ProtocolAdapterStartOutput.class));
+        adapter.start(mock(), mock(ProtocolAdapterStartOutput.class));
 
         ArgumentCaptor<String> captorName = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Object> captorValue = ArgumentCaptor.forClass(Object.class);
