@@ -19,13 +19,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
+import com.hivemq.edge.adapters.opcua.config.Auth;
+import com.hivemq.edge.adapters.opcua.config.BasicAuth;
+import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.Security;
+import com.hivemq.edge.adapters.opcua.config.Tls;
+import com.hivemq.edge.adapters.opcua.config.Truststore;
+import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC128RSA15;
@@ -35,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
+@SuppressWarnings("unchecked")
 class OpcUaAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
@@ -143,7 +154,7 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final  OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory= new OpcUaProtocolAdapterFactory();
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'id'");
     }
@@ -156,7 +167,7 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final  OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory= new OpcUaProtocolAdapterFactory();
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
@@ -169,7 +180,7 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final  OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory= new OpcUaProtocolAdapterFactory();
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'node'");
     }
@@ -182,9 +193,103 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final  OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory= new OpcUaProtocolAdapterFactory();
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'uri'");
+    }
+
+    @Test
+    public void unconvertConfigObject_full_valid() {
+        final OpcuaToMqttMapping opcuaToMqttMapping = new OpcuaToMqttMapping("my-node", "my/topic", 11, 12, 1, 13L);
+        final OpcuaToMqttConfig opcuaToMqttConfig = new OpcuaToMqttConfig(List.of(opcuaToMqttMapping));
+        final Auth auth = new Auth(new BasicAuth("my-username", "my-password"), new X509Auth(true));
+        final Tls tls = new Tls(true,
+                new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
+                new Truststore("my/truststore/path", "truststore-password"));
+
+        final OpcUaAdapterConfig opcUaAdapterConfig = new OpcUaAdapterConfig("my-adapter",
+                "my.uri.com",
+                true,
+                auth,
+                tls,
+                opcuaToMqttConfig,
+                new Security(BASIC128RSA15));
+
+        final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
+        final Map<String, Object> config =
+                opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, opcUaAdapterConfig);
+
+        assertThat(config.get("id")).isEqualTo("my-adapter");
+        assertThat(config.get("uri")).isEqualTo("my.uri.com");
+
+        final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
+        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).satisfiesExactly((mapping) -> {
+            assertThat(mapping.get("node")).isEqualTo("my-node");
+            assertThat(mapping.get("mqttTopic")).isEqualTo("my/topic");
+            assertThat(mapping.get("publishingInterval")).isEqualTo(11);
+            assertThat(mapping.get("serverQueueSize")).isEqualTo(12);
+            assertThat(mapping.get("qos")).isEqualTo(1);
+            assertThat(mapping.get("messageExpiryInterval")).isEqualTo(13L);
+        });
+
+        final Map<String, Object> authMap = (Map<String, Object>) config.get("auth");
+        assertThat((Map<String, Object>) authMap.get("basic")).satisfies(basic -> {
+            assertThat(basic.get("username")).isEqualTo("my-username");
+            assertThat(basic.get("password")).isEqualTo("my-password");
+        });
+        assertThat((Map<String, Object>) authMap.get("x509")).satisfies(basic -> {
+            assertThat(basic.get("enabled")).isEqualTo(true);
+        });
+
+        final Map<String, Object> tlsMap = (Map<String, Object>) config.get("tls");
+        assertThat(tlsMap.get("enabled")).isEqualTo(true);
+        assertThat((Map<String, Object>) tlsMap.get("keystore")).satisfies(basic -> {
+            assertThat(basic.get("path")).isEqualTo("my/keystore/path");
+            assertThat(basic.get("password")).isEqualTo("keystore-password");
+            assertThat(basic.get("privateKeyPassword")).isEqualTo("private-key-password");
+        });
+        assertThat((Map<String, Object>) tlsMap.get("truststore")).satisfies(basic -> {
+            assertThat(basic.get("path")).isEqualTo("my/truststore/path");
+            assertThat(basic.get("password")).isEqualTo("truststore-password");
+        });
+    }
+
+    @Test
+    public void unconvertConfigObject_default_valid() {
+        final OpcuaToMqttMapping opcuaToMqttMapping = new OpcuaToMqttMapping("my-node", "my/topic", null, null, null, null);
+        final OpcuaToMqttConfig opcuaToMqttConfig = new OpcuaToMqttConfig(List.of(opcuaToMqttMapping));
+
+        final OpcUaAdapterConfig opcUaAdapterConfig = new OpcUaAdapterConfig("my-adapter",
+                "my.uri.com",
+                true,
+                null,
+                null,
+                opcuaToMqttConfig,
+                null);
+
+        final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
+        final Map<String, Object> config =
+                opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, opcUaAdapterConfig);
+
+        assertThat(config.get("id")).isEqualTo("my-adapter");
+        assertThat(config.get("uri")).isEqualTo("my.uri.com");
+
+        final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
+        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).satisfiesExactly((mapping) -> {
+            assertThat(mapping.get("node")).isEqualTo("my-node");
+            assertThat(mapping.get("mqttTopic")).isEqualTo("my/topic");
+            assertThat(mapping.get("publishingInterval")).isEqualTo(1000);
+            assertThat(mapping.get("serverQueueSize")).isEqualTo(1);
+            assertThat(mapping.get("qos")).isEqualTo(0);
+            assertThat(mapping.get("messageExpiryInterval")).isEqualTo(4294967295L);
+        });
+
+        final Map<String, Object> authMap = (Map<String, Object>) config.get("auth");
+        assertThat((Map<String, Object>) authMap.get("basic")).isNull();
+        assertThat((Map<String, Object>) authMap.get("x509")).isNull();
+
+        final Map<String, Object> tlsMap = (Map<String, Object>) config.get("tls");
+        assertThat(tlsMap.get("enabled")).isEqualTo(false);
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
