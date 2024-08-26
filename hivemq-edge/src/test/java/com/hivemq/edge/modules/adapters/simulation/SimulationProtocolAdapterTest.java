@@ -44,8 +44,8 @@ class SimulationProtocolAdapterTest {
     private final @NotNull ProtocolAdapterInput input = mock();
     private final @NotNull SimulationAdapterConfig protocolAdapterConfig = mock();
     private @NotNull SimulationProtocolAdapter simulationProtocolAdapter;
-    private final @NotNull SimulationPollingContext simulationPollingContext =
-            new SimulationPollingContext("test", 1, null);
+    private final @NotNull SimulationToMqttMapping simulationPollingContext =
+            new SimulationToMqttMapping("test", 1, null, null, null, null);
     private final @NotNull PollingInputImpl pollingInput = new PollingInputImpl(simulationPollingContext);
     private final @NotNull PollingOutputImpl pollingOutput =
             new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(simulationPollingContext));

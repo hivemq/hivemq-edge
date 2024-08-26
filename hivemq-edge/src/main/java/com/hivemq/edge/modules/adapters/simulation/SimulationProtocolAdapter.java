@@ -25,7 +25,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Random;
@@ -33,7 +33,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
 
-public class SimulationProtocolAdapter implements PollingProtocolAdapter<SimulationPollingContext> {
+public class SimulationProtocolAdapter implements PollingProtocolAdapter<SimulationToMqttMapping> {
 
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull SimulationAdapterConfig adapterConfig;
@@ -75,7 +75,7 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
 
     @Override
     public void poll(
-            final @NotNull PollingInput<SimulationPollingContext> pollingInput,
+            final @NotNull PollingInput<SimulationToMqttMapping> pollingInput,
             final @NotNull PollingOutput pollingOutput) {
 
         final int minDelay = adapterConfig.getMinDelay();
@@ -115,17 +115,17 @@ public class SimulationProtocolAdapter implements PollingProtocolAdapter<Simulat
     }
 
     @Override
-    public @NotNull List<SimulationPollingContext> getPollingContexts() {
-        return adapterConfig.getPollingContexts();
+    public @NotNull List<SimulationToMqttMapping> getPollingContexts() {
+        return adapterConfig.getSimulationToMqttConfig().getSimulationToMqttMappings();
     }
 
     @Override
     public int getPollingIntervalMillis() {
-        return adapterConfig.getPollingIntervalMillis();
+        return adapterConfig.getSimulationToMqttConfig().getPollingIntervalMillis();
     }
 
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
-        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+        return adapterConfig.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval();
     }
 }
