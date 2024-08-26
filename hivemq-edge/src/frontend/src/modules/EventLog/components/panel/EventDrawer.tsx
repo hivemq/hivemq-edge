@@ -67,7 +67,7 @@ const EventDrawer: FC<BridgeMainDrawerProps> = ({ event, isOpen, onClose }) => {
                       <Text>{t('eventLog.table.header.source')}</Text>
                     </GridItem>
                     <GridItem data-testid="event-value-source">
-                      <SourceLink source={event?.source} />
+                      <SourceLink source={event?.source} type={event?.associatedObject} />
                     </GridItem>
                     <GridItem data-testid="event-title-associatedObject">
                       <Text>{t('eventLog.table.header.associatedObject')}</Text>

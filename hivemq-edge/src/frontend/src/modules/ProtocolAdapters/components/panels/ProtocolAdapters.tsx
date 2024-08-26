@@ -76,7 +76,7 @@ const ProtocolAdapters: FC = () => {
         protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
         protocolAdapterType: type,
       }
-      navigate('/protocol-adapters/new', { state: adapterNavigateState })
+      navigate(`/protocol-adapters/new/${type}`, { state: adapterNavigateState })
     }
 
     const handleEditInstance = (adapterId: string, type: string) => {
@@ -84,7 +84,7 @@ const ProtocolAdapters: FC = () => {
         protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
         protocolAdapterType: type,
       }
-      if (adapterId) navigate(`/protocol-adapters/${adapterId}`, { state: adapterNavigateState })
+      if (adapterId) navigate(`/protocol-adapters/edit/${type}/${adapterId}`, { state: adapterNavigateState })
     }
 
     const handleOnDelete = (adapterId: string) => {
@@ -96,8 +96,8 @@ const ProtocolAdapters: FC = () => {
       if (adapterId) navigate(`/edge-flow`, { state: { selectedAdapter: { adapterId, type } } })
     }
 
-    const handleExport = (adapterId: string) => {
-      if (adapterId) navigate(`/protocol-adapters/${adapterId}/export`)
+    const handleExport = (adapterId: string, type: string) => {
+      if (adapterId) navigate(`/protocol-adapters/edit/${type}/${adapterId}/export`)
     }
 
     return [
