@@ -39,6 +39,7 @@ import {
   getRequiredUiSchema,
 } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import { getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -69,12 +70,21 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   const { schema, uiSchema, name, logo, isDiscoverable } = useMemo(() => {
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
     const { configSchema, uiSchema, capabilities } = adapter || {}
+
+    // TODO[NVL] This is still a hack; backend needs to provide identification of subscription properties
+    const paths = getTopicPaths(configSchema || {})
+    const subIndex = paths.shift()?.split('.').shift()
+    const hideSubscriptionsKey =
+      import.meta.env.VITE_FLAG_ADAPTER_SCHEMA_HIDE_SUBSCRIPTION === 'true' ? subIndex : undefined
+
+    console.log('XXXXXX', subIndex, hideSubscriptionsKey)
+
     return {
       isDiscoverable: Boolean(capabilities?.includes('DISCOVER')),
       schema: configSchema,
       name: adapter?.name,
       logo: adapter?.logoUrl,
-      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter),
+      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter, hideSubscriptionsKey),
     }
   }, [data?.items, isNewAdapter, adapterType])
 

@@ -900,5 +900,10 @@
       "title": "A new version of $t(branding.appName) is available",
       "description": "Visit the GitHub repository to learn more about the latest version of $t(branding.appName)"
     }
+  },
+  "warnings": {
+    "deprecated": {
+      "subscriptions": "The subscriptions are now available through the workspace"
+    }
   }
 }
