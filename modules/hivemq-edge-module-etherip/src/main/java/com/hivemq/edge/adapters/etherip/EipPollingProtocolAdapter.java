@@ -26,7 +26,8 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.edge.adapters.etherip.model.EtherIpAdapterConfig;
+import com.hivemq.edge.adapters.etherip.model.EipAdapterConfig;
+import com.hivemq.edge.adapters.etherip.model.EipPollingContext;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
 import etherip.EtherNetIP;
@@ -41,23 +42,23 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<EtherIpAdapterConfig.PollingContextImpl> {
+public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipPollingContext> {
 
-    private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(EtherIpPollingProtocolAdapter.class);
+    private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(EipPollingProtocolAdapter.class);
 
-    protected static final String TAG_ADDRESS_TYPE_SEP = ":";
+    private static final @NotNull String TAG_ADDRESS_TYPE_SEP = ":";
 
-    private final @NotNull EtherIpAdapterConfig adapterConfig;
+    private final @NotNull EipAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     protected final @NotNull AdapterFactories adapterFactories;
     private volatile @Nullable EtherNetIP etherNetIP;
 
-    private final Map<String, EtherIpValue> lastSeenValues;
+    private final @NotNull Map<String, EtherIpValue> lastSeenValues;
 
-    public EtherIpPollingProtocolAdapter(
+    public EipPollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
-            final @NotNull ProtocolAdapterInput<EtherIpAdapterConfig> input) {
+            final @NotNull ProtocolAdapterInput<EipAdapterConfig> input) {
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
@@ -116,8 +117,7 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
 
     @Override
     public void poll(
-            final @NotNull PollingInput<EtherIpAdapterConfig.PollingContextImpl> pollingInput,
-            final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<EipPollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
 
         if (etherNetIP == null) {
             return;
@@ -127,17 +127,15 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
         try {
             final CIPData evt = etherNetIP.readTag(pollingInput.getPollingContext().getTagAddress());
 
-            if(adapterConfig.getPublishChangedDataOnly()) {
-                handleResult(evt, tagAddress)
-                        .forEach(it -> {
-                            if(!lastSeenValues.containsKey(tagAddress) || !lastSeenValues.get(tagAddress).equals(it)) {
-                                pollingOutput.addDataPoint(tagAddress, it.getValue());
-                                lastSeenValues.put(tagAddress, it);
-                            }
-                        });
+            if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
+                handleResult(evt, tagAddress).forEach(it -> {
+                    if (!lastSeenValues.containsKey(tagAddress) || !lastSeenValues.get(tagAddress).equals(it)) {
+                        pollingOutput.addDataPoint(tagAddress, it.getValue());
+                        lastSeenValues.put(tagAddress, it);
+                    }
+                });
             } else {
-                handleResult(evt, tagAddress)
-                        .forEach(it -> pollingOutput.addDataPoint(tagAddress, it.getValue()));
+                handleResult(evt, tagAddress).forEach(it -> pollingOutput.addDataPoint(tagAddress, it.getValue()));
             }
 
 
@@ -156,29 +154,26 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
         }
     }
 
-    private List<EtherIpValue> handleResult(final CIPData evt, final String tagAddress) {
-        return EtherIpValueFactory
-                .fromTagAddressAndCipData(tagAddress, evt)
-                .map(List::of)
-                .orElseGet( () -> {
-                    LOG.warn("Unable to parse tag {}, type {} not supported", tagAddress, evt.getType());
-                    return List.of();
-                });
+    private @NotNull List<EtherIpValue> handleResult(final @NotNull CIPData evt, final @NotNull String tagAddress) {
+        return EtherIpValueFactory.fromTagAddressAndCipData(tagAddress, evt).map(List::of).orElseGet(() -> {
+            LOG.warn("Unable to parse tag {}, type {} not supported", tagAddress, evt.getType());
+            return List.of();
+        });
     }
 
     @Override
-    public @NotNull List<EtherIpAdapterConfig.PollingContextImpl> getPollingContexts() {
-        return adapterConfig.getSubscriptions();
+    public @NotNull List<EipPollingContext> getPollingContexts() {
+        return adapterConfig.getEipToMqttConfig().getMappings();
     }
 
     @Override
     public int getPollingIntervalMillis() {
-        return adapterConfig.getPollingIntervalMillis();
+        return adapterConfig.getEipToMqttConfig().getPollingIntervalMillis();
     }
 
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
-        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+        return adapterConfig.getEipToMqttConfig().getMaxPollingErrorsBeforeRemoval();
     }
 
     /**
@@ -187,7 +182,7 @@ public class EtherIpPollingProtocolAdapter implements PollingProtocolAdapter<Eth
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(@NotNull final EtherIpAdapterConfig.PollingContextImpl subscription) {
+    protected @NotNull String createTagAddressForSubscription(@NotNull final EipPollingContext subscription) {
         return String.format("%s%s%s", subscription.getTagAddress(), TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
     }
 

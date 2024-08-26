@@ -1,2 +1,2 @@
-com.hivemq.edge.adapters.etherip.EtherIpProtocolAdapterFactory
+com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory
 

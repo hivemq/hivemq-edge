@@ -19,25 +19,25 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.etherip.model.EtherIpAdapterConfig;
+import com.hivemq.edge.adapters.etherip.model.EipAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
-public class EtherIpProtocolAdapterFactory implements ProtocolAdapterFactory<EtherIpAdapterConfig> {
+public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdapterConfig> {
 
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
-        return EtherIpProtocolAdapterInformation.INSTANCE;
+        return EipProtocolAdapterInformation.INSTANCE;
     }
 
     @Override
-    public @NotNull ProtocolAdapter createAdapter(final @NotNull ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<EtherIpAdapterConfig> input) {
-        return new EtherIpPollingProtocolAdapter(adapterInformation, input);
+    public @NotNull ProtocolAdapter createAdapter(final @NotNull ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<EipAdapterConfig> input) {
+        return new EipPollingProtocolAdapter(adapterInformation, input);
     }
 
 
     @Override
-    public @NotNull Class<EtherIpAdapterConfig> getConfigClass() {
-        return EtherIpAdapterConfig.class;
+    public @NotNull Class<EipAdapterConfig> getConfigClass() {
+        return EipAdapterConfig.class;
     }
 
 }
