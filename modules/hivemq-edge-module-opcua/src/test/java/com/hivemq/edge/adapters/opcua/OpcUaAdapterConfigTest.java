@@ -23,8 +23,8 @@ import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
 import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.Security;
 import com.hivemq.edge.adapters.opcua.config.Tls;
 import com.hivemq.edge.adapters.opcua.config.Truststore;
@@ -200,8 +200,8 @@ class OpcUaAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final OpcuaToMqttMapping opcuaToMqttMapping = new OpcuaToMqttMapping("my-node", "my/topic", 11, 12, 1, 13L);
-        final OpcuaToMqttConfig opcuaToMqttConfig = new OpcuaToMqttConfig(List.of(opcuaToMqttMapping));
+        final OpcUaToMqttMapping opcuaToMqttMapping = new OpcUaToMqttMapping("my-node", "my/topic", 11, 12, 1, 13L);
+        final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(List.of(opcuaToMqttMapping));
         final Auth auth = new Auth(new BasicAuth("my-username", "my-password"), new X509Auth(true));
         final Tls tls = new Tls(true,
                 new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
@@ -256,8 +256,9 @@ class OpcUaAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_default_valid() {
-        final OpcuaToMqttMapping opcuaToMqttMapping = new OpcuaToMqttMapping("my-node", "my/topic", null, null, null, null);
-        final OpcuaToMqttConfig opcuaToMqttConfig = new OpcuaToMqttConfig(List.of(opcuaToMqttMapping));
+        final OpcUaToMqttMapping
+                opcuaToMqttMapping = new OpcUaToMqttMapping("my-node", "my/topic", null, null, null, null);
+        final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(List.of(opcuaToMqttMapping));
 
         final OpcUaAdapterConfig opcUaAdapterConfig = new OpcUaAdapterConfig("my-adapter",
                 "my.uri.com",

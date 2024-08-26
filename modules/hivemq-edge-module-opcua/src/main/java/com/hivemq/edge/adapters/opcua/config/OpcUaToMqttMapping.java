@@ -8,11 +8,11 @@ import org.jetbrains.annotations.Nullable;
 
 import static java.util.Objects.requireNonNullElse;
 
-public class OpcuaToMqttMapping {
+public class OpcUaToMqttMapping {
 
     @JsonProperty("node")
     @ModuleConfigField(title = "Source Node ID",
-                       description = "identifier of the node on the OPC-UA server. Example: \"ns=3;s=85/0:Temperature\"",
+                       description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\"",
                        required = true)
     private final @NotNull String node;
 
@@ -53,7 +53,7 @@ public class OpcuaToMqttMapping {
     private final long messageExpiryInterval;
 
     @JsonCreator
-    public OpcuaToMqttMapping(
+    public OpcUaToMqttMapping(
             @JsonProperty(value = "node", required = true) final @NotNull String node,
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty("publishingInterval") final @Nullable Integer publishingInterval,

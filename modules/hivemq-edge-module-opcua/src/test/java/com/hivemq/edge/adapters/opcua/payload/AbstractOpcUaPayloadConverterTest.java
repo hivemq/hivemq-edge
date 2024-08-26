@@ -29,8 +29,8 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.PayloadMode;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
@@ -90,8 +90,8 @@ abstract class AbstractOpcUaPayloadConverterTest {
     protected OpcUaProtocolAdapter createAndStartAdapter(
             final @NotNull String subcribedNodeId, final PayloadMode payloadMode) throws Exception {
 
-        final OpcuaToMqttConfig opcuaToMqttConfig =
-                new OpcuaToMqttConfig(List.of(new OpcuaToMqttMapping(subcribedNodeId, "topic", null, null, null, null)));
+        final OpcUaToMqttConfig opcuaToMqttConfig =
+                new OpcUaToMqttConfig(List.of(new OpcUaToMqttMapping(subcribedNodeId, "topic", null, null, null, null)));
         final OpcUaAdapterConfig config = new OpcUaAdapterConfig("test-" + UUID.randomUUID(),
                 opcUaServerExtension.getServerUri(),
                 false,

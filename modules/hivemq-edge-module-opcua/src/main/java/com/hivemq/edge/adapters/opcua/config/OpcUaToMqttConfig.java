@@ -8,17 +8,17 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-public class OpcuaToMqttConfig {
+public class OpcUaToMqttConfig {
 
     @JsonProperty("opcuaToMqttMappings")
-    private final @NotNull List<OpcuaToMqttMapping> subscriptions;
+    private final @NotNull List<OpcUaToMqttMapping> subscriptions;
 
     @JsonCreator
-    public OpcuaToMqttConfig(@JsonProperty("opcuaToMqttMappings") final @Nullable List<OpcuaToMqttMapping> subscriptions) {
+    public OpcUaToMqttConfig(@JsonProperty("opcuaToMqttMappings") final @Nullable List<OpcUaToMqttMapping> subscriptions) {
         this.subscriptions = Objects.requireNonNullElse(subscriptions, List.of());
     }
 
-    public @NotNull List<OpcuaToMqttMapping> getMappings() {
+    public @NotNull List<OpcUaToMqttMapping> getMappings() {
         return subscriptions;
     }
 }

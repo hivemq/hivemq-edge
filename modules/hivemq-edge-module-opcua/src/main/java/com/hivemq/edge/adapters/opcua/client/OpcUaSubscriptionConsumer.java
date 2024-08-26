@@ -21,7 +21,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaException;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
-import com.hivemq.edge.adapters.opcua.config.OpcuaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttMapping;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
@@ -47,26 +47,26 @@ import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.
 public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
     private static final Logger log = LoggerFactory.getLogger(OpcUaSubscriptionConsumer.class);
 
-    private final @NotNull OpcuaToMqttMapping subscription;
+    private final @NotNull OpcUaToMqttMapping subscription;
     private final @NotNull ReadValueId readValueId;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull EventService eventService;
     private final @NotNull CompletableFuture<Void> resultFuture;
     private final @NotNull OpcUaClient opcUaClient;
-    private final @NotNull Map<UInteger, OpcuaToMqttMapping> subscriptionMap;
+    private final @NotNull Map<UInteger, OpcUaToMqttMapping> subscriptionMap;
     private final @NotNull ProtocolAdapterMetricsService metricsHelper;
     private final @NotNull String adapterId;
     private final @NotNull OpcUaProtocolAdapter protocolAdapter;
     private final @NotNull AdapterFactories adapterFactories;
 
     public OpcUaSubscriptionConsumer(
-            final @NotNull OpcuaToMqttMapping subscription,
+            final @NotNull OpcUaToMqttMapping subscription,
             final @NotNull ReadValueId readValueId,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @Nullable EventService eventService,
             final @NotNull CompletableFuture<Void> resultFuture,
             final @NotNull OpcUaClient opcUaClient,
-            final @NotNull Map<UInteger, OpcuaToMqttMapping> subscriptionMap,
+            final @NotNull Map<UInteger, OpcUaToMqttMapping> subscriptionMap,
             final @NotNull ProtocolAdapterMetricsService metricsHelper,
             final @NotNull String adapterId,
             final @NotNull OpcUaProtocolAdapter protocolAdapter,
@@ -116,7 +116,7 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
                     for (final UaMonitoredItem item : items) {
                         if (item.getStatusCode().isGood()) {
                             if (log.isDebugEnabled()) {
-                                log.debug("OPC-UA subscription created for nodeId={}",
+                                log.debug("OPC UA subscription created for nodeId={}",
                                         item.getReadValueId().getNodeId());
                             }
                         } else {
@@ -125,12 +125,12 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
                                     .map(descriptionArray -> String.join(",", descriptionArray))
                                     .orElse("no further description");
 
-                            log.warn("OPC-UA subscription failed for nodeId '{}': {} (status={})",
+                            log.warn("OPC UA subscription failed for nodeId '{}': {} (status={})",
                                     item.getReadValueId().getNodeId(),
                                     descriptions,
                                     item.getStatusCode());
 
-                            throw new OpcUaException("OPC-UA subscription failed for nodeId `" +
+                            throw new OpcUaException("OPC UA subscription failed for nodeId `" +
                                     item.getReadValueId().getNodeId() +
                                     "`: " + descriptions +" (status '" +
                                     item.getStatusCode() +

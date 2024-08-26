@@ -39,7 +39,7 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull String getProtocolName() {
-        return "OPC-UA Client";
+        return "OPC UA";
     }
 
     @Override
@@ -49,12 +49,12 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
 
     @Override
     public @NotNull String getDisplayName() {
-        return "OPC-UA to MQTT Protocol Adapter";
+        return "OPC UA to MQTT Protocol Adapter";
     }
 
     @Override
     public @NotNull String getDescription() {
-        return "Connects HiveMQ Edge to existing OPC-UA services as a client and enables a seamless exchange of data between MQTT and OPC-UA.";
+        return "Connects HiveMQ Edge to existing OPC UA services as a client and enables a seamless exchange of data between MQTT and OPC-UA.";
     }
 
     @Override
@@ -93,12 +93,12 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
                 .getClassLoader()
                 .getResourceAsStream("opcua-adapter-ui-schema.json")) {
             if (is == null) {
-                log.warn("The UISchema for the OPC-UA Adapter could not be loaded from resources: Not found.");
+                log.warn("The UISchema for the OPC UA Adapter could not be loaded from resources: Not found.");
                 return null;
             }
             return IOUtils.toString(is, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            log.warn("The UISchema for the OPC-UA Adapter could not be loaded from resources:", e);
+            log.warn("The UISchema for the OPC UA Adapter could not be loaded from resources:", e);
             return null;
         }
     }
