@@ -33,7 +33,7 @@ const ProtocolIntegrationStore: FC = () => {
       protocolAdapterType: adapterId,
       // selectedActiveAdapter: { isNew: false, isOpen: false, adapterId: (selected?.data as Adapter).id },
     }
-    navigate('/protocol-adapters/new', {
+    navigate(`/protocol-adapters/new/${adapterId}`, {
       state: adapterNavigateState,
     })
   }

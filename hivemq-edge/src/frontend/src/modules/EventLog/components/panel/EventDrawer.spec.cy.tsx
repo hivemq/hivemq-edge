@@ -21,7 +21,7 @@ describe('EventDrawer', () => {
     cy.getByTestId('event-title-source').should('contain.text', 'Source')
     cy.getByTestId('event-value-source').should('contain.text', 'BRIDGE-0')
     cy.getByTestId('event-title-associatedObject').should('contain.text', 'Associated Object')
-    cy.getByTestId('event-value-associatedObject').should('contain.text', 'BRIDGE-0')
+    cy.getByTestId('event-value-associatedObject').should('contain.text', 'BRIDGE-100')
 
     cy.getByTestId('event-value-message').should('contain.text', 'Lorem ipsum dolor sit amet')
     cy.getByTestId('event-title-payload').should('contain.text', 'Payload')
