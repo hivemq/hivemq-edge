@@ -39,6 +39,24 @@ const AdapterSubscriptionManager: FC<AdapterSubscriptionManagerProps> = ({ type 
       <DrawerOverlay />
       <DrawerContent>
         <DrawerCloseButton />
+        <IconButton
+          aria-label="expand"
+          variant="ghost"
+          colorScheme="gray"
+          onClick={setExpanded.toggle}
+          icon={isExpanded ? <LuShrink /> : <LuExpand />}
+          style={{
+            position: 'absolute',
+            top: 'var(--chakra-space-2)',
+            right: 0,
+            width: '32px',
+            height: '32px',
+            transform: 'translate(-48px, 0)',
+            minWidth: 'inherit',
+          }}
+        >
+          Expand
+        </IconButton>
         <DrawerHeader>
           <Text>Manage {type} subscriptions</Text>
         </DrawerHeader>
