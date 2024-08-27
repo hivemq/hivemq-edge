@@ -2,7 +2,7 @@ import { RegistryFieldsType, RegistryWidgetsType, UiSchema } from '@rjsf/utils'
 import { AlertStatus } from '@chakra-ui/react'
 
 import CompactArrayField from '@/components/rjsf/Fields/CompactArrayField.tsx'
-import { WarningMessage } from '@/components/rjsf/Fields/WarningMessage.tsx'
+import { InternalNotice } from '@/components/rjsf/Fields/InternalNotice.tsx'
 
 import i18n from '@/config/i18n.config.ts'
 
@@ -50,5 +50,5 @@ export const adapterJSFWidgets: RegistryWidgetsType = {
 
 export const adapterJSFFields: RegistryFieldsType = {
   compactTable: CompactArrayField,
-  'text:warning': WarningMessage,
+  'text:warning': InternalNotice,
 }
