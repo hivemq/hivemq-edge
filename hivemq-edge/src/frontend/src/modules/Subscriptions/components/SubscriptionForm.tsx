@@ -11,6 +11,7 @@ import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate
 import { customFormatsValidator } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { useSubscriptionManager } from '@/modules/Subscriptions/hooks/useSubscriptionManager.tsx'
+import { useTranslation } from 'react-i18next'
 
 interface SubscriptionFormProps {
   id: string
@@ -19,6 +20,7 @@ interface SubscriptionFormProps {
 
 // TODO[NVL] Should replicate the config from the adapter form; share component?
 const SubscriptionForm: FC<SubscriptionFormProps> = ({ id, type }) => {
+  const { t } = useTranslation()
   const { inwardManager, outwardManager } = useSubscriptionManager(id)
 
   const subscriptionManager = type === 'inward' ? inwardManager : outwardManager
@@ -32,8 +34,7 @@ const SubscriptionForm: FC<SubscriptionFormProps> = ({ id, type }) => {
     [subscriptionManager]
   )
 
-  if (!subscriptionManager)
-    return <ErrorMessage type="Subscriptions" message={`Cannot extract the ${type} subscriptions`} />
+  if (!subscriptionManager) return <ErrorMessage type={type} message={t('protocolAdapter.export.error.noSchema')} />
 
   return (
     <Form
