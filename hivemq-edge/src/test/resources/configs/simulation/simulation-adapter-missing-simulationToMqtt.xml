@@ -1,0 +1,7 @@
+<hivemq>
+    <protocol-adapters>
+        <simulation>
+            <id>my-url</id>
+        </simulation>
+    </protocol-adapters>
+</hivemq>

@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
+import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -85,7 +85,7 @@ public class SimulationToMqttMapping implements PollingContext {
             @JsonProperty("userProperties") final @Nullable List<UserProperty> userProperties) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
-        this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
+        this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerTag);
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
