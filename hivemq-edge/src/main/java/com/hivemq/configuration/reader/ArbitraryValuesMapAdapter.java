@@ -52,6 +52,7 @@ import java.util.Map;
  *     </subscriptions>
  * </object>
  *
+ * Tested in {@see ConfigFileReaderTest}
  */
 public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdapter.ElementMap, Map<String, Object>> {
 

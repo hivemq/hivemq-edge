@@ -25,6 +25,8 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @SuppressWarnings("NullabilityAnnotations")
@@ -117,29 +118,11 @@ public class ConfigFileReaderTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void whenArbitraryField_thenMapCorrectlyFilled() throws IOException {
-        final File tempFile = new File(tempDir, "conf.xml");
-        final BufferedWriter writer = Files.newWriter(tempFile, UTF_8);
-        writer.write("<hivemq>\n" +
-                "    <protocol-adapters>\n" +
-                "        <test-node>\n" +
-                "            <textval>thisisatext</textval>\n" +
-                "            <numval>3</numval>\n" +
-                "            <listvals>\n" +
-                "                <listval>entry1</listval>\n" +
-                "                <listval>entry2</listval>\n" +
-                "            </listvals>\n" +
-                "        </test-node>\n" +
-                "        <test-node>\n" +
-                "            <boolval>true</boolval>\n" +
-                "            <listvals>\n" +
-                "                <listval>entry3</listval>\n" +
-                "            </listvals>\n" +
-                "        </test-node>\n" +
-                "    </protocol-adapters>\n" +
-                "</hivemq>");
-        writer.close();
-        final ConfigurationFile configurationFile = new ConfigurationFile(tempFile);
+    public void whenArbitraryField_thenMapCorrectlyFilled() throws Exception {
+        final URL resource = getClass().getResource("/arbitrary-properties-config1.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final ConfigurationFile configurationFile = new ConfigurationFile(path);
         final ConfigFileReaderWriter configFileReader = new ConfigFileReaderWriter(configurationFile,
                 mock(RestrictionConfigurator.class),
                 mock(SecurityConfigurator.class),
@@ -161,16 +144,42 @@ public class ConfigFileReaderTest {
 
         assertNotNull(config);
         System.out.println(config);
-        assertEquals(1, config.keySet().size());
-        final Object testnode = config.get("test-node");
-        assertNotNull(testnode);
-        assertTrue(testnode instanceof List);
-        List<Object> testnodeList = (List<Object>) testnode;
-        assertEquals(2, testnodeList.size());
-        assertEquals(Map.of("numval", "3", "textval", "thisisatext", "listvals", List.of("entry1", "entry2")),
-                testnodeList.get(0));
+        assertEquals(5, config.keySet().size());
 
-        assertEquals(Map.of("boolval", "true", "listvals", List.of("entry3")), testnodeList.get(1));
+        assertThat((Map<String, Object>) config.get("my-protocol-adapter1")).satisfies(map -> {
+            assertThat(map.get("numval")).isEqualTo("3");
+            assertThat(map.get("textval")).isEqualTo("thisisatext");
+            assertThat(map.get("listvals")).isEqualTo(List.of("entry1", "entry2"));
+        });
+
+        assertThat((Map<String, Object>) config.get("my-protocol-adapter2")).satisfies(map -> {
+            assertThat(map.get("boolval")).isEqualTo("true");
+            assertThat(map.get("listvals")).isEqualTo(List.of("entry3"));
+        });
+
+        assertThat((Map<String, Object>) config.get("my-protocol-adapter3")).satisfies(map -> {
+            assertThat((List<Map<String, Object>>) map.get("persons")).satisfiesExactly(person -> {
+                assertThat(person.get("name")).isEqualTo("john");
+                assertThat(person.get("lastName")).isEqualTo("doe");
+            }, person -> {
+                assertThat(person.get("name")).isEqualTo("boris");
+            });
+        });
+
+        assertThat((Map<String, Object>) config.get("my-protocol-adapter4")).satisfies(map -> {
+            assertThat(map.get("boolval")).isEqualTo("false");
+            assertThat((List<Map<String, Object>>) map.get("cats")).satisfiesExactly(cat -> {
+                assertThat(cat.get("name")).isEqualTo("leo");
+            }, cat -> {
+                assertThat(cat.get("name")).isEqualTo("karli");
+            });
+        });
+
+        assertThat((Map<String, Object>) config.get("my-protocol-adapter5")).satisfies(map -> {
+            assertThat((List<Map<String, Object>>) map.get("cats")).satisfiesExactly(cat -> {
+                assertThat(cat.get("name")).isEqualTo("emma");
+            });
+        });
     }
 
     @SuppressWarnings("unchecked")
