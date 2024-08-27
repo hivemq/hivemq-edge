@@ -8,7 +8,7 @@
                 <simulationToMqttMappings>
                     <simulationToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
-                        <qos>1</qos>
+                        <mqttQos>1</mqttQos>
                         <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
@@ -21,7 +21,7 @@
                     </simulationToMqttMapping>
                     <simulationToMqttMapping>
                         <mqttTopic>my/topic/2</mqttTopic>
-                        <qos>1</qos>
+                        <mqttQos>1</mqttQos>
                         <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
