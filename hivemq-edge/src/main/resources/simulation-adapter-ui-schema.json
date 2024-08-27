@@ -1,36 +1,59 @@
 {
-  "ui:tabs": [
+  "ui:tabs" : [
     {
-      "id": "coreFields",
-      "title": "Settings",
-      "properties": ["id"]
-    },
-    {
-      "id": "subFields",
-      "title": "Subscription",
-      "properties": ["subscriptions"]
-    },
-    {
-      "id": "publishing",
-      "title": "Publishing",
-      "properties": [
-        "maxPollingErrorsBeforeRemoval",
-        "pollingIntervalMillis",
+      "id" : "coreFields",
+      "title" : "Settings",
+      "properties" : [
+        "id",
         "minValue",
-        "maxValue"
+        "maxValue",
+        "minDelay",
+        "maxDelay"
+      ]
+    },
+    {
+      "id" : "subFields",
+      "title" : "Simulation to MQTT",
+      "properties" : [
+        "simulationToMqtt"
       ]
     }
   ],
-
-  "id": {
-    "ui:disabled": false
+  "id" : {
+    "ui:disabled" : false
   },
-  "subscriptions": {
-    "ui:batchMode": true,
-    "items": {
-      "ui:order": [ "destination", "qos", "*"],
-      "ui:collapsable": {
-        "titleKey": "destination"
+  "ui:order" : [
+    "id",
+    "minValue",
+    "maxValue",
+    "minDelay",
+    "maxDelay"
+  ],
+  "simulationToMqtt" : {
+    "ui:batchMode" : true,
+    "items" : {
+      "ui:order" : [
+        "simulationToMqttMappings",
+        "pollingIntervalMillis",
+        "maxPollingErrorsBeforeRemoval",
+        "*"
+      ],
+      "simulationToMqttMappings" : {
+        "ui:batchMode" : true,
+        "items" : {
+          "ui:order" : [
+            "mqttTopic",
+            "mqttQos",
+            "messageHandlingOptions",
+            "includeTimestamp",
+            "includeTagNames",
+            "userProperties",
+            "*"
+          ],
+          "ui:collapsable" : {
+            "titleKey" : "mqttTopic"
+          }
+        }
       }
     }
   }

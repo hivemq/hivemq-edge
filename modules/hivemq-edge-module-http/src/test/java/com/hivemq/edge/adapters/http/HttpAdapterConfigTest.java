@@ -20,13 +20,16 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
+import com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpHeader;
 import com.hivemq.edge.adapters.http.config.HttpPollingContext;
+import com.hivemq.edge.adapters.http.config.HttpToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpContentType.JSON;
@@ -181,118 +184,145 @@ public class HttpAdapterConfigTest {
     }
 
 
-//    @Test
-//    public void unconvertConfigObject_full() throws Exception {
-//        final HttpHeader httpHeader1 = new HttpHeader("foo 1", "bar 1");
-//        final HttpHeader httpHeader2 = new HttpHeader("foo 2", "bar 2");
-//
-//        final HttpAdapterConfig httpAdapterConfig = new HttpAdapterConfig("http://192.168.0.02:777/?asdasd=asdasd",
-//                "my/destination",
-//                0,
-//                POST,
-//                1773,
-//                YAML,
-//                "my-body",
-//                true,
-//                false,
-//                List.of(httpHeader2, httpHeader1),
-//                "my-protocol-adapter",
-//                11,
-//                true,
-//                1337);
-//
-//        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
-//        final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
-//
-//        assertThat(config.entrySet()).satisfiesExactly( //
-//                (it) -> assertThat(it.getKey()).isEqualTo("url"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("destination"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("mqttQos"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestMethod"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeout"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestBodyContentType"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestBody"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("assertResponseIsJson"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpPublishSuccessStatusCodeOnly"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpHeaders"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("id"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("maxPollingErrorsBeforeRemoval"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("allowUntrustedCertificates"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("pollingIntervalMillis"));
-//
-//        assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
-//        assertThat(config.get("pollingIntervalMillis")).isEqualTo(1337);
-//        assertThat(config.get("maxPollingErrorsBeforeRemoval")).isEqualTo(11);
-//        assertThat(config.get("url")).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
-//        assertThat(config.get("destination")).isEqualTo("my/destination");
-//        assertThat(config.get("mqttQos")).isEqualTo(0);
-//        assertThat(config.get("httpRequestMethod")).isEqualTo("POST");
-//        assertThat(config.get("httpRequestBodyContentType")).isEqualTo("YAML");
-//        assertThat(config.get("httpRequestBody")).isEqualTo("my-body");
-//        assertThat(config.get("httpConnectTimeout")).isEqualTo(1773);
-//        assertThat((List<Map<String, String>>) config.get("httpHeaders")).satisfiesExactlyInAnyOrder(header1 -> {
-//            assertThat(header1.get("name")).isEqualTo("foo 1");
-//            assertThat(header1.get("value")).isEqualTo("bar 1");
-//        }, header2 -> {
-//            assertThat(header2.get("name")).isEqualTo("foo 2");
-//            assertThat(header2.get("value")).isEqualTo("bar 2");
-//        });
-//        assertThat((Boolean) config.get("httpPublishSuccessStatusCodeOnly")).isFalse();
-//        assertThat((Boolean) config.get("allowUntrustedCertificates")).isTrue();
-//        assertThat((Boolean) config.get("assertResponseIsJson")).isTrue();
-//    }
-//
-//    @Test
-//    public void unconvertConfigObject_defaults() {
-//        final HttpAdapterConfig httpAdapterConfig = new HttpAdapterConfig("http://192.168.0.02:777/?asdasd=asdasd",
-//                "my/destination",
-//                null,
-//                null,
-//                null,
-//                null,
-//                null,
-//                null,
-//                null,
-//                null,
-//                "my-protocol-adapter",
-//                null,
-//                null,
-//                null);
-//
-//        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
-//        final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
-//
-//        assertThat(config.entrySet()).satisfiesExactly( //
-//                (it) -> assertThat(it.getKey()).isEqualTo("url"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("destination"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("mqttQos"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestMethod"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeout"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestBodyContentType"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpRequestBody"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("assertResponseIsJson"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpPublishSuccessStatusCodeOnly"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("httpHeaders"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("id"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("maxPollingErrorsBeforeRemoval"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("allowUntrustedCertificates"),
-//                (it) -> assertThat(it.getKey()).isEqualTo("pollingIntervalMillis"));
-//
-//        assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
-//        assertThat(config.get("pollingIntervalMillis")).isEqualTo(1000);
-//        assertThat(config.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
-//        assertThat(config.get("url")).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
-//        assertThat(config.get("destination")).isEqualTo("my/destination");
-//        assertThat(config.get("mqttQos")).isEqualTo(0);
-//        assertThat(config.get("httpRequestMethod")).isEqualTo("GET");
-//        assertThat(config.get("httpRequestBodyContentType")).isEqualTo("JSON");
-//        assertThat(config.get("httpRequestBody")).isNull();
-//        assertThat(config.get("httpConnectTimeout")).isEqualTo(5);
-//        assertThat((List<Map<String, String>>) config.get("httpHeaders")).isEmpty();
-//        assertThat((Boolean) config.get("httpPublishSuccessStatusCodeOnly")).isTrue();
-//        assertThat((Boolean) config.get("allowUntrustedCertificates")).isFalse();
-//        assertThat((Boolean) config.get("assertResponseIsJson")).isFalse();
-//    }
+    @Test
+    public void unconvertConfigObject_full() throws Exception {
+        final HttpHeader httpHeader1 = new HttpHeader("foo 1", "bar 1");
+        final HttpHeader httpHeader2 = new HttpHeader("foo 2", "bar 2");
+
+        final HttpAdapterConfig httpAdapterConfig = new HttpAdapterConfig("my-protocol-adapter",
+                "http://192.168.0.02:777/?asdasd=asdasd",
+                1773,
+                new HttpToMqttConfig(1337,
+                        11,
+                        true,
+                        true,
+                        true,
+                        List.of(new HttpPollingContext("my/destination",
+                                        0,
+                                        List.of(),
+                                        true,
+                                        POST,
+                                        1774,
+                                        YAML,
+                                        "my-body",
+                                        List.of(httpHeader2, httpHeader1)),
+                                new HttpPollingContext("my/destination2",
+                                        0,
+                                        List.of(),
+                                        true,
+                                        POST,
+                                        1774,
+                                        YAML,
+                                        "my-body",
+                                        List.of(httpHeader2, httpHeader1)))));
+
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
+        final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
+
+        assertThat(config.entrySet()).satisfiesExactly( //
+                (it) -> assertThat(it.getKey()).isEqualTo("id"),
+                (it) -> assertThat(it.getKey()).isEqualTo("url"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeout"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt"));
+
+        assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
+        assertThat(config.get("url")).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+        assertThat(config.get("httpConnectTimeout")).isEqualTo(1773);
+
+        final Map<String, Object> httpToMqtt = (Map<String, Object>) config.get("httpToMqtt");
+
+        assertThat(httpToMqtt.get("pollingIntervalMillis")).isEqualTo(1337);
+        assertThat(httpToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(11);
+        assertThat((Boolean) httpToMqtt.get("httpPublishSuccessStatusCodeOnly")).isTrue();
+        assertThat((Boolean) httpToMqtt.get("allowUntrustedCertificates")).isTrue();
+        assertThat((Boolean) httpToMqtt.get("assertResponseIsJson")).isTrue();
+
+        final Map<String, Object> mapping =
+                (Map<String, Object>) ((Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(0)).get(
+                        "httpToMqttMapping");
+
+        assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
+        assertThat(mapping.get("mqttQos")).isEqualTo(0);
+        assertThat(mapping.get("httpRequestMethod")).isEqualTo("POST");
+        assertThat(mapping.get("httpRequestBodyContentType")).isEqualTo("YAML");
+        assertThat(mapping.get("httpRequestBody")).isEqualTo("my-body");
+        assertThat((List<Map<String, String>>) mapping.get("httpHeaders")).satisfiesExactlyInAnyOrder(header1 -> {
+            assertThat(header1.get("name")).isEqualTo("foo 1");
+            assertThat(header1.get("value")).isEqualTo("bar 1");
+        }, header2 -> {
+            assertThat(header2.get("name")).isEqualTo("foo 2");
+            assertThat(header2.get("value")).isEqualTo("bar 2");
+        });
+        final Map<String, Object> mapping2 =
+                (Map<String, Object>) ((Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(1)).get(
+                        "httpToMqttMapping");
+
+        assertThat(mapping2.get("mqttTopic")).isEqualTo("my/destination2");
+        assertThat(mapping2.get("mqttQos")).isEqualTo(0);
+        assertThat(mapping2.get("httpRequestMethod")).isEqualTo("POST");
+        assertThat(mapping2.get("httpRequestBodyContentType")).isEqualTo("YAML");
+        assertThat(mapping2.get("httpRequestBody")).isEqualTo("my-body");
+        assertThat((List<Map<String, String>>) mapping2.get("httpHeaders")).satisfiesExactlyInAnyOrder(header1 -> {
+            assertThat(header1.get("name")).isEqualTo("foo 1");
+            assertThat(header1.get("value")).isEqualTo("bar 1");
+        }, header2 -> {
+            assertThat(header2.get("name")).isEqualTo("foo 2");
+            assertThat(header2.get("value")).isEqualTo("bar 2");
+        });
+    }
+
+    @Test
+    public void unconvertConfigObject_defaults() {
+        final HttpAdapterConfig httpAdapterConfig = new HttpAdapterConfig("my-protocol-adapter",
+                "http://192.168.0.02:777/?asdasd=asdasd",
+                null,
+                new HttpToMqttConfig(null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        List.of(new HttpPollingContext("my/destination",
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null,
+                                null))));
+
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
+        final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
+
+        assertThat(config.entrySet()).satisfiesExactly( //
+                (it) -> assertThat(it.getKey()).isEqualTo("id"),
+                (it) -> assertThat(it.getKey()).isEqualTo("url"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeout"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt"));
+
+        assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
+        assertThat(config.get("url")).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+        assertThat(config.get("httpConnectTimeout")).isEqualTo(5);
+
+        final Map<String, Object> httpToMqtt = (Map<String, Object>) config.get("httpToMqtt");
+
+        assertThat(httpToMqtt.get("pollingIntervalMillis")).isEqualTo(1000);
+        assertThat(httpToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
+        assertThat((Boolean) httpToMqtt.get("httpPublishSuccessStatusCodeOnly")).isTrue();
+        assertThat((Boolean) httpToMqtt.get("allowUntrustedCertificates")).isFalse();
+        assertThat((Boolean) httpToMqtt.get("assertResponseIsJson")).isFalse();
+
+        final Map<String, Object> mapping =
+                (Map<String, Object>) ((Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(0)).get(
+                        "httpToMqttMapping");
+
+        assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
+        assertThat(mapping.get("mqttQos")).isEqualTo(0);
+        assertThat(mapping.get("httpRequestMethod")).isEqualTo("GET");
+        assertThat(mapping.get("httpRequestBodyContentType")).isEqualTo("JSON");
+        assertThat(mapping.get("httpRequestBody")).isNull();
+        assertThat((List<Map<String, String>>) mapping.get("httpHeaders")).isEmpty();
+    }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
         final ConfigFileReaderWriter readerWriter = new ConfigFileReaderWriter(new ConfigurationFile(configFile),

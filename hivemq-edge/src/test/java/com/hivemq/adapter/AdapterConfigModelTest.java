@@ -107,12 +107,12 @@ public class AdapterConfigModelTest {
 
     private static class TestContext implements PollingContext {
 
-        @JsonProperty(value = "destination", required = true)
+        @JsonProperty(value = "mqttTopic", required = true)
         @ModuleConfigField(title = "Destination Topic",
                            description = "The topic to publish data on",
                            required = true,
                            format = ModuleConfigField.FieldType.MQTT_TOPIC)
-        protected @Nullable String destination;
+        protected @Nullable String mqttTopic;
 
         @JsonProperty(value = "mqttQos", required = true)
         @ModuleConfigField(title = "QoS",
@@ -152,10 +152,10 @@ public class AdapterConfigModelTest {
 
         @JsonCreator
         public TestContext(
-                @JsonProperty("destination") @Nullable final String destination,
+                @JsonProperty("mqttTopic") @Nullable final String mqttTopic,
                 @JsonProperty("mqttQos") final int qos,
                 @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {
-            this.destination = destination;
+            this.mqttTopic = mqttTopic;
             this.qos = qos;
             if (userProperties != null) {
                 this.userProperties = userProperties;
@@ -164,7 +164,7 @@ public class AdapterConfigModelTest {
 
         @Override
         public @Nullable String getMqttTopic() {
-            return destination;
+            return mqttTopic;
         }
 
         @Override

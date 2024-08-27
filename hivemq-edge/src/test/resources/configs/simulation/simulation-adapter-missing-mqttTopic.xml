@@ -5,7 +5,7 @@
             <simulationToMqtt>
                 <simulationToMqttMappings>
                     <simulationToMqttMapping>
-                        <qos>0</qos>
+                        <mqttQos>0</mqttQos>
                     </simulationToMqttMapping>
                 </simulationToMqttMappings>
             </simulationToMqtt>
