@@ -14,7 +14,7 @@ import NodeAdapter from './NodeAdapter.tsx'
 
 describe('NodeAdapter', () => {
   beforeEach(() => {
-    cy.viewport(400, 400)
+    cy.viewport(600, 400)
     cy.intercept('/api/v1/management/protocol-adapters/types', {
       items: [
         mockProtocolAdapter,
@@ -106,12 +106,38 @@ describe('NodeAdapter', () => {
     cy.get('[role="toolbar"] button').eq(2).should('have.attr', 'aria-label', 'Group the selected adapters')
   })
 
-  it('should render the toolbar properly', () => {
+  it.only('should render the toolbar properly', () => {
     cy.mountWithProviders(
       <CustomNodeTesting
-        nodes={[{ ...MOCK_NODE_ADAPTER, position: { x: 50, y: 100 }, selected: true }]}
+        nodes={[
+          {
+            ...MOCK_NODE_ADAPTER,
+            position: { x: 50, y: 100 },
+            selected: true,
+            data: { ...MOCK_NODE_ADAPTER.data, type: 'opc-ua-client' },
+          },
+        ]}
         nodeTypes={{ [NodeTypes.ADAPTER_NODE]: NodeAdapter }}
       />
+    )
+
+    cy.getByTestId('test-navigate-pathname').should('have.text', '/')
+    cy.get('[role="toolbar"] button').eq(0).click()
+    cy.getByTestId('test-navigate-pathname').should(
+      'have.text',
+      `/workspace/node/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}`
+    )
+
+    cy.get('[role="toolbar"] button').eq(1).click()
+    cy.getByTestId('test-navigate-pathname').should(
+      'have.text',
+      `/workspace/node/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}/outward`
+    )
+
+    cy.get('[role="toolbar"] button').eq(2).click()
+    cy.getByTestId('test-navigate-pathname').should(
+      'have.text',
+      `/workspace/node/adapter/opc-ua-client/${MOCK_NODE_ADAPTER.id}/inward`
     )
   })
 
