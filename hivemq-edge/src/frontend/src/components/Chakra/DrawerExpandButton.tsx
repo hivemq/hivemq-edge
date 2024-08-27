@@ -16,6 +16,7 @@ const DrawerExpandButton: FC<DrawerExpandButtonProps> = (props) => {
       variant="ghost"
       colorScheme="gray"
       onClick={props.toggle}
+      data-isExpanded={props.isExpanded}
       icon={props.isExpanded ? <LuShrink /> : <LuExpand />}
       style={{
         position: 'absolute',
