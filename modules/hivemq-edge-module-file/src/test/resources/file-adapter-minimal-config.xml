@@ -9,11 +9,6 @@
                         <filePath>path/to/file1</filePath>
                         <contentType>BINARY</contentType>
                     </fileToMqttMapping>
-                    <fileToMqttMapping>
-                        <mqttTopic>my/topic/2</mqttTopic>
-                        <filePath>path/to/file2</filePath>
-                        <contentType>TEXT_CSV</contentType>
-                    </fileToMqttMapping>
                 </fileToMqttMappings>
             </fileToMqtt>
         </file>
