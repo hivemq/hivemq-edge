@@ -26,7 +26,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
-import com.hivemq.edge.adapters.file.config.FilePollingContext;
+import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
@@ -37,14 +37,14 @@ import java.nio.file.Path;
 import java.util.List;
 
 
-public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePollingContext> {
+public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileToMqttMapping> {
 
     private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(FilePollingProtocolAdapter.class);
 
     private final @NotNull FileAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull List<FilePollingContext> pollingContext;
+    private final @NotNull List<FileToMqttMapping> pollingContext;
 
     public FilePollingProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -87,7 +87,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePo
 
     @Override
     public void poll(
-            final @NotNull PollingInput<FilePollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<FileToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
         final String absolutePathToFle = pollingInput.getPollingContext().getFilePath();
         try {
             final Path path = Path.of(absolutePathToFle);
@@ -114,7 +114,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FilePo
     }
 
     @Override
-    public @NotNull List<FilePollingContext> getPollingContexts() {
+    public @NotNull List<FileToMqttMapping> getPollingContexts() {
         return pollingContext;
     }
 

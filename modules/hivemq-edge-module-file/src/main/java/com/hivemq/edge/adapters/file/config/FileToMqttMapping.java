@@ -29,10 +29,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
+import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static java.util.Objects.requireNonNullElse;
 
-public class FilePollingContext implements PollingContext {
+public class FileToMqttMapping implements PollingContext {
 
     @JsonProperty(value = "mqttTopic", required = true)
     @ModuleConfigField(title = "Destination MQTT Topic",
@@ -96,7 +96,7 @@ public class FilePollingContext implements PollingContext {
     private final @NotNull ContentType contentType;
 
     @JsonCreator
-    public FilePollingContext(
+    public FileToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty("qos") final @Nullable Integer qos,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
@@ -107,7 +107,7 @@ public class FilePollingContext implements PollingContext {
             @JsonProperty(value = "contentType", required = true) final @NotNull ContentType contentType) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
-        this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
+        this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerTag);
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.contentType = contentType;
