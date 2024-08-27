@@ -1,0 +1,8 @@
+<hivemq>
+    <protocol-adapters>
+        <opcua>
+            <id>simulation-server-2</id>
+            <uri>opc.tcp://CSM1.local:53530/OPCUA/SimulationServer</uri>
+        </opcua>
+    </protocol-adapters>
+</hivemq>
