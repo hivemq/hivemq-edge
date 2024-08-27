@@ -1,6 +1,7 @@
 import { type FC, useEffect, useMemo } from 'react'
-import { Node, useNodes } from 'reactflow'
+import { Node } from 'reactflow'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   Drawer,
   DrawerBody,
@@ -14,21 +15,23 @@ import {
 } from '@chakra-ui/react'
 
 import type { Adapter } from '@/api/__generated__'
-import ErrorMessage from '@/components/ErrorMessage.tsx'
 import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
 import SubscriptionForm from '@/modules/Subscriptions/components/SubscriptionForm.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 interface AdapterSubscriptionManagerProps {
   type: 'inward' | 'outward'
 }
 
 const AdapterSubscriptionManager: FC<AdapterSubscriptionManagerProps> = ({ type }) => {
+  const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
   const { nodeId } = useParams()
   const [isExpanded, setExpanded] = useBoolean(false)
-  const nodes = useNodes()
+  const { nodes } = useWorkspaceStore()
 
   const selectedNode = useMemo(() => {
     return nodes.find((node) => node.id === nodeId && node.type === NodeTypes.ADAPTER_NODE) as Node<Adapter> | undefined
@@ -40,10 +43,10 @@ const AdapterSubscriptionManager: FC<AdapterSubscriptionManagerProps> = ({ type 
   }
 
   useEffect(() => {
-    if (selectedNode) onOpen()
-  }, [onOpen, selectedNode])
+    onOpen()
+  }, [onOpen])
 
-  if (!selectedNode?.data.id) return <ErrorMessage type="SSS" message="Dds" />
+  const adapterId = selectedNode?.data.id
 
   return (
     <Drawer isOpen={isOpen} placement="right" size={isExpanded ? 'full' : 'md'} onClose={handleClose} variant="hivemq">
@@ -55,7 +58,8 @@ const AdapterSubscriptionManager: FC<AdapterSubscriptionManagerProps> = ({ type 
           <Text>Manage {type} subscriptions</Text>
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
-          {nodeId && <SubscriptionForm id={selectedNode.data.id} type={type} />}
+          {!adapterId && <ErrorMessage message={t('protocolAdapter.error.loading')} />}
+          {adapterId && <SubscriptionForm id={adapterId} type={type} />}
         </DrawerBody>
       </DrawerContent>
     </Drawer>
