@@ -8,7 +8,7 @@ describe('DrawerExpandButton', () => {
   it('should render expanded properly', () => {
     // eslint-disable-next-line react/jsx-no-undef
     cy.mountWithProviders(<DrawerExpandButton isExpanded={true} toggle={cy.stub().as('toggle')} />)
-    cy.get('button').should('have.attr', 'data-isExpanded', 'true')
+    cy.get('button').should('have.attr', 'data-expanded', 'true')
 
     cy.get('@toggle').should('not.have.been.called')
     cy.get('button').click()
@@ -18,7 +18,7 @@ describe('DrawerExpandButton', () => {
   it('should render shrunk properly', () => {
     // eslint-disable-next-line react/jsx-no-undef
     cy.mountWithProviders(<DrawerExpandButton isExpanded={false} toggle={cy.stub().as('toggle')} />)
-    cy.get('button').should('have.attr', 'data-isExpanded', 'false')
+    cy.get('button').should('have.attr', 'data-expanded', 'false')
 
     cy.get('@toggle').should('not.have.been.called')
     cy.get('button').click()

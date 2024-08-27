@@ -8,16 +8,16 @@ interface DrawerExpandButtonProps extends Omit<IconButtonProps, 'aria-label'> {
   toggle: () => void
 }
 
-const DrawerExpandButton: FC<DrawerExpandButtonProps> = (props) => {
+const DrawerExpandButton: FC<DrawerExpandButtonProps> = ({ isExpanded, toggle, ...props }) => {
   const { t } = useTranslation('components')
   return (
     <IconButton
       {...props}
       variant="ghost"
       colorScheme="gray"
-      onClick={props.toggle}
-      data-isExpanded={props.isExpanded}
-      icon={props.isExpanded ? <LuShrink /> : <LuExpand />}
+      onClick={toggle}
+      data-expanded={isExpanded}
+      icon={isExpanded ? <LuShrink /> : <LuExpand />}
       style={{
         position: 'absolute',
         top: 'var(--chakra-space-2)',
@@ -27,12 +27,8 @@ const DrawerExpandButton: FC<DrawerExpandButtonProps> = (props) => {
         transform: 'translate(-48px, 0)',
         minWidth: 'inherit',
       }}
-      aria-label={
-        props.isExpanded ? t('DrawerExpandButton.aria-label.shrink') : t('DrawerExpandButton.aria-label.expand')
-      }
-    >
-      Expand
-    </IconButton>
+      aria-label={isExpanded ? t('DrawerExpandButton.aria-label.shrink') : t('DrawerExpandButton.aria-label.expand')}
+    />
   )
 }
 
