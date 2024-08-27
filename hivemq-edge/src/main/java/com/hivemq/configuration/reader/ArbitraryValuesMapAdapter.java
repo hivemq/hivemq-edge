@@ -161,11 +161,6 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
         //if child name is plural of parent name, we expect the value to be a list
         //This obviously does not cover irregular plurals, but 'userProperties' is used very often, so we specially check for it.
         if ((node.getLocalName() + "s").equals(parentName) || "userProperties".equals(parentName)) {
-            //check for single key maps
-            if ((value instanceof Map) && ((Map) value).keySet().size() == 1) {
-                replaceWithList(map, ((Map<?, ?>) value).values().stream().findFirst().get(), parentName);
-                return;
-            }
             replaceWithList(map, value, parentName);
             return;
         }
