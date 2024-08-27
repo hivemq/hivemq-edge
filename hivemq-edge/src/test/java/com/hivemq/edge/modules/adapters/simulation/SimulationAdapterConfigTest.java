@@ -43,7 +43,7 @@ class SimulationAdapterConfigTest {
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
         assertThat(config.getSimulationToMqttConfig().getSimulationToMqttMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getQos()).isEqualTo(1);
+            assertThat(subscription.getMqttQos()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isFalse();
             assertThat(subscription.getIncludeTagNames()).isTrue();
@@ -54,7 +54,7 @@ class SimulationAdapterConfigTest {
             });
         }, subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(subscription.getQos()).isEqualTo(1);
+            assertThat(subscription.getMqttQos()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isFalse();
             assertThat(subscription.getIncludeTagNames()).isTrue();
@@ -83,7 +83,7 @@ class SimulationAdapterConfigTest {
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(config.getSimulationToMqttConfig().getSimulationToMqttMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getQos()).isEqualTo(0);
+            assertThat(subscription.getMqttQos()).isEqualTo(0);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isTrue();
             assertThat(subscription.getIncludeTagNames()).isFalse();

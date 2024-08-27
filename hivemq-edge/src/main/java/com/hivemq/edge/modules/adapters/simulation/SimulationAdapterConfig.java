@@ -75,7 +75,8 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
 
     @JsonCreator
     public SimulationAdapterConfig(
-            @JsonProperty(value = "simulationToMqtt", required = true) final @NotNull SimulationToMqttConfig simulationToMqttConfig,
+            @JsonProperty(value = "simulationToMqtt",
+                          required = true) final @NotNull SimulationToMqttConfig simulationToMqttConfig,
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty("minValue") final @Nullable Integer minValue,
             @JsonProperty("maxValue") final @Nullable Integer maxValue,
