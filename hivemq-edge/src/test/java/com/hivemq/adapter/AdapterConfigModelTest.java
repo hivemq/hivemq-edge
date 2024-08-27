@@ -114,7 +114,7 @@ public class AdapterConfigModelTest {
                            format = ModuleConfigField.FieldType.MQTT_TOPIC)
         protected @Nullable String destination;
 
-        @JsonProperty(value = "qos", required = true)
+        @JsonProperty(value = "mqttQos", required = true)
         @ModuleConfigField(title = "QoS",
                            description = "MQTT Quality of Service level",
                            required = true,
@@ -153,7 +153,7 @@ public class AdapterConfigModelTest {
         @JsonCreator
         public TestContext(
                 @JsonProperty("destination") @Nullable final String destination,
-                @JsonProperty("qos") final int qos,
+                @JsonProperty("mqttQos") final int qos,
                 @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {
             this.destination = destination;
             this.qos = qos;
@@ -168,7 +168,7 @@ public class AdapterConfigModelTest {
         }
 
         @Override
-        public int getQos() {
+        public int getMqttQos() {
             return qos;
         }
 

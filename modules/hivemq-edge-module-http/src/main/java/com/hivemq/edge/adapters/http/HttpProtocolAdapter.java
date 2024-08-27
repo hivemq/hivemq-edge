@@ -30,8 +30,9 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
 import com.hivemq.edge.adapters.http.model.HttpData;
-import com.hivemq.edge.adapters.http.model.HttpPollingContextImpl;
+import com.hivemq.edge.adapters.http.config.HttpPollingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -52,19 +53,21 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
-import static com.hivemq.edge.adapters.http.HttpAdapterConfig.JSON_MIME_TYPE;
-import static com.hivemq.edge.adapters.http.HttpAdapterConfig.PLAIN_MIME_TYPE;
+import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.JSON_MIME_TYPE;
+import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.PLAIN_MIME_TYPE;
 
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingContextImpl> {
+public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingContext> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
 
@@ -79,8 +82,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull AdapterFactories adapterFactories;
-    // The http adapter only supports a single endpont to be polled from
-    private final @NotNull HttpPollingContextImpl pollingContext;
 
     private volatile @Nullable HttpClient httpClient = null;
     private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
@@ -94,7 +95,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
         this.adapterFactories = input.adapterFactories();
-        this.pollingContext = new HttpPollingContextImpl(adapterConfig.getDestination(), adapterConfig.getQos(), null);
     }
 
     @Override
@@ -113,7 +113,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
                     builder.version(HttpClient.Version.HTTP_1_1)
                             .followRedirects(HttpClient.Redirect.NORMAL)
                             .connectTimeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeoutSeconds()));
-                    if (adapterConfig.isAllowUntrustedCertificates()) {
+                    if (adapterConfig.getHttpToMqttConfig().isAllowUntrustedCertificates()) {
                         builder.sslContext(createTrustAllContext());
                     }
                     httpClient = builder.build();
@@ -141,37 +141,39 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
 
     @Override
     public void poll(
-            final @NotNull PollingInput pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<HttpPollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
 
         if (httpClient == null) {
             pollingOutput.fail(new ProtocolAdapterException(), "No response was created, because the client is null.");
             return;
         }
 
+        final HttpPollingContext pollingContext = pollingInput.getPollingContext();
+
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         builder.uri(URI.create(adapterConfig.getUrl()));
-        builder.timeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeoutSeconds()));
+        builder.timeout(Duration.ofSeconds(pollingContext.getHttpRequestTimeout()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
-        adapterConfig.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
+        pollingContext.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
 
-        switch (adapterConfig.getHttpRequestMethod()) {
+        switch (pollingContext.getHttpRequestMethod()) {
             case GET:
                 builder.GET();
                 break;
             case POST:
-                builder.POST(HttpRequest.BodyPublishers.ofString(adapterConfig.getHttpRequestBody()));
-                builder.header(CONTENT_TYPE_HEADER, adapterConfig.getHttpRequestBodyContentType().getContentType());
+                builder.POST(HttpRequest.BodyPublishers.ofString(pollingContext.getHttpRequestBody()));
+                builder.header(CONTENT_TYPE_HEADER, pollingContext.getHttpRequestBodyContentType().getContentType());
                 break;
             case PUT:
-                builder.PUT(HttpRequest.BodyPublishers.ofString(adapterConfig.getHttpRequestBody()));
-                builder.header(CONTENT_TYPE_HEADER, adapterConfig.getHttpRequestBodyContentType().getContentType());
+                builder.PUT(HttpRequest.BodyPublishers.ofString(pollingContext.getHttpRequestBody()));
+                builder.header(CONTENT_TYPE_HEADER, pollingContext.getHttpRequestBodyContentType().getContentType());
                 break;
             default:
                 pollingOutput.fail(new IllegalStateException("Unexpected value: " +
-                                adapterConfig.getHttpRequestMethod()),
+                                pollingContext.getHttpRequestMethod()),
                         "There was an unexpected value present in the request config: " +
-                                adapterConfig.getHttpRequestMethod());
+                                pollingContext.getHttpRequestMethod());
                 return;
         }
 
@@ -188,7 +190,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
                 //-- else encode using base64 (as we dont know what the content is).
                 if (bodyData != null) {
                     responseContentType = httpResponse.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null);
-                    responseContentType = adapterConfig.isAssertResponseIsJson() ? JSON_MIME_TYPE : responseContentType;
+                    responseContentType = adapterConfig.getHttpToMqttConfig().isAssertResponseIsJson() ? JSON_MIME_TYPE : responseContentType;
                     if (JSON_MIME_TYPE.equals(responseContentType)) {
                         try {
                             payloadData = objectMapper.readTree(bodyData);
@@ -240,7 +242,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
                 protocolAdapterState.setConnectionStatus(ERROR);
             }
 
-            if (data.isSuccessStatusCode() || !adapterConfig.isHttpPublishSuccessStatusCodeOnly()) {
+            if (data.isSuccessStatusCode() || !adapterConfig.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()) {
                 data.getDataPoints().forEach(pollingOutput::addDataPoint);
             }
             pollingOutput.finish();
@@ -248,18 +250,18 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
     }
 
     @Override
-    public @NotNull List<HttpPollingContextImpl> getPollingContexts() {
-        return List.of(pollingContext);
+    public @NotNull List<HttpPollingContext> getPollingContexts() {
+        return List.copyOf(adapterConfig.getHttpToMqttConfig().getMappings());
     }
 
     @Override
     public int getPollingIntervalMillis() {
-        return adapterConfig.getPollingIntervalMillis();
+        return adapterConfig.getHttpToMqttConfig().getPollingIntervalMillis();
     }
 
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
-        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+        return adapterConfig.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval();
     }
 
     private static boolean isSuccessStatusCode(final int statusCode) {

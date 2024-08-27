@@ -56,7 +56,7 @@
           "tagAddress",
           "dataType",
           "mqttTopic",
-          "qos",
+          "mqttQos",
           "*"
         ],
         "ui:collapsable" : {

@@ -19,20 +19,27 @@
 <hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <protocol-adapters>
         <http>
-            <qos>0</qos>
-            <httpRequestMethod>POST</httpRequestMethod>
-            <httpConnectTimeout>1337</httpConnectTimeout>
-            <httpRequestBodyContentType>YAML</httpRequestBodyContentType>
-            <httpRequestBody>my-body</httpRequestBody>
-            <httpPublishSuccessStatusCodeOnly>true</httpPublishSuccessStatusCodeOnly>
-            <httpHeaders>
-                <httpHeader/>
-            </httpHeaders>
-            <publishingInterval>1773</publishingInterval>
-            <maxPollingErrorsBeforeRemoval>13</maxPollingErrorsBeforeRemoval>
-            <url>http://192.168.0.02:777/?asdasd=asdasd</url>
-            <destination>my/destination</destination>
             <id>my-protocol-adapter</id>
+            <url>http://192.168.0.02:777/?asdasd=asdasd</url>
+            <httpConnectTimeout>1337</httpConnectTimeout>
+            <httpToMqtt>
+                <pollingIntervalMillis>1773</pollingIntervalMillis>
+                <maxPollingErrorsBeforeRemoval>13</maxPollingErrorsBeforeRemoval>
+                <httpPublishSuccessStatusCodeOnly>true</httpPublishSuccessStatusCodeOnly>
+                <httpToMqttMappings>
+                    <httpToMqttMapping>
+                        <mqttTopic>my/destination</mqttTopic>
+                        <mqttQos>0</mqttQos>
+                        <httpRequestMethod>POST</httpRequestMethod>
+                        <httpRequestTimeout>1338</httpRequestTimeout>
+                        <httpRequestBodyContentType>YAML</httpRequestBodyContentType>
+                        <httpHeaders>
+                            <httpHeader/>
+                        </httpHeaders>
+                    </httpToMqttMapping>
+                </httpToMqttMappings>
+            </httpToMqtt>
+
         </http>
     </protocol-adapters>
 </hivemq>
