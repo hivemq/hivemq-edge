@@ -8,15 +8,15 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.List;
 
-public class FilePollingContextSerializer extends JsonSerializer<List<FilePollingContext>> {
+public class FileToMqttMappingSerializer extends JsonSerializer<List<FileToMqttMapping>> {
 
     @Override
     public void serialize(
-            final List<FilePollingContext> value,
+            final List<FileToMqttMapping> value,
             final JsonGenerator gen,
             final @NotNull SerializerProvider provider) throws IOException {
         gen.writeStartArray();
-        for (final FilePollingContext pollingContext : value) {
+        for (final FileToMqttMapping pollingContext : value) {
             gen.writeStartObject();
             gen.writeObjectField("fileToMqttMapping", pollingContext);
             gen.writeEndObject();

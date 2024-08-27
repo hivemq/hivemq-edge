@@ -15,7 +15,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
-import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -92,19 +91,11 @@ class FileAdapterConfigTest {
         assertThat(config.getFileToMqttConfig().getMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
             assertThat(subscription.getQos()).isEqualTo(0);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
+            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isTrue();
             assertThat(subscription.getIncludeTagNames()).isFalse();
             assertThat(subscription.getFilePath()).isEqualTo("path/to/file1");
             assertThat(subscription.getContentType()).isEqualTo(ContentType.BINARY);
-        }, subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(subscription.getQos()).isEqualTo(0);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
-            assertThat(subscription.getIncludeTimestamp()).isTrue();
-            assertThat(subscription.getIncludeTagNames()).isFalse();
-            assertThat(subscription.getFilePath()).isEqualTo("path/to/file2");
-            assertThat(subscription.getContentType()).isEqualTo(ContentType.TEXT_CSV);
         });
     }
 
@@ -162,7 +153,7 @@ class FileAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final FilePollingContext pollingContext = new FilePollingContext("my/destination",
+        final FileToMqttMapping pollingContext = new FileToMqttMapping("my/destination",
                 1,
                 MQTTMessagePerTag,
                 false,
@@ -201,7 +192,7 @@ class FileAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_defaults_valid() {
-        final FilePollingContext pollingContext = new FilePollingContext("my/destination",
+        final FileToMqttMapping pollingContext = new FileToMqttMapping("my/destination",
                 null,
                 null,
                 null,
@@ -225,7 +216,7 @@ class FileAdapterConfigTest {
             final Map<String, Object> mapping = (Map<String, Object>) mappings.get("fileToMqttMapping");
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
             assertThat(mapping.get("qos")).isEqualTo(0);
-            assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
+            assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerTag");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
 //            TODO: https://hivemq.kanbanize.com/ctrl_board/57/cards/24704/details/
