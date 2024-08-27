@@ -37,7 +37,7 @@ public class OpcUaToMqttMapping {
                        defaultValue = "1")
     private final int serverQueueSize;
 
-    @JsonProperty("qos")
+    @JsonProperty("mqttQos")
     @ModuleConfigField(title = "MQTT QoS",
                        description = "MQTT quality of service level",
                        numberMin = 0,
@@ -58,7 +58,7 @@ public class OpcUaToMqttMapping {
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty("publishingInterval") final @Nullable Integer publishingInterval,
             @JsonProperty("serverQueueSize") final @Nullable Integer serverQueueSize,
-            @JsonProperty("qos") final @Nullable Integer qos,
+            @JsonProperty("mqttQos") final @Nullable Integer qos,
             @JsonProperty("messageExpiryInterval") final @Nullable Long messageExpiryInterval) {
         this.node = node;
         this.mqttTopic = mqttTopic;

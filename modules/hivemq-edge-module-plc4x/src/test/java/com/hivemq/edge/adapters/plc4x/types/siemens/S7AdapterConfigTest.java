@@ -19,11 +19,9 @@ import java.util.Map;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.edge.adapters.plc4x.types.siemens.S7AdapterConfig.ControllerType.S7_1500;
-import static com.hivemq.edge.adapters.plc4x.types.siemens.S7AdapterConfig.ControllerType.S7_300;
 import static com.hivemq.edge.adapters.plc4x.types.siemens.S7AdapterConfig.ControllerType.S7_400;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 
 class S7AdapterConfigTest {
@@ -56,7 +54,7 @@ class S7AdapterConfigTest {
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isFalse();
         assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(mapping.getQos()).isEqualTo(1);
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
@@ -65,7 +63,7 @@ class S7AdapterConfigTest {
 
         }, mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(mapping.getQos()).isEqualTo(1);
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
@@ -100,7 +98,7 @@ class S7AdapterConfigTest {
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isTrue();
         assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(mapping.getQos()).isEqualTo(1);
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
@@ -157,7 +155,7 @@ class S7AdapterConfigTest {
             Map<String, Object> mapping = (Map<String, Object>) mappings.get("s7ToMqttMapping");
 
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("qos")).isEqualTo(1);
+            assertThat(mapping.get("mqttQos")).isEqualTo(1);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);

@@ -41,7 +41,7 @@ public class FileToMqttMapping implements PollingContext {
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
     private final @NotNull String mqttTopic;
 
-    @JsonProperty(value = "qos", required = true)
+    @JsonProperty(value = "mqttQos", required = true)
     @ModuleConfigField(title = "QoS",
                        description = "MQTT Quality of Service level",
                        required = true,
@@ -98,7 +98,7 @@ public class FileToMqttMapping implements PollingContext {
     @JsonCreator
     public FileToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
-            @JsonProperty("qos") final @Nullable Integer qos,
+            @JsonProperty("mqttQos") final @Nullable Integer qos,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
@@ -125,7 +125,7 @@ public class FileToMqttMapping implements PollingContext {
     }
 
     @Override
-    public int getQos() {
+    public int getMqttQos() {
         return qos;
     }
 

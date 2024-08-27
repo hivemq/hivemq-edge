@@ -43,7 +43,7 @@ class FileAdapterConfigTest {
         assertThat(config.getFileToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
         assertThat(config.getFileToMqttConfig().getMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getQos()).isEqualTo(1);
+            assertThat(subscription.getMqttQos()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isFalse();
             assertThat(subscription.getIncludeTagNames()).isTrue();
@@ -57,7 +57,7 @@ class FileAdapterConfigTest {
 //            });
         }, subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(subscription.getQos()).isEqualTo(1);
+            assertThat(subscription.getMqttQos()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isFalse();
             assertThat(subscription.getIncludeTagNames()).isTrue();
@@ -90,7 +90,7 @@ class FileAdapterConfigTest {
         assertThat(config.getFileToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(config.getFileToMqttConfig().getMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getQos()).isEqualTo(0);
+            assertThat(subscription.getMqttQos()).isEqualTo(0);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isTrue();
             assertThat(subscription.getIncludeTagNames()).isFalse();
@@ -176,7 +176,7 @@ class FileAdapterConfigTest {
         assertThat((List<Map<String, Object>>) modbusToMqtt.get("fileToMqttMappings")).satisfiesExactly((mappings) -> {
             final Map<String, Object> mapping = (Map<String, Object>) mappings.get("fileToMqttMapping");
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("qos")).isEqualTo(1);
+            assertThat(mapping.get("mqttQos")).isEqualTo(1);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerTag");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);
@@ -215,7 +215,7 @@ class FileAdapterConfigTest {
         assertThat((List<Map<String, Object>>) modbusToMqtt.get("fileToMqttMappings")).satisfiesExactly((mappings) -> {
             final Map<String, Object> mapping = (Map<String, Object>) mappings.get("fileToMqttMapping");
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("qos")).isEqualTo(0);
+            assertThat(mapping.get("mqttQos")).isEqualTo(0);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerTag");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);

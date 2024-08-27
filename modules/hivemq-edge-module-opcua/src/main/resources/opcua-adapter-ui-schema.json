@@ -28,7 +28,7 @@
   "subscriptions": {
     "ui:batchMode": true,
     "items": {
-      "ui:order": ["node", "mqtt-topic", "qos", "*"],
+      "ui:order": ["node", "mqtt-topic", "mqttQos", "*"],
       "ui:collapsable": {
         "titleKey": "mqtt-topic"
       },

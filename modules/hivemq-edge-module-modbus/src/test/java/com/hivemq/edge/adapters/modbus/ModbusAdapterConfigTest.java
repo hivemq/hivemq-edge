@@ -51,7 +51,7 @@ public class ModbusAdapterConfigTest {
         assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isFalse();
         assertThat(config.getModbusToMQTTConfig().getMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getQos()).isEqualTo(1);
+            assertThat(subscription.getMqttQos()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isFalse();
             assertThat(subscription.getIncludeTagNames()).isTrue();
@@ -66,7 +66,7 @@ public class ModbusAdapterConfigTest {
             assertThat(subscription.getAddressRange().endIdx).isEqualTo(13);
         }, subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(subscription.getQos()).isEqualTo(1);
+            assertThat(subscription.getMqttQos()).isEqualTo(1);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isFalse();
             assertThat(subscription.getIncludeTagNames()).isTrue();
@@ -105,7 +105,7 @@ public class ModbusAdapterConfigTest {
         assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isTrue();
         assertThat(config.getModbusToMQTTConfig().getMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getQos()).isEqualTo(0);
+            assertThat(subscription.getMqttQos()).isEqualTo(0);
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(subscription.getIncludeTimestamp()).isTrue();
             assertThat(subscription.getIncludeTagNames()).isFalse();
@@ -253,7 +253,7 @@ public class ModbusAdapterConfigTest {
             Map<String, Object> mapping = (Map<String, Object>) mappings.get("modbusToMqttMapping");
 
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("qos")).isEqualTo(1);
+            assertThat(mapping.get("mqttQos")).isEqualTo(1);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);
@@ -298,7 +298,7 @@ public class ModbusAdapterConfigTest {
 
             Map<String, Object> mapping = (Map<String, Object>) mappings.get("modbusToMqttMapping");
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("qos")).isEqualTo(0);
+            assertThat(mapping.get("mqttQos")).isEqualTo(0);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
@@ -311,7 +311,7 @@ public class ModbusAdapterConfigTest {
 
             Map<String, Object> mapping = (Map<String, Object>) mappings.get("modbusToMqttMapping");
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination/2");
-            assertThat(mapping.get("qos")).isEqualTo(0);
+            assertThat(mapping.get("mqttQos")).isEqualTo(0);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);

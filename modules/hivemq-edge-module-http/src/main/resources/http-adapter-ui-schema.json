@@ -2,43 +2,52 @@
   "ui:tabs": [
     {
       "id": "coreFields",
-      "title": "Core Fields",
-      "properties": ["id", "url"]
+      "title": "Connection",
+      "properties": ["id", "url", "httpConnectTimeout"]
     },
     {
       "id": "publishing",
-      "title": "Publishing",
+      "title": "HTTP to MQTT",
       "properties": [
-        "maxPollingErrorsBeforeRemoval",
-        "pollingIntervalMillis",
-        "destination",
-        "qos"
-      ]
-    },
-    {
-      "id": "http",
-      "title": "HTTP",
-      "properties": [
-        "httpRequestMethod",
-        "httpRequestBodyContentType",
-        "httpRequestBody",
-        "httpHeaders",
-        "httpConnectTimeout",
-        "httpRequestBodyContentType",
-        "assertResponseIsJson",
-        "httpPublishSuccessStatusCodeOnly",
-        "allowUntrustedCertificates"
+        "httpToMqtt"
       ]
     }
   ],
   "id": {
     "ui:disabled": true
   },
-  "port": {
-    "ui:widget": "updown"
-  },
-  "httpRequestBody": {
-    "ui:widget": "textarea"
-  },
-  "ui:order": ["id", "*"]
+  "ui:order": ["id", "url", "*"],
+  "httpToMqtt" : {
+    "ui:batchMode" : true,
+    "ui:order" : [
+      "httpToMqttMappings",
+      "pollingIntervalMillis",
+      "maxPollingErrorsBeforeRemoval",
+      "assertResponseIsJson",
+      "httpPublishSuccessStatusCodeOnly",
+      "allowUntrustedCertificates",
+      "*"
+    ],
+    "httpToMqttMappings" : {
+      "ui:batchMode" : true,
+      "items" : {
+        "ui:order" : [
+          "mqttTopic",
+          "mqttQos",
+          "httpRequestMethod",
+          "httpRequestTimeout",
+          "httpRequestBodyContentType",
+          "httpRequestBody",
+          "httpHeaders",
+          "*"
+        ],
+        "ui:collapsable" : {
+          "titleKey" : "mqttTopic"
+        }
+      },
+      "httpRequestBody": {
+        "ui:widget": "textarea"
+      }
+    }
+  }
 }
