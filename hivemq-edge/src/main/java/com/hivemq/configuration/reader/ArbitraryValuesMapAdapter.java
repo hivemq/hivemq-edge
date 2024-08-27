@@ -95,7 +95,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
                     // add the plural
                     currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
                 }
-            } else if (currentKeyName != null && currentKeyName.endsWith("s") || "userProperties".equals(parentName)) {
+            } else if (parentName != null && currentKeyName.endsWith("s")) {
                 List children = new ArrayList();
                 readChildren(shortName(currentKeyName), list, children, currentKeyName);
                 ElementMap elementMap = new ElementMap();

@@ -245,7 +245,7 @@ public class ConfigFileReaderTest {
         FileUtils.writeStringToFile(tempFile,
                 "<hivemq>\n" +
                         "    <protocol-adapters>\n" +
-                        "        <test-node>\n" +
+                        "        <modbus>\n" +
                         "            <userProperties>\n" +
                         "                <userPropertie>\n" +
                         "                    <name>my-name</name>\n" +
@@ -256,7 +256,7 @@ public class ConfigFileReaderTest {
                         "                    <value>my-value2</value>\n" +
                         "                </userPropertie>\n" +
                         "            </userProperties>" +
-                        "        </test-node>\n" +
+                        "        </modbus>\n" +
                         "    </protocol-adapters>\n" +
                         "</hivemq>",
                 UTF_8);
@@ -286,7 +286,7 @@ public class ConfigFileReaderTest {
         assertEquals(1, config.keySet().size());
 
         final List<Map<String, String>> userProperties1 =
-                (List<Map<String, String>>) ((Map<String, Object>) config.get("test-node")).get("userProperties");
+                (List<Map<String, String>>) ((Map<String, Object>) config.get("modbus")).get("userProperties");
         assertThat(userProperties1).satisfiesExactly(userProperty1 -> {
             assertThat(userProperty1.get("name")).isEqualTo("my-name");
             assertThat(userProperty1.get("value")).isEqualTo("my-value1");
@@ -298,5 +298,17 @@ public class ConfigFileReaderTest {
         configFileReader.writeConfig();
         final String afterReload = FileUtils.readFileToString(tempFile, UTF_8);
         assertThat(afterReload).contains("userProperty");
+        final Map<String, Object> config2 = hiveMQConfigEntity.getProtocolAdapterConfig();
+        assertEquals(1, config2.keySet().size());
+        configFileReader.applyConfig();
+        final List<Map<String, String>> userProperties2 =
+                (List<Map<String, String>>) ((Map<String, Object>) config2.get("modbus")).get("userProperties");
+        assertThat(userProperties2).satisfiesExactly(userProperty1 -> {
+            assertThat(userProperty1.get("name")).isEqualTo("my-name");
+            assertThat(userProperty1.get("value")).isEqualTo("my-value1");
+        }, userProperty2 -> {
+            assertThat(userProperty2.get("name")).isEqualTo("my-name");
+            assertThat(userProperty2.get("value")).isEqualTo("my-value2");
+        });
     }
 }
