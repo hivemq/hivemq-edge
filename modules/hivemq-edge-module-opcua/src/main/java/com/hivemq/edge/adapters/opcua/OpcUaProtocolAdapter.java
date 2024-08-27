@@ -220,8 +220,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
 
     private @NotNull CompletableFuture<Void> createAllSubscriptions() {
         //noinspection ConstantValue
-        if (adapterConfig.getOpcuaToMqttConfig() == null ||
-                adapterConfig.getOpcuaToMqttConfig().getMappings() == null ||
+        if (adapterConfig.getOpcuaToMqttConfig().getMappings() == null ||
                 adapterConfig.getOpcuaToMqttConfig().getMappings().isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }

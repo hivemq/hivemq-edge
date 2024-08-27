@@ -64,7 +64,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "OpcUA To MQTT Config",
                        description = "The configuration for a data stream from OpcUA to MQTT",
                        required = true)
-    private final @Nullable OpcUaToMqttConfig opcuaToMqttConfig;
+    private final @NotNull OpcUaToMqttConfig opcuaToMqttConfig;
 
     public OpcUaAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
@@ -72,7 +72,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty("overrideUri") final Boolean overrideUri,
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
-            @JsonProperty("opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
+            @JsonProperty(value = "opcuaToMqtt", required = true) final @NotNull OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty("security") final @Nullable Security security) {
         this.id = id;
         this.uri = uri;
@@ -103,7 +103,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
         return security;
     }
 
-    public @Nullable OpcUaToMqttConfig getOpcuaToMqttConfig() {
+    public @NotNull OpcUaToMqttConfig getOpcuaToMqttConfig() {
         return opcuaToMqttConfig;
     }
 

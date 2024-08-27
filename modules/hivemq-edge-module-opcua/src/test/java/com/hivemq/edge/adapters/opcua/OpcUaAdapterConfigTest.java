@@ -199,6 +199,19 @@ class OpcUaAdapterConfigTest {
     }
 
     @Test
+    public void convertConfigObject_opcuaMissingOpcuaToMqtt_exception() throws Exception {
+        final URL resource = getClass().getResource("/opcua-adapter-missing-opcuaToMqtt.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
+        assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'opcuaToMqtt'");
+    }
+
+    @Test
     public void unconvertConfigObject_full_valid() {
         final OpcUaToMqttMapping opcuaToMqttMapping = new OpcUaToMqttMapping("my-node", "my/topic", 11, 12, 1, 13L);
         final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(List.of(opcuaToMqttMapping));
