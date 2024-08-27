@@ -40,7 +40,7 @@ public class PollingContextImpl implements PollingContext {
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
     private final @NotNull String mqttTopic;
 
-    @JsonProperty(value = "qos", required = true)
+    @JsonProperty(value = "mqttQos", required = true)
     @ModuleConfigField(title = "QoS",
                        description = "MQTT Quality of Service level",
                        required = true,
@@ -85,7 +85,7 @@ public class PollingContextImpl implements PollingContext {
     @JsonCreator
     public PollingContextImpl(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
-            @JsonProperty(value = "qos", required = true) final @Nullable Integer qos,
+            @JsonProperty(value = "mqttQos", required = true) final @Nullable Integer qos,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
@@ -110,7 +110,7 @@ public class PollingContextImpl implements PollingContext {
     }
 
     @Override
-    public int getQos() {
+    public int getMqttQos() {
         return qos;
     }
 

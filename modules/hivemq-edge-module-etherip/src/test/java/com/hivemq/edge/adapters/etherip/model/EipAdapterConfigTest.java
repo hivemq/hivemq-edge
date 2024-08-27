@@ -47,7 +47,7 @@ class EipAdapterConfigTest {
         assertThat(config.getEipToMqttConfig().getPublishChangedDataOnly()).isFalse();
         assertThat(config.getEipToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(mapping.getQos()).isEqualTo(1);
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
@@ -57,7 +57,7 @@ class EipAdapterConfigTest {
 
         }, mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(mapping.getQos()).isEqualTo(1);
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
@@ -89,7 +89,7 @@ class EipAdapterConfigTest {
         assertThat(config.getEipToMqttConfig().getPublishChangedDataOnly()).isTrue();
         assertThat(config.getEipToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(mapping.getQos()).isEqualTo(1);
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
@@ -138,7 +138,7 @@ class EipAdapterConfigTest {
             Map<String, Object> mapping = (Map<String, Object>) mappings.get("eipToMqttMapping");
 
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("qos")).isEqualTo(1);
+            assertThat(mapping.get("mqttQos")).isEqualTo(1);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);

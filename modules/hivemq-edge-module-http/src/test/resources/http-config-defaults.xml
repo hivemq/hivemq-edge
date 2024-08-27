@@ -20,8 +20,15 @@
     <protocol-adapters>
         <http>
             <url>http://192.168.0.02:777/?asdasd=asdasd</url>
-            <destination>my/destination</destination>
             <id>my-protocol-adapter</id>
+            <httpToMqtt>
+                <httpToMqttMappings>
+                    <httpToMqttMapping>
+                        <mqttTopic>my/destination</mqttTopic>
+                        <mqttQos>1</mqttQos>
+                    </httpToMqttMapping>
+                </httpToMqttMappings>
+            </httpToMqtt>
         </http>
     </protocol-adapters>
 </hivemq>

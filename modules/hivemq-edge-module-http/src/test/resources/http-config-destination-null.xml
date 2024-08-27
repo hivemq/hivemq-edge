@@ -19,8 +19,8 @@
 <hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <protocol-adapters>
         <http>
-            <url>http://192.168.0.02:777/?asdasd=asdasd</url>
             <id>my-protocol-adapter</id>
+            <url>http://192.168.0.02:777/?asdasd=asdasd</url>
         </http>
     </protocol-adapters>
 </hivemq>

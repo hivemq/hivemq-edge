@@ -241,7 +241,7 @@ class OpcUaAdapterConfigTest {
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/topic");
             assertThat(mapping.get("publishingInterval")).isEqualTo(11);
             assertThat(mapping.get("serverQueueSize")).isEqualTo(12);
-            assertThat(mapping.get("qos")).isEqualTo(1);
+            assertThat(mapping.get("mqttQos")).isEqualTo(1);
             assertThat(mapping.get("messageExpiryInterval")).isEqualTo(13L);
         });
 
@@ -294,7 +294,7 @@ class OpcUaAdapterConfigTest {
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/topic");
             assertThat(mapping.get("publishingInterval")).isEqualTo(1000);
             assertThat(mapping.get("serverQueueSize")).isEqualTo(1);
-            assertThat(mapping.get("qos")).isEqualTo(0);
+            assertThat(mapping.get("mqttQos")).isEqualTo(0);
             assertThat(mapping.get("messageExpiryInterval")).isEqualTo(4294967295L);
         });
 

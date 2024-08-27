@@ -97,7 +97,7 @@ public class SimulationToMqttMapping implements PollingContext {
     }
 
     @Override
-    public int getQos() {
+    public int getMqttQos() {
         return qos;
     }
 

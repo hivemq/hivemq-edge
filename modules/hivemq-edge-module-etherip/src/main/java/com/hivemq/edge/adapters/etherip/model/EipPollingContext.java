@@ -17,7 +17,7 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
-@JsonPropertyOrder({"tagName", "tagAddress", "dataType", "mqttTopic", "qos"})
+@JsonPropertyOrder({"tagName", "tagAddress", "dataType", "mqttTopic", "mqttQos"})
 public class EipPollingContext implements PollingContext {
 
     @JsonProperty(value = "tagName", required = true)
@@ -40,7 +40,7 @@ public class EipPollingContext implements PollingContext {
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
     private final @NotNull String mqttTopic;
 
-    @JsonProperty(value = "qos", required = true)
+    @JsonProperty(value = "mqttQos", required = true)
     @ModuleConfigField(title = "QoS",
                        description = "MQTT Quality of Service level",
                        required = true,
@@ -98,7 +98,7 @@ public class EipPollingContext implements PollingContext {
     @JsonCreator
     public EipPollingContext(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
-            @JsonProperty(value = "qos", required = true) final @Nullable Integer qos,
+            @JsonProperty(value = "mqttQos", required = true) final @Nullable Integer qos,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
@@ -135,7 +135,7 @@ public class EipPollingContext implements PollingContext {
     }
 
     @Override
-    public int getQos() {
+    public int getMqttQos() {
         return qos;
     }
 

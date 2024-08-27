@@ -126,7 +126,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         Preconditions.checkNotNull(pollingContext);
         Preconditions.checkNotNull(pollingContext.getMqttTopic());
 
-        Preconditions.checkArgument(pollingContext.getQos() <= 2 && pollingContext.getQos() >= 0,
+        Preconditions.checkArgument(pollingContext.getMqttQos() <= 2 && pollingContext.getMqttQos() >= 0,
                 "QoS needs to be a valid QoS value (0,1,2)");
         try {
             final ImmutableList.Builder<CompletableFuture<?>> publishFutures = ImmutableList.builder();
@@ -142,7 +142,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             for (byte[] json : jsonPayloadsAsBytes) {
                 final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
                         .withTopic(pollingContext.getMqttTopic())
-                        .withQoS(pollingContext.getQos())
+                        .withQoS(pollingContext.getMqttQos())
                         .withPayload(json)
                         .withAdapter(protocolAdapter);
                 final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
