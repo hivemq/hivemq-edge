@@ -1,0 +1,14 @@
+<hivemq>
+    <protocol-adapters>
+        <id>my-simulation-protocol-adapter</id>
+        <simulation>
+            <simulationToMqtt>
+                <simulationToMqttMappings>
+                    <simulationToMqttMapping>
+                        <qos>0</qos>
+                    </simulationToMqttMapping>
+                </simulationToMqttMappings>
+            </simulationToMqtt>
+        </simulation>
+    </protocol-adapters>
+</hivemq>
