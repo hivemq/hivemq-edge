@@ -8,15 +8,14 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerOverlay,
-  IconButton,
   Text,
   useBoolean,
   useDisclosure,
 } from '@chakra-ui/react'
-import { LuExpand, LuShrink } from 'react-icons/lu'
 
 import type { Adapter } from '@/api/__generated__'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
 import SubscriptionForm from '@/modules/Subscriptions/components/SubscriptionForm.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 
@@ -51,24 +50,7 @@ const AdapterSubscriptionManager: FC<AdapterSubscriptionManagerProps> = ({ type 
       <DrawerOverlay />
       <DrawerContent>
         <DrawerCloseButton />
-        <IconButton
-          aria-label="expand"
-          variant="ghost"
-          colorScheme="gray"
-          onClick={setExpanded.toggle}
-          icon={isExpanded ? <LuShrink /> : <LuExpand />}
-          style={{
-            position: 'absolute',
-            top: 'var(--chakra-space-2)',
-            right: 0,
-            width: '32px',
-            height: '32px',
-            transform: 'translate(-48px, 0)',
-            minWidth: 'inherit',
-          }}
-        >
-          Expand
-        </IconButton>
+        <DrawerExpandButton isExpanded={isExpanded} toggle={setExpanded.toggle} />
         <DrawerHeader>
           <Text>Manage {type} subscriptions</Text>
         </DrawerHeader>

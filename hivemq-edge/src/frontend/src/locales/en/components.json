@@ -71,6 +71,12 @@
       "optIn": "Accept all"
     }
   },
+  "DrawerExpandButton": {
+    "aria-label": {
+      "expand": "Expand",
+      "shrink": "Shrink"
+    }
+  },
   "rjsf": {
     "CompactArrayField": {
       "action": {
