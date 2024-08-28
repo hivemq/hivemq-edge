@@ -12,7 +12,7 @@ import { CompactArrayFieldItemTemplate } from '@/components/rjsf/Templates/Compa
 const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (props) => {
   const { registry } = props
 
-  registry.templates = {
+  const template = {
     ...registry.templates,
     ArrayFieldTemplate: CompactArrayFieldTemplate,
     ArrayFieldItemTemplate: CompactArrayFieldItemTemplate,
@@ -20,8 +20,9 @@ const CompactArrayField: FC<FieldProps<unknown, RJSFSchema, AdapterContext>> = (
     BaseInputTemplate: CompactBaseInputTemplate,
     ObjectFieldTemplate: CompactObjectFieldTemplate,
   }
+  const compactRegistry = { ...registry, template: template }
 
-  return <props.registry.fields.ArrayField {...props} />
+  return <props.registry.fields.ArrayField {...props} registry={compactRegistry} />
 }
 
 export default CompactArrayField
