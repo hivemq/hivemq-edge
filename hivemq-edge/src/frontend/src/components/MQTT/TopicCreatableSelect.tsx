@@ -9,6 +9,7 @@ import {
   CreatableProps,
   SelectInstance,
   chakraComponents,
+  Select,
 } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 
@@ -56,6 +57,7 @@ interface TopicCreatableSelectProps<IsMulti extends boolean>
   extends Partial<Omit<TopicCreatableSelect<IsMulti>, 'options'>> {
   id: string
   options: string[]
+  isCreatable?: boolean
 }
 
 const AbstractTopicCreatableSelect = <T extends boolean>({
@@ -63,6 +65,7 @@ const AbstractTopicCreatableSelect = <T extends boolean>({
   options,
   isLoading,
   isMulti,
+  isCreatable = true,
   ...rest
 }: TopicCreatableSelectProps<T>) => {
   const topicOptions = Array.from(new Set([...options]))
@@ -74,8 +77,10 @@ const AbstractTopicCreatableSelect = <T extends boolean>({
     trim: false,
   }
 
+  const SelectComponent = isCreatable ? CreatableSelect : Select
+
   return (
-    <CreatableSelect<TopicOption, T, GroupBase<TopicOption>>
+    <SelectComponent<TopicOption, T, GroupBase<TopicOption>>
       aria-label={t('topicCreate.label')}
       placeholder={t('topicCreate.placeholder')}
       noOptionsMessage={() => t('topicCreate.options.noOptionsMessage')}
@@ -115,6 +120,7 @@ interface MultiTopicsCreatableSelectProps
   extends Omit<TopicCreatableSelectProps<true>, 'value' | 'onChange' | 'options'> {
   value: string[]
   onChange: (value: string[] | undefined) => void
+  isCreatable?: boolean
 }
 
 export const MultiTopicsCreatableSelect = ({ value, onChange, ...props }: MultiTopicsCreatableSelectProps) => {
@@ -125,7 +131,7 @@ export const MultiTopicsCreatableSelect = ({ value, onChange, ...props }: MultiT
       options={data}
       isLoading={!isSuccess}
       isMulti={true}
-      value={value.map<TopicOption>((e) => ({ label: e, value: e, iconColor: 'brand.200' }))}
+      value={value?.map<TopicOption>((e) => ({ label: e, value: e, iconColor: 'brand.200' }))}
       onChange={(m) => onChange(m.map<string>((e) => e.value))}
     />
   )
