@@ -1,10 +1,11 @@
-import { ProtocolAdapter } from '@/api/__generated__'
-import { IconType } from 'react-icons'
+import { type ProtocolAdapter } from '@/api/__generated__'
+import { type IconType } from 'react-icons'
 import { TbSettingsAutomation } from 'react-icons/tb'
 import { FaIndustry } from 'react-icons/fa6'
 import { GrConnectivity } from 'react-icons/gr'
 import { AiFillExperiment } from 'react-icons/ai'
-import { MdInput, MdOutlineFindInPage, MdOutput } from 'react-icons/md'
+import { MdOutlineFindInPage } from 'react-icons/md'
+import { HmInput, HmOutput } from '@/components/react-icons/hm'
 
 /**
  * @deprecated This is a mock, replacing the missing WRITE capability from the adapters
@@ -33,7 +34,7 @@ type CapabilityType = ArrayElement<CapabilitiesArray> | 'WRITE'
  * @deprecated This is a mock, replacing the missing WRITE capability from the adapters
  */
 export const deviceCapabilityIcon: Record<CapabilityType, IconType> = {
-  ['READ']: MdOutput,
+  ['READ']: HmOutput,
   ['DISCOVER']: MdOutlineFindInPage,
-  ['WRITE']: MdInput,
+  ['WRITE']: HmInput,
 }

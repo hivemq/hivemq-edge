@@ -1,9 +1,18 @@
 import { RegistryFieldsType, RegistryWidgetsType, UiSchema } from '@rjsf/utils'
-import CompactArrayField from '@/components/rjsf/Fields/CompactArrayField.tsx'
+import { AlertStatus } from '@chakra-ui/react'
 
-export const getRequiredUiSchema = (uiSchema: UiSchema | undefined, isNewAdapter: boolean): UiSchema => {
+import CompactArrayField from '@/components/rjsf/Fields/CompactArrayField.tsx'
+import { InternalNotice } from '@/components/rjsf/Fields/InternalNotice.tsx'
+
+import i18n from '@/config/i18n.config.ts'
+
+export const getRequiredUiSchema = (
+  uiSchema: UiSchema | undefined,
+  isNewAdapter: boolean,
+  hideSubscriptions?: string
+): UiSchema => {
   const { ['ui:submitButtonOptions']: submitButtonOptions, id, ...rest } = uiSchema || {}
-  return {
+  const newSchema: UiSchema = {
     'ui:submitButtonOptions': {
       // required to relocate the submit button outside the form
       ...submitButtonOptions,
@@ -16,6 +25,19 @@ export const getRequiredUiSchema = (uiSchema: UiSchema | undefined, isNewAdapter
     },
     ...rest,
   }
+
+  if (hideSubscriptions) {
+    const status: AlertStatus = 'info'
+    newSchema[hideSubscriptions] = {
+      'ui:field': 'text:warning',
+      'ui:options': {
+        status,
+        message: i18n.t('warnings.deprecated.subscriptions'),
+      },
+    }
+  }
+
+  return newSchema
 }
 
 export const adapterJSFWidgets: RegistryWidgetsType = {
@@ -23,4 +45,7 @@ export const adapterJSFWidgets: RegistryWidgetsType = {
   'discovery:tagBrowser': 'text',
 }
 
-export const adapterJSFFields: RegistryFieldsType = { compactTable: CompactArrayField }
+export const adapterJSFFields: RegistryFieldsType = {
+  compactTable: CompactArrayField,
+  'text:warning': InternalNotice,
+}

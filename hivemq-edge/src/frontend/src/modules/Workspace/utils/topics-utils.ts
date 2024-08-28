@@ -39,6 +39,15 @@ export const flattenObject = (input: RJSFSchema, root = '') => {
   return result
 }
 
+export const getMainRootFromPath = (paths: string[]): string | undefined => {
+  const firstPath = paths.shift()
+  if (!firstPath) return undefined
+
+  const root = firstPath.split('.').shift()
+  if (!root) return undefined
+  return root
+}
+
 export const getTopicPaths = (configSchema: RJSFSchema) => {
   const flattenSchema = flattenObject(configSchema)
   return (

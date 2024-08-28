@@ -93,7 +93,7 @@ describe('AdapterActionMenu', () => {
     cy.getByTestId('adapter-action-export').should('not.be.visible')
   })
 
-  it.only('should be accessible', () => {
+  it('should be accessible', () => {
     cy.injectAxe()
     cy.mountWithProviders(<AdapterActionMenu adapter={mockAdapter} />)
     cy.getByAriaLabel('Actions').click()
