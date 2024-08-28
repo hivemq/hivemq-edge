@@ -26,14 +26,16 @@
     </mqtt-listeners>
     <protocol-adapters>
         <simulation>
-            <subscriptions>
-                <subscription>
-                    <qos>0</qos>
-                    <destination>test</destination>
-                </subscription>
-            </subscriptions>
-            <pollingIntervalMillis>1000</pollingIntervalMillis>
             <id>test-simulation-server</id>
+            <simulationToMqtt>
+                <pollingIntervalMillis>1000</pollingIntervalMillis>
+                <simulationToMqttMappings>
+                    <simulationToMqttMapping>
+                        <mqttTopic>test</mqttTopic>
+                        <mqttQos>0</mqttQos>
+                    </simulationToMqttMapping>
+                </simulationToMqttMappings>
+            </simulationToMqtt>
         </simulation>
     </protocol-adapters>
 </hivemq>
