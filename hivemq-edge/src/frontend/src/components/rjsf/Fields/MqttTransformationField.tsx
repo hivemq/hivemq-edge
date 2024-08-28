@@ -7,7 +7,7 @@ import { Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIco
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
 import ListSubscriptions from '@/components/rjsf/MqttTransformation/components/ListSubscriptions.tsx'
-import MappingContainer from '@/components/rjsf/MqttTransformation/components/MappingContainer.tsx'
+import SubscriptionContainer from '@/components/rjsf/MqttTransformation/components/SubscriptionContainer.tsx'
 
 export const MqttTransformationField: FC<FieldProps<OutwardSubscription[], RJSFSchema, AdapterContext>> = (props) => {
   const { t } = useTranslation('components')
@@ -80,7 +80,7 @@ export const MqttTransformationField: FC<FieldProps<OutwardSubscription[], RJSFS
         </AccordionButton>
         <AccordionPanel pb={4}>
           {selectedItem !== undefined && (
-            <MappingContainer item={subsData[selectedItem]} onClose={handleClose} onSubmit={handleSubmit} />
+            <SubscriptionContainer item={subsData[selectedItem]} onClose={handleClose} onSubmit={handleSubmit} />
           )}
         </AccordionPanel>
       </AccordionItem>
