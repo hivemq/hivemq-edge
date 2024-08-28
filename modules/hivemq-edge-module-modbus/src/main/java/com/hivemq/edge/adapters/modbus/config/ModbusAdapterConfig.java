@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.modbus.config;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
@@ -23,7 +22,6 @@ import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Objects;
 
 
@@ -71,7 +69,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
     @ModuleConfigField(title = "Modbus To MQTT Config",
                        description = "The configuration for a data stream from Modbus to MQTT",
                        required = true)
-    private final @NotNull ModbusToMQTTConfig modbusToMQTTConfig;
+    private final @NotNull ModbusToMqttConfig modbusToMQTTConfig;
 
     @JsonCreator
     public ModbusAdapterConfig(
@@ -79,7 +77,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
             @JsonProperty(value = "timeout") final @Nullable Integer timeout,
-            @JsonProperty(value = "modbusToMqtt", required = true) final @NotNull ModbusToMQTTConfig modbusToMQTTConfig) {
+            @JsonProperty(value = "modbusToMqtt", required = true) final @NotNull ModbusToMqttConfig modbusToMQTTConfig) {
         this.id = id;
         this.port = port;
         this.host = host;
@@ -103,7 +101,7 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         return timeout;
     }
 
-    public @NotNull ModbusToMQTTConfig getModbusToMQTTConfig() {
+    public @NotNull ModbusToMqttConfig getModbusToMQTTConfig() {
         return modbusToMQTTConfig;
     }
 }

@@ -26,8 +26,8 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.api.mqtt.PublishReturnCode;
 import com.hivemq.edge.adapters.modbus.config.AddressRange;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
-import com.hivemq.edge.adapters.modbus.config.ModbusToMQTTConfig;
-import com.hivemq.edge.adapters.modbus.config.PollingContextImpl;
+import com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import com.hivemq.edge.modules.adapters.data.DataPointImpl;
@@ -52,7 +52,7 @@ class ModbusProtocolAdapterTest {
             532,
             "my.host.com",
             1000,
-            new ModbusToMQTTConfig(1000, 10, true, List.of()));
+            new ModbusToMqttConfig(1000, 10, true, List.of()));
     private final @NotNull ModbusProtocolAdapter adapter =
             new ModbusProtocolAdapter(ModbusProtocolAdapterInformation.INSTANCE, adapterConfig, mock());
     private final @NotNull ProtocolAdapterPublishService publishService = mock(ProtocolAdapterPublishService.class);
@@ -105,7 +105,7 @@ class ModbusProtocolAdapterTest {
     }
 
     protected static ModBusData createSampleData(final int registerCount) {
-        final PollingContext pollingContext = new PollingContextImpl("topic",
+        final PollingContext pollingContext = new ModbusToMqttMapping("topic",
                 2,
                 MessageHandlingOptions.MQTTMessagePerSubscription,
                 true,
