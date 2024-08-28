@@ -33,6 +33,8 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
   const navigate = useNavigate()
 
   const HACK_BIDIRECTIONAL = isBidirectional(adapterProtocol)
+  const adapterNavPath = `/workspace/node/adapter/${adapter.type}/${id}`
+
   return (
     <>
       <ContextualToolbar id={id} onOpenPanel={onContextMenu}>
@@ -41,13 +43,13 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
             <IconButton
               icon={<Icon as={deviceCapabilityIcon['WRITE']} />}
               aria-label={t('workspace.toolbar.command.subscriptions.outward')}
-              onClick={() => navigate(`/workspace/node/adapter/${adapter.type}/${id}/outward`)}
+              onClick={() => navigate(`${adapterNavPath}/outward`)}
             />
           )}
           <IconButton
             icon={<Icon as={deviceCapabilityIcon['READ']} />}
             aria-label={t('workspace.toolbar.command.subscriptions.inward')}
-            onClick={() => navigate(`/workspace/node/adapter/${adapter.type}/${id}/inward`)}
+            onClick={() => navigate(`${adapterNavPath}/inward`)}
           />
         </WorkspaceButtonGroup>
       </ContextualToolbar>
