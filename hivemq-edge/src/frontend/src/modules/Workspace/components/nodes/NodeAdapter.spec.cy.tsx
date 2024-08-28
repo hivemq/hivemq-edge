@@ -106,7 +106,7 @@ describe('NodeAdapter', () => {
     cy.get('[role="toolbar"] button').eq(2).should('have.attr', 'aria-label', 'Group the selected adapters')
   })
 
-  it.only('should render the toolbar properly', () => {
+  it('should render the toolbar properly', () => {
     cy.mountWithProviders(
       <CustomNodeTesting
         nodes={[

@@ -84,7 +84,7 @@ describe('AdapterSubscriptionManager', () => {
     cy.get('header').should('contain.text', 'Manage inward subscriptions')
   })
 
-  it.only('should render outward properly', () => {
+  it('should render outward properly', () => {
     cy.mountWithProviders(<AdapterSubscriptionManager type="outward" />, {
       routerProps: { initialEntries: [`/node/idAdapter`] },
       wrapper: getWrapperWith([{ ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }]),
