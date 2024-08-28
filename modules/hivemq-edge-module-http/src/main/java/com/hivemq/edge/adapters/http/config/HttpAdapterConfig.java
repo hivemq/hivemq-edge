@@ -105,11 +105,11 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     public static class HttpHeader {
 
         @JsonProperty("name")
-        @ModuleConfigField(title = "Http Header Name", description = "The name of the HTTP header")
+        @ModuleConfigField(title = "Name", description = "The name of the HTTP header")
         private final @NotNull String name;
 
         @JsonProperty("value")
-        @ModuleConfigField(title = "Http Header Value", description = "The value of the HTTP header")
+        @ModuleConfigField(title = "Value", description = "The value of the HTTP header")
         private final @NotNull String value;
 
         @JsonCreator

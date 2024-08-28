@@ -2,7 +2,7 @@
   "ui:tabs" : [
     {
       "id" : "coreFields",
-      "title" : "Core Fields",
+      "title" : "Connection",
       "properties" : [
         "id",
         "port",

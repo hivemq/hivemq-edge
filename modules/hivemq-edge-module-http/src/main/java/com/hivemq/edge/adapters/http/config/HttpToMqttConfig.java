@@ -30,7 +30,8 @@ public class HttpToMqttConfig {
     private final int maxPollingErrorsBeforeRemoval;
 
     @JsonProperty("allowUntrustedCertificates")
-    @ModuleConfigField(title = "Allow the adapter to read from untrusted SSL sources (for example expired certificates).",
+    @ModuleConfigField(title = "Allow Untrusted Certificates",
+                       description = "Allow the adapter to read from untrusted SSL sources (for example expired certificates).",
                        defaultValue = "false",
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean allowUntrustedCertificates;
@@ -43,7 +44,8 @@ public class HttpToMqttConfig {
     private final boolean assertResponseIsJson;
 
     @JsonProperty("httpPublishSuccessStatusCodeOnly")
-    @ModuleConfigField(title = "Only publish data when HTTP response code is successful ( 200 - 299 )",
+    @ModuleConfigField(title = "Publish Only On Success Codes",
+                       description = "Only publish data when HTTP response code is successful ( 200 - 299 )",
                        defaultValue = "true",
                        format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean httpPublishSuccessStatusCodeOnly;
