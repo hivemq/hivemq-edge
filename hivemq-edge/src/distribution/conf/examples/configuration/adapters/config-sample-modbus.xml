@@ -26,21 +26,24 @@
     </mqtt-listeners>
     <protocol-adapters>
         <modbus>
+            <id>my-modbus-protocol-adapter</id>
+            <host>my.modbus-server.com</host>
             <port>502</port>
-            <host>some-ip-address</host>
-            <id>modbus-real</id>
-            <publishChangedDataOnly>true</publishChangedDataOnly>
-            <publishingInterval>500</publishingInterval>
-            <subscriptions>
-                <subscription>
-                    <holding-registers>
-                        <startIdx>0</startIdx>
-                        <endIdx>1</endIdx>
-                    </holding-registers>
-                    <destination>test</destination>
-                </subscription>
-            </subscriptions>
-            <maxPollingErrorsBeforeRemoval>5</maxPollingErrorsBeforeRemoval>
+            <modbusToMqtt>
+                <maxPollingErrorsBeforeRemoval>5</maxPollingErrorsBeforeRemoval>
+                <pollingIntervalMillis>500</pollingIntervalMillis>
+                <publishChangedDataOnly>true</publishChangedDataOnly>
+                <modbusToMqttMappings>
+                    <modbusToMqttMapping>
+                        <mqttTopic>my/topic</mqttTopic>
+                        <mqttQos>1</mqttQos>
+                        <addressRange>
+                            <startIdx>0</startIdx>
+                            <endIdx>1</endIdx>
+                        </addressRange>
+                    </modbusToMqttMapping>
+                </modbusToMqttMappings>
+            </modbusToMqtt>
         </modbus>
     </protocol-adapters>
 </hivemq>
