@@ -39,7 +39,7 @@ import {
   getRequiredUiSchema,
 } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
-import { getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
+import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -73,11 +73,9 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
 
     // TODO[NVL] This is still a hack; backend needs to provide identification of subscription properties
     const paths = getTopicPaths(configSchema || {})
-    const subIndex = paths.shift()?.split('.').shift()
+    const subIndex = getMainRootFromPath(paths)
     const hideSubscriptionsKey =
       import.meta.env.VITE_FLAG_ADAPTER_SCHEMA_HIDE_SUBSCRIPTION === 'true' ? subIndex : undefined
-
-    console.log('XXXXXX', subIndex, hideSubscriptionsKey)
 
     return {
       isDiscoverable: Boolean(capabilities?.includes('DISCOVER')),

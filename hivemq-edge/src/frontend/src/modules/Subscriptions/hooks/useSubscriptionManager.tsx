@@ -6,7 +6,7 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { type SubscriptionManagerType } from '@/modules/Subscriptions/types.ts'
 import { MOCK_OUTWARD_SUBSCRIPTION_OPCUA } from '@/modules/Subscriptions/utils/subscription.utils.ts'
-import { getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
+import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
 
 export const useSubscriptionManager = (adapterId: string) => {
   const { data: allProtocols, isLoading: isProtocolLoading } = useGetAdapterTypes()
@@ -31,7 +31,7 @@ export const useSubscriptionManager = (adapterId: string) => {
 
     // TODO[NVL] This is still a hack; backend needs to provide identification of subscription properties
     const paths = getTopicPaths(selectedProtocol?.configSchema || {})
-    const subIndex = paths.shift()?.split('.').shift()
+    const subIndex = getMainRootFromPath(paths)
     if (!subIndex) return undefined
 
     const formData = selectedAdapter.config?.[subIndex]
