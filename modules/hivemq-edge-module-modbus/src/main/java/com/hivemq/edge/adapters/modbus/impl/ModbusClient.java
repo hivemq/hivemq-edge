@@ -189,6 +189,6 @@ public class ModbusClient {
                 buffi.readBytes(bytes);
                 return new String(bytes, StandardCharsets.UTF_8);
         }
-        throw new RuntimeException("implement");
+        throw new RuntimeException("Unknown dataType '" + dataType.name() + "'.");
     }
 }
