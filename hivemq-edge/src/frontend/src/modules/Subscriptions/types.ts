@@ -14,7 +14,7 @@ export interface SubscriptionManagerType {
  */
 export interface OutwardSubscription {
   node: string
-  mqttTopic: string[]
+  'mqtt-topic': string[]
   mapping: Mapping[]
 }
 
