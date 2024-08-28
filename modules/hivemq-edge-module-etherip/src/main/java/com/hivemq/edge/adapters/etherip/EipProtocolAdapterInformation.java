@@ -46,7 +46,7 @@ public class EipProtocolAdapterInformation implements ProtocolAdapterInformation
 
     @Override
     public @NotNull String getProtocolId() {
-        return "ethernet-ip";
+        return "eip";
     }
 
     @Override
