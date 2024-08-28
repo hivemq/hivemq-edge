@@ -91,7 +91,6 @@ public class Plc4xPollingContext implements PollingContext {
     @JsonProperty(value = "mqttQos", required = true)
     @ModuleConfigField(title = "QoS",
                        description = "MQTT Quality of Service level",
-                       required = true,
                        numberMin = 0,
                        numberMax = 2,
                        defaultValue = "0")
@@ -127,7 +126,7 @@ public class Plc4xPollingContext implements PollingContext {
     @JsonCreator
     public Plc4xPollingContext(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
-            @JsonProperty(value = "mqttQos", required = true) final @Nullable Integer qos,
+            @JsonProperty(value = "mqttQos") final @Nullable Integer qos,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,

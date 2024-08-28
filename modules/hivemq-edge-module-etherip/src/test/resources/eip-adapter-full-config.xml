@@ -30,7 +30,7 @@
                 <eipToMqttMappings>
                     <eipToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
-                        <qos>1</qos>
+                        <mqttQos>1</mqttQos>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>true</includeTimestamp>
                         <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
@@ -40,7 +40,7 @@
                     </eipToMqttMapping>
                     <eipToMqttMapping>
                         <mqttTopic>my/topic/2</mqttTopic>
-                        <qos>1</qos>
+                        <mqttQos>1</mqttQos>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>true</includeTimestamp>
                         <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
