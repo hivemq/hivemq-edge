@@ -31,7 +31,7 @@ export const TopicInputTemplate: FC<BaseInputTemplateProps> = (props) => {
           id={id}
           value={value}
           onChange={onChange}
-          isCreatable={Boolean(create !== false)}
+          isCreatable={create === true || create === undefined}
         />
       )}
       {multiple && (
@@ -40,7 +40,7 @@ export const TopicInputTemplate: FC<BaseInputTemplateProps> = (props) => {
           id={id}
           value={value}
           onChange={onChange}
-          isCreatable={Boolean(create !== false)}
+          isCreatable={create === true || create === undefined}
         />
       )}
     </FormControl>
