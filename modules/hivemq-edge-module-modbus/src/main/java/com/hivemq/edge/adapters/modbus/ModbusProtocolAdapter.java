@@ -34,7 +34,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.modbus.config.AddressRange;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
-import com.hivemq.edge.adapters.modbus.config.PollingContextImpl;
+import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
@@ -51,7 +51,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 
-public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingContextImpl> {
+public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqttMapping> {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -60,7 +60,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
     private final @NotNull AdapterFactories adapterFactories;
 
     private volatile @Nullable IModbusClient modbusClient;
-    private final @NotNull Map<PollingContextImpl, List<DataPoint>> lastSamples = new HashMap<>();
+    private final @NotNull Map<ModbusToMqttMapping, List<DataPoint>> lastSamples = new HashMap<>();
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -99,7 +99,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
 
     @Override
     public void poll(
-            final @NotNull PollingInput<PollingContextImpl> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<ModbusToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
 
         //-- If a previously linked job has terminally disconnected the client
         //-- we need to ensure any orphaned jobs tidy themselves up properly
@@ -125,7 +125,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
     }
 
     @Override
-    public @NotNull List<PollingContextImpl> getPollingContexts() {
+    public @NotNull List<ModbusToMqttMapping> getPollingContexts() {
         return new ArrayList<>(adapterConfig.getModbusToMQTTConfig().getMappings());
     }
 
@@ -200,8 +200,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
     }
 
     private void calculateDelta(@NotNull ModBusData modBusData, @NotNull PollingOutput pollingOutput) {
-        PollingContextImpl subscription =
-                (PollingContextImpl) modBusData.getPollingContext();
+        ModbusToMqttMapping subscription =
+                (ModbusToMqttMapping) modBusData.getPollingContext();
 
         List<DataPoint> previousSampleDataPoints = lastSamples.put(subscription, modBusData.getDataPoints());
         List<DataPoint> currentSamplePoints = modBusData.getDataPoints();
@@ -220,7 +220,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<PollingCont
 
     protected @NotNull ModBusData readRegisters(@NotNull final PollingContext sub) {
         try {
-            PollingContextImpl subscription = (PollingContextImpl) sub;
+            ModbusToMqttMapping subscription = (ModbusToMqttMapping) sub;
             AddressRange addressRange = subscription.getAddressRange();
             Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
                     addressRange.endIdx - addressRange.startIdx);

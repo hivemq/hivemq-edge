@@ -8,15 +8,15 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.List;
 
-public class PollingContextSerializer extends JsonSerializer<List<PollingContextImpl>> {
+public class ModbusToMqttMappingSerializer extends JsonSerializer<List<ModbusToMqttMapping>> {
 
     @Override
     public void serialize(
-            final List<PollingContextImpl> value,
+            final List<ModbusToMqttMapping> value,
             final JsonGenerator gen,
             final @NotNull SerializerProvider provider) throws IOException {
         gen.writeStartArray();
-        for (PollingContextImpl pollingContext : value) {
+        for (final ModbusToMqttMapping pollingContext : value) {
             gen.writeStartObject();
             gen.writeObjectField("modbusToMqttMapping", pollingContext);
             gen.writeEndObject();

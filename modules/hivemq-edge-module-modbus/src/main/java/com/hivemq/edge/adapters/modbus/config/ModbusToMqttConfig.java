@@ -14,7 +14,7 @@ import java.util.Objects;
 /**
  * @since 4.9.0
  */
-public class ModbusToMQTTConfig {
+public class ModbusToMqttConfig {
 
     @JsonProperty("pollingIntervalMillis")
     @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
@@ -39,16 +39,16 @@ public class ModbusToMQTTConfig {
     private final boolean publishChangedDataOnly;
 
     @JsonProperty("modbusToMqttMappings")
-    @JsonSerialize(using = PollingContextSerializer.class)
+    @JsonSerialize(using = ModbusToMqttMappingSerializer.class)
     @ModuleConfigField(title = "Modbus to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<PollingContextImpl> mappings;
+    private final @NotNull List<ModbusToMqttMapping> mappings;
 
     @JsonCreator
-    public ModbusToMQTTConfig(
+    public ModbusToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
             @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
-            @JsonProperty(value = "modbusToMqttMappings") final @Nullable List<PollingContextImpl> mappings) {
+            @JsonProperty(value = "modbusToMqttMappings") final @Nullable List<ModbusToMqttMapping> mappings) {
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
         this.publishChangedDataOnly = Objects.requireNonNullElse(publishChangedDataOnly, true);
@@ -67,7 +67,7 @@ public class ModbusToMQTTConfig {
         return publishChangedDataOnly;
     }
 
-    public @NotNull List<PollingContextImpl> getMappings() {
+    public @NotNull List<ModbusToMqttMapping> getMappings() {
         return mappings;
     }
 }
