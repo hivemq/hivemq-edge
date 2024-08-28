@@ -45,10 +45,9 @@ public class HttpPollingContext implements PollingContext {
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
     private final @NotNull String mqttTopic;
 
-    @JsonProperty(value = "mqttQos", required = true)
+    @JsonProperty(value = "mqttQos")
     @ModuleConfigField(title = "MQTT QoS",
                        description = "MQTT Quality of Service level",
-                       required = true,
                        numberMin = 0,
                        numberMax = 2,
                        defaultValue = "0")
@@ -97,7 +96,7 @@ public class HttpPollingContext implements PollingContext {
     @JsonCreator
     public HttpPollingContext(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
-            @JsonProperty(value = "mqttQos", required = true) final @Nullable Integer mqttQos,
+            @JsonProperty(value = "mqttQos") final @Nullable Integer mqttQos,
             @JsonProperty(value = "userProperties") final @Nullable List<UserProperty> userProperties,
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "httpRequestMethod") final @Nullable HttpAdapterConfig.HttpMethod httpRequestMethod,
