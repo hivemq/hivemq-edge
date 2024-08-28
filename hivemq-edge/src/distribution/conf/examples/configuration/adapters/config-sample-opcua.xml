@@ -25,15 +25,18 @@
         </tcp-listener>
     </mqtt-listeners>
     <protocol-adapters>
-        <opc-ua-client>
+        <opcua>
             <id>opc-example</id>
             <uri>opc.tcp://my-opc-server-uri-or-ip:4840</uri>
-            <subscriptions>
-                <subscription>
-                    <node>ns=3;s="node-name"</node>
-                    <mqtt-topic>my/mqtt/topic/1</mqtt-topic>
-                </subscription>
-            </subscriptions>
-        </opc-ua-client>
+            <opcuaToMqtt>
+                <opcuaToMqttMappings>
+                    <opcuaToMqttMapping>
+                        <node>ns=3;s="node-name"</node>
+                        <mqttTopic>my/mqtt/topic/1</mqttTopic>
+                        <qos>1</qos>
+                    </opcuaToMqttMapping>
+                </opcuaToMqttMappings>
+            </opcuaToMqtt>
+        </opcua>
     </protocol-adapters>
 </hivemq>
