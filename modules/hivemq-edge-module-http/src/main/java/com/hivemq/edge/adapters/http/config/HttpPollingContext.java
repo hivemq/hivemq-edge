@@ -63,7 +63,8 @@ public class HttpPollingContext implements PollingContext {
     @JsonProperty(value = "includeTimestamp")
     @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
                        description = "Include the unix timestamp of the sample time in the resulting MQTT message",
-                       defaultValue = "true")
+                       defaultValue = "true",
+                       format = ModuleConfigField.FieldType.BOOLEAN)
     private final boolean includeTimestamp;
 
     @JsonProperty(value = "httpRequestMethod")

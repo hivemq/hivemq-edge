@@ -1,22 +1,30 @@
 {
-  "ui:tabs": [
+  "ui:tabs" : [
     {
-      "id": "coreFields",
-      "title": "Connection",
-      "properties": ["id", "url", "httpConnectTimeout"]
+      "id" : "coreFields",
+      "title" : "Connection",
+      "properties" : [
+        "id",
+        "url",
+        "httpConnectTimeout"
+      ]
     },
     {
-      "id": "publishing",
-      "title": "HTTP to MQTT",
-      "properties": [
+      "id" : "subFields",
+      "title" : "HTTP to MQTT",
+      "properties" : [
         "httpToMqtt"
       ]
     }
   ],
-  "id": {
-    "ui:disabled": true
+  "id" : {
+    "ui:disabled" : true
   },
-  "ui:order": ["id", "url", "*"],
+  "ui:order" : [
+    "id",
+    "url",
+    "*"
+  ],
   "httpToMqtt" : {
     "ui:batchMode" : true,
     "ui:order" : [
@@ -35,20 +43,20 @@
           "mqttTopic",
           "mqttQos",
           "userProperties",
-          "includeTimestamp",
           "httpRequestMethod",
           "httpRequestTimeout",
           "httpRequestBodyContentType",
           "httpRequestBody",
           "httpHeaders",
+          "includeTimestamp",
           "*"
         ],
         "ui:collapsable" : {
           "titleKey" : "mqttTopic"
+        },
+        "httpRequestBody" : {
+          "ui:widget" : "textarea"
         }
-      },
-      "httpRequestBody": {
-        "ui:widget": "textarea"
       }
     }
   }
