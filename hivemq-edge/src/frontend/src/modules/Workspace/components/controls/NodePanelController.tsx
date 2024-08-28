@@ -6,8 +6,9 @@ import { useDisclosure } from '@chakra-ui/react'
 import { Adapter, Bridge } from '@/api/__generated__'
 import { SuspenseFallback } from '@/components/SuspenseOutlet.tsx'
 import { AdapterNavigateState, ProtocolAdapterTabIndex } from '@/modules/ProtocolAdapters/types.ts'
-import { EdgeTypes, Group, NodeTypes } from '@/modules/Workspace/types.ts'
+import { DeviceMetadata, EdgeTypes, Group, NodeTypes } from '@/modules/Workspace/types.ts'
 
+const DevicePropertyDrawer = lazy(() => import('../drawers/DevicePropertyDrawer.tsx'))
 const NodePropertyDrawer = lazy(() => import('../drawers/NodePropertyDrawer.tsx'))
 const LinkPropertyDrawer = lazy(() => import('../drawers/LinkPropertyDrawer.tsx'))
 const GroupPropertyDrawer = lazy(() => import('../drawers/GroupPropertyDrawer.tsx'))
@@ -27,6 +28,9 @@ const NodePanelController: FC = () => {
   ) as Node<Bridge | Adapter> | undefined
 
   const selectedEdge = nodes.find((e) => e.id === nodeId && e.type === NodeTypes.EDGE_NODE)
+  const selectedDevice = nodes.find((e) => e.id === nodeId && e.type === NodeTypes.DEVICE_NODE) as
+    | Node<DeviceMetadata>
+    | undefined
 
   const selectedLinkSource = nodes.find((e) => {
     const link = edges.find((e) => e.id === nodeId && e.type === EdgeTypes.REPORT_EDGE)
@@ -105,6 +109,15 @@ const NodePanelController: FC = () => {
         <NodePropertyDrawer
           nodeId={nodeId}
           selectedNode={selectedNode}
+          isOpen={isOpen}
+          onClose={handleClose}
+          onEditEntity={handleEditEntity}
+        />
+      )}
+      {selectedDevice && (
+        <DevicePropertyDrawer
+          nodeId={nodeId}
+          selectedNode={selectedDevice}
           isOpen={isOpen}
           onClose={handleClose}
           onEditEntity={handleEditEntity}

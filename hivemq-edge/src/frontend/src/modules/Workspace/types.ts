@@ -1,4 +1,5 @@
 import { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange, Rect } from 'reactflow'
+import { ProtocolAdapter } from '@/api/__generated__'
 
 export interface EdgeFlowOptions {
   showTopics: boolean
@@ -76,3 +77,8 @@ export interface TopicTreeMetadata {
   label: string
   count: number
 }
+
+/**
+ * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
+ */
+export type DeviceMetadata = ProtocolAdapter
