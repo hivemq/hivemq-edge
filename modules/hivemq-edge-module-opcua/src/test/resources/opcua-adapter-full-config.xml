@@ -52,7 +52,7 @@
                         <mqttTopic>test/blubb/#</mqttTopic>
                         <publishingInterval>12</publishingInterval>
                         <serverQueueSize>13</serverQueueSize>
-                        <qos>1</qos>
+                        <mqttQos>1</mqttQos>
                         <messageExpiryInterval>15</messageExpiryInterval>
                     </opcuaToMqttMapping>
                     <opcuaToMqttMapping>
@@ -60,7 +60,7 @@
                         <mqttTopic>test/blubbb/#</mqttTopic>
                         <publishingInterval>13</publishingInterval>
                         <serverQueueSize>14</serverQueueSize>
-                        <qos>2</qos>
+                        <mqttQos>2</mqttQos>
                         <messageExpiryInterval>16</messageExpiryInterval>
                     </opcuaToMqttMapping>
                 </opcuaToMqttMappings>

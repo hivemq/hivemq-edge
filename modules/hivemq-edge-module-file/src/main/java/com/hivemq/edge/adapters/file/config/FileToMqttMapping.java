@@ -41,10 +41,9 @@ public class FileToMqttMapping implements PollingContext {
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
     private final @NotNull String mqttTopic;
 
-    @JsonProperty(value = "mqttQos", required = true)
+    @JsonProperty(value = "mqttQos")
     @ModuleConfigField(title = "QoS",
                        description = "MQTT Quality of Service level",
-                       required = true,
                        numberMin = 0,
                        numberMax = 2,
                        defaultValue = "0")

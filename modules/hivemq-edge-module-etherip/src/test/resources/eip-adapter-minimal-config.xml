@@ -25,7 +25,6 @@
                 <eipToMqttMappings>
                     <eipToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
-                        <qos>1</qos>
                         <tagName>tag-name</tagName>
                         <tagAddress>tag-address</tagAddress>
                         <dataType>BOOL</dataType>

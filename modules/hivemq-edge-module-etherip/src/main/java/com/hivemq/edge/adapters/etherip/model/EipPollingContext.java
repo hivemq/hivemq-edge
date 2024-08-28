@@ -55,10 +55,9 @@ public class EipPollingContext implements PollingContext {
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
     private final @NotNull String mqttTopic;
 
-    @JsonProperty(value = "mqttQos", required = true)
+    @JsonProperty(value = "mqttQos")
     @ModuleConfigField(title = "QoS",
                        description = "MQTT Quality of Service level",
-                       required = true,
                        numberMin = 0,
                        numberMax = 2,
                        defaultValue = "0")
@@ -113,7 +112,7 @@ public class EipPollingContext implements PollingContext {
     @JsonCreator
     public EipPollingContext(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
-            @JsonProperty(value = "mqttQos", required = true) final @Nullable Integer qos,
+            @JsonProperty(value = "mqttQos") final @Nullable Integer qos,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
