@@ -39,10 +39,9 @@ public class SimulationToMqttMapping implements PollingContext {
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
     private final @NotNull String mqttTopic;
 
-    @JsonProperty(value = "mqttQos", required = true)
+    @JsonProperty(value = "mqttQos")
     @ModuleConfigField(title = "QoS",
                        description = "MQTT Quality of Service level",
-                       required = true,
                        numberMin = 0,
                        numberMax = 2,
                        defaultValue = "0")
@@ -78,7 +77,7 @@ public class SimulationToMqttMapping implements PollingContext {
     @JsonCreator
     public SimulationToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
-            @JsonProperty(value = "mqttQos") final @Nullable Integer mqttQos,
+            @JsonProperty("mqttQos") final @Nullable Integer mqttQos,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
