@@ -15,6 +15,7 @@
  */
 package com.hivemq.api.resources.impl;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -127,9 +128,9 @@ public class ProtocolAdapterApiUtils {
         final String uiSchemaAsString = info.getUiSchema();
         if (uiSchemaAsString != null) {
             try {
-                return objectMapper.readTree(uiSchemaAsString);
+                return objectMapper.reader().withFeatures(JsonParser.Feature.ALLOW_COMMENTS).readTree(uiSchemaAsString);
             } catch (JsonProcessingException e) {
-                LOG.warn("Ui schema for adapter '{}' is not parsable, the default zu schema will be applied. ",
+                LOG.warn("Ui schema for adapter '{}' is not parsable, the default schema will be applied. ",
                         info.getDisplayName(),
                         e);
                 // fall through to parsing the DEFAULT SCHEMA
@@ -137,9 +138,9 @@ public class ProtocolAdapterApiUtils {
         }
 
         try {
-            return objectMapper.readTree(Objects.requireNonNullElse(uiSchemaAsString, DEFAULT_SCHEMA));
+            return objectMapper.readTree(DEFAULT_SCHEMA);
         } catch (JsonProcessingException e) {
-            LOG.error("Exception during parsing of default zu schema: ", e);
+            LOG.error("Exception during parsing of default schema: ", e);
             // this should never happen as we control the input (default schema)
             throw new RuntimeException(e);
         }
