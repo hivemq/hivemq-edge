@@ -184,7 +184,7 @@ class SimulationAdapterConfigTest {
         assertThat((List<Map<String, Object>>) simulationToMqtt.get("simulationToMqttMappings")).satisfiesExactly((mappings) -> {
             final Map<String, Object> mapping = (Map<String, Object>) mappings.get("simulationToMqttMapping");
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("qos")).isEqualTo(1);
+            assertThat(mapping.get("mqttQos")).isEqualTo(1);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);
@@ -224,7 +224,7 @@ class SimulationAdapterConfigTest {
         assertThat((List<Map<String, Object>>) simulationToMqtt.get("simulationToMqttMappings")).satisfiesExactly((mappings) -> {
             final Map<String, Object> mapping = (Map<String, Object>) mappings.get("simulationToMqttMapping");
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
-            assertThat(mapping.get("qos")).isEqualTo(0);
+            assertThat(mapping.get("mqttQos")).isEqualTo(0);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerTag");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
