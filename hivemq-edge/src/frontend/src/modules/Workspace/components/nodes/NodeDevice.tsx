@@ -2,14 +2,19 @@ import { FC } from 'react'
 import { Handle, Position, NodeProps } from 'reactflow'
 import { HStack, Icon, Text, VStack } from '@chakra-ui/react'
 
-import { ProtocolAdapter } from '@/api/__generated__'
+import { DeviceMetadata } from '@/modules/Workspace/types.ts'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { deviceCapabilityIcon, deviceCategoryIcon } from '@/modules/Workspace/utils/adapter.utils.ts'
+import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
+import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 
-const NodeDevice: FC<NodeProps<ProtocolAdapter>> = ({ selected, data }) => {
+const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data }) => {
+  const { onContextMenu } = useContextMenu(id, selected, '/workspace/node')
   const { category, capabilities } = data
+
   return (
     <>
+      <ContextualToolbar id={id} onOpenPanel={onContextMenu} />
       <NodeWrapper
         isSelected={selected}
         wordBreak="break-word"
@@ -17,6 +22,8 @@ const NodeDevice: FC<NodeProps<ProtocolAdapter>> = ({ selected, data }) => {
         textAlign="center"
         p={3}
         borderTopRadius={30}
+        onDoubleClick={onContextMenu}
+        onContextMenu={onContextMenu}
       >
         <VStack>
           <HStack w="100%" justifyContent="flex-end" gap={1} data-testid="device-capabilities">

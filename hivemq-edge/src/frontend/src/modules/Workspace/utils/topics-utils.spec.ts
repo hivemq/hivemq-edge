@@ -14,6 +14,7 @@ import {
   discoverAdapterTopics,
   flattenObject,
   getBridgeTopics,
+  getMainRootFromPath,
   getPropertiesFromPath,
   getTopicPaths,
   mergeAllTopics,
@@ -178,6 +179,17 @@ describe('mergeAllTopics', () => {
     const actual = mergeAllTopics(undefined, undefined, undefined, undefined)
 
     expect(actual).toStrictEqual([])
+  })
+})
+
+describe('getMainRootFromPath', () => {
+  it('should work', () => {
+    expect(getMainRootFromPath([])).toStrictEqual(undefined)
+    expect(getMainRootFromPath(['root'])).toStrictEqual('root')
+    expect(getMainRootFromPath(['root.'])).toStrictEqual('root')
+    expect(getMainRootFromPath(['root-'])).toStrictEqual('root-')
+    expect(getMainRootFromPath(['root.*.first.one'])).toStrictEqual('root')
+    expect(getMainRootFromPath(['root.*.first.one', 'root2.*.next.one'])).toStrictEqual('root')
   })
 })
 

@@ -750,6 +750,7 @@
       "header_BRIDGE_NODE": "Bridge Overview",
       "header_CLUSTER_NODE": "Group Overview",
       "header_EDGE_NODE": "Edge Overview",
+      "header_DEVICE_NODE": "Device Overview",
       "modify_ADAPTER_NODE": "Modify the adapter",
       "modify_BRIDGE_NODE": "Modify the bridge",
       "eventLog": {
@@ -911,6 +912,11 @@
     "releases": {
       "title": "A new version of $t(branding.appName) is available",
       "description": "Visit the GitHub repository to learn more about the latest version of $t(branding.appName)"
+    }
+  },
+  "warnings": {
+    "deprecated": {
+      "subscriptions": "The subscriptions are now available through the workspace"
     }
   }
 }

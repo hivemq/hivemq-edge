@@ -1,13 +1,14 @@
 import { FC, useMemo } from 'react'
 import { Handle, NodeProps, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { Box, HStack, Icon, Image, Text, VStack } from '@chakra-ui/react'
 
-import { type TopicFilter } from '@/modules/Workspace/types.ts'
 import { type Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
+import { type TopicFilter } from '@/modules/Workspace/types.ts'
 import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.ts'
 import { discoverAdapterTopics } from '@/modules/Workspace/utils/topics-utils.ts'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
@@ -29,8 +30,11 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
     return discoverAdapterTopics(adapterProtocol, adapter.config).map((e) => ({ topic: e }))
   }, [adapter.config, adapterProtocol])
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/adapter/${adapter.type}`)
+  const navigate = useNavigate()
 
   const HACK_BIDIRECTIONAL = isBidirectional(adapterProtocol)
+  const adapterNavPath = `/workspace/node/adapter/${adapter.type}/${id}`
+
   return (
     <>
       <ContextualToolbar id={id} onOpenPanel={onContextMenu}>
@@ -39,13 +43,13 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
             <IconButton
               icon={<Icon as={deviceCapabilityIcon['WRITE']} />}
               aria-label={t('workspace.toolbar.command.subscriptions.outward')}
-              // onClick={onCreateGroup}
+              onClick={() => navigate(`${adapterNavPath}/outward`)}
             />
           )}
           <IconButton
             icon={<Icon as={deviceCapabilityIcon['READ']} />}
             aria-label={t('workspace.toolbar.command.subscriptions.inward')}
-            // onClick={onCreateGroup}
+            onClick={() => navigate(`${adapterNavPath}/inward`)}
           />
         </WorkspaceButtonGroup>
       </ContextualToolbar>
