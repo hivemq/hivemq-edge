@@ -146,7 +146,7 @@ public class AdapterConfigModelTest {
 
         @JsonProperty(value = "userProperties")
         @ModuleConfigField(title = "User Properties",
-                           description = "Arbitrary properties to associate with the subscription",
+                           description = "Arbitrary properties to associate with the mapping",
                            arrayMaxItems = 10)
         private @NotNull List<UserProperty> userProperties = new ArrayList<>();
 

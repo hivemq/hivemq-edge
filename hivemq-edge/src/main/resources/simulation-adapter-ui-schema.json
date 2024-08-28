@@ -27,32 +27,31 @@
     "minValue",
     "maxValue",
     "minDelay",
-    "maxDelay"
+    "maxDelay",
+    "*"
   ],
   "simulationToMqtt" : {
     "ui:batchMode" : true,
-    "items" : {
-      "ui:order" : [
-        "simulationToMqttMappings",
-        "pollingIntervalMillis",
-        "maxPollingErrorsBeforeRemoval",
-        "*"
-      ],
-      "simulationToMqttMappings" : {
-        "ui:batchMode" : true,
-        "items" : {
-          "ui:order" : [
-            "mqttTopic",
-            "mqttQos",
-            "messageHandlingOptions",
-            "includeTimestamp",
-            "includeTagNames",
-            "userProperties",
-            "*"
-          ],
-          "ui:collapsable" : {
-            "titleKey" : "mqttTopic"
-          }
+    "ui:order" : [
+      "simulationToMqttMappings",
+      "pollingIntervalMillis",
+      "maxPollingErrorsBeforeRemoval",
+      "*"
+    ],
+    "simulationToMqttMappings" : {
+      "ui:batchMode" : true,
+      "items" : {
+        "ui:order" : [
+          "mqttTopic",
+          "mqttQos",
+          "userProperties",
+          "messageHandlingOptions",
+          "includeTimestamp",
+          "includeTagNames",
+          "*"
+        ],
+        "ui:collapsable" : {
+          "titleKey" : "mqttTopic"
         }
       }
     }

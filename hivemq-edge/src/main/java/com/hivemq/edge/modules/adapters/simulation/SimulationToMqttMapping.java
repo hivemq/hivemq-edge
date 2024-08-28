@@ -71,7 +71,7 @@ public class SimulationToMqttMapping implements PollingContext {
 
     @JsonProperty(value = "userProperties")
     @ModuleConfigField(title = "User Properties",
-                       description = "Arbitrary properties to associate with the subscription",
+                       description = "Arbitrary properties to associate with the mapping",
                        arrayMaxItems = 10)
     private final @NotNull List<UserProperty> userProperties;
 
