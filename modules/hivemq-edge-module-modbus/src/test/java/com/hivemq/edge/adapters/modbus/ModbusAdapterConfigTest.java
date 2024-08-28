@@ -7,8 +7,8 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.modbus.config.AddressRange;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
-import com.hivemq.edge.adapters.modbus.config.ModbusToMQTTConfig;
-import com.hivemq.edge.adapters.modbus.config.PollingContextImpl;
+import com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -221,7 +221,7 @@ public class ModbusAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final PollingContextImpl pollingContext = new PollingContextImpl("my/destination",
+        final ModbusToMqttMapping pollingContext = new ModbusToMqttMapping("my/destination",
                 1,
                 MQTTMessagePerSubscription,
                 false,
@@ -233,7 +233,7 @@ public class ModbusAdapterConfigTest {
                 14,
                 "my.host.com",
                 15,
-                new ModbusToMQTTConfig(12, 13, true, List.of(pollingContext)));
+                new ModbusToMqttConfig(12, 13, true, List.of(pollingContext)));
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
         final Map<String, Object> config =
@@ -270,16 +270,16 @@ public class ModbusAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_defaults() {
-        final PollingContextImpl pollingContext =
-                new PollingContextImpl("my/destination", null, null, null, null, null, new AddressRange(1, 2));
-        final PollingContextImpl pollingContext2 =
-                new PollingContextImpl("my/destination/2", null, null, null, null, null, new AddressRange(1, 2));
+        final ModbusToMqttMapping pollingContext =
+                new ModbusToMqttMapping("my/destination", null, null, null, null, null, new AddressRange(1, 2));
+        final ModbusToMqttMapping pollingContext2 =
+                new ModbusToMqttMapping("my/destination/2", null, null, null, null, null, new AddressRange(1, 2));
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
                 13,
                 "my.host.com",
                 null,
-                new ModbusToMQTTConfig(null, null, null, List.of(pollingContext, pollingContext2)));
+                new ModbusToMqttConfig(null, null, null, List.of(pollingContext, pollingContext2)));
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
         final Map<String, Object> config =
