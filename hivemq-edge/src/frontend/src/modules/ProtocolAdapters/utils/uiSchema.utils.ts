@@ -23,9 +23,6 @@ export const getRequiredUiSchema = (
       ...id,
       'ui:disabled': !isNewAdapter,
     },
-    // [hideSubscriptions]: {
-    //   'ui:hidden': true,
-    // },
     ...rest,
   }
 

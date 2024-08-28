@@ -47,9 +47,6 @@ const SubscriptionForm: FC<SubscriptionFormProps> = ({ id, type }) => {
       showErrorList="bottom"
       onError={(errors) => console.log('XXXXXXX', errors)}
       formData={subscriptionManager.formData}
-      // customValidate={customValidate(schema, allAdapters, t)}
-      // transformErrors={filterUnboundErrors}
-      // formContext={context}
       widgets={adapterJSFWidgets}
       fields={adapterJSFFields}
       templates={{

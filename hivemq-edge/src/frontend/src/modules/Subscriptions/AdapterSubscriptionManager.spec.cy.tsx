@@ -9,14 +9,14 @@ import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 
-const getWrapperWith = (n?: Node[]) => {
+const getWrapperWith = (initialNodes?: Node[]) => {
   const Wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
     const { nodes } = useWorkspaceStore()
     return (
       <ReactFlowTesting
         config={{
           initialState: {
-            nodes: n,
+            nodes: initialNodes,
           },
         }}
         showDashboard={true}
