@@ -6,12 +6,13 @@ import DataModelSources from '@/components/rjsf/MqttTransformation/components/Da
 import MappingEditor from '@/components/rjsf/MqttTransformation/components/MappingEditor.tsx'
 import SourceSelector from '@/components/rjsf/MqttTransformation/components/SourceSelector.tsx'
 import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
+import { JsonNode } from '@/api/__generated__'
 
 interface SubscriptionContainerProps {
   item: OutwardSubscription
   onClose: () => void
   onSubmit: (newItem: OutwardSubscription) => void
-  onChange: (id: keyof OutwardSubscription, v: any) => void
+  onChange: (id: keyof OutwardSubscription, v: JsonNode | string | string[] | undefined) => void
 }
 
 const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, onSubmit, onChange }) => {
@@ -24,7 +25,7 @@ const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, 
         </VStack>
         <MappingEditor flex={3} />
         <VStack flex={2} alignItems="stretch">
-          <SourceSelector topics={[item.node]} onChange={(v) => onChange('node', v)} />
+          <SourceSelector isTag topics={[item.node]} onChange={(v) => onChange('node', v)} />
           <DataModelDestination flex={1} topic={item.node} />
         </VStack>
       </Stack>
