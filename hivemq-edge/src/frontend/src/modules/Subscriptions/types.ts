@@ -34,3 +34,12 @@ export interface Transformation {
   function: 'toString' | 'toInt' | 'join'
   params: string
 }
+
+/**
+ * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
+ */
+export interface DeviceTags {
+  tag: string
+  node?: string
+  register?: { start: number; shift: number }
+}
