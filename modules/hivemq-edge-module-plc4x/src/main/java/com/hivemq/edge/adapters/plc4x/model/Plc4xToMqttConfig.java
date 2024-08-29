@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.plc4x.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -72,5 +71,5 @@ public abstract class Plc4xToMqttConfig {
         return publishChangedDataOnly;
     }
 
-    public abstract @NotNull List<Plc4xPollingContext> getMappings();
+    public abstract @NotNull List<Plc4xToMqttMapping> getMappings();
 }

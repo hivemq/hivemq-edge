@@ -36,7 +36,7 @@ import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpMethod.
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
-public class HttpPollingContext implements PollingContext {
+public class HttpToMqttMapping implements PollingContext {
 
     @JsonProperty(value = "mqttTopic", required = true)
     @ModuleConfigField(title = "Destination MQTT Topic",
@@ -94,7 +94,7 @@ public class HttpPollingContext implements PollingContext {
     private final @NotNull List<HttpAdapterConfig.HttpHeader> httpHeaders;
 
     @JsonCreator
-    public HttpPollingContext(
+    public HttpToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty(value = "mqttQos") final @Nullable Integer mqttQos,
             @JsonProperty(value = "userProperties") final @Nullable List<UserProperty> userProperties,

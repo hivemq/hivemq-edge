@@ -60,7 +60,7 @@ public class AdapterConfigModelTest {
 
         AdapterConfiguration entity = new AdapterConfiguration();
         entity.subscriptions = new ArrayList<>();
-        entity.subscriptions.add(new TestContext("some/path",1,List.of(new UserProperty("propertyName", "propertyValue"))));
+        entity.subscriptions.add(new TestToMqttMapping("some/path",1,List.of(new UserProperty("propertyName", "propertyValue"))));
         String marhslaled = mapper.writeValueAsString(entity);
         System.err.println(marhslaled);
 
@@ -105,7 +105,7 @@ public class AdapterConfigModelTest {
         }
     }
 
-    private static class TestContext implements PollingContext {
+    private static class TestToMqttMapping implements PollingContext {
 
         @JsonProperty(value = "mqttTopic", required = true)
         @ModuleConfigField(title = "Destination Topic",
@@ -151,7 +151,7 @@ public class AdapterConfigModelTest {
         private @NotNull List<UserProperty> userProperties = new ArrayList<>();
 
         @JsonCreator
-        public TestContext(
+        public TestToMqttMapping(
                 @JsonProperty("mqttTopic") @Nullable final String mqttTopic,
                 @JsonProperty("mqttQos") final int qos,
                 @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {

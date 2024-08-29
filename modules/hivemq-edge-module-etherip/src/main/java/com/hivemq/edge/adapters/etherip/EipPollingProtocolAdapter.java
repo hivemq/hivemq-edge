@@ -27,7 +27,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.etherip.model.EipAdapterConfig;
-import com.hivemq.edge.adapters.etherip.model.EipPollingContext;
+import com.hivemq.edge.adapters.etherip.model.EipToMqttMapping;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
 import etherip.EtherNetIP;
@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipPollingContext> {
+public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMqttMapping> {
 
     private static final @NotNull org.slf4j.Logger LOG = LoggerFactory.getLogger(EipPollingProtocolAdapter.class);
 
@@ -117,7 +117,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipPoll
 
     @Override
     public void poll(
-            final @NotNull PollingInput<EipPollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<EipToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
 
         if (etherNetIP == null) {
             return;
@@ -162,7 +162,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipPoll
     }
 
     @Override
-    public @NotNull List<EipPollingContext> getPollingContexts() {
+    public @NotNull List<EipToMqttMapping> getPollingContexts() {
         return adapterConfig.getEipToMqttConfig().getMappings();
     }
 
@@ -182,7 +182,7 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipPoll
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(@NotNull final EipPollingContext subscription) {
+    protected @NotNull String createTagAddressForSubscription(@NotNull final EipToMqttMapping subscription) {
         return String.format("%s%s%s", subscription.getTagAddress(), TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
     }
 

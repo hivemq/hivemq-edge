@@ -23,15 +23,15 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.List;
 
-public class EipPollingContextSerializer extends JsonSerializer<List<EipPollingContext>> {
+public class EipPollingContextSerializer extends JsonSerializer<List<EipToMqttMapping>> {
 
     @Override
     public void serialize(
-            final @NotNull List<EipPollingContext> value,
+            final @NotNull List<EipToMqttMapping> value,
             final @NotNull JsonGenerator gen,
             final @NotNull SerializerProvider provider) throws IOException {
         gen.writeStartArray();
-        for (EipPollingContext pollingContext : value) {
+        for (final EipToMqttMapping pollingContext : value) {
             gen.writeStartObject();
             gen.writeObjectField("eipToMqttMapping", pollingContext);
             gen.writeEndObject();

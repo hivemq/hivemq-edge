@@ -116,7 +116,7 @@ class EipAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final EipPollingContext pollingContext = new EipPollingContext("my/destination",
+        final EipToMqttMapping pollingContext = new EipToMqttMapping("my/destination",
                 1,
                 MQTTMessagePerSubscription,
                 false,

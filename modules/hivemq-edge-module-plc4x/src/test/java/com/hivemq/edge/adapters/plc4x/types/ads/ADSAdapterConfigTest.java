@@ -21,7 +21,7 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xPollingContext;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -120,7 +120,7 @@ class ADSAdapterConfigTest {
 
     @Test
     public void unconvertConfigObject_full_valid() {
-        final Plc4xPollingContext pollingContext = new Plc4xPollingContext("my/destination",
+        final Plc4xToMqttMapping pollingContext = new Plc4xToMqttMapping("my/destination",
                 1,
                 MQTTMessagePerSubscription,
                 false,
