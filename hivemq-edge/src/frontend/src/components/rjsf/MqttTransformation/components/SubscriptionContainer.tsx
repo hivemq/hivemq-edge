@@ -1,23 +1,32 @@
 import { FC } from 'react'
-import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
 import { Button, ButtonGroup, HStack, Stack, VStack } from '@chakra-ui/react'
+
 import DataModelDestination from '@/components/rjsf/MqttTransformation/components/DataModelDestination.tsx'
 import DataModelSources from '@/components/rjsf/MqttTransformation/components/DataModelSources.tsx'
 import MappingEditor from '@/components/rjsf/MqttTransformation/components/MappingEditor.tsx'
+import SourceSelector from '@/components/rjsf/MqttTransformation/components/SourceSelector.tsx'
+import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
 
 interface SubscriptionContainerProps {
   item: OutwardSubscription
   onClose: () => void
   onSubmit: (newItem: OutwardSubscription) => void
+  onChange: (id: keyof OutwardSubscription, v: any) => void
 }
 
-const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, onSubmit }) => {
+const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, onSubmit, onChange }) => {
   return (
     <VStack alignItems="stretch" gap={4}>
       <Stack gap={2} flexDirection="row">
-        <DataModelSources flex={2} />
+        <VStack flex={2} alignItems="stretch">
+          <SourceSelector topics={item['mqtt-topic']} multiple onChange={(v) => onChange('mqtt-topic', v)} />
+          <DataModelSources flex={1} topics={item['mqtt-topic']} />
+        </VStack>
         <MappingEditor flex={3} />
-        <DataModelDestination flex={2} />
+        <VStack flex={2} alignItems="stretch">
+          <SourceSelector topics={[item.node]} onChange={(v) => onChange('node', v)} />
+          <DataModelDestination flex={1} topic={item.node} />
+        </VStack>
       </Stack>
       <HStack justifyContent="flex-end">
         <ButtonGroup size="sm">

@@ -4,16 +4,21 @@ import { JSONSchema7 } from 'json-schema'
 import { Card, CardBody, CardHeader, CardProps, Heading, HStack } from '@chakra-ui/react'
 import { BiCheckboxChecked } from 'react-icons/bi'
 
-import MOCK_SCHEMA from '@datahub/api/__generated__/schemas/TransitionData.json'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
+import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSubscriptionSchemas.tsx'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
 interface DataModelDestinationProps extends CardProps {
-  id?: string
+  topic: string
 }
 
-const DataModelDestination: FC<DataModelDestinationProps> = ({ id, ...props }) => {
+const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, ...props }) => {
   const { t } = useTranslation('components')
+  const { data, isLoading } = useGetSubscriptionSchemas(topic, 'activated_short')
+
+  const isReady = Boolean(!isLoading && data)
+
   return (
     <Card {...props}>
       <CardHeader as={HStack} justifyContent="space-between">
@@ -27,7 +32,8 @@ const DataModelDestination: FC<DataModelDestinationProps> = ({ id, ...props }) =
         />
       </CardHeader>
       <CardBody>
-        <JsonSchemaBrowser schema={MOCK_SCHEMA as JSONSchema7} />
+        {!isReady && <LoaderSpinner />}
+        {isReady && <JsonSchemaBrowser schema={data as JSONSchema7} />}
       </CardBody>
     </Card>
   )
