@@ -8,6 +8,7 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import Topic from '@/components/MQTT/Topic.tsx'
 import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
+import PLCTag from '@/components/MQTT/PLCTag.tsx'
 
 interface ListSubscriptionsProps {
   items: OutwardSubscription[]
@@ -36,7 +37,7 @@ const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete
         accessorKey: 'node',
         cell: (info) => {
           const val = info.getValue<string>()
-          return val ? <Text>{val}</Text> : <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
+          return val ? <PLCTag topic={val} /> : <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
         },
         header: t('rjsf.MqttTransformationField.listing.destination'),
         enableSorting: false,
