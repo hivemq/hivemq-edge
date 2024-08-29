@@ -68,7 +68,7 @@ public class HttpToMqttConfig {
     @JsonProperty("httpToMqttMappings")
     @JsonSerialize(using = HttpPollingContextSerializer.class)
     @ModuleConfigField(title = "HTTP to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<HttpPollingContext> mappings;
+    private final @NotNull List<HttpToMqttMapping> mappings;
 
     @JsonCreator
     public HttpToMqttConfig(
@@ -77,7 +77,7 @@ public class HttpToMqttConfig {
             @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates,
             @JsonProperty(value = "assertResponseIsJson") final @Nullable Boolean assertResponseIsJson,
             @JsonProperty(value = "httpPublishSuccessStatusCodeOnly") final @Nullable Boolean httpPublishSuccessStatusCodeOnly,
-            @JsonProperty(value = "httpToMqttMappings") final @Nullable List<HttpPollingContext> mappings) {
+            @JsonProperty(value = "httpToMqttMappings") final @Nullable List<HttpToMqttMapping> mappings) {
         this.mappings = Objects.requireNonNullElse(mappings, List.of());
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
@@ -106,7 +106,7 @@ public class HttpToMqttConfig {
         return httpPublishSuccessStatusCodeOnly;
     }
 
-    public @NotNull List<HttpPollingContext> getMappings() {
+    public @NotNull List<HttpToMqttMapping> getMappings() {
         return mappings;
     }
 }

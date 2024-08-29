@@ -33,7 +33,7 @@ import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
 @JsonPropertyOrder({"tagName", "tagAddress", "dataType", "mqttTopic", "mqttQos"})
-public class Plc4xPollingContext implements PollingContext {
+public class Plc4xToMqttMapping implements PollingContext {
 
     @JsonProperty(value = "tagName", required = true)
     @ModuleConfigField(title = "Tag Name",
@@ -124,7 +124,7 @@ public class Plc4xPollingContext implements PollingContext {
     private @NotNull List<UserProperty> userProperties;
 
     @JsonCreator
-    public Plc4xPollingContext(
+    public Plc4xToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty(value = "mqttQos") final @Nullable Integer qos,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,

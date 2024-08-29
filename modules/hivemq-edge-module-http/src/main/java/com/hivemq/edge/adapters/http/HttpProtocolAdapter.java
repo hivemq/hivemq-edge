@@ -32,7 +32,7 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
 import com.hivemq.edge.adapters.http.model.HttpData;
-import com.hivemq.edge.adapters.http.config.HttpPollingContext;
+import com.hivemq.edge.adapters.http.config.HttpToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -53,11 +53,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.ERROR;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.STATELESS;
@@ -67,7 +65,7 @@ import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.PLAIN_MIME_
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingContext> {
+public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMapping> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
 
@@ -141,14 +139,14 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
 
     @Override
     public void poll(
-            final @NotNull PollingInput<HttpPollingContext> pollingInput, final @NotNull PollingOutput pollingOutput) {
+            final @NotNull PollingInput<HttpToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
 
         if (httpClient == null) {
             pollingOutput.fail(new ProtocolAdapterException(), "No response was created, because the client is null.");
             return;
         }
 
-        final HttpPollingContext pollingContext = pollingInput.getPollingContext();
+        final HttpToMqttMapping pollingContext = pollingInput.getPollingContext();
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         builder.uri(URI.create(adapterConfig.getUrl()));
@@ -250,7 +248,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpPollingCo
     }
 
     @Override
-    public @NotNull List<HttpPollingContext> getPollingContexts() {
+    public @NotNull List<HttpToMqttMapping> getPollingContexts() {
         return List.copyOf(adapterConfig.getHttpToMqttConfig().getMappings());
     }
 

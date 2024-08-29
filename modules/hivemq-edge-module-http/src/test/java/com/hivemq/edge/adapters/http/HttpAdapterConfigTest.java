@@ -21,7 +21,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpHeader;
-import com.hivemq.edge.adapters.http.config.HttpPollingContext;
+import com.hivemq.edge.adapters.http.config.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.HttpToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -105,7 +105,7 @@ public class HttpAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
 
-        final HttpPollingContext httpPollingContext = config.getHttpToMqttConfig().getMappings().get(0);
+        final HttpToMqttMapping httpPollingContext = config.getHttpToMqttConfig().getMappings().get(0);
 
         assertThat(httpPollingContext.getMqttTopic()).isEqualTo("my/destination");
         assertThat(httpPollingContext.getMqttQos()).isEqualTo(1);
@@ -135,7 +135,7 @@ public class HttpAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
 
-        final HttpPollingContext httpPollingContext = config.getHttpToMqttConfig().getMappings().get(0);
+        final HttpToMqttMapping httpPollingContext = config.getHttpToMqttConfig().getMappings().get(0);
 
         assertThat(httpPollingContext.getMqttQos()).isEqualTo(0);
         assertThat(httpPollingContext.getHttpRequestMethod()).isEqualTo(POST);
@@ -166,7 +166,7 @@ public class HttpAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
 
-        final HttpPollingContext httpPollingContext = config.getHttpToMqttConfig().getMappings().get(0);
+        final HttpToMqttMapping httpPollingContext = config.getHttpToMqttConfig().getMappings().get(0);
 
         assertThat(httpPollingContext.getMqttTopic()).isEqualTo("my/destination");
         assertThat(httpPollingContext.getMqttQos()).isEqualTo(0);
@@ -197,7 +197,7 @@ public class HttpAdapterConfigTest {
                         true,
                         true,
                         true,
-                        List.of(new HttpPollingContext("my/destination",
+                        List.of(new HttpToMqttMapping("my/destination",
                                         0,
                                         List.of(),
                                         true,
@@ -206,7 +206,7 @@ public class HttpAdapterConfigTest {
                                         YAML,
                                         "my-body",
                                         List.of(httpHeader2, httpHeader1)),
-                                new HttpPollingContext("my/destination2",
+                                new HttpToMqttMapping("my/destination2",
                                         0,
                                         List.of(),
                                         true,
@@ -281,7 +281,7 @@ public class HttpAdapterConfigTest {
                         null,
                         null,
                         null,
-                        List.of(new HttpPollingContext("my/destination",
+                        List.of(new HttpToMqttMapping("my/destination",
                                 null,
                                 null,
                                 null,

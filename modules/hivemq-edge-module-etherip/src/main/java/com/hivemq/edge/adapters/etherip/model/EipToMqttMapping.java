@@ -17,7 +17,6 @@ package com.hivemq.edge.adapters.etherip.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
@@ -25,15 +24,13 @@ import com.hivemq.adapter.sdk.api.config.UserProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
-@JsonPropertyOrder({"tagName", "tagAddress", "dataType", "mqttTopic", "mqttQos"})
-public class EipPollingContext implements PollingContext {
+public class EipToMqttMapping implements PollingContext {
 
     @JsonProperty(value = "tagName", required = true)
     @ModuleConfigField(title = "Tag Name",
@@ -110,7 +107,7 @@ public class EipPollingContext implements PollingContext {
     private final @NotNull List<UserProperty> userProperties;
 
     @JsonCreator
-    public EipPollingContext(
+    public EipToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty(value = "mqttQos") final @Nullable Integer qos,
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,

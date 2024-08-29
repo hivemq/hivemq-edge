@@ -16,13 +16,10 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.UserProperty;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xPollingContext;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xToMqttMapping;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -106,12 +103,12 @@ public class S7ProtocolAdapterTest {
         }
 
         @Override
-        public @NotNull String createTagAddressForSubscription(final @NotNull Plc4xPollingContext subscription) {
+        public @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription) {
             return super.createTagAddressForSubscription(subscription);
         }
     }
 
-    private static class S7TestSub extends Plc4xPollingContext {
+    private static class S7TestSub extends Plc4xToMqttMapping {
 
         public S7TestSub(
                 final @NotNull String tagAddress,

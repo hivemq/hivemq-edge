@@ -21,7 +21,7 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.edge.adapters.etherip.model.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.model.EipDataType;
-import com.hivemq.edge.adapters.etherip.model.EipPollingContext;
+import com.hivemq.edge.adapters.etherip.model.EipToMqttMapping;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Tag;
@@ -74,11 +74,11 @@ public class EipPollingProtocolAdapterIT {
         ProtocolAdapterInput<EipAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
         when(inputMock.getConfig()).thenReturn(config);
 
-        EipPollingContext ctx = mock(EipPollingContext.class);
+        EipToMqttMapping ctx = mock(EipToMqttMapping.class);
         when(ctx.getTagAddress()).thenReturn(tagAddress);
         when(ctx.getDataType()).thenReturn(tagType);
 
-        PollingInput<EipPollingContext> input = mock(PollingInput.class);
+        PollingInput<EipToMqttMapping> input = mock(PollingInput.class);
         when(input.getPollingContext()).thenReturn(ctx);
 
         PollingOutput output = mock(PollingOutput.class);
@@ -116,11 +116,11 @@ public class EipPollingProtocolAdapterIT {
         ProtocolAdapterInput<EipAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
         when(inputMock.getConfig()).thenReturn(config);
 
-        EipPollingContext ctx = mock(EipPollingContext.class);
+        EipToMqttMapping ctx = mock(EipToMqttMapping.class);
         when(ctx.getTagAddress()).thenReturn(TAG_INT);
         when(ctx.getDataType()).thenReturn(EipDataType.INT);
 
-        PollingInput<EipPollingContext> input = mock(PollingInput.class);
+        PollingInput<EipToMqttMapping> input = mock(PollingInput.class);
         when(input.getPollingContext()).thenReturn(ctx);
 
         PollingOutput output = mock(PollingOutput.class);
@@ -152,11 +152,11 @@ public class EipPollingProtocolAdapterIT {
         ProtocolAdapterInput<EipAdapterConfig> inputMock = mock(ProtocolAdapterInput.class);
         when(inputMock.getConfig()).thenReturn(config);
 
-        EipPollingContext ctx = mock(EipPollingContext.class);
+        EipToMqttMapping ctx = mock(EipToMqttMapping.class);
         when(ctx.getTagAddress()).thenReturn(TAG_INT);
         when(ctx.getDataType()).thenReturn(EipDataType.INT);
 
-        PollingInput<EipPollingContext> input = mock(PollingInput.class);
+        PollingInput<EipToMqttMapping> input = mock(PollingInput.class);
         when(input.getPollingContext()).thenReturn(ctx);
 
         PollingOutput output = mock(PollingOutput.class);
