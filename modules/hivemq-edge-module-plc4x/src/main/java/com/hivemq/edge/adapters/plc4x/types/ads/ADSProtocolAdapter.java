@@ -18,7 +18,7 @@ package com.hivemq.edge.adapters.plc4x.types.ads;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xPollingContext;
+import com.hivemq.edge.adapters.plc4x.model.Plc4xToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * @author HiveMQ Adapter Generator
  */
-public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, Plc4xPollingContext> {
+public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, Plc4xToMqttMapping> {
 
     private static final @NotNull String SOURCE_AMS_NET_ID = "sourceAmsNetId";
     private static final @NotNull String SOURCE_AMS_PORT = "sourceAmsPort";
@@ -51,7 +51,7 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, P
     }
 
     @Override
-    protected @NotNull String createTagAddressForSubscription(final Plc4xPollingContext subscription) {
+    protected @NotNull String createTagAddressForSubscription(final Plc4xToMqttMapping subscription) {
         return subscription.getTagAddress();
     }
 

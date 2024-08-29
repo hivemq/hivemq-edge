@@ -23,15 +23,15 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.List;
 
-public class HttpPollingContextSerializer extends JsonSerializer<List<HttpPollingContext>> {
+public class HttpPollingContextSerializer extends JsonSerializer<List<HttpToMqttMapping>> {
 
     @Override
     public void serialize(
-            final List<HttpPollingContext> value,
+            final List<HttpToMqttMapping> value,
             final JsonGenerator gen,
             final @NotNull SerializerProvider provider) throws IOException {
         gen.writeStartArray();
-        for (HttpPollingContext pollingContext : value) {
+        for (final HttpToMqttMapping pollingContext : value) {
             gen.writeStartObject();
             gen.writeObjectField("httpToMqttMapping", pollingContext);
             gen.writeEndObject();
