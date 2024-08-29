@@ -49,6 +49,15 @@ export const MqttTransformationField: FC<FieldProps<OutwardSubscription[], RJSFS
     ])
   }
 
+  const handleChange = (id: keyof OutwardSubscription, v: any) => {
+    if (selectedItem === undefined) return
+    setSubsData((old) => {
+      const currentItem = old?.[selectedItem]
+      if (currentItem) currentItem[id] = v
+      return [...(old || [])]
+    })
+  }
+
   if (!subsData) return null
 
   return (
@@ -80,7 +89,12 @@ export const MqttTransformationField: FC<FieldProps<OutwardSubscription[], RJSFS
         </AccordionButton>
         <AccordionPanel pb={4}>
           {selectedItem !== undefined && (
-            <SubscriptionContainer item={subsData[selectedItem]} onClose={handleClose} onSubmit={handleSubmit} />
+            <SubscriptionContainer
+              item={subsData[selectedItem]}
+              onClose={handleClose}
+              onSubmit={handleSubmit}
+              onChange={handleChange}
+            />
           )}
         </AccordionPanel>
       </AccordionItem>
