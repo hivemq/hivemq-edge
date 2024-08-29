@@ -108,7 +108,7 @@ class ADSAdapterConfigTest {
         assertThat(config.getPlc4xToMqttConfig().getPublishChangedDataOnly()).isTrue();
         assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(mapping.getMqttQos()).isEqualTo(1);
+            assertThat(mapping.getMqttQos()).isEqualTo(0);
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
