@@ -25,12 +25,13 @@ interface AdapterSubscriptionManagerProps {
   type: 'inward' | 'outward'
 }
 
+// TODO[NVL] Ensure layout fully responsive
 const AdapterSubscriptionManager: FC<AdapterSubscriptionManagerProps> = ({ type }) => {
   const { t } = useTranslation()
+  const [isExpanded, setExpanded] = useBoolean(true)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const navigate = useNavigate()
   const { nodeId } = useParams()
-  const [isExpanded, setExpanded] = useBoolean(false)
   const { nodes } = useWorkspaceStore()
 
   const selectedNode = useMemo(() => {
@@ -49,7 +50,7 @@ const AdapterSubscriptionManager: FC<AdapterSubscriptionManagerProps> = ({ type 
   const adapterId = selectedNode?.data.id
 
   return (
-    <Drawer isOpen={isOpen} placement="right" size={isExpanded ? 'full' : 'md'} onClose={handleClose} variant="hivemq">
+    <Drawer isOpen={isOpen} placement="right" size={isExpanded ? 'full' : 'lg'} onClose={handleClose} variant="hivemq">
       <DrawerOverlay />
       <DrawerContent>
         <DrawerCloseButton />
