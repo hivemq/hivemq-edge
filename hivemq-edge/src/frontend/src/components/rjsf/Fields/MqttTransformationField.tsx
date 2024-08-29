@@ -49,6 +49,7 @@ export const MqttTransformationField: FC<FieldProps<OutwardSubscription[], RJSFS
     ])
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleChange = (id: keyof OutwardSubscription, v: any) => {
     if (selectedItem === undefined) return
     setSubsData((old) => {
