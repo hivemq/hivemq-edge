@@ -10,10 +10,10 @@ import { GENERATE_DATA_MODELS } from '@/api/hooks/useTopicOntology/__handlers__'
  */
 export const useGetSubscriptionSchemas = (topic: string | string[], adapter?: string) => {
   return useQuery<RJSFSchema, ApiError>({
-    queryKey: [QUERY_KEYS.DISCOVERY_SCHEMAS, topic],
+    queryKey: [QUERY_KEYS.DISCOVERY_SCHEMAS, topic, adapter],
     queryFn: async () => {
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      return GENERATE_DATA_MODELS(Array.isArray(topic) ? topic.length : 1)
+      return GENERATE_DATA_MODELS(Array.isArray(topic) ? topic.length : 1, adapter === 'activated_short')
     },
     enabled: Boolean(adapter),
   })

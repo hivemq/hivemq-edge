@@ -1,9 +1,9 @@
 import { RJSFSchema } from '@rjsf/utils'
 import { faker } from '@faker-js/faker'
+import { DeviceTags } from '@/modules/Subscriptions/types.ts'
 
-export const GENERATE_DATA_MODELS = (count?: number): RJSFSchema => {
-  console.log('XXXXX', count)
-  return {
+export const GENERATE_DATA_MODELS = (_count?: number, short = false): RJSFSchema => {
+  const model: RJSFSchema = {
     title: 'A registration form',
     description: 'A simple form example.',
     type: 'object',
@@ -22,6 +22,12 @@ export const GENERATE_DATA_MODELS = (count?: number): RJSFSchema => {
         type: 'integer',
         title: faker.lorem.word(),
       },
+    },
+  }
+
+  if (!short)
+    model.properties = {
+      ...model.properties,
       bio: {
         type: 'string',
         title: faker.lorem.word(),
@@ -59,8 +65,9 @@ export const GENERATE_DATA_MODELS = (count?: number): RJSFSchema => {
           },
         },
       },
-    },
-  }
+    }
+
+  return model
 }
 
 export const MOCK_MQTT_SCHEMA_REFS: RJSFSchema = {
@@ -175,4 +182,10 @@ export const MOCK_MQTT_TOPIC_SAMPLES = [
   'tmp/broker1/topic1/segment2/leaf1',
   'tmp/broker2/topic1',
   'tmp/broker4/topic1/segment2',
+]
+
+export const MOCK_DEVICE_TAGS: DeviceTags[] = [
+  { tag: 'write/power-management/alert', node: 'ns=3;i=1002' },
+  { tag: 'write/power-management/off', node: 'ns=3;i=1003' },
+  { tag: 'write/log/event', node: 'ns=3;i=1008' },
 ]
