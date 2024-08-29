@@ -393,6 +393,16 @@ public class BridgeConfigurator {
             remoteBrokerEntity.setAuthentication(authentication);
         }
 
+        //Websocket
+        if (from.getBridgeWebsocketConfig() != null) {
+            final BridgeWebsocketConfigurationEntity websocketConfiguration =
+                    new BridgeWebsocketConfigurationEntity();
+            websocketConfiguration.setEnabled(true);
+            websocketConfiguration.setServerPath(from.getBridgeWebsocketConfig().getPath());
+            websocketConfiguration.setSubProtocol(from.getBridgeWebsocketConfig().getSubProtocol());
+            remoteBrokerEntity.setBridgeWebsocketConfig(websocketConfiguration);
+        }
+
         //TLS
         BridgeTls bridgeTls = from.getBridgeTls();
         if (bridgeTls != null) {
