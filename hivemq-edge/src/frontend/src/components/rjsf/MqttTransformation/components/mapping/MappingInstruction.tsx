@@ -1,6 +1,17 @@
 import { FC } from 'react'
-import { ButtonGroup, Card, CardBody, CardHeader, HStack, List } from '@chakra-ui/react'
-import { RxReset } from 'react-icons/rx'
+import { useTranslation } from 'react-i18next'
+import {
+  ButtonGroup,
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
+  FormControl,
+  HStack,
+  List,
+  Textarea,
+} from '@chakra-ui/react'
+import { RiDeleteBin2Fill, RiFormula } from 'react-icons/ri'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
@@ -21,7 +32,7 @@ interface MappingInstructionProps {
 }
 
 const MappingInstruction: FC<MappingInstructionProps> = ({ property }) => {
-  console.log('xxx', property)
+  const { t } = useTranslation('components')
   return (
     <HStack>
       <Card size="sm" variant="outline" flex={1}>
@@ -31,11 +42,25 @@ const MappingInstruction: FC<MappingInstructionProps> = ({ property }) => {
           </List>
         </CardHeader>
         <CardBody {...getDropZoneBorder('blue')} m={2} p={4}>
-          Drag a source property here
+          {t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')}
         </CardBody>
+        <CardFooter>
+          <ButtonGroup isAttached size="xs" isDisabled>
+            <IconButton
+              aria-label={t('rjsf.MqttTransformationField.instructions.actions.edit.aria-label')}
+              icon={<RiFormula />}
+            />
+          </ButtonGroup>
+          <FormControl isDisabled>
+            <Textarea size="xs" aria-label="ssss" />
+          </FormControl>
+        </CardFooter>
       </Card>
       <ButtonGroup isAttached size="xs">
-        <IconButton aria-label="Clear mapping" icon={<RxReset />} />
+        <IconButton
+          aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
+          icon={<RiDeleteBin2Fill />}
+        />
       </ButtonGroup>
     </HStack>
   )
