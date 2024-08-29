@@ -17,8 +17,8 @@ package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 

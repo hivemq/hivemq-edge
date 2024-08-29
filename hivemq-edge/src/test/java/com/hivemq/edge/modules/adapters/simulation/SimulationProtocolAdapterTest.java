@@ -18,6 +18,8 @@ package com.hivemq.edge.modules.adapters.simulation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
+import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
+import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.protocols.PollingInputImpl;
 import com.hivemq.protocols.PollingOutputImpl;

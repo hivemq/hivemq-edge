@@ -18,7 +18,8 @@ package com.hivemq.edge.adapters.plc4x.types.ads;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;

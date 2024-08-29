@@ -18,8 +18,9 @@ package com.hivemq.edge.adapters.plc4x.types.siemens;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xDataType;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,17 +31,17 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.DATE;
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.DATE_AND_TIME;
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.LDATE;
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.LDATE_AND_TIME;
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.LTIME;
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.LTIME_OF_DAY;
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.STRING;
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.TIME;
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.TIME_OF_DAY;
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.WCHAR;
-import static com.hivemq.edge.adapters.plc4x.model.Plc4xDataType.DATA_TYPE.WSTRING;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.DATE;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.DATE_AND_TIME;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.LDATE;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.LDATE_AND_TIME;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.LTIME;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.LTIME_OF_DAY;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.STRING;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.TIME;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.TIME_OF_DAY;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.WCHAR;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.WSTRING;
 
 /**
  * @author HiveMQ Adapter Generator

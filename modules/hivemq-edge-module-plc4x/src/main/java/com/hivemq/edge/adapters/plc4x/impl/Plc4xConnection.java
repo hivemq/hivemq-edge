@@ -16,8 +16,8 @@
 package com.hivemq.edge.adapters.plc4x.impl;
 
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xAdapterConfig;
-import com.hivemq.edge.adapters.plc4x.model.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import org.apache.plc4x.java.api.PlcConnection;
 import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.exceptions.PlcConnectionException;

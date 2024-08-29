@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.http.config;
+package com.hivemq.edge.adapters.etherip.config;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 
-public class HttpToMqttConfig {
+public class EipToMqttConfig {
 
     @JsonProperty("pollingIntervalMillis")
     @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
@@ -40,50 +40,31 @@ public class HttpToMqttConfig {
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
                        description = "Max. errors polling the endpoint before the polling daemon is stopped",
-                       numberMin = 3,
+                       numberMin = 1,
                        defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
 
-    @JsonProperty("allowUntrustedCertificates")
-    @ModuleConfigField(title = "Allow Untrusted Certificates",
-                       description = "Allow the adapter to read from untrusted SSL sources (for example expired certificates).",
-                       defaultValue = "false",
-                       format = ModuleConfigField.FieldType.BOOLEAN)
-    private final boolean allowUntrustedCertificates;
-
-    @JsonProperty("assertResponseIsJson")
-    @ModuleConfigField(title = "Assert JSON Response?",
-                       description = "Always attempt to parse the body of the response as JSON data, regardless of the Content-Type on the response.",
-                       defaultValue = "false",
-                       format = ModuleConfigField.FieldType.BOOLEAN)
-    private final boolean assertResponseIsJson;
-
-    @JsonProperty("httpPublishSuccessStatusCodeOnly")
-    @ModuleConfigField(title = "Publish Only On Success Codes",
-                       description = "Only publish data when HTTP response code is successful ( 200 - 299 )",
+    @JsonProperty("publishChangedDataOnly")
+    @ModuleConfigField(title = "Only publish data items that have changed since last poll",
                        defaultValue = "true",
                        format = ModuleConfigField.FieldType.BOOLEAN)
-    private final boolean httpPublishSuccessStatusCodeOnly;
+    private final boolean publishChangedDataOnly;
 
-    @JsonProperty("httpToMqttMappings")
-    @JsonSerialize(using = HttpToMqttMappingSerializer.class)
-    @ModuleConfigField(title = "HTTP to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
-    private final @NotNull List<HttpToMqttMapping> mappings;
+    @JsonProperty("eipToMqttMappings")
+    @JsonSerialize(using = EipToMqttMappingSerializer.class)
+    @ModuleConfigField(title = "Eip to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
+    private final @NotNull List<EipToMqttMapping> mappings;
 
     @JsonCreator
-    public HttpToMqttConfig(
+    public EipToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates,
-            @JsonProperty(value = "assertResponseIsJson") final @Nullable Boolean assertResponseIsJson,
-            @JsonProperty(value = "httpPublishSuccessStatusCodeOnly") final @Nullable Boolean httpPublishSuccessStatusCodeOnly,
-            @JsonProperty(value = "httpToMqttMappings") final @Nullable List<HttpToMqttMapping> mappings) {
+            @JsonProperty(value = "publishChangedDataOnly") final @Nullable Boolean publishChangedDataOnly,
+            @JsonProperty(value = "eipToMqttMappings") final @Nullable List<EipToMqttMapping> mappings) {
         this.mappings = Objects.requireNonNullElse(mappings, List.of());
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
-        this.allowUntrustedCertificates = Objects.requireNonNullElse(allowUntrustedCertificates, false);
-        this.assertResponseIsJson = Objects.requireNonNullElse(assertResponseIsJson, false);
-        this.httpPublishSuccessStatusCodeOnly = Objects.requireNonNullElse(httpPublishSuccessStatusCodeOnly, true);
+        this.publishChangedDataOnly = Objects.requireNonNullElse(publishChangedDataOnly, true);
     }
 
     public int getPollingIntervalMillis() {
@@ -94,19 +75,11 @@ public class HttpToMqttConfig {
         return maxPollingErrorsBeforeRemoval;
     }
 
-    public boolean isAllowUntrustedCertificates() {
-        return allowUntrustedCertificates;
+    public boolean getPublishChangedDataOnly() {
+        return publishChangedDataOnly;
     }
 
-    public boolean isAssertResponseIsJson() {
-        return assertResponseIsJson;
-    }
-
-    public boolean isHttpPublishSuccessStatusCodeOnly() {
-        return httpPublishSuccessStatusCodeOnly;
-    }
-
-    public @NotNull List<HttpToMqttMapping> getMappings() {
+    public @NotNull List<EipToMqttMapping> getMappings() {
         return mappings;
     }
 }
