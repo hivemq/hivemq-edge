@@ -14,8 +14,8 @@ interface DataModelSourcesProps extends CardProps {
 }
 
 const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
-  const { data, isLoading } = useGetSubscriptionSchemas(topics, 'activated')
   const { t } = useTranslation('components')
+  const { data, isLoading } = useGetSubscriptionSchemas(topics, topics ? 'activated_short' : undefined)
 
   const isReady = Boolean(!isLoading && data)
 
@@ -33,7 +33,7 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
       </CardHeader>
 
       <CardBody>
-        {!isReady && <LoaderSpinner />}
+        {isLoading && <LoaderSpinner />}
         {isReady && <JsonSchemaBrowser schema={data as JSONSchema7} />}
       </CardBody>
     </Card>

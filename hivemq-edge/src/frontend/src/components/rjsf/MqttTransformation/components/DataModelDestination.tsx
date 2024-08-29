@@ -10,12 +10,12 @@ import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSu
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 
 interface DataModelDestinationProps extends CardProps {
-  topic: string
+  topic: string | undefined
 }
 
 const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, ...props }) => {
   const { t } = useTranslation('components')
-  const { data, isLoading } = useGetSubscriptionSchemas(topic, 'activated_short')
+  const { data, isLoading } = useGetSubscriptionSchemas(topic as string, topic ? 'activated_short' : undefined)
 
   const isReady = Boolean(!isLoading && data)
 
@@ -32,7 +32,7 @@ const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, ...props }
         />
       </CardHeader>
       <CardBody>
-        {!isReady && <LoaderSpinner />}
+        {isLoading && <LoaderSpinner />}
         {isReady && <JsonSchemaBrowser schema={data as JSONSchema7} />}
       </CardBody>
     </Card>
