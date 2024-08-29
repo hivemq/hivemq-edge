@@ -13,9 +13,9 @@ import {
 } from 'chakra-react-select'
 import { useTranslation } from 'react-i18next'
 
-import TopicIcon from '@/components/Icons/TopicIcon.tsx'
-import Topic from '@/components/MQTT/Topic.tsx'
 import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
+import { TopicIcon, PLCTagIcon } from '@/components/Icons/TopicIcon.tsx'
+import Topic from '@/components/MQTT/Topic.tsx'
 
 interface TopicOption extends OptionBase {
   label: string
