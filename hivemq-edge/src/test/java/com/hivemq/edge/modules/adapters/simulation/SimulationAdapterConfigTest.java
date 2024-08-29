@@ -55,6 +55,10 @@ class SimulationAdapterConfigTest {
                 simulationProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("simulation"));
 
         assertThat(config.getId()).isEqualTo("my-simulation-protocol-adapter");
+        assertThat(config.getMinValue()).isEqualTo(0);
+        assertThat(config.getMaxValue()).isEqualTo(1000);
+        assertThat(config.getMinDelay()).isEqualTo(0);
+        assertThat(config.getMaxDelay()).isEqualTo(1000);
         assertThat(config.getSimulationToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
         assertThat(config.getSimulationToMqttConfig().getSimulationToMqttMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");

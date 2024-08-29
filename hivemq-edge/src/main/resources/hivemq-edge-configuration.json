@@ -56,7 +56,7 @@
       }
     },
     {
-      "id" : "opc-ua-client",
+      "id" : "opcua",
       "version" : "2024.7",
       "name" : "OPC-UA to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to existing OPC-UA services as a client and enables a seamless exchange of data between MQTT and OPC-UA.",
@@ -132,7 +132,7 @@
       }
     },
     {
-      "id" : "ethernet-ip",
+      "id" : "eip",
       "version" : "2024.7 (ALPHA)",
       "name" : "Ethernet IP to MQTT Protocol Adapter",
       "description" : "Connects HiveMQ Edge to Rockwell / Allen-Bradley ControlLogix and CompactLogix devices supporting Ethernet IP, reading data from the PLC into MQTT.",

@@ -2,6 +2,10 @@
     <protocol-adapters>
         <simulation>
             <id>my-simulation-protocol-adapter</id>
+            <minValue>0</minValue>
+            <maxValue>1000</maxValue>
+            <minDelay>0</minDelay>
+            <maxDelay>1000</maxDelay>
             <simulationToMqtt>
                 <pollingIntervalMillis>10</pollingIntervalMillis>
                 <maxPollingErrorsBeforeRemoval>9</maxPollingErrorsBeforeRemoval>
