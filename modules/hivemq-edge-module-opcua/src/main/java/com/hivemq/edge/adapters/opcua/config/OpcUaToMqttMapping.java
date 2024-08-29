@@ -62,7 +62,7 @@ public class OpcUaToMqttMapping {
 
     @JsonProperty("messageExpiryInterval")
     @ModuleConfigField(title = "MQTT message expiry interval [s]",
-                       description = "Time in seconds until a MQTT message expires",
+                       description = "Time in seconds until an MQTT publish message expires",
                        numberMin = 1,
                        numberMax = 4294967295L)
     private final long messageExpiryInterval;

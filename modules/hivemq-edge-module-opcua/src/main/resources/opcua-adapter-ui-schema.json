@@ -17,13 +17,13 @@
   "ui:tabs": [
     {
       "id": "coreFields",
-      "title": "Core Fields",
+      "title": "Connection",
       "properties": ["id", "uri", "overrideUri"]
     },
     {
       "id": "subFields",
-      "title": "Subscription",
-      "properties": ["subscriptions"]
+      "title": "OPC UA to MQTT",
+      "properties": ["opcuaToMqtt"]
     },
     {
       "id": "security",
@@ -39,16 +39,18 @@
   "id": {
     "ui:disabled": true
   },
-  "ui:order": ["id", "*", "subscriptions"],
-  "subscriptions": {
+  "ui:order": ["id", "uri", "*"],
+  "opcuaToMqtt": {
     "ui:batchMode": true,
-    "items": {
-      "ui:order": ["node", "mqtt-topic", "mqttQos", "*"],
-      "ui:collapsable": {
-        "titleKey": "mqtt-topic"
-      },
-      "node": {
-        "ui:widget": "discovery:tagBrowser"
+    "opcuaToMqttMappings": {
+      "items": {
+        "ui:order": ["node", "mqttTopic", "mqttQos", "*"],
+        "ui:collapsable": {
+          "titleKey": "mqttTopic"
+        },
+        "node": {
+          "ui:widget": "discovery:tagBrowser"
+        }
       }
     }
   },
