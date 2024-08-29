@@ -5,7 +5,7 @@ import { Button, Card, CardBody, CardHeader, CardProps, Heading, HStack, VStack 
 import { LuWand } from 'react-icons/lu'
 
 import MOCK_SCHEMA from '@datahub/api/__generated__/schemas/TransitionData.json'
-import MappingInstruction from '@/components/rjsf/MqttTransformation/components/MappingInstruction.tsx'
+import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
 interface MappingEditorProps extends CardProps {
@@ -25,7 +25,7 @@ const MappingEditor: FC<MappingEditorProps> = ({ id, ...props }) => {
           {t('rjsf.MqttTransformationField.mapping.auto.aria-label')}
         </Button>
       </CardHeader>
-      <CardBody as={VStack}>
+      <CardBody as={VStack} maxH="60vh" overflowY="scroll">
         {properties.map((e) => (
           <MappingInstruction property={e} key={e.title} />
         ))}
