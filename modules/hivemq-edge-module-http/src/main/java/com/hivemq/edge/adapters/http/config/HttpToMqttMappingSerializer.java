@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.modbus.config;
+package com.hivemq.edge.adapters.http.config;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -23,17 +23,17 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.List;
 
-public class ModbusToMqttMappingSerializer extends JsonSerializer<List<ModbusToMqttMapping>> {
+public class HttpToMqttMappingSerializer extends JsonSerializer<List<HttpToMqttMapping>> {
 
     @Override
     public void serialize(
-            final @NotNull List<ModbusToMqttMapping> value,
-            final @NotNull JsonGenerator gen,
+            final List<HttpToMqttMapping> value,
+            final JsonGenerator gen,
             final @NotNull SerializerProvider provider) throws IOException {
         gen.writeStartArray();
-        for (final ModbusToMqttMapping pollingContext : value) {
+        for (final HttpToMqttMapping pollingContext : value) {
             gen.writeStartObject();
-            gen.writeObjectField("modbusToMqttMapping", pollingContext);
+            gen.writeObjectField("httpToMqttMapping", pollingContext);
             gen.writeEndObject();
         }
         gen.writeEndArray();

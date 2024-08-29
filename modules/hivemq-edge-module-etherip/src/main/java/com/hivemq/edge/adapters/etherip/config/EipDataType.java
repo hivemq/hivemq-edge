@@ -13,16 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.plc4x.impl;
+package com.hivemq.edge.adapters.etherip.config;
 
-import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
-import org.jetbrains.annotations.NotNull;
-
-/**
- * @author Simon L Johnson
- */
-public interface Plc4xConnectionQueryStringProvider<T extends Plc4xAdapterConfig> {
-
-    String getConnectionQueryString(@NotNull final T plc4xAdapterConfig);
-
+public enum EipDataType {
+    BOOL,
+    DINT,
+    INT,
+    LINT,
+    LREAL,
+    LTIME,
+    REAL,
+    SINT,
+    STRING,
+    TIME,
+    UDINT,
+    UINT,
+    ULINT,
+    USINT;
 }

@@ -17,6 +17,7 @@ package com.hivemq.edge.adapters.opcua.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,6 +27,7 @@ import java.util.Objects;
 public class OpcUaToMqttConfig {
 
     @JsonProperty("opcuaToMqttMappings")
+    @JsonSerialize(using = OpcuaToMqttMappingSerializer.class)
     private final @NotNull List<OpcUaToMqttMapping> subscriptions;
 
     @JsonCreator

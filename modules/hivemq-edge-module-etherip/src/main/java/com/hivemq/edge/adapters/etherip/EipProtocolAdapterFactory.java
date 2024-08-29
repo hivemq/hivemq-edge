@@ -19,7 +19,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.etherip.model.EipAdapterConfig;
+import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
 public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdapterConfig> {
