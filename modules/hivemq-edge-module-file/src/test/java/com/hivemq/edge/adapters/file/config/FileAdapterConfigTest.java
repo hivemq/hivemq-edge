@@ -56,35 +56,38 @@ class FileAdapterConfigTest {
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
         assertThat(config.getFileToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
-        assertThat(config.getFileToMqttConfig().getMappings()).satisfiesExactly(subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
-            assertThat(subscription.getMqttQos()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(subscription.getIncludeTimestamp()).isFalse();
-            assertThat(subscription.getIncludeTagNames()).isTrue();
-            assertThat(subscription.getFilePath()).isEqualTo("path/to/file1");
-            assertThat(subscription.getContentType()).isEqualTo(ContentType.BINARY);
+        assertThat(config.getFileToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
+            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
+            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+            assertThat(mapping.getIncludeTimestamp()).isFalse();
+            assertThat(mapping.getIncludeTagNames()).isTrue();
+            assertThat(mapping.getFilePath()).isEqualTo("path/to/file1");
+            assertThat(mapping.getContentType()).isEqualTo(ContentType.BINARY);
 
-//            TODO: https://hivemq.kanbanize.com/ctrl_board/57/cards/24704/details/
-//            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
-//                assertThat(userProperty.getName()).isEqualTo("my-name");
-//                assertThat(userProperty.getValue()).isEqualTo("my-value");
-//            });
-        }, subscription -> {
-            assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
-            assertThat(subscription.getMqttQos()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
-            assertThat(subscription.getIncludeTimestamp()).isFalse();
-            assertThat(subscription.getIncludeTagNames()).isTrue();
+            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value1");
+            }, userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value2");
+            });
+        }, mapping -> {
+            assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
+            assertThat(mapping.getMqttQos()).isEqualTo(1);
+            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+            assertThat(mapping.getIncludeTimestamp()).isFalse();
+            assertThat(mapping.getIncludeTagNames()).isTrue();
+            assertThat(mapping.getFilePath()).isEqualTo("path/to/file2");
+            assertThat(mapping.getContentType()).isEqualTo(ContentType.TEXT_CSV);
 
-//            TODO: https://hivemq.kanbanize.com/ctrl_board/57/cards/24704/details/
-//            assertThat(subscription.getUserProperties()).satisfiesExactly(userProperty -> {
-//                assertThat(userProperty.getName()).isEqualTo("my-name");
-//                assertThat(userProperty.getValue()).isEqualTo("my-value");
-//            });
-
-            assertThat(subscription.getFilePath()).isEqualTo("path/to/file2");
-            assertThat(subscription.getContentType()).isEqualTo(ContentType.TEXT_CSV);
+            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value1");
+            }, userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value2");
+            });
         });
     }
 

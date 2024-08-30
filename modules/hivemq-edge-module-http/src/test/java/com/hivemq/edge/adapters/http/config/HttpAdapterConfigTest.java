@@ -164,20 +164,48 @@ public class HttpAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
 
-        final HttpToMqttMapping httpPollingContext = config.getHttpToMqttConfig().getMappings().get(0);
-
-        assertThat(httpPollingContext.getMqttTopic()).isEqualTo("my/destination");
-        assertThat(httpPollingContext.getMqttQos()).isEqualTo(0);
-        assertThat(httpPollingContext.getHttpRequestMethod()).isEqualTo(GET);
-        assertThat(httpPollingContext.getHttpRequestTimeout()).isEqualTo(1338);
-        assertThat(httpPollingContext.getHttpRequestBodyContentType()).isEqualTo(YAML);
-        assertThat(httpPollingContext.getHttpRequestBody()).isEqualTo("my-body");
-        assertThat(httpPollingContext.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
-            assertThat(header1.getName()).isEqualTo("foo 1");
-            assertThat(header1.getValue()).isEqualTo("bar 1");
-        }, header2 -> {
-            assertThat(header2.getName()).isEqualTo("foo 2");
-            assertThat(header2.getValue()).isEqualTo("bar 2");
+        assertThat(config.getHttpToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
+            assertThat(mapping.getMqttTopic()).isEqualTo("my/destination");
+            assertThat(mapping.getMqttQos()).isEqualTo(0);
+            assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);
+            assertThat(mapping.getHttpRequestTimeout()).isEqualTo(1338);
+            assertThat(mapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
+            assertThat(mapping.getHttpRequestBody()).isEqualTo("my-body");
+            assertThat(mapping.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
+                assertThat(header1.getName()).isEqualTo("foo 1");
+                assertThat(header1.getValue()).isEqualTo("bar 1");
+            }, header2 -> {
+                assertThat(header2.getName()).isEqualTo("foo 2");
+                assertThat(header2.getValue()).isEqualTo("bar 2");
+            });
+            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value1");
+            }, userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value2");
+            });
+        }, mapping -> {
+            assertThat(mapping.getMqttTopic()).isEqualTo("my/destination2");
+            assertThat(mapping.getMqttQos()).isEqualTo(0);
+            assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);
+            assertThat(mapping.getHttpRequestTimeout()).isEqualTo(1338);
+            assertThat(mapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
+            assertThat(mapping.getHttpRequestBody()).isEqualTo("my-body2");
+            assertThat(mapping.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
+                assertThat(header1.getName()).isEqualTo("foo 1");
+                assertThat(header1.getValue()).isEqualTo("bar 1");
+            }, header2 -> {
+                assertThat(header2.getName()).isEqualTo("foo 2");
+                assertThat(header2.getValue()).isEqualTo("bar 2");
+            });
+            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value1");
+            }, userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value2");
+            });
         });
     }
 

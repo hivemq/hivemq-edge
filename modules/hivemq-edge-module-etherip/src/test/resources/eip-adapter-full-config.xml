@@ -37,6 +37,16 @@
                         <tagName>tag-name</tagName>
                         <tagAddress>tag-address</tagAddress>
                         <dataType>BOOL</dataType>
+                        <mqttUserProperties>
+                            <mqttUserProperty>
+                                <name>name</name>
+                                <value>value1</value>
+                            </mqttUserProperty>
+                            <mqttUserProperty>
+                                <name>name</name>
+                                <value>value2</value>
+                            </mqttUserProperty>
+                        </mqttUserProperties>
                     </eipToMqttMapping>
                     <eipToMqttMapping>
                         <mqttTopic>my/topic/2</mqttTopic>
@@ -47,6 +57,16 @@
                         <tagName>tag-name</tagName>
                         <tagAddress>tag-address</tagAddress>
                         <dataType>BOOL</dataType>
+                        <mqttUserProperties>
+                            <mqttUserProperty>
+                                <name>name</name>
+                                <value>value1</value>
+                            </mqttUserProperty>
+                            <mqttUserProperty>
+                                <name>name</name>
+                                <value>value2</value>
+                            </mqttUserProperty>
+                        </mqttUserProperties>
                     </eipToMqttMapping>
                 </eipToMqttMappings>
             </eipToMqtt>

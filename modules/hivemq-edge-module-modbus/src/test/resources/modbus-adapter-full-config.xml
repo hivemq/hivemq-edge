@@ -37,12 +37,12 @@
                         </addressRange>
                         <mqttUserProperties>
                             <mqttUserProperty>
-                                <name>my-name</name>
-                                <value>my-value1</value>
+                                <name>name</name>
+                                <value>value1</value>
                             </mqttUserProperty>
                             <mqttUserProperty>
-                                <name>my-name</name>
-                                <value>my-value2</value>
+                                <name>name</name>
+                                <value>value2</value>
                             </mqttUserProperty>
                         </mqttUserProperties>
                         <includeTagNames>true</includeTagNames>
@@ -58,12 +58,12 @@
                         </addressRange>
                         <mqttUserProperties>
                             <mqttUserProperty>
-                                <name>my-name</name>
-                                <value>my-value1</value>
+                                <name>name</name>
+                                <value>value1</value>
                             </mqttUserProperty>
                             <mqttUserProperty>
-                                <name>my-name</name>
-                                <value>my-value2</value>
+                                <name>name</name>
+                                <value>value2</value>
                             </mqttUserProperty>
                         </mqttUserProperties>
                         <includeTagNames>true</includeTagNames>
