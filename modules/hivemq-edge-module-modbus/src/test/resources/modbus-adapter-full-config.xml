@@ -16,16 +16,16 @@
                         <startIdx>11</startIdx>
                         <endIdx>13</endIdx>
                     </addressRange>
-<!--                    <userProperties>--> TODO: https://hivemq.kanbanize.com/ctrl_board/57/cards/24704/details/
-<!--                        <userProperty>-->
-<!--                            <name>my-name</name>-->
-<!--                            <value>my-value1</value>-->
-<!--                        </userProperty>-->
-<!--                        <userProperty>-->
-<!--                            <name>my-name</name>-->
-<!--                            <value>my-value2</value>-->
-<!--                        </userProperty>-->
-<!--                    </userProperties>-->
+                    <userProperties>
+                        <userProperty>
+                            <name>my-name</name>
+                            <value>my-value1</value>
+                        </userProperty>
+                        <userProperty>
+                            <name>my-name</name>
+                            <value>my-value2</value>
+                        </userProperty>
+                    </userProperties>
                     <includeTagNames>true</includeTagNames>
                     <includeTimestamp>false</includeTimestamp>
                 </subscription>
