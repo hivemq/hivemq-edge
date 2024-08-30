@@ -169,7 +169,7 @@ public class ConnectPacketImplTest {
     public void equals() {
         EqualsVerifier.forClass(ConnectPacketImpl.class)
                 .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
-                .withNonnullFields("mqttVersion", "clientId", "userProperties")
+                .withNonnullFields("mqttVersion", "clientId", "mqttUserProperties")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();
     }

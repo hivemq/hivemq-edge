@@ -190,16 +190,16 @@ public class ConfigFileReaderTest {
                 "<hivemq>\n" +
                         "    <protocol-adapters>\n" +
                         "        <test-node>\n" +
-                        "            <userProperties>\n" +
-                        "                <userProperty>\n" +
+                        "            <mqttUserProperties>\n" +
+                        "                <mqttUserProperty>\n" +
                         "                    <name>my-name</name>\n" +
                         "                    <value>my-value1</value>\n" +
-                        "                </userProperty>\n" +
-                        "                <userProperty>\n" +
+                        "                </mqttUserProperty>\n" +
+                        "                <mqttUserProperty>\n" +
                         "                    <name>my-name</name>\n" +
                         "                    <value>my-value2</value>\n" +
-                        "                </userProperty>\n" +
-                        "            </userProperties>" +
+                        "                </mqttUserProperty>\n" +
+                        "            </mqttUserProperties>" +
                         "        </test-node>\n" +
                         "    </protocol-adapters>\n" +
                         "</hivemq>",
@@ -230,7 +230,7 @@ public class ConfigFileReaderTest {
         assertEquals(1, config.keySet().size());
 
         final List<Map<String, String>> userProperties1 =
-                (List<Map<String, String>>) ((Map<String, Object>) config.get("test-node")).get("userProperties");
+                (List<Map<String, String>>) ((Map<String, Object>) config.get("test-node")).get("mqttUserProperties");
         assertThat(userProperties1).satisfiesExactly(userProperty1 -> {
             assertThat(userProperty1.get("name")).isEqualTo("my-name");
             assertThat(userProperty1.get("value")).isEqualTo("my-value1");
@@ -241,7 +241,7 @@ public class ConfigFileReaderTest {
 
         configFileReader.writeConfig();
         final String afterReload = FileUtils.readFileToString(tempFile, UTF_8);
-        assertThat(afterReload).contains("userProperty");
+        assertThat(afterReload).contains("mqttUserProperty");
     }
 
     /**
@@ -255,16 +255,16 @@ public class ConfigFileReaderTest {
                 "<hivemq>\n" +
                         "    <protocol-adapters>\n" +
                         "        <modbus>\n" +
-                        "            <userProperties>\n" +
-                        "                <userPropertie>\n" +
+                        "            <mqttUserProperties>\n" +
+                        "                <mqttUserPropertie>\n" +
                         "                    <name>my-name</name>\n" +
                         "                    <value>my-value1</value>\n" +
-                        "                </userPropertie>\n" +
-                        "                <userPropertie>\n" +
+                        "                </mqttUserPropertie>\n" +
+                        "                <mqttUserPropertie>\n" +
                         "                    <name>my-name</name>\n" +
                         "                    <value>my-value2</value>\n" +
-                        "                </userPropertie>\n" +
-                        "            </userProperties>" +
+                        "                </mqttUserPropertie>\n" +
+                        "            </mqttUserProperties>" +
                         "        </modbus>\n" +
                         "    </protocol-adapters>\n" +
                         "</hivemq>",
@@ -295,7 +295,7 @@ public class ConfigFileReaderTest {
         assertEquals(1, config.keySet().size());
 
         final List<Map<String, String>> userProperties1 =
-                (List<Map<String, String>>) ((Map<String, Object>) config.get("modbus")).get("userProperties");
+                (List<Map<String, String>>) ((Map<String, Object>) config.get("modbus")).get("mqttUserProperties");
         assertThat(userProperties1).satisfiesExactly(userProperty1 -> {
             assertThat(userProperty1.get("name")).isEqualTo("my-name");
             assertThat(userProperty1.get("value")).isEqualTo("my-value1");
@@ -306,12 +306,12 @@ public class ConfigFileReaderTest {
 
         configFileReader.writeConfig();
         final String afterReload = FileUtils.readFileToString(tempFile, UTF_8);
-        assertThat(afterReload).contains("userProperty");
+        assertThat(afterReload).contains("mqttUserProperty");
         final Map<String, Object> config2 = hiveMQConfigEntity.getProtocolAdapterConfig();
         assertEquals(1, config2.keySet().size());
         configFileReader.applyConfig();
         final List<Map<String, String>> userProperties2 =
-                (List<Map<String, String>>) ((Map<String, Object>) config2.get("modbus")).get("userProperties");
+                (List<Map<String, String>>) ((Map<String, Object>) config2.get("modbus")).get("mqttUserProperties");
         assertThat(userProperties2).satisfiesExactly(userProperty1 -> {
             assertThat(userProperty1.get("name")).isEqualTo("my-name");
             assertThat(userProperty1.get("value")).isEqualTo("my-value1");

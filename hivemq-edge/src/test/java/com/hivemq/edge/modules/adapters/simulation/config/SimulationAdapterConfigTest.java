@@ -16,7 +16,7 @@
 package com.hivemq.edge.modules.adapters.simulation.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -162,7 +162,7 @@ class SimulationAdapterConfigTest {
                 MQTTMessagePerSubscription,
                 false,
                 true,
-                List.of(new UserProperty("my-name", "my-value")));
+                List.of(new MqttUserProperty("my-name", "my-value")));
 
         final SimulationAdapterConfig simulationAdapterConfig =
                 new SimulationAdapterConfig(new SimulationToMqttConfig(List.of(pollingContext), 11, 12),
@@ -193,7 +193,7 @@ class SimulationAdapterConfigTest {
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);
-            assertThat((List<Map<String, Object>>) mapping.get("userProperties")).satisfiesExactly((userProperty) -> {
+            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");
                 assertThat(userProperty.get("value")).isEqualTo("my-value");
             });
@@ -233,7 +233,7 @@ class SimulationAdapterConfigTest {
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerTag");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
-            assertThat((List<Map<String, Object>>) mapping.get("userProperties")).isEmpty();
+            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
         });
     }
 

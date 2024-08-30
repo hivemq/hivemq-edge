@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.file.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -173,7 +173,7 @@ class FileAdapterConfigTest {
                 MQTTMessagePerTag,
                 false,
                 true,
-                List.of(new UserProperty("my-name", "my-value")),
+                List.of(new MqttUserProperty("my-name", "my-value")),
                 "path/to/file",
                 ContentType.BINARY);
 
@@ -196,7 +196,7 @@ class FileAdapterConfigTest {
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);
 //            TODO: https://hivemq.kanbanize.com/ctrl_board/57/cards/24704/details/
-            assertThat((List<Map<String, Object>>) mapping.get("userProperties")).satisfiesExactly((userProperty) -> {
+            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");
                 assertThat(userProperty.get("value")).isEqualTo("my-value");
             });
@@ -235,7 +235,7 @@ class FileAdapterConfigTest {
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
 //            TODO: https://hivemq.kanbanize.com/ctrl_board/57/cards/24704/details/
-            assertThat((List<Map<String, Object>>) mapping.get("userProperties")).isEmpty();
+            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
             assertThat(mapping.get("filePath")).isEqualTo("path/to/file");
             assertThat(mapping.get("contentType")).isEqualTo("BINARY");
         });

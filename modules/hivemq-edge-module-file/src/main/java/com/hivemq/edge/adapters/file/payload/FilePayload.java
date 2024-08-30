@@ -17,7 +17,7 @@ package com.hivemq.edge.adapters.file.payload;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.edge.adapters.file.config.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,7 +31,7 @@ public class FilePayload {
     private final @NotNull Long timestamp;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private final @Nullable List<UserProperty> userProperties;
+    private final @Nullable List<MqttUserProperty> userProperties;
 
     @JsonProperty("value")
     private final @NotNull Object value;
@@ -43,7 +43,7 @@ public class FilePayload {
     private final @NotNull String contentType;
 
     public FilePayload(
-            final @NotNull Long timestamp, final @NotNull List<UserProperty> userProperties,
+            final @NotNull Long timestamp, final @NotNull List<MqttUserProperty> userProperties,
             final @NotNull Object value, final @NotNull String tagName, final @NotNull ContentType contentType) {
         this.timestamp = timestamp;
         this.userProperties = userProperties;

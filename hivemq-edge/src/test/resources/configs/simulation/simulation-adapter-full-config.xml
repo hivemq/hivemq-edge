@@ -16,12 +16,12 @@
                         <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
-                        <userProperties>
-                            <userPropertie>
+                        <mqttUserProperties>
+                            <mqttUserPropertie>
                                 <name>my-name</name>
                                 <value>my-value</value>
-                            </userPropertie>
-                        </userProperties>
+                            </mqttUserPropertie>
+                        </mqttUserProperties>
                     </simulationToMqttMapping>
                     <simulationToMqttMapping>
                         <mqttTopic>my/topic/2</mqttTopic>
@@ -29,12 +29,12 @@
                         <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
-                        <userProperties>
-                            <userPropertie>
+                        <mqttUserProperties>
+                            <mqttUserPropertie>
                                 <name>my-name</name>
                                 <value>my-value</value>
-                            </userPropertie>
-                        </userProperties>
+                            </mqttUserPropertie>
+                        </mqttUserProperties>
                     </simulationToMqttMapping>
                 </simulationToMqttMappings>
             </simulationToMqtt>

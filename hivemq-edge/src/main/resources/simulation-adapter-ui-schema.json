@@ -44,7 +44,7 @@
         "ui:order" : [
           "mqttTopic",
           "mqttQos",
-          "userProperties",
+          "mqttUserProperties",
           "messageHandlingOptions",
           "includeTimestamp",
           "includeTagNames",

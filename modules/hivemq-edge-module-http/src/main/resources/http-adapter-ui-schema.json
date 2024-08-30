@@ -57,7 +57,7 @@
         "ui:order" : [
           "mqttTopic",
           "mqttQos",
-          "userProperties",
+          "mqttUserProperties",
           "httpRequestMethod",
           "httpRequestTimeout",
           "httpRequestBodyContentType",
