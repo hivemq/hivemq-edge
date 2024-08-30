@@ -74,6 +74,13 @@ class ADSAdapterConfigTest {
             assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
 
+            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value1");
+            }, userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value2");
+            });
         }, mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
@@ -82,6 +89,14 @@ class ADSAdapterConfigTest {
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
+
+            assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value1");
+            }, userProperty -> {
+                assertThat(userProperty.getName()).isEqualTo("name");
+                assertThat(userProperty.getValue()).isEqualTo("value2");
+            });
         });
     }
 
