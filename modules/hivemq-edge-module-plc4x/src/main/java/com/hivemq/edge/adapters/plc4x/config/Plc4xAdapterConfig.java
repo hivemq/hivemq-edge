@@ -52,12 +52,6 @@ public abstract class Plc4xAdapterConfig<T extends Plc4xToMqttConfig> implements
                        required = true,
                        format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
-//
-//    @JsonProperty("plc4xToMqtt")
-//    @ModuleConfigField(title = "Plc4x To MQTT Config",
-//                       description = "The configuration for a data stream from Plc4x to MQTT",
-//                       required = true)
-//    private final @NotNull T plc4xToMqttConfig;
 
     @JsonCreator
     public Plc4xAdapterConfig(
