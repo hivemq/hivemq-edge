@@ -1,6 +1,6 @@
 [versions]
 apache-commonsIO = "2.16.1"
-apache-plc4x = "0.12.0"
+apache-plc4x = "0.11.0"
 hivemq-edge-adapterSdk = "2024.5"
 jackson = "2.17.1"
 junit-jupiter = "5.10.3"
