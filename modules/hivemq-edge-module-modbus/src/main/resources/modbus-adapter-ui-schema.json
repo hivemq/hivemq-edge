@@ -62,7 +62,7 @@
           "mqttQos",
           "addressRange",
           "*",
-          "userProperties"
+          "mqttUserProperties"
         ],
         "ui:collapsable" : {
           "titleKey" : "mqttTopic"

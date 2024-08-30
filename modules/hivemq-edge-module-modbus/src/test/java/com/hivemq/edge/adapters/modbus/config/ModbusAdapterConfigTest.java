@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.modbus.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -238,7 +238,7 @@ public class ModbusAdapterConfigTest {
                 MQTTMessagePerSubscription,
                 false,
                 true,
-                List.of(new UserProperty("my-name", "my-value")),
+                List.of(new MqttUserProperty("my-name", "my-value")),
                 new AddressRange(1, 2));
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
@@ -269,7 +269,7 @@ public class ModbusAdapterConfigTest {
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);
-            assertThat((List<Map<String, Object>>) mapping.get("userProperties")).satisfiesExactly((userProperty) -> {
+            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");
                 assertThat(userProperty.get("value")).isEqualTo("my-value");
             });
@@ -313,7 +313,7 @@ public class ModbusAdapterConfigTest {
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
-            assertThat((List<Map<String, Object>>) mapping.get("userProperties")).isEmpty();
+            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
             assertThat((Map<String, Object>) mapping.get("addressRange")).satisfies((addressRange) -> {
                 assertThat(addressRange.get("startIdx")).isEqualTo(1);
                 assertThat(addressRange.get("endIdx")).isEqualTo(2);
@@ -325,7 +325,7 @@ public class ModbusAdapterConfigTest {
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
-            assertThat((List<Map<String, Object>>) mapping.get("userProperties")).isEmpty();
+            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
             assertThat((Map<String, Object>) mapping.get("addressRange")).satisfies((addressRange) -> {
                 assertThat(addressRange.get("startIdx")).isEqualTo(1);
                 assertThat(addressRange.get("endIdx")).isEqualTo(2);

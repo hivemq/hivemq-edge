@@ -29,7 +29,7 @@ public class AuthPacketImplTest {
     public void equals() {
         EqualsVerifier.forClass(AuthPacketImpl.class)
                 .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
-                .withNonnullFields("reasonCode", "method", "userProperties")
+                .withNonnullFields("reasonCode", "method", "mqttUserProperties")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();
     }

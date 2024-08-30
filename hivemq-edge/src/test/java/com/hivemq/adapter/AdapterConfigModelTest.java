@@ -28,7 +28,7 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
@@ -60,14 +60,14 @@ public class AdapterConfigModelTest {
 
         AdapterConfiguration entity = new AdapterConfiguration();
         entity.subscriptions = new ArrayList<>();
-        entity.subscriptions.add(new TestToMqttMapping("some/path",1,List.of(new UserProperty("propertyName", "propertyValue"))));
+        entity.subscriptions.add(new TestToMqttMapping("some/path",1,List.of(new MqttUserProperty("propertyName", "propertyValue"))));
         String marhslaled = mapper.writeValueAsString(entity);
         System.err.println(marhslaled);
 
         JsonNode node = mapper.readTree(marhslaled);
 
         JsonNode subscriptions = findFirstChild(node, "subscriptions");
-        Assertions.assertFalse(hasImmediateChild(subscriptions, "userProperties"), "Wrapped typed should not have a duplicate title");
+        Assertions.assertFalse(hasImmediateChild(subscriptions, "mqttUserProperties"), "Wrapped typed should not have a duplicate title");
     }
 
     private static JsonNode findFirstChild(final @NotNull JsonNode parent, final @NotNull String nodeName){
@@ -144,17 +144,17 @@ public class AdapterConfigModelTest {
                            defaultValue = "false")
         protected @NotNull Boolean includeTagNames = Boolean.FALSE;
 
-        @JsonProperty(value = "userProperties")
+        @JsonProperty(value = "mqttUserProperties")
         @ModuleConfigField(title = "User Properties",
                            description = "Arbitrary properties to associate with the mapping",
                            arrayMaxItems = 10)
-        private @NotNull List<UserProperty> userProperties = new ArrayList<>();
+        private @NotNull List<MqttUserProperty> userProperties = new ArrayList<>();
 
         @JsonCreator
         public TestToMqttMapping(
                 @JsonProperty("mqttTopic") @Nullable final String mqttTopic,
                 @JsonProperty("mqttQos") final int qos,
-                @JsonProperty("userProperties") @Nullable List<UserProperty> userProperties) {
+                @JsonProperty("mqttUserProperties") @Nullable List<MqttUserProperty> userProperties) {
             this.mqttTopic = mqttTopic;
             this.qos = qos;
             if (userProperties != null) {
@@ -188,7 +188,7 @@ public class AdapterConfigModelTest {
         }
 
         @Override
-        public @NotNull List<UserProperty> getUserProperties() {
+        public @NotNull List<MqttUserProperty> getUserProperties() {
             return userProperties;
         }
     }
