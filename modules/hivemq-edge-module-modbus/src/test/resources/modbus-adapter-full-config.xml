@@ -35,16 +35,16 @@
                             <startIdx>11</startIdx>
                             <endIdx>13</endIdx>
                         </addressRange>
-                        <userProperties>
-                            <userProperty>
+                        <mqttUserProperties>
+                            <mqttUserProperty>
                                 <name>my-name</name>
                                 <value>my-value1</value>
-                            </userProperty>
-                            <userProperty>
+                            </mqttUserProperty>
+                            <mqttUserProperty>
                                 <name>my-name</name>
                                 <value>my-value2</value>
-                            </userProperty>
-                        </userProperties>
+                            </mqttUserProperty>
+                        </mqttUserProperties>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
                     </modbusToMqttMapping>
@@ -56,16 +56,16 @@
                             <startIdx>11</startIdx>
                             <endIdx>13</endIdx>
                         </addressRange>
-                        <userProperties>
-                            <userProperty>
+                        <mqttUserProperties>
+                            <mqttUserProperty>
                                 <name>my-name</name>
                                 <value>my-value1</value>
-                            </userProperty>
-                            <userProperty>
+                            </mqttUserProperty>
+                            <mqttUserProperty>
                                 <name>my-name</name>
                                 <value>my-value2</value>
-                            </userProperty>
-                        </userProperties>
+                            </mqttUserProperty>
+                        </mqttUserProperties>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
                     </modbusToMqttMapping>

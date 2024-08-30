@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -100,11 +100,11 @@ public class EipToMqttMapping implements PollingContext {
             "USInt"}, required = true)
     private final @NotNull EipDataType dataType;
 
-    @JsonProperty(value = "userProperties")
+    @JsonProperty(value = "mqttUserProperties")
     @ModuleConfigField(title = "User Properties",
                        description = "Arbitrary properties to associate with the mapping",
                        arrayMaxItems = 10)
-    private final @NotNull List<UserProperty> userProperties;
+    private final @NotNull List<MqttUserProperty> userProperties;
 
     @JsonCreator
     public EipToMqttMapping(
@@ -116,7 +116,7 @@ public class EipToMqttMapping implements PollingContext {
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "tagAddress", required = true) final @NotNull String tagAddress,
             @JsonProperty(value = "dataType", required = true) final @NotNull EipDataType dataType,
-            @JsonProperty("userProperties") final @Nullable List<UserProperty> userProperties) {
+            @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerTag);
@@ -166,7 +166,7 @@ public class EipToMqttMapping implements PollingContext {
     }
 
     @Override
-    public @NotNull List<UserProperty> getUserProperties() {
+    public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
     }
 }

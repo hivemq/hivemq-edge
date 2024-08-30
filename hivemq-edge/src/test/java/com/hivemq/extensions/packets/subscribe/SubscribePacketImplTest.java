@@ -30,7 +30,7 @@ public class SubscribePacketImplTest {
     public void equals() {
         EqualsVerifier.forClass(SubscribePacketImpl.class)
                 .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
-                .withNonnullFields("subscriptions", "userProperties")
+                .withNonnullFields("subscriptions", "mqttUserProperties")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();
     }

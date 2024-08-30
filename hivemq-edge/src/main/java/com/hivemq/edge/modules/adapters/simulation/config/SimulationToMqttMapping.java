@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,11 +68,11 @@ public class SimulationToMqttMapping implements PollingContext {
                        defaultValue = "false")
     private final boolean includeTagNames;
 
-    @JsonProperty(value = "userProperties")
+    @JsonProperty(value = "mqttUserProperties")
     @ModuleConfigField(title = "User Properties",
                        description = "Arbitrary properties to associate with the mapping",
                        arrayMaxItems = 10)
-    private final @NotNull List<UserProperty> userProperties;
+    private final @NotNull List<MqttUserProperty> userProperties;
 
     @JsonCreator
     public SimulationToMqttMapping(
@@ -81,7 +81,7 @@ public class SimulationToMqttMapping implements PollingContext {
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
-            @JsonProperty("userProperties") final @Nullable List<UserProperty> userProperties) {
+            @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
         this.mqttTopic = mqttTopic;
         this.mqttQos = requireNonNullElse(mqttQos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerTag);
@@ -116,7 +116,7 @@ public class SimulationToMqttMapping implements PollingContext {
     }
 
     @Override
-    public @NotNull List<UserProperty> getUserProperties() {
+    public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
     }
 }

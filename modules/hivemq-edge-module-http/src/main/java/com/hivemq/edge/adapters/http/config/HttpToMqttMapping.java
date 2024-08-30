@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,11 +53,11 @@ public class HttpToMqttMapping implements PollingContext {
                        defaultValue = "0")
     private final int mqttQos;
 
-    @JsonProperty(value = "userProperties")
+    @JsonProperty(value = "mqttUserProperties")
     @ModuleConfigField(title = "MQTT User Properties",
                        description = "Arbitrary properties to associate with the mapping",
                        arrayMaxItems = 10)
-    private final @NotNull List<UserProperty> userProperties;
+    private final @NotNull List<MqttUserProperty> userProperties;
 
     @JsonProperty(value = "includeTimestamp")
     @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
@@ -97,7 +97,7 @@ public class HttpToMqttMapping implements PollingContext {
     public HttpToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty(value = "mqttQos") final @Nullable Integer mqttQos,
-            @JsonProperty(value = "userProperties") final @Nullable List<UserProperty> userProperties,
+            @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "httpRequestMethod") final @Nullable HttpAdapterConfig.HttpMethod httpRequestMethod,
             @JsonProperty(value = "httpRequestTimeout") final @Nullable Integer httpRequestTimeout,
@@ -148,7 +148,7 @@ public class HttpToMqttMapping implements PollingContext {
     }
 
     @Override
-    public @NotNull List<UserProperty> getUserProperties() {
+    public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
     }
 

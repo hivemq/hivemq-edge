@@ -16,7 +16,7 @@
 package com.hivemq.edge.adapters.plc4x.types.siemens.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -134,7 +134,7 @@ class S7AdapterConfigTest {
                 "tag-name",
                 "tag-address",
                 Plc4xDataType.DATA_TYPE.BOOL,
-                List.of(new UserProperty("my-name", "my-value"))
+                List.of(new MqttUserProperty("my-name", "my-value"))
         );
 
         final S7AdapterConfig s7AdapterConfig = new S7AdapterConfig("my-s7-adapter",
@@ -178,7 +178,7 @@ class S7AdapterConfigTest {
             assertThat(mapping.get("tagName")).isEqualTo("tag-name");
             assertThat(mapping.get("tagAddress")).isEqualTo("tag-address");
             assertThat(mapping.get("jsonPayloadCreator")).isNull();
-            assertThat((List<Map<String, Object>>) mapping.get("userProperties")).satisfiesExactly((userProperty) -> {
+            assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");
                 assertThat(userProperty.get("value")).isEqualTo("my-value");
             });

@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
-import com.hivemq.adapter.sdk.api.config.UserProperty;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.edge.adapters.file.payload.FileJsonPayloadCreator;
 import org.jetbrains.annotations.NotNull;
@@ -70,11 +70,11 @@ public class FileToMqttMapping implements PollingContext {
                        defaultValue = "false")
     private final boolean includeTagNames;
 
-    @JsonProperty(value = "userProperties")
+    @JsonProperty(value = "mqttUserProperties")
     @ModuleConfigField(title = "User Properties",
                        description = "Arbitrary properties to associate with the mapping",
                        arrayMaxItems = 10)
-    private final @NotNull List<UserProperty> userProperties;
+    private final @NotNull List<MqttUserProperty> userProperties;
 
     @JsonProperty(value = "filePath", required = true)
     @ModuleConfigField(title = "The file path",
@@ -101,7 +101,7 @@ public class FileToMqttMapping implements PollingContext {
             @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
-            @JsonProperty("userProperties") final @Nullable List<UserProperty> userProperties,
+            @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
             @JsonProperty(value = "filePath", required = true) final @NotNull String filePath,
             @JsonProperty(value = "contentType", required = true) final @NotNull ContentType contentType) {
         this.mqttTopic = mqttTopic;
@@ -144,7 +144,7 @@ public class FileToMqttMapping implements PollingContext {
     }
 
     @Override
-    public @NotNull List<UserProperty> getUserProperties() {
+    public @NotNull List<MqttUserProperty> getUserProperties() {
         return userProperties;
     }
 

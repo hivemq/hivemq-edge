@@ -30,7 +30,7 @@ public class PubcompPacketImplTest {
     public void equals() {
         EqualsVerifier.forClass(PubcompPacketImpl.class)
                 .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
-                .withNonnullFields("reasonCode", "userProperties")
+                .withNonnullFields("reasonCode", "mqttUserProperties")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();
     }

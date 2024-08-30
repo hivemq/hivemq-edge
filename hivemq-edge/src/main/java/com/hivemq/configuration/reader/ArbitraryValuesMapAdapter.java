@@ -87,9 +87,9 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
         }
         else if (value instanceof List) {
             List list = (List) value;
-            if ("userProperties".equals(currentKeyName)) {
+            if ("mqttUserProperties".equals(currentKeyName)) {
                 final List children = new ArrayList();
-                readChildren("userProperty", list, children, currentKeyName);
+                readChildren("mqttUserProperty", list, children, currentKeyName);
                 final ElementMap elementMap = new ElementMap();
                 elementMap.elements = children;
                 if (!children.isEmpty()){
@@ -161,7 +161,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
 
         //if child name is plural of parent name, we expect the value to be a list
         //This obviously does not cover irregular plurals, but 'userProperties' is used very often, so we specially check for it.
-        if ((node.getLocalName() + "s").equals(parentName) || "userProperties".equals(parentName)) {
+        if ((node.getLocalName() + "s").equals(parentName) || "mqttUserProperties".equals(parentName)) {
             replaceWithList(map, value, parentName);
             return;
         }
