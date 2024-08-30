@@ -111,7 +111,7 @@ public class JsonPayloadDefaultCreator implements JsonPayloadCreator {
     protected @NotNull AbstractProtocolAdapterJsonPayload decoratePayloadMessage(
             final @NotNull AbstractProtocolAdapterJsonPayload payload, final @NotNull PollingContext pollingContext) {
         if (!pollingContext.getUserProperties().isEmpty()) {
-            payload.setUserProperties(pollingContext.getUserProperties());
+            payload.setMqttUserProperties(pollingContext.getUserProperties());
         }
         return payload;
     }

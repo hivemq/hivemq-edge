@@ -16,6 +16,7 @@
 package com.hivemq.edge.modules.adapters.data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
@@ -29,7 +30,8 @@ public abstract class AbstractProtocolAdapterJsonPayload {
     private final @Nullable Long timestamp;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private @Nullable List<MqttUserProperty> userProperties;
+    @JsonProperty("mqttUserProperties")
+    private @Nullable List<MqttUserProperty> mqttUserProperties;
 
     public AbstractProtocolAdapterJsonPayload(final @Nullable Long timestamp) {
         this.timestamp = timestamp;
@@ -41,11 +43,11 @@ public abstract class AbstractProtocolAdapterJsonPayload {
     }
 
     @Nullable
-    public List<MqttUserProperty> getUserProperties() {
-        return userProperties;
+    public List<MqttUserProperty> getMqttUserProperties() {
+        return mqttUserProperties;
     }
 
-    public void setUserProperties(final @Nullable List<MqttUserProperty> userProperties) {
-        this.userProperties = userProperties;
+    public void setMqttUserProperties(final @Nullable List<MqttUserProperty> mqttUserProperties) {
+        this.mqttUserProperties = mqttUserProperties;
     }
 }
