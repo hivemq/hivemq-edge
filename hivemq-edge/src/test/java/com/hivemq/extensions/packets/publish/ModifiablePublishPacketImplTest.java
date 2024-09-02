@@ -1185,7 +1185,7 @@ public class ModifiablePublishPacketImplTest {
     public void equals() {
         EqualsVerifier.forClass(ModifiablePublishPacketImpl.class)
                 .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
-                .withNonnullFields("topic", "qos", "subscriptionIdentifiers", "mqttUserProperties")
+                .withNonnullFields("topic", "qos", "subscriptionIdentifiers", "userProperties")
                 .withIgnoredFields("configurationService", "modified")
                 .suppress(Warning.STRICT_INHERITANCE, Warning.NONFINAL_FIELDS)
                 .withPrefabValues(ImmutableIntArray.class, ImmutableIntArray.of(), ImmutableIntArray.of(123))

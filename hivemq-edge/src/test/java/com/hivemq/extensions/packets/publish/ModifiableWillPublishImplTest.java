@@ -172,7 +172,7 @@ public class ModifiableWillPublishImplTest {
     public void equals() {
         EqualsVerifier.forClass(ModifiableWillPublishImpl.class)
                 .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
-                .withNonnullFields("topic", "qos", "subscriptionIdentifiers", "mqttUserProperties")
+                .withNonnullFields("topic", "qos", "subscriptionIdentifiers", "userProperties")
                 .withIgnoredFields("configurationService", "modified")
                 .withRedefinedSuperclass()
                 .suppress(Warning.STRICT_INHERITANCE, Warning.NONFINAL_FIELDS)
