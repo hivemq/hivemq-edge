@@ -42,7 +42,7 @@
                 <s7ToMqttMappings>
                     <s7ToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
-                        <qos>1</qos>
+                        <mqttQos>1</mqttQos>
                         <includeTagNames>false</includeTagNames>
                         <includeTimestamp>true</includeTimestamp>
                         <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
