@@ -1,3 +1,4 @@
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import * as path from 'path'
@@ -10,7 +11,12 @@ export default defineConfig({
       '@datahub': path.resolve(__dirname, './src/extensions/datahub'),
     },
   },
-  plugins: [react()],
+
+  plugins: [react(), sentryVitePlugin({
+    org: "hivemq",
+    project: "edge"
+  })],
+
   server: {
     open: true,
     port: 3000,
@@ -33,4 +39,8 @@ export default defineConfig({
       },
     },
   },
+
+  build: {
+    sourcemap: true
+  }
 })

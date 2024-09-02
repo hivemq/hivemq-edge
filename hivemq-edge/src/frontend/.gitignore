@@ -31,3 +31,6 @@ test-results
 /public/app/
 /public/images/
 /public/module/
+
+# Sentry Config File
+.env.sentry-build-plugin
