@@ -31,6 +31,7 @@ import java.util.Objects;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
+import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MIN_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpContentType.JSON;
 import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpMethod.GET;
 import static java.util.Objects.requireNonNullElse;
@@ -75,7 +76,9 @@ public class HttpToMqttMapping implements PollingContext {
     @JsonProperty(value = "httpRequestTimeoutSeconds")
     @ModuleConfigField(title = "Http Request Timeout",
                        description = "Timeout (in seconds) to wait for the HTTP Request to complete",
-                       defaultValue = DEFAULT_TIMEOUT_SECONDS + "")
+                       defaultValue = DEFAULT_TIMEOUT_SECONDS + "",
+                       numberMin = MIN_TIMEOUT_SECONDS,
+                       numberMax = MAX_TIMEOUT_SECONDS)
     private final int httpRequestTimeoutSeconds;
 
     @JsonProperty(value = "httpRequestBodyContentType")
@@ -113,7 +116,7 @@ public class HttpToMqttMapping implements PollingContext {
         this.httpRequestBody = httpRequestBody;
         if (httpRequestTimeoutSeconds != null) {
             //-- Ensure we apply a reasonable timeout, so we don't hang threads
-            this.httpRequestTimeoutSeconds = Math.max(httpRequestTimeoutSeconds, MAX_TIMEOUT_SECONDS);
+            this.httpRequestTimeoutSeconds = Math.min(httpRequestTimeoutSeconds, MAX_TIMEOUT_SECONDS);
         } else {
             this.httpRequestTimeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
         }

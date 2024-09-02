@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua.util;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
@@ -24,10 +25,7 @@ import java.nio.ByteBuffer;
  */
 public class Bytes {
 
-    public static byte @Nullable [] fromReadOnlyBuffer(final @Nullable ByteBuffer byteBuffer) {
-        if (byteBuffer == null) {
-            return null;
-        }
+    public static byte @NotNull [] fromReadOnlyBuffer(final @NotNull ByteBuffer byteBuffer) {
         final ByteBuffer rewind = byteBuffer.asReadOnlyBuffer().rewind();
         final byte[] array = new byte[rewind.remaining()];
         rewind.get(array);

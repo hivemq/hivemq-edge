@@ -21,5 +21,6 @@ package com.hivemq.edge.adapters.http;
 public interface HttpAdapterConstants {
 
     int DEFAULT_TIMEOUT_SECONDS = 5;
+    int MIN_TIMEOUT_SECONDS = 1;
     int MAX_TIMEOUT_SECONDS = 60;
 }

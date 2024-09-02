@@ -56,7 +56,6 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
     private final @NotNull ProtocolAdapterMetricsService metricsHelper;
     private final @NotNull String adapterId;
     private final @NotNull OpcUaProtocolAdapter protocolAdapter;
-    private final @NotNull AdapterFactories adapterFactories;
 
     public OpcUaSubscriptionConsumer(
             final @NotNull OpcUaToMqttMapping subscription,
@@ -68,8 +67,7 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
             final @NotNull Map<UInteger, OpcUaToMqttMapping> subscriptionMap,
             final @NotNull ProtocolAdapterMetricsService metricsHelper,
             final @NotNull String adapterId,
-            final @NotNull OpcUaProtocolAdapter protocolAdapter,
-            final @NotNull AdapterFactories adapterFactories) {
+            final @NotNull OpcUaProtocolAdapter protocolAdapter) {
         this.subscription = subscription;
         this.readValueId = readValueId;
         this.adapterPublishService = adapterPublishService;
@@ -80,7 +78,6 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
         this.metricsHelper = metricsHelper;
         this.adapterId = adapterId;
         this.protocolAdapter = protocolAdapter;
-        this.adapterFactories = adapterFactories;
     }
 
     @Override
@@ -107,8 +104,7 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
                         metricsHelper,
                         adapterId,
                         eventService,
-                        protocolAdapter,
-                        adapterFactories));
+                        protocolAdapter));
 
         uaSubscription.createMonitoredItems(TimestampsToReturn.Both, List.of(request), onItemCreated)
                 .thenAccept(items -> {

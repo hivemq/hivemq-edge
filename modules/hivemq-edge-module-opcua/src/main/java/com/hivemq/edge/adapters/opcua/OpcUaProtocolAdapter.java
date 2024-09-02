@@ -81,7 +81,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
     private final @NotNull OpcUaAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
-    private final @NotNull AdapterFactories adapterFactories;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private @Nullable OpcUaClient opcUaClient;
     private final @NotNull Map<UInteger, OpcUaToMqttMapping> subscriptionMap = new ConcurrentHashMap<>();
@@ -93,7 +92,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.moduleServices = input.moduleServices();
-        this.adapterFactories = input.adapterFactories();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
     }
 
@@ -295,8 +293,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                             subscriptionMap,
                             protocolAdapterMetricsService,
                             adapterConfig.getId(),
-                            this,
-                            adapterFactories));
+                            this));
             return resultFuture;
         } catch (final Exception e) {
             return CompletableFuture.failedFuture(e);

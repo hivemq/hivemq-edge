@@ -30,7 +30,7 @@
                     <modbusToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
                         <mqttQos>1</mqttQos>
-                        <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                        <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <addressRange>
                             <startIdx>11</startIdx>
                             <endIdx>13</endIdx>
@@ -51,7 +51,7 @@
                     <modbusToMqttMapping>
                         <mqttTopic>my/topic/2</mqttTopic>
                         <mqttQos>1</mqttQos>
-                        <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                        <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <addressRange>
                             <startIdx>11</startIdx>
                             <endIdx>13</endIdx>

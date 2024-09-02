@@ -101,11 +101,11 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
         return port;
     }
 
-    public @NotNull Integer getBackplane() {
+    public int getBackplane() {
         return backplane;
     }
 
-    public @NotNull Integer getSlot() {
+    public int getSlot() {
         return slot;
     }
 
