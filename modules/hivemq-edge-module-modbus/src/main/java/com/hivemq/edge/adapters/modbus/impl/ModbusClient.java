@@ -59,7 +59,7 @@ public class ModbusClient implements IModbusClient {
                     ModbusTcpMasterConfig config = new ModbusTcpMasterConfig.Builder(adapterConfig.getHost()).
                             setPort(adapterConfig.getPort()).
                             setInstanceId(adapterConfig.getId()).
-                            setTimeout(Duration.ofMillis(adapterConfig.getTimeout())).
+                            setTimeout(Duration.ofMillis(adapterConfig.getTimeoutMillis())).
                             build();
                     modbusClient = new ModbusTcpMaster(config);
                 }

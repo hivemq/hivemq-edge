@@ -150,7 +150,7 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMap
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         builder.uri(URI.create(adapterConfig.getUrl()));
-        builder.timeout(Duration.ofSeconds(pollingContext.getHttpRequestTimeout()));
+        builder.timeout(Duration.ofSeconds(pollingContext.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
         pollingContext.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));

@@ -40,7 +40,7 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
                        stringMaxLength = 1024)
     private final @NotNull String id;
 
-    @JsonProperty("host")
+    @JsonProperty(value = "host", required = true)
     @ModuleConfigField(title = "Host",
                        description = "IP Address or hostname of the device you wish to connect to",
                        required = true,
@@ -48,7 +48,7 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
     private final @NotNull String host;
 
 
-    @JsonProperty("port")
+    @JsonProperty(value = "port", required = true)
     @ModuleConfigField(title = "Port",
                        description = "The port number on the device you wish to connect to",
                        required = true,
@@ -59,14 +59,14 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
 
     @JsonProperty("backplane")
     @ModuleConfigField(title = "Backplane", description = "Backplane device value", defaultValue = "1")
-    private final @NotNull Integer backplane;
+    private final int backplane;
 
     @JsonProperty("slot")
     @ModuleConfigField(title = "Slot", description = "Slot device value", defaultValue = "0")
-    private final @NotNull Integer slot;
+    private final int slot;
 
 
-    @JsonProperty("eipToMqtt")
+    @JsonProperty(value = "eipToMqtt", required = true)
     @ModuleConfigField(title = "Ethernet IP To MQTT Config",
                        description = "The configuration for a data stream from Ethernet IP to MQTT",
                        required = true)

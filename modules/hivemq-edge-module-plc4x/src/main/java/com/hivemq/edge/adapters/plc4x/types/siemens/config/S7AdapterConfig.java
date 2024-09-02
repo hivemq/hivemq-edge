@@ -38,7 +38,7 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
         LOGO
     }
 
-    @JsonProperty("port")
+    @JsonProperty(value = "port", required = true)
     @ModuleConfigField(title = "Port",
                        description = "The port number on the device you wish to connect to",
                        required = true,
@@ -58,33 +58,33 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
     @ModuleConfigField(title = "Remote Rack",
                        description = "Rack value for the remote main CPU (PLC).",
                        defaultValue = "0")
-    private final @NotNull Integer remoteRack;
+    private final int remoteRack;
 
     @JsonProperty("remoteRack2")
     @ModuleConfigField(title = "Remote Rack 2",
                        description = "Rack value for the remote secondary CPU (PLC).",
                        defaultValue = "0")
-    private final @NotNull Integer remoteRack2;
+    private final int remoteRack2;
 
     @JsonProperty("remoteSlot")
     @ModuleConfigField(title = "Remote Slot",
                        description = "Slot value for the remote main CPU (PLC).",
                        defaultValue = "0")
-    private final @NotNull Integer remoteSlot;
+    private final int remoteSlot;
 
     @JsonProperty("remoteSlot2")
     @ModuleConfigField(title = "Remote Slot 2",
                        description = "Slot value for the remote secondary CPU (PLC).",
                        defaultValue = "0")
-    private final @NotNull Integer remoteSlot2;
+    private final int remoteSlot2;
 
     @JsonProperty("remoteTsap")
     @ModuleConfigField(title = "Remote TSAP",
                        description = "Remote TSAP value. The TSAP (Transport Services Access Point) mechanism is used as a further addressing level in the S7 PLC network. Usually only required for PLC from the LOGO series.",
                        defaultValue = "0")
-    private final @NotNull Integer remoteTsap;
+    private final int remoteTsap;
 
-    @JsonProperty("s7ToMqtt")
+    @JsonProperty(value = "s7ToMqtt", required = true)
     @ModuleConfigField(title = "S7 To MQTT Config",
                        description = "The configuration for a data stream from S7 to MQTT",
                        required = true)

@@ -563,7 +563,7 @@ public interface ApiBodyExamples {
             "                        \"default\": true,\n" +
             "                        \"format\": \"boolean\"\n" +
             "                    },\n" +
-            "                    \"publishingInterval\": {\n" +
+            "                    \"pollingIntervalMillis\": {\n" +
             "                        \"type\": \"integer\",\n" +
             "                        \"title\": \"Publishing interval [ms]\",\n" +
             "                        \"description\": \"Publishing interval in milliseconds for this subscription on the server\",\n" +
@@ -613,7 +613,7 @@ public interface ApiBodyExamples {
             "                    \"host\",\n" +
             "                    \"id\",\n" +
             "                    \"port\",\n" +
-            "                    \"publishingInterval\"\n" +
+            "                    \"pollingIntervalMillis\"\n" +
             "                ]\n" +
             "            }\n" +
             "        },\n" +

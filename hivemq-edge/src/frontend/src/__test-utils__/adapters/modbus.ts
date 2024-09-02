@@ -57,7 +57,7 @@ export const MOCK_PROTOCOL_MODBUS: ProtocolAdapter = {
         default: true,
         format: 'boolean',
       },
-      publishingInterval: {
+      pollingIntervalMillis: {
         type: 'integer',
         title: 'Publishing interval [ms]',
         description: 'Publishing interval in milliseconds for this subscription on the server',
@@ -115,7 +115,7 @@ export const MOCK_PROTOCOL_MODBUS: ProtocolAdapter = {
         },
       },
     },
-    required: ['host', 'id', 'port', 'publishingInterval'],
+    required: ['host', 'id', 'port', 'pollingIntervalMillis'],
   },
 }
 
@@ -126,7 +126,7 @@ export const MOCK_ADAPTER_MODBUS: GenericObjectType = {
     id: 'fg',
     port: 3,
     host: 'cvvccvvb.bvc.vb.vb.vb.bvbv',
-    publishingInterval: 1000,
+    pollingIntervalMillis: 1000,
     maxPollingErrorsBeforeRemoval: 10,
     publishChangedDataOnly: true,
     subscriptions: [

@@ -22,16 +22,20 @@ import org.jetbrains.annotations.NotNull;
 
 public class Keystore {
 
-    @JsonProperty("path")
-    @ModuleConfigField(title = "Keystore path", description = "Path on the local file system to the keystore.")
+    @JsonProperty(value = "path", required = true)
+    @ModuleConfigField(title = "Keystore path",
+                       description = "Path on the local file system to the keystore.",
+                       required = true)
     private final @NotNull String path;
 
-    @JsonProperty("password")
-    @ModuleConfigField(title = "Keystore password", description = "Password to open the keystore.")
+    @JsonProperty(value = "password", required = true)
+    @ModuleConfigField(title = "Keystore password", description = "Password to open the keystore.", required = true)
     private final @NotNull String password;
 
-    @JsonProperty("privateKeyPassword")
-    @ModuleConfigField(title = "Private key password", description = "Password to access the private key.")
+    @JsonProperty(value = "privateKeyPassword", required = true)
+    @ModuleConfigField(title = "Private key password",
+                       description = "Password to access the private key.",
+                       required = true)
     private final @NotNull String privateKeyPassword;
 
     @JsonCreator

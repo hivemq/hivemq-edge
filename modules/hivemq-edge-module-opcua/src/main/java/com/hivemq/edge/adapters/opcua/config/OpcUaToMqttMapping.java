@@ -25,13 +25,13 @@ import static java.util.Objects.requireNonNullElse;
 
 public class OpcUaToMqttMapping {
 
-    @JsonProperty("node")
+    @JsonProperty(value = "node", required = true)
     @ModuleConfigField(title = "Source Node ID",
                        description = "identifier of the node on the OPC UA server. Example: \"ns=3;s=85/0:Temperature\"",
                        required = true)
     private final @NotNull String node;
 
-    @JsonProperty("mqttTopic")
+    @JsonProperty(value = "mqttTopic", required = true)
     @ModuleConfigField(title = "Destination MQTT topic",
                        description = "The MQTT topic to publish to",
                        format = ModuleConfigField.FieldType.MQTT_TOPIC,

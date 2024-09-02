@@ -22,12 +22,14 @@ import org.jetbrains.annotations.NotNull;
 
 public class Truststore {
 
-    @JsonProperty("path")
-    @ModuleConfigField(title = "Truststore path", description = "Path on the local file system to the truststore.")
+    @JsonProperty(value = "path", required = true)
+    @ModuleConfigField(title = "Truststore path",
+                       description = "Path on the local file system to the truststore.",
+                       required = true)
     private final @NotNull String path;
 
-    @JsonProperty("password")
-    @ModuleConfigField(title = "Truststore password", description = "Password to open the truststore.")
+    @JsonProperty(value = "password", required = true)
+    @ModuleConfigField(title = "Truststore password", description = "Password to open the truststore.", required = true)
     private final @NotNull String password;
 
     @JsonCreator

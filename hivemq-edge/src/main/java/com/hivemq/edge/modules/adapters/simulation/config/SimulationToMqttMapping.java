@@ -40,7 +40,7 @@ public class SimulationToMqttMapping implements PollingContext {
     private final @NotNull String mqttTopic;
 
     @JsonProperty(value = "mqttQos")
-    @ModuleConfigField(title = "QoS",
+    @ModuleConfigField(title = "MQTT QoS",
                        description = "MQTT Quality of Service level",
                        numberMin = 0,
                        numberMax = 2,

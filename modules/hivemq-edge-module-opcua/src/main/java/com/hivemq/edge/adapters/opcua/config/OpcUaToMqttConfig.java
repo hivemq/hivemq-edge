@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.opcua.config;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,14 +29,16 @@ public class OpcUaToMqttConfig {
 
     @JsonProperty("opcuaToMqttMappings")
     @JsonSerialize(using = OpcuaToMqttMappingSerializer.class)
-    private final @NotNull List<OpcUaToMqttMapping> subscriptions;
+    @ModuleConfigField(title = "opcuaToMqttMappings",
+                       description = "Map your sensor data to MQTT Topics")
+    private final @NotNull List<OpcUaToMqttMapping> opcuaToMqttMappings;
 
     @JsonCreator
-    public OpcUaToMqttConfig(@JsonProperty("opcuaToMqttMappings") final @Nullable List<OpcUaToMqttMapping> subscriptions) {
-        this.subscriptions = Objects.requireNonNullElse(subscriptions, List.of());
+    public OpcUaToMqttConfig(@JsonProperty("opcuaToMqttMappings") final @Nullable List<OpcUaToMqttMapping> opcuaToMqttMappings) {
+        this.opcuaToMqttMappings = Objects.requireNonNullElse(opcuaToMqttMappings, List.of());
     }
 
     public @NotNull List<OpcUaToMqttMapping> getMappings() {
-        return subscriptions;
+        return opcuaToMqttMappings;
     }
 }

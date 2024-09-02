@@ -31,8 +31,10 @@ public class SimulationAdapterConfig implements ProtocolAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
 
-    @JsonProperty("simulationToMqtt")
-    @ModuleConfigField(title = "simulationToMqtt", description = "Define Simulations to create MQTT messages.")
+    @JsonProperty(value = "simulationToMqtt", required = true)
+    @ModuleConfigField(title = "simulationToMqtt",
+                       description = "Define Simulations to create MQTT messages.",
+                       required = true)
     private final @NotNull SimulationToMqttConfig simulationToMqttConfig;
 
     @JsonProperty(value = "id", required = true)

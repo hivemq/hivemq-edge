@@ -22,7 +22,7 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 @JsonPropertyOrder({"startIdx", "endIdx"})
 public class AddressRange {
 
-    @JsonProperty("startIdx")
+    @JsonProperty(value = "startIdx", required = true)
     @ModuleConfigField(title = "Start Index",
                        description = "The Starting Index (Incl.) of the Address Range",
                        numberMin = 0,
@@ -30,7 +30,7 @@ public class AddressRange {
                        required = true)
     public final int startIdx;
 
-    @JsonProperty("endIdx")
+    @JsonProperty(value = "endIdx", required = true)
     @ModuleConfigField(title = "End Index",
                        description = "The Finishing Index (Excl.) of the Address Range",
                        numberMin = 1,
