@@ -33,7 +33,7 @@
                     <opcuaToMqttMapping>
                         <node>ns=3;s="node-name"</node>
                         <mqttTopic>my/mqtt/topic/1</mqttTopic>
-                        <qos>1</qos>
+                        <mqttQos>1</mqttQos>
                     </opcuaToMqttMapping>
                 </opcuaToMqttMappings>
             </opcuaToMqtt>
