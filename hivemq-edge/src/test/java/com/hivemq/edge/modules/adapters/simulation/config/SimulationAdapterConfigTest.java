@@ -64,7 +64,7 @@ class SimulationAdapterConfigTest {
         assertThat(config.getSimulationToMqttConfig().getSimulationToMqttMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
             assertThat(subscription.getMqttQos()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(subscription.getIncludeTimestamp()).isFalse();
             assertThat(subscription.getIncludeTagNames()).isTrue();
 
@@ -75,7 +75,7 @@ class SimulationAdapterConfigTest {
         }, subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
             assertThat(subscription.getMqttQos()).isEqualTo(1);
-            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+            assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(subscription.getIncludeTimestamp()).isFalse();
             assertThat(subscription.getIncludeTagNames()).isTrue();
 

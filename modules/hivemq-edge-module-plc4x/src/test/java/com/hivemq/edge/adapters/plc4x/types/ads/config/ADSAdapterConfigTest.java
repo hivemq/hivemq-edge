@@ -68,7 +68,7 @@ class ADSAdapterConfigTest {
         assertThat(config.getPlc4xToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
-            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
@@ -84,7 +84,7 @@ class ADSAdapterConfigTest {
         }, mapping -> {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/topic/2");
             assertThat(mapping.getMqttQos()).isEqualTo(1);
-            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
+            assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
             assertThat(mapping.getTagAddress()).isEqualTo("tag-address");

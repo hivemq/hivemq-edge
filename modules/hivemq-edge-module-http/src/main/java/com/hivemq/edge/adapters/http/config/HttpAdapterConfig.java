@@ -23,8 +23,7 @@ import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpContentType.JSON;
-import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpMethod.GET;
+import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MIN_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
 
@@ -59,7 +58,9 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     @JsonProperty("httpConnectTimeoutSeconds")
     @ModuleConfigField(title = "HTTP Connection Timeout",
                        description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
-                       defaultValue = DEFAULT_TIMEOUT_SECONDS + "")
+                       defaultValue = DEFAULT_TIMEOUT_SECONDS + "",
+                       numberMin = MIN_TIMEOUT_SECONDS,
+                       numberMax = MAX_TIMEOUT_SECONDS)
     private final int httpConnectTimeoutSeconds;
 
     @JsonProperty(value = "httpToMqtt", required = true)
@@ -78,7 +79,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
         this.url = url;
         if (httpConnectTimeoutSeconds != null) {
             //-- Ensure we apply a reasonable timeout, so we don't hang threads
-            this.httpConnectTimeoutSeconds = Math.max(httpConnectTimeoutSeconds, MAX_TIMEOUT_SECONDS);
+            this.httpConnectTimeoutSeconds = Math.min(httpConnectTimeoutSeconds, MAX_TIMEOUT_SECONDS);
         } else {
             this.httpConnectTimeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
         }
@@ -142,14 +143,14 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
         XML(XML_MIME_TYPE),
         YAML(YAML_MIME_TYPE);
 
-        HttpContentType(final @NotNull String contentType) {
-            this.contentType = contentType;
+        HttpContentType(final @NotNull String mimeType) {
+            this.mimeType = mimeType;
         }
 
-        final @NotNull String contentType;
+        final @NotNull String mimeType;
 
-        public @NotNull String getContentType() {
-            return contentType;
+        public @NotNull String getMimeType() {
+            return mimeType;
         }
     }
 }
