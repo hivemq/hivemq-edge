@@ -30,7 +30,7 @@ public class PubackPacketImplTest {
     public void equals() {
         EqualsVerifier.forClass(PubackPacketImpl.class)
                 .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
-                .withNonnullFields("reasonCode", "mqttUserProperties")
+                .withNonnullFields("reasonCode", "userProperties")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();
     }
