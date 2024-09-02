@@ -4,6 +4,7 @@ import MainApp from './modules/App/MainApp.tsx'
 import { handlers } from './__test-utils__/msw/handlers.ts'
 import { setupWorker } from 'msw/browser'
 
+import './config/sentry.config'
 import './config/i18n.config'
 
 if (import.meta.env.MODE === 'development') {
