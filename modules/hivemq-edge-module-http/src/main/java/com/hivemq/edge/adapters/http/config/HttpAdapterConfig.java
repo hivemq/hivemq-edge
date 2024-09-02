@@ -28,7 +28,7 @@ import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpMethod.
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
 
-@JsonPropertyOrder({"id", "url", "httpConnectTimeout", "httpToMqtt"})
+@JsonPropertyOrder({"id", "url", "httpConnectTimeoutSeconds", "httpToMqtt"})
 public class HttpAdapterConfig implements ProtocolAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
@@ -39,7 +39,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     public static final @NotNull String XML_MIME_TYPE = "application/xml";
     public static final @NotNull String YAML_MIME_TYPE = "application/yaml";
 
-    @JsonProperty(value = "id")
+    @JsonProperty(value = "id", required = true)
     @ModuleConfigField(title = "Identifier",
                        description = "Unique identifier for this protocol adapter",
                        format = ModuleConfigField.FieldType.IDENTIFIER,
@@ -49,20 +49,20 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        stringMaxLength = 1024)
     private final @NotNull String id;
 
-    @JsonProperty("url")
+    @JsonProperty(value = "url", required = true)
     @ModuleConfigField(title = "URL",
                        description = "The url of the HTTP request you would like to make",
                        format = ModuleConfigField.FieldType.URI,
                        required = true)
     private final @NotNull String url;
 
-    @JsonProperty("httpConnectTimeout")
+    @JsonProperty("httpConnectTimeoutSeconds")
     @ModuleConfigField(title = "HTTP Connection Timeout",
                        description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
                        defaultValue = DEFAULT_TIMEOUT_SECONDS + "")
     private final int httpConnectTimeoutSeconds;
 
-    @JsonProperty("httpToMqtt")
+    @JsonProperty(value = "httpToMqtt", required = true)
     @ModuleConfigField(title = "HTTP To MQTT Config",
                        description = "The configuration for a data stream from HTTP to MQTT",
                        required = true)
@@ -72,7 +72,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     public HttpAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "url", required = true) final @NotNull String url,
-            @JsonProperty(value = "httpConnectTimeout") final @Nullable Integer httpConnectTimeoutSeconds,
+            @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
             @JsonProperty(value = "httpToMqtt", required = true) final @NotNull HttpToMqttConfig httpToMqttConfig) {
         this.id = id;
         this.url = url;
@@ -104,17 +104,18 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
 
     public static class HttpHeader {
 
-        @JsonProperty("name")
-        @ModuleConfigField(title = "Name", description = "The name of the HTTP header")
+        @JsonProperty(value = "name", required = true)
+        @ModuleConfigField(title = "Name", description = "The name of the HTTP header", required = true)
         private final @NotNull String name;
 
-        @JsonProperty("value")
-        @ModuleConfigField(title = "Value", description = "The value of the HTTP header")
+        @JsonProperty(value = "value", required = true)
+        @ModuleConfigField(title = "Value", description = "The value of the HTTP header", required = true)
         private final @NotNull String value;
 
         @JsonCreator
         public HttpHeader(
-                @JsonProperty("name") final @NotNull String name, @JsonProperty("value") final @NotNull String value) {
+                @JsonProperty(value = "name", required = true) final @NotNull String name,
+                @JsonProperty(value = "value", required = true) final @NotNull String value) {
             this.name = name;
             this.value = value;
         }

@@ -59,7 +59,7 @@ public class ModbusAdapterConfigTest {
         assertThat(config.getModbusToMQTTConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(9);
         assertThat(config.getPort()).isEqualTo(1234);
         assertThat(config.getHost()).isEqualTo("my.modbus-server.com");
-        assertThat(config.getTimeout()).isEqualTo(1337);
+        assertThat(config.getTimeoutMillis()).isEqualTo(1337);
         assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isFalse();
         assertThat(config.getModbusToMQTTConfig().getMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
@@ -115,7 +115,7 @@ public class ModbusAdapterConfigTest {
         assertThat(config.getModbusToMQTTConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
         assertThat(config.getPort()).isEqualTo(1234);
         assertThat(config.getHost()).isEqualTo("my.modbus-server.com");
-        assertThat(config.getTimeout()).isEqualTo(5000);
+        assertThat(config.getTimeoutMillis()).isEqualTo(5000);
         assertThat(config.getModbusToMQTTConfig().getPublishChangedDataOnly()).isTrue();
         assertThat(config.getModbusToMQTTConfig().getMappings()).satisfiesExactly(subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic");
@@ -256,7 +256,7 @@ public class ModbusAdapterConfigTest {
         assertThat(config.get("id")).isEqualTo("my-modbus-adapter");
         assertThat(config.get("port")).isEqualTo(14);
         assertThat(config.get("host")).isEqualTo("my.host.com");
-        assertThat(config.get("timeout")).isEqualTo(15);
+        assertThat(config.get("timeoutMillis")).isEqualTo(15);
         final Map<String, Object> modbusToMqtt = (Map<String, Object>) config.get("modbusToMqtt");
         assertThat(modbusToMqtt.get("pollingIntervalMillis")).isEqualTo(12);
         assertThat(modbusToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
@@ -302,7 +302,7 @@ public class ModbusAdapterConfigTest {
         assertThat(config.get("id")).isEqualTo("my-modbus-adapter");
         assertThat(config.get("port")).isEqualTo(13);
         assertThat(config.get("host")).isEqualTo("my.host.com");
-        assertThat(config.get("timeout")).isEqualTo(5000);
+        assertThat(config.get("timeoutMillis")).isEqualTo(5000);
         final Map<String, Object> modbusToMqtt = (Map<String, Object>) config.get("modbusToMqtt");
         assertThat(modbusToMqtt.get("pollingIntervalMillis")).isEqualTo(1000);
         assertThat(modbusToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);

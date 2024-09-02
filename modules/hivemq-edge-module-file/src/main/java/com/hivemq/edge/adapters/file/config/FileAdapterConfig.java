@@ -35,7 +35,7 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
                        stringMaxLength = 1024)
     private final @NotNull String id;
 
-    @JsonProperty("fileToMqtt")
+    @JsonProperty(value = "fileToMqtt", required = true)
     @ModuleConfigField(title = "File To MQTT Config",
                        description = "The configuration for a data stream from File to MQTT",
                        required = true)

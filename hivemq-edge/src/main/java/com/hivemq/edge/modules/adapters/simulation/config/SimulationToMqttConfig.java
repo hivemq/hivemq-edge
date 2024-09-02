@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.modules.adapters.simulation.config;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -29,17 +28,16 @@ import java.util.Objects;
 public class SimulationToMqttConfig {
 
     @JsonProperty("pollingIntervalMillis")
-    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
     @ModuleConfigField(title = "Polling Interval [ms]",
                        description = "Time in millisecond that this endpoint will be polled",
                        numberMin = 1,
-                       required = true,
                        defaultValue = "1000")
     private final int pollingIntervalMillis;
 
     @JsonProperty("maxPollingErrorsBeforeRemoval")
     @ModuleConfigField(title = "Max. Polling Errors",
-                       description = "Max. errors polling the endpoint before the polling daemon is stopped",
+                       description = "Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)",
+                       numberMin = -1,
                        defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
 

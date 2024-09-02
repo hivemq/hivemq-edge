@@ -20,7 +20,7 @@
       "title" : "Connection",
       "properties" : [
         "id",
-        "timeout"
+        "*"
       ]
     },
     {

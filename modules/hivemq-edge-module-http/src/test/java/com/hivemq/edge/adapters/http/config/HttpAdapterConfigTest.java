@@ -168,7 +168,7 @@ public class HttpAdapterConfigTest {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/destination");
             assertThat(mapping.getMqttQos()).isEqualTo(0);
             assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);
-            assertThat(mapping.getHttpRequestTimeout()).isEqualTo(1338);
+            assertThat(mapping.getHttpRequestTimeoutSeconds()).isEqualTo(1338);
             assertThat(mapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
             assertThat(mapping.getHttpRequestBody()).isEqualTo("my-body");
             assertThat(mapping.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
@@ -189,7 +189,7 @@ public class HttpAdapterConfigTest {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/destination2");
             assertThat(mapping.getMqttQos()).isEqualTo(0);
             assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);
-            assertThat(mapping.getHttpRequestTimeout()).isEqualTo(1338);
+            assertThat(mapping.getHttpRequestTimeoutSeconds()).isEqualTo(1338);
             assertThat(mapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
             assertThat(mapping.getHttpRequestBody()).isEqualTo("my-body2");
             assertThat(mapping.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
@@ -248,12 +248,12 @@ public class HttpAdapterConfigTest {
         assertThat(config.entrySet()).satisfiesExactly( //
                 (it) -> assertThat(it.getKey()).isEqualTo("id"),
                 (it) -> assertThat(it.getKey()).isEqualTo("url"),
-                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeout"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeoutSeconds"),
                 (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt"));
 
         assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
         assertThat(config.get("url")).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
-        assertThat(config.get("httpConnectTimeout")).isEqualTo(1773);
+        assertThat(config.get("httpConnectTimeoutSeconds")).isEqualTo(1773);
 
         final Map<String, Object> httpToMqtt = (Map<String, Object>) config.get("httpToMqtt");
 
@@ -323,12 +323,12 @@ public class HttpAdapterConfigTest {
         assertThat(config.entrySet()).satisfiesExactly( //
                 (it) -> assertThat(it.getKey()).isEqualTo("id"),
                 (it) -> assertThat(it.getKey()).isEqualTo("url"),
-                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeout"),
+                (it) -> assertThat(it.getKey()).isEqualTo("httpConnectTimeoutSeconds"),
                 (it) -> assertThat(it.getKey()).isEqualTo("httpToMqtt"));
 
         assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
         assertThat(config.get("url")).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
-        assertThat(config.get("httpConnectTimeout")).isEqualTo(5);
+        assertThat(config.get("httpConnectTimeoutSeconds")).isEqualTo(5);
 
         final Map<String, Object> httpToMqtt = (Map<String, Object>) config.get("httpToMqtt");
 

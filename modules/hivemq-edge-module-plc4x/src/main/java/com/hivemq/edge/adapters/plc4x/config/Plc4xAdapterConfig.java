@@ -38,7 +38,7 @@ public abstract class Plc4xAdapterConfig<T extends Plc4xToMqttConfig> implements
                        stringMaxLength = 1024)
     private final @NotNull String id;
 
-    @JsonProperty("port")
+    @JsonProperty(value = "port", required = true)
     @ModuleConfigField(title = "Port",
                        description = "The port number on the device to connect to",
                        required = true,
@@ -46,7 +46,7 @@ public abstract class Plc4xAdapterConfig<T extends Plc4xToMqttConfig> implements
                        numberMax = PORT_MAX)
     private final int port;
 
-    @JsonProperty("host")
+    @JsonProperty(value = "host", required = true)
     @ModuleConfigField(title = "Host",
                        description = "IP Address or hostname of the device you wish to connect to",
                        required = true,

@@ -37,7 +37,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
                        stringMaxLength = 1024)
     private final @NotNull String id;
 
-    @JsonProperty("uri")
+    @JsonProperty(value = "uri", required = true)
     @ModuleConfigField(title = "OPC UA Server URI",
                        description = "URI of the OPC UA server to connect to",
                        format = ModuleConfigField.FieldType.URI,
@@ -60,7 +60,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     @JsonProperty("security")
     private final @NotNull Security security;
 
-    @JsonProperty("opcuaToMqtt")
+    @JsonProperty(value = "opcuaToMqtt", required = true)
     @ModuleConfigField(title = "OpcUA To MQTT Config",
                        description = "The configuration for a data stream from OpcUA to MQTT",
                        required = true)
@@ -69,7 +69,7 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     public OpcUaAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
-            @JsonProperty("overrideUri") final Boolean overrideUri,
+            @JsonProperty("overrideUri") final @Nullable Boolean overrideUri,
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
             @JsonProperty(value = "opcuaToMqtt", required = true) final @NotNull OpcUaToMqttConfig opcuaToMqttConfig,

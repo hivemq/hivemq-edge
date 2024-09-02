@@ -42,14 +42,14 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
                        stringMaxLength = 1024)
     private final @NotNull String id;
 
-    @JsonProperty("host")
+    @JsonProperty(value = "host", required = true)
     @ModuleConfigField(title = "Host",
                        description = "IP Address or hostname of the device you wish to connect to",
                        required = true,
                        format = ModuleConfigField.FieldType.HOSTNAME)
     private final @NotNull String host;
 
-    @JsonProperty("port")
+    @JsonProperty(value = "port", required = true)
     @ModuleConfigField(title = "Port",
                        description = "The port number on the device you wish to connect to",
                        required = true,
@@ -57,15 +57,15 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
                        numberMax = PORT_MAX)
     private final int port;
 
-    @JsonProperty("timeout")
+    @JsonProperty("timeoutMillis")
     @ModuleConfigField(title = "Timeout",
                        description = "Time (in milliseconds) to await a connection before the client gives up",
                        numberMin = 1000,
                        numberMax = 15000,
                        defaultValue = "5000")
-    private final int timeout;
+    private final int timeoutMillis;
 
-    @JsonProperty("modbusToMqtt")
+    @JsonProperty(value = "modbusToMqtt", required = true)
     @ModuleConfigField(title = "Modbus To MQTT Config",
                        description = "The configuration for a data stream from Modbus to MQTT",
                        required = true)
@@ -76,12 +76,12 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "port", required = true) final int port,
             @JsonProperty(value = "host", required = true) final @NotNull String host,
-            @JsonProperty(value = "timeout") final @Nullable Integer timeout,
+            @JsonProperty(value = "timeoutMillis") final @Nullable Integer timeoutMillis,
             @JsonProperty(value = "modbusToMqtt", required = true) final @NotNull ModbusToMqttConfig modbusToMQTTConfig) {
         this.id = id;
         this.port = port;
         this.host = host;
-        this.timeout = Objects.requireNonNullElse(timeout, 5000);
+        this.timeoutMillis = Objects.requireNonNullElse(timeoutMillis, 5000);
         this.modbusToMQTTConfig = modbusToMQTTConfig;
     }
 
@@ -97,8 +97,8 @@ public class ModbusAdapterConfig implements ProtocolAdapterConfig {
         return port;
     }
 
-    public int getTimeout() {
-        return timeout;
+    public int getTimeoutMillis() {
+        return timeoutMillis;
     }
 
     public @NotNull ModbusToMqttConfig getModbusToMQTTConfig() {
