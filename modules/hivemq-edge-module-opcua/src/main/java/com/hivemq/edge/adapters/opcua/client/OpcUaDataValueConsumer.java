@@ -47,28 +47,26 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
     public static final byte[] EMTPY_BYTES = new byte[]{};
 
-    private final @NotNull OpcUaToMqttMapping subscription;
+    private final @NotNull OpcUaToMqttMapping mapping;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull OpcUaClient opcUaClient;
     private final @NotNull NodeId nodeId;
     private final @NotNull ProtocolAdapterMetricsService metricsHelper;
     private final @NotNull EventService eventService;
     private final @NotNull OpcUaProtocolAdapter protocolAdapter;
-    private final @NotNull AdapterFactories adapterFactories;
     private final @NotNull String adapterId;
     private final @NotNull AtomicBoolean firstMessageReceived = new AtomicBoolean(false);
 
     public OpcUaDataValueConsumer(
-            final @NotNull OpcUaToMqttMapping subscription,
+            final @NotNull OpcUaToMqttMapping mapping,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull OpcUaClient opcUaClient,
             final @NotNull NodeId nodeId,
             final @NotNull ProtocolAdapterMetricsService metricsHelper,
             final @NotNull String adapterId,
             final @NotNull EventService eventService,
-            final @NotNull OpcUaProtocolAdapter protocolAdapter,
-            final @NotNull AdapterFactories adapterFactories) {
-        this.subscription = subscription;
+            final @NotNull OpcUaProtocolAdapter protocolAdapter) {
+        this.mapping = mapping;
         this.adapterPublishService = adapterPublishService;
         this.opcUaClient = opcUaClient;
         this.nodeId = nodeId;
@@ -76,21 +74,20 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
         this.metricsHelper = metricsHelper;
         this.eventService = eventService;
         this.protocolAdapter = protocolAdapter;
-        this.adapterFactories = adapterFactories;
     }
 
     @Override
     public void accept(final @NotNull DataValue dataValue) {
         try {
 
-            final @NotNull byte[] convertedPayload = convertPayload(dataValue, PayloadMode.JSON);
+            final byte[] convertedPayload = convertPayload(dataValue, PayloadMode.JSON);
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
-                    .withTopic(subscription.getMqttTopic())
+                    .withTopic(mapping.getMqttTopic())
                     .withPayload(convertedPayload)
-                    .withQoS(subscription.getQos())
+                    .withQoS(mapping.getQos())
                     .withContextInformation("opcua-node-id", nodeId.toParseableString());
 
-            publishBuilder.withMessageExpiryInterval(subscription.getMessageExpiryInterval());
+            publishBuilder.withMessageExpiryInterval(mapping.getMessageExpiryInterval());
 
             try {
 
@@ -111,7 +108,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
                         .withSeverity(Event.SEVERITY.INFO)
                         .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
                                 adapterId,
-                                subscription.getMqttTopic()))
+                                mapping.getMqttTopic()))
                         .withPayload(Payload.ContentType.JSON, new String(convertedPayload, StandardCharsets.UTF_8))
                         .fire();
 
@@ -130,15 +127,11 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
         }
     }
 
-    private @NotNull byte @NotNull [] convertPayload(
+    private byte @NotNull [] convertPayload(
             DataValue dataValue, final @NotNull PayloadMode payloadMode) {
         //null value, emtpy buffer
         if (dataValue.getValue().getValue() == null) {
             return EMTPY_BYTES;
-        }
-
-        if (payloadMode == null) {
-            return Bytes.fromReadOnlyBuffer(OpcUaJsonPayloadConverter.convertPayload(opcUaClient, dataValue));
         }
         //option to choose different encoding types here -> string vs. json ...
         switch (payloadMode) {

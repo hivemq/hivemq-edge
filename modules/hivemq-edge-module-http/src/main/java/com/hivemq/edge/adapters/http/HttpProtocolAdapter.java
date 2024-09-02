@@ -161,11 +161,11 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMap
                 break;
             case POST:
                 builder.POST(HttpRequest.BodyPublishers.ofString(pollingContext.getHttpRequestBody()));
-                builder.header(CONTENT_TYPE_HEADER, pollingContext.getHttpRequestBodyContentType().getContentType());
+                builder.header(CONTENT_TYPE_HEADER, pollingContext.getHttpRequestBodyContentType().getMimeType());
                 break;
             case PUT:
                 builder.PUT(HttpRequest.BodyPublishers.ofString(pollingContext.getHttpRequestBody()));
-                builder.header(CONTENT_TYPE_HEADER, pollingContext.getHttpRequestBodyContentType().getContentType());
+                builder.header(CONTENT_TYPE_HEADER, pollingContext.getHttpRequestBodyContentType().getMimeType());
                 break;
             default:
                 pollingOutput.fail(new IllegalStateException("Unexpected value: " +

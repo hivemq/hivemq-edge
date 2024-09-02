@@ -35,7 +35,7 @@
                         <mqttQos>1</mqttQos>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>true</includeTimestamp>
-                        <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                        <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <tagName>tag-name</tagName>
                         <tagAddress>tag-address</tagAddress>
                         <dataType>WORD</dataType>
@@ -55,7 +55,7 @@
                         <mqttQos>1</mqttQos>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>true</includeTimestamp>
-                        <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                        <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <tagName>tag-name</tagName>
                         <tagAddress>tag-address</tagAddress>
                         <dataType>WORD</dataType>

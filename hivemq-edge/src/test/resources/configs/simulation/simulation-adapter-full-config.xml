@@ -13,7 +13,7 @@
                     <simulationToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
                         <mqttQos>1</mqttQos>
-                        <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                        <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
                         <mqttUserProperties>
@@ -26,7 +26,7 @@
                     <simulationToMqttMapping>
                         <mqttTopic>my/topic/2</mqttTopic>
                         <mqttQos>1</mqttQos>
-                        <messageHandlingOptions>MQTTMessagePerTag</messageHandlingOptions>
+                        <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
                         <mqttUserProperties>
