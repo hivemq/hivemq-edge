@@ -30,7 +30,7 @@ public class UnsubscribePacketImplTest {
     public void equals() {
         EqualsVerifier.forClass(UnsubscribePacketImpl.class)
                 .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
-                .withNonnullFields("topicFilters", "mqttUserProperties")
+                .withNonnullFields("topicFilters", "userProperties")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();
     }

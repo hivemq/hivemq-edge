@@ -30,7 +30,7 @@ public class SubackPacketImplTest {
     public void equals() {
         EqualsVerifier.forClass(SubackPacketImpl.class)
                 .withIgnoredAnnotations(NotNull.class) // EqualsVerifier thinks @NotNull Optional is @NotNull
-                .withNonnullFields("reasonCodes", "mqttUserProperties")
+                .withNonnullFields("reasonCodes", "userProperties")
                 .suppress(Warning.STRICT_INHERITANCE)
                 .verify();
     }
