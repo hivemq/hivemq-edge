@@ -29,11 +29,9 @@ import java.util.Objects;
 public class HttpToMqttConfig {
 
     @JsonProperty("pollingIntervalMillis")
-    @JsonAlias(value = "publishingInterval") //-- Ensure we cater for properties created with legacy configuration
     @ModuleConfigField(title = "Polling Interval [ms]",
                        description = "Time in millisecond that this endpoint will be polled",
                        numberMin = 1,
-                       required = true,
                        defaultValue = "1000")
     private final int pollingIntervalMillis;
 

@@ -42,7 +42,7 @@ public class FileToMqttMapping implements PollingContext {
     private final @NotNull String mqttTopic;
 
     @JsonProperty(value = "mqttQos")
-    @ModuleConfigField(title = "QoS",
+    @ModuleConfigField(title = "MQTT QoS",
                        description = "MQTT Quality of Service level",
                        numberMin = 0,
                        numberMax = 2,
@@ -119,7 +119,7 @@ public class FileToMqttMapping implements PollingContext {
     }
 
     @Override
-    public @Nullable String getMqttTopic() {
+    public @NotNull String getMqttTopic() {
         return mqttTopic;
     }
 

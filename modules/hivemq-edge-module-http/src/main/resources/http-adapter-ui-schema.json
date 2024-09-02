@@ -21,7 +21,7 @@
       "properties" : [
         "id",
         "url",
-        "httpConnectTimeout"
+        "httpConnectTimeoutSeconds"
       ]
     },
     {
@@ -59,7 +59,7 @@
           "mqttQos",
           "mqttUserProperties",
           "httpRequestMethod",
-          "httpRequestTimeout",
+          "httpRequestTimeoutSeconds",
           "httpRequestBodyContentType",
           "httpRequestBody",
           "httpHeaders",

@@ -50,7 +50,7 @@ export const MOCK_PROTOCOL_HTTP: ProtocolAdapter = {
         description: 'Http method associated with the request',
         default: 'GET',
       },
-      httpConnectTimeout: {
+      httpConnectTimeoutSeconds: {
         type: 'integer',
         title: 'Http Connection Timeout',
         description: 'Timeout (in second) to apply to the HTTP Request',
@@ -105,7 +105,7 @@ export const MOCK_PROTOCOL_HTTP: ProtocolAdapter = {
         format: 'identifier',
         pattern: '([a-zA-Z_0-9\\-])*',
       },
-      publishingInterval: {
+      pollingIntervalMillis: {
         type: 'integer',
         title: 'Polling interval [ms]',
         description: 'Time in millisecond that this URL will be called',
@@ -120,7 +120,7 @@ export const MOCK_PROTOCOL_HTTP: ProtocolAdapter = {
         minimum: 3,
       },
     },
-    required: ['url', 'destination', 'qos', 'httpConnectTimeout', 'id', 'publishingInterval'],
+    required: ['url', 'destination', 'qos', 'httpConnectTimeoutSeconds', 'id', 'pollingIntervalMillis'],
   },
 }
 
@@ -132,12 +132,12 @@ export const MOCK_ADAPTER_HTTP = {
     destination: 'a/valid/topic/http/1',
     qos: 0,
     httpRequestMethod: 'GET',
-    httpConnectTimeout: 10,
+    httpConnectTimeoutSeconds: 10,
     httpRequestBodyContentType: 'JSON',
     httpPublishSuccessStatusCodeOnly: true,
     httpHeaders: [],
     id: '678',
-    publishingInterval: 1000,
+    pollingIntervalMillis: 1000,
     maxPollingErrorsBeforeRemoval: 10,
   },
   adapterRuntimeInformation: {

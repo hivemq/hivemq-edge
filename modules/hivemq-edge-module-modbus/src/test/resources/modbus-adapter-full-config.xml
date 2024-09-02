@@ -21,7 +21,7 @@
             <id>my-modbus-protocol-adapter</id>
             <host>my.modbus-server.com</host>
             <port>1234</port>
-            <timeout>1337</timeout>
+            <timeoutMillis>1337</timeoutMillis>
             <modbusToMqtt>
                 <pollingIntervalMillis>10</pollingIntervalMillis>
                 <maxPollingErrorsBeforeRemoval>9</maxPollingErrorsBeforeRemoval>

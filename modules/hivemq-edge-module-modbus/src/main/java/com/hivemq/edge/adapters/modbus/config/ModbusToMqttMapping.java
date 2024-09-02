@@ -41,7 +41,7 @@ public class ModbusToMqttMapping implements PollingContext {
     private final @NotNull String mqttTopic;
 
     @JsonProperty(value = "mqttQos")
-    @ModuleConfigField(title = "QoS",
+    @ModuleConfigField(title = "MQTT QoS",
                        description = "MQTT Quality of Service level",
                        numberMin = 0,
                        numberMax = 2,
@@ -70,15 +70,15 @@ public class ModbusToMqttMapping implements PollingContext {
     private final boolean includeTagNames;
 
     @JsonProperty(value = "mqttUserProperties")
-    @ModuleConfigField(title = "User Properties",
+    @ModuleConfigField(title = "MQTT User Properties",
                        description = "Arbitrary properties to associate with the mapping",
                        arrayMaxItems = 10)
     private final @NotNull List<MqttUserProperty> userProperties;
 
-    @JsonProperty("addressRange")
-    @JsonAlias("holding-registers")
-    @ModuleConfigField(title = "Holding Registers",
-                       description = "Define the start and end index values for your memory addresses")
+    @JsonProperty(value = "addressRange", required = true)
+    @ModuleConfigField(title = "Address Range",
+                       description = "Define the start and end index values for your memory addresses",
+                       required = true)
     private final @NotNull AddressRange addressRange;
 
     @JsonCreator

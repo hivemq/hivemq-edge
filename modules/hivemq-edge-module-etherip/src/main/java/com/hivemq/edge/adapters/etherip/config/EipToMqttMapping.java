@@ -39,7 +39,7 @@ public class EipToMqttMapping implements PollingContext {
                        format = ModuleConfigField.FieldType.IDENTIFIER)
     private final @NotNull String tagName;
 
-    @JsonProperty("tagAddress")
+    @JsonProperty(value = "tagAddress", required = true)
     @ModuleConfigField(title = "Tag Address",
                        description = "The well formed address of the tag to read",
                        required = true)
@@ -53,7 +53,7 @@ public class EipToMqttMapping implements PollingContext {
     private final @NotNull String mqttTopic;
 
     @JsonProperty(value = "mqttQos")
-    @ModuleConfigField(title = "QoS",
+    @ModuleConfigField(title = "MQTT QoS",
                        description = "MQTT Quality of Service level",
                        numberMin = 0,
                        numberMax = 2,
@@ -73,16 +73,16 @@ public class EipToMqttMapping implements PollingContext {
     @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
                        description = "Include the unix timestamp of the sample time in the resulting MQTT message",
                        defaultValue = "true")
-    private final @NotNull Boolean includeTimestamp;
+    private final boolean includeTimestamp;
 
     @JsonProperty(value = "includeTagNames")
     @ModuleConfigField(title = "Include Tag Names In Publish?",
                        description = "Include the names of the tags in the resulting MQTT publish",
                        defaultValue = "false")
-    private final @NotNull Boolean includeTagNames;
+    private final boolean includeTagNames;
 
 
-    @JsonProperty("dataType")
+    @JsonProperty(value = "dataType", required = true)
     @ModuleConfigField(title = "Data Type", description = "The expected data type of the tag", enumDisplayValues = {
             "Bool",
             "DInt",
@@ -110,13 +110,13 @@ public class EipToMqttMapping implements PollingContext {
     public EipToMqttMapping(
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty(value = "mqttQos") final @Nullable Integer qos,
-            @JsonProperty("messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
-            @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
-            @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
+            @JsonProperty(value = "messageHandlingOptions") final @Nullable MessageHandlingOptions messageHandlingOptions,
+            @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
+            @JsonProperty(value = "includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "tagAddress", required = true) final @NotNull String tagAddress,
             @JsonProperty(value = "dataType", required = true) final @NotNull EipDataType dataType,
-            @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
+            @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerTag);

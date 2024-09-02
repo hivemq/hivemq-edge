@@ -42,13 +42,13 @@ public class Plc4xToMqttMapping implements PollingContext {
                        format = ModuleConfigField.FieldType.IDENTIFIER)
     private final @NotNull String tagName;
 
-    @JsonProperty("tagAddress")
+    @JsonProperty(value = "tagAddress", required = true)
     @ModuleConfigField(title = "Tag Address",
                        description = "The well formed address of the tag to read",
                        required = true)
     private final @NotNull String tagAddress;
 
-    @JsonProperty("dataType")
+    @JsonProperty(value = "dataType", required = true)
     @ModuleConfigField(title = "Data Type", description = "The expected data type of the tag", enumDisplayValues = {
             "Null",
             "Boolean",
@@ -88,8 +88,8 @@ public class Plc4xToMqttMapping implements PollingContext {
                        format = ModuleConfigField.FieldType.MQTT_TOPIC)
     private final @NotNull String mqttTopic;
 
-    @JsonProperty(value = "mqttQos", required = true)
-    @ModuleConfigField(title = "QoS",
+    @JsonProperty(value = "mqttQos")
+    @ModuleConfigField(title = "MQTT QoS",
                        description = "MQTT Quality of Service level",
                        numberMin = 0,
                        numberMax = 2,
@@ -109,13 +109,13 @@ public class Plc4xToMqttMapping implements PollingContext {
     @ModuleConfigField(title = "Include Sample Timestamp In Publish?",
                        description = "Include the unix timestamp of the sample time in the resulting MQTT message",
                        defaultValue = "true")
-    private @NotNull Boolean includeTimestamp;
+    private boolean includeTimestamp;
 
     @JsonProperty(value = "includeTagNames")
     @ModuleConfigField(title = "Include Tag Names In Publish?",
                        description = "Include the names of the tags in the resulting MQTT publish",
                        defaultValue = "false")
-    private @NotNull Boolean includeTagNames;
+    private boolean includeTagNames;
 
     @JsonProperty(value = "mqttUserProperties")
     @ModuleConfigField(title = "User Properties",

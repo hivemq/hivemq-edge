@@ -115,7 +115,7 @@ public class AdapterConfigModelTest {
         protected @Nullable String mqttTopic;
 
         @JsonProperty(value = "mqttQos", required = true)
-        @ModuleConfigField(title = "QoS",
+        @ModuleConfigField(title = "MQTT QoS",
                            description = "MQTT Quality of Service level",
                            required = true,
                            numberMin = 0,

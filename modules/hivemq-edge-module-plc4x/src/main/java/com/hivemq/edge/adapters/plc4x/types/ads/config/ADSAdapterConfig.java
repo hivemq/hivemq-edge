@@ -27,7 +27,7 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
     private static final int PORT_MIN = 1;
     private static final int PORT_MAX = 65535;
 
-    @JsonProperty("port")
+    @JsonProperty(value = "port", required = true)
     @ModuleConfigField(title = "Port",
                        description = "The port number on the device to connect to",
                        required = true,
@@ -36,6 +36,7 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
                        defaultValue = "48898")
     private final int port;
 
+    @JsonProperty(value = "targetAmsPort", required = true)
     @ModuleConfigField(title = "Target AMS Port",
                        description = "The AMS port number on the device to connect to",
                        required = true,
@@ -44,6 +45,7 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
                        defaultValue = "851")
     private final int targetAmsPort;
 
+    @JsonProperty(value = "sourceAmsPort", required = true)
     @ModuleConfigField(title = "Source AMS Port",
                        description = "The local AMS port number used by HiveMQ Edge",
                        required = true,
@@ -52,21 +54,21 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
                        defaultValue = "48898")
     private final int sourceAmsPort;
 
-    @JsonProperty("sourceAmsNetId")
+    @JsonProperty(value = "sourceAmsNetId", required = true)
     @ModuleConfigField(title = "Source Ams Net Id",
                        required = true,
                        stringPattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
                        description = "The AMS Net ID used by HiveMQ Edge")
     private final @NotNull String sourceAmsNetId;
 
-    @JsonProperty("targetAmsNetId")
+    @JsonProperty(value = "targetAmsNetId", required = true)
     @ModuleConfigField(title = "Target Ams Net Id",
                        required = true,
                        stringPattern = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
                        description = "The AMS Net ID of the device to connect to")
     private final @NotNull String targetAmsNetId;
 
-    @JsonProperty("adsToMqtt")
+    @JsonProperty(value = "adsToMqtt", required = true)
     @ModuleConfigField(title = "ADS To MQTT Config",
                        description = "The configuration for a data stream from ADS to MQTT",
                        required = true)

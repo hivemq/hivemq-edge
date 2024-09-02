@@ -72,11 +72,11 @@ public class HttpToMqttMapping implements PollingContext {
                        defaultValue = "GET")
     private final @NotNull HttpAdapterConfig.HttpMethod httpRequestMethod;
 
-    @JsonProperty(value = "httpRequestTimeout")
+    @JsonProperty(value = "httpRequestTimeoutSeconds")
     @ModuleConfigField(title = "Http Request Timeout",
                        description = "Timeout (in seconds) to wait for the HTTP Request to complete",
                        defaultValue = DEFAULT_TIMEOUT_SECONDS + "")
-    private final int httpRequestTimeout;
+    private final int httpRequestTimeoutSeconds;
 
     @JsonProperty(value = "httpRequestBodyContentType")
     @ModuleConfigField(title = "Http Request Content Type",
@@ -100,7 +100,7 @@ public class HttpToMqttMapping implements PollingContext {
             @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
             @JsonProperty(value = "includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty(value = "httpRequestMethod") final @Nullable HttpAdapterConfig.HttpMethod httpRequestMethod,
-            @JsonProperty(value = "httpRequestTimeout") final @Nullable Integer httpRequestTimeout,
+            @JsonProperty(value = "httpRequestTimeoutSeconds") final @Nullable Integer httpRequestTimeoutSeconds,
             @JsonProperty(value = "httpRequestBodyContentType") final @Nullable HttpAdapterConfig.HttpContentType httpRequestBodyContentType,
             @JsonProperty(value = "httpRequestBody") final @Nullable String httpRequestBody,
             @JsonProperty(value = "httpHeaders") final @Nullable List<HttpAdapterConfig.HttpHeader> httpHeaders) {
@@ -111,11 +111,11 @@ public class HttpToMqttMapping implements PollingContext {
         this.httpRequestMethod = Objects.requireNonNullElse(httpRequestMethod, GET);
         this.httpRequestBodyContentType = Objects.requireNonNullElse(httpRequestBodyContentType, JSON);
         this.httpRequestBody = httpRequestBody;
-        if (httpRequestTimeout != null) {
+        if (httpRequestTimeoutSeconds != null) {
             //-- Ensure we apply a reasonable timeout, so we don't hang threads
-            this.httpRequestTimeout = Math.max(httpRequestTimeout, MAX_TIMEOUT_SECONDS);
+            this.httpRequestTimeoutSeconds = Math.max(httpRequestTimeoutSeconds, MAX_TIMEOUT_SECONDS);
         } else {
-            this.httpRequestTimeout = DEFAULT_TIMEOUT_SECONDS;
+            this.httpRequestTimeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
         }
         this.httpHeaders = Objects.requireNonNullElseGet(httpHeaders, List::of);
     }
@@ -156,8 +156,8 @@ public class HttpToMqttMapping implements PollingContext {
         return httpRequestMethod;
     }
 
-    public int getHttpRequestTimeout() {
-        return httpRequestTimeout;
+    public int getHttpRequestTimeoutSeconds() {
+        return httpRequestTimeoutSeconds;
     }
 
     public @NotNull HttpAdapterConfig.HttpContentType getHttpRequestBodyContentType() {

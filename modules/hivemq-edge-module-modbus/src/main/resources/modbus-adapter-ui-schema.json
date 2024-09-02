@@ -22,7 +22,7 @@
         "id",
         "port",
         "host",
-        "timeout"
+        "timeoutMillis"
       ]
     },
     {
