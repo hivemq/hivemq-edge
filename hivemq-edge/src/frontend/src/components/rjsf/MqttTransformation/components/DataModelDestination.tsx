@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { JSONSchema7 } from 'json-schema'
-import { Card, CardBody, CardHeader, CardProps, Heading, HStack } from '@chakra-ui/react'
+import { Alert, AlertIcon, AlertTitle, Card, CardBody, CardHeader, CardProps, Heading, HStack } from '@chakra-ui/react'
 import { BiCheckboxChecked } from 'react-icons/bi'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
@@ -20,7 +20,7 @@ const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, ...props }
   const isReady = Boolean(!isLoading && data)
 
   return (
-    <Card {...props}>
+    <Card {...props} size="sm">
       <CardHeader as={HStack} justifyContent="space-between">
         <Heading as="h3" size="sm">
           {t('rjsf.MqttTransformationField.destination.header')}
