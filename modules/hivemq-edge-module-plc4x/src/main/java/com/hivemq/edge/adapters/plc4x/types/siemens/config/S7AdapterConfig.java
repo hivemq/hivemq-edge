@@ -119,23 +119,23 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
         return port;
     }
 
-    public @NotNull Integer getRemoteRack() {
+    public int getRemoteRack() {
         return remoteRack;
     }
 
-    public @NotNull Integer getRemoteRack2() {
+    public int getRemoteRack2() {
         return remoteRack2;
     }
 
-    public @NotNull Integer getRemoteSlot() {
+    public int getRemoteSlot() {
         return remoteSlot;
     }
 
-    public @NotNull Integer getRemoteSlot2() {
+    public int getRemoteSlot2() {
         return remoteSlot2;
     }
 
-    public @NotNull Integer getRemoteTsap() {
+    public int getRemoteTsap() {
         return remoteTsap;
     }
 
