@@ -127,7 +127,7 @@ public class HttpAdapterConfigTest {
 
         assertThat(config.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
-        assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(1337);
+        assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);
 
         assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
@@ -159,7 +159,7 @@ public class HttpAdapterConfigTest {
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
-        assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(1337);
+        assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);
         assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
@@ -168,7 +168,7 @@ public class HttpAdapterConfigTest {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/destination");
             assertThat(mapping.getMqttQos()).isEqualTo(0);
             assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);
-            assertThat(mapping.getHttpRequestTimeoutSeconds()).isEqualTo(1338);
+            assertThat(mapping.getHttpRequestTimeoutSeconds()).isEqualTo(50);
             assertThat(mapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
             assertThat(mapping.getHttpRequestBody()).isEqualTo("my-body");
             assertThat(mapping.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
@@ -189,7 +189,7 @@ public class HttpAdapterConfigTest {
             assertThat(mapping.getMqttTopic()).isEqualTo("my/destination2");
             assertThat(mapping.getMqttQos()).isEqualTo(0);
             assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);
-            assertThat(mapping.getHttpRequestTimeoutSeconds()).isEqualTo(1338);
+            assertThat(mapping.getHttpRequestTimeoutSeconds()).isEqualTo(50);
             assertThat(mapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
             assertThat(mapping.getHttpRequestBody()).isEqualTo("my-body2");
             assertThat(mapping.getHttpHeaders()).satisfiesExactlyInAnyOrder(header1 -> {
@@ -217,7 +217,7 @@ public class HttpAdapterConfigTest {
 
         final HttpAdapterConfig httpAdapterConfig = new HttpAdapterConfig("my-protocol-adapter",
                 "http://192.168.0.02:777/?asdasd=asdasd",
-                1773,
+                50,
                 new HttpToMqttConfig(1337,
                         11,
                         true,
@@ -253,7 +253,7 @@ public class HttpAdapterConfigTest {
 
         assertThat(config.get("id")).isEqualTo("my-protocol-adapter");
         assertThat(config.get("url")).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
-        assertThat(config.get("httpConnectTimeoutSeconds")).isEqualTo(1773);
+        assertThat(config.get("httpConnectTimeoutSeconds")).isEqualTo(50);
 
         final Map<String, Object> httpToMqtt = (Map<String, Object>) config.get("httpToMqtt");
 
@@ -263,9 +263,7 @@ public class HttpAdapterConfigTest {
         assertThat((Boolean) httpToMqtt.get("allowUntrustedCertificates")).isTrue();
         assertThat((Boolean) httpToMqtt.get("assertResponseIsJson")).isTrue();
 
-        final Map<String, Object> mapping =
-                (Map<String, Object>) ((Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(0)).get(
-                        "httpToMqttMapping");
+        final Map<String, Object> mapping = (Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(0);
 
         assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
         assertThat(mapping.get("mqttQos")).isEqualTo(0);
@@ -279,9 +277,7 @@ public class HttpAdapterConfigTest {
             assertThat(header2.get("name")).isEqualTo("foo 2");
             assertThat(header2.get("value")).isEqualTo("bar 2");
         });
-        final Map<String, Object> mapping2 =
-                (Map<String, Object>) ((Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(1)).get(
-                        "httpToMqttMapping");
+        final Map<String, Object> mapping2 = (Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(1);
 
         assertThat(mapping2.get("mqttTopic")).isEqualTo("my/destination2");
         assertThat(mapping2.get("mqttQos")).isEqualTo(0);
@@ -339,8 +335,7 @@ public class HttpAdapterConfigTest {
         assertThat((Boolean) httpToMqtt.get("assertResponseIsJson")).isFalse();
 
         final Map<String, Object> mapping =
-                (Map<String, Object>) ((Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(0)).get(
-                        "httpToMqttMapping");
+                (Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(0);
 
         assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
         assertThat(mapping.get("mqttQos")).isEqualTo(0);

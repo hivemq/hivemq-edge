@@ -172,9 +172,7 @@ class ADSAdapterConfigTest {
         assertThat(adsToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
         assertThat(adsToMqtt.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat((List<Map<String, Object>>) adsToMqtt.get("adsToMqttMappings")).satisfiesExactly((mappings) -> {
-
-            Map<String, Object> mapping = (Map<String, Object>) mappings.get("adsToMqttMapping");
+        assertThat((List<Map<String, Object>>) adsToMqtt.get("adsToMqttMappings")).satisfiesExactly((mapping) -> {
 
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
             assertThat(mapping.get("mqttQos")).isEqualTo(1);

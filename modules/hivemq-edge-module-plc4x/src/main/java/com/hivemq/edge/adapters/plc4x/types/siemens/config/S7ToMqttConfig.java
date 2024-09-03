@@ -30,7 +30,6 @@ import java.util.Objects;
 public class S7ToMqttConfig extends Plc4xToMqttConfig {
 
     @JsonProperty("s7ToMqttMappings")
-    @JsonSerialize(using = S7PollingContextSerializer.class)
     @ModuleConfigField(title = "S7 to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
     private final @NotNull List<Plc4xToMqttMapping> mappings;
 

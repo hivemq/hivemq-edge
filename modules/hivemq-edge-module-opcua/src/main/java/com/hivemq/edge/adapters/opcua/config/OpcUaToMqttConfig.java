@@ -28,7 +28,6 @@ import java.util.Objects;
 public class OpcUaToMqttConfig {
 
     @JsonProperty("opcuaToMqttMappings")
-    @JsonSerialize(using = OpcuaToMqttMappingSerializer.class)
     @ModuleConfigField(title = "opcuaToMqttMappings",
                        description = "Map your sensor data to MQTT Topics")
     private final @NotNull List<OpcUaToMqttMapping> opcuaToMqttMappings;

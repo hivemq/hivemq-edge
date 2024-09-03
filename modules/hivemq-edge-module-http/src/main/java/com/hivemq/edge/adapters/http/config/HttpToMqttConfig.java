@@ -64,7 +64,6 @@ public class HttpToMqttConfig {
     private final boolean httpPublishSuccessStatusCodeOnly;
 
     @JsonProperty("httpToMqttMappings")
-    @JsonSerialize(using = HttpToMqttMappingSerializer.class)
     @ModuleConfigField(title = "HTTP to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
     private final @NotNull List<HttpToMqttMapping> mappings;
 
