@@ -163,9 +163,7 @@ class EipAdapterConfigTest {
         assertThat(eipToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
         assertThat(eipToMqtt.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat((List<Map<String, Object>>) eipToMqtt.get("eipToMqttMappings")).satisfiesExactly((mappings) -> {
-
-            Map<String, Object> mapping = (Map<String, Object>) mappings.get("eipToMqttMapping");
+        assertThat((List<Map<String, Object>>) eipToMqtt.get("eipToMqttMappings")).satisfiesExactly((mapping) -> {
 
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
             assertThat(mapping.get("mqttQos")).isEqualTo(1);

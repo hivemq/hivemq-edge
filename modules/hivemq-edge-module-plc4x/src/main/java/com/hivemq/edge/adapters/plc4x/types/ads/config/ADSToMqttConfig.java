@@ -30,7 +30,6 @@ import java.util.Objects;
 public class ADSToMqttConfig extends Plc4xToMqttConfig {
 
     @JsonProperty("adsToMqttMappings")
-    @JsonSerialize(using = ADSPollingContextSerializer.class)
     @ModuleConfigField(title = "ADS to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
     private final @NotNull List<Plc4xToMqttMapping> mappings;
 

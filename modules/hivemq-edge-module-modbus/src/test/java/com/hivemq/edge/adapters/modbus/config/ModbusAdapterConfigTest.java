@@ -262,9 +262,7 @@ public class ModbusAdapterConfigTest {
         assertThat(modbusToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
         assertThat(modbusToMqtt.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat((List<Map<String, Object>>) modbusToMqtt.get("modbusToMqttMappings")).satisfiesExactly((mappings) -> {
-
-            Map<String, Object> mapping = (Map<String, Object>) mappings.get("modbusToMqttMapping");
+        assertThat((List<Map<String, Object>>) modbusToMqtt.get("modbusToMqttMappings")).satisfiesExactly((mapping) -> {
 
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
             assertThat(mapping.get("mqttQos")).isEqualTo(1);
@@ -308,8 +306,7 @@ public class ModbusAdapterConfigTest {
         assertThat(modbusToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
         assertThat(modbusToMqtt.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat(((List<Map<String, Object>>) modbusToMqtt.get("modbusToMqttMappings"))).satisfiesExactly(mappings -> {
-            final Map<String, Object> mapping = (Map<String, Object>) mappings.get("modbusToMqttMapping");
+        assertThat(((List<Map<String, Object>>) modbusToMqtt.get("modbusToMqttMappings"))).satisfiesExactly(mapping -> {
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
             assertThat(mapping.get("mqttQos")).isEqualTo(0);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
@@ -320,8 +317,7 @@ public class ModbusAdapterConfigTest {
                 assertThat(addressRange.get("startIdx")).isEqualTo(1);
                 assertThat(addressRange.get("endIdx")).isEqualTo(2);
             });
-        }, mappings -> {
-            final Map<String, Object> mapping = (Map<String, Object>) mappings.get("modbusToMqttMapping");
+        }, mapping -> {
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination/2");
             assertThat(mapping.get("mqttQos")).isEqualTo(0);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");

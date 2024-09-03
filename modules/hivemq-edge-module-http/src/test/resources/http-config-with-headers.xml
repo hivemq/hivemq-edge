@@ -21,7 +21,7 @@
         <http>
             <id>my-protocol-adapter</id>
             <url>http://192.168.0.02:777/?asdasd=asdasd</url>
-            <httpConnectTimeoutSeconds>1337</httpConnectTimeoutSeconds>
+            <httpConnectTimeoutSeconds>50</httpConnectTimeoutSeconds>
             <httpToMqtt>
                 <pollingIntervalMillis>1773</pollingIntervalMillis>
                 <maxPollingErrorsBeforeRemoval>13</maxPollingErrorsBeforeRemoval>
@@ -43,7 +43,7 @@
                             </mqttUserProperty>
                         </mqttUserProperties>
                         <httpRequestMethod>GET</httpRequestMethod>
-                        <httpRequestTimeoutSeconds>1338</httpRequestTimeoutSeconds>
+                        <httpRequestTimeoutSeconds>50</httpRequestTimeoutSeconds>
                         <httpRequestBodyContentType>YAML</httpRequestBodyContentType>
                         <httpRequestBody>my-body</httpRequestBody>
                         <httpHeaders>
@@ -71,7 +71,7 @@
                             </mqttUserProperty>
                         </mqttUserProperties>
                         <httpRequestMethod>GET</httpRequestMethod>
-                        <httpRequestTimeoutSeconds>1338</httpRequestTimeoutSeconds>
+                        <httpRequestTimeoutSeconds>50</httpRequestTimeoutSeconds>
                         <httpRequestBodyContentType>YAML</httpRequestBodyContentType>
                         <httpRequestBody>my-body2</httpRequestBody>
                         <httpHeaders>

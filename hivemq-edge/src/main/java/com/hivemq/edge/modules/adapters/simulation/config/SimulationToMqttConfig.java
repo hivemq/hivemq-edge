@@ -42,7 +42,6 @@ public class SimulationToMqttConfig {
     private final int maxPollingErrorsBeforeRemoval;
 
     @JsonProperty("simulationToMqttMappings")
-    @JsonSerialize(using = SimulationToMqttMappingSerializer.class)
     @ModuleConfigField(title = "simulationToMqttMappings",
                        description = "List of simulation to mqtt mappings for the simulation")
     private final @NotNull List<SimulationToMqttMapping> simulationToMqttMappings;

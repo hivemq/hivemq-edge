@@ -43,7 +43,6 @@ public class FileToMqttConfig {
     private final int maxPollingErrorsBeforeRemoval;
 
     @JsonProperty("fileToMqttMappings")
-    @JsonSerialize(using = FileToMqttMappingSerializer.class)
     @ModuleConfigField(title = "File to MQTT Mappings", description = "Map your file to MQTT Topics")
     private final @NotNull List<FileToMqttMapping> mappings;
 

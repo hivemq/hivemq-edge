@@ -52,7 +52,6 @@ public class ModbusToMqttConfig {
     private final boolean publishChangedDataOnly;
 
     @JsonProperty("modbusToMqttMappings")
-    @JsonSerialize(using = ModbusToMqttMappingSerializer.class)
     @ModuleConfigField(title = "Modbus to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
     private final @NotNull List<ModbusToMqttMapping> mappings;
 

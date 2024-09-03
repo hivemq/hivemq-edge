@@ -21,7 +21,7 @@
         <http>
             <id>my-protocol-adapter</id>
             <url>http://192.168.0.02:777/?asdasd=asdasd</url>
-            <httpConnectTimeoutSeconds>1337</httpConnectTimeoutSeconds>
+            <httpConnectTimeoutSeconds>50</httpConnectTimeoutSeconds>
             <httpToMqtt>
                 <pollingIntervalMillis>1773</pollingIntervalMillis>
                 <maxPollingErrorsBeforeRemoval>13</maxPollingErrorsBeforeRemoval>
