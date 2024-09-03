@@ -1,5 +1,4 @@
 import { RJSFSchema } from '@rjsf/utils'
-import { faker } from '@faker-js/faker'
 import { DeviceTags } from '@/modules/Subscriptions/types.ts'
 
 export const GENERATE_DATA_MODELS = (_count?: number, short = false): RJSFSchema => {
@@ -11,16 +10,16 @@ export const GENERATE_DATA_MODELS = (_count?: number, short = false): RJSFSchema
     properties: {
       firstName: {
         type: 'string',
-        title: faker.lorem.word(),
+        title: 'firstName',
         default: 'Chuck',
       },
       lastName: {
         type: 'string',
-        title: faker.lorem.word(),
+        title: 'lastName',
       },
       age: {
         type: 'integer',
-        title: faker.lorem.word(),
+        title: 'age',
       },
     },
   }
@@ -30,21 +29,21 @@ export const GENERATE_DATA_MODELS = (_count?: number, short = false): RJSFSchema
       ...model.properties,
       bio: {
         type: 'string',
-        title: faker.lorem.word(),
+        title: 'bio',
       },
       password: {
         type: 'string',
-        title: faker.lorem.word(),
+        title: 'password',
         minLength: 3,
       },
       telephone: {
         type: 'string',
-        title: faker.lorem.word(),
+        title: 'telephone',
         minLength: 10,
       },
       listOfStrings: {
         type: 'array',
-        title: faker.lorem.word(),
+        title: 'listOfStrings',
         items: {
           type: 'string',
           default: 'bazinga',
@@ -52,14 +51,14 @@ export const GENERATE_DATA_MODELS = (_count?: number, short = false): RJSFSchema
       },
       minItemsList: {
         type: 'array',
-        title: faker.lorem.word(),
+        title: 'minItemsList',
         minItems: 3,
         items: {
           type: 'object',
           properties: {
             name: {
               type: 'string',
-              title: faker.lorem.word(),
+              title: 'name',
               default: 'Default name',
             },
           },
