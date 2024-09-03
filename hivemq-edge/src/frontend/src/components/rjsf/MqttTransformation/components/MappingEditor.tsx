@@ -1,20 +1,35 @@
-import { FC } from 'react'
+import { FC, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RJSFSchema } from '@rjsf/utils'
+import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { Button, Card, CardBody, CardHeader, CardProps, Heading, HStack, VStack } from '@chakra-ui/react'
 import { LuWand } from 'react-icons/lu'
 
-import MOCK_SCHEMA from '@datahub/api/__generated__/schemas/TransitionData.json'
+import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSubscriptionSchemas.tsx'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 
 interface MappingEditorProps extends CardProps {
-  id?: string
+  topic: string
+  showTransformation?: boolean
 }
 
-const MappingEditor: FC<MappingEditorProps> = ({ id, ...props }) => {
+const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = false, ...props }) => {
   const { t } = useTranslation('components')
-  const properties = getPropertyListFrom(MOCK_SCHEMA as RJSFSchema)
+  const { data, isLoading } = useGetSubscriptionSchemas(topic as string, topic ? 'activated_short' : undefined)
+  const properties = data ? getPropertyListFrom(data) : []
+  const ref = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return
+
+    return dropTargetForElements({
+      element,
+      canDrop: () => false,
+    })
+  }, [])
+
   return (
     <Card {...props}>
       <CardHeader as={HStack} justifyContent="space-between">
@@ -26,8 +41,10 @@ const MappingEditor: FC<MappingEditorProps> = ({ id, ...props }) => {
         </Button>
       </CardHeader>
       <CardBody as={VStack} maxH="60vh" overflowY="scroll">
+        {isLoading && <LoaderSpinner />}
+
         {properties.map((e) => (
-          <MappingInstruction property={e} key={e.title} />
+          <MappingInstruction showTransformation={showTransformation} property={e} key={e.title} />
         ))}
       </CardBody>
     </Card>
