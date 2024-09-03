@@ -166,9 +166,7 @@ class S7AdapterConfigTest {
         assertThat(s7ToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
         assertThat(s7ToMqtt.get("publishChangedDataOnly")).isEqualTo(true);
 
-        assertThat((List<Map<String, Object>>) s7ToMqtt.get("s7ToMqttMappings")).satisfiesExactly((mappings) -> {
-
-            Map<String, Object> mapping = (Map<String, Object>) mappings.get("s7ToMqttMapping");
+        assertThat((List<Map<String, Object>>) s7ToMqtt.get("s7ToMqttMappings")).satisfiesExactly((mapping) -> {
 
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
             assertThat(mapping.get("mqttQos")).isEqualTo(1);

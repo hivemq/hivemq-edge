@@ -49,7 +49,6 @@ public class EipToMqttConfig {
     private final boolean publishChangedDataOnly;
 
     @JsonProperty("eipToMqttMappings")
-    @JsonSerialize(using = EipToMqttMappingSerializer.class)
     @ModuleConfigField(title = "Eip to MQTT Mappings", description = "Map your sensor data to MQTT Topics")
     private final @NotNull List<EipToMqttMapping> mappings;
 

@@ -186,8 +186,7 @@ class SimulationAdapterConfigTest {
         assertThat(simulationToMqtt.get("pollingIntervalMillis")).isEqualTo(11);
         assertThat(simulationToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(12);
 
-        assertThat((List<Map<String, Object>>) simulationToMqtt.get("simulationToMqttMappings")).satisfiesExactly((mappings) -> {
-            final Map<String, Object> mapping = (Map<String, Object>) mappings.get("simulationToMqttMapping");
+        assertThat((List<Map<String, Object>>) simulationToMqtt.get("simulationToMqttMappings")).satisfiesExactly((mapping) -> {
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
             assertThat(mapping.get("mqttQos")).isEqualTo(1);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerSubscription");
@@ -226,8 +225,7 @@ class SimulationAdapterConfigTest {
         assertThat(simulationToMqtt.get("pollingIntervalMillis")).isEqualTo(1000);
         assertThat(simulationToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
 
-        assertThat((List<Map<String, Object>>) simulationToMqtt.get("simulationToMqttMappings")).satisfiesExactly((mappings) -> {
-            final Map<String, Object> mapping = (Map<String, Object>) mappings.get("simulationToMqttMapping");
+        assertThat((List<Map<String, Object>>) simulationToMqtt.get("simulationToMqttMappings")).satisfiesExactly((mapping) -> {
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
             assertThat(mapping.get("mqttQos")).isEqualTo(0);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerTag");

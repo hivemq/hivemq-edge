@@ -227,8 +227,7 @@ class OpcUaAdapterConfigTest {
         assertThat(config.get("uri")).isEqualTo("my.uri.com");
 
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
-        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).satisfiesExactly((mappings) -> {
-            final Map<String, Object> mapping = (Map<String, Object>) mappings.get("opcuaToMqttMapping");
+        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).satisfiesExactly((mapping) -> {
             assertThat(mapping.get("node")).isEqualTo("my-node");
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/topic");
             assertThat(mapping.get("publishingInterval")).isEqualTo(11);
@@ -276,8 +275,7 @@ class OpcUaAdapterConfigTest {
         assertThat(config.get("uri")).isEqualTo("my.uri.com");
 
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
-        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).satisfiesExactly((mappings) -> {
-            final Map<String, Object> mapping = (Map<String, Object>) mappings.get("opcuaToMqttMapping");
+        assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).satisfiesExactly((mapping) -> {
             assertThat(mapping.get("node")).isEqualTo("my-node");
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/topic");
             assertThat(mapping.get("publishingInterval")).isEqualTo(1000);

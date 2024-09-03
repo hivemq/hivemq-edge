@@ -192,14 +192,12 @@ class FileAdapterConfigTest {
         final Map<String, Object> modbusToMqtt = (Map<String, Object>) config.get("fileToMqtt");
         assertThat(modbusToMqtt.get("pollingIntervalMillis")).isEqualTo(12);
         assertThat(modbusToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(13);
-        assertThat((List<Map<String, Object>>) modbusToMqtt.get("fileToMqttMappings")).satisfiesExactly((mappings) -> {
-            final Map<String, Object> mapping = (Map<String, Object>) mappings.get("fileToMqttMapping");
+        assertThat((List<Map<String, Object>>) modbusToMqtt.get("fileToMqttMappings")).satisfiesExactly((mapping) -> {
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
             assertThat(mapping.get("mqttQos")).isEqualTo(1);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerTag");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);
-//            TODO: https://hivemq.kanbanize.com/ctrl_board/57/cards/24704/details/
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");
                 assertThat(userProperty.get("value")).isEqualTo("my-value");
@@ -231,14 +229,12 @@ class FileAdapterConfigTest {
         final Map<String, Object> modbusToMqtt = (Map<String, Object>) config.get("fileToMqtt");
         assertThat(modbusToMqtt.get("pollingIntervalMillis")).isEqualTo(1000);
         assertThat(modbusToMqtt.get("maxPollingErrorsBeforeRemoval")).isEqualTo(10);
-        assertThat((List<Map<String, Object>>) modbusToMqtt.get("fileToMqttMappings")).satisfiesExactly((mappings) -> {
-            final Map<String, Object> mapping = (Map<String, Object>) mappings.get("fileToMqttMapping");
+        assertThat((List<Map<String, Object>>) modbusToMqtt.get("fileToMqttMappings")).satisfiesExactly((mapping) -> {
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
             assertThat(mapping.get("mqttQos")).isEqualTo(0);
             assertThat(mapping.get("messageHandlingOptions")).isEqualTo("MQTTMessagePerTag");
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
-//            TODO: https://hivemq.kanbanize.com/ctrl_board/57/cards/24704/details/
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
             assertThat(mapping.get("filePath")).isEqualTo("path/to/file");
             assertThat(mapping.get("contentType")).isEqualTo("BINARY");
