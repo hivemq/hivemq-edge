@@ -28,6 +28,7 @@ import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.events.model.TypeIdentifier;
 import com.hivemq.bridge.MqttForwarder;
 import com.hivemq.bridge.config.BridgeTls;
+import com.hivemq.bridge.config.BridgeWebsocketConfig;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.bridge.config.RemoteSubscription;
@@ -122,6 +123,14 @@ public class BridgeMqttClient {
         builder.identifier(bridge.getClientId());
         builder.serverHost(bridge.getHost());
         builder.serverPort(bridge.getPort());
+
+        final BridgeWebsocketConfig websocketConfig = bridge.getBridgeWebsocketConfig();
+        if (websocketConfig != null) {
+            builder.webSocketConfig()
+                    .subprotocol(websocketConfig.getSubProtocol())
+                    .serverPath(websocketConfig.getPath())
+                    .applyWebSocketConfig();
+        }
 
         //-- Bind connection listeners to maintain status
         builder.addConnectedListener(context -> {

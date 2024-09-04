@@ -102,5 +102,8 @@ export const $Bridge = {
             format: 'string',
             maxLength: 65535,
         },
+        websocketConfiguration: {
+            type: 'WebsocketConfiguration',
+        },
     },
 } as const;

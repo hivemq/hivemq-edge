@@ -12,40 +12,38 @@ interface SourceLinkProps {
   type?: TypeIdentifier | undefined
 }
 
-interface LinkWrapperProps {
-  Icon: JSX.Element
-  To?: (id: string) => string | undefined
-  State?: (id: string) => AdapterNavigateState
-}
-
-const LinkWrapper: Record<TypeIdentifier.type, LinkWrapperProps> = {
-  [TypeIdentifier.type.ADAPTER]: {
-    Icon: <Icon as={PiPlugsConnectedFill} mr={2} />,
-    State: (id: string) => ({
-      protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
-      protocolAdapterType: id,
-    }),
-    To: (id: string) => `/protocol-adapters/${id}`,
-  },
-  [TypeIdentifier.type.ADAPTER_TYPE]: {
-    Icon: <Icon as={PiPlugsConnectedFill} mr={2} />,
-  },
-  [TypeIdentifier.type.BRIDGE]: {
-    Icon: <Icon as={PiBridgeThin} fontSize="20px" mr={2} />,
-    To: (id: string) => `/mqtt-bridges/${id}`,
-  },
-  [TypeIdentifier.type.EVENT]: {
-    Icon: <Icon as={MdOutlineEventNote} mr={2} />,
-  },
-  [TypeIdentifier.type.USER]: {
-    Icon: <Icon as={PiUserFill} mr={2} />,
-  },
-}
-
 const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
-  const SourceType = source?.type && LinkWrapper[source?.type]
+  let icon: JSX.Element | undefined
+  let to: string | undefined
+  let state: AdapterNavigateState | undefined
 
-  if (!SourceType?.To)
+  switch (source?.type) {
+    case TypeIdentifier.type.ADAPTER:
+      icon = <Icon as={PiPlugsConnectedFill} mr={2} />
+      state = {
+        protocolAdapterTabIndex: ProtocolAdapterTabIndex.ADAPTERS,
+        protocolAdapterType: type?.identifier,
+      }
+      to = `/protocol-adapters/edit/${type?.identifier}/${source.identifier}`
+      break
+    case TypeIdentifier.type.ADAPTER_TYPE:
+      icon = <Icon as={PiPlugsConnectedFill} mr={2} />
+      break
+    case TypeIdentifier.type.BRIDGE:
+      icon = <Icon as={PiBridgeThin} fontSize="20px" mr={2} />
+      to = `/mqtt-bridges/${source.identifier}`
+      break
+    case TypeIdentifier.type.EVENT:
+      icon = <Icon as={MdOutlineEventNote} mr={2} />
+      break
+    case TypeIdentifier.type.USER:
+      icon = <Icon as={PiUserFill} mr={2} />
+      break
+    default:
+      break
+  }
+
+  if (!to)
     return (
       <Box whiteSpace="nowrap" display="inline-flex">
         {source?.identifier}
@@ -53,14 +51,8 @@ const SourceLink: FC<SourceLinkProps> = ({ source, type }) => {
     )
 
   return (
-    <ChakraLink
-      as={ReactRouterLink}
-      to={source?.identifier && SourceType.To?.(source.identifier)}
-      state={type?.identifier && SourceType.State?.(type?.identifier)}
-      whiteSpace="nowrap"
-      display="inline-flex"
-    >
-      {source?.type && SourceType.Icon}
+    <ChakraLink as={ReactRouterLink} to={to} state={state} whiteSpace="nowrap" display="inline-flex">
+      {Boolean(icon) && icon}
       {source?.identifier}
     </ChakraLink>
   )

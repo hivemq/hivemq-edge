@@ -23,7 +23,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
     if (!adapter.config) return []
     return discoverAdapterTopics(adapterProtocol, adapter.config).map((e) => ({ topic: e }))
   }, [adapter.config, adapterProtocol])
-  const { onContextMenu } = useContextMenu(id, selected, '/edge-flow/node')
+  const { onContextMenu } = useContextMenu(id, selected, `/edge-flow/node/adapter/${adapter.type}`)
 
   return (
     <>

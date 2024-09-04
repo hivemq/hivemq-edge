@@ -52,15 +52,15 @@ export const routes = createBrowserRouter(
           element: <ProtocolAdapterPage />,
           children: [
             {
-              path: 'new',
+              path: 'new/:type',
               element: <AdapterController isNew />,
             },
             {
-              path: ':adapterId',
+              path: 'edit/:type/:adapterId',
               element: <AdapterController />,
             },
             {
-              path: ':adapterId/export',
+              path: 'edit/:type/:adapterId/export',
               element: <ExportDrawer />,
             },
           ],
@@ -70,7 +70,7 @@ export const routes = createBrowserRouter(
           element: <EdgeFlowPage />,
           children: [
             {
-              path: ':nodeType/:nodeId',
+              path: ':nodeType/:device?/:adapter?/:nodeId',
               element: <NodePanelController />,
             },
           ],
