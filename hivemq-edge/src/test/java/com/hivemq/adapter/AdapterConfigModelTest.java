@@ -145,7 +145,7 @@ public class AdapterConfigModelTest {
         protected @NotNull Boolean includeTagNames = Boolean.FALSE;
 
         @JsonProperty(value = "mqttUserProperties")
-        @ModuleConfigField(title = "User Properties",
+        @ModuleConfigField(title = "MQTT User Properties",
                            description = "Arbitrary properties to associate with the mapping",
                            arrayMaxItems = 10)
         private @NotNull List<MqttUserProperty> userProperties = new ArrayList<>();
