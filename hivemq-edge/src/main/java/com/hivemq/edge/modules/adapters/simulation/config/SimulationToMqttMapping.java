@@ -69,7 +69,7 @@ public class SimulationToMqttMapping implements PollingContext {
     private final boolean includeTagNames;
 
     @JsonProperty(value = "mqttUserProperties")
-    @ModuleConfigField(title = "User Properties",
+    @ModuleConfigField(title = "MQTT User Properties",
                        description = "Arbitrary properties to associate with the mapping",
                        arrayMaxItems = 10)
     private final @NotNull List<MqttUserProperty> userProperties;

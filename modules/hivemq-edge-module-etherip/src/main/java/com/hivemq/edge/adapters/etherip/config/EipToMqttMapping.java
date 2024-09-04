@@ -101,7 +101,7 @@ public class EipToMqttMapping implements PollingContext {
     private final @NotNull EipDataType dataType;
 
     @JsonProperty(value = "mqttUserProperties")
-    @ModuleConfigField(title = "User Properties",
+    @ModuleConfigField(title = "MQTT User Properties",
                        description = "Arbitrary properties to associate with the mapping",
                        arrayMaxItems = 10)
     private final @NotNull List<MqttUserProperty> userProperties;
