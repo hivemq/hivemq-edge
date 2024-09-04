@@ -4,7 +4,7 @@ import { createRoutesFromChildren, matchRoutes, useLocation, useNavigationType }
 
 if (import.meta.env.MODE !== 'development')
   Sentry.init({
-    dsn: 'https://6878b30beacaee0a926f189192dc3e7c@o4507702360670208.ingest.de.sentry.io/4507883299602512',
+    dsn: import.meta.env.VITE_MONITORING_SENTRY,
     release: `hivemq-edge@${import.meta.env.VITE_HIVEMQ_EDGE_VERSION}`,
     environment: import.meta.env.MODE,
 
