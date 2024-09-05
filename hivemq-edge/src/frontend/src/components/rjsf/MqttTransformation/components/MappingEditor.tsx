@@ -14,7 +14,7 @@ interface MappingEditorProps extends Omit<CardProps, 'onChange'> {
   topic: string
   showTransformation?: boolean
   mapping?: Mapping[]
-  onChange?: (v: string | string[] | undefined) => void
+  onChange?: (v: Mapping[] | undefined) => void
 }
 
 const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = false, mapping, onChange, ...props }) => {
@@ -47,8 +47,25 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
         {isLoading && <LoaderSpinner />}
 
         {properties.map((property) => {
-          console.log('XXXXX prop', property)
-          return <MappingInstruction showTransformation={showTransformation} property={property} key={property.title} />
+          const instruction = mapping?.findIndex((e) => e.destination === property.title) || -1
+          console.log('XXXXX prop', property, mapping, instruction)
+          return (
+            <MappingInstruction
+              showTransformation={showTransformation}
+              property={property}
+              key={property.title}
+              mapping={instruction ? mapping?.[instruction] : undefined}
+              onChange={(s, d) => {
+                console.log('XXXXX', s, d)
+                const gg = [...(mapping || [])]
+                const hhhh = { source: [s], destination: d }
+                if (instruction !== -1) {
+                  gg[instruction] = hhhh
+                } else gg.push(hhhh)
+                onChange?.(gg)
+              }}
+            />
+          )
         })}
       </CardBody>
     </Card>

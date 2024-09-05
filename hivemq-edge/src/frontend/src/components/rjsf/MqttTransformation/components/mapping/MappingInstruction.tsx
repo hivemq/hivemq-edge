@@ -7,6 +7,7 @@ import {
   CardBody,
   CardFooter,
   CardHeader,
+  Code,
   FormControl,
   HStack,
   List,
@@ -17,6 +18,7 @@ import { RiDeleteBin2Fill, RiFormula } from 'react-icons/ri'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
 import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import { Mapping } from '@/modules/Subscriptions/types.ts'
 
 enum DropState {
   IDLE = 'IDLE',
@@ -25,7 +27,7 @@ enum DropState {
 }
 
 const getDropZoneBorder = (color: string, state: DropState) => {
-  const activeColor = state === DropState.DRAG_OVER ? 'green' : color
+  const activeColor = state === DropState.DRAG_OVER || state === DropState.COMPLETED ? 'green' : color
   return {
     bgGradient: `repeating-linear(0deg, ${activeColor}, ${activeColor} 10px, transparent 10px, transparent 20px, ${activeColor} 20px), repeating-linear-gradient(90deg, ${activeColor}, ${activeColor} 10px, transparent 10px, transparent 20px, ${activeColor} 20px), repeating-linear-gradient(180deg, ${activeColor}, ${activeColor} 10px, transparent 10px, transparent 20px, ${activeColor} 20px), repeating-linear-gradient(270deg, ${activeColor}, ${activeColor} 10px, transparent 10px, transparent 20px, ${activeColor} 20px)`,
     backgroundSize: '2px 100%, 100% 2px, 2px 100% , 100% 2px',
@@ -39,9 +41,16 @@ const getDropZoneBorder = (color: string, state: DropState) => {
 interface MappingInstructionProps {
   property: FlatJSONSchema7
   showTransformation?: boolean
+  mapping?: Mapping
+  onChange?: (source: string, destination: string) => void
 }
 
-const MappingInstruction: FC<MappingInstructionProps> = ({ property, showTransformation = false }) => {
+const MappingInstruction: FC<MappingInstructionProps> = ({
+  property,
+  mapping,
+  onChange: XXXXX,
+  showTransformation = false,
+}) => {
   const { t } = useTranslation('components')
   const [state, setState] = useState<DropState>(DropState.IDLE)
   const ref = useRef<HTMLDivElement | null>(null)
@@ -53,7 +62,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({ property, showTransfo
     return dropTargetForElements({
       element,
       canDrop: (dropTarget) => {
-        return dropTarget.source.data.taskId === property.type
+        return dropTarget.source.data.type === property.type
       },
       onDragEnter: () => {
         setState(DropState.DRAG_OVER)
@@ -61,11 +70,12 @@ const MappingInstruction: FC<MappingInstructionProps> = ({ property, showTransfo
       onDragLeave: () => {
         setState(DropState.IDLE)
       },
-      onDrop: () => {
+      onDrop: (dropTarget) => {
         setState(DropState.COMPLETED)
+        XXXXX?.(dropTarget.source.data.title as string, property.title as string)
       },
     })
-  }, [property])
+  }, [XXXXX, property])
 
   return (
     <HStack>
@@ -75,8 +85,12 @@ const MappingInstruction: FC<MappingInstructionProps> = ({ property, showTransfo
             <PropertyItem property={property} />
           </List>
         </CardHeader>
-        <CardBody {...getDropZoneBorder('blue', state)} m={2} p={4} ref={ref}>
-          {t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')}
+        <CardBody {...getDropZoneBorder('blue', state)} m={2} p={4} ref={ref} minW={250}>
+          {mapping ? (
+            <Code>{mapping.source.join(' ')}</Code>
+          ) : (
+            t('rjsf.MqttTransformationField.instructions.dropzone.arial-label')
+          )}
         </CardBody>
         {state === DropState.COMPLETED && showTransformation && (
           <CardFooter>

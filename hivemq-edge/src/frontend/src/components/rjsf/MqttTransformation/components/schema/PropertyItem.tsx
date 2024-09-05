@@ -21,9 +21,9 @@ const PropertyItem: FC<PropertyItemProps> = ({ property, isDraggable = false }) 
     if (!element) return
     return draggable({
       element,
-      getInitialData: () => ({ taskId: property.type }),
+      getInitialData: () => ({ ...property }),
     })
-  }, [property.type])
+  }, [isDraggable, property, property.type])
 
   const TypeIcon = DataTypeIcon[(property.type || 'null') as JSONSchema7TypeName satisfies JSONSchema7TypeName]
 

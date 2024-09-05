@@ -34,7 +34,13 @@ const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, 
           <DataModelSources flex={1} topics={item['mqtt-topic']} />
         </VStack>
         {strategy != MappingStrategy.EXACT && (
-          <MappingEditor flex={3} topic={item.node} showTransformation={strategy === MappingStrategy.TRANSFORMED} />
+          <MappingEditor
+            flex={3}
+            topic={item.node}
+            mapping={item.mapping}
+            showTransformation={strategy === MappingStrategy.TRANSFORMED}
+            onChange={(m) => onChange('mapping', m)}
+          />
         )}
         <VStack flex={2} alignItems="stretch">
           <SourceSelector isTag topics={[item.node]} onChange={(v) => onChange('node', v)} />
