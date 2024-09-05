@@ -25,7 +25,7 @@ export interface OutwardSubscription {
 export interface Mapping {
   source: string[]
   destination: string
-  transformation: Transformation
+  transformation?: Transformation
 }
 
 /**
