@@ -45,9 +45,6 @@
       "ui:order": ["node", "mqtt-topic", "destination", "qos", "*"],
       "ui:collapsable": {
         "titleKey": "destination"
-      },
-      "userProperties": {
-        "ui:field": "compactTable"
       }
     }
   }

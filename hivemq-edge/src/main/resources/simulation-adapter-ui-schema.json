@@ -31,9 +31,6 @@
       "ui:order": [ "destination", "qos", "*"],
       "ui:collapsable": {
         "titleKey": "destination"
-      },
-      "userProperties": {
-        "ui:field": "compactTable"
       }
     }
   }

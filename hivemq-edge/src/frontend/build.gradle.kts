@@ -7,6 +7,18 @@ plugins {
 group = "com.hivemq"
 description = "Frontend for HiveMQ Edge"
 
+node {
+  download.set(true)
+  version.set("16.14.2")
+  pnpmVersion.set("8")
+}
+
+tasks.withType<PnpmTask>().configureEach {
+  environment = mapOf(
+    "VITE_HIVEMQ_EDGE_VERSION" to project.property("version").toString(),
+  )
+}
+
 val buildFrontend by tasks.registering(PnpmTask::class) {
   pnpmCommand.set(listOf("build", "--base=/app"))
   dependsOn(tasks.pnpmInstall)
@@ -30,10 +42,4 @@ val releaseBinary: Configuration by configurations.creating {
 
 artifacts {
   add(releaseBinary.name, buildFrontend)
-}
-
-node {
-  download.set(true)
-  version.set("16.14.2")
-  pnpmVersion.set("8")
 }
