@@ -7,6 +7,7 @@ import MappingEditor from '@/components/rjsf/MqttTransformation/components/Mappi
 import SourceSelector from '@/components/rjsf/MqttTransformation/components/SourceSelector.tsx'
 import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
 import { JsonNode } from '@/api/__generated__'
+import { useMappingValidation } from '@/components/rjsf/MqttTransformation/hooks/useMappingValidation.tsx'
 
 export enum MappingStrategy {
   EXACT = 'EXACT',
@@ -23,6 +24,8 @@ interface SubscriptionContainerProps {
 
 const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, onSubmit, onChange }) => {
   const [strategy] = useState<MappingStrategy>(MappingStrategy.TYPED)
+  const validation = useMappingValidation(item)
+
   return (
     <VStack alignItems="stretch" gap={4}>
       <Stack gap={2} flexDirection="row">
@@ -35,7 +38,7 @@ const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, 
         )}
         <VStack flex={2} alignItems="stretch">
           <SourceSelector isTag topics={[item.node]} onChange={(v) => onChange('node', v)} />
-          <DataModelDestination flex={1} topic={item.node} />
+          <DataModelDestination flex={1} topic={item.node} validation={validation} />
         </VStack>
       </Stack>
       <HStack justifyContent="flex-end">

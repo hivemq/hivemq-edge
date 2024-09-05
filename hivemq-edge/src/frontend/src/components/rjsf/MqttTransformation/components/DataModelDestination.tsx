@@ -8,12 +8,15 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSubscriptionSchemas.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+import { MappingValidation } from '@/modules/Subscriptions/types.ts'
+import ValidationStatus from '@/components/rjsf/MqttTransformation/components/mapping/ValidationStatus.tsx'
 
 interface DataModelDestinationProps extends CardProps {
   topic: string | undefined
+  validation: MappingValidation
 }
 
-const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, ...props }) => {
+const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, validation, ...props }) => {
   const { t } = useTranslation('components')
   const { data, isLoading } = useGetSubscriptionSchemas(topic as string, topic ? 'activated_short' : undefined)
 
@@ -25,6 +28,7 @@ const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, ...props }
         <Heading as="h3" size="sm">
           {t('rjsf.MqttTransformationField.destination.header')}
         </Heading>
+        <ValidationStatus validation={validation} />
         <IconButton
           size="xs"
           icon={<BiCheckboxChecked />}

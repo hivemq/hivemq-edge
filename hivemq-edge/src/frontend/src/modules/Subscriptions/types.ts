@@ -1,4 +1,5 @@
 import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
+import { AlertProps } from '@chakra-ui/react'
 
 export interface SubscriptionManagerType {
   schema: RJSFSchema
@@ -42,4 +43,8 @@ export interface DeviceTags {
   tag: string
   node?: string
   register?: { start: number; shift: number }
+}
+
+export interface MappingValidation extends Pick<AlertProps, 'status'> {
+  errors: string[]
 }
