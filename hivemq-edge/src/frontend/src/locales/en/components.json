@@ -182,6 +182,67 @@
         "noOption_one": "No options matching {{ value }}",
         "noOption_other": "No options matching {{ value }}"
       }
+    },
+    "MqttTransformationField": {
+      "tabs": {
+        "list": "List of subscriptions",
+        "editor": "Mapping Editor"
+      },
+      "unset": "< unset >",
+      "listing": {
+        "sources": "Sources",
+        "destination": "Destination",
+        "actions": "Actions"
+      },
+      "actions": {
+        "delete": {
+          "aria-label": "Delete subscription"
+        },
+        "edit": {
+          "aria-label": "Edit subscription"
+        },
+        "add": {
+          "aria-label": "Add a new subscription"
+        }
+      },
+      "sources": {
+        "header": "Sources",
+        "samples": {
+          "aria-label": "Reload samples"
+        }
+      },
+      "mapping": {
+        "header": "Properties to set",
+        "auto": {
+          "aria-label": "Auto-mapping"
+        }
+      },
+      "destination": {
+        "header": "Destination output",
+        "check": {
+          "aria-label": "Mapping valid"
+        }
+      },
+      "instructions": {
+        "dropzone": {
+          "arial-label": "Drag a source property here"
+        },
+        "editor": {
+          "arial-label": "Edit the transformation"
+        },
+        "actions": {
+          "clear": {
+            "aria-label": "Clear mapping"
+          },
+          "edit": {
+            "aria-label": "Edit transformation"
+          }
+        }
+      },
+      "status": {
+        "title_error": "Some errors",
+        "title_success": "Complete"
+      }
     }
   }
 }
