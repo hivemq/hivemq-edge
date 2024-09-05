@@ -64,6 +64,22 @@ export const GENERATE_DATA_MODELS = (_count?: number, short = false): RJSFSchema
           },
         },
       },
+      subItems: {
+        type: 'object',
+        title: 'subItems',
+        properties: {
+          name: {
+            type: 'string',
+            title: 'name',
+            default: 'Default name',
+          },
+          type: {
+            type: 'string',
+            title: 'type',
+            default: 'Default type',
+          },
+        },
+      },
     }
 
   return model
