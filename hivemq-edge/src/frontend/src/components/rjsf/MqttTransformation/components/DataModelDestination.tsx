@@ -1,7 +1,7 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { JSONSchema7 } from 'json-schema'
-import { Alert, AlertIcon, AlertTitle, Card, CardBody, CardHeader, CardProps, Heading, HStack } from '@chakra-ui/react'
+import { Card, CardBody, CardHeader, CardProps, Heading, HStack } from '@chakra-ui/react'
 import { BiCheckboxChecked } from 'react-icons/bi'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
