@@ -9,12 +9,14 @@ import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json
 
 interface PropertyItemProps {
   property: FlatJSONSchema7
+  isDraggable?: boolean
 }
 
-const PropertyItem: FC<PropertyItemProps> = ({ property }) => {
+const PropertyItem: FC<PropertyItemProps> = ({ property, isDraggable = false }) => {
   const ref = useRef<HTMLLIElement | null>(null)
 
   useEffect(() => {
+    if (!isDraggable) return
     const element = ref.current
     if (!element) return
     return draggable({

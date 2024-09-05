@@ -34,7 +34,7 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
 
       <CardBody>
         {isLoading && <LoaderSpinner />}
-        {isReady && <JsonSchemaBrowser schema={data as JSONSchema7} />}
+        {isReady && <JsonSchemaBrowser schema={data as JSONSchema7} isDraggable />}
       </CardBody>
     </Card>
   )
