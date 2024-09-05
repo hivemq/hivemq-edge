@@ -1,5 +1,5 @@
 import { FC, useState } from 'react'
-import { Button, ButtonGroup, HStack, Stack, VStack } from '@chakra-ui/react'
+import { Box, Button, ButtonGroup, HStack, Stack, VStack } from '@chakra-ui/react'
 
 import DataModelDestination from '@/components/rjsf/MqttTransformation/components/DataModelDestination.tsx'
 import DataModelSources from '@/components/rjsf/MqttTransformation/components/DataModelSources.tsx'
@@ -29,23 +29,40 @@ const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, 
   return (
     <VStack alignItems="stretch" gap={4}>
       <Stack gap={2} flexDirection="row">
-        <VStack flex={2} alignItems="stretch">
+        <VStack flex={1} alignItems="stretch">
           <SourceSelector topics={item['mqtt-topic']} multiple onChange={(v) => onChange('mqtt-topic', v)} />
           <DataModelSources flex={1} topics={item['mqtt-topic']} />
         </VStack>
-        {strategy != MappingStrategy.EXACT && (
-          <MappingEditor
-            flex={3}
-            topic={item.node}
-            mapping={item.mapping}
-            showTransformation={strategy === MappingStrategy.TRANSFORMED}
-            onChange={(m) => onChange('mapping', m)}
-          />
-        )}
         <VStack flex={2} alignItems="stretch">
-          <SourceSelector isTag topics={[item.node]} onChange={(v) => onChange('node', v)} />
-          <DataModelDestination flex={1} topic={item.node} validation={validation} />
+          <Box maxW="50%">
+            <SourceSelector isTag topics={[item.node]} onChange={(v) => onChange('node', v)} />
+          </Box>
+          <HStack alignItems="stretch">
+            {strategy != MappingStrategy.EXACT && (
+              <MappingEditor
+                flex={1}
+                topic={item.node}
+                mapping={item.mapping}
+                showTransformation={strategy === MappingStrategy.TRANSFORMED}
+                onChange={(m) => onChange('mapping', m)}
+              />
+            )}
+            <DataModelDestination flex={1} topic={item.node} validation={validation} />
+          </HStack>
         </VStack>
+        {/*{strategy != MappingStrategy.EXACT && (*/}
+        {/*  <MappingEditor*/}
+        {/*    flex={3}*/}
+        {/*    topic={item.node}*/}
+        {/*    mapping={item.mapping}*/}
+        {/*    showTransformation={strategy === MappingStrategy.TRANSFORMED}*/}
+        {/*    onChange={(m) => onChange('mapping', m)}*/}
+        {/*  />*/}
+        {/*)}*/}
+        {/*<VStack flex={2} alignItems="stretch">*/}
+        {/*  <SourceSelector isTag topics={[item.node]} onChange={(v) => onChange('node', v)} />*/}
+        {/*  <DataModelDestination flex={1} topic={item.node} validation={validation} />*/}
+        {/*</VStack>*/}
       </Stack>
       <HStack justifyContent="flex-end">
         <ButtonGroup size="sm">
