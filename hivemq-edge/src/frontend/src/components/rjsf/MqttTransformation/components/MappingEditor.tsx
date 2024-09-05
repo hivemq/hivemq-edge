@@ -8,15 +8,18 @@ import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSu
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
+import { Mapping } from '@/modules/Subscriptions/types.ts'
 
-interface MappingEditorProps extends CardProps {
+interface MappingEditorProps extends Omit<CardProps, 'onChange'> {
   topic: string
   showTransformation?: boolean
+  mapping?: Mapping[]
+  onChange?: (v: string | string[] | undefined) => void
 }
 
-const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = false, ...props }) => {
+const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = false, mapping, onChange, ...props }) => {
   const { t } = useTranslation('components')
-  const { data, isLoading } = useGetSubscriptionSchemas(topic as string, topic ? 'activated_short' : undefined)
+  const { data, isLoading } = useGetSubscriptionSchemas(topic as string, topic ? 'destination' : undefined)
   const properties = data ? getPropertyListFrom(data) : []
   const ref = useRef<HTMLDivElement | null>(null)
 
@@ -43,9 +46,10 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
       <CardBody as={VStack} maxH="60vh" overflowY="scroll">
         {isLoading && <LoaderSpinner />}
 
-        {properties.map((e) => (
-          <MappingInstruction showTransformation={showTransformation} property={e} key={e.title} />
-        ))}
+        {properties.map((property) => {
+          console.log('XXXXX prop', property)
+          return <MappingInstruction showTransformation={showTransformation} property={property} key={property.title} />
+        })}
       </CardBody>
     </Card>
   )

@@ -18,7 +18,7 @@ interface DataModelDestinationProps extends CardProps {
 
 const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, validation, ...props }) => {
   const { t } = useTranslation('components')
-  const { data, isLoading } = useGetSubscriptionSchemas(topic as string, topic ? 'activated_short' : undefined)
+  const { data, isLoading } = useGetSubscriptionSchemas(topic as string, topic ? 'destination' : undefined)
 
   const isReady = Boolean(!isLoading && data)
 

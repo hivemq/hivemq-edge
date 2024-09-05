@@ -15,7 +15,7 @@ interface DataModelSourcesProps extends CardProps {
 
 const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
   const { t } = useTranslation('components')
-  const { data, isLoading } = useGetSubscriptionSchemas(topics, topics ? 'activated_short' : undefined)
+  const { data, isLoading } = useGetSubscriptionSchemas(topics, topics ? 'source' : undefined)
 
   const isReady = Boolean(!isLoading && data)
 

@@ -10,16 +10,16 @@ export const GENERATE_DATA_MODELS = (_count?: number, short = false): RJSFSchema
     properties: {
       firstName: {
         type: 'string',
-        title: 'firstName',
+        title: short ? 'First String' : 'firstName',
         default: 'Chuck',
       },
       lastName: {
         type: 'string',
-        title: 'lastName',
+        title: short ? 'Second String' : 'lastname',
       },
       age: {
         type: 'integer',
-        title: 'age',
+        title: short ? 'Number' : 'age',
       },
     },
   }

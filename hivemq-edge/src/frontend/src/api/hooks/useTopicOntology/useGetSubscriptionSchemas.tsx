@@ -8,13 +8,13 @@ import { GENERATE_DATA_MODELS } from '@/api/hooks/useTopicOntology/__handlers__'
 /**
  * @deprecated This is a mock, replace with https://hivemq.kanbanize.com/ctrl_board/57/cards/25661/details/
  */
-export const useGetSubscriptionSchemas = (topic: string | string[], adapter?: string) => {
+export const useGetSubscriptionSchemas = (topic: string | string[], type?: 'source' | 'destination') => {
   return useQuery<RJSFSchema, ApiError>({
-    queryKey: [QUERY_KEYS.DISCOVERY_SCHEMAS, topic, adapter],
+    queryKey: [QUERY_KEYS.DISCOVERY_SCHEMAS, topic, type],
     queryFn: async () => {
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      return GENERATE_DATA_MODELS(Array.isArray(topic) ? topic.length : 1, adapter === 'activated_short')
+      return GENERATE_DATA_MODELS(Array.isArray(topic) ? topic.length : 1, type === 'destination')
     },
-    enabled: Boolean(adapter),
+    enabled: Boolean(type),
   })
 }
