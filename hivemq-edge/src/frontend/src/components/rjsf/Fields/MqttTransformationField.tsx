@@ -15,6 +15,7 @@ export const MqttTransformationField: FC<FieldProps<OutwardSubscription[], RJSFS
   const [subsData, setSubsData] = useState<OutwardSubscription[] | undefined>(props.formData)
 
   useEffect(() => {
+    // TODO[NVL] Add validation and persistence
     return () => console.log('end', subsData)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

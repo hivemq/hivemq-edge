@@ -48,7 +48,6 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
 
         {properties.map((property) => {
           const instruction = mapping?.findIndex((e) => e.destination === property.title) || -1
-          console.log('XXXXX prop', property, mapping, instruction)
           return (
             <MappingInstruction
               showTransformation={showTransformation}
@@ -56,7 +55,6 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
               key={property.title}
               mapping={instruction ? mapping?.[instruction] : undefined}
               onChange={(s, d) => {
-                console.log('XXXXX', s, d)
                 const gg = [...(mapping || [])]
                 const hhhh = { source: [s], destination: d }
                 if (instruction !== -1) {

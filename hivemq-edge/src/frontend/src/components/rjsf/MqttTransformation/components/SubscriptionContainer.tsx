@@ -50,19 +50,6 @@ const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, 
             <DataModelDestination flex={1} topic={item.node} validation={validation} />
           </HStack>
         </VStack>
-        {/*{strategy != MappingStrategy.EXACT && (*/}
-        {/*  <MappingEditor*/}
-        {/*    flex={3}*/}
-        {/*    topic={item.node}*/}
-        {/*    mapping={item.mapping}*/}
-        {/*    showTransformation={strategy === MappingStrategy.TRANSFORMED}*/}
-        {/*    onChange={(m) => onChange('mapping', m)}*/}
-        {/*  />*/}
-        {/*)}*/}
-        {/*<VStack flex={2} alignItems="stretch">*/}
-        {/*  <SourceSelector isTag topics={[item.node]} onChange={(v) => onChange('node', v)} />*/}
-        {/*  <DataModelDestination flex={1} topic={item.node} validation={validation} />*/}
-        {/*</VStack>*/}
       </Stack>
       <HStack justifyContent="flex-end">
         <ButtonGroup size="sm">
