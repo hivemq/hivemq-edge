@@ -22,7 +22,7 @@ export const ClientFilterNode: FC<NodeProps<ClientFilterData>> = (props) => {
         </HStack>
         <VStack ml={6} data-testid="node-model">
           {data.clients?.map((client) => (
-            <ClientTag tagTitle={client} key={client} />
+            <ClientTag tagTitle={client} key={client} data-testid="client-wrapper" />
           ))}
         </VStack>
       </NodeWrapper>
