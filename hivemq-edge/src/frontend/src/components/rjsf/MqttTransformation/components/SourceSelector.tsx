@@ -23,7 +23,7 @@ const SourceSelector: FC<SourceSelectorProps> = ({ topics, onChange, multiple = 
       {!multiple && (
         <SingleTopicCreatableSelect
           isLoading={isLoading || isTagsLoading}
-          options={isTag ? tags?.map((e) => e.tag) || [] : data}
+          options={isTag ? tags?.map((deviceTag) => deviceTag.tag) || [] : data}
           id="id"
           value={topics[0]}
           onChange={onChange}

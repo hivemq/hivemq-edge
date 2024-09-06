@@ -1,13 +1,13 @@
 import { FC, useState } from 'react'
 import { Box, Button, ButtonGroup, HStack, Stack, VStack } from '@chakra-ui/react'
 
+import { JsonNode } from '@/api/__generated__'
 import DataModelDestination from '@/components/rjsf/MqttTransformation/components/DataModelDestination.tsx'
 import DataModelSources from '@/components/rjsf/MqttTransformation/components/DataModelSources.tsx'
 import MappingEditor from '@/components/rjsf/MqttTransformation/components/MappingEditor.tsx'
 import SourceSelector from '@/components/rjsf/MqttTransformation/components/SourceSelector.tsx'
-import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
-import { JsonNode } from '@/api/__generated__'
 import { useMappingValidation } from '@/components/rjsf/MqttTransformation/hooks/useMappingValidation.tsx'
+import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
 
 export enum MappingStrategy {
   EXACT = 'EXACT',
@@ -44,7 +44,7 @@ const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, 
                 topic={item.node}
                 mapping={item.mapping}
                 showTransformation={strategy === MappingStrategy.TRANSFORMED}
-                onChange={(m) => onChange('mapping', m)}
+                onChange={(mappings) => onChange('mapping', mappings)}
               />
             )}
             <DataModelDestination flex={1} topic={item.node} validation={validation} />

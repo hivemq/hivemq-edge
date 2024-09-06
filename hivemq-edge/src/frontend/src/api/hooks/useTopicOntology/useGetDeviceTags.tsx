@@ -6,7 +6,7 @@ import { DeviceTags } from '@/modules/Subscriptions/types.ts'
 import { MOCK_DEVICE_TAGS } from '@/api/hooks/useTopicOntology/__handlers__'
 
 /**
- * @deprecated This is a mock, replace with ######
+ * @deprecated This is a mock, replace with https://hivemq.kanbanize.com/ctrl_board/57/cards/25736/details/
  */
 export const useGetDeviceTags = (adapterId: string | undefined) => {
   return useQuery<DeviceTags[], ApiError>({

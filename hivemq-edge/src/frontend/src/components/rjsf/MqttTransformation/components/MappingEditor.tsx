@@ -1,6 +1,5 @@
-import { FC, useEffect, useRef } from 'react'
+import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter'
 import { Button, Card, CardBody, CardHeader, CardProps, Heading, HStack, VStack } from '@chakra-ui/react'
 import { LuWand } from 'react-icons/lu'
 
@@ -21,20 +20,9 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
   const { t } = useTranslation('components')
   const { data, isLoading } = useGetSubscriptionSchemas(topic as string, topic ? 'destination' : undefined)
   const properties = data ? getPropertyListFrom(data) : []
-  const ref = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
-
-    return dropTargetForElements({
-      element,
-      canDrop: () => false,
-    })
-  }, [])
 
   return (
-    <Card {...props}>
+    <Card {...props} size="sm">
       <CardHeader as={HStack} justifyContent="space-between">
         <Heading as="h3" size="sm">
           {t('rjsf.MqttTransformationField.mapping.header')}
@@ -54,13 +42,13 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
               property={property}
               key={property.title}
               mapping={instruction ? mapping?.[instruction] : undefined}
-              onChange={(s, d) => {
-                const gg = [...(mapping || [])]
-                const hhhh = { source: [s], destination: d }
+              onChange={(source, destination) => {
+                const newMappings = [...(mapping || [])]
+                const newItem = { source: [source], destination: destination }
                 if (instruction !== -1) {
-                  gg[instruction] = hhhh
-                } else gg.push(hhhh)
-                onChange?.(gg)
+                  newMappings[instruction] = newItem
+                } else newMappings.push(newItem)
+                onChange?.(newMappings)
               }}
             />
           )

@@ -13,11 +13,11 @@ interface PropertyItemProps {
 }
 
 const PropertyItem: FC<PropertyItemProps> = ({ property, isDraggable = false }) => {
-  const ref = useRef<HTMLLIElement | null>(null)
+  const draggableRef = useRef<HTMLLIElement | null>(null)
 
   useEffect(() => {
     if (!isDraggable) return
-    const element = ref.current
+    const element = draggableRef.current
     if (!element) return
     return draggable({
       element,
@@ -29,7 +29,7 @@ const PropertyItem: FC<PropertyItemProps> = ({ property, isDraggable = false }) 
 
   return (
     <ListItem
-      ref={ref}
+      ref={draggableRef}
       key={[...property.path, property.title].join('-')}
       ml={(property?.path?.length || 0) * 8}
       data-type={property.type as string}
