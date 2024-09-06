@@ -5,7 +5,7 @@ import { JsonNode } from '@/api/__generated__'
 import DataModelDestination from '@/components/rjsf/MqttTransformation/components/DataModelDestination.tsx'
 import DataModelSources from '@/components/rjsf/MqttTransformation/components/DataModelSources.tsx'
 import MappingEditor from '@/components/rjsf/MqttTransformation/components/MappingEditor.tsx'
-import SourceSelector from '@/components/rjsf/MqttTransformation/components/SourceSelector.tsx'
+import EntitySelector from '@/components/rjsf/MqttTransformation/components/EntitySelector.tsx'
 import { useMappingValidation } from '@/components/rjsf/MqttTransformation/hooks/useMappingValidation.tsx'
 import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
 
@@ -30,12 +30,17 @@ const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, 
     <VStack alignItems="stretch" gap={4}>
       <Stack gap={2} flexDirection="row">
         <VStack flex={1} alignItems="stretch">
-          <SourceSelector topics={item['mqtt-topic']} multiple onChange={(v) => onChange('mqtt-topic', v)} />
+          <EntitySelector
+            type="topic"
+            topics={item['mqtt-topic']}
+            multiple
+            onChange={(v) => onChange('mqtt-topic', v)}
+          />
           <DataModelSources flex={1} topics={item['mqtt-topic']} />
         </VStack>
         <VStack flex={2} alignItems="stretch">
           <Box maxW="50%">
-            <SourceSelector isTag topics={[item.node]} onChange={(v) => onChange('node', v)} />
+            <EntitySelector type="tag" topics={[item.node]} onChange={(v) => onChange('node', v)} />
           </Box>
           <HStack alignItems="stretch">
             {strategy != MappingStrategy.EXACT && (

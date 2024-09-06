@@ -6,29 +6,29 @@ import { MultiTopicsCreatableSelect, SingleTopicCreatableSelect } from '@/compon
 import { useGetDeviceTags } from '@/api/hooks/useTopicOntology/useGetDeviceTags.tsx'
 
 interface SourceSelectorProps {
-  isTag?: boolean
+  type: 'topic' | 'tag'
   topics: string[]
   multiple?: boolean
   onChange: (v: string | string[] | undefined) => void
 }
 
-const SourceSelector: FC<SourceSelectorProps> = ({ topics, onChange, multiple = false, isTag = false }) => {
+const EntitySelector: FC<SourceSelectorProps> = ({ topics, onChange, multiple = false, type }) => {
   const { isLoading, data } = useGetEdgeTopics({
     publishOnly: true,
   })
-  const { isLoading: isTagsLoading, data: tags } = useGetDeviceTags(isTag ? 'my-tags' : undefined)
+  const { isLoading: isTagsLoading, data: tags } = useGetDeviceTags(type === 'tag' ? 'my-tags' : undefined)
 
   return (
     <Box>
       {!multiple && (
         <SingleTopicCreatableSelect
           isLoading={isLoading || isTagsLoading}
-          options={isTag ? tags?.map((deviceTag) => deviceTag.tag) || [] : data}
+          options={type === 'tag' ? tags?.map((deviceTag) => deviceTag.tag) || [] : data}
           id="id"
           value={topics[0]}
           onChange={onChange}
           isCreatable={true}
-          isTag={isTag}
+          isTag={type === 'tag'}
         />
       )}
       {multiple && (
@@ -38,11 +38,11 @@ const SourceSelector: FC<SourceSelectorProps> = ({ topics, onChange, multiple = 
           value={topics}
           onChange={onChange}
           isCreatable={false}
-          isTag={isTag}
+          isTag={type === 'tag'}
         />
       )}
     </Box>
   )
 }
 
-export default SourceSelector
+export default EntitySelector
