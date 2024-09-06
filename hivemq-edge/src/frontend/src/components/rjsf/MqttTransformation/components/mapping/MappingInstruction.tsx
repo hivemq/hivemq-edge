@@ -84,6 +84,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
           p={4}
           ref={dropTargetRef}
           minW={250}
+          data-testid="mapping-instruction-dropzone"
         >
           {mapping ? (
             <Code>{mapping.source.join(' ')}</Code>
@@ -110,6 +111,7 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
           aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
           icon={<RiDeleteBin2Fill />}
           onClick={() => setState(DropState.IDLE)}
+          isDisabled
         />
       </ButtonGroup>
     </HStack>
