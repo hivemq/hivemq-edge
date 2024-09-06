@@ -35,13 +35,13 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
         {isLoading && <LoaderSpinner />}
 
         {properties.map((property) => {
-          const instruction = mapping?.findIndex((e) => e.destination === property.title) || -1
+          const instruction = mapping ? mapping.findIndex((e) => e.destination === property.title) : -1
           return (
             <MappingInstruction
               showTransformation={showTransformation}
               property={property}
               key={property.title}
-              mapping={instruction ? mapping?.[instruction] : undefined}
+              mapping={instruction !== -1 ? mapping?.[instruction] : undefined}
               onChange={(source, destination) => {
                 const newMappings = [...(mapping || [])]
                 const newItem = { source: [source], destination: destination }
