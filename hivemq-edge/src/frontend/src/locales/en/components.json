@@ -1,6 +1,9 @@
 {
-  "topic": {
-    "iconLabel": "Topic"
+  "iconLabel": {
+    "topic": "Topic",
+    "tag": "Tag",
+    "client": "Client",
+    "workspace": "Workspace"
   },
   "pagination": {
     "ariaLabel": "Pagination",
