@@ -85,6 +85,9 @@ const TEST_INWARD_EXPECTED = {
       },
     }),
     uiSchema: expect.objectContaining({
+      'ui:submitButtonOptions': {
+        norender: true,
+      },
       subscriptions: {
         items: {
           'ui:collapsable': {
@@ -143,31 +146,15 @@ describe('useSubscriptionManager', () => {
       ...TEST_INWARD_EXPECTED,
       outwardManager: expect.objectContaining({
         formData: {
-          subscriptions: [],
-        },
-        schema: expect.objectContaining({
-          properties: {
-            subscriptions: expect.objectContaining({
-              items: expect.objectContaining({
-                required: ['node', 'mqtt-topic'],
-                properties: expect.objectContaining({
-                  mapping: expect.objectContaining({
-                    description:
-                      'The list of data model transformations required to produce a valid destination node from the selected MQTT topics',
-                  }),
-                  'mqtt-topic': expect.objectContaining({
-                    description: 'The MQTT topics used to identify the source of the mapping',
-                  }),
-                  node: expect.objectContaining({}),
-                }),
-              }),
+          subscriptions: expect.arrayContaining([
+            expect.objectContaining({
+              'mqtt-topic': ['bar/test8', 'pump1/temperature'],
             }),
-          },
-          required: ['subscriptions'],
-          type: 'object',
-        }),
+          ]),
+        },
         uiSchema: {
           subscriptions: {
+            'ui:field': 'mqtt:transform',
             items: {
               'mqtt-topic': {
                 items: {
@@ -179,7 +166,21 @@ describe('useSubscriptionManager', () => {
               },
             },
           },
+          'ui:submitButtonOptions': {
+            norender: true,
+          },
         },
+        schema: expect.objectContaining({
+          required: ['subscriptions'],
+          type: 'object',
+          properties: expect.objectContaining({
+            subscriptions: expect.objectContaining({
+              items: expect.objectContaining({
+                required: ['node', 'mqtt-topic'],
+              }),
+            }),
+          }),
+        }),
       }),
     })
   })
