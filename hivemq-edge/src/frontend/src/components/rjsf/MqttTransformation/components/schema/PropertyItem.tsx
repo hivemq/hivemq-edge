@@ -36,7 +36,7 @@ const PropertyItem: FC<PropertyItemProps> = ({ property, isDraggable = false, ha
       ml={(property?.path?.length || 0) * 8}
       data-type={property.type as string}
       data-path={path}
-      tabIndex={0}
+      tabIndex={isDraggable ? 0 : undefined}
     >
       <ListIcon as={TypeIcon as IconType} color="green.500" />
       <Tooltip label={path} placement="top" isDisabled={!hasTooltip}>

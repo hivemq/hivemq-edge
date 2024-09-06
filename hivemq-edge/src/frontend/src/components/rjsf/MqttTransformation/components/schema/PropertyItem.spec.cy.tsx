@@ -29,7 +29,11 @@ describe('PropertyItem', () => {
   it('should render draggable', () => {
     cy.mountWithProviders(<PropertyItem property={MOCK_PROPERTY} isDraggable={true} />, { wrapper })
 
-    cy.get('ul li').eq(0).should('have.text', 'Billing address').should('have.attr', 'draggable', 'true')
+    cy.get('ul li')
+      .eq(0)
+      .should('have.text', 'Billing address')
+      .should('have.attr', 'draggable', 'true')
+      .should('have.attr', 'tabindex', '0')
   })
 
   it('should render tooltip', () => {

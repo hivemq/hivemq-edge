@@ -27,9 +27,22 @@ describe('DataModelDestination', () => {
     cy.get('[role=list]').find('li').as('properties')
     cy.get('@properties').should('have.length', 3)
 
-    cy.get('@properties').eq(0).should('have.text', 'First String').should('have.attr', 'data-type', 'string')
-    cy.get('@properties').eq(1).should('have.text', 'Second String').should('have.attr', 'data-type', 'string')
-    cy.get('@properties').eq(2).should('have.text', 'Number').should('have.attr', 'data-type', 'integer')
+    cy.get('@properties')
+      .eq(0)
+      .should('have.text', 'First String')
+      .should('have.attr', 'data-type', 'string')
+      .should('not.have.attr', 'draggable')
+    cy.get('@properties')
+      .eq(1)
+      .should('have.text', 'Second String')
+      .should('have.attr', 'data-type', 'string')
+      .should('not.have.attr', 'draggable')
+
+    cy.get('@properties')
+      .eq(2)
+      .should('have.text', 'Number')
+      .should('have.attr', 'data-type', 'integer')
+      .should('not.have.attr', 'draggable')
   })
 
   it('should be accessible ', () => {

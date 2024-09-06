@@ -30,7 +30,11 @@ describe('MappingInstruction', () => {
     )
 
     cy.getByAriaLabel('Clear mapping').should('be.disabled')
-    cy.get('ul li').eq(0).should('have.text', 'Billing address').should('have.attr', 'data-type', 'object')
+    cy.get('ul li')
+      .eq(0)
+      .should('have.text', 'Billing address')
+      .should('have.attr', 'data-type', 'object')
+      .should('not.have.attr', 'draggable')
     cy.getByTestId('mapping-instruction-dropzone').should('have.text', 'Drag a source property here')
 
     // TODO[NVL] Test drag and drop
