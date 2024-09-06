@@ -29,6 +29,7 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
           size="xs"
           icon={<RxReload />}
           aria-label={t('rjsf.MqttTransformationField.sources.samples.aria-label')}
+          isDisabled
         />
       </CardHeader>
 

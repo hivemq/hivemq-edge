@@ -15,7 +15,7 @@ describe('DataModelDestination', () => {
     cy.viewport(800, 900)
   })
 
-  it.only('should render properly', () => {
+  it('should render properly', () => {
     cy.mountWithProviders(<DataModelDestination topic="sssss" validation={MOCK_SUBS} />)
 
     cy.get('h3').should('have.text', 'Destination output')
