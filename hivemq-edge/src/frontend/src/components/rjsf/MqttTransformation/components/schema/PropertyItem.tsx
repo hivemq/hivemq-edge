@@ -10,9 +10,10 @@ import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json
 interface PropertyItemProps {
   property: FlatJSONSchema7
   isDraggable?: boolean
+  hasTooltip?: boolean
 }
 
-const PropertyItem: FC<PropertyItemProps> = ({ property, isDraggable = false }) => {
+const PropertyItem: FC<PropertyItemProps> = ({ property, isDraggable = false, hasTooltip = false }) => {
   const draggableRef = useRef<HTMLLIElement | null>(null)
 
   useEffect(() => {
@@ -26,6 +27,7 @@ const PropertyItem: FC<PropertyItemProps> = ({ property, isDraggable = false }) 
   }, [isDraggable, property, property.type])
 
   const TypeIcon = DataTypeIcon[(property.type || 'null') as JSONSchema7TypeName satisfies JSONSchema7TypeName]
+  const path = [...property.path, property.title].join('.')
 
   return (
     <ListItem
@@ -33,9 +35,11 @@ const PropertyItem: FC<PropertyItemProps> = ({ property, isDraggable = false }) 
       key={[...property.path, property.title].join('-')}
       ml={(property?.path?.length || 0) * 8}
       data-type={property.type as string}
+      data-path={path}
+      tabIndex={0}
     >
       <ListIcon as={TypeIcon as IconType} color="green.500" />
-      <Tooltip label={[...property.path, property.title].join('/')} placement="top" isDisabled>
+      <Tooltip label={path} placement="top" isDisabled={!hasTooltip}>
         <Badge>{[property.title].join(' . ')}</Badge>
       </Tooltip>
     </ListItem>
