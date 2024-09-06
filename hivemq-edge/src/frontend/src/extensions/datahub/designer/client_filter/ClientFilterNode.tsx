@@ -3,7 +3,7 @@ import { NodeProps, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 
-import Client from '@/components/MQTT/Client.tsx'
+import { ClientTag } from '@/components/MQTT/EntityTag.tsx'
 
 import { ClientFilterData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
@@ -21,17 +21,17 @@ export const ClientFilterNode: FC<NodeProps<ClientFilterData>> = (props) => {
           </VStack>
         </HStack>
         <VStack ml={6} data-testid="node-model">
-          {data.clients?.map((t) => (
-            <Client client={t} key={t} />
+          {data.clients?.map((client) => (
+            <ClientTag tagTitle={client} key={client} />
           ))}
         </VStack>
       </NodeWrapper>
-      {data.clients?.map((t, index) => (
+      {data.clients?.map((client, index) => (
         <CustomHandle
           type="source"
           position={Position.Right}
           id={`${id}-${index}`}
-          key={`${id}-${t}-${index}`}
+          key={`${id}-${client}-${index}`}
           style={{
             top: `calc(var(--chakra-space-3) + 12px + ${index * 24}px + ${0.5 * index}rem)`,
           }}

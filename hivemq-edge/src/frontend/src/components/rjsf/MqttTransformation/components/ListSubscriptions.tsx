@@ -6,9 +6,8 @@ import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
-import Topic from '@/components/MQTT/Topic.tsx'
+import { PLCTag, Topic } from '@/components/MQTT/EntityTag.tsx'
 import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
-import PLCTag from '@/components/MQTT/PLCTag.tsx'
 
 interface ListSubscriptionsProps {
   items: OutwardSubscription[]
@@ -29,7 +28,7 @@ const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete
         cell: (info) => {
           const values = info.getValue<string[]>()
           if (!values.length) return <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
-          return values.map((e) => <Topic key={e} topic={e} />)
+          return values.map((e) => <Topic key={e} tagTitle={e} />)
         },
         header: t('rjsf.MqttTransformationField.listing.sources'),
       },
@@ -37,7 +36,7 @@ const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete
         accessorKey: 'node',
         cell: (info) => {
           const val = info.getValue<string>()
-          return val ? <PLCTag topic={val} /> : <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
+          return val ? <PLCTag tagTitle={val} /> : <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
         },
         header: t('rjsf.MqttTransformationField.listing.destination'),
         enableSorting: false,

@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
 import { TopicIcon, PLCTagIcon } from '@/components/Icons/TopicIcon.tsx'
-import Topic from '@/components/MQTT/Topic.tsx'
+import { Topic } from '@/components/MQTT/EntityTag.tsx'
 
 interface TopicOption extends OptionBase {
   label: string
@@ -48,7 +48,7 @@ const customComponents = (
     // TODO[NVL] removing the default style might cause side effects
     return (
       <chakraComponents.MultiValueContainer {...props} sx={{}}>
-        <Topic topic={children} mr={3} />
+        <Topic tagTitle={children} mr={3} />
       </chakraComponents.MultiValueContainer>
     )
   },
