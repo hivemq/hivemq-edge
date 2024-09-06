@@ -1,48 +1,32 @@
 import { FC } from 'react'
-import { Box } from '@chakra-ui/react'
 
-import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
 import { MultiTopicsCreatableSelect, SingleTopicCreatableSelect } from '@/components/MQTT/TopicCreatableSelect.tsx'
 import { useGetDeviceTags } from '@/api/hooks/useTopicOntology/useGetDeviceTags.tsx'
 
+// TODO[NVL] The whole topic CreatableSelect thing needs to be refactored to any type of entities
 interface SourceSelectorProps {
-  type: 'topic' | 'tag'
-  topics: string[]
-  multiple?: boolean
+  values: string[]
   onChange: (v: string | string[] | undefined) => void
 }
 
-const EntitySelector: FC<SourceSelectorProps> = ({ topics, onChange, multiple = false, type }) => {
-  const { isLoading, data } = useGetEdgeTopics({
-    publishOnly: true,
-  })
-  const { isLoading: isTagsLoading, data: tags } = useGetDeviceTags(type === 'tag' ? 'my-tags' : undefined)
-
+export const SelectSourceTopics: FC<SourceSelectorProps> = ({ values, onChange }) => {
   return (
-    <Box>
-      {!multiple && (
-        <SingleTopicCreatableSelect
-          isLoading={isLoading || isTagsLoading}
-          options={type === 'tag' ? tags?.map((deviceTag) => deviceTag.tag) || [] : data}
-          id="id"
-          value={topics[0]}
-          onChange={onChange}
-          isCreatable={true}
-          isTag={type === 'tag'}
-        />
-      )}
-      {multiple && (
-        <MultiTopicsCreatableSelect
-          isLoading={isLoading}
-          id="id"
-          value={topics}
-          onChange={onChange}
-          isCreatable={false}
-          isTag={type === 'tag'}
-        />
-      )}
-    </Box>
+    <MultiTopicsCreatableSelect id="mapping-select-source" value={values} onChange={onChange} isCreatable={false} />
   )
 }
 
-export default EntitySelector
+export const SelectDestinationTag: FC<SourceSelectorProps> = ({ values, onChange }) => {
+  const { isLoading, data } = useGetDeviceTags('my-tags')
+
+  return (
+    <SingleTopicCreatableSelect
+      isLoading={isLoading}
+      options={data?.map((deviceTag) => deviceTag.tag) || []}
+      id="mapping-select-destination"
+      value={values[0]}
+      onChange={onChange}
+      isCreatable={true}
+      isTag
+    />
+  )
+}
