@@ -27,7 +27,7 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
         <Heading as="h3" size="sm">
           {t('rjsf.MqttTransformationField.mapping.header')}
         </Heading>
-        <Button size="xs" leftIcon={<LuWand />}>
+        <Button data-testid="auto-mapping" size="sm" leftIcon={<LuWand />} isDisabled>
           {t('rjsf.MqttTransformationField.mapping.auto.aria-label')}
         </Button>
       </CardHeader>
