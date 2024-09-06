@@ -19,23 +19,12 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
 import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
 import { Mapping } from '@/modules/Subscriptions/types.ts'
+import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
 
 enum DropState {
   IDLE = 'IDLE',
   DRAG_OVER = 'DRAG_OVER',
   COMPLETED = 'COMPLETED',
-}
-
-const getDropZoneBorder = (color: string, state: DropState) => {
-  const activeColor = state === DropState.DRAG_OVER || state === DropState.COMPLETED ? 'green' : color
-  return {
-    bgGradient: `repeating-linear(0deg, ${activeColor}, ${activeColor} 10px, transparent 10px, transparent 20px, ${activeColor} 20px), repeating-linear-gradient(90deg, ${activeColor}, ${activeColor} 10px, transparent 10px, transparent 20px, ${activeColor} 20px), repeating-linear-gradient(180deg, ${activeColor}, ${activeColor} 10px, transparent 10px, transparent 20px, ${activeColor} 20px), repeating-linear-gradient(270deg, ${activeColor}, ${activeColor} 10px, transparent 10px, transparent 20px, ${activeColor} 20px)`,
-    backgroundSize: '2px 100%, 100% 2px, 2px 100% , 100% 2px',
-    backgroundPosition: '0 0, 0 0, 100% 0, 0 100%',
-    backgroundRepeat: 'no-repeat',
-    borderRadius: '4px',
-    backgroundColor: state === DropState.DRAG_OVER ? 'green.100' : 'inherit',
-  }
 }
 
 interface MappingInstructionProps {
@@ -48,15 +37,15 @@ interface MappingInstructionProps {
 const MappingInstruction: FC<MappingInstructionProps> = ({
   property,
   mapping,
-  onChange: XXXXX,
+  onChange,
   showTransformation = false,
 }) => {
   const { t } = useTranslation('components')
   const [state, setState] = useState<DropState>(DropState.IDLE)
-  const ref = useRef<HTMLDivElement | null>(null)
+  const dropTargetRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    const element = ref.current
+    const element = dropTargetRef.current
     if (!element) return
 
     return dropTargetForElements({
@@ -72,10 +61,13 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
       },
       onDrop: (dropTarget) => {
         setState(DropState.COMPLETED)
-        XXXXX?.(dropTarget.source.data.title as string, property.title as string)
+        onChange?.(dropTarget.source.data.title as string, property.title as string)
       },
     })
-  }, [XXXXX, property])
+  }, [onChange, property])
+
+  const activeColor = state === DropState.DRAG_OVER || state === DropState.COMPLETED ? 'green' : 'blue.500'
+  const backgroundColor = state === DropState.DRAG_OVER ? 'green.100' : 'inherit'
 
   return (
     <HStack>
@@ -85,7 +77,14 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
             <PropertyItem property={property} />
           </List>
         </CardHeader>
-        <CardBody {...getDropZoneBorder('blue', state)} m={2} p={4} ref={ref} minW={250}>
+        <CardBody
+          {...getDropZoneBorder(activeColor)}
+          backgroundColor={backgroundColor}
+          m={2}
+          p={4}
+          ref={dropTargetRef}
+          minW={250}
+        >
           {mapping ? (
             <Code>{mapping.source.join(' ')}</Code>
           ) : (
