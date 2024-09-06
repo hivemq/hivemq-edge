@@ -10,9 +10,7 @@ interface SourceSelectorProps {
 }
 
 export const SelectSourceTopics: FC<SourceSelectorProps> = ({ values, onChange }) => {
-  return (
-    <MultiTopicsCreatableSelect id="mapping-select-source" value={values} onChange={onChange} isCreatable={false} />
-  )
+  return <MultiTopicsCreatableSelect id="mapping-select-source" value={values} onChange={onChange} isCreatable={true} />
 }
 
 export const SelectDestinationTag: FC<SourceSelectorProps> = ({ values, onChange }) => {
@@ -25,7 +23,7 @@ export const SelectDestinationTag: FC<SourceSelectorProps> = ({ values, onChange
       id="mapping-select-destination"
       value={values[0]}
       onChange={onChange}
-      isCreatable={true}
+      isCreatable={false}
       isTag
     />
   )
