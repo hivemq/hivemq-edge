@@ -13,10 +13,17 @@ import { BrokerClient, BrokerClientConfiguration } from '@/api/types/api-broker-
 
 export const CONFIG_ADAPTER_WIDTH = 245
 
-const POS_SEPARATOR = 8
+const POS_SEPARATOR = 80
 const POS_EDGE: XYPosition = { x: 300, y: 200 }
-const POS_NODE_INC: XYPosition = { x: 245 + POS_SEPARATOR, y: 300 }
+const POS_NODE_INC: XYPosition = { x: CONFIG_ADAPTER_WIDTH + POS_SEPARATOR, y: 400 }
 const MAX_ADAPTERS = 10
+
+export const gluedNodeDefinition: Record<string, [NodeTypes, number, 'target' | 'source']> = {
+  [NodeTypes.BRIDGE_NODE]: [NodeTypes.HOST_NODE, 200, 'target'],
+  [NodeTypes.ADAPTER_NODE]: [NodeTypes.DEVICE_NODE, -125, 'target'],
+  [NodeTypes.HOST_NODE]: [NodeTypes.BRIDGE_NODE, -200, 'source'],
+  [NodeTypes.DEVICE_NODE]: [NodeTypes.ADAPTER_NODE, 125, 'source'],
+}
 
 export const createEdgeNode = (label: string, positionStorage?: Record<string, XYPosition>) => {
   const nodeEdge: Node<unknown, NodeTypes.EDGE_NODE> = {
@@ -204,8 +211,8 @@ export const createAdapterNode = (
       targetPosition: Position.Top,
       data: type,
       position: positionStorage?.[idBAdapterDevice] ?? {
-        x: nodeAdapter.position.x + 48,
-        y: nodeAdapter.position.y - 250,
+        x: nodeAdapter.position.x,
+        y: nodeAdapter.position.y + gluedNodeDefinition[NodeTypes.ADAPTER_NODE][1],
       },
     }
 
