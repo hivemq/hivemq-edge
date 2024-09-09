@@ -7,10 +7,13 @@ import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import { deviceCapabilityIcon, deviceCategoryIcon } from '@/modules/Workspace/utils/adapter.utils.ts'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
+import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
+import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
 const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data }) => {
   const { onContextMenu } = useContextMenu(id, selected, '/workspace/node')
   const { category, capabilities } = data
+  const showSkeleton = useStore(selectorIsSkeletonZoom)
 
   return (
     <>

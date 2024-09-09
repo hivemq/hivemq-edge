@@ -18,6 +18,7 @@ import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
 import TopicsContainer from '@/modules/Workspace/components/parts/TopicsContainer.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import WorkspaceButtonGroup from '@/modules/Workspace/components/parts/WorkspaceButtonGroup.tsx'
+import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
 const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) => {
   const { t } = useTranslation()
@@ -31,6 +32,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
   }, [adapter.config, adapterProtocol])
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/adapter/${adapter.type}`)
   const navigate = useNavigate()
+  const showSkeleton = useStore(selectorIsSkeletonZoom)
 
   const HACK_BIDIRECTIONAL = isBidirectional(adapterProtocol)
   const adapterNavPath = `/workspace/node/adapter/${adapter.type}/${id}`

@@ -13,12 +13,15 @@ import { getBridgeTopics } from '../../utils/topics-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
+import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
+import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
 const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
   const { t } = useTranslation()
   const topics = getBridgeTopics(bridge)
   const { options } = useEdgeFlowContext()
   const { onContextMenu } = useContextMenu(id, selected, '/workspace/node/bridge')
+  const showSkeleton = useStore(selectorIsSkeletonZoom)
 
   return (
     <>
