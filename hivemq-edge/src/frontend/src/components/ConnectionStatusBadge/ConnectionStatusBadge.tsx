@@ -3,15 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Badge } from '@chakra-ui/react'
 
 import { Status } from '@/api/__generated__'
-
-const statusMapping = {
-  [Status.runtime.STOPPED]: { text: 'STOPPED', color: 'status.error' },
-  [Status.connection.ERROR]: { text: 'ERROR', color: 'status.error' },
-  [Status.connection.UNKNOWN]: { text: 'UNKNOWN', color: 'status.error' },
-  [Status.connection.CONNECTED]: { text: 'CONNECTED', color: 'status.connected' },
-  [Status.connection.DISCONNECTED]: { text: 'DISCONNECTED', color: 'status.disconnected' },
-  [Status.connection.STATELESS]: { text: 'STATELESS', color: 'status.stateless' },
-}
+import { statusMapping } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 interface ConnectionStatusBadgeProps {
   status?: Status

@@ -1,4 +1,4 @@
-import { type ProtocolAdapter } from '@/api/__generated__'
+import { type ProtocolAdapter, Status } from '@/api/__generated__'
 import { type IconType } from 'react-icons'
 import { TbSettingsAutomation } from 'react-icons/tb'
 import { FaIndustry } from 'react-icons/fa6'
@@ -37,4 +37,13 @@ export const deviceCapabilityIcon: Record<CapabilityType, IconType> = {
   ['READ']: HmOutput,
   ['DISCOVER']: MdOutlineFindInPage,
   ['WRITE']: HmInput,
+}
+
+export const statusMapping = {
+  [Status.runtime.STOPPED]: { text: 'STOPPED', color: 'status.error' },
+  [Status.connection.ERROR]: { text: 'ERROR', color: 'status.error' },
+  [Status.connection.UNKNOWN]: { text: 'UNKNOWN', color: 'status.error' },
+  [Status.connection.CONNECTED]: { text: 'CONNECTED', color: 'status.connected' },
+  [Status.connection.DISCONNECTED]: { text: 'DISCONNECTED', color: 'status.disconnected' },
+  [Status.connection.STATELESS]: { text: 'STATELESS', color: 'status.stateless' },
 }
