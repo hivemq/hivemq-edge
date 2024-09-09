@@ -4,7 +4,7 @@ import { TbSettingsAutomation } from 'react-icons/tb'
 import { FaIndustry } from 'react-icons/fa6'
 import { GrConnectivity } from 'react-icons/gr'
 import { AiFillExperiment } from 'react-icons/ai'
-import { MdOutlineFindInPage } from 'react-icons/md'
+import { RiCompassDiscoverLine } from 'react-icons/ri'
 import { HmInput, HmOutput } from '@/components/react-icons/hm'
 
 /**
@@ -35,7 +35,7 @@ type CapabilityType = ArrayElement<CapabilitiesArray> | 'WRITE'
  */
 export const deviceCapabilityIcon: Record<CapabilityType, IconType> = {
   ['READ']: HmOutput,
-  ['DISCOVER']: MdOutlineFindInPage,
+  ['DISCOVER']: RiCompassDiscoverLine,
   ['WRITE']: HmInput,
 }
 
