@@ -65,7 +65,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
 
   return (
     <>
-      <ContextualToolbar id={id} onOpenPanel={onContextMenu}>
+      <ContextualToolbar id={id} dragging={props.dragging} onOpenPanel={onContextMenu}>
         <WorkspaceButtonGroup isAttached={false}>
           <IconButton
             data-testid="node-group-toolbar-expand"

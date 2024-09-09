@@ -10,14 +10,14 @@ import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualTo
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
-const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data }) => {
+const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data, dragging }) => {
   const { onContextMenu } = useContextMenu(id, selected, '/workspace/node')
   const { category, capabilities } = data
   const showSkeleton = useStore(selectorIsSkeletonZoom)
 
   return (
     <>
-      <ContextualToolbar id={id} onOpenPanel={onContextMenu} />
+      <ContextualToolbar id={id} onOpenPanel={onContextMenu} dragging={dragging} />
       <NodeWrapper
         isSelected={selected}
         wordBreak="break-word"

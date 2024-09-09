@@ -13,13 +13,13 @@ import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 import WorkspaceButtonGroup from '@/modules/Workspace/components/parts/WorkspaceButtonGroup.tsx'
 
-type SelectedNodeProps = Pick<NodeProps, 'id'> & Pick<NodeToolbarProps, 'position'>
+type SelectedNodeProps = Pick<NodeProps, 'id' | `dragging`> & Pick<NodeToolbarProps, 'position'>
 interface ContextualToolbarProps extends SelectedNodeProps {
   onOpenPanel?: MouseEventHandler | undefined
   children?: React.ReactNode
 }
 
-const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, children }) => {
+const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, children, dragging }) => {
   const { t } = useTranslation()
   const { onInsertGroupNode, nodes } = useWorkspaceStore()
   const theme = useTheme()
@@ -100,7 +100,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
   return (
     <>
       <NodeToolbar
-        isVisible={Boolean(mainNodes?.id === id)}
+        isVisible={Boolean(mainNodes?.id === id && !dragging)}
         position={Position.Right}
         role="toolbar"
         aria-label={t('workspace.toolbar.container.right')}
@@ -117,7 +117,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
       </NodeToolbar>
       {(children || isGroupable) && (
         <NodeToolbar
-          isVisible={Boolean(mainNodes?.id === id)}
+          isVisible={Boolean(mainNodes?.id === id && !dragging)}
           position={Position.Left}
           role="toolbar"
           aria-label={t('workspace.toolbar.container.left')}

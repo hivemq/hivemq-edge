@@ -20,7 +20,7 @@ import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import WorkspaceButtonGroup from '@/modules/Workspace/components/parts/WorkspaceButtonGroup.tsx'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
-const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) => {
+const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, dragging }) => {
   const { t } = useTranslation()
   const { data: protocols } = useGetAdapterTypes()
   const adapterProtocol = protocols?.items?.find((e) => e.id === adapter.type)
@@ -39,7 +39,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
 
   return (
     <>
-      <ContextualToolbar id={id} onOpenPanel={onContextMenu}>
+      <ContextualToolbar id={id} dragging={dragging} onOpenPanel={onContextMenu}>
         <WorkspaceButtonGroup>
           {HACK_BIDIRECTIONAL && (
             <IconButton

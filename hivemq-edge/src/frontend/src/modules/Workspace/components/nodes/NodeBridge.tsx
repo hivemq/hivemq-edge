@@ -16,7 +16,7 @@ import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualTo
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
-const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
+const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge, dragging }) => {
   const { t } = useTranslation()
   const topics = getBridgeTopics(bridge)
   const { options } = useEdgeFlowContext()
@@ -25,7 +25,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge }) => {
 
   return (
     <>
-      <ContextualToolbar id={id} onOpenPanel={onContextMenu} />
+      <ContextualToolbar id={id} dragging={dragging} onOpenPanel={onContextMenu} />
       <NodeWrapper
         isSelected={selected}
         onDoubleClick={onContextMenu}
