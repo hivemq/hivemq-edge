@@ -101,12 +101,34 @@ const ReactFlowWrapper = () => {
       snapToGrid={true}
       nodesConnectable={false}
       deleteKeyCode={null}
+      proOptions={proOptions}
     >
       <Box role="toolbar" aria-label={t('workspace.controls.aria-label')} aria-controls="edge-workspace-canvas">
         <SelectionListener />
         <StatusListener />
         <Background />
         <CanvasControls />
+        <MiniMap
+          style={{ backgroundColor: 'var(--chakra-colors-chakra-body-bg)', margin: 0 }}
+          zoomable
+          pannable
+          nodeClassName={(node) => node.type || ''}
+          nodeComponent={(miniMapNode) => {
+            if (miniMapNode.className === NodeTypes.EDGE_NODE)
+              return <circle cx={miniMapNode.x} cy={miniMapNode.y} r="50" fill="#ffc000" />
+            if (miniMapNode.className === NodeTypes.DEVICE_NODE || miniMapNode.className === NodeTypes.HOST_NODE)
+              return null
+            return (
+              <rect
+                x={miniMapNode.x}
+                y={miniMapNode.y}
+                width={miniMapNode.width}
+                height={miniMapNode.height}
+                fill="#e2e2e2"
+              />
+            )
+          }}
+        />
       </Box>
       <SuspenseOutlet />
     </ReactFlow>
