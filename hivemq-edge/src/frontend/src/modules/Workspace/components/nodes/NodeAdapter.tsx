@@ -1,8 +1,8 @@
 import { FC, useMemo } from 'react'
-import { Handle, NodeProps, Position } from 'reactflow'
+import { Handle, NodeProps, Position, useStore } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { Box, HStack, Icon, Image, Text, VStack } from '@chakra-ui/react'
+import { Box, HStack, Icon, Image, SkeletonText, Text, VStack } from '@chakra-ui/react'
 
 import { type Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
@@ -62,20 +62,41 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected }) =>
         w={CONFIG_ADAPTER_WIDTH}
         p={2}
       >
-        <VStack>
-          <HStack w="100%">
-            <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
-            <Text flex={1} data-testid="adapter-node-name">
-              {adapter.id}
-            </Text>
-          </HStack>
-          {options.showStatus && (
-            <Box flex={1}>
-              <ConnectionStatusBadge status={adapter.status} />
+        {!showSkeleton && (
+          <VStack>
+            {HACK_BIDIRECTIONAL && <TopicsContainer topics={[{ topic: 'topic/mock/todo' }]} />}
+
+            <HStack>
+              <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
+              <Text flex={1} data-testid="adapter-node-name">
+                {adapter.id}
+              </Text>
+            </HStack>
+            {options.showStatus && (
+              <Box flex={1}>
+                <ConnectionStatusBadge status={adapter.status} />
+              </Box>
+            )}
+            {options.showTopics && <TopicsContainer topics={topics} />}
+          </VStack>
+        )}
+        {showSkeleton && (
+          <HStack px={6} my="4">
+            <Box>
+              <ConnectionStatusBadge status={adapter.status} skeleton />
             </Box>
-          )}
-          {options.showTopics && <TopicsContainer topics={topics} />}
-        </VStack>
+            <Box w="100%">
+              <SkeletonText
+                noOfLines={topics.length ? 2 : 1}
+                spacing="4"
+                skeletonHeight="2"
+                startColor="gray.500"
+                endColor="gray.500"
+                aria-label={adapter.id}
+              />
+            </Box>
+          </HStack>
+        )}
       </NodeWrapper>
       <Handle type="source" position={Position.Bottom} id="Bottom" isConnectable={false} />
       {HACK_BIDIRECTIONAL && <Handle type="source" position={Position.Top} id="Top" isConnectable={false} />}

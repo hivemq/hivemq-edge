@@ -1,5 +1,5 @@
 import { FC } from 'react'
-import { Handle, Position, NodeProps } from 'reactflow'
+import { Handle, Position, NodeProps, useStore } from 'reactflow'
 import { HStack, Icon, Text, VStack } from '@chakra-ui/react'
 
 import { DeviceMetadata } from '@/modules/Workspace/types.ts'
@@ -21,23 +21,30 @@ const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data }) => {
       <NodeWrapper
         isSelected={selected}
         wordBreak="break-word"
-        maxW={200}
         textAlign="center"
         p={3}
+        w={CONFIG_ADAPTER_WIDTH}
         borderTopRadius={30}
         onDoubleClick={onContextMenu}
         onContextMenu={onContextMenu}
       >
         <VStack>
-          <HStack w="100%" justifyContent="flex-end" gap={1} data-testid="device-capabilities">
-            {capabilities?.map((capability) => (
-              <Icon key={capability} boxSize={4} as={deviceCapabilityIcon[capability]} data-type={capability} />
-            ))}
-          </HStack>
-          <HStack w="100%" data-testid="device-description">
-            <Icon as={deviceCategoryIcon[category?.name || 'SIMULATION']} data-type={category?.name} />
-            <Text>{data.protocol}</Text>
-          </HStack>
+          {!showSkeleton && (
+            <>
+              <HStack w="100%" justifyContent="flex-end" gap={1} data-testid="device-capabilities">
+                {capabilities?.map((capability) => (
+                  <Icon key={capability} boxSize={4} as={deviceCapabilityIcon[capability]} data-type={capability} />
+                ))}
+              </HStack>
+              <HStack w="100%" data-testid="device-description">
+                <Icon as={deviceCategoryIcon[category?.name || 'SIMULATION']} data-type={category?.name} />
+                <Text>{data.protocol}</Text>
+              </HStack>
+            </>
+          )}
+          {showSkeleton && (
+            <Icon as={deviceCategoryIcon[category?.name || 'SIMULATION']} data-type={category?.name} boxSize="14" />
+          )}
         </VStack>
       </NodeWrapper>
       <Handle type="target" position={Position.Bottom} isConnectable={false} />
