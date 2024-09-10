@@ -180,47 +180,47 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.configFileReaderWriter = configFileReaderWriter;
     }
 
-    public <T> @NotNull T proxy(final @NotNull Class<T> type,
-                                final @NotNull T instance,
-                                final @Nullable Class<?>...ifs) {
+    public <T> @NotNull T proxy(
+            final @NotNull Class<T> type, final @NotNull T instance, final @Nullable Class<?>... ifs) {
 
-        if(configFileReaderWriter == null){
+        if (configFileReaderWriter == null) {
             //-- This is the initial loading phase from the XML through the configurators
             // --back to the config services, so do not proxy this else it will lead to a loop
             return instance;
         } else {
-            InvocationHandler handler = (proxyIn, method, args) -> {
-                boolean mutator = method.getName().startsWith("set") ||
+            final InvocationHandler handler = (proxyIn, method, args) -> {
+                final boolean mutator = method.getName().startsWith("set") ||
                         method.getName().startsWith("add") ||
                         method.getName().startsWith("remove");
-                Lock presentLock = mutator ? lock.writeLock() : lock.readLock();
+                final Lock presentLock = mutator ? lock.writeLock() : lock.readLock();
                 try {
                     presentLock.lock();
                     return method.invoke(instance, args);
                 } finally {
-                    if(mutator){
+                    if (mutator) {
                         flush(configFileReaderWriter);
                     }
                     presentLock.unlock();
                 }
             };
-            Class<?>[] allInterfaces = Stream.concat(Stream.of(type), Stream.of(ifs))
-                    .distinct()
-                    .toArray(Class<?>[]::new);
+            final Class<?>[] allInterfaces =
+                    Stream.concat(Stream.of(type), Stream.of(ifs)).distinct().toArray(Class<?>[]::new);
             //noinspection unchecked
             return (T) Proxy.newProxyInstance(type.getClassLoader(), allInterfaces, handler);
         }
     }
 
     private void flush(final @NotNull ConfigFileReaderWriter configFileReaderWriter) {
-        if(log.isTraceEnabled()){
+        if (log.isTraceEnabled()) {
             log.trace("flushing configuration changes to entity layer");
         }
         try {
             configFileReaderWriter.syncConfiguration();
-            if(gatewayConfiguration().isMutableConfigurationEnabled()){
+            if (gatewayConfiguration().isMutableConfigurationEnabled()) {
                 configFileReaderWriter.writeConfig();
             }
+        } catch (final Exception e){
+            log.error("Configuration file sync failed: ", e);
         } finally {
             lastWrite.set(System.currentTimeMillis());
         }
@@ -228,15 +228,15 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Override
     public void writeConfiguration(final @NotNull Writer writer) {
-        if(dynamicConfigurationService.isConfigurationExportEnabled()){
+        if (dynamicConfigurationService.isConfigurationExportEnabled() && configFileReaderWriter != null) {
             configFileReaderWriter.writeConfigToXML(writer);
         } else {
             throw new SecurityException("xml export not allowed");
         }
     }
 
-    public Optional<Long> getLastUpdateTime(){
-        long l = lastWrite.get();
+    public @NotNull Optional<Long> getLastUpdateTime() {
+        final long l = lastWrite.get();
         return l == 0 ? Optional.empty() : Optional.of(l);
     }
 }
