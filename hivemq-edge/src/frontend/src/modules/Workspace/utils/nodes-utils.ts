@@ -75,7 +75,7 @@ export const createBridgeNode = (
     },
     animated: isConnected && !!remote.length,
     style: {
-      strokeWidth: isConnected ? 1.5 : 0.5,
+      strokeWidth: 1.5,
       stroke: getThemeForStatus(theme, bridge.status),
     },
   }
@@ -107,7 +107,7 @@ export const createBridgeNode = (
     },
     animated: isConnected && !!local.length,
     style: {
-      strokeWidth: isConnected ? 1.5 : 0.5,
+      strokeWidth: 1.5,
       stroke: getThemeForStatus(theme, bridge.status),
     },
   }
@@ -194,7 +194,7 @@ export const createAdapterNode = (
     },
     animated: isConnected && !!topics.length,
     style: {
-      strokeWidth: isConnected ? 1.5 : 0.5,
+      strokeWidth: 1.5,
       stroke: getThemeForStatus(theme, adapter.status),
     },
   }
@@ -230,7 +230,7 @@ export const createAdapterNode = (
       },
       animated: isConnected && !!topics.length,
       style: {
-        strokeWidth: isConnected ? 1.5 : 0.5,
+        strokeWidth: 1.5,
         stroke: getThemeForStatus(theme, adapter.status),
       },
     }
@@ -274,7 +274,7 @@ export const createClientNode = (
     },
     animated: isConnected,
     style: {
-      strokeWidth: isConnected ? 1.5 : 0.5,
+      strokeWidth: 1.5,
       stroke: theme.colors.status.connected[500],
     },
   }
