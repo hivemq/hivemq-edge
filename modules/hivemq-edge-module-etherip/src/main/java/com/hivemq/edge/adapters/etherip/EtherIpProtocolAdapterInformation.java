@@ -71,7 +71,7 @@ public class EtherIpProtocolAdapterInformation implements ProtocolAdapterInforma
 
     @Override
     public @NotNull String getLogoUrl() {
-        return "/images/eip-icon.png";
+        return "/images/ab-eth-icon.png";
     }
 
     @Override
