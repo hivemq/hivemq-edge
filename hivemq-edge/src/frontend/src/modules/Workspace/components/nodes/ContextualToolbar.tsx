@@ -1,5 +1,14 @@
 import { type FC, MouseEventHandler, useMemo } from 'react'
-import { NodeToolbar, type NodeProps, type NodeToolbarProps, Position, Node, Edge, MarkerType } from 'reactflow'
+import {
+  NodeToolbar,
+  type NodeProps,
+  type NodeToolbarProps,
+  Position,
+  Node,
+  Edge,
+  MarkerType,
+  getOutgoers,
+} from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@chakra-ui/react'
 import { LuPanelRightOpen } from 'react-icons/lu'
@@ -12,6 +21,7 @@ import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 import WorkspaceButtonGroup from '@/modules/Workspace/components/parts/WorkspaceButtonGroup.tsx'
+import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 
 type SelectedNodeProps = Pick<NodeProps, 'id' | `dragging`> & Pick<NodeToolbarProps, 'position'>
 interface ContextualToolbarProps extends SelectedNodeProps {
@@ -21,7 +31,7 @@ interface ContextualToolbarProps extends SelectedNodeProps {
 
 const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, children, dragging }) => {
   const { t } = useTranslation()
-  const { onInsertGroupNode, nodes } = useWorkspaceStore()
+  const { onInsertGroupNode, nodes, edges } = useWorkspaceStore()
   const theme = useTheme()
 
   const selectedNodes = nodes.filter((node) => node.selected)
@@ -30,8 +40,19 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
     const adapters = selectedNodes.filter(
       (node) => node.type === NodeTypes.ADAPTER_NODE && !node.parentId && !node.parentNode
     )
-    return adapters.length >= 2 ? adapters : undefined
-  }, [selectedNodes])
+
+    // Add devices to the group
+    const devices = adapters.reduce<Node[]>((acc, curr) => {
+      const [type] = gluedNodeDefinition[curr.type as NodeTypes]
+      if (!type) return acc
+      const outgoers = getOutgoers(curr, nodes, edges)
+      const gluedNode = outgoers.find((node) => node.type === type)
+      if (gluedNode) acc.push(gluedNode)
+      return acc
+    }, [])
+
+    return adapters.length >= 2 ? [...adapters, ...devices] : undefined
+  }, [edges, nodes, selectedNodes])
 
   const onCreateGroup = () => {
     if (!selectedGroupCandidates) return
