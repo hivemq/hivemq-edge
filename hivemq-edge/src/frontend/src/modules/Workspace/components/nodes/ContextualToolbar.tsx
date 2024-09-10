@@ -17,10 +17,10 @@ import { ImMakeGroup } from 'react-icons/im'
 import { Adapter, Status } from '@/api/__generated__'
 import { EdgeTypes, Group, IdStubs, NodeTypes } from '@/modules/Workspace/types.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { getGroupLayout } from '@/modules/Workspace/utils/group.utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
-import WorkspaceButtonGroup from '@/modules/Workspace/components/parts/WorkspaceButtonGroup.tsx'
 import { gluedNodeDefinition } from '@/modules/Workspace/utils/nodes-utils.ts'
 
 type SelectedNodeProps = Pick<NodeProps, 'id' | `dragging`> & Pick<NodeToolbarProps, 'position'>
@@ -126,7 +126,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
         role="toolbar"
         aria-label={t('workspace.toolbar.container.right')}
       >
-        <WorkspaceButtonGroup>
+        <ToolbarButtonGroup>
           <IconButton
             size="sm"
             data-testid="node-group-toolbar-panel"
@@ -134,7 +134,7 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
             aria-label={t('workspace.toolbar.command.overview')}
             onClick={onOpenPanel}
           />
-        </WorkspaceButtonGroup>
+        </ToolbarButtonGroup>
       </NodeToolbar>
       {(children || isGroupable) && (
         <NodeToolbar
@@ -146,14 +146,14 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
         >
           {children}
           {isGroupable && (
-            <WorkspaceButtonGroup>
+            <ToolbarButtonGroup>
               <IconButton
                 data-testid="node-group-toolbar-group"
                 icon={<ImMakeGroup />}
                 aria-label={t('workspace.toolbar.command.group')}
                 onClick={onCreateGroup}
               />
-            </WorkspaceButtonGroup>
+            </ToolbarButtonGroup>
           )}
         </NodeToolbar>
       )}
