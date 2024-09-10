@@ -143,7 +143,6 @@ public class ConfigFileReaderTest {
         final Map<String, Object> config = hiveMQConfigEntity.getProtocolAdapterConfig();
 
         assertNotNull(config);
-        System.out.println(config);
         assertEquals(5, config.keySet().size());
 
         assertThat((Map<String, Object>) config.get("my-protocol-adapter1")).satisfies(map -> {
