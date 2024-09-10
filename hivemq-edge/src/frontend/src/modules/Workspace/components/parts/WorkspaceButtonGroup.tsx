@@ -7,7 +7,7 @@ const WorkspaceButtonGroup: FC<ButtonGroupProps> = ({ children, ...rest }) => {
     <ButtonGroup
       size="sm"
       variant="solid"
-      colorScheme="blue"
+      colorScheme="gray"
       orientation="vertical"
       isAttached
       sx={{
