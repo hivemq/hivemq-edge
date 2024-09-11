@@ -16,6 +16,17 @@ export const isBidirectional = (adapter: ProtocolAdapter | undefined) => {
 }
 
 /**
+ * @deprecated This is a mock, should be in the OpenAPI spec, https://hivemq.kanbanize.com/ctrl_board/57/cards/25259/details/
+ * @see ProtocolAdapterCategory
+ */
+export enum ProtocolAdapterCategoryName {
+  BUILDING_AUTOMATION = 'BUILDING_AUTOMATION',
+  INDUSTRIAL = 'INDUSTRIAL',
+  CONNECTIVITY = 'CONNECTIVITY',
+  SIMULATION = 'SIMULATION',
+}
+
+/**
  * @deprecated This is a mock, mapping should be based on ProtocolAdapterCategory and image property
  * @see ProtocolAdapterCategory
  */

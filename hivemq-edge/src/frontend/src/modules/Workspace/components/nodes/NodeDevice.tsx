@@ -4,7 +4,11 @@ import { HStack, Icon, Text, VStack } from '@chakra-ui/react'
 
 import { DeviceMetadata } from '@/modules/Workspace/types.ts'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
-import { deviceCapabilityIcon, deviceCategoryIcon } from '@/modules/Workspace/utils/adapter.utils.ts'
+import {
+  deviceCapabilityIcon,
+  deviceCategoryIcon,
+  ProtocolAdapterCategoryName,
+} from '@/modules/Workspace/utils/adapter.utils.ts'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
@@ -37,13 +41,20 @@ const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data, draggin
                 ))}
               </HStack>
               <HStack w="100%" data-testid="device-description">
-                <Icon as={deviceCategoryIcon[category?.name || 'SIMULATION']} data-type={category?.name} />
+                <Icon
+                  as={deviceCategoryIcon[category?.name || ProtocolAdapterCategoryName.SIMULATION]}
+                  data-type={category?.name}
+                />
                 <Text>{data.protocol}</Text>
               </HStack>
             </>
           )}
           {showSkeleton && (
-            <Icon as={deviceCategoryIcon[category?.name || 'SIMULATION']} data-type={category?.name} boxSize="14" />
+            <Icon
+              as={deviceCategoryIcon[category?.name || ProtocolAdapterCategoryName.SIMULATION]}
+              data-type={category?.name}
+              boxSize="14"
+            />
           )}
         </VStack>
       </NodeWrapper>
