@@ -15,12 +15,20 @@
  */
 package com.hivemq.edge.modules.adapters.simulation;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
+import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttConfig;
+import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
+import com.hivemq.edge.modules.adapters.simulation.config.legacy.LegacySimulationAdapterConfig;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<SimulationAdapterConfig> {
 
@@ -30,13 +38,54 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
     }
 
     @Override
-    public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<SimulationAdapterConfig> input) {
+    public @NotNull ProtocolAdapter createAdapter(
+            @NotNull final ProtocolAdapterInformation adapterInformation,
+            @NotNull final ProtocolAdapterInput<SimulationAdapterConfig> input) {
         return new SimulationProtocolAdapter(adapterInformation, input, TimeWaiter.INSTANCE);
     }
 
     @Override
     public @NotNull Class<SimulationAdapterConfig> getConfigClass() {
         return SimulationAdapterConfig.class;
+    }
+
+    @Override
+    public @NotNull SimulationAdapterConfig convertConfigObject(
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+        if (config.get("simulationToMqtt") != null || config.get("mqttToSimulation") != null) {
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+        } else {
+            return tryConvertLegacyConfig(objectMapper, config);
+        }
+    }
+
+    private static @NotNull SimulationAdapterConfig tryConvertLegacyConfig(
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+        final LegacySimulationAdapterConfig legacySimulationAdapterConfig =
+                objectMapper.convertValue(config, LegacySimulationAdapterConfig.class);
+
+        final List<SimulationToMqttMapping> simulationToMqttMappings =
+                legacySimulationAdapterConfig.getPollingContexts()
+                        .stream()
+                        .map(context -> new SimulationToMqttMapping(context.getMqttTopic(),
+                                context.getMqttQos(),
+                                context.getMessageHandlingOptions(),
+                                context.getIncludeTimestamp(),
+                                context.getIncludeTagNames(),
+                                context.getUserProperties()))
+                        .collect(Collectors.toList());
+
+        final SimulationToMqttConfig simulationToMqttConfig = new SimulationToMqttConfig(simulationToMqttMappings,
+                legacySimulationAdapterConfig.getPollingIntervalMillis(),
+                legacySimulationAdapterConfig.getMaxPollingErrorsBeforeRemoval());
+
+
+        return new SimulationAdapterConfig(simulationToMqttConfig,
+                legacySimulationAdapterConfig.getId(),
+                legacySimulationAdapterConfig.getMinValue(),
+                legacySimulationAdapterConfig.getMaxValue(),
+                legacySimulationAdapterConfig.getMinDelay(),
+                legacySimulationAdapterConfig.getMaxDelay());
     }
 
 }
