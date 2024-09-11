@@ -1,10 +1,10 @@
-import { type ProtocolAdapter } from '@/api/__generated__'
+import { type ProtocolAdapter, Status } from '@/api/__generated__'
 import { type IconType } from 'react-icons'
 import { TbSettingsAutomation } from 'react-icons/tb'
 import { FaIndustry } from 'react-icons/fa6'
 import { GrConnectivity } from 'react-icons/gr'
 import { AiFillExperiment } from 'react-icons/ai'
-import { MdOutlineFindInPage } from 'react-icons/md'
+import { RiCompassDiscoverLine } from 'react-icons/ri'
 import { HmInput, HmOutput } from '@/components/react-icons/hm'
 
 /**
@@ -13,6 +13,17 @@ import { HmInput, HmOutput } from '@/components/react-icons/hm'
  */
 export const isBidirectional = (adapter: ProtocolAdapter | undefined) => {
   return Boolean(adapter?.id?.includes('opc-ua-client'))
+}
+
+/**
+ * @deprecated This is a mock, should be in the OpenAPI spec, https://hivemq.kanbanize.com/ctrl_board/57/cards/25259/details/
+ * @see ProtocolAdapterCategory
+ */
+export enum ProtocolAdapterCategoryName {
+  BUILDING_AUTOMATION = 'BUILDING_AUTOMATION',
+  INDUSTRIAL = 'INDUSTRIAL',
+  CONNECTIVITY = 'CONNECTIVITY',
+  SIMULATION = 'SIMULATION',
 }
 
 /**
@@ -35,6 +46,15 @@ type CapabilityType = ArrayElement<CapabilitiesArray> | 'WRITE'
  */
 export const deviceCapabilityIcon: Record<CapabilityType, IconType> = {
   ['READ']: HmOutput,
-  ['DISCOVER']: MdOutlineFindInPage,
+  ['DISCOVER']: RiCompassDiscoverLine,
   ['WRITE']: HmInput,
+}
+
+export const statusMapping = {
+  [Status.runtime.STOPPED]: { text: 'STOPPED', color: 'status.error' },
+  [Status.connection.ERROR]: { text: 'ERROR', color: 'status.error' },
+  [Status.connection.UNKNOWN]: { text: 'UNKNOWN', color: 'status.error' },
+  [Status.connection.CONNECTED]: { text: 'CONNECTED', color: 'status.connected' },
+  [Status.connection.DISCONNECTED]: { text: 'DISCONNECTED', color: 'status.disconnected' },
+  [Status.connection.STATELESS]: { text: 'STATELESS', color: 'status.stateless' },
 }

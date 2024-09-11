@@ -97,16 +97,16 @@ describe('createBridgeNode', () => {
       nodeBridge: expect.objectContaining({
         id: 'bridge@bridge-id-01',
         position: {
-          x: 426.5,
-          y: 500,
+          x: 462.5,
+          y: 600,
         },
       }),
 
       nodeHost: expect.objectContaining({
         id: 'host@bridge-id-01',
         position: {
-          x: 426.5,
-          y: 750,
+          x: 462.5,
+          y: 850,
         },
       }),
       hostConnector: expect.objectContaining({}),
@@ -144,7 +144,7 @@ describe('createListenerNode', () => {
       nodeListener: expect.objectContaining({
         id: 'listener@tcp-listener-1883',
         position: {
-          x: 47,
+          x: -25,
           y: 280,
         },
       }),
@@ -187,8 +187,8 @@ describe('createAdapterNode', () => {
       nodeAdapter: expect.objectContaining({
         id: `adapter@${MOCK_ADAPTER_ID}`,
         position: {
-          x: 553,
-          y: 0,
+          x: 625,
+          y: -66.66666666666669,
         },
       }),
       edgeConnector: expect.objectContaining({}),
@@ -229,8 +229,8 @@ describe('createClientNode', () => {
         },
         id: 'client@my-first-client',
         position: {
-          x: 426.5,
-          y: 500,
+          x: 462.5,
+          y: 600,
         },
         sourcePosition: 'bottom',
         type: NodeTypes.CLIENT_NODE,
@@ -257,8 +257,8 @@ describe('createClientNode', () => {
       nodeClient: expect.objectContaining({
         id: 'client@my-first-client',
         position: {
-          x: 426.5,
-          y: 500,
+          x: 462.5,
+          y: 600,
         },
       }),
       clientConnector: expect.objectContaining({}),
@@ -287,8 +287,8 @@ describe('createClientNode', () => {
         },
         id: 'client@my-first-client',
         position: {
-          x: 426.5,
-          y: 500,
+          x: 462.5,
+          y: 600,
         },
         sourcePosition: 'bottom',
         type: NodeTypes.CLIENT_NODE,
@@ -315,8 +315,8 @@ describe('createClientNode', () => {
       nodeClient: expect.objectContaining({
         id: 'client@my-first-client',
         position: {
-          x: 426.5,
-          y: 500,
+          x: 462.5,
+          y: 600,
         },
       }),
       clientConnector: expect.objectContaining({}),
