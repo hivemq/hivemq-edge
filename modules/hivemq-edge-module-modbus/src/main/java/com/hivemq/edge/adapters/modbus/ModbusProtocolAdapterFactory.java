@@ -71,11 +71,7 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
                         context.getMessageHandlingOptions(),
                         context.getIncludeTimestamp(),
                         context.getIncludeTagNames(),
-                        context.getLegacyProperties()
-                                .stream()
-                                .map(legacyUserProperty -> new MqttUserProperty(legacyUserProperty.getName(),
-                                        legacyUserProperty.getValue()))
-                                .collect(Collectors.toList()),
+                        context.getLegacyProperties(),
                         context.getAddressRange()))
                 .collect(Collectors.toList());
 
