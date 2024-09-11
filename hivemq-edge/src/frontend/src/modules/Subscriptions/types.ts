@@ -1,4 +1,5 @@
 import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
+import { AlertProps } from '@chakra-ui/react'
 
 export interface SubscriptionManagerType {
   schema: RJSFSchema
@@ -14,7 +15,7 @@ export interface SubscriptionManagerType {
  */
 export interface OutwardSubscription {
   node: string
-  mqttTopic: string[]
+  'mqtt-topic': string[]
   mapping: Mapping[]
 }
 
@@ -24,7 +25,7 @@ export interface OutwardSubscription {
 export interface Mapping {
   source: string[]
   destination: string
-  transformation: Transformation
+  transformation?: Transformation
 }
 
 /**
@@ -33,4 +34,17 @@ export interface Mapping {
 export interface Transformation {
   function: 'toString' | 'toInt' | 'join'
   params: string
+}
+
+/**
+ * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
+ */
+export interface DeviceTags {
+  tag: string
+  node?: string
+  register?: { start: number; shift: number }
+}
+
+export interface MappingValidation extends Pick<AlertProps, 'status'> {
+  errors: string[]
 }

@@ -29,7 +29,6 @@ const SubscriptionForm: FC<SubscriptionFormProps> = ({ id, type }) => {
     (data: IChangeEvent) => {
       const subscriptions = data.formData?.subscriptions
       subscriptionManager?.onSubmit?.(subscriptions)
-      console.log('XXXXXXX', subscriptions)
     },
     [subscriptionManager]
   )
