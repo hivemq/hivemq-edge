@@ -8,6 +8,7 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSubscriptionSchemas.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 interface DataModelSourcesProps extends CardProps {
   topics: string[]
@@ -16,8 +17,6 @@ interface DataModelSourcesProps extends CardProps {
 const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
   const { t } = useTranslation('components')
   const { data, isLoading } = useGetSubscriptionSchemas(topics, topics ? 'source' : undefined)
-
-  const isReady = Boolean(!isLoading && data)
 
   return (
     <Card {...props} size="sm">
@@ -35,7 +34,8 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
 
       <CardBody>
         {isLoading && <LoaderSpinner />}
-        {isReady && <JsonSchemaBrowser schema={data as JSONSchema7} isDraggable />}
+        {!isLoading && !data && <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />}
+        {!isLoading && data && <JsonSchemaBrowser schema={data as JSONSchema7} isDraggable />}
       </CardBody>
     </Card>
   )

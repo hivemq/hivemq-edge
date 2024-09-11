@@ -44,7 +44,7 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
               mapping={instruction !== -1 ? mapping?.[instruction] : undefined}
               onChange={(source, destination) => {
                 const newMappings = [...(mapping || [])]
-                const newItem = { source: [source], destination: destination }
+                const newItem = { source: [source], destination }
                 if (instruction !== -1) {
                   newMappings[instruction] = newItem
                 } else newMappings.push(newItem)

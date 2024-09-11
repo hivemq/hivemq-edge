@@ -23,6 +23,7 @@ export const MqttTransformationField: FC<FieldProps<OutwardSubscription[], RJSFS
   const handleEdit = (index: number) => {
     setSelectedItem(index)
   }
+
   const handleDelete = (index: number) => {
     setSubsData((old) => {
       const gg = [...(old || [])]

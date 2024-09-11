@@ -8,6 +8,7 @@ import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBr
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ValidationStatus from '@/components/rjsf/MqttTransformation/components/mapping/ValidationStatus.tsx'
 import { MappingValidation } from '@/modules/Subscriptions/types.ts'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 interface DataModelDestinationProps extends CardProps {
   topic: string | undefined
@@ -17,8 +18,6 @@ interface DataModelDestinationProps extends CardProps {
 const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, validation, ...props }) => {
   const { t } = useTranslation('components')
   const { data, isLoading } = useGetSubscriptionSchemas(topic as string, topic ? 'destination' : undefined)
-
-  const isReady = Boolean(!isLoading && data)
 
   return (
     <Card {...props} size="sm">
@@ -30,7 +29,8 @@ const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, validation
       </CardHeader>
       <CardBody>
         {isLoading && <LoaderSpinner />}
-        {isReady && <JsonSchemaBrowser schema={data as JSONSchema7} />}
+        {!isLoading && !data && <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />}
+        {!isLoading && data && <JsonSchemaBrowser schema={data as JSONSchema7} />}
       </CardBody>
     </Card>
   )
