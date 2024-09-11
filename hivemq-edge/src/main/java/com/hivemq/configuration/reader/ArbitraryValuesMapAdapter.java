@@ -96,6 +96,15 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
                     // add the plural
                     currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
                 }
+            } else if ("userProperties".equals(currentKeyName)) {
+                final List children = new ArrayList();
+                readChildren("userProperty", list, children, currentKeyName);
+                final ElementMap elementMap = new ElementMap();
+                elementMap.elements = children;
+                if (!children.isEmpty()){
+                    // add the plural
+                    currentEl.add(new JAXBElement<>(new QName(currentKeyName), ElementMap.class, elementMap));
+                }
             } else if (parentName != null && currentKeyName.endsWith("s")) {
                 List children = new ArrayList();
                 readChildren(shortName(currentKeyName), list, children, currentKeyName);
@@ -114,7 +123,9 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
             }
         }
         else {
-            currentEl.add(new JAXBElement<>(new QName(currentKeyName), String.class, value.toString()));
+            if(value != null) {
+                currentEl.add(new JAXBElement<>(new QName(currentKeyName), String.class, value.toString()));
+            }
         }
     }
 
@@ -161,7 +172,7 @@ public class ArbitraryValuesMapAdapter extends XmlAdapter<ArbitraryValuesMapAdap
 
         //if child name is plural of parent name, we expect the value to be a list
         //This obviously does not cover irregular plurals, but 'userProperties' is used very often, so we specially check for it.
-        if ((node.getLocalName() + "s").equals(parentName) || "mqttUserProperties".equals(parentName)) {
+        if ((node.getLocalName() + "s").equals(parentName) || "mqttUserProperties".equals(parentName) || "userProperties".equals(parentName)) {
             replaceWithList(map, value, parentName);
             return;
         }
