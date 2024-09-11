@@ -15,12 +15,20 @@
  */
 package com.hivemq.edge.adapters.etherip;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
+import com.hivemq.edge.adapters.etherip.config.EipToMqttConfig;
+import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
+import com.hivemq.edge.adapters.etherip.config.legacy.LegacyEipAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdapterConfig> {
 
@@ -30,14 +38,57 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
     }
 
     @Override
-    public @NotNull ProtocolAdapter createAdapter(final @NotNull ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<EipAdapterConfig> input) {
+    public @NotNull ProtocolAdapter createAdapter(
+            final @NotNull ProtocolAdapterInformation adapterInformation,
+            @NotNull final ProtocolAdapterInput<EipAdapterConfig> input) {
         return new EipPollingProtocolAdapter(adapterInformation, input);
     }
 
+    @Override
+    public @NotNull EipAdapterConfig convertConfigObject(
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+        if (config.get("eipToMqtt") != null || config.get("mqttToEip") != null) {
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+        } else {
+            return tryConvertLegacyConfig(objectMapper, config);
+        }
+    }
 
     @Override
     public @NotNull Class<EipAdapterConfig> getConfigClass() {
         return EipAdapterConfig.class;
     }
 
+    private static @NotNull EipAdapterConfig tryConvertLegacyConfig(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<String, Object> config) {
+        final LegacyEipAdapterConfig legacyEipAdapterConfig =
+                objectMapper.convertValue(config, LegacyEipAdapterConfig.class);
+
+        final List<EipToMqttMapping> modbusToMqttMappings = legacyEipAdapterConfig.getSubscriptions()
+                .stream()
+                .map(context -> new EipToMqttMapping(context.getDestinationMqttTopic(),
+                        context.getQos(),
+                        context.getMessageHandlingOptions(),
+                        context.getIncludeTimestamp(),
+                        context.getIncludeTagNames(),
+                        context.getTagName(),
+                        context.getTagAddress(),
+                        context.getDataType(),
+                        context.getUserProperties())).collect(Collectors.toList());
+
+        final EipToMqttConfig modbusToMqttConfig =
+                new EipToMqttConfig(legacyEipAdapterConfig.getPollingIntervalMillis(),
+                        legacyEipAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
+                        legacyEipAdapterConfig.getPublishChangedDataOnly(),
+                        modbusToMqttMappings);
+
+
+        return new EipAdapterConfig(legacyEipAdapterConfig.getId(),
+                legacyEipAdapterConfig.getPort(),
+                legacyEipAdapterConfig.getHost(),
+                legacyEipAdapterConfig.getBackplane(),
+                legacyEipAdapterConfig.getSlot(),
+                modbusToMqttConfig);
+    }
 }
