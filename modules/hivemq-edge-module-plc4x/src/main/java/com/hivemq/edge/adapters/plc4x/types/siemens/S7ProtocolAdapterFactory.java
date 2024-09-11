@@ -15,12 +15,20 @@
  */
 package com.hivemq.edge.adapters.plc4x.types.siemens;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7ToMqttConfig;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.legacy.LegacyS7AdapterConfig;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -43,4 +51,49 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
         return S7AdapterConfig.class;
     }
 
+
+    @Override
+    public @NotNull S7AdapterConfig convertConfigObject(
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+        if(config.get("adsToMqtt") != null || config.get("mqttToAds") != null) {
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+        } else  {
+            return tryConvertLegacyConfig(objectMapper, config);
+        }
+    }
+
+    private static @NotNull S7AdapterConfig tryConvertLegacyConfig(final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+        final LegacyS7AdapterConfig legacyS7AdapterConfig =
+                objectMapper.convertValue(config, LegacyS7AdapterConfig.class);
+
+        final List<Plc4xToMqttMapping> plc4xToMqttMappings = legacyS7AdapterConfig.getSubscriptions()
+                .stream()
+                .map(subscription -> new Plc4xToMqttMapping(subscription.getMqttTopic(),
+                        subscription.getMqttQos(),
+                        subscription.getMessageHandlingOptions(),
+                        subscription.getIncludeTimestamp(),
+                        subscription.getIncludeTagNames(),
+                        subscription.getTagName(),
+                        subscription.getTagAddress(),
+                        subscription.getDataType(),
+                        subscription.getUserProperties()))
+                .collect(Collectors.toList());
+
+        final S7ToMqttConfig s7ToMqttConfig =
+                new S7ToMqttConfig(legacyS7AdapterConfig.getPollingIntervalMillis(),
+                        legacyS7AdapterConfig.getMaxPollingErrorsBeforeRemoval(),
+                        legacyS7AdapterConfig.getPublishChangedDataOnly(),
+                        plc4xToMqttMappings);
+
+        return new S7AdapterConfig(legacyS7AdapterConfig.getId(),
+                legacyS7AdapterConfig.getPort(),
+                legacyS7AdapterConfig.getHost(),
+                legacyS7AdapterConfig.getControllerType(),
+                legacyS7AdapterConfig.getRemoteRack(),
+                legacyS7AdapterConfig.getRemoteRack2(),
+                legacyS7AdapterConfig.getRemoteSlot(),
+                legacyS7AdapterConfig.getRemoteSlot2(),
+                legacyS7AdapterConfig.getRemoteTsap(),
+                s7ToMqttConfig);
+    }
 }
