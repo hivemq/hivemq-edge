@@ -1,0 +1,12 @@
+<hivemq>
+    <protocol-adapters>
+        <simulation>
+            <id>my-simulation-protocol-adapter</id>
+            <subscriptions>
+                <subscription>
+                    <destination>my/topic</destination>
+                </subscription>
+            </subscriptions>
+        </simulation>
+    </protocol-adapters>
+</hivemq>
