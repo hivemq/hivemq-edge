@@ -55,7 +55,7 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
     @Override
     public @NotNull S7AdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        if(config.get("adsToMqtt") != null || config.get("mqttToAds") != null) {
+        if(config.get("s7ToMqtt") != null || config.get("mqttToS7") != null) {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } else  {
             return tryConvertLegacyConfig(objectMapper, config);
