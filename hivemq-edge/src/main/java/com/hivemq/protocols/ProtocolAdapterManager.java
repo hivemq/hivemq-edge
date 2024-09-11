@@ -57,12 +57,14 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -171,6 +173,30 @@ public class ProtocolAdapterManager {
             }
         }
 
+        final Map<String, Object> allAdapters = new HashMap<>();
+        for (ProtocolAdapterWrapper<? extends ProtocolAdapter> value : protocolAdapters.values()) {
+            final ProtocolAdapterConfig configObject = value.getConfigObject();
+            final ProtocolAdapterFactory<?> adapterFactory = value.getAdapterFactory();
+            final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            try {
+                Thread.currentThread().setContextClassLoader(adapterFactory.getClass().getClassLoader());
+                allAdapters.compute(value.getAdapter().getProtocolAdapterInformation().getProtocolId(), (s, o) -> {
+                    if (o == null) {
+                        final ArrayList<Map<String, Object>> list = new ArrayList<>();
+                        list.add(adapterFactory.unconvertConfigObject(objectMapper, configObject));
+                        return list;
+                    }
+                    ((List) o).add(adapterFactory.unconvertConfigObject(objectMapper, configObject));
+                    return o;
+                });
+            } finally {
+                Thread.currentThread().setContextClassLoader(contextClassLoader);
+            }
+        }
+        synchronized (lock) {
+            configurationService.protocolAdapterConfigurationService().setAllConfigs(allAdapters);
+        }
+
         return FutureConverter.toListenableFuture(CompletableFuture.allOf(adapterFutures.build()
                 .toArray(new CompletableFuture[]{})));
     }
@@ -272,11 +298,12 @@ public class ProtocolAdapterManager {
             final PollingProtocolAdapter adapter = (PollingProtocolAdapter) protocolAdapterWrapper.getAdapter();
             adapter.getPollingContexts().forEach(adapterSubscription -> {
                 //noinspection unchecked this is safe as we literally make a check on the adapter class before
-                final PerSubscriptionSampler<? extends PollingContext> sampler = new PerSubscriptionSampler<>(protocolAdapterWrapper,
+                final PerSubscriptionSampler<? extends PollingContext> sampler = new PerSubscriptionSampler<>(
+                        protocolAdapterWrapper,
                         metricRegistry,
                         objectMapper,
                         moduleServices.adapterPublishService(),
-                        (PollingContext)adapterSubscription,
+                        (PollingContext) adapterSubscription,
                         eventService,
                         jsonPayloadDefaultCreator);
                 protocolAdapterPollingService.schedulePolling(protocolAdapterWrapper, sampler);
@@ -301,7 +328,8 @@ public class ProtocolAdapterManager {
             final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
             stopFuture = adapterStopOutput.getOutputFuture();
             protocolAdapter.stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
-        } stopFuture.thenApply(input -> {
+        }
+        stopFuture.thenApply(input -> {
             if (log.isTraceEnabled()) {
                 log.trace("Protocol-adapter '{}' stopped.", protocolAdapter.getId());
             }
