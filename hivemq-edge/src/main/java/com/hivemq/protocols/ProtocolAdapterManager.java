@@ -64,7 +64,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -140,7 +139,7 @@ public class ProtocolAdapterManager {
         final ImmutableList.Builder<CompletableFuture<Void>> adapterFutures = ImmutableList.builder();
 
         for (Map.Entry<String, Object> configSection : allConfigs.entrySet()) {
-            final String adapterType = configSection.getKey();
+            final String adapterType = getKey(configSection.getKey());
             final ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
             if (protocolAdapterFactory == null) {
                 if (log.isWarnEnabled()) {
@@ -199,6 +198,13 @@ public class ProtocolAdapterManager {
 
         return FutureConverter.toListenableFuture(CompletableFuture.allOf(adapterFutures.build()
                 .toArray(new CompletableFuture[]{})));
+    }
+
+    private static @NotNull String getKey(final @NotNull String key) {
+        if(key.equals("ethernet-ip")) {
+            return "eip";
+        }
+        return key;
     }
 
     @SuppressWarnings("rawtypes")
