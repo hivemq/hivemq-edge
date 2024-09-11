@@ -14,7 +14,7 @@ const NodeEdge: FC<NodeProps> = (props) => {
 
   return (
     <>
-      <ContextualToolbar id={props.id} onOpenPanel={onContextMenu} />
+      <ContextualToolbar id={props.id} dragging={props.dragging} onOpenPanel={onContextMenu} />
       <NodeWrapper
         isSelected={props.selected}
         onDoubleClick={onContextMenu}
