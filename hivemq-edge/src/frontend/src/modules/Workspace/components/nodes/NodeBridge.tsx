@@ -8,7 +8,7 @@ import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import logo from '@/assets/hivemq/05-icon-hivemq-bridge-extension.svg'
 
 import NodeWrapper from '../parts/NodeWrapper.tsx'
-import TopicsContainer from '../parts/TopicsContainer.tsx'
+import MappingBadge from '../parts/MappingBadge.tsx'
 import { getBridgeTopics } from '../../utils/topics-utils.ts'
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.ts'
@@ -35,7 +35,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge, draggin
       >
         {!showSkeleton && (
           <VStack>
-            {options.showTopics && <TopicsContainer topics={topics.remote} />}
+            {options.showTopics && <MappingBadge destinations={topics.remote.map((topic) => topic.topic)} />}
             <HStack>
               <Image boxSize="20px" objectFit="scale-down" src={logo} alt={t('workspace.node.bridge')} />
               <Text flex={1} data-testid="bridge-node-name">
@@ -47,7 +47,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge, draggin
                 <ConnectionStatusBadge status={bridge.status} />
               </Box>
             )}
-            {options.showTopics && <TopicsContainer topics={topics.local} />}
+            {options.showTopics && <MappingBadge destinations={topics.local.map((topic) => topic.topic)} />}
           </VStack>
         )}
         {showSkeleton && (
