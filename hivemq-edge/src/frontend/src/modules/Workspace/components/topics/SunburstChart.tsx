@@ -4,7 +4,7 @@ import { ResponsiveSunburst, type ComputedDatum, type SunburstCustomLayerProps }
 import { type HierarchyNode } from 'd3-hierarchy'
 import { Badge, HStack } from '@chakra-ui/react'
 
-import Topic from '@/components/MQTT/Topic.tsx'
+import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import { TopicTreeMetadata } from '@/modules/Workspace/types.ts'
 
 interface SunburstNivoProps {
@@ -17,7 +17,7 @@ const TopicTooltip = (props: ComputedDatum<unknown>) => {
 
   return (
     <HStack>
-      <Topic topic={id.toString()} />
+      <Topic tagTitle={id.toString()} />
       <Badge colorScheme="blue">{props.value}</Badge>
     </HStack>
   )

@@ -18,7 +18,7 @@ interface MetadataExplorerProps {
 
 const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
   const { t } = useTranslation()
-  const { data, isLoading } = useGetSubscriptionSchemas(topic, 'activated')
+  const { data, isLoading } = useGetSubscriptionSchemas(topic, 'source')
   const { data: allClients, isLoading: isClientLoading } = useListClientSubscriptions()
   const createClient = useCreateClientSubscriptions()
   const updateClient = useUpdateClientSubscriptions()

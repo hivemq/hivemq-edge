@@ -1,37 +1,30 @@
 import { type FC, useMemo } from 'react'
-import type { JSONSchema7, JSONSchema7TypeName } from 'json-schema'
-import type { IconType } from 'react-icons'
-import { Badge, List, ListIcon, ListItem, Tooltip } from '@chakra-ui/react'
+import type { JSONSchema7 } from 'json-schema'
+import { List, ListProps } from '@chakra-ui/react'
 
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { DataTypeIcon } from '@/components/rjsf/MqttTransformation/utils/data-type.utils.tsx'
+import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
 
-interface JsonSchemaBrowserProps {
+interface JsonSchemaBrowserProps extends ListProps {
   schema: JSONSchema7
+  isDraggable?: boolean
 }
 
-const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = (props) => {
+const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({ schema, isDraggable = false, ...props }) => {
   const properties = useMemo(() => {
-    return getPropertyListFrom(props.schema)
-  }, [props.schema])
+    return getPropertyListFrom(schema)
+  }, [schema])
 
   return (
-    <List>
+    <List {...props}>
       {properties.length > 0 &&
         properties.map((property) => {
-          const TypeIcon = DataTypeIcon[(property.type || 'null') as JSONSchema7TypeName satisfies JSONSchema7TypeName]
-
           return (
-            <ListItem
+            <PropertyItem
               key={[...property.path, property.title].join('-')}
-              ml={(property?.path?.length || 0) * 8}
-              data-type={property.type as string}
-            >
-              <ListIcon as={TypeIcon as IconType} color="green.500" />
-              <Tooltip label={[...property.path, property.title].join('/')} placement="top" isDisabled>
-                <Badge>{[property.title].join(' . ')}</Badge>
-              </Tooltip>
-            </ListItem>
+              property={property}
+              isDraggable={isDraggable}
+            />
           )
         })}
     </List>

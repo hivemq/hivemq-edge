@@ -3,7 +3,7 @@ import ReactTreeView, { flattenTree } from 'react-accessible-treeview'
 import { Box, HStack, Icon, Text } from '@chakra-ui/react'
 import { LuChevronDown, LuChevronRight } from 'react-icons/lu'
 
-import Topic from '@/components/MQTT/Topic.tsx'
+import { Topic } from '@/components/MQTT/EntityTag.tsx'
 import { type SunburstData } from 'recharts/types/chart/SunburstChart'
 
 interface TreeViewProps {
@@ -29,7 +29,7 @@ const TreeViewChart: FC<TreeViewProps> = ({ data }) => {
             )}
             {!isBranch && (
               <Box m={1}>
-                <Topic topic={element.id.toString().substring(1)} />
+                <Topic tagTitle={element.id.toString().substring(1)} />
               </Box>
             )}
           </HStack>

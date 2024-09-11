@@ -1,4 +1,5 @@
 import { type RJSFSchema, UiSchema } from '@rjsf/utils'
+import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
 
 interface MockSubscription {
   schema?: RJSFSchema
@@ -76,7 +77,11 @@ export const MOCK_OUTWARD_SUBSCRIPTION_OPCUA: MockSubscription = {
     required: ['subscriptions'],
   },
   uiSchema: {
+    'ui:submitButtonOptions': {
+      norender: true,
+    },
     subscriptions: {
+      'ui:field': 'mqtt:transform',
       items: {
         'mqtt-topic': {
           items: {
@@ -87,3 +92,38 @@ export const MOCK_OUTWARD_SUBSCRIPTION_OPCUA: MockSubscription = {
     },
   },
 }
+
+export const MOCK_MAPPING_DATA: OutwardSubscription[] = [
+  {
+    'mqtt-topic': ['bar/test8', 'pump1/temperature'],
+    mapping: [
+      {
+        source: ['dfdf'],
+        destination: 'dfdf',
+        transformation: {
+          function: 'toString',
+          params: 'dffd',
+        },
+      },
+      {
+        source: ['dd'],
+        destination: 'dffdfd',
+        transformation: {
+          function: 'toString',
+          params: 'fdfgfg',
+        },
+      },
+    ],
+    node: 'write/power-management/alert',
+  },
+  {
+    'mqtt-topic': [],
+    mapping: [],
+    node: '',
+  },
+  {
+    'mqtt-topic': [],
+    mapping: [],
+    node: '',
+  },
+]
