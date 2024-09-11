@@ -15,12 +15,19 @@
  */
 package com.hivemq.edge.adapters.http;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
+import com.hivemq.edge.adapters.http.config.HttpToMqttConfig;
+import com.hivemq.edge.adapters.http.config.HttpToMqttMapping;
+import com.hivemq.edge.adapters.http.config.legacy.LegacyHttpAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -40,8 +47,46 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     }
 
     @Override
+    public @NotNull HttpAdapterConfig convertConfigObject(
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+        if (config.get("HttpToMqtt") != null || config.get("mqttToHttp") != null) {
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+        } else {
+            return tryConvertLegacyConfig(objectMapper, config);
+        }
+    }
+
+    @Override
     public @NotNull Class<HttpAdapterConfig> getConfigClass() {
         return HttpAdapterConfig.class;
     }
 
+    private static @NotNull HttpAdapterConfig tryConvertLegacyConfig(
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+        final LegacyHttpAdapterConfig legacyHttpAdapterConfig =
+                objectMapper.convertValue(config, LegacyHttpAdapterConfig.class);
+
+        final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(legacyHttpAdapterConfig.getDestination(),
+                legacyHttpAdapterConfig.getQos(),
+                List.of(),
+                false,
+                legacyHttpAdapterConfig.getHttpRequestMethod(),
+                legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
+                legacyHttpAdapterConfig.getHttpRequestBodyContentType(),
+                legacyHttpAdapterConfig.getHttpRequestBody(),
+                legacyHttpAdapterConfig.getHttpHeaders());
+
+        final HttpToMqttConfig httpToMqttConfig =
+                new HttpToMqttConfig(legacyHttpAdapterConfig.getPollingIntervalMillis(),
+                        legacyHttpAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
+                        legacyHttpAdapterConfig.isAllowUntrustedCertificates(),
+                        legacyHttpAdapterConfig.isAssertResponseIsJson(),
+                        legacyHttpAdapterConfig.isHttpPublishSuccessStatusCodeOnly(),
+                        List.of(httpToMqttMapping));
+
+        return new HttpAdapterConfig(legacyHttpAdapterConfig.getId(),
+                legacyHttpAdapterConfig.getUrl(),
+                legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
+                httpToMqttConfig);
+    }
 }
