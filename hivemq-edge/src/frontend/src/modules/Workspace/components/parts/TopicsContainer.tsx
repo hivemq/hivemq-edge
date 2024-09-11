@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { HStack, Tag, TagLabel, VStack } from '@chakra-ui/react'
-import Topic from '@/components/MQTT/Topic.tsx'
+import { Topic } from '@/components/MQTT/EntityTag.tsx'
 
 import { TopicFilter } from '../../types.ts'
 
@@ -15,7 +15,7 @@ const TopicsContainer: FC<NodeTopicsProps> = ({ topics }) => {
     <HStack spacing="4" data-testid="topics-container">
       <VStack alignItems="flex-start">
         {topics.slice(0, MAX_TOPICS).map((e, i) => (
-          <Topic key={`local-${i}`} topic={e.topic} />
+          <Topic key={`local-${i}`} tagTitle={e.topic} />
         ))}
       </VStack>
       {topics.length > MAX_TOPICS && (

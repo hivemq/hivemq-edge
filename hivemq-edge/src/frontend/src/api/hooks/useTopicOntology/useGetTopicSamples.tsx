@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { QUERY_KEYS } from '@/api/utils.ts'
 
 import { ApiError } from '@/api/__generated__'
-import { MOCK_MQTT_TOPIC_SAMPLES } from '@/__test-utils__/adapters/mqtt-subscription.mocks.ts'
+import { MOCK_MQTT_TOPIC_SAMPLES } from '@/api/hooks/useTopicOntology/__handlers__'
 
 interface PostTopicSamplesProps {
   adapter: string
@@ -10,7 +10,7 @@ interface PostTopicSamplesProps {
 }
 
 /**
- * @deprecated This is a mock
+ * @deprecated This is a mock, replace with https://hivemq.kanbanize.com/ctrl_board/57/cards/25255/details/
  */
 export const useGetTopicSamples = () => {
   return useQuery<string[], ApiError>({
@@ -23,7 +23,7 @@ export const useGetTopicSamples = () => {
 }
 
 /**
- * @deprecated This is a mock
+ * @deprecated This is a mock, replace with https://hivemq.kanbanize.com/ctrl_board/57/cards/25255/details/
  */
 export const usePostTopicSamples = () => {
   const queryClient = useQueryClient()
