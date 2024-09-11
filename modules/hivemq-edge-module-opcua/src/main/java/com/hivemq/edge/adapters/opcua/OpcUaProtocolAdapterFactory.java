@@ -15,12 +15,20 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.legacy.LegacyOpcUaAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUaAdapterConfig> {
 
@@ -39,5 +47,43 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
     @Override
     public @NotNull Class<OpcUaAdapterConfig> getConfigClass() {
         return OpcUaAdapterConfig.class;
+    }
+
+    @Override
+    public @NotNull OpcUaAdapterConfig convertConfigObject(
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+        if (config.get("opcuaToMqtt") != null || config.get("mqttToOpcua") != null) {
+            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+        } else {
+            return tryConvertLegacyConfig(objectMapper, config);
+        }
+    }
+
+    private static @NotNull OpcUaAdapterConfig tryConvertLegacyConfig(
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+        final LegacyOpcUaAdapterConfig legacyOpcUaAdapterConfig =
+                objectMapper.convertValue(config, LegacyOpcUaAdapterConfig.class);
+
+        final List<OpcUaToMqttMapping> opcuaToMqttMappings = legacyOpcUaAdapterConfig.getSubscriptions()
+                .stream()
+                .map(context -> new OpcUaToMqttMapping(context.getNode(),
+                        context.getMqttTopic(),
+                        context.getPublishingInterval(),
+                        context.getServerQueueSize(),
+                        context.getQos(),
+                        context.getMessageExpiryInterval() != null ?
+                                context.getMessageExpiryInterval().longValue() :
+                                null))
+                .collect(Collectors.toList());
+
+        final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(opcuaToMqttMappings);
+
+        return new OpcUaAdapterConfig(legacyOpcUaAdapterConfig.getId(),
+                legacyOpcUaAdapterConfig.getUri(),
+                legacyOpcUaAdapterConfig.getOverrideUri(),
+                legacyOpcUaAdapterConfig.getAuth(),
+                legacyOpcUaAdapterConfig.getTls(),
+                opcuaToMqttConfig,
+                legacyOpcUaAdapterConfig.getSecurity());
     }
 }

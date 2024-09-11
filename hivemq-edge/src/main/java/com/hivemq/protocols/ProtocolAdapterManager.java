@@ -200,9 +200,13 @@ public class ProtocolAdapterManager {
                 .toArray(new CompletableFuture[]{})));
     }
 
+    //legacy handling, hardcoded here, to not add legacy stuff into the adapter-sdk
     private static @NotNull String getKey(final @NotNull String key) {
-        if(key.equals("ethernet-ip")) {
+        if (key.equals("ethernet-ip")) {
             return "eip";
+        }
+        if (key.equals("opc-ua-client")) {
+            return "opcua";
         }
         return key;
     }
