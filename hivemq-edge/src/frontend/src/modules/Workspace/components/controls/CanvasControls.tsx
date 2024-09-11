@@ -1,6 +1,6 @@
 import { FC, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ControlProps, Panel, ReactFlowState, useReactFlow, useStore, useStoreApi } from 'reactflow'
+import { ControlProps, Panel, useReactFlow, useStore, useStoreApi } from 'reactflow'
 import { ButtonGroup } from '@chakra-ui/react'
 import { shallow } from 'zustand/shallow'
 import { IoMdOptions } from 'react-icons/io'
@@ -9,16 +9,12 @@ import { FaLock, FaLockOpen, FaMinus, FaPlus } from 'react-icons/fa6'
 
 import { useEdgeFlowContext } from '../../hooks/useEdgeFlowContext.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
-import { CONFIG_ZOOM_MAX, CONFIG_ZOOM_MIN } from '@/modules/Workspace/utils/react-flow.utils.ts'
-
-const selector = (s: ReactFlowState) => ({
-  isInteractive: s.nodesDraggable || s.nodesConnectable || s.elementsSelectable,
-})
-
-const selectorSetZoomMinMax = (state: ReactFlowState) => ({
-  setMinZoom: state.setMinZoom,
-  setMaxZoom: state.setMaxZoom,
-})
+import {
+  CONFIG_ZOOM_MAX,
+  CONFIG_ZOOM_MIN,
+  selectorIsInteractive,
+  selectorSetZoomMinMax,
+} from '@/modules/Workspace/utils/react-flow.utils.ts'
 
 const CanvasControls: FC<ControlProps> = ({ onInteractiveChange }) => {
   const { t } = useTranslation()
@@ -26,7 +22,7 @@ const CanvasControls: FC<ControlProps> = ({ onInteractiveChange }) => {
   const store = useStoreApi()
   const { setMinZoom, setMaxZoom } = useStore(selectorSetZoomMinMax)
   const { zoomIn, zoomOut, fitView } = useReactFlow()
-  const { isInteractive } = useStore(selector, shallow)
+  const { isInteractive } = useStore(selectorIsInteractive, shallow)
 
   useEffect(() => {
     setMinZoom(CONFIG_ZOOM_MIN)

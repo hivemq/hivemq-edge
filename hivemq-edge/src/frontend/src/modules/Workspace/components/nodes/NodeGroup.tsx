@@ -19,8 +19,8 @@ import { Group } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
-import WorkspaceButtonGroup from '@/modules/Workspace/components/parts/WorkspaceButtonGroup.tsx'
 
 const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()
@@ -65,8 +65,8 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
 
   return (
     <>
-      <ContextualToolbar id={id} onOpenPanel={onContextMenu}>
-        <WorkspaceButtonGroup isAttached={false}>
+      <ContextualToolbar id={id} dragging={props.dragging} onOpenPanel={onContextMenu}>
+        <ToolbarButtonGroup isAttached={false}>
           <IconButton
             data-testid="node-group-toolbar-expand"
             icon={<Icon as={data.isOpen ? LuShrink : LuExpand} boxSize={5} />}
@@ -81,7 +81,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
             aria-label={t('workspace.grouping.command.ungroup')}
             onClick={onConfirmUngroup}
           />
-        </WorkspaceButtonGroup>
+        </ToolbarButtonGroup>
       </ContextualToolbar>
       {selected && (
         <NodeResizer
