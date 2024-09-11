@@ -208,6 +208,9 @@ public class ProtocolAdapterManager {
         if (key.equals("opc-ua-client")) {
             return "opcua";
         }
+        if (key.equals("file_input")) {
+            return "file";
+        }
         return key;
     }
 
