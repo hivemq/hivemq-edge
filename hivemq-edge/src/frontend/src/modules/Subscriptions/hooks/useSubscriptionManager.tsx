@@ -5,7 +5,7 @@ import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { type SubscriptionManagerType } from '@/modules/Subscriptions/types.ts'
-import { MOCK_OUTWARD_SUBSCRIPTION_OPCUA } from '@/modules/Subscriptions/utils/subscription.utils.ts'
+import { MOCK_MAPPING_DATA, MOCK_OUTWARD_SUBSCRIPTION_OPCUA } from '@/modules/Subscriptions/utils/subscription.utils.ts'
 import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
 
 export const useSubscriptionManager = (adapterId: string) => {
@@ -60,7 +60,9 @@ export const useSubscriptionManager = (adapterId: string) => {
 
     return {
       schema: MOCK_OUTWARD_SUBSCRIPTION_OPCUA.schema || {},
-      formData: { subscriptions: [] },
+      formData: {
+        subscriptions: MOCK_MAPPING_DATA,
+      },
       uiSchema: MOCK_OUTWARD_SUBSCRIPTION_OPCUA.uiSchema || {},
     }
   }, [adapterInfo])

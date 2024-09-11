@@ -1,5 +1,5 @@
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
-import { MOCK_MQTT_SCHEMA_REFS } from '@/__test-utils__/adapters/mqtt-subscription.mocks.ts'
+import { MOCK_MQTT_SCHEMA_REFS } from '@/api/hooks/useTopicOntology/__handlers__'
 
 describe('JsonSchemaBrowser', () => {
   beforeEach(() => {

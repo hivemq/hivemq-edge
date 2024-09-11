@@ -14,7 +14,7 @@ describe('MetadataExplorer', () => {
 
     cy.get('button').should('have.attr', 'aria-label', 'Load samples').should('have.attr', 'disabled', 'disabled')
 
-    cy.get('[role="list"]').find('li').eq(0).should('contain.text', 'Billing address')
+    cy.get('[role="list"]').find('li').eq(0).should('contain.text', 'firstName')
   })
 
   it('should be accessible', () => {

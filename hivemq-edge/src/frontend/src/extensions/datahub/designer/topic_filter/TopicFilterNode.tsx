@@ -3,7 +3,7 @@ import { NodeProps, Position } from 'reactflow'
 import { useTranslation } from 'react-i18next'
 import { HStack, Text, VStack } from '@chakra-ui/react'
 
-import Topic from '@/components/MQTT/Topic.tsx'
+import { Topic } from '@/components/MQTT/EntityTag.tsx'
 
 import { TopicFilterData } from '@datahub/types.ts'
 import { CustomHandle, NodeWrapper } from '@datahub/components/nodes'
@@ -23,7 +23,7 @@ export const TopicFilterNode: FC<NodeProps<TopicFilterData>> = (props) => {
         </HStack>
         <VStack ml={6} alignItems="flex-end">
           {data.topics?.map((t) => (
-            <Topic topic={t} key={t} />
+            <Topic tagTitle={t} key={t} />
           ))}
         </VStack>
       </NodeWrapper>
