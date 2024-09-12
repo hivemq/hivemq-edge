@@ -180,5 +180,6 @@ export const toTreeMetadata = (
 }
 
 export const stratifyTopicTree = (topics: TopicTreeMetadata[]) => {
+  // TODO[NVL] The path() stratify creates a leading / - needs removal
   return stratify<TopicTreeMetadata>().path((d) => d.label)(topics)
 }
