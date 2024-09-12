@@ -7,6 +7,8 @@ import { CustomFormat } from '@/api/types/json-schema.ts'
 import { BrokerClient } from '@/api/types/api-broker-client.ts'
 import { TopicFilter, type TopicTreeMetadata } from '../types.ts'
 
+export const MQTT_WILDCARD_MULTI = '#'
+export const MQTT_WILDCARD_SINGLE = '+'
 export const TOPIC_PATH_ITEMS_TOKEN = '*'
 
 const subsToTopics = (subs: BridgeSubscription[] | undefined): TopicFilter[] => {
