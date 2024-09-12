@@ -130,19 +130,6 @@ public class ModbusAdapterConfigTest {
     }
 
     @Test
-    public void convertConfigObject_modbusToMqttMissing_exception() throws Exception {
-        final URL resource = getClass().getResource("/modbus-adapter-missing-modbusToMqtt-config.xml");
-        final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
-        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'modbusToMqtt'");
-    }
-
-    @Test
     public void convertConfigObject_idMissing_exception() throws Exception {
         final URL resource = getClass().getResource("/modbus-adapter-missing-id-config.xml");
         final File path = Path.of(resource.toURI()).toFile();

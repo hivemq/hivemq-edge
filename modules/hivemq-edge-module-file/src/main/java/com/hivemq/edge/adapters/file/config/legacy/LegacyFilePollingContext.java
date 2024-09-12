@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.file.config.legacy;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
@@ -52,23 +51,6 @@ public class LegacyFilePollingContext {
 
     @JsonProperty(value = "contentType", required = true)
     protected @NotNull ContentType contentType;
-
-    @JsonCreator
-    public LegacyFilePollingContext(
-            @JsonProperty("destination") @Nullable final String destination,
-            @JsonProperty("qos") final int qos,
-            @JsonProperty("userProperties") @Nullable List<MqttUserProperty> userProperties,
-            @JsonProperty("filePath") @NotNull String filePath,
-            @JsonProperty("contentType") @NotNull ContentType contentType) {
-        this.destination = destination;
-        this.qos = qos;
-        this.contentType = contentType;
-        if (userProperties != null) {
-            this.userProperties = userProperties;
-        }
-        this.filePath = filePath;
-    }
-
 
     public @NotNull String getFilePath() {
         return filePath;

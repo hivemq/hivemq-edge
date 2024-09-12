@@ -47,7 +47,7 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
     @Override
     public @NotNull FileAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        if (config.get("FileToMqtt") != null || config.get("mqttToFile") != null) {
+        if (config.get("fileToMqtt") != null || config.get("mqttToFile") != null) {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } else {
             return tryConvertLegacyConfig(objectMapper, config);
@@ -65,7 +65,7 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
         final LegacyFileAdapterConfig legacyFileAdapterConfig =
                 objectMapper.convertValue(config, LegacyFileAdapterConfig.class);
 
-        final List<FileToMqttMapping> FileToMqttMappings = legacyFileAdapterConfig.getPollingContexts()
+        final List<FileToMqttMapping> fileToMqttMappings = legacyFileAdapterConfig.getPollingContexts()
                 .stream()
                 .map(context -> new FileToMqttMapping(context.getDestinationMqttTopic(),
                         context.getQos(),
@@ -77,12 +77,12 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
                         context.getContentType()))
                 .collect(Collectors.toList());
 
-        final FileToMqttConfig FileToMqttConfig =
+        final FileToMqttConfig fileToMqttConfig =
                 new FileToMqttConfig(legacyFileAdapterConfig.getPollingIntervalMillis(),
                         legacyFileAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                        FileToMqttMappings);
+                        fileToMqttMappings);
 
-        return new FileAdapterConfig(legacyFileAdapterConfig.getId(), FileToMqttConfig);
+        return new FileAdapterConfig(legacyFileAdapterConfig.getId(), fileToMqttConfig);
     }
 
 }

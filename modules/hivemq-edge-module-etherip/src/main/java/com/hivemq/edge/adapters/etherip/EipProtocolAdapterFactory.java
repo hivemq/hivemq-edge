@@ -65,7 +65,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
         final LegacyEipAdapterConfig legacyEipAdapterConfig =
                 objectMapper.convertValue(config, LegacyEipAdapterConfig.class);
 
-        final List<EipToMqttMapping> modbusToMqttMappings = legacyEipAdapterConfig.getSubscriptions()
+        final List<EipToMqttMapping> eipToMqttMappings = legacyEipAdapterConfig.getSubscriptions()
                 .stream()
                 .map(context -> new EipToMqttMapping(context.getDestinationMqttTopic(),
                         context.getQos(),
@@ -77,11 +77,11 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
                         context.getDataType(),
                         context.getUserProperties())).collect(Collectors.toList());
 
-        final EipToMqttConfig modbusToMqttConfig =
+        final EipToMqttConfig eipToMqttConfig =
                 new EipToMqttConfig(legacyEipAdapterConfig.getPollingIntervalMillis(),
                         legacyEipAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
                         legacyEipAdapterConfig.getPublishChangedDataOnly(),
-                        modbusToMqttMappings);
+                        eipToMqttMappings);
 
 
         return new EipAdapterConfig(legacyEipAdapterConfig.getId(),
@@ -89,6 +89,6 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
                 legacyEipAdapterConfig.getHost(),
                 legacyEipAdapterConfig.getBackplane(),
                 legacyEipAdapterConfig.getSlot(),
-                modbusToMqttConfig);
+                eipToMqttConfig);
     }
 }

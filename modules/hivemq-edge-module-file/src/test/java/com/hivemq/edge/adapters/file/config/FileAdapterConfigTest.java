@@ -119,19 +119,6 @@ class FileAdapterConfigTest {
     }
 
     @Test
-    public void convertConfigObject_fileToMqttMissing_exception() throws Exception {
-        final URL resource = getClass().getResource("/file-adapter-to-mqtt-missing.xml");
-        final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
-        final FileProtocolAdapterFactory modbusProtocolAdapterFactory = new FileProtocolAdapterFactory();
-        assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'fileToMqtt'");
-    }
-
-    @Test
     public void convertConfigObject_contentTypeMissing_exception() throws Exception {
         final URL resource = getClass().getResource("/file-adapter-content-type-missing.xml");
         final File path = Path.of(resource.toURI()).toFile();
