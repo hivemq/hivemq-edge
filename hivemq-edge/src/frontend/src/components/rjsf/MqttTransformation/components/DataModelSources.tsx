@@ -32,7 +32,7 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
         />
       </CardHeader>
 
-      <CardBody>
+      <CardBody maxH="55vh" overflowY="scroll">
         {isLoading && <LoaderSpinner />}
         {!isLoading && !data && <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />}
         {!isLoading && data && <JsonSchemaBrowser schema={data as JSONSchema7} isDraggable />}
