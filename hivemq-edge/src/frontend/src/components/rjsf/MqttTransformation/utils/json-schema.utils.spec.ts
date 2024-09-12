@@ -10,22 +10,53 @@ describe('getPropertyListFrom', () => {
     expect(getPropertyListFrom({})).toStrictEqual<FlatJSONSchema7[]>([])
   })
 
+  it('should return error', async () => {
+    expect(
+      getPropertyListFrom({
+        definitions: {
+          address: {
+            type: 'string',
+          },
+        },
+        type: 'object',
+        properties: {
+          fake_prop: {
+            title: 'Fake Property',
+            $ref: '/schemas/address',
+          },
+        },
+      })
+    ).toStrictEqual<FlatJSONSchema7[]>([
+      {
+        description: "error: definition address doesn't exist",
+        key: 'fake_prop',
+        path: [],
+        type: 'null',
+      },
+    ])
+  })
+
   it('should handle definitions', async () => {
     expect(getPropertyListFrom(MOCK_MQTT_SCHEMA_REFS)).toStrictEqual<FlatJSONSchema7[]>(
       expect.arrayContaining([
         {
           description: undefined,
+          key: 'billing_address',
           path: [],
           title: 'Billing address',
           type: 'object',
         },
         {
-          path: ['Billing address'],
+          description: undefined,
+          key: 'street_address',
+          path: ['billing_address'],
           title: 'street_address',
           type: 'string',
         },
         {
-          path: ['Recursive references'],
+          description: undefined,
+          key: 'children',
+          path: ['tree'],
           title: 'children',
           type: 'array',
         },
@@ -38,15 +69,24 @@ describe('getPropertyListFrom', () => {
       expect.arrayContaining([
         {
           description: undefined,
+          key: 'firstName',
           path: [],
           title: 'First name',
           type: 'string',
         },
         {
           description: undefined,
+          key: 'telephone',
           path: [],
           title: 'Telephone',
           type: 'string',
+        },
+        {
+          description: undefined,
+          key: 'minItemsList',
+          path: [],
+          title: 'A list with a minimal number of items',
+          type: 'array',
         },
       ])
     )
