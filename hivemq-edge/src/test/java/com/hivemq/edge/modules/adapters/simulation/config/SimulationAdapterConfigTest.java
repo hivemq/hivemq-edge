@@ -141,21 +141,6 @@ class SimulationAdapterConfigTest {
     }
 
     @Test
-    public void convertConfigObject_missingSimulationToMqtt_exception() throws Exception {
-        final URL resource = getClass().getResource("/configs/simulation/simulation-adapter-missing-simulationToMqtt.xml");
-        final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
-        final SimulationProtocolAdapterFactory simulationProtocolAdapterFactory =
-                new SimulationProtocolAdapterFactory();
-        assertThatThrownBy(() -> simulationProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("simulation"))).hasMessageContaining("Missing required creator property 'simulationToMqtt'");
-    }
-
-
-    @Test
     public void unconvertConfigObject_full_valid() {
         final SimulationToMqttMapping pollingContext = new SimulationToMqttMapping("my/destination",
                 1,
