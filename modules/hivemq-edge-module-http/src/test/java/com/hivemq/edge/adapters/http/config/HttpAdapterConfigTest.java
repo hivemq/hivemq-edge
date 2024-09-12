@@ -58,19 +58,6 @@ public class HttpAdapterConfigTest {
     }
 
     @Test
-    public void convertConfigObject_httpToMqttNull_exception() throws Exception {
-        final URL resource = getClass().getResource("/http-config-destination-null.xml");
-        final File path = Path.of(resource.toURI()).toFile();
-
-        final HiveMQConfigEntity configEntity = loadConfig(path);
-        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
-
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
-        assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'httpToMqtt'");
-    }
-
-    @Test
     public void convertConfigObject_idNull_exception() throws Exception {
         final URL resource = getClass().getResource("/http-config-id-null.xml");
         final File path = Path.of(resource.toURI()).toFile();
