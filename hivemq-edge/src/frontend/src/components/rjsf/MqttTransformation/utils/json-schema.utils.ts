@@ -5,6 +5,7 @@ export const ARRAY_ITEM_INDEX = '___index'
 
 export interface FlatJSONSchema7 extends JSONSchema7 {
   path: string[]
+  key: string
 }
 
 export const getPropertyListFrom = (schema: RJSFSchema): FlatJSONSchema7[] => {
