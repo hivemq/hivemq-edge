@@ -36,6 +36,9 @@ export const useGetSubscriptionSchemas = (topic: string | string[], type?: 'sour
           results[topic] = inference.toJSONSchema() as RJSFSchema
         }
       }
+
+      if (!Object.keys(results).length) throw new Error(t('domainMapping.error.noSampleForTopic', { topicFilter }))
+
       return results
     },
     enabled: Boolean(type),
