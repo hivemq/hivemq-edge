@@ -22,19 +22,19 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
     <Card {...props} size="sm">
       <CardHeader as={HStack} justifyContent="space-between">
         <Heading as="h3" size="sm">
-          {t('rjsf.MqttTransformationField.sources.header')}
+          {t('components:rjsf.MqttTransformationField.sources.header')}
         </Heading>
         <IconButton
           size="sm"
           icon={<RxReload />}
-          aria-label={t('rjsf.MqttTransformationField.sources.samples.aria-label')}
+          aria-label={t('components:rjsf.MqttTransformationField.sources.samples.aria-label')}
           isDisabled
         />
       </CardHeader>
 
       <CardBody maxH="55vh" overflowY="scroll">
         {isLoading && <LoaderSpinner />}
-        {!isLoading && !data && <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />}
+        {isError && error && <ErrorMessage message={error.message} />}
         {!isLoading && data && <JsonSchemaBrowser schema={data as JSONSchema7} isDraggable />}
       </CardBody>
     </Card>
