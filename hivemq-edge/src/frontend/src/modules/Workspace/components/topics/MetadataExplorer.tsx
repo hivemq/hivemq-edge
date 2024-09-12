@@ -11,6 +11,7 @@ import { useUpdateClientSubscriptions } from '@/api/hooks/useClientSubscriptions
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
 
 interface MetadataExplorerProps {
   topic: string
@@ -18,10 +19,14 @@ interface MetadataExplorerProps {
 
 const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
   const { t } = useTranslation()
-  const { data, isLoading } = useGetSubscriptionSchemas(topic, 'source')
+  const { data, isLoading, isError, error } = useGetSubscriptionSchemas(topic, 'source')
   const { data: allClients, isLoading: isClientLoading } = useListClientSubscriptions()
   const createClient = useCreateClientSubscriptions()
   const updateClient = useUpdateClientSubscriptions()
+
+  const schema = useMemo(() => {
+    return data?.[topic]
+  }, [data, topic])
 
   const handleOnClick = () => {
     if (!allClients || allClients.length === 0) {
@@ -73,7 +78,8 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
       </CardHeader>
       <CardBody>
         {isLoading && <LoaderSpinner />}
-        {!isLoading && data && (
+        {isError && error && <ErrorMessage message={error.message} />}
+        {schema && (
           <>
             {isClientReady && (
               <HStack mb={3}>
@@ -86,7 +92,7 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
               </HStack>
             )}
             <Box h="25vh" overflowY="scroll" tabIndex={0}>
-              <JsonSchemaBrowser schema={data} />
+              <JsonSchemaBrowser schema={schema} />
             </Box>
           </>
         )}
