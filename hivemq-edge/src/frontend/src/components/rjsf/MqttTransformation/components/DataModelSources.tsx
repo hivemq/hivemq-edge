@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { JSONSchema7 } from 'json-schema'
 import { Card, CardBody, CardHeader, CardProps, Heading, HStack } from '@chakra-ui/react'
@@ -15,8 +15,18 @@ interface DataModelSourcesProps extends CardProps {
 }
 
 const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
-  const { t } = useTranslation('components')
-  const { data, isLoading } = useGetSubscriptionSchemas(topics, topics ? 'source' : undefined)
+  const { t } = useTranslation()
+  const { data, isLoading, isError, error } = useGetSubscriptionSchemas(topics, topics ? 'source' : undefined)
+
+  const structuredSchema = useMemo(() => {
+    return Object.keys(data || {}).reduce<JSONSchema7[]>((acc, schemaId) => {
+      if (data?.[schemaId]) {
+        const newData: JSONSchema7 = { ...(data?.[schemaId] as JSONSchema7), title: schemaId }
+        acc.push(newData)
+      }
+      return acc
+    }, [])
+  }, [data])
 
   return (
     <Card {...props} size="sm">
@@ -35,7 +45,8 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
       <CardBody maxH="55vh" overflowY="scroll">
         {isLoading && <LoaderSpinner />}
         {isError && error && <ErrorMessage message={error.message} />}
-        {!isLoading && data && <JsonSchemaBrowser schema={data as JSONSchema7} isDraggable />}
+        {!isLoading &&
+          structuredSchema.map((schema) => <JsonSchemaBrowser schema={schema} isDraggable key={schema.title} />)}
       </CardBody>
     </Card>
   )
