@@ -49,7 +49,7 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     @Override
     public @NotNull HttpAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        if (config.get("HttpToMqtt") != null || config.get("mqttToHttp") != null) {
+        if (config.get("httpToMqtt") != null || config.get("mqttToHttp") != null) {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } else {
             return tryConvertLegacyConfig(objectMapper, config);

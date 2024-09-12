@@ -36,7 +36,6 @@ public class LegacyFileAdapterConfig {
     private int maxPollingErrorsBeforeRemoval = 10;
 
     @JsonProperty("subscriptions")
-    @ModuleConfigField(title = "subscription", description = "Map your file content to an MQTT Topic")
     private @NotNull List<LegacyFilePollingContext> pollingContexts = new ArrayList<>();
 
     public @NotNull String getId() {
