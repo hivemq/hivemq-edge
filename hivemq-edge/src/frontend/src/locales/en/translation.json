@@ -918,5 +918,11 @@
     "deprecated": {
       "subscriptions": "The subscriptions are now available through the workspace"
     }
+  },
+  "domainMapping": {
+    "error": {
+      "noSampleForTopic": "No sample could be observed for the topic filter {{ topicFilter }}",
+      "noSchemaForTopic": "There are no valid schema for the topic filter {{ topicFilter }}"
+    }
   }
 }
