@@ -1,5 +1,7 @@
 import { RJSFSchema } from '@rjsf/utils'
 import { JSONSchema7 } from 'json-schema'
+import { match, P } from 'ts-pattern'
+import { JsonNode } from '@/api/__generated__'
 
 export const ARRAY_ITEM_INDEX = '___index'
 
@@ -60,3 +62,21 @@ export const getPropertyListFrom = (schema: RJSFSchema): FlatJSONSchema7[] => {
   }
   return list
 }
+
+export const reducerSchemaExamples = (state: RJSFSchema, event: JsonNode) =>
+  match([state, event])
+    .returnType<RJSFSchema>()
+    .with([{ type: 'object', properties: P.select('props') }, P.select('obj')], ({ props, obj }, [subSchema]) => {
+      if (!props) return subSchema
+
+      const allPropertyNames = Object.keys(props)
+      const properties: RJSFSchema = {}
+      for (const prop of allPropertyNames) {
+        properties[prop] = reducerSchemaExamples(props[prop] as RJSFSchema, obj[prop])
+      }
+      return { ...subSchema, properties: properties }
+    })
+    .with(P._, ([st, ex]) => {
+      return { ...st, examples: ex }
+    })
+    .exhaustive()
