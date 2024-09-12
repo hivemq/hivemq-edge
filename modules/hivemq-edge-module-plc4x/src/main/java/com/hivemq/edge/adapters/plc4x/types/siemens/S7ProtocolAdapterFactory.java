@@ -41,7 +41,9 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
     }
 
     @Override
-    public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<S7AdapterConfig> input) {
+    public @NotNull ProtocolAdapter createAdapter(
+            @NotNull final ProtocolAdapterInformation adapterInformation,
+            @NotNull final ProtocolAdapterInput<S7AdapterConfig> input) {
         return new S7ProtocolAdapter(adapterInformation, input);
     }
 
@@ -55,14 +57,16 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
     @Override
     public @NotNull S7AdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        if(config.get("s7ToMqtt") != null || config.get("mqttToS7") != null) {
+        if (config.get("s7ToMqtt") != null || config.get("mqttToS7") != null) {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
-        } else  {
+        } else {
             return tryConvertLegacyConfig(objectMapper, config);
         }
     }
 
-    private static @NotNull S7AdapterConfig tryConvertLegacyConfig(final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+    private static @NotNull S7AdapterConfig tryConvertLegacyConfig(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<String, Object> config) {
         final LegacyS7AdapterConfig legacyS7AdapterConfig =
                 objectMapper.convertValue(config, LegacyS7AdapterConfig.class);
 
@@ -79,11 +83,10 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
                         subscription.getUserProperties()))
                 .collect(Collectors.toList());
 
-        final S7ToMqttConfig s7ToMqttConfig =
-                new S7ToMqttConfig(legacyS7AdapterConfig.getPollingIntervalMillis(),
-                        legacyS7AdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                        legacyS7AdapterConfig.getPublishChangedDataOnly(),
-                        plc4xToMqttMappings);
+        final S7ToMqttConfig s7ToMqttConfig = new S7ToMqttConfig(legacyS7AdapterConfig.getPollingIntervalMillis(),
+                legacyS7AdapterConfig.getMaxPollingErrorsBeforeRemoval(),
+                legacyS7AdapterConfig.getPublishChangedDataOnly(),
+                plc4xToMqttMappings);
 
         return new S7AdapterConfig(legacyS7AdapterConfig.getId(),
                 legacyS7AdapterConfig.getPort(),

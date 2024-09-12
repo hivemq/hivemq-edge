@@ -138,7 +138,7 @@ public class ProtocolAdapterManager {
         }
         final ImmutableList.Builder<CompletableFuture<Void>> adapterFutures = ImmutableList.builder();
 
-        for (Map.Entry<String, Object> configSection : allConfigs.entrySet()) {
+        for (final Map.Entry<String, Object> configSection : allConfigs.entrySet()) {
             final String adapterType = getKey(configSection.getKey());
             final ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
             if (protocolAdapterFactory == null) {
@@ -147,8 +147,8 @@ public class ProtocolAdapterManager {
                 }
                 continue;
             }
-            Object adapterXmlElement = configSection.getValue();
-            List<Map<String, Object>> adapterConfigs;
+            final Object adapterXmlElement = configSection.getValue();
+            final List<Map<String, Object>> adapterConfigs;
             if (adapterXmlElement instanceof List) {
                 adapterConfigs = (List<Map<String, Object>>) adapterXmlElement;
             } else if (adapterXmlElement instanceof Map) {
@@ -161,31 +161,39 @@ public class ProtocolAdapterManager {
                 continue;
             }
 
-            for (Map<String, Object> adapterConfig : adapterConfigs) {
-                ProtocolAdapterWrapper instance =
+            for (final Map<String, Object> adapterConfig : adapterConfigs) {
+                final ProtocolAdapterWrapper instance =
                         createAdapterInstance(adapterType, adapterConfig, versionProvider.getVersion());
                 protocolAdapterMetrics.increaseProtocolAdapterMetric(instance.getAdapter()
                         .getProtocolAdapterInformation()
                         .getProtocolId());
-                CompletableFuture<Void> future = start(instance);
+                final CompletableFuture<Void> future = start(instance);
                 adapterFutures.add(future);
             }
         }
 
-        final Map<String, Object> allAdapters = new HashMap<>();
-        for (ProtocolAdapterWrapper<? extends ProtocolAdapter> value : protocolAdapters.values()) {
+        rewriteAdapterConfigurations();
+
+        return FutureConverter.toListenableFuture(CompletableFuture.allOf(adapterFutures.build()
+                .toArray(new CompletableFuture[]{})));
+    }
+
+    private void rewriteAdapterConfigurations() {
+        final Map<String, Object> allAdapterConfigs = new HashMap<>();
+        for (final ProtocolAdapterWrapper<? extends ProtocolAdapter> value : protocolAdapters.values()) {
             final ProtocolAdapterConfig configObject = value.getConfigObject();
             final ProtocolAdapterFactory<?> adapterFactory = value.getAdapterFactory();
             final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
             try {
                 Thread.currentThread().setContextClassLoader(adapterFactory.getClass().getClassLoader());
-                allAdapters.compute(value.getAdapter().getProtocolAdapterInformation().getProtocolId(), (s, o) -> {
+                allAdapterConfigs.compute(value.getAdapter().getProtocolAdapterInformation().getProtocolId(), (s, o) -> {
                     if (o == null) {
-                        final ArrayList<Map<String, Object>> list = new ArrayList<>();
+                        final List<Map<String, Object>> list = new ArrayList<>();
                         list.add(adapterFactory.unconvertConfigObject(objectMapper, configObject));
                         return list;
                     }
-                    ((List) o).add(adapterFactory.unconvertConfigObject(objectMapper, configObject));
+                    //noinspection unchecked
+                    ((List<Map<String, Object>>) o).add(adapterFactory.unconvertConfigObject(objectMapper, configObject));
                     return o;
                 });
             } finally {
@@ -193,11 +201,8 @@ public class ProtocolAdapterManager {
             }
         }
         synchronized (lock) {
-            configurationService.protocolAdapterConfigurationService().setAllConfigs(allAdapters);
+            configurationService.protocolAdapterConfigurationService().setAllConfigs(allAdapterConfigs);
         }
-
-        return FutureConverter.toListenableFuture(CompletableFuture.allOf(adapterFutures.build()
-                .toArray(new CompletableFuture[]{})));
     }
 
     //legacy handling, hardcoded here, to not add legacy stuff into the adapter-sdk
@@ -221,7 +226,7 @@ public class ProtocolAdapterManager {
 
         implementations.add(SimulationProtocolAdapterFactory.class);
 
-        for (Class<? extends ProtocolAdapterFactory> facroryClass : implementations) {
+        for (final Class<? extends ProtocolAdapterFactory> facroryClass : implementations) {
             try {
                 final ProtocolAdapterFactory<?> protocolAdapterFactory =
                         facroryClass.getDeclaredConstructor().newInstance();
@@ -230,8 +235,8 @@ public class ProtocolAdapterManager {
                 }
                 final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
                 factoryMap.put(information.getProtocolId(), protocolAdapterFactory);
-            } catch (InvocationTargetException | InstantiationException | IllegalAccessException |
-                     NoSuchMethodException e) {
+            } catch (final InvocationTargetException | InstantiationException | IllegalAccessException |
+                           NoSuchMethodException e) {
                 log.error("Not able to load module, reason: {}.", e.getMessage());
             }
         }
@@ -244,7 +249,7 @@ public class ProtocolAdapterManager {
 
     public @NotNull CompletableFuture<Void> start(final @NotNull String protocolAdapterId) {
         Preconditions.checkNotNull(protocolAdapterId);
-        Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapterOptional = getAdapterById(protocolAdapterId);
+        final Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapterOptional = getAdapterById(protocolAdapterId);
         return adapterOptional.map(this::start)
                 .orElseGet(() -> CompletableFuture.failedFuture(new ProtocolAdapterException("Adapter '" +
                         protocolAdapterId +
@@ -253,7 +258,7 @@ public class ProtocolAdapterManager {
 
     public @NotNull CompletableFuture<Void> stop(final @NotNull String protocolAdapterId) {
         Preconditions.checkNotNull(protocolAdapterId);
-        Optional<ProtocolAdapterWrapper<?>> adapterOptional = getAdapterById(protocolAdapterId);
+        final Optional<ProtocolAdapterWrapper<?>> adapterOptional = getAdapterById(protocolAdapterId);
         return adapterOptional.map(this::stop)
                 .orElseGet(() -> CompletableFuture.failedFuture(new ProtocolAdapterException("Adapter '" +
                         protocolAdapterId +
@@ -265,7 +270,7 @@ public class ProtocolAdapterManager {
         if (log.isInfoEnabled()) {
             log.info("Starting protocol-adapter '{}'.", protocolAdapterWrapper.getId());
         }
-        CompletableFuture<Boolean> startFuture;
+        final CompletableFuture<Boolean> startFuture;
         final ProtocolAdapterStartOutputImpl output = new ProtocolAdapterStartOutputImpl();
         if (protocolAdapterWrapper.getRuntimeStatus() == ProtocolAdapterState.RuntimeStatus.STARTED) {
             startFuture = CompletableFuture.completedFuture(true);
@@ -290,7 +295,7 @@ public class ProtocolAdapterManager {
                 if (log.isTraceEnabled()) {
                     log.trace("Protocol-adapter '{}' started.", protocolAdapterWrapper.getId());
                 }
-                HiveMQEdgeRemoteEvent adapterCreatedEvent =
+                final HiveMQEdgeRemoteEvent adapterCreatedEvent =
                         new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED);
                 adapterCreatedEvent.addUserData("adapterType",
                         protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId());
@@ -329,7 +334,7 @@ public class ProtocolAdapterManager {
         if (log.isInfoEnabled()) {
             log.info("Stopping protocol-adapter '{}'.", protocolAdapter.getId());
         }
-        CompletableFuture<Void> stopFuture;
+        final CompletableFuture<Void> stopFuture;
 
         if (protocolAdapter instanceof PollingProtocolAdapter) {
             protocolAdapterPollingService.stopPollingForAdapterInstance(protocolAdapter);
@@ -382,7 +387,7 @@ public class ProtocolAdapterManager {
                 .withMessage("Error starting adapter '" + protocolAdapter.getId() + "'.")
                 .fire();
 
-        HiveMQEdgeRemoteEvent adapterCreatedEvent =
+        final HiveMQEdgeRemoteEvent adapterCreatedEvent =
                 new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_ERROR);
         adapterCreatedEvent.addUserData("adapterType", protocolAdapter.getProtocolAdapterInformation().getProtocolId());
         remoteService.fireUsageEvent(adapterCreatedEvent);
@@ -406,7 +411,7 @@ public class ProtocolAdapterManager {
 
     public boolean deleteAdapter(final @NotNull String id) {
         Preconditions.checkNotNull(id);
-        Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapterInstance = getAdapterById(id);
+        final Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapterInstance = getAdapterById(id);
         if (adapterInstance.isPresent()) {
             protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterInstance.get()
                     .getAdapterInformation()
@@ -418,9 +423,9 @@ public class ProtocolAdapterManager {
             // FIXME: We need to adapt the whole flow to async
             try {
                 adapterStopOutput.getOutputFuture().get();
-            } catch (InterruptedException e) {
+            } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
-            } catch (ExecutionException e) {
+            } catch (final ExecutionException e) {
                 throw new RuntimeException(e);
             }
 
@@ -429,9 +434,9 @@ public class ProtocolAdapterManager {
                     synchronized (lock) {
                         //ensure the instance releases any hard state
                         adapterInstance.get().destroy();
-                        Map<String, Object> mainMap =
+                        final Map<String, Object> mainMap =
                                 configurationService.protocolAdapterConfigurationService().getAllConfigs();
-                        List<Map<String, Object>> adapterList =
+                        final List<Map<String, Object>> adapterList =
                                 getAdapterListForType(adapterInstance.get().getAdapterInformation().getProtocolId());
                         if (adapterList != null) {
                             if (adapterList.removeIf(instance -> id.equals(instance.get("id")))) {
@@ -457,9 +462,9 @@ public class ProtocolAdapterManager {
 
     public boolean updateAdapter(final @NotNull String adapterId, final @NotNull Map<String, Object> config) {
         Preconditions.checkNotNull(adapterId);
-        Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapterInstance = getAdapterById(adapterId);
+        final Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapterInstance = getAdapterById(adapterId);
         if (adapterInstance.isPresent()) {
-            ProtocolAdapterWrapper<? extends ProtocolAdapter> oldInstance = adapterInstance.get();
+            final ProtocolAdapterWrapper<? extends ProtocolAdapter> oldInstance = adapterInstance.get();
             deleteAdapter(oldInstance.getId());
             addAdapter(oldInstance.getProtocolAdapterInformation().getProtocolId(), oldInstance.getId(), config);
             return true;
@@ -469,13 +474,13 @@ public class ProtocolAdapterManager {
 
     public @NotNull Optional<ProtocolAdapterWrapper<? extends ProtocolAdapter>> getAdapterById(final @NotNull String id) {
         Preconditions.checkNotNull(id);
-        Map<String, ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapters = getProtocolAdapters();
+        final Map<String, ProtocolAdapterWrapper<? extends ProtocolAdapter>> adapters = getProtocolAdapters();
         return Optional.ofNullable(adapters.get(id));
     }
 
     public @NotNull Optional<ProtocolAdapterInformation> getAdapterTypeById(final @NotNull String typeId) {
         Preconditions.checkNotNull(typeId);
-        ProtocolAdapterInformation information = getAllAvailableAdapterTypes().get(typeId);
+        final ProtocolAdapterInformation information = getAllAvailableAdapterTypes().get(typeId);
         return Optional.ofNullable(information);
     }
 
@@ -496,7 +501,7 @@ public class ProtocolAdapterManager {
             final @NotNull Map<String, Object> config,
             final @NotNull String version) {
 
-        ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
+        final ProtocolAdapterFactory<?> protocolAdapterFactory = getProtocolAdapterFactory(adapterType);
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(protocolAdapterFactory.getClass().getClassLoader());
@@ -526,7 +531,7 @@ public class ProtocolAdapterManager {
             // hen-egg problem. Rather solve this here as have not final fields in the adapter.
             moduleServicesPerModule.setAdapter(protocolAdapter);
 
-            ProtocolAdapterWrapper<? extends ProtocolAdapter> wrapper = new ProtocolAdapterWrapper<>(protocolAdapter,
+            final ProtocolAdapterWrapper<? extends ProtocolAdapter> wrapper = new ProtocolAdapterWrapper<>(protocolAdapter,
                     protocolAdapterFactory,
                     protocolAdapterFactory.getInformation(),
                     protocolAdapterState,
@@ -543,12 +548,12 @@ public class ProtocolAdapterManager {
             final @NotNull String adapterType, final @NotNull Map<String, Object> config) {
 
         synchronized (lock) {
-            ProtocolAdapterWrapper<? extends ProtocolAdapter> instance =
+            final ProtocolAdapterWrapper<? extends ProtocolAdapter> instance =
                     createAdapterInstance(adapterType, config, versionProvider.getVersion());
 
             //-- Write the protocol adapter back to the main config (through the proxy)
-            List<Map<String, Object>> adapterList = getAdapterListForType(adapterType);
-            Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
+            final List<Map<String, Object>> adapterList = getAdapterListForType(adapterType);
+            final Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
             adapterList.add(config);
             configurationService.protocolAdapterConfigurationService().setAllConfigs(mainMap);
             return start(instance);
@@ -557,9 +562,9 @@ public class ProtocolAdapterManager {
 
     protected @NotNull List<Map<String, Object>> getAdapterListForType(final @NotNull String adapterType) {
 
-        Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
-        List<Map<String, Object>> adapterList;
-        Object o = mainMap.get(adapterType);
+        final Map<String, Object> mainMap = configurationService.protocolAdapterConfigurationService().getAllConfigs();
+        final List<Map<String, Object>> adapterList;
+        final Object o = mainMap.get(adapterType);
         if (o instanceof Map || o instanceof String || o == null) {
             adapterList = new ArrayList<>();
             if (o instanceof Map) {

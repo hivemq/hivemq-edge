@@ -42,7 +42,9 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
     }
 
     @Override
-    public @NotNull ProtocolAdapter createAdapter(@NotNull final ProtocolAdapterInformation adapterInformation, @NotNull final ProtocolAdapterInput<ADSAdapterConfig> input) {
+    public @NotNull ProtocolAdapter createAdapter(
+            @NotNull final ProtocolAdapterInformation adapterInformation,
+            @NotNull final ProtocolAdapterInput<ADSAdapterConfig> input) {
         return new ADSProtocolAdapter(adapterInformation, input);
     }
 
@@ -54,14 +56,16 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
     @Override
     public @NotNull ADSAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        if(config.get("adsToMqtt") != null || config.get("mqttToAds") != null) {
+        if (config.get("adsToMqtt") != null || config.get("mqttToAds") != null) {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
-        } else  {
+        } else {
             return tryConvertLegacyConfig(objectMapper, config);
         }
     }
 
-    private static @NotNull ADSAdapterConfig tryConvertLegacyConfig(final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+    private static @NotNull ADSAdapterConfig tryConvertLegacyConfig(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<String, Object> config) {
         final LegacyADSAdapterConfig legacyAdsAdapterConfig =
                 objectMapper.convertValue(config, LegacyADSAdapterConfig.class);
 
