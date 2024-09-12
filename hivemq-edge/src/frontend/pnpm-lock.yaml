@@ -208,6 +208,9 @@ dependencies:
   tippy.js:
     specifier: ^6.3.7
     version: 6.3.7
+  ts-pattern:
+    specifier: ^5.3.1
+    version: 5.3.1
   uuid:
     specifier: ^9.0.1
     version: 9.0.1
@@ -10312,6 +10315,10 @@ packages:
 
   /ts-pattern@3.3.5:
     resolution: {integrity: sha512-LD+wFR/RNckk1DrKV0LTH4KIT9wRqnnOjtEf77ovhKcVi8gf83Uf6U7OdywEua6KD9SbHadUdfolayfIUiPxzw==}
+    dev: false
+
+  /ts-pattern@5.3.1:
+    resolution: {integrity: sha512-1RUMKa8jYQdNfmnK4jyzBK3/PS/tnjcZ1CW0v1vWDeYe5RBklc/nquw03MEoB66hVBm4BnlCfmOqDVxHyT1DpA==}
     dev: false
 
   /tslib@1.14.1:
