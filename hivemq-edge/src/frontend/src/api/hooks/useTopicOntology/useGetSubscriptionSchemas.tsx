@@ -23,7 +23,7 @@ export const useGetSubscriptionSchemas = (topic: string | string[], type?: 'sour
     // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: [QUERY_KEYS.DISCOVERY_SCHEMAS, allTopics],
     queryFn: async () => {
-      if (type === 'destination') return GENERATE_DATA_MODELS(type === 'destination')
+      if (type === 'destination') return GENERATE_DATA_MODELS(type === 'destination', topic as string)
 
       const samples = await mqttClient.actions?.onSampling(MQTT_WILDCARD_MULTI)
       if (!samples) throw new Error(t('domainMapping.error.noSampleForTopic', { topicFilter }))

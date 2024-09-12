@@ -11,6 +11,7 @@ const MOCK_SUBS: OutwardSubscription = {
 const MOCK_PROPERTY: FlatJSONSchema7 = {
   description: undefined,
   path: [],
+  key: 'billing-address',
   title: 'Billing address',
   type: 'object',
 }

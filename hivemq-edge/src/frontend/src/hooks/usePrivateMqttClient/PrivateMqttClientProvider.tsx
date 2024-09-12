@@ -134,6 +134,7 @@ export const PrivateMqttClientProvider: FC<PropsWithChildren> = ({ children }) =
 
   ///// Sampling async method
 
+  // TODO[NVL] Instead of using wildcard, add multiple subscriptions
   const onSampling = useCallback(
     (topicFilter: string) => {
       if (!client) return
