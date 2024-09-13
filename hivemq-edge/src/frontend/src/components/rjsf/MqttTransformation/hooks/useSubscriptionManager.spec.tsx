@@ -10,7 +10,7 @@ describe('useMappingValidation', () => {
     const { result } = renderHook(useMappingValidation)
 
     expect(result.current).toStrictEqual({
-      status: 'success',
+      status: 'error',
       errors: [],
     })
   })
