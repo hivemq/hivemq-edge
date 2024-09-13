@@ -11,9 +11,15 @@ interface PropertyItemProps {
   property: FlatJSONSchema7
   isDraggable?: boolean
   hasTooltip?: boolean
+  hasExamples?: boolean
 }
 
-const PropertyItem: FC<PropertyItemProps> = ({ property, isDraggable = false, hasTooltip = false }) => {
+const PropertyItem: FC<PropertyItemProps> = ({
+  property,
+  isDraggable = false,
+  hasTooltip = false,
+  hasExamples = false,
+}) => {
   const draggableRef = useRef<HTMLLIElement | null>(null)
 
   useEffect(() => {

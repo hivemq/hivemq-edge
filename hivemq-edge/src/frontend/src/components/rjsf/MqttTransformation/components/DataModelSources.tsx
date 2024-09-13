@@ -46,7 +46,9 @@ const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
         {isLoading && <LoaderSpinner />}
         {isError && error && <ErrorMessage message={error.message} />}
         {!isLoading &&
-          structuredSchema.map((schema) => <JsonSchemaBrowser schema={schema} isDraggable key={schema.title} />)}
+          structuredSchema.map((schema) => (
+            <JsonSchemaBrowser schema={schema} isDraggable hasExamples key={schema.title} />
+          ))}
       </CardBody>
     </Card>
   )

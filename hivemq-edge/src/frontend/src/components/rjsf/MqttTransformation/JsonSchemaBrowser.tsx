@@ -8,9 +8,15 @@ import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema
 interface JsonSchemaBrowserProps extends ListProps {
   schema: JSONSchema7
   isDraggable?: boolean
+  hasExamples?: boolean
 }
 
-const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({ schema, isDraggable = false, ...props }) => {
+const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({
+  schema,
+  isDraggable = false,
+  hasExamples = false,
+  ...props
+}) => {
   const properties = useMemo(() => {
     return getPropertyListFrom(schema)
   }, [schema])
@@ -30,6 +36,7 @@ const JsonSchemaBrowser: FC<JsonSchemaBrowserProps> = ({ schema, isDraggable = f
                 key={[...property.path, property.title].join('-')}
                 property={property}
                 isDraggable={isDraggable}
+                hasExamples={hasExamples}
               />
             )
           })}
