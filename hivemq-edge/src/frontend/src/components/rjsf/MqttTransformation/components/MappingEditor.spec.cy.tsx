@@ -28,7 +28,7 @@ describe('MappingEditor', () => {
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.getByTestId('loading-spinner').should('not.exist')
 
-    cy.get('[role=list]').find('li').should('have.length', 3)
+    cy.get('[role=list]').find('li').should('have.length', 6)
     cy.getByTestId('mapping-instruction-dropzone').eq(0).should('have.text', 'Drag a source property here')
     cy.getByTestId('mapping-instruction-dropzone').eq(1).should('have.text', 'dropped-property')
   })
