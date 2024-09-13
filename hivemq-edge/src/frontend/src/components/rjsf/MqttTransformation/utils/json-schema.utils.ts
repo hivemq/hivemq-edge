@@ -69,15 +69,21 @@ export const getPropertyListFrom = (schema: RJSFSchema): FlatJSONSchema7[] => {
 export const reducerSchemaExamples = (state: RJSFSchema, event: JsonNode) =>
   match([state, event])
     .returnType<RJSFSchema>()
-    .with([{ type: 'object', properties: P.select('props') }, P.select('obj')], ({ props, obj }, [subSchema]) => {
-      if (!props) return subSchema
+    .with(
+      [{ type: 'object', properties: P.select('properties') }, P.select('values')],
+      ({ properties, values }, [subSchema]) => {
+        if (!properties) return subSchema
 
-      const allPropertyNames = Object.keys(props)
-      const properties: RJSFSchema = {}
-      for (const prop of allPropertyNames) {
-        properties[prop] = reducerSchemaExamples(props[prop] as RJSFSchema, obj[prop])
+        const allPropertyNames = Object.keys(properties)
+        const newProperties: RJSFSchema = {}
+        for (const propName of allPropertyNames) {
+          newProperties[propName] = reducerSchemaExamples(properties[propName] as RJSFSchema, values[propName])
+        }
+        return { ...subSchema, properties: newProperties }
       }
-      return { ...subSchema, properties: properties }
+    )
+    .with([{ type: 'array' }, P.select('values')], (_, [subSchema]) => {
+      return subSchema
     })
     .with(P._, ([st, ex]) => {
       return { ...st, examples: ex }
