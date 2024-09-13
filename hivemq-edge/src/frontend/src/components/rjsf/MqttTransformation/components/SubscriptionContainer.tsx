@@ -32,7 +32,7 @@ const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, 
   return (
     <VStack alignItems="stretch" gap={4}>
       <Stack gap={2} flexDirection="row">
-        <VStack flex={1} alignItems="stretch">
+        <VStack flex={1} alignItems="stretch" maxW="40vw">
           <Box>
             <SelectSourceTopics values={item['mqtt-topic']} onChange={(v) => onChange('mqtt-topic', v)} />
           </Box>

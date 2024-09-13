@@ -44,13 +44,23 @@ const PropertyItem: FC<PropertyItemProps> = ({
       data-path={path}
       tabIndex={isDraggable ? 0 : undefined}
     >
-      <HStack py="3px">
-        <ListIcon as={TypeIcon as IconType} color="green.500" />
-        <Tooltip label={path} placement="top" isDisabled={!hasTooltip}>
-          <Badge data-testid="property-name">{[property.title].join(' . ')}</Badge>
-        </Tooltip>
-        {property.examples && (
-          <Code data-testid="property-example" size="xs" variant="none" fontSize="xs">
+      <HStack py="3px" justifyContent="space-between">
+        <HStack gap={0}>
+          <ListIcon as={TypeIcon as IconType} color="green.500" />
+          <Tooltip label={path} placement="top" isDisabled={!hasTooltip}>
+            <Badge data-testid="property-name">{[property.title].join(' . ')}</Badge>
+          </Tooltip>
+        </HStack>
+        {property.examples && hasExamples && (
+          <Code
+            data-testid="property-example"
+            size="xs"
+            variant="none"
+            fontSize="xs"
+            overflow="hidden"
+            textOverflow="ellipsis"
+            whiteSpace="nowrap"
+          >
             {property.examples.toString()}
           </Code>
         )}
