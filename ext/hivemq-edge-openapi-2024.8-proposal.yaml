@@ -92,7 +92,9 @@ tags:
     description: |+
       These endpoints can be used to retrieve states of clients for the Data Hub.
   - name: Domain
-    description: Services associated with domain mapping
+    description: Interact with the elements of the domain conceptualised aropunf the Edge instance
+  - name: Client
+    description: Interact with MQTT clients connected to the Edge Broker
 
 paths:
   /:
@@ -3917,7 +3919,7 @@ paths:
       tags:
         - Metrics
         - Metrics Endpoint
-  /api/v1/management/domain/topic-samples:
+  /api/v1/management/client/topic-samples:
     get:
       description: Get a sample of MQTT topics published by clients connected to the Edge broker over a period of time
       operationId: get-client-topics
@@ -3945,8 +3947,8 @@ paths:
           description: Success
       summary: Get a sample of MQTT topics
       tags:
-        - Domain
-  /api/v1/management/domain/client-filters:
+        - Client
+  /api/v1/management/client/filters:
     get:
       description: Get a list of all clients filters created for the Edge instance
       operationId: get-client-filters
@@ -3959,7 +3961,7 @@ paths:
           description: Success
       summary: Get a list of MQTT client filters
       tags:
-        - Domain
+        - Client
     post:
       description: Add a client filter to the Edge instance
       operationId: add-client-filter
@@ -3975,8 +3977,8 @@ paths:
           description: Success
       summary: Add a client filter
       tags:
-        - Domain
-  /api/v1/management/domain/client-filters/{clientFilterId}:
+        - Client
+  /api/v1/management/client/filters/{clientFilterId}:
     get:
       description: Get the details of the specified client filter and its topcis
       operationId: get-client-filter
@@ -3996,7 +3998,7 @@ paths:
           description: Success
       summary: Get a MQTT client filter
       tags:
-        - Domain
+        - Client
     delete:
       description: Delete the specified client filter.
       operationId: delete-client-filter
@@ -4012,7 +4014,7 @@ paths:
           description: Success
       summary: Delete a client filter
       tags:
-        - Domain
+        - Client
     put:
       description: Update the specified client filter
       operationId: update-client-filter
@@ -4033,7 +4035,7 @@ paths:
           description: Success
       summary: Update a client filter
       tags:
-        - Domain
+        - Client
 components:
   schemas:
     Adapter:
