@@ -4394,6 +4394,29 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Capability'
+    ClientFilter:
+      type: object
+      description: A client filter
+      properties:
+        id:
+          type: string
+          description: The unique id of the client filter
+        topicFilters:
+          type: array
+          description: The list of topics associated with this client filter
+          items:
+            type: string
+      required:
+        - id
+        - topicFilters
+    ClientFilterList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/ClientFilter'
     DataPoint:
       type: object
       properties:
@@ -4499,26 +4522,6 @@ components:
       ### TODO We need to name that entity
       type: object
       description: A data point on a device connected to the adapter
-    ClientFilter:
-      type: object
-      description: A tag associated with a data point on a device connected to the adapter
-      properties:
-        id:
-          type: string
-          description: The Tag associated with the data-point.
-        topicFilters:
-          type: string
-      required:
-        - id
-        - topicFilters
-    ClientFilterList:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/ClientFilter'
     DomainTag:
       type: object
       description: A tag associated with a data point on a device connected to the adapter
