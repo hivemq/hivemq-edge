@@ -53,7 +53,7 @@ describe('PropertyItem', () => {
 
   it('should render examples properly', () => {
     cy.mountWithProviders(
-      <PropertyItem property={{ ...MOCK_PROPERTY, examples: 'this is a sample' }} isDraggable={false} />,
+      <PropertyItem property={{ ...MOCK_PROPERTY, examples: 'this is a sample' }} isDraggable={false} hasExamples />,
       { wrapper }
     )
 
