@@ -4818,6 +4818,7 @@ components:
             type: string
             description: The capabilities of this adapter
             enum:
+            - WRITE
             - READ
             - DISCOVER
           uniqueItems: true
