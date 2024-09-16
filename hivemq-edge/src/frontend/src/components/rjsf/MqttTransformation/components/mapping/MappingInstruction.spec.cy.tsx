@@ -30,7 +30,7 @@ describe('MappingInstruction', () => {
       />
     )
 
-    cy.getByAriaLabel('Clear mapping').should('be.disabled')
+    cy.getByAriaLabel('Clear mapping').should('not.be.disabled')
     cy.get('ul li')
       .eq(0)
       .should('have.text', 'Billing address')
