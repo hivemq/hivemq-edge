@@ -3919,6 +3919,85 @@ paths:
       tags:
         - Metrics
         - Metrics Endpoint
+  /api/v1/management/domain/tags:
+    get:
+      description: Get the list of all domain tags created in this Edge instance
+      operationId: get-domain-tags
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+          description: Success
+      summary: Get all domain tags
+      tags:
+        - Domain
+  /api/v1/management/domain/tags/schema:
+    get:
+      description: Get the data schema associated with the specified tags
+      operationId: get-tag-schemas
+      parameters:
+        - description: The list of tags to query the schema from
+          in: query
+          name: tags
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagSchema'
+          description: Success
+      summary: Get data schemas
+      tags:
+        - Domain
+  /api/v1/management/domain/topics:
+    get:
+      description: Get the list of all topic tags created in this Edge instance
+      operationId: get-domain-topics
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+          description: Success
+      summary: Get all topic tags
+      tags:
+        - Domain
+  /api/v1/management/domain/topics/schema:
+    get:
+      description: Get the data schema associated with the specified topics
+      operationId: get-topic-schemas
+      parameters:
+        - description: The list of topics to query the schema from
+          in: query
+          name: topics
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagSchema'
+          description: Success
+      summary: Get data schemas
+      tags:
+        - Domain
+
   /api/v1/management/client/topic-samples:
     get:
       description: Get a sample of MQTT topics published by clients connected to the Edge broker over a period of time
@@ -5354,6 +5433,9 @@ components:
         type:
           type: string
           description: The type of the object in transition
+    TagSchema:
+      type: object
+      description: The JSON-Schema specification of a data point
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge
