@@ -42,7 +42,8 @@ tags:
   - description: This resource bundles endpoints for the available Functions for the
       HiveMQ Data Hub. Currently this is limited to getting the available Functions.
     name: Data Hub - Functions
-  - description: |-
+  - name: Data Hub - Behavior Policies
+    description: |-
       Policies describe how you want the HiveMQ broker to validate the behavior of MQTT clients.
       Each policy has four sections:
       
@@ -53,8 +54,8 @@ tags:
       These endpoints can be used to create, update, delete, and list behavior policies.
       
       For more information on all capabilities the HiveMQ Data Hub offers, see the [HiveMQ documentation](https://docs.hivemq.com/hivemq/latest/data-hub/index.html).
-    name: Data Hub - Behavior Policies
-  - description: |-
+  - name: Data Hub - Data Policies
+    description: |-
       Data Policies describe how you want the HiveMQ broker to apply schemas to incoming MQTT message payload data and act on the validation results.
       Each policy has four sections:
       
@@ -66,8 +67,8 @@ tags:
       These endpoints can be used to create, update, delete, and list data policies.
       
       For more information on all capabilities the HiveMQ Data Hub offers, see the [HiveMQ documentation](https://docs.hivemq.com/hivemq/latest/data-hub/index.html).
-    name: Data Hub - Data Policies
-  - description: |-
+  - name: Data Hub - Schemas
+    description: |-
       A schema defines the expected structure and format of incoming MQTT message payload data.
       
       This endpoint can be used to create, get, and delete schemas.
@@ -80,18 +81,19 @@ tags:
       - [Protocol Buffers (Protobuf)](https://protobuf.dev/)
       
       For more information on how to define and use a schema in HiveMQ, see [Schemas](https://docs.hivemq.com/hivemq/latest/data-hub/schemas.html).
-    name: Data Hub - Schemas
-  - description: |-
+  - name: Data Hub - Scripts
+    description: |-
       A script represents custom logic that can be executed in response to MQTT messages.
       
       This endpoint can be used to create, get, and delete scripts.
       
       For more information on how to define and use a script in HiveMQ, see [Scripts](https://docs.hivemq.com/hivemq/latest/data-hub/scripts.html).
-    name: Data Hub - Scripts
-  - description: |+
+  - name: Data Hub - State
+    description: |+
       These endpoints can be used to retrieve states of clients for the Data Hub.
+  - name: Domain
+    description: Services associated with domain mapping
 
-    name: Data Hub - State
 paths:
   /:
     get:
@@ -3915,6 +3917,36 @@ paths:
       tags:
         - Metrics
         - Metrics Endpoint
+  /api/v1/management/domain/topic-samples:
+    get:
+      description: Get a sample of MQTT topics published by clients connected to the Edge broker over a period of time
+      operationId: get-client-topics
+      parameters:
+        - description: The time limit for the observation.
+          in: query
+          name: queryTime
+          required: true
+          schema:
+            type: integer
+            minimum: 500
+            default: 1000
+            maximum: 10000
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                items:
+                  - client1/topic1
+                  - client1/topic2
+                  - client2/topic1
+              schema:
+                $ref: '#/components/schemas/ClientTopicList'
+          description: Success
+      summary: Get a sample of MQTT topics
+      tags:
+        - Domain
+
 components:
   schemas:
     Adapter:
@@ -4400,6 +4432,14 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/DomainTag'
+    ClientTopicList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result topics that are returned by this endpoint
+          items:
+            type: string
     EnvironmentProperties:
       type: object
       description: A map of properties relating to the installation
