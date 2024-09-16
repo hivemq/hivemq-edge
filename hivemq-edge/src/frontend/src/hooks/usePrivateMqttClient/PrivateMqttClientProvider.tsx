@@ -125,7 +125,7 @@ export const PrivateMqttClientProvider: FC<PropsWithChildren> = ({ children }) =
           const topics = old.map((sample) => sample.topic)
           if (topics.includes(topic)) return [...old]
 
-          console.info('MQTTClient: message', topic)
+          mqttClientLog('MQTTClient: message', topic)
           return [...old, { payload: JSON.parse(message.toString()), topic: topic }]
         })
       }
