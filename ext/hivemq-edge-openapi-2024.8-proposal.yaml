@@ -3946,7 +3946,94 @@ paths:
       summary: Get a sample of MQTT topics
       tags:
         - Domain
-
+  /api/v1/management/domain/client-filters:
+    get:
+      description: Get a list of all clients filters created for the Edge instance
+      operationId: get-client-filters
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientFilterList'
+          description: Success
+      summary: Get a list of MQTT client filters
+      tags:
+        - Domain
+    post:
+      description: Add a client filter to the Edge instance
+      operationId: add-client-filter
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientFilter'
+        description: The new client filter
+        required: true
+      responses:
+        "200":
+          description: Success
+      summary: Add a client filter
+      tags:
+        - Domain
+  /api/v1/management/domain/client-filters/{clientFilterId}:
+    get:
+      description: Get the details of the specified client filter and its topcis
+      operationId: get-client-filter
+      parameters:
+        - description: The client filter Id.
+          in: path
+          name: clientFilterId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientFilter'
+          description: Success
+      summary: Get a MQTT client filter
+      tags:
+        - Domain
+    delete:
+      description: Delete the specified client filter.
+      operationId: delete-client-filter
+      parameters:
+        - description: The client filter Id.
+          in: path
+          name: clientFilterId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+      summary: Delete a client filter
+      tags:
+        - Domain
+    put:
+      description: Update the specified client filter
+      operationId: update-client-filter
+      parameters:
+        - description: The client filter Id.
+          in: path
+          name: clientFilterId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientFilter'
+      responses:
+        "200":
+          description: Success
+      summary: Update a client filter
+      tags:
+        - Domain
 components:
   schemas:
     Adapter:
@@ -4412,6 +4499,26 @@ components:
       ### TODO We need to name that entity
       type: object
       description: A data point on a device connected to the adapter
+    ClientFilter:
+      type: object
+      description: A tag associated with a data point on a device connected to the adapter
+      properties:
+        id:
+          type: string
+          description: The Tag associated with the data-point.
+        topicFilters:
+          type: string
+      required:
+        - id
+        - topicFilters
+    ClientFilterList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/ClientFilter'
     DomainTag:
       type: object
       description: A tag associated with a data point on a device connected to the adapter
