@@ -3682,6 +3682,41 @@ paths:
       summary: Obtain a list of configured adapters for the specified type
       tags:
       - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/tags:
+    get:
+      description: Get the domain tags for the device connected through this adapter
+      operationId: get-adapter-domainTags
+      parameters:
+        - description: The name of the adapter to query.
+          in: path
+          name: adapterId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainTagList'
+              examples:
+                OPC-UA:
+                  # Example OPC-UA data point
+                  value:
+                    - tag: "opc-ua/pump1/temperature"
+                      dataPoint:
+                        nodeId: "ns=3;i=1002"
+                MODBUS:
+                  # Example MODBUS data point
+                  value:
+                    - tag: "modbus/pump2/temperature"
+                      dataPoint:
+                        start: 1
+                        shift: 24
+      summary: Get the domain tags for the device connected through this adapter
+      tags:
+        - Protocol Adapters
   /api/v1/management/uns/isa95:
     get:
       description: Obtain isa95 config.
@@ -4267,6 +4302,30 @@ components:
       required:
       - arguments
       - type
+    DeviceDataPoint:
+      ### TODO We need to name that entity
+      type: object
+      description: A data point on a device connected to the adapter
+    DomainTag:
+      type: object
+      description: A tag associated with a data point on a device connected to the adapter
+      properties:
+        tag:
+          type: string
+          description: The Tag associated with the data-point.
+        dataPoint:
+          $ref: '#/components/schemas/DeviceDataPoint'
+      required:
+        - tag
+        - dataPoint
+    DomainTagList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/DomainTag'
     EnvironmentProperties:
       type: object
       description: A map of properties relating to the installation
