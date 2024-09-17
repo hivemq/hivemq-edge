@@ -4475,6 +4475,24 @@ components:
           description: List of result items that are returned by this endpoint
           items:
             $ref: '#/components/schemas/Capability'
+    QoS:
+      type: integer
+      format: int32
+      default: 0
+      description: The maxQoS for this subscription.
+      enum:
+        - 0
+        - 1
+        - 2
+    ClientFilterConfiguration:
+      type: object
+      required:
+        - destination
+      properties:
+        destination:
+          type: string
+        maxQoS:
+          $ref: '#/components/schemas/QoS'
     ClientFilter:
       type: object
       description: A client filter
@@ -4486,18 +4504,15 @@ components:
           type: array
           description: The list of topics associated with this client filter
           items:
-            type: string
+            $ref: '#/components/schemas/ClientFilterConfiguration'
       required:
         - id
         - topicFilters
     ClientFilterList:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/ClientFilter'
+      type: array
+      description: List of result items that are returned by this endpoint
+      items:
+        $ref: '#/components/schemas/ClientFilter'
     DataPoint:
       type: object
       properties:
