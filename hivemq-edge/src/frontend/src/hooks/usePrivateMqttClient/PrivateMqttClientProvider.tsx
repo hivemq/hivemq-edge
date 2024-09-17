@@ -119,8 +119,6 @@ export const PrivateMqttClientProvider: FC<PropsWithChildren> = ({ children }) =
     // https://github.com/mqttjs/MQTT.js#event-message
     client.on('message', (topic, message) => {
       if (connectStatus === MqttClientStatus.SAMPLING) {
-        // setSamples((old) => Array.from(new Set([...old, topic])))
-        // const schema = GenerateSchema.json('topic', JSON.parse(message.toString()))
         setSamples((old) => {
           const topics = old.map((sample) => sample.topic)
           if (topics.includes(topic)) return [...old]

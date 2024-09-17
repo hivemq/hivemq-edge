@@ -61,51 +61,6 @@ export const GENERATE_DATA_MODELS = (short = false, title?: string): RJSFSchema 
         title: 'telephone',
         minLength: 10,
       },
-      // listOfStrings: {
-      //   type: 'array',
-      //   title: 'listOfStrings',
-      //   items: {
-      //     type: 'string',
-      //     default: 'bazinga',
-      //   },
-      // },
-      // minItemsList: {
-      //   type: 'array',
-      //   title: 'minItemsList',
-      //   minItems: 3,
-      //   items: {
-      //     type: 'object',
-      //     examples: 'minItemsList',
-      //
-      //     properties: {
-      //       name: {
-      //         type: 'string',
-      //         title: 'name',
-      //         default: 'Default name',
-      //         examples: 'name',
-      //       },
-      //     },
-      //   },
-      // },
-      // subItems: {
-      //   type: 'object',
-      //   title: 'subItems',
-      //   examples: 'subItems',
-      //
-      //   properties: {
-      //     name: {
-      //       examples: 'name',
-      //       type: 'string',
-      //       title: 'name',
-      //       default: 'Default name',
-      //     },
-      //     type: {
-      //       type: 'string',
-      //       title: 'type',
-      //       default: 'Default type',
-      //     },
-      //   },
-      // },
     }
 
   return model

@@ -47,7 +47,7 @@ export const getProperty = (
       }
     }
   } else if (type === 'array') {
-    // Check recursively for item's properties
+    // TODO[NVL] Check recursively for item's properties? Need to decide how to process items in arrays
   }
 
   return [mainProps, ...subProperties]

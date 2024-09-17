@@ -35,7 +35,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge, draggin
       >
         {!showSkeleton && (
           <VStack>
-            {options.showTopics && <MappingBadge destinations={topics.remote.map((topic) => topic.topic)} />}
+            {options.showTopics && <MappingBadge destinations={topics.remote.map((filter) => filter.topic)} />}
             <HStack>
               <Image boxSize="20px" objectFit="scale-down" src={logo} alt={t('workspace.node.bridge')} />
               <Text flex={1} data-testid="bridge-node-name">
@@ -47,7 +47,7 @@ const NodeBridge: FC<NodeProps<Bridge>> = ({ id, selected, data: bridge, draggin
                 <ConnectionStatusBadge status={bridge.status} />
               </Box>
             )}
-            {options.showTopics && <MappingBadge destinations={topics.local.map((topic) => topic.topic)} />}
+            {options.showTopics && <MappingBadge destinations={topics.local.map((filter) => filter.topic)} />}
           </VStack>
         )}
         {showSkeleton && (

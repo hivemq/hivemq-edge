@@ -16,6 +16,7 @@ describe('DataModelSources', () => {
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.getByTestId('loading-spinner').should('not.exist')
 
+    // TODO[NVL] Cannot test MQTTClient. Need a better mock handling
     // cy.get('[role=list]').find('li').as('properties')
     // cy.get('@properties').should('have.length', 13)
     //
@@ -44,7 +45,6 @@ describe('DataModelSources', () => {
     //   .should('have.attr', 'data-path', 'listOfStrings.___index')
     //   .should('have.attr', 'draggable', 'true')
 
-    // TODO[NVL] Cannot test MQTTClient. Need a better mock handling
     cy.get('[role="alert"]')
       .should('have.attr', 'data-status', 'error')
       .should('have.text', 'No sample could be observed for the topic filter #')

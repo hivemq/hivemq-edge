@@ -10,7 +10,7 @@ import { reducerSchemaExamples } from '@/components/rjsf/MqttTransformation/util
 import { usePrivateMqttClient } from '@/hooks/usePrivateMqttClient/usePrivateMqttClient.ts'
 import { MQTT_WILDCARD_MULTI } from '@/modules/Workspace/utils/topics-utils.ts'
 
-/**s
+/**
  * @deprecated This is a mock, replace with https://hivemq.kanbanize.com/ctrl_board/57/cards/25661/details/
  */
 export const useGetSubscriptionSchemas = (topic: string | string[], type?: 'source' | 'destination') => {
