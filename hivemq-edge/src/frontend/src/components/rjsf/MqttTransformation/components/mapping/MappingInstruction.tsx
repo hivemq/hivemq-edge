@@ -111,7 +111,6 @@ const MappingInstruction: FC<MappingInstructionProps> = ({
           aria-label={t('rjsf.MqttTransformationField.instructions.actions.clear.aria-label')}
           icon={<RiDeleteBin2Fill />}
           onClick={() => setState(DropState.IDLE)}
-          isDisabled
         />
       </ButtonGroup>
     </HStack>

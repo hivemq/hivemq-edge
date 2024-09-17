@@ -25,7 +25,7 @@ describe('DataModelDestination', () => {
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.getByTestId('loading-spinner').should('not.exist')
     cy.get('[role=list]').find('li').as('properties')
-    cy.get('@properties').should('have.length', 3)
+    cy.get('@properties').should('have.length', 6)
 
     cy.get('@properties')
       .eq(0)

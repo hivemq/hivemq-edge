@@ -31,7 +31,7 @@ const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = fal
           {t('rjsf.MqttTransformationField.mapping.auto.aria-label')}
         </Button>
       </CardHeader>
-      <CardBody as={VStack} maxH="60vh" overflowY="scroll">
+      <CardBody as={VStack} maxH="58vh" overflowY="scroll">
         {isLoading && <LoaderSpinner />}
 
         {properties.map((property) => {

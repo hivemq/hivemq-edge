@@ -15,12 +15,13 @@ describe('TopicExplorer', () => {
   it('should render properly', () => {
     cy.mountWithProviders(<TopicExplorer />)
 
-    // TODO Technically this is not a proper button-like radio
-    cy.getByAriaLabel('Topic Tree View').should('be.disabled')
-    cy.getByAriaLabel('Topic Wheel').should('not.be.disabled')
+    cy.get('[role="tablist"]').find('[role="tab"]').as('tabs').should('have.length', 2)
+    cy.get('@tabs').eq(0).should('have.text', 'Topic Wheel').should('have.attr', 'aria-selected', 'true')
+    cy.get('@tabs').eq(1).should('have.text', 'Topic Tree View')
 
     cy.getByTestId('form-control-uns').should('have.text', 'UNS')
     cy.getByTestId('form-control-origin').should('have.text', 'Adapter')
+    cy.get('svg > g > text').should('have.text', 'HiveMQ Edge')
   })
 
   it('should be accessible', () => {

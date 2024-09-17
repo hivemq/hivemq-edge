@@ -16,20 +16,23 @@ interface DataModelDestinationProps extends CardProps {
 }
 
 const DataModelDestination: FC<DataModelDestinationProps> = ({ topic, validation, ...props }) => {
-  const { t } = useTranslation('components')
-  const { data, isLoading } = useGetSubscriptionSchemas(topic as string, topic ? 'destination' : undefined)
+  const { t } = useTranslation()
+  const { data, isLoading, isError, error } = useGetSubscriptionSchemas(
+    topic as string,
+    topic ? 'destination' : undefined
+  )
 
   return (
     <Card {...props} size="sm">
       <CardHeader as={HStack} justifyContent="space-between">
         <Heading as="h3" size="sm">
-          {t('rjsf.MqttTransformationField.destination.header')}
+          {t('components:rjsf.MqttTransformationField.destination.header')}
         </Heading>
         <ValidationStatus validation={validation} />
       </CardHeader>
       <CardBody>
         {isLoading && <LoaderSpinner />}
-        {!isLoading && !data && <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />}
+        {isError && error && <ErrorMessage message={error.message} />}
         {!isLoading && data && <JsonSchemaBrowser schema={data as JSONSchema7} />}
       </CardBody>
     </Card>

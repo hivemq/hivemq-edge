@@ -1,6 +1,6 @@
 import { type FC, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ResponsiveSunburst, type ComputedDatum, type SunburstCustomLayerProps } from '@nivo/sunburst'
+import { ResponsiveSunburst, type ComputedDatum, type SunburstCustomLayerProps, DatumId } from '@nivo/sunburst'
 import { type HierarchyNode } from 'd3-hierarchy'
 import { Badge, HStack } from '@chakra-ui/react'
 
@@ -12,12 +12,17 @@ interface SunburstNivoProps {
   onSelect?: (topic: string, event: MouseEvent) => void
 }
 
+// TODO[NVL] The path() stratify creates a leading / - needs removal
+const trimStratifiedTopicId = (id: DatumId): string => {
+  return id.toString().slice(1)
+}
+
 const TopicTooltip = (props: ComputedDatum<unknown>) => {
   const { id } = props
 
   return (
     <HStack>
-      <Topic tagTitle={id.toString()} />
+      <Topic tagTitle={trimStratifiedTopicId(id)} />
       <Badge colorScheme="blue">{props.value}</Badge>
     </HStack>
   )
@@ -60,7 +65,7 @@ const SunburstChart: FC<SunburstNivoProps> = ({ data, onSelect }) => {
       tooltip={TopicTooltip}
       isInteractive={true}
       onClick={(data, evt) => {
-        onSelect?.(data.id.toString(), evt)
+        onSelect?.(trimStratifiedTopicId(data.id), evt)
       }}
       layers={['arcs', 'arcLabels', CenteredMetric]}
     />

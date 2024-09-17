@@ -7,6 +7,7 @@ import { List } from '@chakra-ui/react'
 const MOCK_PROPERTY: FlatJSONSchema7 = {
   description: undefined,
   path: [],
+  key: 'billing_address',
   title: 'Billing address',
   type: 'object',
 }
@@ -48,6 +49,17 @@ describe('PropertyItem', () => {
       .should('have.attr', 'data-path', 'root.branch.Billing address')
     cy.get('ul li span').click()
     cy.get('ul li span').should('have.attr', 'aria-describedby')
+  })
+
+  it('should render examples properly', () => {
+    cy.mountWithProviders(
+      <PropertyItem property={{ ...MOCK_PROPERTY, examples: 'this is a sample' }} isDraggable={false} hasExamples />,
+      { wrapper }
+    )
+
+    cy.get('ul li').should('have.attr', 'data-type', 'object')
+    cy.getByTestId('property-name').should('have.text', 'Billing address')
+    cy.getByTestId('property-example').should('have.text', 'this is a sample')
   })
 
   it('should be accessible ', () => {
