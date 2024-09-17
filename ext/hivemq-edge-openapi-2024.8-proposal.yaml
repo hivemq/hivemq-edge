@@ -92,7 +92,7 @@ tags:
     description: |+
       These endpoints can be used to retrieve states of clients for the Data Hub.
   - name: Domain
-    description: Interact with the elements of the domain conceptualised aropunf the Edge instance
+    description: Interact with the elements of the domain conceptualised around the Edge instance
   - name: Client
     description: Interact with MQTT clients connected to the Edge Broker
 
