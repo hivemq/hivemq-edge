@@ -2,6 +2,6 @@ import { MappingValidation, OutwardSubscription } from '@/modules/Subscriptions/
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const useMappingValidation = (_item: OutwardSubscription) => {
-  const status: MappingValidation = { status: 'success', errors: [] }
+  const status: MappingValidation = { status: 'error', errors: [] }
   return status
 }

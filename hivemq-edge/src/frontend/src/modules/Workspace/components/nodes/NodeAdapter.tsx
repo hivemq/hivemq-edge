@@ -9,14 +9,13 @@ import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapte
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
-import { type TopicFilter } from '@/modules/Workspace/types.ts'
 import { useEdgeFlowContext } from '@/modules/Workspace/hooks/useEdgeFlowContext.ts'
 import { discoverAdapterTopics } from '@/modules/Workspace/utils/topics-utils.ts'
 import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import { deviceCapabilityIcon, isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import NodeWrapper from '@/modules/Workspace/components/parts/NodeWrapper.tsx'
-import TopicsContainer from '@/modules/Workspace/components/parts/TopicsContainer.tsx'
+import MappingBadge from '@/modules/Workspace/components/parts/MappingBadge.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
 
@@ -25,10 +24,10 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
   const { data: protocols } = useGetAdapterTypes()
   const adapterProtocol = protocols?.items?.find((e) => e.id === adapter.type)
   const { options } = useEdgeFlowContext()
-  const topics = useMemo<TopicFilter[]>(() => {
+  const topics = useMemo<string[]>(() => {
     if (!adapterProtocol) return []
     if (!adapter.config) return []
-    return discoverAdapterTopics(adapterProtocol, adapter.config).map((e) => ({ topic: e }))
+    return discoverAdapterTopics(adapterProtocol, adapter.config)
   }, [adapter.config, adapterProtocol])
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/adapter/${adapter.type}`)
   const navigate = useNavigate()
@@ -64,7 +63,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
       >
         {!showSkeleton && (
           <VStack>
-            {HACK_BIDIRECTIONAL && <TopicsContainer topics={[{ topic: 'topic/mock/todo' }]} />}
+            {HACK_BIDIRECTIONAL && <MappingBadge destinations={['topic/mock/todo']} isTag />}
 
             <HStack>
               <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
@@ -77,7 +76,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
                 <ConnectionStatusBadge status={adapter.status} />
               </Box>
             )}
-            {options.showTopics && <TopicsContainer topics={topics} />}
+            {options.showTopics && <MappingBadge destinations={topics} />}
           </VStack>
         )}
         {showSkeleton && (

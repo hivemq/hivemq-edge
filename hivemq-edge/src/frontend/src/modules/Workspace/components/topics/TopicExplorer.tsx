@@ -1,13 +1,23 @@
 import { type FC, useMemo, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ButtonGroup, Card, CardBody, CardHeader, FormControl, FormLabel, HStack, Switch } from '@chakra-ui/react'
-import { LuFolderTree } from 'react-icons/lu'
-import { TbChartDonutFilled } from 'react-icons/tb'
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  FormControl,
+  FormLabel,
+  HStack,
+  Switch,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+} from '@chakra-ui/react'
 
 import { useGetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useGetUnifiedNamespace.ts'
 import { useSetUnifiedNamespace } from '@/api/hooks/useUnifiedNamespace/useSetUnifiedNamespace.ts'
 
-import IconButton from '@/components/Chakra/IconButton.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
 import SunburstChart from '@/modules/Workspace/components/topics/SunburstChart.tsx'
@@ -15,15 +25,12 @@ import TreeViewChart from '@/modules/Workspace/components/topics/TreeViewChart.t
 import { useGetTopicSamples } from '@/api/hooks/useTopicOntology/useGetTopicSamples.tsx'
 import { stratifyTopicTree, toTreeMetadata } from '@/modules/Workspace/utils/topics-utils.ts'
 
-type SUNBURST_CHART = 'nivo' | 'recharts' | 'treeview'
-
 interface TopicSunburstProps {
   onSelect?: (topic: string | undefined) => void
 }
 
 const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
   const { t } = useTranslation()
-  const [chart, setChart] = useState<SUNBURST_CHART>('treeview')
   const [useOrigin, setUseOrigin] = useState(false)
   const { mutateAsync } = useSetUnifiedNamespace()
   const { data: uns } = useGetUnifiedNamespace()
@@ -55,23 +62,9 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
   }
 
   return (
-    <Card size="sm" w="100%" h="500px">
+    <Card size="sm">
       <CardHeader as={HStack} gap={10}>
-        <ButtonGroup isAttached>
-          <IconButton
-            icon={<LuFolderTree />}
-            aria-label={t('workspace.topicWheel.control.treeview')}
-            isDisabled={chart === 'treeview'}
-            onClick={() => setChart('treeview')}
-          />
-          <IconButton
-            icon={<TbChartDonutFilled />}
-            aria-label={t('workspace.topicWheel.control.sunburst')}
-            isDisabled={chart === 'nivo'}
-            onClick={() => setChart('nivo')}
-          />
-        </ButtonGroup>
-        <FormControl display="flex" alignItems="center" data-testid="form-control-uns">
+        <FormControl display="flex" data-testid="form-control-uns">
           <FormLabel htmlFor="switch-uns" mb={0}>
             {t('workspace.topicWheel.control.uns')}
           </FormLabel>
@@ -97,8 +90,21 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
         </FormControl>
       </CardHeader>
       <CardBody onClick={() => onSelect?.(undefined)}>
-        {chart === 'nivo' && <SunburstChart data={sunburstData} onSelect={onHandleSelect} />}
-        {chart === 'treeview' && <TreeViewChart data={sunburstData} onSelect={onSelect} />}
+        <Tabs variant="enclosed">
+          <TabList>
+            <Tab>{t('workspace.topicWheel.control.sunburst')}</Tab>
+            <Tab>{t('workspace.topicWheel.control.treeview')}</Tab>
+          </TabList>
+
+          <TabPanels>
+            <TabPanel w="100%" h="400px">
+              <SunburstChart data={sunburstData} onSelect={onHandleSelect} />
+            </TabPanel>
+            <TabPanel>
+              <TreeViewChart data={sunburstData} onSelect={onSelect} />
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </CardBody>
     </Card>
   )

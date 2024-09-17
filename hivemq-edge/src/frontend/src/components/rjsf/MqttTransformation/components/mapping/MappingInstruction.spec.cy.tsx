@@ -11,6 +11,7 @@ const MOCK_SUBS: OutwardSubscription = {
 const MOCK_PROPERTY: FlatJSONSchema7 = {
   description: undefined,
   path: [],
+  key: 'billing-address',
   title: 'Billing address',
   type: 'object',
 }
@@ -29,7 +30,7 @@ describe('MappingInstruction', () => {
       />
     )
 
-    cy.getByAriaLabel('Clear mapping').should('be.disabled')
+    cy.getByAriaLabel('Clear mapping').should('not.be.disabled')
     cy.get('ul li')
       .eq(0)
       .should('have.text', 'Billing address')
