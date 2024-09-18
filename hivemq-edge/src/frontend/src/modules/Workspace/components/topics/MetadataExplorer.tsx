@@ -12,6 +12,7 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import { MOCK_CLIENT_STUB } from '@/api/hooks/useTopicOntology/__handlers__'
 
 interface MetadataExplorerProps {
   topic: string
@@ -29,6 +30,8 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
   }, [data, topic])
 
   const handleOnClick = () => {
+    // TODO[25280] Refactor with new topic mapping structure, https://hivemq.kanbanize.com/ctrl_board/57/cards/25280/details/
+    const mockTopicId = topic.slice(MOCK_CLIENT_STUB.length + 1)
     if (!allClients || allClients.length === 0) {
       const newClientFilter: ClientFilter = {
         id: mockTopicId,
@@ -49,7 +52,7 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
     /**
      * @deprecated This is a mock, replace with topic filter (https://hivemq.kanbanize.com/ctrl_board/57/cards/25280/details/)
      */
-    const isWildcard = topic.startsWith('/tmp/')
+    const isWildcard = topic.startsWith(`/${MOCK_CLIENT_STUB}/`)
     if (!isWildcard) return false
 
     /**

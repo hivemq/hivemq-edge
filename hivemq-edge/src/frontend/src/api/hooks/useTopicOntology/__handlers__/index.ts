@@ -172,12 +172,15 @@ export const MOCK_MQTT_SCHEMA_PLAIN: RJSFSchema = {
     },
   },
 }
+
+export const MOCK_CLIENT_STUB = 'tmp'
+
 export const MOCK_MQTT_TOPIC_SAMPLES = [
-  'tmp/broker1/topic1/segment1',
-  'tmp/broker1/topic1/segment2',
-  'tmp/broker1/topic1/segment2/leaf1',
-  'tmp/broker2/topic1',
-  'tmp/broker4/topic1/segment2',
+  `${MOCK_CLIENT_STUB}/broker1/topic1/segment1`,
+  `${MOCK_CLIENT_STUB}/broker1/topic1/segment2`,
+  `${MOCK_CLIENT_STUB}/broker1/topic1/segment2/leaf1`,
+  `${MOCK_CLIENT_STUB}/broker2/topic1`,
+  `${MOCK_CLIENT_STUB}/broker4/topic1/segment2`,
 ]
 
 export const MOCK_DEVICE_TAGS: DeviceTags[] = [
