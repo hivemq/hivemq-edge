@@ -1,6 +1,5 @@
 import { NodeProps, Position } from 'reactflow'
-import { Listener } from '@/api/__generated__'
-import { BrokerClientConfiguration } from '@/api/types/api-broker-client.ts'
+import { ClientFilter, Listener } from '@/api/__generated__'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 import { mockClientSubscription } from '@/api/hooks/useClientSubscriptions/__handlers__'
@@ -63,10 +62,10 @@ export const MOCK_NODE_DEVICE: NodeProps<DeviceMetadata> = {
   ...MOCK_DEFAULT_NODE,
 }
 
-export const MOCK_NODE_CLIENT: NodeProps<BrokerClientConfiguration> = {
+export const MOCK_NODE_CLIENT: NodeProps<ClientFilter> = {
   id: 'idBridge',
   type: NodeTypes.BRIDGE_NODE,
   sourcePosition: Position.Bottom,
-  data: mockClientSubscription.config,
+  data: mockClientSubscription,
   ...MOCK_DEFAULT_NODE,
 }
