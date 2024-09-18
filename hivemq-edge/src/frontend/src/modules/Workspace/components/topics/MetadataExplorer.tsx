@@ -4,6 +4,7 @@ import { Box, Button, Card, CardBody, CardHeader, Heading, HStack, Text } from '
 import { LuLoader } from 'react-icons/lu'
 
 import type { ClientFilter } from '@/api/__generated__'
+import { MOCK_CLIENT_STUB } from '@/api/hooks/useClientSubscriptions/__handlers__'
 import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSubscriptionSchemas.tsx'
 import { useListClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useListClientSubscriptions.ts'
 import { useCreateClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useCreateClientSubscriptions.ts'
@@ -12,7 +13,6 @@ import IconButton from '@/components/Chakra/IconButton.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import { MOCK_CLIENT_STUB } from '@/api/hooks/useTopicOntology/__handlers__'
 
 interface MetadataExplorerProps {
   topic: string

@@ -173,16 +173,6 @@ export const MOCK_MQTT_SCHEMA_PLAIN: RJSFSchema = {
   },
 }
 
-export const MOCK_CLIENT_STUB = 'tmp'
-
-export const MOCK_MQTT_TOPIC_SAMPLES = [
-  `${MOCK_CLIENT_STUB}/broker1/topic1/segment1`,
-  `${MOCK_CLIENT_STUB}/broker1/topic1/segment2`,
-  `${MOCK_CLIENT_STUB}/broker1/topic1/segment2/leaf1`,
-  `${MOCK_CLIENT_STUB}/broker2/topic1`,
-  `${MOCK_CLIENT_STUB}/broker4/topic1/segment2`,
-]
-
 export const MOCK_DEVICE_TAGS: DeviceTags[] = [
   { tag: 'write/power-management/alert', node: 'ns=3;i=1002' },
   { tag: 'write/power-management/off', node: 'ns=3;i=1003' },

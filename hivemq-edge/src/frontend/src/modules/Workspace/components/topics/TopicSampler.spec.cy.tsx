@@ -1,17 +1,17 @@
 import TopicSampler from '@/modules/Workspace/components/topics/TopicSampler.tsx'
 import { FC, PropsWithChildren } from 'react'
 import { Text, VStack } from '@chakra-ui/react'
-import { useGetTopicSamples } from '@/api/hooks/useTopicOntology/useGetTopicSamples.tsx'
+import { useGetClientTopicSamples } from '@/api/hooks/useClientSubscriptions/useGetClientTopicSamples.ts'
 
 const Wrapper: FC<PropsWithChildren> = ({ children }) => {
-  const { isLoading, data } = useGetTopicSamples()
+  const { isLoading, data } = useGetClientTopicSamples()
   return (
     <VStack alignItems="flex-start">
       {children}
       <VStack alignItems="flex-start">
         <Text data-testid="sampler-loader">{isLoading ? 'loading' : 'loaded'}</Text>
         <ul data-testid="sampler-listing">
-          {data?.map((topic, index) => (
+          {data?.items?.map((topic, index) => (
             <li key={`${topic}-${index}`}>{topic}</li>
           ))}
         </ul>

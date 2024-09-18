@@ -22,8 +22,8 @@ import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
 import SunburstChart from '@/modules/Workspace/components/topics/SunburstChart.tsx'
 import TreeViewChart from '@/modules/Workspace/components/topics/TreeViewChart.tsx'
-import { useGetTopicSamples } from '@/api/hooks/useTopicOntology/useGetTopicSamples.tsx'
 import { stratifyTopicTree, toTreeMetadata } from '@/modules/Workspace/utils/topics-utils.ts'
+import { useGetClientTopicSamples } from '@/api/hooks/useClientSubscriptions/useGetClientTopicSamples.ts'
 
 interface TopicSunburstProps {
   onSelect?: (topic: string | undefined) => void
@@ -35,7 +35,7 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
   const { mutateAsync } = useSetUnifiedNamespace()
   const { data: uns } = useGetUnifiedNamespace()
   const { data: topics, isLoading } = useGetEdgeTopics({ publishOnly: false, useOrigin: useOrigin })
-  const { data: topicSamples } = useGetTopicSamples()
+  const { data: topicSamples } = useGetClientTopicSamples()
 
   const unsPrefix = useMemo(() => {
     if (!uns || !uns.enabled) return ''
@@ -50,7 +50,7 @@ const TopicExplorer: FC<TopicSunburstProps> = ({ onSelect }) => {
     if (isLoading) return stratifyTopicTree([{ label: 'root', count: 1 }])
 
     const edgeTopics = toTreeMetadata(topics, unsPrefix)
-    const remoteTopics = toTreeMetadata(topicSamples || [])
+    const remoteTopics = toTreeMetadata(topicSamples?.items || [])
     return stratifyTopicTree([...edgeTopics, ...remoteTopics])
   }, [isLoading, topicSamples, topics, unsPrefix])
 
