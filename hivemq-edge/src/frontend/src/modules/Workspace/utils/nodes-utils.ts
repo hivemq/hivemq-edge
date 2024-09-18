@@ -3,13 +3,12 @@ import { WithCSSVar } from '@chakra-ui/react'
 import { Dict } from '@chakra-ui/utils'
 import { GenericObjectType } from '@rjsf/utils'
 
-import { Adapter, Bridge, Status, Listener, ProtocolAdapter } from '@/api/__generated__'
+import { Adapter, Bridge, Status, Listener, ProtocolAdapter, ClientFilter } from '@/api/__generated__'
 
 import { EdgeTypes, IdStubs, NodeTypes } from '../types.ts'
 import { getBridgeTopics, discoverAdapterTopics } from '../utils/topics-utils.ts'
 import { getThemeForStatus } from '@/modules/Workspace/utils/status-utils.ts'
 import { isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
-import { BrokerClient, BrokerClientConfiguration } from '@/api/types/api-broker-client.ts'
 
 export const CONFIG_ADAPTER_WIDTH = 245
 
@@ -240,20 +239,20 @@ export const createAdapterNode = (
 }
 
 export const createClientNode = (
-  client: BrokerClient,
+  client: ClientFilter,
   nbClient: number,
   maxClient: number,
   theme: Partial<WithCSSVar<Dict>>,
   positionStorage?: Record<string, XYPosition>
 ) => {
   const idClient = `${IdStubs.CLIENT_NODE}@${client.id}`
-  const isConnected = Boolean(client.config.subscriptions?.length)
+  const isConnected = Boolean(client.topicFilters.length)
 
-  const nodeClient: Node<BrokerClientConfiguration, NodeTypes.CLIENT_NODE> = {
+  const nodeClient: Node<ClientFilter, NodeTypes.CLIENT_NODE> = {
     id: idClient,
     type: NodeTypes.CLIENT_NODE,
     sourcePosition: Position.Bottom,
-    data: client.config,
+    data: client,
     position: positionStorage?.[idClient] ?? {
       x: POS_EDGE.x + POS_NODE_INC.x * (nbClient - (maxClient - 1) / 2),
       y: POS_EDGE.y + POS_NODE_INC.y,

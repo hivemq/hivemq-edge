@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Box, Button, Card, CardBody, CardHeader, Heading, HStack, Text } from '@chakra-ui/react'
 import { LuLoader } from 'react-icons/lu'
 
-import { BrokerClientConfiguration, BrokerClientSubscription } from '@/api/types/api-broker-client.ts'
+import type { ClientFilter } from '@/api/__generated__'
 import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSubscriptionSchemas.tsx'
 import { useListClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useListClientSubscriptions.ts'
 import { useCreateClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useCreateClientSubscriptions.ts'
@@ -30,23 +30,18 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
 
   const handleOnClick = () => {
     if (!allClients || allClients.length === 0) {
-      /**
-       * @deprecated This is a mock, replace with topic filter (https://hivemq.kanbanize.com/ctrl_board/57/cards/25280/details/)
-       */
-      const id = topic.slice(4)
-      const newClientFilter: BrokerClientConfiguration = {
-        id: id,
-        subscriptions: [{ destination: id, maxQoS: BrokerClientSubscription.maxQoS._0 }],
+      const newClientFilter: ClientFilter = {
+        id: mockTopicId,
+        topicFilters: [{ destination: mockTopicId }],
       }
-      createClient.mutateAsync({ id: id, config: newClientFilter })
+      createClient.mutateAsync(newClientFilter)
       return
     }
 
-    const firstFilter = allClients?.[0]
+    const [firstFilter] = allClients
     if (firstFilter) {
-      const firstFilterConfig: BrokerClientConfiguration = firstFilter.config
-      firstFilterConfig.subscriptions?.push({ destination: firstFilter.id, maxQoS: BrokerClientSubscription.maxQoS._0 })
-      updateClient.mutateAsync({ id: firstFilter.id, config: firstFilterConfig })
+      firstFilter.topicFilters?.push({ destination: mockTopicId })
+      updateClient.mutateAsync(firstFilter)
     }
   }
 
@@ -63,7 +58,7 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
     const newTopic = topic.slice(4)
     const allClientTopics =
       allClients?.reduce<string[]>((acc, clientFilter) => {
-        const subscriptions = clientFilter.config.subscriptions?.map((subscription) => subscription.destination) || []
+        const subscriptions = clientFilter.topicFilters?.map((subscription) => subscription.destination) || []
         return Array.from(new Set([...acc, ...subscriptions]))
       }, []) || []
 
