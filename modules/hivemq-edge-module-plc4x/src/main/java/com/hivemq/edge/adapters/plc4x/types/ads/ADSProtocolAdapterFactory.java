@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.plc4x.types.ads;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
@@ -26,6 +25,8 @@ import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSToMqttConfig;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.legacy.LegacyADSAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,8 @@ import java.util.stream.Collectors;
  * @author HiveMQ Adapter Generator
  */
 public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdapterConfig> {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ADSProtocolAdapterFactory.class);
 
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
@@ -55,11 +58,29 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
 
     @Override
     public @NotNull ADSAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        if (config.get("adsToMqtt") != null || config.get("mqttToAds") != null) {
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<String, Object> config) {
+        try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
-        } else {
-            return tryConvertLegacyConfig(objectMapper, config);
+        } catch (final Exception currentConfigFailedException) {
+            try {
+                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'",
+                        ADSProtocolAdapterInformation.INSTANCE.getDisplayName(),
+                        currentConfigFailedException.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Original Exception:", currentConfigFailedException);
+                }
+                return tryConvertLegacyConfig(objectMapper, config);
+            } catch (final Exception legacyConfigFailedException) {
+                log.warn("Could not load legacy '{}' configuration. Because: '{}'",
+                        ADSProtocolAdapterInformation.INSTANCE.getDisplayName(),
+                        legacyConfigFailedException.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Original Exception:", legacyConfigFailedException);
+                }
+                //we rethrow the exception from the current config conversation, to have a correct rest response.
+                throw currentConfigFailedException;
+            }
         }
     }
 
