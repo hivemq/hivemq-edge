@@ -25,6 +25,8 @@ import com.hivemq.edge.adapters.http.config.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.legacy.LegacyHttpAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,8 @@ import java.util.Map;
  * @author HiveMQ Adapter Generator
  */
 public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAdapterConfig> {
+
+    private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapterFactory.class);
 
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
@@ -49,11 +53,19 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     @Override
     public @NotNull HttpAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        if (config.get("httpToMqtt") != null || config.get("mqttToHttp") != null) {
+        try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
-        } else {
-            return tryConvertLegacyConfig(objectMapper, config);
+        } catch (final Exception currentConfigFailedException) {
+            try {
+                log.warn("Could not load http adapter configuration, trying to load legacy configuration: ", currentConfigFailedException);
+                return tryConvertLegacyConfig(objectMapper, config);
+            } catch (final Exception legacyConfigFailedException) {
+                log.warn("Could not load legacy http adapter configuration: ", legacyConfigFailedException);
+                //we rethrow the exception from the current config conversation, to have a correct rest response.
+                throw currentConfigFailedException;
+            }
         }
+
     }
 
     @Override
