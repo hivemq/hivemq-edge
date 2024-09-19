@@ -9,10 +9,12 @@ import { HmInput, HmOutput } from '@/components/react-icons/hm'
 
 /**
  * @deprecated This is a mock, replacing the missing WRITE capability from the adapters
- * @param adapter Adapter | undefined
  */
 export const isBidirectional = (adapter: ProtocolAdapter | undefined) => {
-  return Boolean(adapter?.id?.includes('opc-ua-client'))
+  const MOCK_BIDIRECTIONAL_ADAPTER_TYPES = ['opc-ua-client', 'modbus']
+  return Boolean(
+    adapter?.capabilities?.includes('WRITE') || MOCK_BIDIRECTIONAL_ADAPTER_TYPES.includes(adapter?.id || '')
+  )
 }
 
 /**
@@ -39,11 +41,8 @@ export const deviceCategoryIcon: Record<string, IconType> = {
 
 type ArrayElement<ArrayType extends Array<unknown>> = ArrayType[number]
 type CapabilitiesArray = NonNullable<ProtocolAdapter['capabilities']>
-type CapabilityType = ArrayElement<CapabilitiesArray> | 'WRITE'
+type CapabilityType = ArrayElement<CapabilitiesArray>
 
-/**
- * @deprecated This is a mock, replacing the missing WRITE capability from the adapters
- */
 export const deviceCapabilityIcon: Record<CapabilityType, IconType> = {
   ['READ']: HmOutput,
   ['DISCOVER']: RiCompassDiscoverLine,
