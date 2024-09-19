@@ -169,6 +169,4 @@ public class LegacyHttpAdapterConfig {
     public int getMaxPollingErrorsBeforeRemoval() {
         return maxPollingErrorsBeforeRemoval;
     }
-
-
 }
