@@ -3,7 +3,7 @@ import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 import { ApiError, type DomainTagList } from '@/api/__generated__'
 import { QUERY_KEYS } from '@/api/utils.ts'
 
-export const useGetAdapterDomainTags = (adapterId: string | undefined) => {
+export const useGetDomainTags = (adapterId: string | undefined) => {
   const appClient = useHttpClient()
 
   return useQuery<DomainTagList, ApiError>({

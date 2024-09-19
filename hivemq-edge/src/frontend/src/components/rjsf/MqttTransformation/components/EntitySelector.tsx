@@ -1,6 +1,6 @@
 import { FC } from 'react'
 
-import { useGetAdapterDomainTags } from '@/api/hooks/useProtocolAdapters/useGetAdapterDomainTags.tsx'
+import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
 import { MultiTopicsCreatableSelect, SingleTopicCreatableSelect } from '@/components/MQTT/TopicCreatableSelect.tsx'
 
 // TODO[NVL] The whole topic CreatableSelect thing needs to be refactored to any type of entities
@@ -16,7 +16,7 @@ export const SelectSourceTopics: FC<SourceSelectorProps> = ({ values, onChange }
 }
 
 export const SelectDestinationTag: FC<SourceSelectorProps> = ({ adapterId, values, onChange }) => {
-  const { isLoading, data } = useGetAdapterDomainTags(adapterId)
+  const { isLoading, data } = useGetDomainTags(adapterId)
 
   return (
     <SingleTopicCreatableSelect
