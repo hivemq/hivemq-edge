@@ -6,6 +6,8 @@ import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import {
   Adapter,
   AdaptersList,
+  type DomainTag,
+  type DomainTagList,
   JsonNode,
   ObjectNode,
   ProtocolAdapter,
@@ -255,6 +257,12 @@ export const mockDataPointOPCUA: ValuesTree = {
   ],
 }
 
+export const MOCK_DEVICE_TAGS: DomainTag[] = [
+  { tag: 'write/power-management/alert', dataPoint: { node: 'ns=3;i=1002' } },
+  { tag: 'write/power-management/off', dataPoint: { node: 'ns=3;i=1003' } },
+  { tag: 'write/log/event', dataPoint: { node: 'ns=3;i=1008' } },
+]
+
 export const handlers = [
   http.get('*/protocol-adapters/types', () => {
     return HttpResponse.json<ProtocolAdaptersList>({ items: [mockProtocolAdapter] }, { status: 200 })
@@ -287,5 +295,11 @@ export const handlers = [
 
   http.get('*/protocol-adapters/adapters/:adapterId/discover', () => {
     return HttpResponse.json<ValuesTree>(mockDataPointOPCUA, { status: 200 })
+  }),
+]
+
+export const deviceHandlers = [
+  http.get('*/protocol-adapters/adapters/:adapterId/tags', () => {
+    return HttpResponse.json<DomainTagList>({ items: MOCK_DEVICE_TAGS }, { status: 200 })
   }),
 ]

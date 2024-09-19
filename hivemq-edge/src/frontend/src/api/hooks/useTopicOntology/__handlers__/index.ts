@@ -1,5 +1,4 @@
 import { RJSFSchema } from '@rjsf/utils'
-import { DeviceTags } from '@/modules/Subscriptions/types.ts'
 
 export const GENERATE_DATA_MODELS = (short = false, title?: string): RJSFSchema => {
   const model: RJSFSchema = {
@@ -172,9 +171,3 @@ export const MOCK_MQTT_SCHEMA_PLAIN: RJSFSchema = {
     },
   },
 }
-
-export const MOCK_DEVICE_TAGS: DeviceTags[] = [
-  { tag: 'write/power-management/alert', node: 'ns=3;i=1002' },
-  { tag: 'write/power-management/off', node: 'ns=3;i=1003' },
-  { tag: 'write/log/event', node: 'ns=3;i=1008' },
-]
