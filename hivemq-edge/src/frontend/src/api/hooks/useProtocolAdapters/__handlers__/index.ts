@@ -257,10 +257,10 @@ export const mockDataPointOPCUA: ValuesTree = {
   ],
 }
 
-export const MOCK_DEVICE_TAGS: DomainTag[] = [
-  { tag: 'write/power-management/alert', dataPoint: { node: 'ns=3;i=1002' } },
-  { tag: 'write/power-management/off', dataPoint: { node: 'ns=3;i=1003' } },
-  { tag: 'write/log/event', dataPoint: { node: 'ns=3;i=1008' } },
+export const MOCK_DEVICE_TAGS = (adapterId: string): DomainTag[] => [
+  { tag: `${adapterId}/power-management/alert`, dataPoint: { node: 'ns=3;i=1002' } },
+  { tag: `${adapterId}/power-management/off`, dataPoint: { node: 'ns=3;i=1003' } },
+  { tag: `${adapterId}/log/event`, dataPoint: { node: 'ns=3;i=1008' } },
 ]
 
 export const handlers = [
@@ -299,7 +299,8 @@ export const handlers = [
 ]
 
 export const deviceHandlers = [
-  http.get('*/protocol-adapters/adapters/:adapterId/tags', () => {
-    return HttpResponse.json<DomainTagList>({ items: MOCK_DEVICE_TAGS }, { status: 200 })
+  http.get('*/protocol-adapters/adapters/:adapterId/tags', ({ params }) => {
+    const { adapterId } = params
+    return HttpResponse.json<DomainTagList>({ items: MOCK_DEVICE_TAGS(adapterId as string) }, { status: 200 })
   }),
 ]
