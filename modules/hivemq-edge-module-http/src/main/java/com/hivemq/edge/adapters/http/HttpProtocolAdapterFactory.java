@@ -57,10 +57,10 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } catch (final Exception currentConfigFailedException) {
             try {
-                log.warn("Could not load http adapter configuration, trying to load legacy configuration: ", currentConfigFailedException);
+                log.warn("Could not load http adapter configuration, trying to load legacy configuration.");
                 return tryConvertLegacyConfig(objectMapper, config);
-            } catch (final Exception legacyConfigFailedException) {
-                log.warn("Could not load legacy http adapter configuration: ", legacyConfigFailedException);
+            } catch (final Exception ignored) {
+                log.warn("Could not load legacy http adapter configuration.");
                 //we rethrow the exception from the current config conversation, to have a correct rest response.
                 throw currentConfigFailedException;
             }
