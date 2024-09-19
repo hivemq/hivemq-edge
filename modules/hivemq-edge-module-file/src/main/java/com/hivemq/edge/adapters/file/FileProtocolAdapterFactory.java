@@ -25,12 +25,16 @@ import com.hivemq.edge.adapters.file.config.FileToMqttConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.config.legacy.LegacyFileAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAdapterConfig> {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(FileProtocolAdapterFactory.class);
 
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
@@ -46,11 +50,29 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
 
     @Override
     public @NotNull FileAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        if (config.get("fileToMqtt") != null || config.get("mqttToFile") != null) {
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<String, Object> config) {
+        try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
-        } else {
-            return tryConvertLegacyConfig(objectMapper, config);
+        } catch (final Exception currentConfigFailedException) {
+            try {
+                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'",
+                        FileProtocolAdapterInformation.INSTANCE.getDisplayName(),
+                        currentConfigFailedException.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Original Exception:", currentConfigFailedException);
+                }
+                return tryConvertLegacyConfig(objectMapper, config);
+            } catch (final Exception legacyConfigFailedException) {
+                log.warn("Could not load legacy '{}' configuration. Because: '{}'",
+                        FileProtocolAdapterInformation.INSTANCE.getDisplayName(),
+                        legacyConfigFailedException.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Original Exception:", legacyConfigFailedException);
+                }
+                //we rethrow the exception from the current config conversation, to have a correct rest response.
+                throw currentConfigFailedException;
+            }
         }
     }
 

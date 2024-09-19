@@ -52,20 +52,30 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
 
     @Override
     public @NotNull HttpAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<String, Object> config) {
         try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } catch (final Exception currentConfigFailedException) {
             try {
-                log.warn("Could not load http adapter configuration, trying to load legacy configuration.");
+                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'",
+                        HttpProtocolAdapterInformation.INSTANCE.getDisplayName(),
+                        currentConfigFailedException.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Original Exception:", currentConfigFailedException);
+                }
                 return tryConvertLegacyConfig(objectMapper, config);
-            } catch (final Exception ignored) {
-                log.warn("Could not load legacy http adapter configuration.");
+            } catch (final Exception legacyConfigFailedException) {
+                log.warn("Could not load legacy '{}' configuration. Because: '{}'",
+                        HttpProtocolAdapterInformation.INSTANCE.getDisplayName(),
+                        legacyConfigFailedException.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Original Exception:", legacyConfigFailedException);
+                }
                 //we rethrow the exception from the current config conversation, to have a correct rest response.
                 throw currentConfigFailedException;
             }
         }
-
     }
 
     @Override
@@ -74,7 +84,8 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     }
 
     private static @NotNull HttpAdapterConfig tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<String, Object> config) {
         final LegacyHttpAdapterConfig legacyHttpAdapterConfig =
                 objectMapper.convertValue(config, LegacyHttpAdapterConfig.class);
 

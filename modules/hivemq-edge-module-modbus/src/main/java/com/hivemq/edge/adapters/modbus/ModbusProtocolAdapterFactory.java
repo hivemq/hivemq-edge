@@ -18,20 +18,23 @@ package com.hivemq.edge.adapters.modbus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.edge.adapters.modbus.config.legacy.LegacyModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
+import com.hivemq.edge.adapters.modbus.config.legacy.LegacyModbusAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<ModbusAdapterConfig> {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(ModbusProtocolAdapterFactory.class);
 
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
@@ -52,15 +55,35 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
 
     @Override
     public @NotNull ModbusAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        if(config.get("modbusToMqtt") != null || config.get("mqttToModbus") != null) {
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<String, Object> config) {
+        try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
-        } else  {
-            return tryConvertLegacyConfig(objectMapper, config);
+        } catch (final Exception currentConfigFailedException) {
+            try {
+                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'",
+                        ModbusProtocolAdapterInformation.INSTANCE.getDisplayName(),
+                        currentConfigFailedException.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Original Exception:", currentConfigFailedException);
+                }
+                return tryConvertLegacyConfig(objectMapper, config);
+            } catch (final Exception legacyConfigFailedException) {
+                log.warn("Could not load legacy '{}' configuration. Because: '{}'",
+                        ModbusProtocolAdapterInformation.INSTANCE.getDisplayName(),
+                        legacyConfigFailedException.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Original Exception:", legacyConfigFailedException);
+                }
+                //we rethrow the exception from the current config conversation, to have a correct rest response.
+                throw currentConfigFailedException;
+            }
         }
     }
 
-    private static @NotNull ModbusAdapterConfig tryConvertLegacyConfig(final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+    private static @NotNull ModbusAdapterConfig tryConvertLegacyConfig(
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<String, Object> config) {
         final LegacyModbusAdapterConfig legacyModbusAdapterConfig =
                 objectMapper.convertValue(config, LegacyModbusAdapterConfig.class);
 
