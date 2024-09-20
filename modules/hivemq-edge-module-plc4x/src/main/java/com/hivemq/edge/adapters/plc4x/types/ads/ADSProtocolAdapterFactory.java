@@ -58,13 +58,13 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
 
     @Override
     public @NotNull ADSAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } catch (final Exception currentConfigFailedException) {
             try {
-                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'",
+                log.warn(
+                        "Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
                         ADSProtocolAdapterInformation.INSTANCE.getDisplayName(),
                         currentConfigFailedException.getMessage());
                 if (log.isDebugEnabled()) {
@@ -85,8 +85,7 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
     }
 
     private static @NotNull ADSAdapterConfig tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         final LegacyADSAdapterConfig legacyAdsAdapterConfig =
                 objectMapper.convertValue(config, LegacyADSAdapterConfig.class);
 

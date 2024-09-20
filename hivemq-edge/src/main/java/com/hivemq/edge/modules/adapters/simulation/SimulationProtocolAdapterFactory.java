@@ -61,7 +61,7 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } catch (final Exception currentConfigFailedException) {
             try {
-                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'",
+                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
                         SimulationProtocolAdapterInformation.INSTANCE.getDisplayName(),
                         currentConfigFailedException.getMessage());
                 if (log.isDebugEnabled()) {
