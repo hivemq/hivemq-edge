@@ -164,6 +164,7 @@ export const PrivateMqttClientProvider: FC<PropsWithChildren> = ({ children }) =
       const worker = setupWorker(...createHandlersWithMQTTClient(onSampling))
       worker.start({ onUnhandledRequest: 'bypass' }).then(() => worker.listHandlers())
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [client])
 
   const value: PrivateMqttClientType = {
