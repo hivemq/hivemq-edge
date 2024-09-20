@@ -1,7 +1,9 @@
 import { FC, PropsWithChildren, useCallback, useEffect, useRef, useState } from 'react'
+import { setupWorker } from 'msw/browser'
 import mqtt, { ErrorWithReasonCode, MqttClient } from 'mqtt'
 import debug from 'debug'
 
+import { createHandlersWithMQTTClient } from '@/__test-utils__/msw/handlers.ts'
 import { MqttClientStatus, MQTTSample, PrivateMqttClientType } from '@/hooks/usePrivateMqttClient/type.ts'
 import { PRIVATE_MQTT_CLIENT, SAMPLING_DURATION } from '@/hooks/usePrivateMqttClient/mqtt-client.utils.ts'
 import { PrivateMqttClientContext } from '@/hooks/usePrivateMqttClient/PrivateMqttClientContext'
@@ -154,6 +156,15 @@ export const PrivateMqttClientProvider: FC<PropsWithChildren> = ({ children }) =
     },
     [client, connectStatus, mqttSubscribe, mqttUnsubscribe, samplesLockedRef]
   )
+
+  useEffect(() => {
+    if (!client) return
+
+    if (import.meta.env.VITE_FLAG_MOCK_SERVER === 'true') {
+      const worker = setupWorker(...createHandlersWithMQTTClient(onSampling))
+      worker.start({ onUnhandledRequest: 'bypass' }).then(() => worker.listHandlers())
+    }
+  }, [client])
 
   const value: PrivateMqttClientType = {
     state: { client, connectStatus, samples, error },
