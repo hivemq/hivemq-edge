@@ -147,6 +147,20 @@ export const MOCK_MQTT_SCHEMA_PLAIN: RJSFSchema = {
       title: 'Telephone',
       minLength: 10,
     },
+    nestedObject: {
+      type: 'object',
+      title: 'NestedObject',
+      properties: {
+        name: {
+          type: 'string',
+          default: 'Default name',
+        },
+        age: {
+          type: 'integer',
+          title: 'Age',
+        },
+      },
+    },
     listOfStrings: {
       type: 'array',
       title: 'A list of strings',
