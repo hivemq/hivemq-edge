@@ -878,6 +878,7 @@
                                                             </xs:restriction>
                                                         </xs:simpleType>
                                                     </xs:element>
+                                                    <xs:element name="queue-limit" type="xs:int" minOccurs="0"/>
                                                     <xs:element name="preserve-retain" type="xs:boolean" minOccurs="0"/>
                                                     <xs:element name="destination" type="nonEmptyString" minOccurs="0"/>
                                                     <xs:element name="custom-user-properties" minOccurs="0">
