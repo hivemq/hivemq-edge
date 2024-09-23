@@ -1,4 +1,5 @@
 import DataModelSources from './DataModelSources.tsx'
+import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
   return <h2>{children}</h2>
@@ -10,44 +11,16 @@ describe('DataModelSources', () => {
   })
 
   it('should render properly', () => {
-    cy.mountWithProviders(<DataModelSources topics={['sssss']} />)
+    cy.intercept('/api/v1/management/domain/topics/schema?*', { test: GENERATE_DATA_MODELS(false, 'test') }).as(
+      'getSchema'
+    )
+    cy.mountWithProviders(<DataModelSources topics={['test']} />)
     cy.get('h3').should('have.text', 'Sources')
     // loading
     cy.getByTestId('loading-spinner').should('be.visible')
     cy.getByTestId('loading-spinner').should('not.exist')
 
-    // TODO[NVL] Cannot test MQTTClient. Need a better mock handling
-    // cy.get('[role=list]').find('li').as('properties')
-    // cy.get('@properties').should('have.length', 13)
-    //
-    // cy.get('@properties')
-    //   .eq(0)
-    //   .should('have.text', 'firstName')
-    //   .should('have.attr', 'data-type', 'string')
-    //   .should('have.attr', 'draggable', 'true')
-    //
-    // cy.get('@properties')
-    //   .eq(2)
-    //   .should('have.text', 'age')
-    //   .should('have.attr', 'data-type', 'integer')
-    //   .should('have.attr', 'draggable', 'true')
-    //
-    // cy.get('@properties')
-    //   .eq(6)
-    //   .should('have.text', 'listOfStrings')
-    //   .should('have.attr', 'data-type', 'array')
-    //   .should('have.attr', 'draggable', 'true')
-    //
-    // cy.get('@properties')
-    //   .eq(7)
-    //   .should('have.text', '___index')
-    //   .should('have.attr', 'data-type', 'string')
-    //   .should('have.attr', 'data-path', 'listOfStrings.___index')
-    //   .should('have.attr', 'draggable', 'true')
-
-    cy.get('[role="alert"]')
-      .should('have.attr', 'data-status', 'error')
-      .should('have.text', 'No sample could be observed for the topic filter #')
+    cy.get('[role=list]').find('li').as('properties')
   })
 
   it('should be accessible ', () => {
