@@ -11,5 +11,6 @@ export const useGetClientTopicSamples = (queryTime?: number) => {
     // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryKey: [QUERY_KEYS.CLIENTS, QUERY_KEYS.DISCOVERY_TOPICS],
     queryFn: () => appClient.client.getClientTopics(queryTime),
+    enabled: false,
   })
 }
