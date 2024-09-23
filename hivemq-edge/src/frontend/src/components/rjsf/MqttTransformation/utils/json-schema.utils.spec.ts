@@ -5,8 +5,8 @@ import {
   payloadToSchema,
   reducerSchemaExamples,
 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { MOCK_MQTT_SCHEMA_PLAIN, MOCK_MQTT_SCHEMA_REFS } from '@/api/hooks/useTopicOntology/__handlers__'
 import { RJSFSchema } from '@rjsf/utils'
+import { MOCK_MQTT_SCHEMA_PLAIN, MOCK_MQTT_SCHEMA_REFS } from '@/__test-utils__/rjsf/schema.mocks.ts'
 
 describe('getPropertyListFrom', () => {
   it('should return an empty list of properties', async () => {
