@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Button, Card, CardBody, CardHeader, CardProps, Heading, HStack, VStack } from '@chakra-ui/react'
 import { LuWand } from 'react-icons/lu'
 
-import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSubscriptionSchemas.tsx'
+import { useGetTagSchemas } from '@/api/hooks/useDomainModel/useGetTagSchemas.ts'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
@@ -18,7 +18,8 @@ interface MappingEditorProps extends Omit<CardProps, 'onChange'> {
 
 const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = false, mapping, onChange, ...props }) => {
   const { t } = useTranslation('components')
-  const { data, isLoading } = useGetSubscriptionSchemas(topic as string, topic ? 'destination' : undefined)
+  const { data, isLoading } = useGetTagSchemas([topic])
+
   const properties = data ? getPropertyListFrom(data) : []
 
   return (

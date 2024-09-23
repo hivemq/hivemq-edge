@@ -5,7 +5,7 @@ import { LuLoader } from 'react-icons/lu'
 
 import type { ClientFilter } from '@/api/__generated__'
 import { MOCK_CLIENT_STUB } from '@/api/hooks/useClientSubscriptions/__handlers__'
-import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSubscriptionSchemas.tsx'
+import { useGetTopicSchemas } from '@/api/hooks/useDomainModel/useGetTopicSchemas.ts'
 import { useListClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useListClientSubscriptions.ts'
 import { useCreateClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useCreateClientSubscriptions.ts'
 import { useUpdateClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useUpdateClientSubscriptions.ts'
@@ -20,7 +20,7 @@ interface MetadataExplorerProps {
 
 const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, error } = useGetSubscriptionSchemas(topic, 'source')
+  const { data, isLoading, isError, error } = useGetTopicSchemas([topic])
   const { data: allClients, isLoading: isClientLoading } = useListClientSubscriptions()
   const createClient = useCreateClientSubscriptions()
   const updateClient = useUpdateClientSubscriptions()
@@ -52,7 +52,7 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
     /**
      * @deprecated This is a mock, replace with topic filter (https://hivemq.kanbanize.com/ctrl_board/57/cards/25280/details/)
      */
-    const isWildcard = topic.startsWith(`/${MOCK_CLIENT_STUB}/`)
+    const isWildcard = topic.startsWith(`${MOCK_CLIENT_STUB}/`)
     if (!isWildcard) return false
 
     /**

@@ -6,9 +6,9 @@ import { RxReload } from 'react-icons/rx'
 
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
-import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSubscriptionSchemas.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import { useGetTopicSchemas } from '@/api/hooks/useDomainModel/useGetTopicSchemas.ts'
 
 interface DataModelSourcesProps extends CardProps {
   topics: string[]
@@ -16,7 +16,7 @@ interface DataModelSourcesProps extends CardProps {
 
 const DataModelSources: FC<DataModelSourcesProps> = ({ topics, ...props }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, error } = useGetSubscriptionSchemas(topics, topics ? 'source' : undefined)
+  const { data, isLoading, isError, error } = useGetTopicSchemas(topics)
 
   const structuredSchema = useMemo(() => {
     return Object.keys(data || {}).reduce<JSONSchema7[]>((acc, schemaId) => {
