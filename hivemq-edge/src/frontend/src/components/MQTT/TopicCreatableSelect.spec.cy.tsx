@@ -3,6 +3,7 @@
 import { MultiTopicsCreatableSelect, SingleTopicCreatableSelect } from './TopicCreatableSelect.tsx'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { mockClientSubscription } from '@/api/hooks/useClientSubscriptions/__handlers__'
 
 const MOCK_ID = 'my-id'
 
@@ -67,6 +68,7 @@ describe('MultiTopicsCreatableSelect', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [] }).as('getConfig1')
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [] }).as('getConfig2')
     cy.intercept('/api/v1/management/bridges', { items: [] }).as('getConfig3')
+    cy.intercept('/api/v1/management/client/filters', [])
 
     cy.mountWithProviders(<MultiTopicsCreatableSelect id={MOCK_ID} value={[]} onChange={cy.stub()} />)
 
@@ -80,6 +82,7 @@ describe('MultiTopicsCreatableSelect', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getConfig1')
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getConfig2')
     cy.intercept('/api/v1/management/bridges', { items: [mockBridge] }).as('getConfig3')
+    cy.intercept('/api/v1/management/client/filters', [mockClientSubscription])
 
     cy.mountWithProviders(<MultiTopicsCreatableSelect id={MOCK_ID} value={[]} onChange={mockOnChange} />)
     cy.wait(['@getConfig1', '@getConfig2', '@getConfig3'])
@@ -102,6 +105,7 @@ describe('MultiTopicsCreatableSelect', () => {
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getConfig1')
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getConfig2')
     cy.intercept('/api/v1/management/bridges', { items: [mockBridge] }).as('getConfig3')
+    cy.intercept('/api/v1/management/client/filters', [mockClientSubscription])
 
     cy.mountWithProviders(<MultiTopicsCreatableSelect id={MOCK_ID} value={['old topic']} onChange={mockOnChange} />)
     cy.wait(['@getConfig1', '@getConfig2', '@getConfig3'])
