@@ -2,10 +2,10 @@
 apache-commonsIO = "2.17.0"
 assertj = "3.26.3"
 hivemq-edge-adapterSdk = "2024.5"
-jackson = "2.17.1"
+jackson = "2.17.2"
 junit-jupiter = "5.11.0"
 mockito = "5.13.0"
-slf4j = "2.0.13"
+slf4j = "2.0.16"
 
 [libraries]
 apache-commonsIO = { module = "commons-io:commons-io", version.ref = "apache-commonsIO" }
