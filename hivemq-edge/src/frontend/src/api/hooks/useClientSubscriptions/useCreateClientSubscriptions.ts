@@ -18,7 +18,7 @@ export const useCreateClientSubscriptions = () => {
      * @deprecated This is a mock, missing persistence from backend (https://hivemq.kanbanize.com/ctrl_board/57/cards/25322/details/)
      */
     onError: (_, data) => {
-      console.log('XXXXXX eer')
+      /* istanbul ignore next -- @preserve */
       queryClient.setQueryData<ClientFilterList>([QUERY_KEYS.CLIENTS], (old) => {
         return Array.from(new Set([data, ...(old || [])]))
       })

@@ -18,6 +18,7 @@ export const useUpdateClientSubscriptions = () => {
      * @deprecated This is a mock, missing persistence from backend (https://hivemq.kanbanize.com/ctrl_board/57/cards/25322/details/)
      */
     onError: (_, data) => {
+      /* istanbul ignore next -- @preserve */
       queryClient.setQueryData<ClientFilterList>([QUERY_KEYS.CLIENTS], (old) => {
         const index = old?.findIndex((client) => client.id === data.id)
         if (index !== undefined && old) {

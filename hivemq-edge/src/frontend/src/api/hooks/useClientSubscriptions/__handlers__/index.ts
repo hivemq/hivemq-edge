@@ -34,6 +34,14 @@ export const handlers = [
     return HttpResponse.json({}, { status: 200 })
   }),
 
+  http.delete('*/management/client/filters/:clientFilterId', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
+
+  http.put('*/management/client/filters/:clientFilterId', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
+
   http.get('**/management/client/topic-samples', async ({ request }) => {
     const url = new URL(request.url)
     const queryTime = Number(url.searchParams.get('queryTime'))
