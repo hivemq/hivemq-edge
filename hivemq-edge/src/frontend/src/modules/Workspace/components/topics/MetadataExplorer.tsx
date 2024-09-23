@@ -77,6 +77,9 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
       <CardBody>
         {isLoading && <LoaderSpinner />}
         {isError && error && <ErrorMessage message={error.message} />}
+        {!isLoading && !isError && !schema && (
+          <ErrorMessage message={t('domainMapping.error.noSampleForTopic', { topicFilter: topic })} />
+        )}
         {schema && (
           <>
             {isClientReady && (
