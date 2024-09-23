@@ -17,6 +17,11 @@ describe('useGetClientTopicSamples', () => {
     const { result } = renderHook(() => useGetClientTopicSamples(), { wrapper })
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
+    })
+
+    await waitFor(() => {
+      result.current.refetch()
+      expect(result.current.isLoading).toBeFalsy()
       expect(result.current.isSuccess).toBeTruthy()
     })
     expect(result.current.data).toStrictEqual<ClientTopicList>({
