@@ -259,7 +259,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
 
             @Override
             public void onSessionActive(final @NotNull UaSession session) {
-                log.info("Connected: {}", session);
+                log.info("OpcUa client connected: {}", session);
                 protocolAdapterState.setConnectionStatus(CONNECTED);
             }
         });
