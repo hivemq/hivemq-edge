@@ -246,7 +246,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         opcUaClient = OpcUaClient.create(adapterConfig.getUri(),
                 new OpcUaEndpointFilter(configPolicyUri, adapterConfig),
                 new OpcUaClientConfigurator(adapterConfig));
-
         //Decoding a struct with custom DataType requires a DataTypeManager, so we register one that updates each time a session is activated.
         opcUaClient.addSessionInitializer(new DataTypeDictionarySessionInitializer(new GenericBsdParser()));
 
