@@ -253,7 +253,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
         opcUaClient.addSessionActivityListener(new SessionActivityListener() {
             @Override
             public void onSessionInactive(final @NotNull UaSession session) {
-                log.info("Disconnected: {}", session);
+                log.info("OpcUa client disconnected: {}", session);
                 protocolAdapterState.setConnectionStatus(DISCONNECTED);
             }
 
