@@ -3932,6 +3932,8 @@ paths:
                 items:
                   type: string
           description: Success
+        "401":
+          $ref: '#/components/responses/Unauthorized'
       summary: Get all domain tags
       tags:
         - Domain
@@ -3955,6 +3957,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/TagSchemaList'
           description: Success
+        "401":
+          $ref: '#/components/responses/Unauthorized'
       summary: Get data schemas
       tags:
         - Domain
@@ -3971,6 +3975,8 @@ paths:
                 items:
                   type: string
           description: Success
+        "401":
+          $ref: '#/components/responses/Unauthorized'
       summary: Get all topic tags
       tags:
         - Domain
@@ -3994,6 +4000,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/TagSchemaList'
           description: Success
+        "401":
+          $ref: '#/components/responses/Unauthorized'
       summary: Get data schemas
       tags:
         - Domain
@@ -4024,6 +4032,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientTopicList'
           description: Success
+        "401":
+          $ref: '#/components/responses/Unauthorized'
       summary: Get a sample of MQTT topics
       tags:
         - Client
@@ -4038,6 +4048,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientFilterList'
           description: Success
+        "401":
+          $ref: '#/components/responses/Unauthorized'
       summary: Get a list of MQTT client filters
       tags:
         - Client
@@ -4054,6 +4066,8 @@ paths:
       responses:
         "200":
           description: Success
+        "401":
+          $ref: '#/components/responses/Unauthorized'
       summary: Add a client filter
       tags:
         - Client
@@ -4075,6 +4089,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClientFilter'
           description: Success
+        "401":
+          $ref: '#/components/responses/Unauthorized'
       summary: Get a MQTT client filter
       tags:
         - Client
@@ -4112,6 +4128,8 @@ paths:
       responses:
         "200":
           description: Success
+        "401":
+          $ref: '#/components/responses/Unauthorized'
       summary: Update a client filter
       tags:
         - Client
