@@ -24,7 +24,6 @@ import java.util.List;
 
 public class DomainTagList extends ItemsResponse<DomainTag> {
 
-
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagList(
             @JsonProperty("items") final @NotNull List<DomainTag> items) {
