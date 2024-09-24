@@ -264,7 +264,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
             }
         });
         opcUaClient.addFaultListener(serviceFault -> {
-            log.warn("Service fault detected: {}", serviceFault);
+            log.warn("OpcUa service fault detected: {}", serviceFault);
             moduleServices.eventService()
                     .createAdapterEvent(adapterConfig.getId(), adapterInformation.getProtocolId())
                     .withSeverity(Event.SEVERITY.ERROR)
