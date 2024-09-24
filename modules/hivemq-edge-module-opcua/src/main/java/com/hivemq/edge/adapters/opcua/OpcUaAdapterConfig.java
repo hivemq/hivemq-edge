@@ -467,6 +467,4 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
             return securityPolicy;
         }
     }
-
-
 }
