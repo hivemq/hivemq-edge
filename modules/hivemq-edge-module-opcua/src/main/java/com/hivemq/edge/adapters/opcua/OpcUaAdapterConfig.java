@@ -127,6 +127,10 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
         return overrideUri;
     }
 
+    public void setOverrideUri(final @NotNull Boolean overrideUri) {
+        this.overrideUri = overrideUri;
+    }
+
     @Override
     public @NotNull String toString() {
         return "OpcUaAdapterConfig{" +
@@ -136,10 +140,16 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
                 ", uri='" +
                 uri +
                 '\'' +
+                ", overrideUri=" +
+                overrideUri +
                 ", subscriptions=" +
                 subscriptions +
                 ", auth=" +
                 auth +
+                ", tls=" +
+                tls +
+                ", security=" +
+                security +
                 '}';
     }
 
@@ -457,4 +467,6 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
             return securityPolicy;
         }
     }
+
+
 }

@@ -248,8 +248,8 @@ public class ProtocolAdapterManager {
                         .withMessage(String.format("Adapter '%s' started OK.", protocolAdapterWrapper.getId()))
                         .fire();
 
-                if (log.isTraceEnabled()) {
-                    log.trace("Protocol-adapter '{}' started.", protocolAdapterWrapper.getId());
+                if (log.isInfoEnabled()) {
+                    log.info("Protocol-adapter '{}' started.", protocolAdapterWrapper.getId());
                 }
                 HiveMQEdgeRemoteEvent adapterCreatedEvent =
                         new HiveMQEdgeRemoteEvent(HiveMQEdgeRemoteEvent.EVENT_TYPE.ADAPTER_STARTED);
@@ -301,9 +301,11 @@ public class ProtocolAdapterManager {
             final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
             stopFuture = adapterStopOutput.getOutputFuture();
             protocolAdapter.stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
-        } stopFuture.thenApply(input -> {
-            if (log.isTraceEnabled()) {
-                log.trace("Protocol-adapter '{}' stopped.", protocolAdapter.getId());
+        }
+
+        stopFuture.thenApply(input -> {
+            if (log.isInfoEnabled()) {
+                log.info("Protocol-adapter '{}' stopped.", protocolAdapter.getId());
             }
             protocolAdapter.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
             eventService.createAdapterEvent(protocolAdapter.getId(),
