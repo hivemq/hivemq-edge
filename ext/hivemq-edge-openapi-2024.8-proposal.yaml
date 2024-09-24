@@ -3953,7 +3953,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TagSchema'
+                $ref: '#/components/schemas/TagSchemaList'
           description: Success
       summary: Get data schemas
       tags:
@@ -3992,7 +3992,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TagSchema'
+                $ref: '#/components/schemas/TagSchemaList'
           description: Success
       summary: Get data schemas
       tags:
@@ -4614,10 +4614,6 @@ components:
       required:
         - arguments
         - type
-    DeviceDataPoint:
-      ### TODO We need to name that entity
-      type: object
-      description: A data point on a device connected to the adapter
     DomainTag:
       type: object
       description: A tag associated with a data point on a device connected to the adapter
@@ -4626,10 +4622,15 @@ components:
           type: string
           description: The Tag associated with the data-point.
         dataPoint:
-          $ref: '#/components/schemas/DeviceDataPoint'
+          $ref: '#/components/schemas/DomainTagAddress'
       required:
         - tag
         - dataPoint
+    DomainTagAddress:
+      ### TODO We need to name that entity
+      type: object
+      description: A data point on a device connected to the adapter
+      additionalProperties: true
     DomainTagList:
       type: object
       properties:
@@ -5451,6 +5452,16 @@ components:
     TagSchema:
       type: object
       description: The JSON-Schema specification of a data point
+      additionalProperties: true
+    TagSchemaList:
+      type: array
+      items:
+        type: object
+        properties:
+          tag:
+            type: string
+          schema:
+            $ref: '#/components/schemas/TagSchema'
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge
