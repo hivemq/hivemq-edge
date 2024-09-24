@@ -299,7 +299,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
                             adapterFactories));
             return resultFuture;
         } catch (final Exception e) {
-            log.error("Subscribing nodeId={} failed: {}", subscription.getNode(), e.getMessage(), e);
+            log.error("OpcUa subscribing nodeId={} failed: {}", subscription.getNode(), e.getMessage(), e);
             return CompletableFuture.failedFuture(e);
         }
     }
