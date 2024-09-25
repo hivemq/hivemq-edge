@@ -25,6 +25,7 @@ import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
@@ -119,14 +120,20 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
                                         item.getReadValueId().getNodeId());
                             }
                         } else {
-                            log.warn("OPC-UA subscription failed for nodeId={} (status={})",
+                            String[] descriptions = StatusCodes
+                                    .lookup(item.getStatusCode().getValue())
+                                    .orElse(new String[]{"no further description"});
+
+                            log.warn("OPC-UA subscription failed for nodeId={} (status={}): {}",
                                     item.getReadValueId().getNodeId(),
-                                    item.getStatusCode());
+                                    item.getStatusCode(),
+                                    descriptions);
+
                             throw new OpcUaException("OPC-UA subscription failed for nodeId `" +
                                     item.getReadValueId().getNodeId() +
                                     "` (status '" +
                                     item.getStatusCode() +
-                                    "')");
+                                    "'): " + descriptions);
                         }
                     }
                     resultFuture.complete(null);
