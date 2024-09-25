@@ -113,27 +113,28 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
 
         uaSubscription.createMonitoredItems(TimestampsToReturn.Both, List.of(request), onItemCreated)
                 .thenAccept(items -> {
-                    for (UaMonitoredItem item : items) {
+                    for (final UaMonitoredItem item : items) {
                         if (item.getStatusCode().isGood()) {
                             if (log.isDebugEnabled()) {
                                 log.debug("OPC-UA subscription created for nodeId={}",
                                         item.getReadValueId().getNodeId());
                             }
                         } else {
-                            String[] descriptions = StatusCodes
+                            final String descriptions = StatusCodes
                                     .lookup(item.getStatusCode().getValue())
-                                    .orElse(new String[]{"no further description"});
+                                    .map(descriptionArray -> String.join(",", descriptionArray))
+                                    .orElse("no further description");
 
-                            log.warn("OPC-UA subscription failed for nodeId={} (status={}): {}",
+                            log.warn("OPC-UA subscription failed for nodeId '{}': {} (status={})",
                                     item.getReadValueId().getNodeId(),
-                                    item.getStatusCode(),
-                                    descriptions);
+                                    descriptions,
+                                    item.getStatusCode());
 
                             throw new OpcUaException("OPC-UA subscription failed for nodeId `" +
                                     item.getReadValueId().getNodeId() +
-                                    "` (status '" +
+                                    "`: " + descriptions +" (status '" +
                                     item.getStatusCode() +
-                                    "'): " + descriptions);
+                                    "')");
                         }
                     }
                     resultFuture.complete(null);
