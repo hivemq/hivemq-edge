@@ -25,6 +25,7 @@ import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
+import org.eclipse.milo.opcua.stack.core.StatusCodes;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
@@ -112,19 +113,26 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
 
         uaSubscription.createMonitoredItems(TimestampsToReturn.Both, List.of(request), onItemCreated)
                 .thenAccept(items -> {
-                    for (UaMonitoredItem item : items) {
+                    for (final UaMonitoredItem item : items) {
                         if (item.getStatusCode().isGood()) {
                             if (log.isDebugEnabled()) {
                                 log.debug("OPC-UA subscription created for nodeId={}",
                                         item.getReadValueId().getNodeId());
                             }
                         } else {
-                            log.warn("OPC-UA subscription failed for nodeId={} (status={})",
+                            final String descriptions = StatusCodes
+                                    .lookup(item.getStatusCode().getValue())
+                                    .map(descriptionArray -> String.join(",", descriptionArray))
+                                    .orElse("no further description");
+
+                            log.warn("OPC-UA subscription failed for nodeId '{}': {} (status={})",
                                     item.getReadValueId().getNodeId(),
+                                    descriptions,
                                     item.getStatusCode());
+
                             throw new OpcUaException("OPC-UA subscription failed for nodeId `" +
                                     item.getReadValueId().getNodeId() +
-                                    "` (status '" +
+                                    "`: " + descriptions +" (status '" +
                                     item.getStatusCode() +
                                     "')");
                         }
