@@ -40,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -113,7 +112,7 @@ public class ProtocolAdapterApiUtils {
                 null,
                 info.getAuthor(),
                 true,
-                getCapabilities(info),
+                getCapabilities(adapterManager, info),
                 convertApiCategory(info.getCategory()),
                 info.getTags() == null ?
                         null :
@@ -124,7 +123,8 @@ public class ProtocolAdapterApiUtils {
 
     @VisibleForTesting
     protected static @NotNull JsonNode getUiSchemaForAdapter(
-            @NotNull ObjectMapper objectMapper, @NotNull ProtocolAdapterInformation info) {
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull ProtocolAdapterInformation info) {
         final String uiSchemaAsString = info.getUiSchema();
         if (uiSchemaAsString != null) {
             try {
@@ -146,10 +146,16 @@ public class ProtocolAdapterApiUtils {
         }
     }
 
-    private static @NotNull Set<ProtocolAdapter.Capability> getCapabilities(final @NotNull ProtocolAdapterInformation info) {
-        Set<ProtocolAdapter.Capability> capabilities = new HashSet<>();
+    private static @NotNull Set<ProtocolAdapter.Capability> getCapabilities(
+            final @NotNull ProtocolAdapterManager adapterManager, final @NotNull ProtocolAdapterInformation info) {
+        final Set<ProtocolAdapter.Capability> capabilities = new HashSet<>();
         for (final ProtocolAdapterCapability capability : info.getCapabilities()) {
-            capabilities.add(ProtocolAdapter.Capability.from(capability));
+            if (capability == ProtocolAdapterCapability.WRITE && adapterManager.writingEnabled()) {
+                capabilities.add(ProtocolAdapter.Capability.from(capability));
+            }
+            if (capability != ProtocolAdapterCapability.WRITE) {
+                capabilities.add(ProtocolAdapter.Capability.from(capability));
+            }
         }
         return capabilities;
     }
@@ -165,8 +171,8 @@ public class ProtocolAdapterApiUtils {
         Preconditions.checkNotNull(module);
         Preconditions.checkNotNull(configurationService);
         String logoUrl = module.getLogoUrl() == null ? null : module.getLogoUrl().getUrl();
-        String documentationUrl = module.getDocumentationLink() == null ? null : module.getDocumentationLink().getUrl();
-        String provisioningUrl = module.getProvisioningLink() == null ? null : module.getProvisioningLink().getUrl();
+        final String documentationUrl = module.getDocumentationLink() == null ? null : module.getDocumentationLink().getUrl();
+        final String provisioningUrl = module.getProvisioningLink() == null ? null : module.getProvisioningLink().getUrl();
         if (logoUrl != null) {
             logoUrl = logoUrl.startsWith("/") ? "/module" + logoUrl : "/module/" + logoUrl;
             logoUrl = applyAbsoluteServerAddressInDeveloperMode(logoUrl, configurationService);

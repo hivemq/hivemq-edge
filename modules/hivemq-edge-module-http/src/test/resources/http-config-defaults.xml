@@ -16,19 +16,27 @@
     limitations under the License.
 
 -->
-<hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<hivemq>
     <protocol-adapters>
         <http>
-            <url>http://192.168.0.02:777/?asdasd=asdasd</url>
             <id>my-protocol-adapter</id>
             <httpToMqtt>
                 <httpToMqttMappings>
                     <httpToMqttMapping>
+                        <url>http://192.168.0.02:777/?asdasd=asdasd</url>
                         <mqttTopic>my/destination</mqttTopic>
                         <mqttQos>1</mqttQos>
                     </httpToMqttMapping>
                 </httpToMqttMappings>
             </httpToMqtt>
+            <mqttToHttp>
+                <mqttToHttpMappings>
+                    <mqttToHttpMapping>
+                        <url>http://192.168.0.02:777/?asdasd=asdasd</url>
+                        <mqttTopicFilter>my/#</mqttTopicFilter>
+                    </mqttToHttpMapping>
+                </mqttToHttpMappings>
+            </mqttToHttp>
         </http>
     </protocol-adapters>
 </hivemq>

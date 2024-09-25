@@ -7,7 +7,7 @@
     </envs>
     <option name="MAIN_CLASS_NAME" value="com.hivemq.HiveMQEdgeMain" />
     <module name="com.hivemq.hivemq-edge.main" />
-      <option name="VM_PARAMETERS" value="-Djava.net.preferIPv4Stack=true -Duser.language=en -Duser.region=US -Dhivemq.home=hivemq-edge/src/distribution -Dhivemq.edge.config.xml=developer-config.xml -Dhivemq.edge.workspace.modules=true -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -noverify --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED --add-exports java.base/jdk.internal.misc=ALL-UNNAMED -Xmx64M" />
+      <option name="VM_PARAMETERS" value="-Djava.net.preferIPv4Stack=true -Duser.language=en -Duser.region=US -Dhivemq.home=hivemq-edge/src/distribution -Dhivemq.edge.config.xml=developer-config.xml -Dhivemq.edge.workspace.modules=true -Dhivemq.edge.workspace.commercial-modules=true -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -noverify --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.nio=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED --add-exports java.base/jdk.internal.misc=ALL-UNNAMED -Xmx64M" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="com.hivemq.*" />

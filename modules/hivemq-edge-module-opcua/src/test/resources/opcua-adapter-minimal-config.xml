@@ -28,6 +28,14 @@
                     </opcuaToMqttMapping>
                 </opcuaToMqttMappings>
             </opcuaToMqtt>
+            <mqttToOpcua>
+                <mqttToOpcuaMappings>
+                    <mqttToOpcuaMapping>
+                        <node>ns=1;i=1004</node>
+                        <mqttTopicFilter>test/blubb/#</mqttTopicFilter>
+                    </mqttToOpcuaMapping>
+                </mqttToOpcuaMappings>
+            </mqttToOpcua>
         </opcua>
     </protocol-adapters>
 </hivemq>

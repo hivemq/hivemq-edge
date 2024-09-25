@@ -26,7 +26,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
  */
 public interface ProtocolAdapterPollingService {
 
-    void schedulePolling(@NotNull ProtocolAdapter adapter, @NotNull ProtocolAdapterPollingSampler input);
+    void schedulePolling(@NotNull ProtocolAdapterPollingSampler input);
 
     void stopPollingForAdapterInstance(@NotNull ProtocolAdapter adapter);
 }

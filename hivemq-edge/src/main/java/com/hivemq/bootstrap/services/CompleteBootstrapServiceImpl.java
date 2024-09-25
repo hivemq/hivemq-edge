@@ -16,6 +16,7 @@
 package com.hivemq.bootstrap.services;
 
 import com.codahale.metrics.MetricRegistry;
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.bootstrap.ioc.Persistences;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.HivemqId;
@@ -36,6 +37,7 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
     private final @NotNull Persistences persistences;
     private final @NotNull RestComponentsService restComponentsService;
     private final @NotNull HandlerService handlerService;
+    private final @NotNull EventService eventService;
     private final @NotNull PersistenceBootstrapService delegate;
 
     @Inject
@@ -43,11 +45,13 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
             final @NotNull PersistenceBootstrapService delegate,
             final @NotNull Persistences persistences,
             final @NotNull RestComponentsService restComponentsService,
-            final @NotNull HandlerService handlerService) {
+            final @NotNull HandlerService handlerService,
+            final @NotNull EventService eventService) {
         this.delegate = delegate;
         this.persistences = persistences;
         this.restComponentsService = restComponentsService;
         this.handlerService = handlerService;
+        this.eventService = eventService;
     }
 
     @Override
@@ -100,14 +104,14 @@ public class CompleteBootstrapServiceImpl implements CompleteBootstrapService {
         return handlerService;
     }
 
-    public static @NotNull CompleteBootstrapService decorate(
-            final @NotNull PersistenceBootstrapService persistenceBootstrapService,
-            final @NotNull Persistences persistences,
-            final @NotNull RestComponentsService restComponentsService,
-            final @NotNull HandlerService handlerService) {
-        return new CompleteBootstrapServiceImpl(persistenceBootstrapService,
-                persistences,
-                restComponentsService,
-                handlerService);
+    @Override
+    public @NotNull EventService eventService() {
+        return eventService;
     }
+
+    @Override
+    public @NotNull EdgeCoreFactoryService edgeCoreFactoryService() {
+        return delegate.edgeCoreFactoryService();
+    }
+
 }

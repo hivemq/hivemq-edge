@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
@@ -35,6 +36,12 @@ import java.util.stream.Collectors;
 public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<ModbusAdapterConfig> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ModbusProtocolAdapterFactory.class);
+
+    final boolean writingEnabled;
+
+    public ModbusProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
+    }
 
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
@@ -54,7 +61,7 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
     }
 
     @Override
-    public @NotNull ModbusAdapterConfig convertConfigObject(
+    public @NotNull ProtocolAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config) {
         try {

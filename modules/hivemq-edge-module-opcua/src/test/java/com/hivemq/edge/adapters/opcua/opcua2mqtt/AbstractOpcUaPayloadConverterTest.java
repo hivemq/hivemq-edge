@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.opcua.payload;
+package com.hivemq.edge.adapters.opcua.opcua2mqtt;
 
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
@@ -29,8 +29,8 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.PayloadMode;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;

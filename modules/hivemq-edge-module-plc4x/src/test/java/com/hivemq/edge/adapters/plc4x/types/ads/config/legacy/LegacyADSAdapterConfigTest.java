@@ -52,9 +52,9 @@ class LegacyADSAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory();
+        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory(false);
         final ADSAdapterConfig config =
-                adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
+                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
 
         assertThat(config.getId()).isEqualTo("asd");
         assertThat(config.getHost()).isEqualTo("172.16.10.54");
@@ -93,9 +93,9 @@ class LegacyADSAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory();
+        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory(false);
         final ADSAdapterConfig config =
-                adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
+                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
 
         assertThat(config.getId()).isEqualTo("my-ads-id");
         assertThat(config.getPort()).isEqualTo(48898);

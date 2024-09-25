@@ -49,9 +49,9 @@ class LegacyFileAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final FileProtocolAdapterFactory fileProtocolAdapterFactory = new FileProtocolAdapterFactory();
+        final FileProtocolAdapterFactory fileProtocolAdapterFactory = new FileProtocolAdapterFactory(false);
         final FileAdapterConfig config =
-                fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
+                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -99,9 +99,9 @@ class LegacyFileAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final FileProtocolAdapterFactory fileProtocolAdapterFactory = new FileProtocolAdapterFactory();
+        final FileProtocolAdapterFactory fileProtocolAdapterFactory = new FileProtocolAdapterFactory(false);
         final FileAdapterConfig config =
-                fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
+                (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
 
         assertThat(config.getId()).isEqualTo("my-file-protocol-adapter");
         assertThat(config.getFileToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);

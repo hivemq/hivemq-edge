@@ -15,11 +15,16 @@
  */
 package com.hivemq.edge.adapters.opcua.config;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNullElse;
 
@@ -60,26 +65,28 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
     @JsonProperty("security")
     private final @NotNull Security security;
 
-    @JsonProperty(value = "opcuaToMqtt", required = true)
+    @JsonProperty(value = "opcuaToMqtt")
     @ModuleConfigField(title = "OpcUA To MQTT Config",
-                       description = "The configuration for a data stream from OpcUA to MQTT",
-                       required = true)
+                       description = "The configuration for a data stream from OpcUA to MQTT")
     private final @NotNull OpcUaToMqttConfig opcuaToMqttConfig;
 
+    @JsonCreator
     public OpcUaAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
             @JsonProperty(value = "uri", required = true) final @NotNull String uri,
             @JsonProperty("overrideUri") final @Nullable Boolean overrideUri,
             @JsonProperty("auth") final @Nullable Auth auth,
             @JsonProperty("tls") final @Nullable Tls tls,
-            @JsonProperty(value = "opcuaToMqtt", required = true) final @NotNull OpcUaToMqttConfig opcuaToMqttConfig,
+            @JsonProperty(value = "opcuaToMqtt") final @Nullable OpcUaToMqttConfig opcuaToMqttConfig,
             @JsonProperty("security") final @Nullable Security security) {
         this.id = id;
         this.uri = uri;
         this.overrideUri = requireNonNullElse(overrideUri, false);
         this.auth = requireNonNullElse(auth, new Auth(null, null));
         this.tls = requireNonNullElse(tls, new Tls(false, null, null));
-        this.opcuaToMqttConfig = opcuaToMqttConfig;
+        this.opcuaToMqttConfig =
+                Objects.requireNonNullElseGet(opcuaToMqttConfig, () -> new OpcUaToMqttConfig(List.of()));
+
         this.security = requireNonNullElse(security, new Security(SecPolicy.DEFAULT));
     }
 

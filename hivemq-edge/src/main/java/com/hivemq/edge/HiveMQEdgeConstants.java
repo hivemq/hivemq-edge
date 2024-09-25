@@ -22,6 +22,8 @@ public interface HiveMQEdgeConstants {
     String CLIENT_AGENT_PROPERTY_VALUE = "HiveMQ-Edge; %s";
 
     String DEVELOPMENT_MODE = "hivemq.edge.workspace.modules";
+    String COMMERCIAL_DEVELOPMENT_MODE = "hivemq.edge.workspace.commercial-modules";
+
     String CONFIG_FILE_NAME = "hivemq.edge.config.xml";
     String MUTABLE_CONFIGURAION_ENABLED = "mutable.configuration.enabled";
     String CONFIGURATION_EXPORT_ENABLED = "configuration.export.enabled";

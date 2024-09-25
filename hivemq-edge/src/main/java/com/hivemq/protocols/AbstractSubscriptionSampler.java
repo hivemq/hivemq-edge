@@ -27,6 +27,7 @@ import com.hivemq.adapter.sdk.api.data.JsonPayloadCreator;
 import com.hivemq.adapter.sdk.api.data.ProtocolAdapterDataSample;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
+import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.modules.adapters.metrics.ProtocolAdapterMetricsServiceImpl;
@@ -69,13 +70,11 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
     private volatile @Nullable ScheduledFuture<?> future;
 
     protected final @NotNull AtomicBoolean closed = new AtomicBoolean(false);
-    protected final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapter;
+    protected final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter<PollingContext>> protocolAdapter;
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
 
     public AbstractSubscriptionSampler(
-            final @NotNull ProtocolAdapterWrapper<? extends ProtocolAdapter> protocolAdapter,
-            final long protocolPollingIntervalMillis,
-            final int maxPollingErrorsBeforeRemoval,
+            final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter<PollingContext>> protocolAdapter,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
@@ -83,13 +82,13 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
         this.protocolAdapter = protocolAdapter;
         this.adapterId = protocolAdapter.getId();
-        this.initialDelay = Math.max(protocolPollingIntervalMillis, 100);
-        this.period = Math.max(protocolPollingIntervalMillis, 10);
+        this.initialDelay = Math.max(protocolAdapter.getAdapter().getPollingIntervalMillis(), 100);
+        this.period = Math.max(protocolAdapter.getAdapter().getPollingIntervalMillis(), 10);
         this.objectMapper = objectMapper;
         this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
-        this.maxErrorsBeforeRemoval = maxPollingErrorsBeforeRemoval;
+        this.maxErrorsBeforeRemoval = protocolAdapter.getAdapter().getMaxPollingErrorsBeforeRemoval();
         this.uuid = UUID.randomUUID();
         this.created = new Date();
         this.protocolAdapterMetricsService =
@@ -144,7 +143,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
                         .withTopic(pollingContext.getMqttTopic())
                         .withQoS(pollingContext.getMqttQos())
                         .withPayload(json)
-                        .withAdapter(protocolAdapter);
+                        .withAdapter(protocolAdapter.getAdapter());
                 final CompletableFuture<ProtocolPublishResult> publishFuture = publishBuilder.send();
                 publishFuture.thenAccept(publishReturnCode -> {
                     protocolAdapterMetricsService.incrementReadPublishSuccess();
@@ -175,7 +174,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     @Override
     public @NotNull ProtocolAdapter getAdapter() {
-        return protocolAdapter;
+        return protocolAdapter.getAdapter();
     }
 
     @Override

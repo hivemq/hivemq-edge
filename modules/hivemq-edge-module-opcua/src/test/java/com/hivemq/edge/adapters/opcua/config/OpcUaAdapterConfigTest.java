@@ -20,6 +20,10 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterFactory;
+import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaConfig;
+import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -49,9 +53,9 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final OpcUaProtocolAdapterFactory oopcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
-        final OpcUaAdapterConfig config =
-                oopcUaProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("opcua"));
+        final OpcUaProtocolAdapterFactory oopcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(true);
+        final BidirectionalOpcUaAdapterConfig config =
+                (BidirectionalOpcUaAdapterConfig) oopcUaProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("opcua"));
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -85,18 +89,29 @@ class OpcUaAdapterConfigTest {
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
         assertThat(config.getOpcuaToMqttConfig().getOpcuaToMqttMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
-            assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/#");
+            assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/a");
             assertThat(mapping.getQos()).isEqualTo(1);
             assertThat(mapping.getPublishingInterval()).isEqualTo(12);
             assertThat(mapping.getServerQueueSize()).isEqualTo(13);
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(15);
         }, mapping -> {
             assertThat(mapping.getNode()).isEqualTo("ns=2;i=1004");
-            assertThat(mapping.getMqttTopic()).isEqualTo("test/blubbb/#");
+            assertThat(mapping.getMqttTopic()).isEqualTo("test/blubbb/b");
             assertThat(mapping.getQos()).isEqualTo(2);
             assertThat(mapping.getPublishingInterval()).isEqualTo(13);
             assertThat(mapping.getServerQueueSize()).isEqualTo(14);
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(16);
+        });
+
+        assertThat(config.getMqttToOpcUaConfig()).isNotNull();
+        assertThat(config.getMqttToOpcUaConfig().getMappings()).satisfiesExactly(mapping -> {
+            assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
+            assertThat(mapping.getMqttTopicFilter()).isEqualTo("test/blubb/#");
+            assertThat(mapping.getMqttMaxQos()).isEqualTo(0);
+        }, mapping -> {
+            assertThat(mapping.getNode()).isEqualTo("ns=2;i=1004");
+            assertThat(mapping.getMqttTopicFilter()).isEqualTo("test/blubbb/#");
+            assertThat(mapping.getMqttMaxQos()).isEqualTo(0);
         });
     }
 
@@ -108,9 +123,9 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final OpcUaProtocolAdapterFactory oopcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
-        final OpcUaAdapterConfig config =
-                oopcUaProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("opcua"));
+        final OpcUaProtocolAdapterFactory oopcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(true);
+        final BidirectionalOpcUaAdapterConfig config =
+                (BidirectionalOpcUaAdapterConfig) oopcUaProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("opcua"));
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -135,6 +150,13 @@ class OpcUaAdapterConfigTest {
             assertThat(mapping.getServerQueueSize()).isEqualTo(1);
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(4294967295L);
         });
+
+        assertThat(config.getMqttToOpcUaConfig()).isNotNull();
+        assertThat(config.getMqttToOpcUaConfig().getMappings()).satisfiesExactly(mapping -> {
+            assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
+            assertThat(mapping.getMqttTopicFilter()).isEqualTo("test/blubb/#");
+            assertThat(mapping.getMqttMaxQos()).isEqualTo(1);
+        });
     }
 
     @Test
@@ -145,7 +167,7 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(false);
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'id'");
     }
@@ -158,7 +180,7 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(false);
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
@@ -171,7 +193,7 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(false);
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'node'");
     }
@@ -184,9 +206,35 @@ class OpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(false);
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'uri'");
+    }
+
+    @Test
+    public void convertConfigObject_mqttToOpcuaMissingNode_exception() throws Exception {
+        final URL resource = getClass().getResource("/mqtt-to-opcua-missing-node.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(true);
+        assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'node'");
+    }
+
+    @Test
+    public void convertConfigObject_mqttToOpcuaMissingTopic_exception() throws Exception {
+        final URL resource = getClass().getResource("/mqtt-to-opcua-missing-topic-filter.xml");
+        final File path = Path.of(resource.toURI()).toFile();
+
+        final HiveMQConfigEntity configEntity = loadConfig(path);
+        final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
+
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(true);
+        assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'mqttTopicFilter'");
     }
 
     @Test
@@ -198,15 +246,19 @@ class OpcUaAdapterConfigTest {
                 new Keystore("my/keystore/path", "keystore-password", "private-key-password"),
                 new Truststore("my/truststore/path", "truststore-password"));
 
-        final OpcUaAdapterConfig opcUaAdapterConfig = new OpcUaAdapterConfig("my-adapter",
+        final MqttToOpcUaMapping mqttToOpcUaMapping = new MqttToOpcUaMapping("my-node", "my/topic", 0);
+        final MqttToOpcUaConfig mqttToOpcUaConfig = new MqttToOpcUaConfig(List.of(mqttToOpcUaMapping));
+
+        final BidirectionalOpcUaAdapterConfig opcUaAdapterConfig = new BidirectionalOpcUaAdapterConfig("my-adapter",
                 "my.uri.com",
                 true,
                 auth,
                 tls,
                 opcuaToMqttConfig,
+                mqttToOpcUaConfig,
                 new Security(BASIC128RSA15));
 
-        final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
+        final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(true);
         final Map<String, Object> config =
                 opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, opcUaAdapterConfig);
 
@@ -221,6 +273,13 @@ class OpcUaAdapterConfigTest {
             assertThat(mapping.get("serverQueueSize")).isEqualTo(12);
             assertThat(mapping.get("mqttQos")).isEqualTo(1);
             assertThat(mapping.get("messageExpiryInterval")).isEqualTo(13L);
+        });
+
+        final Map<String, Object> mqttToOpcua = (Map<String, Object>) config.get("mqttToOpcua");
+        assertThat((List<Map<String, Object>>) mqttToOpcua.get("mqttToOpcuaMappings")).satisfiesExactly((mapping) -> {
+            assertThat(mapping.get("node")).isEqualTo("my-node");
+            assertThat(mapping.get("mqttTopicFilter")).isEqualTo("my/topic");
+            assertThat(mapping.get("mqttMaxQos")).isEqualTo(0);
         });
 
         final Map<String, Object> authMap = (Map<String, Object>) config.get("auth");
@@ -251,10 +310,19 @@ class OpcUaAdapterConfigTest {
                 new OpcUaToMqttMapping("my-node", "my/topic", null, null, null, null);
         final OpcUaToMqttConfig opcuaToMqttConfig = new OpcUaToMqttConfig(List.of(opcuaToMqttMapping));
 
-        final OpcUaAdapterConfig opcUaAdapterConfig =
-                new OpcUaAdapterConfig("my-adapter", "my.uri.com", true, null, null, opcuaToMqttConfig, null);
+        final MqttToOpcUaMapping mqttToOpcUaMapping = new MqttToOpcUaMapping("my-node", "my/topic", null);
+        final MqttToOpcUaConfig mqttToOpcUaConfig = new MqttToOpcUaConfig(List.of(mqttToOpcUaMapping));
 
-        final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
+        final BidirectionalOpcUaAdapterConfig opcUaAdapterConfig = new BidirectionalOpcUaAdapterConfig("my-adapter",
+                "my.uri.com",
+                true,
+                null,
+                null,
+                opcuaToMqttConfig,
+                mqttToOpcUaConfig,
+                null);
+
+        final OpcUaProtocolAdapterFactory opcuaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(true);
         final Map<String, Object> config =
                 opcuaProtocolAdapterFactory.unconvertConfigObject(mapper, opcUaAdapterConfig);
 
@@ -269,6 +337,13 @@ class OpcUaAdapterConfigTest {
             assertThat(mapping.get("serverQueueSize")).isEqualTo(1);
             assertThat(mapping.get("mqttQos")).isEqualTo(0);
             assertThat(mapping.get("messageExpiryInterval")).isEqualTo(4294967295L);
+        });
+
+        final Map<String, Object> mqttToOpcua = (Map<String, Object>) config.get("mqttToOpcua");
+        assertThat((List<Map<String, Object>>) mqttToOpcua.get("mqttToOpcuaMappings")).satisfiesExactly((mapping) -> {
+            assertThat(mapping.get("node")).isEqualTo("my-node");
+            assertThat(mapping.get("mqttTopicFilter")).isEqualTo("my/topic");
+            assertThat(mapping.get("mqttMaxQos")).isEqualTo(1);
         });
 
         final Map<String, Object> authMap = (Map<String, Object>) config.get("auth");

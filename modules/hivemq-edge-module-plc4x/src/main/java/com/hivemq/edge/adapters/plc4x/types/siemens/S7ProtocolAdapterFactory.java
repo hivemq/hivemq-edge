@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.plc4x.types.siemens;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
@@ -25,6 +26,8 @@ import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7ToMqttConfig;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.legacy.LegacyS7AdapterConfig;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -34,6 +37,14 @@ import java.util.stream.Collectors;
  * @author HiveMQ Adapter Generator
  */
 public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7AdapterConfig> {
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(S7ProtocolAdapterFactory.class);
+
+    final boolean writingEnabled;
+
+    public S7ProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
+    }
 
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
@@ -55,12 +66,29 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
 
 
     @Override
-    public @NotNull S7AdapterConfig convertConfigObject(
+    public @NotNull ProtocolAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
-        if (config.get("s7ToMqtt") != null || config.get("mqttToS7") != null) {
+        try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
-        } else {
-            return tryConvertLegacyConfig(objectMapper, config);
+        } catch (final Exception currentConfigFailedException) {
+            try {
+                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
+                        S7ProtocolAdapterInformation.INSTANCE.getDisplayName(),
+                        currentConfigFailedException.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Original Exception:", currentConfigFailedException);
+                }
+                return tryConvertLegacyConfig(objectMapper, config);
+            } catch (final Exception legacyConfigFailedException) {
+                log.warn("Could not load legacy '{}' configuration. Because: '{}'",
+                        S7ProtocolAdapterInformation.INSTANCE.getDisplayName(),
+                        legacyConfigFailedException.getMessage());
+                if (log.isDebugEnabled()) {
+                    log.debug("Original Exception:", legacyConfigFailedException);
+                }
+                //we rethrow the exception from the current config conversation, to have a correct rest response.
+                throw currentConfigFailedException;
+            }
         }
     }
 

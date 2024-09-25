@@ -23,6 +23,7 @@ import com.hivemq.bootstrap.LoggingBootstrap;
 import com.hivemq.bootstrap.ioc.DaggerInjector;
 import com.hivemq.bootstrap.ioc.Injector;
 import com.hivemq.bootstrap.ioc.Persistences;
+import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
 import com.hivemq.bootstrap.services.GeneralBootstrapServiceImpl;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.common.shutdown.ShutdownHooks;
@@ -70,6 +71,7 @@ public class HiveMQEdgeBootstrap {
     private final @NotNull PersistencesService persistencesService = new PersistencesService(persistenceStartup);
     private final @NotNull RestComponentsService restComponentsService =
             new RestComponentsServiceImpl(genericAPIHolder);
+    private final @NotNull EdgeCoreFactoryService edgeCoreFactoryService;
 
     private volatile @Nullable ConfigurationService configService;
     private @Nullable CommercialModuleLoaderDiscovery commercialModuleLoaderDiscovery;
@@ -86,6 +88,7 @@ public class HiveMQEdgeBootstrap {
         this.systemInformation = systemInformation;
         this.moduleLoader = moduleLoader;
         this.configService = configService;
+        this.edgeCoreFactoryService = new EdgeCoreFactoryService();
     }
 
     public @NotNull Injector bootstrap() throws HiveMQEdgeStartupException {
@@ -166,6 +169,7 @@ public class HiveMQEdgeBootstrap {
                 .commercialModuleDiscovery(commercialModuleLoaderDiscovery)
                 .generalBootstrapService(generalBootstrapService)
                 .hivemqId(hivemqId)
+                .edgeCoreFactoryService(edgeCoreFactoryService)
                 .build();
         log.trace("Initialized injector in {}ms", (System.currentTimeMillis() - startDagger));
     }
@@ -178,7 +182,7 @@ public class HiveMQEdgeBootstrap {
         try {
             commercialModuleLoaderDiscovery = new CommercialModuleLoaderDiscovery(moduleLoader);
             generalBootstrapService =
-                    new GeneralBootstrapServiceImpl(shutdownHooks, metricRegistry, systemInformation, configService, hivemqId);
+                    new GeneralBootstrapServiceImpl(shutdownHooks, metricRegistry, systemInformation, configService, hivemqId, edgeCoreFactoryService);
             commercialModuleLoaderDiscovery.generalBootstrap(generalBootstrapService);
         } catch (Exception e) {
             log.warn("Error on loading the commercial module loader.", e);

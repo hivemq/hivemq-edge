@@ -25,18 +25,18 @@ public class ProtocolAdapterStartOutputImpl implements ProtocolAdapterStartOutpu
 
     private @Nullable volatile String message = null;
     private @Nullable volatile Throwable throwable = null;
-    private final @NotNull CompletableFuture<Boolean> startFuture = new CompletableFuture<>();
+    private final @NotNull CompletableFuture<Void> startFuture = new CompletableFuture<>();
 
     @Override
     public void startedSuccessfully() {
-        this.startFuture.complete(true);
+        this.startFuture.complete(null);
     }
 
     @Override
     public void failStart(final @NotNull Throwable t, final @Nullable String errorMessage) {
         this.throwable = t;
         this.message = errorMessage;
-        this.startFuture.complete(false);
+        this.startFuture.completeExceptionally(t);
     }
 
     public @Nullable Throwable getThrowable() {
@@ -47,7 +47,7 @@ public class ProtocolAdapterStartOutputImpl implements ProtocolAdapterStartOutpu
         return message;
     }
 
-    public @NotNull CompletableFuture<Boolean> getStartFuture() {
+    public @NotNull CompletableFuture<Void> getStartFuture() {
         return startFuture;
     }
 }

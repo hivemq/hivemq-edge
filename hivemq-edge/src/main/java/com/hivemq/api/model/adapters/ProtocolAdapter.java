@@ -33,7 +33,8 @@ public class ProtocolAdapter {
 
     public enum Capability {
         @Schema(description = "The adapter is able to read tags or values from the connected device") READ,
-        @Schema(description = "The adapter is able to discover tags from the connected device") DISCOVER;
+        @Schema(description = "The adapter is able to discover tags from the connected device") DISCOVER,
+        @Schema(description = "The adapter is able to write data to the connected device") WRITE;
 
         public static @NotNull Capability from(final ProtocolAdapterCapability capability) {
             switch (capability) {
@@ -41,6 +42,8 @@ public class ProtocolAdapter {
                     return READ;
                 case DISCOVER:
                     return DISCOVER;
+                case WRITE:
+                    return WRITE;
                 default:
                     throw new IllegalArgumentException("No capability found for " + capability);
             }

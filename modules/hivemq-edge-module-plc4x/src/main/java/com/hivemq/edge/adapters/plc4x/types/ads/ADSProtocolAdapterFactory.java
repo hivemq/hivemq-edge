@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSToMqttConfig;
@@ -39,6 +40,12 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(ADSProtocolAdapterFactory.class);
 
+    final boolean writingEnabled;
+
+    public ADSProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
+    }
+
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
         return ADSProtocolAdapterInformation.INSTANCE;
@@ -57,7 +64,7 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
     }
 
     @Override
-    public @NotNull ADSAdapterConfig convertConfigObject(
+    public @NotNull ProtocolAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);

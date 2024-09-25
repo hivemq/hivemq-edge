@@ -23,7 +23,7 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.SecPolicy;
 import com.hivemq.edge.adapters.opcua.config.Security;
 import com.hivemq.edge.adapters.opcua.config.Tls;
@@ -88,7 +88,7 @@ class OpcUaProtocolAdapterAuthTest {
                 false,
                 auth,
                 null,
-                new OpcUaToMqttConfig(List.of()),
+                null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
@@ -112,7 +112,7 @@ class OpcUaProtocolAdapterAuthTest {
                 false,
                 null,
                 tls,
-                new OpcUaToMqttConfig(List.of()),
+                null,
                 security);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
@@ -136,7 +136,7 @@ class OpcUaProtocolAdapterAuthTest {
                 false,
                 auth,
                 null,
-                new OpcUaToMqttConfig(List.of()),
+                null,
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);

@@ -49,7 +49,7 @@
                 <opcuaToMqttMappings>
                     <opcuaToMqttMapping>
                         <node>ns=1;i=1004</node>
-                        <mqttTopic>test/blubb/#</mqttTopic>
+                        <mqttTopic>test/blubb/a</mqttTopic>
                         <publishingInterval>12</publishingInterval>
                         <serverQueueSize>13</serverQueueSize>
                         <mqttQos>1</mqttQos>
@@ -57,7 +57,7 @@
                     </opcuaToMqttMapping>
                     <opcuaToMqttMapping>
                         <node>ns=2;i=1004</node>
-                        <mqttTopic>test/blubbb/#</mqttTopic>
+                        <mqttTopic>test/blubbb/b</mqttTopic>
                         <publishingInterval>13</publishingInterval>
                         <serverQueueSize>14</serverQueueSize>
                         <mqttQos>2</mqttQos>
@@ -65,6 +65,20 @@
                     </opcuaToMqttMapping>
                 </opcuaToMqttMappings>
             </opcuaToMqtt>
+            <mqttToOpcua>
+                <mqttToOpcuaMappings>
+                    <mqttToOpcuaMapping>
+                        <node>ns=1;i=1004</node>
+                        <mqttTopicFilter>test/blubb/#</mqttTopicFilter>
+                        <mqttMaxQos>0</mqttMaxQos>
+                    </mqttToOpcuaMapping>
+                    <mqttToOpcuaMapping>
+                        <node>ns=2;i=1004</node>
+                        <mqttTopicFilter>test/blubbb/#</mqttTopicFilter>
+                        <mqttMaxQos>0</mqttMaxQos>
+                    </mqttToOpcuaMapping>
+                </mqttToOpcuaMappings>
+            </mqttToOpcua>
         </opcua>
     </protocol-adapters>
 </hivemq>

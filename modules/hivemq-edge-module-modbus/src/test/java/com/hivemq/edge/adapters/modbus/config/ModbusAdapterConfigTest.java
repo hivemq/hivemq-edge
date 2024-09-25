@@ -50,9 +50,9 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         final ModbusAdapterConfig config =
-                modbusProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("modbus"));
+                (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("modbus"));
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -106,9 +106,9 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         final ModbusAdapterConfig config =
-                modbusProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("modbus"));
+                (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("modbus"));
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(1000);
@@ -137,7 +137,7 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'id'");
     }
@@ -150,7 +150,7 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'host'");
     }
@@ -163,7 +163,7 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'port'");
     }
@@ -176,7 +176,7 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'mqttTopic'");
     }
@@ -189,7 +189,7 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus")));
     }
@@ -202,7 +202,7 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'startIdx'");
     }
@@ -215,7 +215,7 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'endIdx'");
     }
@@ -236,7 +236,7 @@ public class ModbusAdapterConfigTest {
                 15,
                 new ModbusToMqttConfig(12, 13, true, List.of(pollingContext)));
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         final Map<String, Object> config =
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 
@@ -280,7 +280,7 @@ public class ModbusAdapterConfigTest {
                 null,
                 new ModbusToMqttConfig(null, null, null, List.of(pollingContext, pollingContext2)));
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         final Map<String, Object> config =
                 modbusProtocolAdapterFactory.unconvertConfigObject(mapper, modbusAdapterConfig);
 

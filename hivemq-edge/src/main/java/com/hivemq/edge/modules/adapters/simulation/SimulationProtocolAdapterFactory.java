@@ -18,6 +18,7 @@ package com.hivemq.edge.modules.adapters.simulation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
@@ -35,6 +36,12 @@ import java.util.stream.Collectors;
 public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<SimulationAdapterConfig> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(SimulationProtocolAdapterFactory.class);
+
+    final boolean writingEnabled;
+
+    public SimulationProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
+    }
 
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
@@ -54,7 +61,7 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
     }
 
     @Override
-    public @NotNull SimulationAdapterConfig convertConfigObject(
+    public @NotNull ProtocolAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config) {
         try {

@@ -18,11 +18,13 @@ package com.hivemq.edge.adapters.opcua;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.edge.adapters.opcua.config.BidirectionalOpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttMapping;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
+import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.legacy.LegacyOpcUaAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -35,6 +37,12 @@ import java.util.stream.Collectors;
 public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUaAdapterConfig> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterFactory.class);
+
+    final boolean writingEnabled;
+
+    public OpcUaProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
+    }
 
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
@@ -49,12 +57,15 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
     }
 
     @Override
-    public @NotNull Class<OpcUaAdapterConfig> getConfigClass() {
+    public @NotNull Class<? extends ProtocolAdapterConfig> getConfigClass() {
+        if(writingEnabled) {
+            return BidirectionalOpcUaAdapterConfig.class;
+        }
         return OpcUaAdapterConfig.class;
     }
 
     @Override
-    public @NotNull OpcUaAdapterConfig convertConfigObject(
+    public @NotNull ProtocolAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config) {
         try {

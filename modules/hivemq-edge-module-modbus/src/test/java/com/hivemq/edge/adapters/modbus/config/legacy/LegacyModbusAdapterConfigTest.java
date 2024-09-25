@@ -50,9 +50,9 @@ public class LegacyModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         final ModbusAdapterConfig config =
-                modbusProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("modbus"));
+                (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("modbus"));
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter-full");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(10);
@@ -106,9 +106,9 @@ public class LegacyModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         final ModbusAdapterConfig config =
-                modbusProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("modbus"));
+                (ModbusAdapterConfig) modbusProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("modbus"));
 
         assertThat(config.getId()).isEqualTo("my-modbus-protocol-adapter-min");
         assertThat(config.getModbusToMQTTConfig().getPollingIntervalMillis()).isEqualTo(1000);

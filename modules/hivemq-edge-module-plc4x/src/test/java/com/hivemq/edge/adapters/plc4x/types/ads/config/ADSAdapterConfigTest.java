@@ -51,9 +51,9 @@ class ADSAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory();
+        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory(false);
         final ADSAdapterConfig config =
-                adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
+                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
 
         assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -108,9 +108,9 @@ class ADSAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory();
+        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory(false);
         final ADSAdapterConfig config =
-                adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
+                (ADSAdapterConfig) adsProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ads"));
 
         assertThat(config.getId()).isEqualTo("my-ads-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -156,7 +156,7 @@ class ADSAdapterConfigTest {
                 "1.2.3.4.5.7",
                 new ADSToMqttConfig(12, 13, true, List.of(pollingContext)));
 
-        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory();
+        final ADSProtocolAdapterFactory adsProtocolAdapterFactory = new ADSProtocolAdapterFactory(false);
         final Map<String, Object> config =
                 adsProtocolAdapterFactory.unconvertConfigObject(mapper, adsAdapterConfig);
 

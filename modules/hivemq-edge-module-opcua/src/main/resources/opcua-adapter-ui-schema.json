@@ -6,9 +6,14 @@
       "properties": ["id", "uri", "overrideUri"]
     },
     {
-      "id": "subFields",
+      "id": "opcuaToMqtt",
       "title": "OPC UA to MQTT",
       "properties": ["opcuaToMqtt"]
+    },
+    {
+      "id": "mqttToOpcua",
+      "title": "MQTT to OPC UA",
+      "properties": ["mqttToOpcua"]
     },
     {
       "id": "security",
@@ -32,6 +37,20 @@
         "ui:order": ["node", "mqttTopic", "mqttQos", "*"],
         "ui:collapsable": {
           "titleKey": "mqttTopic"
+        },
+        "node": {
+          "ui:widget": "discovery:tagBrowser"
+        }
+      }
+    }
+  },
+  "mqttToOpcua": {
+    "ui:batchMode": true,
+    "mqttToOpcuaMappings": {
+      "items": {
+        "ui:order": ["node", "mqttTopicFilter", "mqttMaxQos", "*"],
+        "ui:collapsable": {
+          "titleKey": "mqttTopicFilter"
         },
         "node": {
           "ui:widget": "discovery:tagBrowser"

@@ -54,9 +54,9 @@ class LegacyS7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory();
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
         final S7AdapterConfig config =
-                s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
+                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
 
         assertThat(config.getId()).isEqualTo("my-s7-id");
         assertThat(config.getPort()).isEqualTo(102);
@@ -100,9 +100,9 @@ class LegacyS7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory();
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
         final S7AdapterConfig config =
-                s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
+                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
 
         assertThat(config.getId()).isEqualTo("my-s7-id");
         assertThat(config.getPort()).isEqualTo(102);
