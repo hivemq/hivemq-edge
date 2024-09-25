@@ -20,14 +20,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
+import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MIN_TIMEOUT_SECONDS;
+import java.util.Objects;
+
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MAX_TIMEOUT_SECONDS;
+import static com.hivemq.edge.adapters.http.HttpAdapterConstants.MIN_TIMEOUT_SECONDS;
 
-@JsonPropertyOrder({"id", "url", "httpConnectTimeoutSeconds", "httpToMqtt"})
 public class HttpAdapterConfig implements ProtocolAdapterConfig {
 
     private static final @NotNull String ID_REGEX = "^([a-zA-Z_0-9-_])*$";
@@ -48,13 +51,6 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        stringMaxLength = 1024)
     private final @NotNull String id;
 
-    @JsonProperty(value = "url", required = true)
-    @ModuleConfigField(title = "URL",
-                       description = "The url of the HTTP request you would like to make",
-                       format = ModuleConfigField.FieldType.URI,
-                       required = true)
-    private final @NotNull String url;
-
     @JsonProperty("httpConnectTimeoutSeconds")
     @ModuleConfigField(title = "HTTP Connection Timeout",
                        description = "Timeout (in seconds) to allow the underlying HTTP connection to be established",
@@ -63,36 +59,39 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
                        numberMax = MAX_TIMEOUT_SECONDS)
     private final int httpConnectTimeoutSeconds;
 
-    @JsonProperty(value = "httpToMqtt", required = true)
+    @JsonProperty("allowUntrustedCertificates")
+    @ModuleConfigField(title = "Allow Untrusted Certificates",
+                       description = "Allow the adapter to connect to untrusted SSL sources (for example expired certificates).",
+                       defaultValue = "false",
+                       format = ModuleConfigField.FieldType.BOOLEAN)
+    private final boolean allowUntrustedCertificates;
+
+    @JsonProperty(value = "httpToMqtt")
     @ModuleConfigField(title = "HTTP To MQTT Config",
-                       description = "The configuration for a data stream from HTTP to MQTT",
-                       required = true)
+                       description = "The configuration for a data stream from HTTP to MQTT")
     private final @NotNull HttpToMqttConfig httpToMqttConfig;
+
 
     @JsonCreator
     public HttpAdapterConfig(
             @JsonProperty(value = "id", required = true) final @NotNull String id,
-            @JsonProperty(value = "url", required = true) final @NotNull String url,
             @JsonProperty(value = "httpConnectTimeoutSeconds") final @Nullable Integer httpConnectTimeoutSeconds,
-            @JsonProperty(value = "httpToMqtt", required = true) final @NotNull HttpToMqttConfig httpToMqttConfig) {
+            @JsonProperty(value = "httpToMqtt") final @Nullable HttpToMqttConfig httpToMqttConfig,
+            @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates) {
         this.id = id;
-        this.url = url;
         if (httpConnectTimeoutSeconds != null) {
             //-- Ensure we apply a reasonable timeout, so we don't hang threads
             this.httpConnectTimeoutSeconds = Math.min(httpConnectTimeoutSeconds, MAX_TIMEOUT_SECONDS);
         } else {
             this.httpConnectTimeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
         }
-        this.httpToMqttConfig = httpToMqttConfig;
+        this.httpToMqttConfig = Objects.requireNonNullElse(httpToMqttConfig, HttpToMqttConfig.DEFAULT);
+        this.allowUntrustedCertificates = Objects.requireNonNullElse(allowUntrustedCertificates, false);
     }
 
     @Override
     public @NotNull String getId() {
         return id;
-    }
-
-    public @NotNull String getUrl() {
-        return url;
     }
 
     public int getHttpConnectTimeoutSeconds() {
@@ -101,6 +100,10 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
 
     public @NotNull HttpToMqttConfig getHttpToMqttConfig() {
         return httpToMqttConfig;
+    }
+
+    public boolean isAllowUntrustedCertificates() {
+        return allowUntrustedCertificates;
     }
 
     public static class HttpHeader {

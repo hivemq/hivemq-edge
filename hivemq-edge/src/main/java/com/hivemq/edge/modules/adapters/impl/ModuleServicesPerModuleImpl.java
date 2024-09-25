@@ -22,26 +22,23 @@ import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import dagger.internal.Preconditions;
 
 public class ModuleServicesPerModuleImpl implements ModuleServices {
 
-    private final @NotNull ModuleServicesImpl delegate;
-    private final @NotNull ProtocolAdapterPublishServicePerAdapter adapterPublishService;
+    private final @NotNull ProtocolAdapterPublishServicePerAdapter adapterPublishServicePerAdapter;
     private final @NotNull EventService eventService;
 
     public ModuleServicesPerModuleImpl(
-            final @Nullable ProtocolAdapter protocolAdapter,
-            final @NotNull ModuleServicesImpl delegate,
+            final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService) {
-        this.delegate = delegate;
         this.eventService = eventService;
-        this.adapterPublishService =
-                new ProtocolAdapterPublishServicePerAdapter(delegate.adapterPublishService(), protocolAdapter);
+        this.adapterPublishServicePerAdapter = new ProtocolAdapterPublishServicePerAdapter(adapterPublishService);
     }
 
     @Override
     public @NotNull ProtocolAdapterPublishService adapterPublishService() {
-        return adapterPublishService;
+        return adapterPublishServicePerAdapter;
     }
 
     @Override
@@ -50,20 +47,19 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
     }
 
     public void setAdapter(final @NotNull ProtocolAdapter protocolAdapter) {
-        this.adapterPublishService.setAdapter(protocolAdapter);
+        this.adapterPublishServicePerAdapter.setAdapter(protocolAdapter);
     }
 
 
     private static class ProtocolAdapterPublishServicePerAdapter implements ProtocolAdapterPublishService {
 
         private final @NotNull ProtocolAdapterPublishService delegate;
+        private @Nullable ProtocolAdapter adapter;
 
         public ProtocolAdapterPublishServicePerAdapter(
-                @NotNull final ProtocolAdapterPublishService delegate, @NotNull final ProtocolAdapter adapter) {
+                @NotNull final ProtocolAdapterPublishService delegate) {
             this.delegate = delegate;
         }
-
-        private @NotNull ProtocolAdapter adapter;
 
         public void setAdapter(final @NotNull ProtocolAdapter adapter) {
             this.adapter = adapter;
@@ -71,7 +67,9 @@ public class ModuleServicesPerModuleImpl implements ModuleServices {
 
         @Override
         public @NotNull ProtocolAdapterPublishBuilder createPublish() {
-            final ProtocolAdapterPublishBuilderImpl builder = (ProtocolAdapterPublishBuilderImpl) delegate.createPublish();
+            Preconditions.checkNotNull(adapter, "Adapter must not be null");
+            final ProtocolAdapterPublishBuilderImpl builder =
+                    (ProtocolAdapterPublishBuilderImpl) delegate.createPublish();
             return builder.withAdapter(adapter);
         }
     }

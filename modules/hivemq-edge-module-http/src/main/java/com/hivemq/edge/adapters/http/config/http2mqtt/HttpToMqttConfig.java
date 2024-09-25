@@ -13,12 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.http.config;
+package com.hivemq.edge.adapters.http.config.http2mqtt;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +25,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class HttpToMqttConfig {
+
+    public static final @NotNull HttpToMqttConfig DEFAULT = new HttpToMqttConfig(null, null, null, null, null);
 
     @JsonProperty("pollingIntervalMillis")
     @ModuleConfigField(title = "Polling Interval [ms]",
@@ -41,13 +41,6 @@ public class HttpToMqttConfig {
                        numberMin = 3,
                        defaultValue = "10")
     private final int maxPollingErrorsBeforeRemoval;
-
-    @JsonProperty("allowUntrustedCertificates")
-    @ModuleConfigField(title = "Allow Untrusted Certificates",
-                       description = "Allow the adapter to read from untrusted SSL sources (for example expired certificates).",
-                       defaultValue = "false",
-                       format = ModuleConfigField.FieldType.BOOLEAN)
-    private final boolean allowUntrustedCertificates;
 
     @JsonProperty("assertResponseIsJson")
     @ModuleConfigField(title = "Assert JSON Response?",
@@ -71,14 +64,12 @@ public class HttpToMqttConfig {
     public HttpToMqttConfig(
             @JsonProperty(value = "pollingIntervalMillis") final @Nullable Integer pollingIntervalMillis,
             @JsonProperty(value = "maxPollingErrorsBeforeRemoval") final @Nullable Integer maxPollingErrorsBeforeRemoval,
-            @JsonProperty(value = "allowUntrustedCertificates") final @Nullable Boolean allowUntrustedCertificates,
             @JsonProperty(value = "assertResponseIsJson") final @Nullable Boolean assertResponseIsJson,
             @JsonProperty(value = "httpPublishSuccessStatusCodeOnly") final @Nullable Boolean httpPublishSuccessStatusCodeOnly,
             @JsonProperty(value = "httpToMqttMappings") final @Nullable List<HttpToMqttMapping> mappings) {
         this.mappings = Objects.requireNonNullElse(mappings, List.of());
         this.pollingIntervalMillis = Objects.requireNonNullElse(pollingIntervalMillis, 1000);
         this.maxPollingErrorsBeforeRemoval = Objects.requireNonNullElse(maxPollingErrorsBeforeRemoval, 10);
-        this.allowUntrustedCertificates = Objects.requireNonNullElse(allowUntrustedCertificates, false);
         this.assertResponseIsJson = Objects.requireNonNullElse(assertResponseIsJson, false);
         this.httpPublishSuccessStatusCodeOnly = Objects.requireNonNullElse(httpPublishSuccessStatusCodeOnly, true);
     }
@@ -89,10 +80,6 @@ public class HttpToMqttConfig {
 
     public int getMaxPollingErrorsBeforeRemoval() {
         return maxPollingErrorsBeforeRemoval;
-    }
-
-    public boolean isAllowUntrustedCertificates() {
-        return allowUntrustedCertificates;
     }
 
     public boolean isAssertResponseIsJson() {

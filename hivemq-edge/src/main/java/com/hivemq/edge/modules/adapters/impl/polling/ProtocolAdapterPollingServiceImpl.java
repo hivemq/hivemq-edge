@@ -59,15 +59,14 @@ public class ProtocolAdapterPollingServiceImpl implements ProtocolAdapterPolling
     }
 
     @Override
-    public void schedulePolling(
-            @NotNull final ProtocolAdapter adapter, @NotNull final ProtocolAdapterPollingSampler sampler) {
+    public void schedulePolling(final @NotNull ProtocolAdapterPollingSampler sampler) {
         final PollingTask pollingTask = new PollingTask(sampler, scheduledExecutorService, eventService, nanoTimeProvider);
         scheduledExecutorService.schedule(pollingTask, sampler.getInitialDelay(), sampler.getUnit());
         samplerToTask.put(sampler, pollingTask);
     }
 
     @Override
-    public void stopPollingForAdapterInstance(@NotNull final ProtocolAdapter adapter) {
+    public void stopPollingForAdapterInstance(final @NotNull ProtocolAdapter adapter) {
         samplerToTask.keySet()
                 .stream()
                 .filter(p -> p.getAdapterId().equals(adapter.getId()))

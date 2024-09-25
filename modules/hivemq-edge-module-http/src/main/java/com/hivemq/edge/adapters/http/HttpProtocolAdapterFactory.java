@@ -18,12 +18,15 @@ package com.hivemq.edge.adapters.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.edge.adapters.http.config.BidirectionalHttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
-import com.hivemq.edge.adapters.http.config.HttpToMqttConfig;
-import com.hivemq.edge.adapters.http.config.HttpToMqttMapping;
+import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
+import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.legacy.LegacyHttpAdapterConfig;
+import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +41,12 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
 
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapterFactory.class);
 
+    final boolean writingEnabled;
+
+    public HttpProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
+    }
+
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
         return HttpProtocolAdapterInformation.INSTANCE;
@@ -51,7 +60,7 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     }
 
     @Override
-    public @NotNull HttpAdapterConfig convertConfigObject(
+    public @NotNull ProtocolAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config) {
         try {
@@ -79,7 +88,10 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     }
 
     @Override
-    public @NotNull Class<HttpAdapterConfig> getConfigClass() {
+    public @NotNull Class<? extends HttpAdapterConfig> getConfigClass() {
+        if (writingEnabled) {
+            return BidirectionalHttpAdapterConfig.class;
+        }
         return HttpAdapterConfig.class;
     }
 
@@ -89,7 +101,8 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
         final LegacyHttpAdapterConfig legacyHttpAdapterConfig =
                 objectMapper.convertValue(config, LegacyHttpAdapterConfig.class);
 
-        final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(legacyHttpAdapterConfig.getDestination(),
+        final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(legacyHttpAdapterConfig.getUrl(),
+                legacyHttpAdapterConfig.getDestination(),
                 legacyHttpAdapterConfig.getQos(),
                 List.of(),
                 false,
@@ -102,14 +115,13 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
         final HttpToMqttConfig httpToMqttConfig =
                 new HttpToMqttConfig(legacyHttpAdapterConfig.getPollingIntervalMillis(),
                         legacyHttpAdapterConfig.getMaxPollingErrorsBeforeRemoval(),
-                        legacyHttpAdapterConfig.isAllowUntrustedCertificates(),
                         legacyHttpAdapterConfig.isAssertResponseIsJson(),
                         legacyHttpAdapterConfig.isHttpPublishSuccessStatusCodeOnly(),
                         List.of(httpToMqttMapping));
 
         return new HttpAdapterConfig(legacyHttpAdapterConfig.getId(),
-                legacyHttpAdapterConfig.getUrl(),
                 legacyHttpAdapterConfig.getHttpConnectTimeoutSeconds(),
-                httpToMqttConfig);
+                httpToMqttConfig,
+                legacyHttpAdapterConfig.isAllowUntrustedCertificates());
     }
 }

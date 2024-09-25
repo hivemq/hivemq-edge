@@ -27,15 +27,12 @@ import java.util.function.Consumer;
 public class OpcUaSubscriptionListener implements UaSubscriptionManager.SubscriptionListener {
 
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-    private final @NotNull String adapterId;
     private final @NotNull Consumer<UaSubscription> recreateSubscriptionsCallback;
 
     public OpcUaSubscriptionListener(
             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
-            final @NotNull String adapterId,
             final @NotNull Consumer<UaSubscription> recreateSubscriptionsCallback) {
         this.protocolAdapterMetricsService = protocolAdapterMetricsService;
-        this.adapterId = adapterId;
         this.recreateSubscriptionsCallback = recreateSubscriptionsCallback;
     }
 

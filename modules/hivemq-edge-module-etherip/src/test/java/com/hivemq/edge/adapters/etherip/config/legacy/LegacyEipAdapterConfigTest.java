@@ -48,9 +48,9 @@ class LegacyEipAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final EipProtocolAdapterFactory eipProtocolAdapterFactory = new EipProtocolAdapterFactory();
+        final EipProtocolAdapterFactory eipProtocolAdapterFactory = new EipProtocolAdapterFactory(false);
         final EipAdapterConfig config =
-                eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ethernet-ip"));
+                (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ethernet-ip"));
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -105,9 +105,9 @@ class LegacyEipAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final EipProtocolAdapterFactory eipProtocolAdapterFactory = new EipProtocolAdapterFactory();
+        final EipProtocolAdapterFactory eipProtocolAdapterFactory = new EipProtocolAdapterFactory(false);
         final EipAdapterConfig config =
-                eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ethernet-ip"));
+                (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ethernet-ip"));
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);

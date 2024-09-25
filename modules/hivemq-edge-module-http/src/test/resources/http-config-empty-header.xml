@@ -16,11 +16,10 @@
     limitations under the License.
 
 -->
-<hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<hivemq>
     <protocol-adapters>
         <http>
             <id>my-protocol-adapter</id>
-            <url>http://192.168.0.02:777/?asdasd=asdasd</url>
             <httpConnectTimeoutSeconds>50</httpConnectTimeoutSeconds>
             <httpToMqtt>
                 <pollingIntervalMillis>1773</pollingIntervalMillis>
@@ -28,6 +27,7 @@
                 <httpPublishSuccessStatusCodeOnly>true</httpPublishSuccessStatusCodeOnly>
                 <httpToMqttMappings>
                     <httpToMqttMapping>
+                        <url>http://192.168.0.02:777/?asdasd=asdasd</url>
                         <mqttTopic>my/destination</mqttTopic>
                         <mqttQos>0</mqttQos>
                         <httpRequestMethod>POST</httpRequestMethod>

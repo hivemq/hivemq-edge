@@ -26,7 +26,6 @@ public interface GeneralBootstrapService {
 
     @NotNull MetricRegistry metricRegistry();
 
-
     @NotNull SystemInformation systemInformation();
 
     @NotNull ShutdownHooks shutdownHooks();
@@ -34,4 +33,6 @@ public interface GeneralBootstrapService {
     @NotNull ConfigurationService configurationService();
 
     @NotNull HivemqId getHivemqId();
+
+    @NotNull EdgeCoreFactoryService edgeCoreFactoryService();
 }

@@ -29,7 +29,7 @@ import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
-public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements ProtocolAdapter {
+public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
 
     private final @NotNull T adapter;
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
@@ -57,17 +57,14 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> implements Protoc
         adapter.start(input, output);
     }
 
-    @Override
     public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
         adapter.stop(input, output);
     }
 
-    @Override
     public @NotNull ProtocolAdapterInformation getProtocolAdapterInformation() {
         return adapter.getProtocolAdapterInformation();
     }
 
-    @Override
     public void discoverValues(
             @NotNull final ProtocolAdapterDiscoveryInput input,
             @NotNull final ProtocolAdapterDiscoveryOutput output) {

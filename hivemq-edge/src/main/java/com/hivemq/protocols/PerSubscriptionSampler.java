@@ -34,11 +34,11 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
     private static final Logger log = LoggerFactory.getLogger(PerSubscriptionSampler.class);
 
 
-    private final @NotNull PollingProtocolAdapter perSubscriptionProtocolAdapter;
+    private final @NotNull PollingProtocolAdapter<PollingContext> perSubscriptionProtocolAdapter;
     private final @NotNull T pollingContext;
 
     public PerSubscriptionSampler(
-            final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter> protocolAdapter,
+            final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter<PollingContext>> protocolAdapter,
             final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
@@ -46,8 +46,6 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
             final @NotNull EventService eventService,
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
         super(protocolAdapter,
-                protocolAdapter.getAdapter().getPollingIntervalMillis(),
-                protocolAdapter.getAdapter().getMaxPollingErrorsBeforeRemoval(),
                 metricRegistry,
                 objectMapper,
                 adapterPublishService,
@@ -63,7 +61,8 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
         if (Thread.currentThread().isInterrupted()) {
             return CompletableFuture.failedFuture(new InterruptedException());
         }
-        final PollingOutputImpl pollingOutput = new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(pollingContext));
+        final PollingOutputImpl pollingOutput =
+                new PollingOutputImpl(new ProtocolAdapterDataSampleImpl(pollingContext));
         try {
             perSubscriptionProtocolAdapter.poll(new PollingInputImpl<>(pollingContext), pollingOutput);
         } catch (Throwable t) {

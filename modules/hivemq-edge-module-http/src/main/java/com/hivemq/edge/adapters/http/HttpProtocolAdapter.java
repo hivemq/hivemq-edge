@@ -15,7 +15,11 @@
  */
 package com.hivemq.edge.adapters.http;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
@@ -30,9 +34,18 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.writing.WritingContext;
+import com.hivemq.adapter.sdk.api.writing.WritingInput;
+import com.hivemq.adapter.sdk.api.writing.WritingOutput;
+import com.hivemq.adapter.sdk.api.writing.WritingPayload;
+import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.edge.adapters.http.config.BidirectionalHttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
+import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
+import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.model.HttpData;
-import com.hivemq.edge.adapters.http.config.HttpToMqttMapping;
+import com.hivemq.edge.adapters.http.mqtt2http.HttpPayload;
+import com.hivemq.edge.adapters.http.mqtt2http.JsonSchema;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -54,6 +67,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -65,7 +79,8 @@ import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.PLAIN_MIME_
 /**
  * @author HiveMQ Adapter Generator
  */
-public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMapping> {
+public class HttpProtocolAdapter
+        implements PollingProtocolAdapter<HttpToMqttMapping>, WritingProtocolAdapter<MqttToHttpMapping> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(HttpProtocolAdapter.class);
 
@@ -106,18 +121,14 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMap
         try {
             protocolAdapterState.setConnectionStatus(STATELESS);
             if (httpClient == null) {
-                if (HttpUtils.validHttpOrHttpsUrl(adapterConfig.getUrl())) {
-                    final HttpClient.Builder builder = HttpClient.newBuilder();
-                    builder.version(HttpClient.Version.HTTP_1_1)
-                            .followRedirects(HttpClient.Redirect.NORMAL)
-                            .connectTimeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeoutSeconds()));
-                    if (adapterConfig.getHttpToMqttConfig().isAllowUntrustedCertificates()) {
-                        builder.sslContext(createTrustAllContext());
-                    }
-                    httpClient = builder.build();
-                } else {
-                    protocolAdapterState.setErrorConnectionStatus(null, "Invalid URL supplied");
+                final HttpClient.Builder builder = HttpClient.newBuilder();
+                builder.version(HttpClient.Version.HTTP_1_1)
+                        .followRedirects(HttpClient.Redirect.NORMAL)
+                        .connectTimeout(Duration.ofSeconds(adapterConfig.getHttpConnectTimeoutSeconds()));
+                if (adapterConfig.isAllowUntrustedCertificates()) {
+                    builder.sslContext(createTrustAllContext());
                 }
+                httpClient = builder.build();
             }
             output.startedSuccessfully();
         } catch (final Exception e) {
@@ -136,7 +147,6 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMap
         return adapterInformation;
     }
 
-
     @Override
     public void poll(
             final @NotNull PollingInput<HttpToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
@@ -146,32 +156,32 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMap
             return;
         }
 
-        final HttpToMqttMapping pollingContext = pollingInput.getPollingContext();
+        final HttpToMqttMapping httpToMqttMapping = pollingInput.getPollingContext();
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        builder.uri(URI.create(adapterConfig.getUrl()));
-        builder.timeout(Duration.ofSeconds(pollingContext.getHttpRequestTimeoutSeconds()));
+        builder.uri(URI.create(httpToMqttMapping.getUrl()));
+        builder.timeout(Duration.ofSeconds(httpToMqttMapping.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
-        pollingContext.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
+        httpToMqttMapping.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
 
-        switch (pollingContext.getHttpRequestMethod()) {
+        switch (httpToMqttMapping.getHttpRequestMethod()) {
             case GET:
                 builder.GET();
                 break;
             case POST:
-                builder.POST(HttpRequest.BodyPublishers.ofString(pollingContext.getHttpRequestBody()));
-                builder.header(CONTENT_TYPE_HEADER, pollingContext.getHttpRequestBodyContentType().getMimeType());
+                builder.POST(HttpRequest.BodyPublishers.ofString(httpToMqttMapping.getHttpRequestBody()));
+                builder.header(CONTENT_TYPE_HEADER, httpToMqttMapping.getHttpRequestBodyContentType().getMimeType());
                 break;
             case PUT:
-                builder.PUT(HttpRequest.BodyPublishers.ofString(pollingContext.getHttpRequestBody()));
-                builder.header(CONTENT_TYPE_HEADER, pollingContext.getHttpRequestBodyContentType().getMimeType());
+                builder.PUT(HttpRequest.BodyPublishers.ofString(httpToMqttMapping.getHttpRequestBody()));
+                builder.header(CONTENT_TYPE_HEADER, httpToMqttMapping.getHttpRequestBodyContentType().getMimeType());
                 break;
             default:
                 pollingOutput.fail(new IllegalStateException("Unexpected value: " +
-                                pollingContext.getHttpRequestMethod()),
+                                httpToMqttMapping.getHttpRequestMethod()),
                         "There was an unexpected value present in the request config: " +
-                                pollingContext.getHttpRequestMethod());
+                                httpToMqttMapping.getHttpRequestMethod());
                 return;
         }
 
@@ -188,7 +198,9 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMap
                 //-- else encode using base64 (as we dont know what the content is).
                 if (bodyData != null) {
                     responseContentType = httpResponse.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null);
-                    responseContentType = adapterConfig.getHttpToMqttConfig().isAssertResponseIsJson() ? JSON_MIME_TYPE : responseContentType;
+                    responseContentType = adapterConfig.getHttpToMqttConfig().isAssertResponseIsJson() ?
+                            JSON_MIME_TYPE :
+                            responseContentType;
                     if (JSON_MIME_TYPE.equals(responseContentType)) {
                         try {
                             payloadData = objectMapper.readTree(bodyData);
@@ -216,8 +228,8 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMap
                 }
             }
 
-            final HttpData data = new HttpData(pollingContext,
-                    adapterConfig.getUrl(),
+            final HttpData data = new HttpData(httpToMqttMapping,
+                    httpToMqttMapping.getUrl(),
                     httpResponse.statusCode(),
                     responseContentType,
                     adapterFactories.dataPointFactory());
@@ -240,7 +252,8 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMap
                 protocolAdapterState.setConnectionStatus(ERROR);
             }
 
-            if (data.isSuccessStatusCode() || !adapterConfig.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()) {
+            if (data.isSuccessStatusCode() ||
+                    !adapterConfig.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()) {
                 data.getDataPoints().forEach(pollingOutput::addDataPoint);
             }
             pollingOutput.finish();
@@ -260,6 +273,75 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMap
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
         return adapterConfig.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval();
+    }
+
+    @Override
+    public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
+        if (httpClient == null) {
+            writingOutput.fail(new ProtocolAdapterException(),
+                    "No response was created, because the client is null.",
+                    false);
+            return;
+        }
+
+        final MqttToHttpMapping mqttToHttpMapping = (MqttToHttpMapping) writingInput.getWritingContext();
+        final HttpRequest.Builder builder = HttpRequest.newBuilder();
+        builder.uri(URI.create(mqttToHttpMapping.getUrl()));
+        builder.timeout(Duration.ofSeconds(mqttToHttpMapping.getHttpRequestTimeoutSeconds()));
+        builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
+        mqttToHttpMapping.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
+
+        final HttpPayload httpPayload = (HttpPayload) writingInput.getWritingPayload();
+        final String payloadAsString = httpPayload.getValue().toString();
+
+        switch (mqttToHttpMapping.getHttpRequestMethod()) {
+            case POST:
+                builder.POST(HttpRequest.BodyPublishers.ofString(payloadAsString));
+                builder.header(CONTENT_TYPE_HEADER, JSON_MIME_TYPE);
+                break;
+            case PUT:
+                builder.PUT(HttpRequest.BodyPublishers.ofString(payloadAsString));
+                builder.header(CONTENT_TYPE_HEADER, JSON_MIME_TYPE);
+                break;
+            default:
+                writingOutput.fail(new IllegalStateException("Unsupported request method: " +
+                                mqttToHttpMapping.getHttpRequestMethod()),
+                        "There was an unexpected value present in the request config: " +
+                                mqttToHttpMapping.getHttpRequestMethod(),
+                        false);
+                return;
+        }
+
+        final CompletableFuture<HttpResponse<String>> responseFuture =
+                httpClient.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+        responseFuture.thenAccept(httpResponse -> {
+            if (isSuccessStatusCode(httpResponse.statusCode())) {
+                writingOutput.finish();
+            } else {
+                // TODO when retry?
+                writingOutput.fail("Forwarding a message from topic failed with reason code " +
+                        httpResponse.statusCode(), false);
+            }
+        });
+    }
+
+    @Override
+    public @NotNull List<MqttToHttpMapping> getWritingContexts() {
+        if (adapterConfig instanceof BidirectionalHttpAdapterConfig) {
+            return ((BidirectionalHttpAdapterConfig) adapterConfig).getMqttToHttpConfig().getMappings();
+        }
+        return Collections.emptyList();
+    }
+
+    @Override
+    public @NotNull CompletableFuture<@NotNull JsonNode> createMqttPayloadJsonSchema(final @NotNull MqttToHttpMapping writeContext) {
+        return CompletableFuture.completedFuture(JsonSchema.createJsonSchema());
+    }
+
+    @Override
+    public @NotNull Class<? extends WritingPayload> getMqttPayloadClass() {
+        return HttpPayload.class;
     }
 
     private static boolean isSuccessStatusCode(final int statusCode) {
@@ -319,4 +401,5 @@ public class HttpProtocolAdapter implements PollingProtocolAdapter<HttpToMqttMap
             throw new RuntimeException(e);
         }
     }
+
 }

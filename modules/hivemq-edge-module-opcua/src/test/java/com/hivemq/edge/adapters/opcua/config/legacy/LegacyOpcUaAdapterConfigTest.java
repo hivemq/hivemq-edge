@@ -20,23 +20,13 @@ import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterFactory;
-import com.hivemq.edge.adapters.opcua.config.Auth;
-import com.hivemq.edge.adapters.opcua.config.BasicAuth;
-import com.hivemq.edge.adapters.opcua.config.Keystore;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttConfig;
-import com.hivemq.edge.adapters.opcua.config.OpcUaToMqttMapping;
-import com.hivemq.edge.adapters.opcua.config.Security;
-import com.hivemq.edge.adapters.opcua.config.Tls;
-import com.hivemq.edge.adapters.opcua.config.Truststore;
-import com.hivemq.edge.adapters.opcua.config.X509Auth;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 
 import static com.hivemq.edge.adapters.opcua.config.SecPolicy.BASIC128RSA15;
@@ -59,9 +49,9 @@ class LegacyOpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(true);
         final OpcUaAdapterConfig config =
-                opcUaProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("opcua"));
+                (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("opcua"));
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");
@@ -118,9 +108,9 @@ class LegacyOpcUaAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory();
+        final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory = new OpcUaProtocolAdapterFactory(true);
         final OpcUaAdapterConfig config =
-                opcUaProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("opcua"));
+                (OpcUaAdapterConfig) opcUaProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("opcua"));
 
         assertThat(config.getId()).isEqualTo("simulation-server-2");
         assertThat(config.getUri()).isEqualTo("opc.tcp://CSM1.local:53530/OPCUA/SimulationServer");

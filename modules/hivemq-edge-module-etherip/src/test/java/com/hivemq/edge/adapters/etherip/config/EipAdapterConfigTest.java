@@ -48,9 +48,9 @@ class EipAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final EipProtocolAdapterFactory eipProtocolAdapterFactory = new EipProtocolAdapterFactory();
+        final EipProtocolAdapterFactory eipProtocolAdapterFactory = new EipProtocolAdapterFactory(false);
         final EipAdapterConfig config =
-                eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"));
+                (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"));
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -105,9 +105,9 @@ class EipAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final EipProtocolAdapterFactory eipProtocolAdapterFactory = new EipProtocolAdapterFactory();
+        final EipProtocolAdapterFactory eipProtocolAdapterFactory = new EipProtocolAdapterFactory(false);
         final EipAdapterConfig config =
-                eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"));
+                (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("eip"));
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -149,7 +149,7 @@ class EipAdapterConfigTest {
                 16,
                 new EipToMqttConfig(12, 13, true, List.of(pollingContext)));
 
-        final EipProtocolAdapterFactory eipProtocolAdapterFactory = new EipProtocolAdapterFactory();
+        final EipProtocolAdapterFactory eipProtocolAdapterFactory = new EipProtocolAdapterFactory(false);
         final Map<String, Object> config =
                 eipProtocolAdapterFactory.unconvertConfigObject(mapper, eipAdapterConfig);
 

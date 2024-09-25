@@ -23,6 +23,7 @@ import com.hivemq.api.resources.GenericAPIHolder;
 import com.hivemq.bootstrap.netty.ioc.NettyModule;
 import com.hivemq.bootstrap.services.AfterHiveMQStartBootstrapService;
 import com.hivemq.bootstrap.services.CompleteBootstrapService;
+import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
 import com.hivemq.bootstrap.services.GeneralBootstrapService;
 import com.hivemq.bootstrap.services.PersistenceBootstrapService;
 import com.hivemq.bridge.ioc.BridgeModule;
@@ -79,7 +80,8 @@ import java.util.Set;
         UnsServiceModule.class,
         DataGovernanceModule.class,
         RemoteServiceModule.class,
-        BootstrapServicesModule.class})
+        BootstrapServicesModule.class,
+        AdapterModule.class})
 @Singleton
 public interface Injector {
 
@@ -166,6 +168,9 @@ public interface Injector {
 
         @BindsInstance
         Builder generalBootstrapService(GeneralBootstrapService generalBootstrapService);
+
+        @BindsInstance
+        Builder edgeCoreFactoryService(EdgeCoreFactoryService edgeCoreFactoryService);
 
         Injector build();
     }

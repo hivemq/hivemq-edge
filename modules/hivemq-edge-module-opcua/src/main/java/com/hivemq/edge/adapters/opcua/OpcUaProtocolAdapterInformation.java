@@ -15,6 +15,7 @@
  */
 package com.hivemq.edge.adapters.opcua;
 
+import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCategory;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterTag;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
 import java.util.List;
 
 public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformation{
@@ -80,6 +82,11 @@ public class OpcUaProtocolAdapterInformation implements ProtocolAdapterInformati
     @Override
     public @Nullable ProtocolAdapterCategory getCategory() {
         return ProtocolAdapterCategory.INDUSTRIAL;
+    }
+
+    @Override
+    public @NotNull EnumSet<ProtocolAdapterCapability> getCapabilities() {
+        return EnumSet.of(ProtocolAdapterCapability.READ, ProtocolAdapterCapability.WRITE, ProtocolAdapterCapability.DISCOVER);
     }
 
     @Override

@@ -5,15 +5,22 @@
       "title" : "Connection",
       "properties" : [
         "id",
-        "url",
-        "httpConnectTimeoutSeconds"
+        "httpConnectTimeoutSeconds",
+        "allowUntrustedCertificates"
       ]
     },
     {
-      "id" : "subFields",
+      "id" : "httpToMqtt",
       "title" : "HTTP to MQTT",
       "properties" : [
         "httpToMqtt"
+      ]
+    },
+    {
+      "id" : "mqttToHttp",
+      "title" : "MQTT to HTTP",
+      "properties" : [
+        "mqttToHttp"
       ]
     }
   ],
@@ -33,13 +40,13 @@
       "maxPollingErrorsBeforeRemoval",
       "assertResponseIsJson",
       "httpPublishSuccessStatusCodeOnly",
-      "allowUntrustedCertificates",
       "*"
     ],
     "httpToMqttMappings" : {
       "ui:batchMode" : true,
       "items" : {
         "ui:order" : [
+          "url",
           "mqttTopic",
           "mqttQos",
           "mqttUserProperties",
@@ -56,6 +63,31 @@
         },
         "httpRequestBody" : {
           "ui:widget" : "textarea"
+        }
+      }
+    }
+  },
+  "mqttToHttp" : {
+    "ui:batchMode" : true,
+    "ui:order" : [
+      "mqttToHttpMappings",
+      "*"
+    ],
+    "mqttToHttpMappings" : {
+      "ui:batchMode" : true,
+      "items" : {
+        "ui:order" : [
+          "url",
+          "mqttTopicFilter",
+          "mqttMaxQos",
+          "mqttUserProperties",
+          "httpRequestMethod",
+          "httpRequestTimeoutSeconds",
+          "httpHeaders",
+          "*"
+        ],
+        "ui:collapsable" : {
+          "titleKey" : "mqttTopicFilter"
         }
       }
     }

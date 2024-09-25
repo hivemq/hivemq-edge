@@ -95,7 +95,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response getAdapterTypes() {
 
         //-- Obtain the adapters installed by the runtime (these will be marked as installed = true).
-        Set<ProtocolAdapter> installedAdapters =
+        final Set<ProtocolAdapter> installedAdapters =
                 protocolAdapterManager.getAllAvailableAdapterTypes().values().stream().map(installedAdapter -> {
                     try {
                         return ProtocolAdapterApiUtils.convertInstalledAdapterType(objectMapper,

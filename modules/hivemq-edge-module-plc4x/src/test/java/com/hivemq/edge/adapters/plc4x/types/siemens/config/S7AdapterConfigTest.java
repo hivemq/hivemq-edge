@@ -52,9 +52,9 @@ class S7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory();
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
         final S7AdapterConfig config =
-                s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
+                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
 
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -96,9 +96,9 @@ class S7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory();
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
         final S7AdapterConfig config =
-                s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
+                (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
 
         assertThat(config.getId()).isEqualTo("my-s7-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -148,7 +148,7 @@ class S7AdapterConfigTest {
                 5,
                 new S7ToMqttConfig(12, 13, true, List.of(pollingContext)));
 
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory();
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
         final Map<String, Object> config =
                 s7ProtocolAdapterFactory.unconvertConfigObject(mapper, s7AdapterConfig);
 

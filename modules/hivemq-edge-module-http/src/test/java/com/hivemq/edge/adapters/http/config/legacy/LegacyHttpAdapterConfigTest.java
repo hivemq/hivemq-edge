@@ -21,7 +21,7 @@ import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.http.HttpProtocolAdapterFactory;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
-import com.hivemq.edge.adapters.http.config.HttpToMqttMapping;
+import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -50,11 +50,10 @@ public class LegacyHttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(false);
         final HttpAdapterConfig config =
-                httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
+                (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
 
-        assertThat(config.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(5);
 
@@ -62,14 +61,14 @@ public class LegacyHttpAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1000);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
 
-        final HttpToMqttMapping httpPollingContext = config.getHttpToMqttConfig().getMappings().get(0);
-
-        assertThat(httpPollingContext.getMqttTopic()).isEqualTo("my/destination");
-        assertThat(httpPollingContext.getMqttQos()).isEqualTo(1);
-        assertThat(httpPollingContext.getHttpRequestMethod()).isEqualTo(GET);
-        assertThat(httpPollingContext.getHttpRequestBodyContentType()).isEqualTo(JSON);
-        assertThat(httpPollingContext.getHttpRequestBody()).isNull();
-        assertThat(httpPollingContext.getHttpHeaders()).isEmpty();
+        final HttpToMqttMapping httpToMqttMapping = config.getHttpToMqttConfig().getMappings().get(0);
+        assertThat(httpToMqttMapping.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+        assertThat(httpToMqttMapping.getMqttTopic()).isEqualTo("my/destination");
+        assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(1);
+        assertThat(httpToMqttMapping.getHttpRequestMethod()).isEqualTo(GET);
+        assertThat(httpToMqttMapping.getHttpRequestBodyContentType()).isEqualTo(JSON);
+        assertThat(httpToMqttMapping.getHttpRequestBody()).isNull();
+        assertThat(httpToMqttMapping.getHttpHeaders()).isEmpty();
     }
 
     @Test
@@ -82,18 +81,18 @@ public class LegacyHttpAdapterConfigTest {
 
         assertThat(adapters.get("http")).isNotNull();
 
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory();
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(false);
         final HttpAdapterConfig config =
-                httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
+                (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
-        assertThat(config.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(50);
         assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
         assertThat(config.getHttpToMqttConfig().getPollingIntervalMillis()).isEqualTo(1773);
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
 
         assertThat(config.getHttpToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
+            assertThat(mapping.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
             assertThat(mapping.getMqttTopic()).isEqualTo("my/destination");
             assertThat(mapping.getMqttQos()).isEqualTo(0);
             assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);

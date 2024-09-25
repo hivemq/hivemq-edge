@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.file;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
@@ -36,6 +37,12 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(FileProtocolAdapterFactory.class);
 
+    final boolean writingEnabled;
+
+    public FileProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
+    }
+
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
         return FileProtocolAdapterInformation.INSTANCE;
@@ -49,7 +56,7 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
     }
 
     @Override
-    public @NotNull FileAdapterConfig convertConfigObject(
+    public @NotNull ProtocolAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config) {
         try {

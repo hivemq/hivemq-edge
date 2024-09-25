@@ -15,6 +15,7 @@
  */
 package com.hivemq.bootstrap.services;
 
+import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.bootstrap.ioc.Persistences;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extensions.core.HandlerService;
@@ -27,4 +28,7 @@ public interface CompleteBootstrapService extends PersistenceBootstrapService {
     @NotNull RestComponentsService restComponentsService();
 
     @NotNull HandlerService handlerService();
+
+    @NotNull
+    EventService eventService();
 }

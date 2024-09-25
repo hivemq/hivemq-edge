@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.etherip;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
@@ -36,6 +37,12 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(EipProtocolAdapterFactory.class);
 
+    final boolean writingEnabled;
+
+    public EipProtocolAdapterFactory(final boolean writingEnabled) {
+        this.writingEnabled = writingEnabled;
+    }
+
     @Override
     public @NotNull ProtocolAdapterInformation getInformation() {
         return EipProtocolAdapterInformation.INSTANCE;
@@ -49,7 +56,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
     }
 
     @Override
-    public @NotNull EipAdapterConfig convertConfigObject(
+    public @NotNull ProtocolAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper,
             final @NotNull Map<String, Object> config) {
         try {
