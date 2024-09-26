@@ -218,15 +218,15 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter {
 
     private @NotNull CompletableFuture<Void> createAllSubscriptions() {
         //noinspection ConstantValue
-        if (adapterConfig.getOpcuaToMqttConfig().getMappings() == null ||
-                adapterConfig.getOpcuaToMqttConfig().getMappings().isEmpty()) {
+        if (adapterConfig.getOpcuaToMqttConfig().getOpcuaToMqttMappings() == null ||
+                adapterConfig.getOpcuaToMqttConfig().getOpcuaToMqttMappings().isEmpty()) {
             return CompletableFuture.completedFuture(null);
         }
 
         final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
         final ImmutableList.Builder<CompletableFuture<Void>> subscribeFutures = ImmutableList.builder();
 
-        for (final OpcUaToMqttMapping subscription : adapterConfig.getOpcuaToMqttConfig().getMappings()) {
+        for (final OpcUaToMqttMapping subscription : adapterConfig.getOpcuaToMqttConfig().getOpcuaToMqttMappings()) {
             subscribeFutures.add(subscribeToNode(subscription));
         }
 

@@ -17,7 +17,6 @@ package com.hivemq.edge.adapters.opcua.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,7 +36,7 @@ public class OpcUaToMqttConfig {
         this.opcuaToMqttMappings = Objects.requireNonNullElse(opcuaToMqttMappings, List.of());
     }
 
-    public @NotNull List<OpcUaToMqttMapping> getMappings() {
+    public @NotNull List<OpcUaToMqttMapping> getOpcuaToMqttMappings() {
         return opcuaToMqttMappings;
     }
 }
