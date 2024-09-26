@@ -22,27 +22,23 @@ import org.jetbrains.annotations.NotNull;
 
 public class Keystore {
 
-    @JsonProperty(value = "path", required = true)
-    @ModuleConfigField(title = "Keystore path",
-                       description = "Path on the local file system to the keystore.",
-                       required = true)
+    @JsonProperty(value = "path")
+    @ModuleConfigField(title = "Keystore path", description = "Path on the local file system to the keystore.")
     private final @NotNull String path;
 
-    @JsonProperty(value = "password", required = true)
-    @ModuleConfigField(title = "Keystore password", description = "Password to open the keystore.", required = true)
+    @JsonProperty(value = "password")
+    @ModuleConfigField(title = "Keystore password", description = "Password to open the keystore.")
     private final @NotNull String password;
 
-    @JsonProperty(value = "privateKeyPassword", required = true)
-    @ModuleConfigField(title = "Private key password",
-                       description = "Password to access the private key.",
-                       required = true)
+    @JsonProperty(value = "privateKeyPassword")
+    @ModuleConfigField(title = "Private key password", description = "Password to access the private key.")
     private final @NotNull String privateKeyPassword;
 
     @JsonCreator
     public Keystore(
-            @JsonProperty(value = "path", required = true) final @NotNull String path,
-            @JsonProperty(value = "password", required = true) final @NotNull String password,
-            @JsonProperty(value = "privateKeyPassword", required = true) final @NotNull String privateKeyPassword) {
+            @JsonProperty(value = "path") final @NotNull String path,
+            @JsonProperty(value = "password") final @NotNull String password,
+            @JsonProperty(value = "privateKeyPassword") final @NotNull String privateKeyPassword) {
         this.path = path;
         this.password = password;
         this.privateKeyPassword = privateKeyPassword;
