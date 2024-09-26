@@ -83,7 +83,7 @@ class OpcUaAdapterConfigTest {
         });
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
-        assertThat(config.getOpcuaToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
+        assertThat(config.getOpcuaToMqttConfig().getOpcuaToMqttMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/#");
             assertThat(mapping.getQos()).isEqualTo(1);
@@ -127,7 +127,7 @@ class OpcUaAdapterConfigTest {
         });
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
-        assertThat(config.getOpcuaToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
+        assertThat(config.getOpcuaToMqttConfig().getOpcuaToMqttMappings()).satisfiesExactly(mapping -> {
             assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/#");
             assertThat(mapping.getQos()).isEqualTo(0);
