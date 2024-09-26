@@ -196,4 +196,11 @@ public interface ClientQueuePersistence {
      * @param sharedSubscription for which there are messages available
      */
     void sharedPublishAvailable(@NotNull String sharedSubscription);
+
+    void addPublishAvailableCallback(@NotNull PublishAvailableCallback callback, @NotNull String queueId);
+    void removePublishAvailableCallback(@NotNull String queueId);
+
+    interface PublishAvailableCallback {
+        void onPublishAvailable(@NotNull String queueId);
+    }
 }
