@@ -3,7 +3,7 @@
     {
       "id": "coreFields",
       "title": "Connection",
-      "properties": ["id", "uri", "overrideUri"]
+      "properties": ["id", "uri", "overrideUri", "security", "tls", "auth"]
     },
     {
       "id": "opcuaToMqtt",
@@ -14,22 +14,12 @@
       "id": "mqttToOpcua",
       "title": "MQTT to OPC UA",
       "properties": ["mqttToOpcua"]
-    },
-    {
-      "id": "security",
-      "title": "Security",
-      "properties": ["security", "tls"]
-    },
-    {
-      "id": "authentication",
-      "title": "Authentication",
-      "properties": ["auth"]
     }
   ],
   "id": {
     "ui:disabled": true
   },
-  "ui:order": ["id", "uri", "*"],
+  "ui:order": ["id", "uri", "overrideUri", "security", "tls", "auth", "*"],
   "opcuaToMqtt": {
     "ui:batchMode": true,
     "opcuaToMqttMappings": {
