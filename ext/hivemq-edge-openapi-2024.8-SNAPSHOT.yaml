@@ -4820,6 +4820,7 @@ components:
             enum:
             - READ
             - DISCOVER
+            - WRITE
           uniqueItems: true
         category:
           $ref: '#/components/schemas/ProtocolAdapterCategory'
