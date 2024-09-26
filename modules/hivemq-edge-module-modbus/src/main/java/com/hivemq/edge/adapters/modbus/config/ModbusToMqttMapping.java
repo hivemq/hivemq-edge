@@ -95,7 +95,7 @@ public class ModbusToMqttMapping implements PollingContext {
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
             @JsonProperty(value = "addressRange", required = true) final @NotNull AddressRange addressRange,
-            @JsonProperty(value = "dataType") final @Nullable ModbusDataType dataType) throws ProtocolAdapterException {
+            @JsonProperty(value = "dataType") final @Nullable ModbusDataType dataType) {
         this.mqttTopic = mqttTopic;
         this.qos = requireNonNullElse(qos, 0);
         this.messageHandlingOptions = requireNonNullElse(messageHandlingOptions, MQTTMessagePerSubscription);
@@ -110,7 +110,7 @@ public class ModbusToMqttMapping implements PollingContext {
             case INT_16:
             case UINT_16:
                 if (registerCount != 1) {
-                    throw new ProtocolAdapterException("The data type " +
+                    throw new IllegalArgumentException("The data type " +
                             this.dataType +
                             " needs exactly 1 register, but " +
                             registerCount +
@@ -121,7 +121,7 @@ public class ModbusToMqttMapping implements PollingContext {
             case UINT_32:
             case FLOAT_32:
                 if (registerCount != 2) {
-                    throw new ProtocolAdapterException("The data type " +
+                    throw new IllegalArgumentException("The data type " +
                             this.dataType +
                             " needs exactly 2 registers, but " +
                             registerCount +
@@ -130,7 +130,7 @@ public class ModbusToMqttMapping implements PollingContext {
                 break;
             case INT_64:
                 if (registerCount != 4) {
-                    throw new ProtocolAdapterException("The data type " +
+                    throw new IllegalArgumentException("The data type " +
                             this.dataType +
                             " needs exactly 4 registers, but " +
                             registerCount +

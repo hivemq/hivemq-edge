@@ -22,6 +22,7 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
 import com.hivemq.edge.adapters.modbus.config.legacy.LegacyModbusAdapterConfig;
@@ -102,7 +103,8 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
                         context.getIncludeTimestamp(),
                         context.getIncludeTagNames(),
                         context.getLegacyProperties(),
-                        context.getAddressRange()))
+                        context.getAddressRange(),
+                        ModbusDataType.INT_32))
                 .collect(Collectors.toList());
 
         final ModbusToMqttConfig modbusToMqttConfig =
