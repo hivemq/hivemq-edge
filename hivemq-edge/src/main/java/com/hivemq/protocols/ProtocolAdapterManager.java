@@ -417,22 +417,6 @@ public class ProtocolAdapterManager {
             if (log.isDebugEnabled()) {
                 log.debug("Protocol-adapter forcefully '{}' stopped.", protocolAdapterWrapper.getId());
             }
-            protocolAdapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
-            eventService.createAdapterEvent(protocolAdapterWrapper.getId(),
-                            protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId())
-                    .withSeverity(Event.SEVERITY.INFO)
-                    .withMessage(String.format("Adapter '%s' stopped OK.", protocolAdapterWrapper.getId()))
-                    .fire();
-            return null;
-        }).exceptionally(throwable -> {
-            if (log.isWarnEnabled()) {
-                log.warn("Protocol-adapter '{}' was unable to stop cleanly", protocolAdapterWrapper.getId(), throwable);
-            }
-            eventService.createAdapterEvent(protocolAdapterWrapper.getId(),
-                            protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId())
-                    .withSeverity(Event.SEVERITY.CRITICAL)
-                    .withMessage("Error stopping adapter '" + protocolAdapterWrapper.getId() + "'.")
-                    .fire();
             return null;
         });
     }
