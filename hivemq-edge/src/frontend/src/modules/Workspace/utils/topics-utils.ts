@@ -91,7 +91,7 @@ export const getPropertiesFromPath = (path: string, instance: JSONSchema7 | unde
   return getPropertiesFromPath(rest.join('.'), properties?.[property] as JSONSchema7)
 }
 
-const getTopicsFromPath = (path: string, instance: RJSFSchema): string[] => {
+const getTopicsFromPath = (path: string, instance: GenericObjectType): string[] => {
   /* istanbul ignore next -- @preserve */
   if (!path.length) {
     console.log('Warning! Is this really happening?')
@@ -99,22 +99,19 @@ const getTopicsFromPath = (path: string, instance: RJSFSchema): string[] => {
   }
   const [property, ...rest] = path.split('.')
 
-  if (!rest.length) return [instance?.[property]]
+  if (!rest.length) {
+    return instance[property] ? [instance[property]] : []
+  }
+
   if (property === TOPIC_PATH_ITEMS_TOKEN) {
     const res: string[] = []
-
-    /* istanbul ignore else -- @preserve */
-    if (Array.isArray(instance)) {
-      for (const item of instance as RJSFSchema[]) {
-        const topicsFromPath = getTopicsFromPath(rest.join('.'), item)
-        res.push(...topicsFromPath)
-      }
-    } else {
-      const topicsFromPath = getTopicsFromPath(rest.join('.'), instance as RJSFSchema)
+    for (const item of instance as GenericObjectType[]) {
+      const topicsFromPath = getTopicsFromPath(rest.join('.'), item)
       res.push(...topicsFromPath)
     }
     return res
   }
+
   return getTopicsFromPath(rest.join('.'), instance?.[property])
 }
 
