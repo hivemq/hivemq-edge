@@ -15,6 +15,7 @@
  */
 package com.hivemq.protocols.writing;
 
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
@@ -25,7 +26,8 @@ public interface ProtocolAdapterWritingService {
 
     boolean writingEnabled();
 
-    @NotNull CompletableFuture<Void> startWriting(@NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter);
+    @NotNull CompletableFuture<Void> startWriting(@NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter,
+                                                  @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService);
 
     @NotNull CompletableFuture<Void> stopWriting(@NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter);
 }

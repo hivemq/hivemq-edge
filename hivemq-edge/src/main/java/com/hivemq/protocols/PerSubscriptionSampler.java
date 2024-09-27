@@ -39,14 +39,12 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
 
     public PerSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter<PollingContext>> protocolAdapter,
-            final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull T pollingContext,
             final @NotNull EventService eventService,
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
         super(protocolAdapter,
-                metricRegistry,
                 objectMapper,
                 adapterPublishService,
                 eventService,

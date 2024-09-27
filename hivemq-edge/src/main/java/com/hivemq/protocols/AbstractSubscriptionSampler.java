@@ -75,7 +75,6 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
 
     public AbstractSubscriptionSampler(
             final @NotNull ProtocolAdapterWrapper<PollingProtocolAdapter<PollingContext>> protocolAdapter,
-            final @NotNull MetricRegistry metricRegistry,
             final @NotNull ObjectMapper objectMapper,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull EventService eventService,
@@ -91,10 +90,7 @@ public abstract class AbstractSubscriptionSampler implements ProtocolAdapterPoll
         this.maxErrorsBeforeRemoval = protocolAdapter.getAdapter().getMaxPollingErrorsBeforeRemoval();
         this.uuid = UUID.randomUUID();
         this.created = new Date();
-        this.protocolAdapterMetricsService =
-                new ProtocolAdapterMetricsServiceImpl(protocolAdapter.getProtocolAdapterInformation().getProtocolId(),
-                        protocolAdapter.getId(),
-                        metricRegistry);
+        this.protocolAdapterMetricsService = protocolAdapter.getProtocolAdapterMetricsService();
     }
 
     @Override

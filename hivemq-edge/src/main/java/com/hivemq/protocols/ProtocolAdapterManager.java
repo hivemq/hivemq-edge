@@ -322,7 +322,7 @@ public class ProtocolAdapterManager {
                 log.debug("Start writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
             startWritingFuture =
-                    protocolAdapterWritingService.startWriting((WritingProtocolAdapter<WritingContext>) protocolAdapterWrapper.getAdapter());
+                    protocolAdapterWritingService.startWriting((WritingProtocolAdapter<WritingContext>) protocolAdapterWrapper.getAdapter(), protocolAdapterWrapper.getProtocolAdapterMetricsService());
         } else {
             startWritingFuture = CompletableFuture.completedFuture(null);
         }
@@ -340,7 +340,6 @@ public class ProtocolAdapterManager {
                 //noinspection unchecked this is safe as we literally make a check on the adapter class before
                 final PerSubscriptionSampler<PollingContext> sampler = new PerSubscriptionSampler<PollingContext>(
                         protocolAdapterWrapper,
-                        metricRegistry,
                         objectMapper,
                         moduleServices.adapterPublishService(),
                         adapterSubscription,
@@ -572,7 +571,9 @@ public class ProtocolAdapterManager {
             // hen-egg problem. Rather solve this here as have not final fields in the adapter.
             moduleServicesPerModule.setAdapter(protocolAdapter);
 
-            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(protocolAdapter,
+            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(
+                    protocolAdapterMetricsService,
+                    protocolAdapter,
                     protocolAdapterFactory,
                     protocolAdapterFactory.getInformation(),
                     protocolAdapterState,

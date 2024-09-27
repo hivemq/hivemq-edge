@@ -25,12 +25,14 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 
 public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
 
+    private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
     private final @NotNull T adapter;
     private final @NotNull ProtocolAdapterFactory<?> adapterFactory;
     private final @NotNull ProtocolAdapterInformation adapterInformation;
@@ -39,11 +41,13 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
     protected @Nullable Long lastStartAttemptTime;
 
     public ProtocolAdapterWrapper(
+            final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService,
             final @NotNull T adapter,
             final @NotNull ProtocolAdapterFactory<?> adapterFactory,
             final @NotNull ProtocolAdapterInformation adapterInformation,
             final @NotNull ProtocolAdapterState protocolAdapterState,
             final @NotNull ProtocolAdapterConfig configObject) {
+        this.protocolAdapterMetricsService = protocolAdapterMetricsService;
         this.adapter = adapter;
         this.adapterFactory = adapterFactory;
         this.adapterInformation = adapterInformation;
@@ -66,8 +70,7 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
     }
 
     public void discoverValues(
-            @NotNull final ProtocolAdapterDiscoveryInput input,
-            @NotNull final ProtocolAdapterDiscoveryOutput output) {
+            @NotNull final ProtocolAdapterDiscoveryInput input, @NotNull final ProtocolAdapterDiscoveryOutput output) {
         adapter.discoverValues(input, output);
     }
 
@@ -109,6 +112,10 @@ public class ProtocolAdapterWrapper<T extends ProtocolAdapter> {
 
     public @NotNull T getAdapter() {
         return adapter;
+    }
+
+    public @NotNull ProtocolAdapterMetricsService getProtocolAdapterMetricsService() {
+        return protocolAdapterMetricsService;
     }
 
     public void setErrorConnectionStatus(final @NotNull Throwable exception, final @Nullable String errorMessage) {
