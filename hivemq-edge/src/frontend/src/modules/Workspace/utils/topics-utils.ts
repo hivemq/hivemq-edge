@@ -64,12 +64,12 @@ export const getTopicPaths = (configSchema: RJSFSchema) => {
       .filter(([k, v]) => k.endsWith('format') && v === CustomFormat.MQTT_TOPIC)
       .map(([path]) =>
         path
-          // The root of the path will always be "properties" [?]
-          .replace('properties.', '')
-          // The leaf of the path will always be "format"
-          .replace('.format', '')
           // A `type: 'array'` property will have a `items: { properties: {}}` pattern [?]
           .replace(/items\.properties/gi, TOPIC_PATH_ITEMS_TOKEN)
+          // The root of the path will always be "properties" [?]
+          .replaceAll('properties.', '')
+          // The leaf of the path will always be "format"
+          .replace('.format', '')
       )
   )
 }
