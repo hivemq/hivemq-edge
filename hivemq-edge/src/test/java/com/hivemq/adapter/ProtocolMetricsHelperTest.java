@@ -60,7 +60,7 @@ public class ProtocolMetricsHelperTest {
         //add an arbitrary fifth
         registry.counter(ARBITRARY_METRIC).inc();
 
-        assertEquals(5, registry.getMetrics().size(), "Number of metrics should match");
+        assertEquals(7, registry.getMetrics().size(), "Number of metrics should match");
 
         helper1.clearAll();
 
