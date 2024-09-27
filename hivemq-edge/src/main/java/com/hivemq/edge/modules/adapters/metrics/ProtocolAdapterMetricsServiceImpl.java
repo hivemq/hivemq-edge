@@ -42,8 +42,10 @@ public class ProtocolAdapterMetricsServiceImpl implements InternalProtocolAdapte
 
     private final @NotNull String protocolAdapterType;
     private final @NotNull String protocolAdapterId;
-    private final @NotNull Counter publishSuccessCounter;
-    private final @NotNull Counter publishFailedCounter;
+    private final @NotNull Counter publishReadSuccessCounter;
+    private final @NotNull Counter publishReadFailedCounter;
+    private final @NotNull Counter publishWriteSuccessCounter;
+    private final @NotNull Counter publishWriteFailedCounter;
     private final @NotNull Counter connectionSuccessCounter;
     private final @NotNull Counter connectionFailedCounter;
 
@@ -57,10 +59,14 @@ public class ProtocolAdapterMetricsServiceImpl implements InternalProtocolAdapte
         this.protocolAdapterType = protocolAdapterType;
         this.protocolAdapterId = protocolAdapterId;
         this.metricRegistry = metricRegistry;
-        this.publishSuccessCounter =
+        this.publishReadSuccessCounter =
                 metricRegistry.counter(createAdapterMetricsNamespace("read.publish." + SUCCESS_COUNT));
-        this.publishFailedCounter =
+        this.publishReadFailedCounter =
                 metricRegistry.counter(createAdapterMetricsNamespace("read.publish." + FAILED_COUNT));
+        this.publishWriteSuccessCounter =
+                metricRegistry.counter(createAdapterMetricsNamespace("write.publish." + SUCCESS_COUNT));
+        this.publishWriteFailedCounter =
+                metricRegistry.counter(createAdapterMetricsNamespace("write.publish." + FAILED_COUNT));
         this.connectionSuccessCounter =
                 metricRegistry.counter(createAdapterMetricsNamespace("connection." + SUCCESS_COUNT));
         this.connectionFailedCounter =
@@ -73,7 +79,7 @@ public class ProtocolAdapterMetricsServiceImpl implements InternalProtocolAdapte
      */
     @Override
     public void incrementReadPublishSuccess() {
-        publishSuccessCounter.inc();
+        publishReadSuccessCounter.inc();
     }
 
     /**
@@ -81,9 +87,18 @@ public class ProtocolAdapterMetricsServiceImpl implements InternalProtocolAdapte
      */
     @Override
     public void incrementReadPublishFailure() {
-        publishFailedCounter.inc();
+        publishReadFailedCounter.inc();
     }
 
+    @Override
+    public void incrementWritePublishSuccess() {
+        publishWriteSuccessCounter.inc();
+    }
+
+    @Override
+    public void incrementWritePublishFailure() {
+        publishWriteFailedCounter.inc();
+    }
 
     /**
      * Use to indicate a connection attempt to the device has failed

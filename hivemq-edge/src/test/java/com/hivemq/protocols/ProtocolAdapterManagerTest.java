@@ -33,7 +33,6 @@ import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.client.mqtt.mqtt3.Mqtt3AsyncClient;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -51,7 +50,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -111,11 +109,12 @@ class ProtocolAdapterManagerTest {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.startWriting(any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(protocolAdapterWritingService.startWriting(any(),
+                protocolAdapterWrapper.getProtocolAdapterMetricsService())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper =
-                new ProtocolAdapterWrapper<>(new TestWritingAdapter(true),
+                new ProtocolAdapterWrapper<>(protocolAdapterMetricsService, new TestWritingAdapter(true),
                         mock(),
                         mock(),
                         new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
@@ -136,7 +135,7 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper =
-                new ProtocolAdapterWrapper<>(new TestWritingAdapter(true),
+                new ProtocolAdapterWrapper<>(protocolAdapterMetricsService, new TestWritingAdapter(true),
                         mock(),
                         mock(),
                         new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
@@ -146,7 +145,8 @@ class ProtocolAdapterManagerTest {
 
         assertEquals(ProtocolAdapterState.RuntimeStatus.STARTED, adapterWrapper.getRuntimeStatus());
         verify(remoteService).fireUsageEvent(any());
-        verify(protocolAdapterWritingService, never()).startWriting(any());
+        verify(protocolAdapterWritingService, never()).startWriting(any(),
+                protocolAdapterWrapper.getProtocolAdapterMetricsService());
     }
 
     @Test
@@ -155,11 +155,12 @@ class ProtocolAdapterManagerTest {
         final EventBuilder eventBuilder = new EventBuilderImpl(mock());
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.startWriting(any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(protocolAdapterWritingService.startWriting(any(),
+                protocolAdapterWrapper.getProtocolAdapterMetricsService())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper =
-                new ProtocolAdapterWrapper<>(new TestWritingAdapter(false),
+                new ProtocolAdapterWrapper<>(protocolAdapterMetricsService, new TestWritingAdapter(false),
                         mock(),
                         mock(),
                         new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
@@ -176,12 +177,13 @@ class ProtocolAdapterManagerTest {
     void test_startWriting_eventServiceFailedStart_resourcesCleanedUp() {
 
         when(protocolAdapterWritingService.writingEnabled()).thenReturn(true);
-        when(protocolAdapterWritingService.startWriting(any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(protocolAdapterWritingService.startWriting(any(),
+                protocolAdapterWrapper.getProtocolAdapterMetricsService())).thenReturn(CompletableFuture.completedFuture(null));
         when(eventService.createAdapterEvent(anyString(),
                 anyString())).thenThrow(new RuntimeException("we failed start"));
 
         final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper =
-                new ProtocolAdapterWrapper<>(new TestWritingAdapter(false),
+                new ProtocolAdapterWrapper<>(protocolAdapterMetricsService, new TestWritingAdapter(false),
                         mock(),
                         mock(),
                         new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
@@ -204,7 +206,7 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper =
-                new ProtocolAdapterWrapper<>(new TestWritingAdapter(true),
+                new ProtocolAdapterWrapper<>(protocolAdapterMetricsService, new TestWritingAdapter(true),
                         mock(),
                         mock(),
                         new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),
@@ -227,7 +229,7 @@ class ProtocolAdapterManagerTest {
         when(eventService.createAdapterEvent(anyString(), anyString())).thenReturn(eventBuilder);
 
         final ProtocolAdapterWrapper<TestWritingAdapter> adapterWrapper =
-                new ProtocolAdapterWrapper<>(new TestWritingAdapter(false),
+                new ProtocolAdapterWrapper<>(protocolAdapterMetricsService, new TestWritingAdapter(false),
                         mock(),
                         mock(),
                         new ProtocolAdapterStateImpl(eventService, "test-adapter", "test-protocol"),

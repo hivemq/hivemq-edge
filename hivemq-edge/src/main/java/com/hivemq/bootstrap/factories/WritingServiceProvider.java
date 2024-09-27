@@ -16,6 +16,7 @@
 package com.hivemq.bootstrap.factories;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
@@ -74,7 +75,8 @@ public class WritingServiceProvider {
         }
 
         @Override
-        public @NotNull CompletableFuture<Void> startWriting(@NotNull final WritingProtocolAdapter<WritingContext> writingProtocolAdapter) {
+        public @NotNull CompletableFuture<Void> startWriting(@NotNull final WritingProtocolAdapter<WritingContext> writingProtocolAdapter,
+                                                             final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService) {
             log.warn("No bidirectional module is currently installed. Writing to PLCs is currently not supported.");
             return CompletableFuture.completedFuture(null);
         }
