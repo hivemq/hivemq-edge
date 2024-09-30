@@ -89,7 +89,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics;
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
-    private final @NotNull WritingServiceProvider writingServiceProvider;
+    private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ExecutorService executorService;
 
     private final @NotNull Object lock = new Object();
@@ -107,7 +107,7 @@ public class ProtocolAdapterManager {
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
             final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics,
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
-            final @NotNull WritingServiceProvider writingServiceProvider,
+            final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService,
             final @NotNull ExecutorService executorService) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
@@ -120,7 +120,7 @@ public class ProtocolAdapterManager {
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetrics = protocolAdapterMetrics;
         this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
-        this.writingServiceProvider = writingServiceProvider;
+        this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.executorService = executorService;
     }
 
@@ -128,11 +128,7 @@ public class ProtocolAdapterManager {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public @NotNull ListenableFuture<Void> start() {
 
-        final ProtocolAdapterWritingService protocolAdapterWritingService = writingServiceProvider.get();
-        if (protocolAdapterWritingService != null) {
-            protocolAdapterWritingService.addWritingChangedCallback(this::findAllAdapters);
-        }
-
+        protocolAdapterWritingService.addWritingChangedCallback(this::findAllAdapters);
         findAllAdapters();
 
         //iterate configs and start each adapter
@@ -322,9 +318,7 @@ public class ProtocolAdapterManager {
 
     private @NotNull CompletableFuture<Void> startWriting(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         final CompletableFuture<Void> startWritingFuture;
-        final ProtocolAdapterWritingService protocolAdapterWritingService = writingServiceProvider.get();
         if (writingEnabled() &&
-                protocolAdapterWritingService != null &&
                 protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
             if (log.isDebugEnabled()) {
                 log.debug("Start writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
@@ -371,9 +365,7 @@ public class ProtocolAdapterManager {
 
         //no check for 'writing is enabled', as we have to stop it anyway since the license could have been removed in the meantime.
         final CompletableFuture<Void> stopWritingFuture;
-        final ProtocolAdapterWritingService protocolAdapterWritingService = writingServiceProvider.get();
-        if (protocolAdapterWritingService != null &&
-                protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
+        if (protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
             if (log.isDebugEnabled()) {
                 log.debug("Stopping writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
@@ -416,9 +408,7 @@ public class ProtocolAdapterManager {
 
         //no check for 'writing is enabled', as we have to stop it anyway since the license could have been removed in the meantime.
         final CompletableFuture<Void> stopWritingFuture;
-        final ProtocolAdapterWritingService protocolAdapterWritingService = writingServiceProvider.get();
-        if (protocolAdapterWritingService != null &&
-                protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
+        if (protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
             stopWritingFuture =
                     protocolAdapterWritingService.stopWriting((WritingProtocolAdapter<WritingContext>) protocolAdapterWrapper.getAdapter());
         } else {
@@ -633,10 +623,6 @@ public class ProtocolAdapterManager {
     }
 
     public boolean writingEnabled() {
-        final ProtocolAdapterWritingService protocolAdapterWritingService = writingServiceProvider.get();
-        if (protocolAdapterWritingService == null) {
-            return false;
-        }
         return protocolAdapterWritingService.writingEnabled();
     }
 

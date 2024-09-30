@@ -56,7 +56,7 @@ public class WritingServiceProvider {
         this.singleWriterService = singleWriterService;
     }
 
-    public @Nullable ProtocolAdapterWritingService get() {
+    public @NotNull ProtocolAdapterWritingService get() {
         final WritingServiceFactory writingServiceFactory = edgeCoreFactoryService.getWritingServiceFactory();
         if (writingServiceFactory == null) {
             return new WritingServiceNoop();

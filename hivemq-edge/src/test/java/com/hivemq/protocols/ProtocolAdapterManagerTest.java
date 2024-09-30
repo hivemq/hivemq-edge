@@ -77,7 +77,6 @@ class ProtocolAdapterManagerTest {
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService = mock();
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics = mock();
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator = mock();
-    private final @NotNull WritingServiceProvider writingServiceProvider = mock();
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService = mock();
     private final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -85,7 +84,6 @@ class ProtocolAdapterManagerTest {
 
     @BeforeEach
     void setUp() {
-        when(writingServiceProvider.get()).thenReturn(protocolAdapterWritingService);
         protocolAdapterManager = new ProtocolAdapterManager(configurationService,
                 metricRegistry,
                 moduleServices,
@@ -97,7 +95,7 @@ class ProtocolAdapterManagerTest {
                 protocolAdapterPollingService,
                 protocolAdapterMetrics,
                 jsonPayloadDefaultCreator,
-                writingServiceProvider,
+                protocolAdapterWritingService,
                 executorService);
     }
 
