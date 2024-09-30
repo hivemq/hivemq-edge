@@ -18,22 +18,21 @@ package com.hivemq.api.model.tags;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.persistence.domain.DomainTag;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public class DomainTag {
-
+public class DomainTagModel {
 
     @JsonProperty("tagAddress")
     @Schema(description = "The address for the data point on the device")
     private final @NotNull TagAddress tagAddress;
-
 
     @JsonProperty("tag")
     @Schema(description = "The tag that ")
     private final @NotNull String tag;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public DomainTag(
+    public DomainTagModel(
             @JsonProperty("tagAddress") final @NotNull TagAddress tagAddress,
             @JsonProperty("tag") final @NotNull String tag) {
         this.tagAddress = tagAddress;
@@ -46,5 +45,10 @@ public class DomainTag {
 
     public @NotNull TagAddress getTagAddress() {
         return tagAddress;
+    }
+
+
+    public static @NotNull DomainTagModel fromDomainTag(final @NotNull DomainTag domainTag) {
+        return new DomainTagModel(domainTag.getTagAddress(), domainTag.getTag());
     }
 }

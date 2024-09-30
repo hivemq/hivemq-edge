@@ -22,11 +22,11 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
 
-public class DomainTagList extends ItemsResponse<DomainTag> {
+public class DomainTagModelList extends ItemsResponse<DomainTagModel> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public DomainTagList(
-            @JsonProperty("items") final @NotNull List<DomainTag> items) {
+    public DomainTagModelList(
+            @JsonProperty("items") final @NotNull List<DomainTagModel> items) {
         super(items);
     }
 

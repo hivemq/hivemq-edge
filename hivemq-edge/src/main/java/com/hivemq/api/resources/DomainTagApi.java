@@ -4,8 +4,8 @@ package com.hivemq.api.resources;
 import com.hivemq.api.model.ApiBodyExamples;
 import com.hivemq.api.model.TagResourceExamples;
 import com.hivemq.api.model.status.StatusTransitionResult;
-import com.hivemq.api.model.tags.DomainTag;
-import com.hivemq.api.model.tags.DomainTagList;
+import com.hivemq.api.model.tags.DomainTagModel;
+import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.model.tags.TagSchemaList;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,7 +46,7 @@ public interface DomainTagApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = DomainTagList.class),
+                                                       schema = @Schema(implementation = DomainTagModelList.class),
                                                        examples = {
                                                                @ExampleObject(description = "An example for domain tags in opc ua",
                                                                               name = "opc ua domain tags example",
@@ -77,7 +77,7 @@ public interface DomainTagApi {
             @NotNull @Parameter(name = "domainTag",
                                 description = "The domain tag.",
                                 required = true,
-                                in = ParameterIn.DEFAULT) DomainTag domainTag);
+                                in = ParameterIn.DEFAULT) DomainTagModel domainTag);
 
 
     @DELETE
@@ -125,7 +125,7 @@ public interface DomainTagApi {
                                 description = "The id of the domain tag that will be changed.",
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("tagId") String tagId,
-            final @NotNull DomainTag domainTag);
+            final @NotNull DomainTagModel domainTag);
 
 
     @GET
@@ -137,7 +137,7 @@ public interface DomainTagApi {
                        @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = DomainTagList.class),
+                                                       schema = @Schema(implementation = DomainTagModelList.class),
                                                        examples = {
                                                                @ExampleObject(description = "An example for domain tags in opc ua",
                                                                               name = "opc ua domain tags example",
@@ -148,6 +148,9 @@ public interface DomainTagApi {
     Response getDomainTags();
 
 
+
+    // TODO not part of this ticket as it does not include schemas
+    /**
 
     @GET
     @Path("/domain/tags/schema")
@@ -166,9 +169,9 @@ public interface DomainTagApi {
                                                                               value = TagResourceExamples.EXAMPLE_OPC_UA)}))})
     @Produces(APPLICATION_JSON)
     @NotNull
-    Response getTagSchemas();
+    Response getTagSchema();
 
 
-
+    **/
 
 }
