@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.bootstrap.services.EdgeCoreFactoryService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.SingleWriterService;
 import com.hivemq.protocols.writing.NanoTimeProvider;
@@ -55,8 +56,7 @@ public class WritingServiceProvider {
         this.singleWriterService = singleWriterService;
     }
 
-
-    public @NotNull ProtocolAdapterWritingService get() {
+    public @Nullable ProtocolAdapterWritingService get() {
         final WritingServiceFactory writingServiceFactory = edgeCoreFactoryService.getWritingServiceFactory();
         if (writingServiceFactory == null) {
             return new WritingServiceNoop();
@@ -68,6 +68,11 @@ public class WritingServiceProvider {
     public static class WritingServiceNoop implements ProtocolAdapterWritingService {
 
         private static final @NotNull Logger log = LoggerFactory.getLogger(WritingServiceNoop.class);
+
+        @Override
+        public void addWritingChangedCallback(final @NotNull ProtocolAdapterWritingService.WritingChangedCallback callback) {
+
+        }
 
         @Override
         public boolean writingEnabled() {

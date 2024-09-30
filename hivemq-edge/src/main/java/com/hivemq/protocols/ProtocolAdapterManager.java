@@ -37,6 +37,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.bootstrap.factories.WritingServiceProvider;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -88,7 +89,7 @@ public class ProtocolAdapterManager {
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService;
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics;
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
-    private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
+    private final @NotNull WritingServiceProvider writingServiceProvider;
     private final @NotNull ExecutorService executorService;
 
     private final @NotNull Object lock = new Object();
@@ -106,7 +107,7 @@ public class ProtocolAdapterManager {
             final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService,
             final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics,
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
-            final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService,
+            final @NotNull WritingServiceProvider writingServiceProvider,
             final @NotNull ExecutorService executorService) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
@@ -119,7 +120,7 @@ public class ProtocolAdapterManager {
         this.protocolAdapterPollingService = protocolAdapterPollingService;
         this.protocolAdapterMetrics = protocolAdapterMetrics;
         this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
-        this.protocolAdapterWritingService = protocolAdapterWritingService;
+        this.writingServiceProvider = writingServiceProvider;
         this.executorService = executorService;
     }
 
@@ -127,16 +128,12 @@ public class ProtocolAdapterManager {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public @NotNull ListenableFuture<Void> start() {
 
-        findAllAdapters();
+        final ProtocolAdapterWritingService protocolAdapterWritingService = writingServiceProvider.get();
+        if (protocolAdapterWritingService != null) {
+            protocolAdapterWritingService.addWritingChangedCallback(this::findAllAdapters);
+        }
 
-        log.info("Discovered {} protocol adapter-type(s): [{}].",
-                factoryMap.size(),
-                factoryMap.values()
-                        .stream()
-                        .map(protocolAdapterFactory -> "'" +
-                                protocolAdapterFactory.getInformation().getProtocolName() +
-                                "'")
-                        .collect(Collectors.joining(", ")));
+        findAllAdapters();
 
         //iterate configs and start each adapter
         final Map<String, Object> allConfigs =
@@ -251,6 +248,15 @@ public class ProtocolAdapterManager {
                 log.error("Not able to load module, reason: {}.", e.getMessage());
             }
         }
+
+        log.info("Discovered {} protocol adapter-type(s): [{}].",
+                factoryMap.size(),
+                factoryMap.values()
+                        .stream()
+                        .map(protocolAdapterFactory -> "'" +
+                                protocolAdapterFactory.getInformation().getProtocolName() +
+                                "'")
+                        .collect(Collectors.joining(", ")));
     }
 
     public @Nullable ProtocolAdapterFactory<?> getProtocolAdapterFactory(final @NotNull String protocolAdapterType) {
@@ -314,15 +320,18 @@ public class ProtocolAdapterManager {
                         "'not found.")));
     }
 
-    private @NotNull CompletableFuture<Void> startWriting(@NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
+    private @NotNull CompletableFuture<Void> startWriting(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         final CompletableFuture<Void> startWritingFuture;
-        if (protocolAdapterWritingService.writingEnabled() &&
+        final ProtocolAdapterWritingService protocolAdapterWritingService = writingServiceProvider.get();
+        if (writingEnabled() &&
+                protocolAdapterWritingService != null &&
                 protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
             if (log.isDebugEnabled()) {
                 log.debug("Start writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
             startWritingFuture =
-                    protocolAdapterWritingService.startWriting((WritingProtocolAdapter<WritingContext>) protocolAdapterWrapper.getAdapter(), protocolAdapterWrapper.getProtocolAdapterMetricsService());
+                    protocolAdapterWritingService.startWriting((WritingProtocolAdapter<WritingContext>) protocolAdapterWrapper.getAdapter(),
+                            protocolAdapterWrapper.getProtocolAdapterMetricsService());
         } else {
             startWritingFuture = CompletableFuture.completedFuture(null);
         }
@@ -362,7 +371,9 @@ public class ProtocolAdapterManager {
 
         //no check for 'writing is enabled', as we have to stop it anyway since the license could have been removed in the meantime.
         final CompletableFuture<Void> stopWritingFuture;
-        if (protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
+        final ProtocolAdapterWritingService protocolAdapterWritingService = writingServiceProvider.get();
+        if (protocolAdapterWritingService != null &&
+                protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
             if (log.isDebugEnabled()) {
                 log.debug("Stopping writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
@@ -405,7 +416,9 @@ public class ProtocolAdapterManager {
 
         //no check for 'writing is enabled', as we have to stop it anyway since the license could have been removed in the meantime.
         final CompletableFuture<Void> stopWritingFuture;
-        if (protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
+        final ProtocolAdapterWritingService protocolAdapterWritingService = writingServiceProvider.get();
+        if (protocolAdapterWritingService != null &&
+                protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
             stopWritingFuture =
                     protocolAdapterWritingService.stopWriting((WritingProtocolAdapter<WritingContext>) protocolAdapterWrapper.getAdapter());
         } else {
@@ -571,8 +584,7 @@ public class ProtocolAdapterManager {
             // hen-egg problem. Rather solve this here as have not final fields in the adapter.
             moduleServicesPerModule.setAdapter(protocolAdapter);
 
-            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(
-                    protocolAdapterMetricsService,
+            final ProtocolAdapterWrapper wrapper = new ProtocolAdapterWrapper(protocolAdapterMetricsService,
                     protocolAdapter,
                     protocolAdapterFactory,
                     protocolAdapterFactory.getInformation(),
@@ -621,6 +633,10 @@ public class ProtocolAdapterManager {
     }
 
     public boolean writingEnabled() {
+        final ProtocolAdapterWritingService protocolAdapterWritingService = writingServiceProvider.get();
+        if (protocolAdapterWritingService == null) {
+            return false;
+        }
         return protocolAdapterWritingService.writingEnabled();
     }
 

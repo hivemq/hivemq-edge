@@ -26,8 +26,18 @@ public interface ProtocolAdapterWritingService {
 
     boolean writingEnabled();
 
-    @NotNull CompletableFuture<Void> startWriting(@NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter,
-                                                  @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService);
+    @NotNull
+    CompletableFuture<Void> startWriting(
+            @NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter,
+            @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService);
 
-    @NotNull CompletableFuture<Void> stopWriting(@NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter);
+    @NotNull
+    CompletableFuture<Void> stopWriting(@NotNull WritingProtocolAdapter<WritingContext> writingProtocolAdapter);
+
+    void addWritingChangedCallback(@NotNull WritingChangedCallback callback);
+
+    @FunctionalInterface
+    interface WritingChangedCallback {
+        void onWritingEnabledChanged();
+    }
 }
