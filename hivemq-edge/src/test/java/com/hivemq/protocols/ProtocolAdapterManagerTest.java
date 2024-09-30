@@ -33,6 +33,7 @@ import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
+import com.hivemq.bootstrap.factories.WritingServiceProvider;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -76,6 +77,7 @@ class ProtocolAdapterManagerTest {
     private final @NotNull ProtocolAdapterPollingService protocolAdapterPollingService = mock();
     private final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics = mock();
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator = mock();
+    private final @NotNull WritingServiceProvider writingServiceProvider = mock();
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService = mock();
     private final @NotNull ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -83,6 +85,7 @@ class ProtocolAdapterManagerTest {
 
     @BeforeEach
     void setUp() {
+        when(writingServiceProvider.get()).thenReturn(protocolAdapterWritingService);
         protocolAdapterManager = new ProtocolAdapterManager(configurationService,
                 metricRegistry,
                 moduleServices,
@@ -94,7 +97,7 @@ class ProtocolAdapterManagerTest {
                 protocolAdapterPollingService,
                 protocolAdapterMetrics,
                 jsonPayloadDefaultCreator,
-                protocolAdapterWritingService,
+                writingServiceProvider,
                 executorService);
     }
 
