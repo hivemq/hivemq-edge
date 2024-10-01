@@ -278,9 +278,7 @@ public class HttpProtocolAdapter
     @Override
     public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
         if (httpClient == null) {
-            writingOutput.fail(new ProtocolAdapterException(),
-                    "No response was created, because the client is null.",
-                    false);
+            writingOutput.fail(new ProtocolAdapterException(), "No response was created, because the client is null.");
             return;
         }
 
@@ -307,8 +305,7 @@ public class HttpProtocolAdapter
                 writingOutput.fail(new IllegalStateException("Unsupported request method: " +
                                 mqttToHttpMapping.getHttpRequestMethod()),
                         "There was an unexpected value present in the request config: " +
-                                mqttToHttpMapping.getHttpRequestMethod(),
-                        false);
+                                mqttToHttpMapping.getHttpRequestMethod());
                 return;
         }
 
@@ -319,9 +316,10 @@ public class HttpProtocolAdapter
             if (isSuccessStatusCode(httpResponse.statusCode())) {
                 writingOutput.finish();
             } else {
-                // TODO when retry?
-                writingOutput.fail("Forwarding a message from topic failed with reason code " +
-                        httpResponse.statusCode(), false);
+                writingOutput.fail(String.format(
+                        "Forwarding a message to url '%s' failed with status code '%d",
+                        mqttToHttpMapping.getUrl(),
+                        httpResponse.statusCode()));
             }
         });
     }

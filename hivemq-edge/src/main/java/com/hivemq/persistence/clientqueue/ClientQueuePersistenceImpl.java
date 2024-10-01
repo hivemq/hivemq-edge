@@ -184,15 +184,15 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
     }
 
     @Override
-    public void sharedPublishAvailable(final @NotNull String sharedSubscription) {
-        if (sharedSubscription.startsWith(MessageForwarderImpl.FORWARDER_PREFIX)) {
-            messageForwarder.messageAvailable(sharedSubscription);
+    public void sharedPublishAvailable(final @NotNull String queueId) {
+        if (queueId.startsWith(MessageForwarderImpl.FORWARDER_PREFIX)) {
+            messageForwarder.messageAvailable(queueId);
         } else {
-            final PublishAvailableCallback availableCallback = queueidCallbackMap.get(sharedSubscription);
+            final PublishAvailableCallback availableCallback = queueidCallbackMap.get(queueId);
             if (availableCallback != null) {
-                availableCallback.onPublishAvailable(sharedSubscription);
+                availableCallback.onPublishAvailable(queueId);
             } else {
-                publishPollService.get().pollSharedPublishes(sharedSubscription);
+                publishPollService.get().pollSharedPublishes(queueId);
             }
         }
     }

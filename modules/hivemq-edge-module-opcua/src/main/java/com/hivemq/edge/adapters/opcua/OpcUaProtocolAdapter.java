@@ -256,7 +256,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                 opcUaObject = Objects.requireNonNull(jsonToOpcUAConverter)
                         .convertToOpcUAValue(opcUAWritePayload.getValue(), nodeId);
             } catch (final Exception e) {
-                writingOutput.fail(e.getMessage(), false);
+                writingOutput.fail(e.getMessage());
                 return;
             }
 
@@ -264,21 +264,21 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
             final DataValue dataValue = new DataValue(variant, null, null);
             if (opcUaClient == null) {
                 log.warn("Client is not connected.");
-                writingOutput.fail("Client is not connected.", true);
+                writingOutput.fail("Client is not connected.");
                 return;
             }
             final CompletableFuture<StatusCode> writeFuture = opcUaClient.writeValue(nodeId, dataValue);
             writeFuture.whenComplete((statusCode, throwable) -> {
                 if (throwable != null) {
                     log.error("Exception while writing to opcua node '{}'", writeContext.getNode(), throwable);
-                    writingOutput.fail(throwable, null, false);
+                    writingOutput.fail(throwable, null);
                 } else {
                     log.info("Wrote '{}' to nodeId={}", variant, nodeId);
                     writingOutput.finish();
                 }
             });
         } catch (final IllegalArgumentException illegalArgumentException) {
-            writingOutput.fail(illegalArgumentException, null, false);
+            writingOutput.fail(illegalArgumentException, null);
         }
     }
 

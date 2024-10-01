@@ -41,8 +41,12 @@ public interface ClientQueuePersistence {
      * @param queueLimit of the client session or the default configuration.
      */
     @NotNull
-    ListenableFuture<Void> add(@NotNull String queueId, boolean shared, @NotNull PUBLISH publish, boolean retained,
-                               long queueLimit);
+    ListenableFuture<Void> add(
+            @NotNull String queueId,
+            boolean shared,
+            @NotNull PUBLISH publish,
+            boolean retained,
+            long queueLimit);
 
     /**
      * Add a list of publishes to the queue.
@@ -56,8 +60,12 @@ public interface ClientQueuePersistence {
      * @param queueLimit of the client session or the default configuration.
      */
     @NotNull
-    ListenableFuture<Void> add(@NotNull String queueId, boolean shared, @NotNull List<PUBLISH> publishes, boolean retained,
-                               final long queueLimit);
+    ListenableFuture<Void> add(
+            @NotNull String queueId,
+            boolean shared,
+            @NotNull List<PUBLISH> publishes,
+            boolean retained,
+            final long queueLimit);
 
     /**
      * Read publishes that are not yet in-flight.
@@ -71,7 +79,11 @@ public interface ClientQueuePersistence {
      * @return The read publishes
      */
     @NotNull
-    ListenableFuture<ImmutableList<PUBLISH>> readNew(@NotNull String queueId, boolean shared, @NotNull ImmutableIntArray packetIds, long byteLimit);
+    ListenableFuture<ImmutableList<PUBLISH>> readNew(
+            @NotNull String queueId,
+            boolean shared,
+            @NotNull ImmutableIntArray packetIds,
+            long byteLimit);
 
     /**
      * Read publishes and pubrels that are in-flight.
@@ -82,7 +94,10 @@ public interface ClientQueuePersistence {
      * @return The read messages
      */
     @NotNull
-    ListenableFuture<ImmutableList<MessageWithID>> readInflight(@NotNull String client, long byteLimit, int messageLimit);
+    ListenableFuture<ImmutableList<MessageWithID>> readInflight(
+            @NotNull String client,
+            long byteLimit,
+            int messageLimit);
 
     /**
      * Remove the entry for a given packet ID.
@@ -146,7 +161,10 @@ public interface ClientQueuePersistence {
      * @return The read publishes
      */
     @NotNull
-    ListenableFuture<ImmutableList<PUBLISH>> readShared(@NotNull String sharedSubscription, int messageLimit, long byteLimit);
+    ListenableFuture<ImmutableList<PUBLISH>> readShared(
+            @NotNull String sharedSubscription,
+            int messageLimit,
+            long byteLimit);
 
     /**
      * Remove a PUBLISH which has the same unique ID as the one that is provided.
@@ -198,6 +216,7 @@ public interface ClientQueuePersistence {
     void sharedPublishAvailable(@NotNull String sharedSubscription);
 
     void addPublishAvailableCallback(@NotNull PublishAvailableCallback callback, @NotNull String queueId);
+
     void removePublishAvailableCallback(@NotNull String queueId);
 
     interface PublishAvailableCallback {
