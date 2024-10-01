@@ -2,8 +2,10 @@ import {
   SelectDestinationTag,
   SelectSourceTopics,
 } from '@/components/rjsf/MqttTransformation/components/EntitySelector.tsx'
-import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { MOCK_DEVICE_TAGS, mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
+import { mockClientSubscription } from '@/api/hooks/useClientSubscriptions/__handlers__'
+import { DomainTagList } from '@/api/__generated__'
 
 describe('SelectSourceTopics', () => {
   beforeEach(() => {
@@ -12,9 +14,10 @@ describe('SelectSourceTopics', () => {
 
   describe('SelectSourceTopics', () => {
     it('should render properly', () => {
-      cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocols')
-      cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] }).as('getAdapters')
-      cy.intercept('/api/v1/management/bridges', { items: [mockBridge] }).as('getConfig3')
+      cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] })
+      cy.intercept('api/v1/management/protocol-adapters/adapters', { items: [mockAdapter] })
+      cy.intercept('/api/v1/management/bridges', { items: [mockBridge] })
+      cy.intercept('/api/v1/management/client/filters', [mockClientSubscription])
 
       cy.mountWithProviders(<SelectSourceTopics values={['topic/test1', 'topic/test2']} onChange={cy.stub()} />)
 
@@ -29,7 +32,13 @@ describe('SelectSourceTopics', () => {
 
   describe('SelectSourceTopics', () => {
     it('should render properly', () => {
-      cy.mountWithProviders(<SelectDestinationTag values={['tag/test1']} onChange={cy.stub()} />)
+      const mockAdapterId = 'my-adapter'
+      const mockResponse: DomainTagList = { items: MOCK_DEVICE_TAGS(mockAdapterId) }
+      cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags', mockResponse)
+
+      cy.mountWithProviders(
+        <SelectDestinationTag adapterId={mockAdapterId} values={['tag/test1']} onChange={cy.stub()} />
+      )
 
       // Loading
       cy.get('#mapping-select-destination').should('contain.text', 'Loading...')

@@ -14,6 +14,8 @@ export const MqttTransformationField: FC<FieldProps<OutwardSubscription[], RJSFS
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
   const [subsData, setSubsData] = useState<OutwardSubscription[] | undefined>(props.formData)
 
+  const { adapterId, adapterType } = props.formContext || {}
+
   useEffect(() => {
     // TODO[NVL] Add validation and persistence
     return () => undefined
@@ -92,6 +94,8 @@ export const MqttTransformationField: FC<FieldProps<OutwardSubscription[], RJSFS
         <AccordionPanel pb={4}>
           {selectedItem !== undefined && (
             <SubscriptionContainer
+              adapterId={adapterId}
+              adapterType={adapterType}
               item={subsData[selectedItem]}
               onClose={handleClose}
               onSubmit={handleSubmit}

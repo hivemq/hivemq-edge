@@ -1,5 +1,6 @@
 import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
 import MappingEditor from './MappingEditor.tsx'
+import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 
 const MOCK_SUBS: OutwardSubscription = {
   node: 'my-node',
@@ -17,8 +18,10 @@ describe('MappingEditor', () => {
   })
 
   it('should render properly', () => {
+    cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
+
     cy.mountWithProviders(
-      <MappingEditor topic="sssss" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.mapping} />
+      <MappingEditor topic="test" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.mapping} />
     )
 
     cy.get('h3').should('have.text', 'Properties to set')
@@ -36,8 +39,9 @@ describe('MappingEditor', () => {
   it('should be accessible ', () => {
     cy.injectAxe()
 
+    cy.intercept('/api/v1/management/domain/tags/schema?*', GENERATE_DATA_MODELS(true, 'test'))
     cy.mountWithProviders(
-      <MappingEditor topic="sssss" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.mapping} />,
+      <MappingEditor topic="test" showTransformation={false} onChange={cy.stub()} mapping={MOCK_SUBS.mapping} />,
       { wrapper }
     )
 

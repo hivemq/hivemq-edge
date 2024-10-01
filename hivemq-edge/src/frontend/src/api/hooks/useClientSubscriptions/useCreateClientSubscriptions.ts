@@ -1,36 +1,26 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ApiError } from '../../__generated__'
+import { ApiError, ClientFilter, ClientFilterList } from '../../__generated__'
 
 import { QUERY_KEYS } from '@/api/utils.ts'
-import { BrokerClient, BrokerClientConfiguration } from '@/api/types/api-broker-client.ts'
+import { useHttpClient } from '@/api/hooks/useHttpClient/useHttpClient.ts'
 
-interface CreateProtocolAdapterProps {
-  id: string
-  config: BrokerClientConfiguration
-}
-
-/**
- * @deprecated This is a mock, missing persistence from backend (https://hivemq.kanbanize.com/ctrl_board/57/cards/25322/details/)
- */
 export const useCreateClientSubscriptions = () => {
+  const appClient = useHttpClient()
   const queryClient = useQueryClient()
 
-  return useMutation<CreateProtocolAdapterProps, ApiError, CreateProtocolAdapterProps>({
-    mutationFn: async ({ id, config }: CreateProtocolAdapterProps) => {
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      return { id, config }
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData<BrokerClient[]>([QUERY_KEYS.CLIENTS], (old) => {
-        const newClient: BrokerClient = {
-          config: {
-            ...data.config,
-            id: data.id,
-          },
-          id: data.id,
-          type: 'broker-client',
-        }
-        return Array.from(new Set([newClient, ...(old || [])]))
+  const addClientFilter = (client: ClientFilter) => {
+    return appClient.client.addClientFilter(client)
+  }
+
+  return useMutation<ClientFilter, ApiError, ClientFilter>({
+    mutationFn: addClientFilter,
+    /**
+     * @deprecated This is a mock, missing persistence from backend (https://hivemq.kanbanize.com/ctrl_board/57/cards/25322/details/)
+     */
+    onError: (_, data) => {
+      /* istanbul ignore next -- @preserve */
+      queryClient.setQueryData<ClientFilterList>([QUERY_KEYS.CLIENTS], (old) => {
+        return Array.from(new Set([data, ...(old || [])]))
       })
     },
   })

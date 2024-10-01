@@ -1,70 +1,4 @@
 import { RJSFSchema } from '@rjsf/utils'
-import { DeviceTags } from '@/modules/Subscriptions/types.ts'
-
-export const GENERATE_DATA_MODELS = (short = false, title?: string): RJSFSchema => {
-  const model: RJSFSchema = {
-    title: title || 'A registration form',
-    description: 'A simple form example.',
-    type: 'object',
-    required: ['firstName', 'lastName'],
-    properties: {
-      firstName: {
-        type: 'string',
-        title: short ? 'First String' : 'firstName',
-        default: 'Chuck',
-        examples: 'firstName',
-      },
-      lastName: {
-        type: 'string',
-        title: short ? 'Second String' : 'lastname',
-      },
-      age: {
-        type: 'integer',
-        title: short ? 'Number' : 'age',
-      },
-      subItems: {
-        type: 'object',
-        title: 'subItems',
-        examples: 'subItems',
-
-        properties: {
-          name: {
-            examples: 'name',
-            type: 'string',
-            title: 'name',
-            default: 'Default name',
-          },
-          type: {
-            type: 'string',
-            title: 'type',
-            default: 'Default type',
-          },
-        },
-      },
-    },
-  }
-
-  if (!short)
-    model.properties = {
-      ...model.properties,
-      bio: {
-        type: 'string',
-        title: 'bio',
-      },
-      password: {
-        type: 'string',
-        title: 'password',
-        minLength: 3,
-      },
-      telephone: {
-        type: 'string',
-        title: 'telephone',
-        minLength: 10,
-      },
-    }
-
-  return model
-}
 
 export const MOCK_MQTT_SCHEMA_REFS: RJSFSchema = {
   definitions: {
@@ -148,6 +82,20 @@ export const MOCK_MQTT_SCHEMA_PLAIN: RJSFSchema = {
       title: 'Telephone',
       minLength: 10,
     },
+    nestedObject: {
+      type: 'object',
+      title: 'NestedObject',
+      properties: {
+        name: {
+          type: 'string',
+          default: 'Default name',
+        },
+        age: {
+          type: 'integer',
+          title: 'Age',
+        },
+      },
+    },
     listOfStrings: {
       type: 'array',
       title: 'A list of strings',
@@ -172,16 +120,3 @@ export const MOCK_MQTT_SCHEMA_PLAIN: RJSFSchema = {
     },
   },
 }
-export const MOCK_MQTT_TOPIC_SAMPLES = [
-  'tmp/broker1/topic1/segment1',
-  'tmp/broker1/topic1/segment2',
-  'tmp/broker1/topic1/segment2/leaf1',
-  'tmp/broker2/topic1',
-  'tmp/broker4/topic1/segment2',
-]
-
-export const MOCK_DEVICE_TAGS: DeviceTags[] = [
-  { tag: 'write/power-management/alert', node: 'ns=3;i=1002' },
-  { tag: 'write/power-management/off', node: 'ns=3;i=1003' },
-  { tag: 'write/log/event', node: 'ns=3;i=1008' },
-]

@@ -14,6 +14,7 @@ import '@/config/i18n.config.ts'
 import { EdgeFlowProvider } from './FlowContext.tsx'
 import useGetFlowElements from './useGetFlowElements.ts'
 import { EdgeFlowOptions } from '@/modules/Workspace/types.ts'
+import { handlers as ClientHandlers } from '@/api/hooks/useClientSubscriptions/__handlers__'
 
 // [Vitest] Mocking hooks
 vi.mock('@chakra-ui/react', async () => {
@@ -32,7 +33,7 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = (
 describe('useGetFlowElements', () => {
   beforeEach(() => {
     window.localStorage.clear()
-    server.use(...handlers)
+    server.use(...handlers, ...ClientHandlers)
   })
 
   afterEach(() => {
@@ -43,14 +44,14 @@ describe('useGetFlowElements', () => {
   it('should be used in the right context', async () => {
     const { result } = renderHook(() => useGetFlowElements(), { wrapper })
 
-    expect(result.current.nodes).toHaveLength(0)
+    expect(result.current.nodes).toHaveLength(1)
     expect(result.current.edges).toHaveLength(0)
   })
 
   it.each<[Partial<EdgeFlowOptions>, number, number]>([
-    [{}, 4, 3],
-    [{ showGateway: true }, 5, 4],
-    [{ showGateway: false }, 4, 3],
+    [{}, 1, 0],
+    [{ showGateway: true }, 1, 0],
+    [{ showGateway: false }, 1, 0],
   ])('should consider %s for %s nodes and %s edges', async (defaults, countNode, countEdge) => {
     const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
       <SimpleWrapper>

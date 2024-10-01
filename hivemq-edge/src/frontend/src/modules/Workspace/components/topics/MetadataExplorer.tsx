@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Box, Button, Card, CardBody, CardHeader, Heading, HStack, Text } from '@chakra-ui/react'
 import { LuLoader } from 'react-icons/lu'
 
-import { BrokerClientConfiguration, BrokerClientSubscription } from '@/api/types/api-broker-client.ts'
-import { useGetSubscriptionSchemas } from '@/api/hooks/useTopicOntology/useGetSubscriptionSchemas.tsx'
+import type { ClientFilter } from '@/api/__generated__'
+import { MOCK_CLIENT_STUB } from '@/api/hooks/useClientSubscriptions/__handlers__'
+import { useGetTopicSchemas } from '@/api/hooks/useDomainModel/useGetTopicSchemas.ts'
 import { useListClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useListClientSubscriptions.ts'
 import { useCreateClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useCreateClientSubscriptions.ts'
 import { useUpdateClientSubscriptions } from '@/api/hooks/useClientSubscriptions/useUpdateClientSubscriptions.ts'
@@ -19,7 +20,7 @@ interface MetadataExplorerProps {
 
 const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, error } = useGetSubscriptionSchemas(topic, 'source')
+  const { data, isLoading, isError, error } = useGetTopicSchemas([topic])
   const { data: allClients, isLoading: isClientLoading } = useListClientSubscriptions()
   const createClient = useCreateClientSubscriptions()
   const updateClient = useUpdateClientSubscriptions()
@@ -29,24 +30,21 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
   }, [data, topic])
 
   const handleOnClick = () => {
+    // TODO[25280] Refactor with new topic mapping structure, https://hivemq.kanbanize.com/ctrl_board/57/cards/25280/details/
+    const mockTopicId = topic.slice(MOCK_CLIENT_STUB.length + 1)
     if (!allClients || allClients.length === 0) {
-      /**
-       * @deprecated This is a mock, replace with topic filter (https://hivemq.kanbanize.com/ctrl_board/57/cards/25280/details/)
-       */
-      const id = topic.slice(4)
-      const newClientFilter: BrokerClientConfiguration = {
-        id: id,
-        subscriptions: [{ destination: id, maxQoS: BrokerClientSubscription.maxQoS._0 }],
+      const newClientFilter: ClientFilter = {
+        id: mockTopicId,
+        topicFilters: [{ destination: mockTopicId }],
       }
-      createClient.mutateAsync({ id: id, config: newClientFilter })
+      createClient.mutateAsync(newClientFilter)
       return
     }
 
-    const firstFilter = allClients?.[0]
+    const [firstFilter] = allClients
     if (firstFilter) {
-      const firstFilterConfig: BrokerClientConfiguration = firstFilter.config
-      firstFilterConfig.subscriptions?.push({ destination: firstFilter.id, maxQoS: BrokerClientSubscription.maxQoS._0 })
-      updateClient.mutateAsync({ id: firstFilter.id, config: firstFilterConfig })
+      firstFilter.topicFilters?.push({ destination: mockTopicId })
+      updateClient.mutateAsync(firstFilter)
     }
   }
 
@@ -54,7 +52,7 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
     /**
      * @deprecated This is a mock, replace with topic filter (https://hivemq.kanbanize.com/ctrl_board/57/cards/25280/details/)
      */
-    const isWildcard = topic.startsWith('/tmp/')
+    const isWildcard = topic.startsWith(`${MOCK_CLIENT_STUB}/`)
     if (!isWildcard) return false
 
     /**
@@ -63,7 +61,7 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
     const newTopic = topic.slice(4)
     const allClientTopics =
       allClients?.reduce<string[]>((acc, clientFilter) => {
-        const subscriptions = clientFilter.config.subscriptions?.map((subscription) => subscription.destination) || []
+        const subscriptions = clientFilter.topicFilters?.map((subscription) => subscription.destination) || []
         return Array.from(new Set([...acc, ...subscriptions]))
       }, []) || []
 
@@ -79,6 +77,9 @@ const MetadataExplorer: FC<MetadataExplorerProps> = ({ topic }) => {
       <CardBody>
         {isLoading && <LoaderSpinner />}
         {isError && error && <ErrorMessage message={error.message} />}
+        {!isLoading && !isError && !schema && (
+          <ErrorMessage message={t('domainMapping.error.noSampleForTopic', { topicFilter: topic })} />
+        )}
         {schema && (
           <>
             {isClientReady && (

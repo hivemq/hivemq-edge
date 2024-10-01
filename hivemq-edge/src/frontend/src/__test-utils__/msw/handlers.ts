@@ -10,6 +10,11 @@ import { handlers as DataHubBehaviorPoliciesService } from '@/extensions/datahub
 import { handlers as DataHubSchemasService } from '@/extensions/datahub/api/hooks/DataHubSchemasService/__handlers__'
 import { handlers as DataHubScriptsService } from '@/extensions/datahub/api/hooks/DataHubScriptsService/__handlers__'
 
+import { handlers as ClientFilterHandlers } from '@/api/hooks/useClientSubscriptions/__handlers__'
+import { deviceHandlers as DeviceHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { schemaHandlers } from '@/api/hooks/useDomainModel/__handlers__'
+import { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
+
 export const handlers = [
   ...useFrontendServices,
   ...ListenerHandlers,
@@ -23,3 +28,14 @@ export const handlers = [
   ...DataHubSchemasService,
   ...DataHubScriptsService,
 ]
+
+export const createHandlersWithMQTTClient = (
+  onSampling?: (topicFilter: string) => Promise<MQTTSample[]> | undefined
+) => {
+  return [
+    ...ClientFilterHandlers,
+    ...DeviceHandlers,
+    // Domain & Schemas
+    ...schemaHandlers(onSampling),
+  ]
+}

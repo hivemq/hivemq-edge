@@ -8,7 +8,6 @@ import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/700.css'
 
 import queryClient from '@/api/queryClient.ts'
-import { PrivateMqttClientProvider } from '@/hooks/usePrivateMqttClient/PrivateMqttClientProvider.tsx'
 import { routes } from '@/modules/App/routes.tsx'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 import themeHiveMQ from '@/modules/Theme/themeHiveMQ.ts'
@@ -19,9 +18,7 @@ const MainApp: FC = () => {
     <QueryClientProvider client={queryClient}>
       <ChakraProvider theme={themeHiveMQ}>
         <AuthProvider>
-          <PrivateMqttClientProvider>
-            <RouterProvider router={routes} />
-          </PrivateMqttClientProvider>
+          <RouterProvider router={routes} />
         </AuthProvider>
         <PrivacyConsentBanner />
       </ChakraProvider>
