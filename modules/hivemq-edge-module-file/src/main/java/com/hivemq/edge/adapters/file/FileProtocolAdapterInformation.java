@@ -46,7 +46,7 @@ public class FileProtocolAdapterInformation implements ProtocolAdapterInformatio
 
     @Override
     public @NotNull String getProtocolId() {
-        return "file_input";
+        return "file";
     }
 
     @Override

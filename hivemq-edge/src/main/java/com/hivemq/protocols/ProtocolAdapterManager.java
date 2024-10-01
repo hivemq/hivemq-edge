@@ -281,7 +281,6 @@ public class ProtocolAdapterManager {
             schedulePolling(protocolAdapterWrapper);
             return startWriting(protocolAdapterWrapper);
         }, executorService).<Void>thenApplyAsync(unused -> {
-            protocolAdapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
             eventService.createAdapterEvent(protocolAdapterWrapper.getId(),
                             protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId())
                     .withSeverity(Event.SEVERITY.INFO)
@@ -294,6 +293,7 @@ public class ProtocolAdapterManager {
             adapterCreatedEvent.addUserData("adapterType",
                     protocolAdapterWrapper.getProtocolAdapterInformation().getProtocolId());
             remoteService.fireUsageEvent(adapterCreatedEvent);
+            protocolAdapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STARTED);
             return null;
         }, executorService).exceptionally(throwable -> {
             try {

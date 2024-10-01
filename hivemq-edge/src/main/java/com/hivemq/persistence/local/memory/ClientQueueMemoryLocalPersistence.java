@@ -690,14 +690,14 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
     @Override
     @ExecuteInSingleWriter
     public void removeInFlightMarker(
-            final @NotNull String sharedSubscription, final @NotNull String uniqueId, final int bucketIndex) {
+            final @NotNull String queueId, final @NotNull String uniqueId, final int bucketIndex) {
 
-        checkNotNull(sharedSubscription, "Shared subscription must not be null");
+        checkNotNull(queueId, "QueueId must not be null");
         checkNotNull(uniqueId, "Unique id must not be null");
         ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
 
         final Map<String, Messages> bucket = sharedBuckets[bucketIndex];
-        final Messages messages = bucket.get(sharedSubscription);
+        final Messages messages = bucket.get(queueId);
         if (messages == null) {
             return;
         }

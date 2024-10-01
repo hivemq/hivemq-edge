@@ -74,9 +74,13 @@ public interface PublishPollService {
      * @param subscriptionIdentifier of the clients subscription
      * @param channel                to which the messages are sent
      */
-    void pollSharedPublishesForClient(@NotNull String client, @NotNull String sharedSubscription, int qos,
-                                      boolean retainAsPublished, @Nullable Integer subscriptionIdentifier,
-                                      @NotNull Channel channel);
+    void pollSharedPublishesForClient(
+            @NotNull String client,
+            @NotNull String sharedSubscription,
+            int qos,
+            boolean retainAsPublished,
+            @Nullable Integer subscriptionIdentifier,
+            @NotNull Channel channel);
 
     /**
      * Remove a message form the client queue.
