@@ -301,7 +301,6 @@ export const handlers = [
 export const deviceHandlers = [
   http.get('*/protocol-adapters/adapters/:adapterId/tags', ({ params }) => {
     const { adapterId } = params
-    console.log('>', { adapterId })
 
     return HttpResponse.json<DomainTagList>({ items: MOCK_DEVICE_TAGS(adapterId as string) }, { status: 200 })
   }),
@@ -310,17 +309,11 @@ export const deviceHandlers = [
     return HttpResponse.json({}, { status: 200 })
   }),
 
-  http.delete('*/protocol-adapters/adapters/:adapterId/tags/:tagId', ({ params }) => {
-    const { adapterId, tagId } = params
-    console.log('>', { adapterId, tagId })
-
+  http.delete('*/protocol-adapters/adapters/:adapterId/tags/:tagId', () => {
     return HttpResponse.json({}, { status: 200 })
   }),
 
-  http.put('*/protocol-adapters/adapters/:adapterId/tags/:tagId', ({ params }) => {
-    const { adapterId, tagId } = params
-    console.log('>', { adapterId, tagId })
-
+  http.put('*/protocol-adapters/adapters/:adapterId/tags/:tagId', () => {
     return HttpResponse.json({}, { status: 200 })
   }),
 ]

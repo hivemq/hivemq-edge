@@ -6,7 +6,7 @@ import { usePrivateMqttClient } from '@/hooks/usePrivateMqttClient/usePrivateMqt
 import { PrivateMqttClientType } from '@/hooks/usePrivateMqttClient/type.ts'
 
 describe('usePrivateMqttClient', () => {
-  it('should load the data', async () => {
+  it('should load the default state', async () => {
     const { result } = renderHook(() => usePrivateMqttClient(), { wrapper })
 
     expect(result.current).toStrictEqual<PrivateMqttClientType>({ state: undefined, actions: undefined })

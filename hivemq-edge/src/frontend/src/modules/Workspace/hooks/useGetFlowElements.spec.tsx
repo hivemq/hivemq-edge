@@ -24,8 +24,6 @@ vi.mock('@chakra-ui/react', async () => {
   return { ...actual, useTheme: vi.fn<[], Partial<WithCSSVar<Dict>>>(() => MOCK_THEME) }
 })
 
-//// 44-48,53-63,67-81,86-93
-
 const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
   <SimpleWrapper>
     <EdgeFlowProvider>{children}</EdgeFlowProvider>
