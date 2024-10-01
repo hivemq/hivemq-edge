@@ -20,12 +20,21 @@ export enum MappingStrategy {
 
 interface SubscriptionContainerProps {
   item: OutwardSubscription
+  adapterType?: string
+  adapterId?: string
   onClose: () => void
   onSubmit: (newItem: OutwardSubscription) => void
   onChange: (id: keyof OutwardSubscription, v: JsonNode | string | string[] | undefined) => void
 }
 
-const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, onSubmit, onChange }) => {
+const SubscriptionContainer: FC<SubscriptionContainerProps> = ({
+  adapterId,
+  adapterType,
+  item,
+  onClose,
+  onSubmit,
+  onChange,
+}) => {
   const [strategy] = useState<MappingStrategy>(MappingStrategy.TYPED)
   const validation = useMappingValidation(item)
 
@@ -40,7 +49,12 @@ const SubscriptionContainer: FC<SubscriptionContainerProps> = ({ item, onClose, 
         </VStack>
         <VStack flex={2} alignItems="stretch">
           <Box maxW="50%">
-            <SelectDestinationTag values={[item.node]} onChange={(v) => onChange('node', v)} />
+            <SelectDestinationTag
+              adapterId={adapterId}
+              adapterType={adapterType}
+              values={[item.node]}
+              onChange={(v) => onChange('node', v)}
+            />
           </Box>
           <HStack alignItems="stretch">
             {strategy != MappingStrategy.EXACT && (

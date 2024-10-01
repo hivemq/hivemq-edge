@@ -1,20 +1,16 @@
 import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { usePostTopicSamples } from '@/api/hooks/useTopicOntology/useGetTopicSamples.tsx'
 import { Button, Card, CardBody, CardFooter, CardHeader, Heading, HStack, Text } from '@chakra-ui/react'
+import { useGetClientTopicSamples } from '@/api/hooks/useClientSubscriptions/useGetClientTopicSamples.ts'
+import { MOCK_SAMPLE_REFETCH_TRIGGER } from '@/api/hooks/useClientSubscriptions/__handlers__'
 
 interface TopicSamplerProps {
   topic: string
 }
 
-/**
- * @deprecated This is a mock, will need to be replaced
- */
-const MOCK_ADAPTER = 'MOCK_ADAPTER'
-
 const TopicSampler: FC<TopicSamplerProps> = ({ topic }) => {
   const { t } = useTranslation()
-  const topicSampler = usePostTopicSamples()
+  const { refetch, isLoading, isFetching } = useGetClientTopicSamples(MOCK_SAMPLE_REFETCH_TRIGGER)
 
   return (
     <Card size="sm">
@@ -27,8 +23,8 @@ const TopicSampler: FC<TopicSamplerProps> = ({ topic }) => {
       </CardBody>
       <CardFooter>
         <Button
-          onClick={() => topicSampler.mutateAsync({ adapter: MOCK_ADAPTER, topic: topic })}
-          isLoading={topicSampler.isPending}
+          onClick={() => refetch()}
+          isLoading={isLoading || isFetching}
           loadingText={t('workspace.topicWheel.topicSampler.sampler.loader')}
         >
           {t('workspace.topicWheel.topicSampler.sampler.cta')}

@@ -60,7 +60,7 @@ const AdapterSubscriptionManager: FC<AdapterSubscriptionManagerProps> = ({ type 
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           {!adapterId && <ErrorMessage message={t('protocolAdapter.error.loading')} />}
-          {adapterId && <SubscriptionForm id={adapterId} type={type} />}
+          {adapterId && <SubscriptionForm adapterId={adapterId} adapterType={selectedNode?.data.type} type={type} />}
         </DrawerBody>
       </DrawerContent>
     </Drawer>

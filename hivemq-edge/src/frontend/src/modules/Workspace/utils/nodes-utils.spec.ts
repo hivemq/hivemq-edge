@@ -220,10 +220,9 @@ describe('createClientNode', () => {
       nodeClient: expect.objectContaining({
         data: {
           id: 'my-first-client',
-          subscriptions: [
+          topicFilters: [
             {
               destination: 'test/topic/1',
-              maxQoS: 0,
             },
           ],
         },
@@ -278,10 +277,9 @@ describe('createClientNode', () => {
       nodeClient: expect.objectContaining({
         data: {
           id: 'my-first-client',
-          subscriptions: [
+          topicFilters: [
             {
               destination: 'test/topic/1',
-              maxQoS: 0,
             },
           ],
         },

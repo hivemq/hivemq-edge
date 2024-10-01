@@ -2,6 +2,8 @@ import { RJSFSchema } from '@rjsf/utils'
 import { JSONSchema7, JSONSchema7Definition } from 'json-schema'
 import { JsonNode } from '@/api/__generated__'
 import { match, P } from 'ts-pattern'
+import { inferSchema } from '@jsonhero/schema-infer'
+import { MQTTSample } from '@/hooks/usePrivateMqttClient/type.ts'
 
 export const ARRAY_ITEM_INDEX = '___index'
 
@@ -77,7 +79,7 @@ export const reducerSchemaExamples = (state: RJSFSchema, event: JsonNode) =>
         const allPropertyNames = Object.keys(properties)
         const newProperties: RJSFSchema = {}
         for (const propName of allPropertyNames) {
-          newProperties[propName] = reducerSchemaExamples(properties[propName] as RJSFSchema, values[propName])
+          newProperties[propName] = reducerSchemaExamples(properties[propName] as RJSFSchema, values?.[propName])
         }
         return { ...subSchema, properties: newProperties }
       }
@@ -85,7 +87,19 @@ export const reducerSchemaExamples = (state: RJSFSchema, event: JsonNode) =>
     .with([{ type: 'array' }, P.select('values')], (_, [subSchema]) => {
       return subSchema
     })
-    .with(P._, ([st, ex]) => {
-      return { ...st, examples: ex }
+    .with(P._, ([allStates, examples]) => {
+      if (!examples) return allStates
+      return { ...allStates, examples: examples }
     })
     .exhaustive()
+
+export const payloadToSchema = (samples: MQTTSample[] | undefined) => {
+  const results: Record<string, RJSFSchema> = {}
+  for (const { topic, payload } of samples || []) {
+    const inference = inferSchema(payload)
+    // The inference process doesn't deal with examples; values need a second pattern processing
+    const schema = inference.toJSONSchema() as RJSFSchema
+    results[topic] = reducerSchemaExamples(schema, payload)
+  }
+  return results
+}

@@ -12,18 +12,27 @@ import { customFormatsValidator } from '@/modules/ProtocolAdapters/utils/validat
 import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { useSubscriptionManager } from '@/modules/Subscriptions/hooks/useSubscriptionManager.tsx'
 import { useTranslation } from 'react-i18next'
+import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 interface SubscriptionFormProps {
-  id: string
+  adapterId: string
+  adapterType?: string
   type: 'inward' | 'outward'
 }
 
 // TODO[NVL] Should replicate the config from the adapter form; share component?
-const SubscriptionForm: FC<SubscriptionFormProps> = ({ id, type }) => {
+const SubscriptionForm: FC<SubscriptionFormProps> = ({ adapterId, adapterType, type }) => {
   const { t } = useTranslation()
-  const { inwardManager, outwardManager } = useSubscriptionManager(id)
+  const { inwardManager, outwardManager } = useSubscriptionManager(adapterId)
 
   const subscriptionManager = type === 'inward' ? inwardManager : outwardManager
+
+  const context: AdapterContext = {
+    isEditAdapter: true,
+    isDiscoverable: false,
+    adapterType: adapterType,
+    adapterId: adapterId,
+  }
 
   const onFormSubmit = useCallback(
     (data: IChangeEvent) => {
@@ -48,6 +57,7 @@ const SubscriptionForm: FC<SubscriptionFormProps> = ({ id, type }) => {
       formData={subscriptionManager.formData}
       widgets={adapterJSFWidgets}
       fields={adapterJSFFields}
+      formContext={context}
       templates={{
         ObjectFieldTemplate,
         FieldTemplate,

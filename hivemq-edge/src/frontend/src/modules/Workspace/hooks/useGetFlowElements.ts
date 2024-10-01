@@ -35,10 +35,6 @@ const useGetFlowElements = () => {
   const { items: listeners } = listenerList || {}
 
   useEffect(() => {
-    if (!bridges) return
-    if (!adapters) return
-    if (!clients) return
-
     const nodes: Node[] = []
     const edges: Edge[] = []
 
@@ -53,11 +49,11 @@ const useGetFlowElements = () => {
       }
     })
 
-    bridges.forEach((bridge, incBridgeNb) => {
+    bridges?.forEach((bridge, incBridgeNb) => {
       const { nodeBridge, edgeConnector, nodeHost, hostConnector } = createBridgeNode(
         bridge,
         incBridgeNb,
-        bridges.length + clients.length,
+        bridges.length + (clients?.length || 0),
         theme
       )
       nodes.push(nodeBridge)
@@ -67,7 +63,7 @@ const useGetFlowElements = () => {
       edges.push(hostConnector)
     })
 
-    adapters.forEach((adapter, incAdapterNb) => {
+    adapters?.forEach((adapter, incAdapterNb) => {
       const type = adapterTypes?.items?.find((e) => e.id === adapter.type)
 
       const { nodeAdapter, edgeConnector, nodeDevice, deviceConnector } = createAdapterNode(
@@ -86,11 +82,11 @@ const useGetFlowElements = () => {
       }
     })
 
-    clients.forEach((client, incClient) => {
+    clients?.forEach((client, incClient) => {
       const { nodeClient, clientConnector } = createClientNode(
         client,
-        bridges.length + incClient,
-        bridges.length + clients.length,
+        (bridges?.length || 0) + incClient,
+        (bridges?.length || 0) + clients.length,
         theme
       )
       nodes.push(nodeClient)
