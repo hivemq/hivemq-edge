@@ -1,20 +1,27 @@
-import { type ProtocolAdapter, Status } from '@/api/__generated__'
 import { type IconType } from 'react-icons'
 import { TbSettingsAutomation } from 'react-icons/tb'
 import { FaIndustry } from 'react-icons/fa6'
 import { GrConnectivity } from 'react-icons/gr'
 import { AiFillExperiment } from 'react-icons/ai'
 import { RiCompassDiscoverLine } from 'react-icons/ri'
+
+import { isMockAdapterTypeBidirectional } from '@/__test-utils__/adapters/types.ts'
+import { type ProtocolAdapter, Status } from '@/api/__generated__'
 import { HmInput, HmOutput } from '@/components/react-icons/hm'
 
-/**
- * @deprecated This is a mock, replacing the missing WRITE capability from the adapters
- */
+const MQTT_PROPERTY_STUB = {
+  inward: 'ToMqtt',
+  outward: 'mqttTo',
+}
+
+const capitalize = (s: string) => s && s[0].toUpperCase() + s.slice(1)
+
+export const getInwardMappingRootProperty = (adapterType: string) => `${adapterType}${MQTT_PROPERTY_STUB.inward}`
+export const getOutwardMappingRootProperty = (adapterType: string) =>
+  `${MQTT_PROPERTY_STUB.outward}${capitalize(adapterType)}`
+
 export const isBidirectional = (adapter: ProtocolAdapter | undefined) => {
-  const MOCK_BIDIRECTIONAL_ADAPTER_TYPES = ['opc-ua-client', 'modbus']
-  return Boolean(
-    adapter?.capabilities?.includes('WRITE') || MOCK_BIDIRECTIONAL_ADAPTER_TYPES.includes(adapter?.id || '')
-  )
+  return Boolean(adapter?.capabilities?.includes('WRITE') || isMockAdapterTypeBidirectional(adapter?.id))
 }
 
 /**
