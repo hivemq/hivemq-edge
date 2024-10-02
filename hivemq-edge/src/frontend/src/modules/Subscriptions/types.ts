@@ -1,11 +1,9 @@
-import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
+import { GenericObjectType, type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import { AlertProps } from '@chakra-ui/react'
 
 export interface SubscriptionManagerType {
   schema: RJSFSchema
-  // TODO[NVL] Needs to align the types for the subscriptions
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  formData: { subscriptions: Record<string, any> }
+  formData: GenericObjectType
   uiSchema: UiSchema
   onSubmit?: (data: unknown) => void
 }
