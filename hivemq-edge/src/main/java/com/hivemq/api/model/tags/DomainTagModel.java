@@ -49,6 +49,6 @@ public class DomainTagModel {
 
 
     public static @NotNull DomainTagModel fromDomainTag(final @NotNull DomainTag domainTag) {
-        return new DomainTagModel(domainTag.getTagAddress(), domainTag.getTag());
+        return new DomainTagModel(new TagAddress(domainTag.getTagAddress()), domainTag.getTag());
     }
 }

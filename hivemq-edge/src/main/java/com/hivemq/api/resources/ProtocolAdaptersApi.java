@@ -29,6 +29,7 @@ import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.http.error.Error;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -316,7 +317,18 @@ public interface ProtocolAdaptersApi {
                operationId = "add-adapter-domainTags",
                description = "Add a new domain tag to the specified adapter.",
                responses = {
-                       @ApiResponse(responseCode = "200", description = "Success")})
+                       @ApiResponse(responseCode = "200", description = "Success"),
+                       @ApiResponse(responseCode = "403",
+                                    description = "Already Present",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = Error.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example response in case an tag is already present for this tagId.",
+                                                                              name = "already present example",
+                                                                              summary = "An example response in case an tag is already present for this tagId.",
+                                                                              value = TagResourceExamples.EXAMPLE_ALREADY_PRESENT)}))}
+
+    )
     @NotNull
     Response addAdapterDomainTag(
             @NotNull @Parameter(name = "adapterId",
@@ -355,15 +367,16 @@ public interface ProtocolAdaptersApi {
                description = "Update the domain tag of an adapter.",
                operationId = "update-adapter-domainTags",
                responses = {
-                       @ApiResponse(responseCode = "200",
-                                    description = "Success",
+                       @ApiResponse(responseCode = "200", description = "Success"),
+                       @ApiResponse(responseCode = "403",
+                                    description = "Not Found",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = StatusTransitionResult.class),
+                                                       schema = @Schema(implementation = Error.class),
                                                        examples = {
-                                                               @ExampleObject(description = "Example response with PENDING status.",
-                                                                              name = "transition-status-result",
-                                                                              summary = "Adapter Connection Transition Result",
-                                                                              value = ApiBodyExamples.EXAMPLE_STATUS_TRANSITION_RESULT)}))})
+                                                               @ExampleObject(description = "An example response in case no tag is present for this tagId.",
+                                                                              name = "already present example",
+                                                                              summary = "An example response in case no tag is present for this tagId.",
+                                                                              value = TagResourceExamples.EXAMPLE_NOT_PRESENT)}))})
     @NotNull
     Response updateDomainTag(
             @Parameter(name = "adapterId",
