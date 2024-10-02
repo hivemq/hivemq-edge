@@ -23,8 +23,6 @@ tags:
   name: Authentication Endpoint
 - description: Explore and interact with the Bridges configured on your Gateway.
   name: Bridges
-- description: Services to manage domain tags.
-  name: Tag Endpoint
 - description: Interact with the system event sub-system.
   name: Events
 - description: Services relating to the use of the portal.
@@ -3308,25 +3306,6 @@ paths:
       summary: Transition the runtime status of a bridge
       tags:
       - Bridges
-  /api/v1/management/domain/tags:
-    get:
-      description: Get the list of all domain tags created in this Edge instance
-      operationId: get-domain-tags
-      responses:
-        "200":
-          content:
-            application/json:
-              examples:
-                opc ua domain tags example:
-                  description: An example for domain tags in opc ua
-                  summary: 'Example for domain tags for opc ua '
-                  value: {}
-              schema:
-                $ref: '#/components/schemas/DomainTagModelList'
-          description: Success
-      summary: Get the list of all domain tags created in this Edge instance
-      tags:
-      - Tag Endpoint
   /api/v1/management/events:
     get:
       description: Get all bridges configured in the system.
@@ -3617,13 +3596,20 @@ paths:
                 opc ua domain tags example:
                   description: An example for domain tags in opc ua
                   summary: 'Example for domain tags for opc ua '
-                  value: {}
+                  value:
+                    items:
+                    - tagAddress:
+                        address: ns=2;i=test
+                      tag: tag1
+                    - tagAddress:
+                        address: ns=2;i=test2
+                      tag: tag2
               schema:
                 $ref: '#/components/schemas/DomainTagModelList'
           description: Success
       summary: Get the domain tags for the device connected through this adapter.
       tags:
-      - Tag Endpoint
+      - Protocol Adapters
     post:
       description: Add a new domain tag to the specified adapter.
       operationId: add-adapter-domainTags
@@ -3644,9 +3630,27 @@ paths:
       responses:
         "200":
           description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case an tag is already present
+                    for this tagId.
+                  summary: An example response in case an tag is already present for
+                    this tagId.
+                  value:
+                    type: https://docs.hivemq.com/problem-registry/already-present
+                    title: The item already exists.
+                    detail: The tag 'tag' cannot be created since another item already
+                      exists with the same id.
+                    instance: /tags
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Already Present
       summary: Add a new domain tag to the specified adapter
       tags:
-      - Tag Endpoint
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagId}:
     delete:
       description: Delete the specified domain tag on the given adapter.
@@ -3669,7 +3673,7 @@ paths:
           description: Success
       summary: Delete an domain tag
       tags:
-      - Tag Endpoint
+      - Protocol Adapters
     put:
       description: Update the domain tag of an adapter.
       operationId: update-adapter-domainTags
@@ -3693,21 +3697,28 @@ paths:
               $ref: '#/components/schemas/DomainTagModel'
       responses:
         "200":
+          description: Success
+        "403":
           content:
             application/json:
               examples:
-                transition-status-result:
-                  description: Example response with PENDING status.
-                  summary: Adapter Connection Transition Result
+                already present example:
+                  description: An example response in case no tag is present for this
+                    tagId.
+                  summary: An example response in case no tag is present for this
+                    tagId.
                   value:
-                    status: PENDING
-                    callbackTimeoutMillis: 1000
+                    type: https://docs.hivemq.com/problem-registry/not-found
+                    title: The item cannot be found.
+                    detail: The tag 'tag1' cannot be found and therefore cannot be
+                      deleted
+                    instance: /tags/tag1
               schema:
-                $ref: '#/components/schemas/StatusTransitionResult'
-          description: Success
+                $ref: '#/components/schemas/Error'
+          description: Not Found
       summary: Update the domain tag of an adapter.
       tags:
-      - Tag Endpoint
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
     post:
       description: Add adapter to the system.
@@ -3753,6 +3764,32 @@ paths:
                 $ref: '#/components/schemas/StatusList'
           description: The Connection Details Verification Result.
       summary: Get the status of all the adapters in the system.
+      tags:
+      - Protocol Adapters
+  /api/v1/management/protocol-adapters/tags:
+    get:
+      description: Get the list of all domain tags created in this Edge instance
+      operationId: get-domain-tags
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                opc ua domain tags example:
+                  description: An example for domain tags in opc ua
+                  summary: 'Example for domain tags for opc ua '
+                  value:
+                    items:
+                    - tagAddress:
+                        address: ns=2;i=test
+                      tag: tag1
+                    - tagAddress:
+                        address: ns=2;i=test2
+                      tag: tag2
+              schema:
+                $ref: '#/components/schemas/DomainTagModelList'
+          description: Success
+      summary: Get the list of all domain tags created in this Edge instance
       tags:
       - Protocol Adapters
   /api/v1/management/protocol-adapters/types:
