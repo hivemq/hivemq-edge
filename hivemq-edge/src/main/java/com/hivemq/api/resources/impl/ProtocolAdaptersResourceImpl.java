@@ -35,6 +35,8 @@ import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.status.StatusTransitionResult;
+import com.hivemq.api.model.tags.DomainTagModel;
+import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -46,6 +48,11 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidator;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.persistence.domain.DomainTag;
+import com.hivemq.persistence.domain.DomainTagAddResult;
+import com.hivemq.persistence.domain.DomainTagDeleteResult;
+import com.hivemq.persistence.domain.DomainTagPersistence;
+import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
@@ -57,7 +64,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -76,6 +85,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull VersionProvider versionProvider;
+    private final @NotNull DomainTagPersistence domainTagPersistence;
 
     @Inject
     public ProtocolAdaptersResourceImpl(
@@ -83,12 +93,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull ConfigurationService configurationService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull VersionProvider versionProvider) {
+            final @NotNull VersionProvider versionProvider,
+            final @NotNull DomainTagPersistence domainTagPersistence) {
         this.remoteService = remoteService;
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
         this.versionProvider = versionProvider;
+        this.domainTagPersistence = domainTagPersistence;
     }
 
     @Override
@@ -372,4 +384,98 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         return Response.status(200).entity(new StatusList(builder.build())).build();
     }
+
+
+    @Override
+    public @NotNull Response getDomainTagsForAdapter(@NotNull final String adapterId) {
+        final List<DomainTag> tagsForAdapter = domainTagPersistence.getTagsForAdapter(adapterId);
+        if (tagsForAdapter.isEmpty()) {
+            // empty list is also 200 as discussed.
+            return Response.ok().build();
+        }
+        final List<DomainTagModel> domainTagModels =
+                tagsForAdapter.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
+        final DomainTagModelList domainTagModelList = new DomainTagModelList(domainTagModels);
+        return Response.ok().entity(domainTagModelList).build();
+    }
+
+    @Override
+    public @NotNull Response addAdapterDomainTag(
+            @NotNull final String adapterId, @NotNull final DomainTagModel domainTag) {
+        final DomainTagAddResult domainTagAddResult =
+                domainTagPersistence.addDomainTag(adapterId, DomainTag.fromDomainTagEntity(domainTag));
+        switch (domainTagAddResult.getDomainTagPutStatus()) {
+            case SUCCESS:
+                return Response.ok().build();
+            case ALREADY_EXISTS:
+                //TODO
+                break;
+            case INTERNAL_ERROR:
+                return Response.serverError().build();
+        }
+        return Response.serverError().build();
+    }
+
+    @Override
+    public @NotNull Response deleteDomainTag(
+            @NotNull final String adapterId,
+            @NotNull final String tagIdBase64Encoded) {
+        final byte[] decoded = Base64.getDecoder().decode(tagIdBase64Encoded);
+        final String tagId = new String(decoded, StandardCharsets.UTF_8);
+
+        final DomainTagDeleteResult domainTagDeleteResult = domainTagPersistence.deleteDomainTag(adapterId, tagId);
+        switch (domainTagDeleteResult.getDomainTagUpdateStatus()) {
+            case SUCCESS:
+                return Response.ok().build();
+            case NOT_FOUND:
+                // TODO
+                break;
+            case INTERNAL_ERROR:
+                return Response.serverError().build();
+        }
+        return Response.serverError().build();
+    }
+
+    @Override
+    public @NotNull Response updateDomainTag(
+            final @NotNull String adapterId, @NotNull final String tagId, final @NotNull DomainTagModel domainTag) {
+        final DomainTagUpdateResult domainTagUpdateResult =
+                domainTagPersistence.updateDomainTag(adapterId, tagId, domainTag);
+        switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
+            case SUCCESS:
+                return Response.ok().build();
+            case NOT_FOUND:
+                return Response.status(403).entity("").build();
+            case INTERNAL_ERROR:
+                return Response.serverError().build();
+        }
+        return Response.serverError().build();
+    }
+
+    @Override
+    public @NotNull Response getDomainTags() {
+        final List<DomainTag> domainTags = domainTagPersistence.getDomainTags();
+        if (domainTags.isEmpty()) {
+            // empty list is also 200 as discussed.
+            return Response.ok().build();
+        }
+        final List<DomainTagModel> domainTagModels =
+                domainTags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
+        return Response.ok().entity(new DomainTagModelList(domainTagModels)).build();
+    }
+
+
+
+
+    public String itemNotFound(final @NotNull String tagId){
+
+        return "{\n" +
+                " \"type\": \"https://docs.hivemq.com/problem-registry/not-found\",\n" +
+                " \"title\": \"The item cannot be found\",\n" +
+                " \"detail\": \"The tag {id} cannot be found and therefore cannot be deleted\",\n" +
+                " \"instance\": \"/tags/{id}\",\n" +
+                "}";
+
+    }
+
 }

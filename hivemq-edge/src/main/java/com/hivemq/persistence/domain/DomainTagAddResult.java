@@ -38,8 +38,6 @@ public class DomainTagAddResult {
     public enum DomainTagPutStatus {
         SUCCESS(),
         ALREADY_EXISTS(),
-        INSUFFICIENT_STORAGE(),
-        USER_ERROR(),
         INTERNAL_ERROR();
     }
 

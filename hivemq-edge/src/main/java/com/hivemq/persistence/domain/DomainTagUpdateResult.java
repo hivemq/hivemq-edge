@@ -40,7 +40,6 @@ public class DomainTagUpdateResult {
     public enum DomainTagUpdateStatus {
         SUCCESS(),
         NOT_FOUND(),
-        INSUFFICIENT_STORAGE(),
         INTERNAL_ERROR();
     }
 }

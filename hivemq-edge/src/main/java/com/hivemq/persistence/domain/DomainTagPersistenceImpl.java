@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +16,10 @@ import java.util.stream.Collectors;
 public class DomainTagPersistenceImpl implements DomainTagPersistence {
 
     private final @NotNull ConcurrentHashMap<String, Set<DomainTag>> adapterToDomainTag = new ConcurrentHashMap<>();
+
+    @Inject
+    public DomainTagPersistenceImpl() {
+    }
 
     @Override
     public @NotNull DomainTagAddResult addDomainTag(
@@ -78,6 +83,11 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
 
     @Override
     public @NotNull List<DomainTag> getTagsForAdapter(@NotNull final String adapterId) {
-        return ImmutableList.copyOf(adapterToDomainTag.get(adapterId));
+        final Set<DomainTag> domainTags = adapterToDomainTag.get(adapterId);
+        if(domainTags!=null){
+            return ImmutableList.copyOf(domainTags);
+        } else {
+            return List.of();
+        }
     }
 }

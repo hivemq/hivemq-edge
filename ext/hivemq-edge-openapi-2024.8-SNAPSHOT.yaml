@@ -23,6 +23,8 @@ tags:
   name: Authentication Endpoint
 - description: Explore and interact with the Bridges configured on your Gateway.
   name: Bridges
+- description: Services to manage domain tags.
+  name: Tag Endpoint
 - description: Interact with the system event sub-system.
   name: Events
 - description: Services relating to the use of the portal.
@@ -3306,6 +3308,25 @@ paths:
       summary: Transition the runtime status of a bridge
       tags:
       - Bridges
+  /api/v1/management/domain/tags:
+    get:
+      description: Get the list of all domain tags created in this Edge instance
+      operationId: get-domain-tags
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                opc ua domain tags example:
+                  description: An example for domain tags in opc ua
+                  summary: 'Example for domain tags for opc ua '
+                  value: {}
+              schema:
+                $ref: '#/components/schemas/DomainTagModelList'
+          description: Success
+      summary: Get the list of all domain tags created in this Edge instance
+      tags:
+      - Tag Endpoint
   /api/v1/management/events:
     get:
       description: Get all bridges configured in the system.
@@ -3577,6 +3598,116 @@ paths:
       summary: Transition the runtime status of an adapter
       tags:
       - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/tags:
+    get:
+      description: Get the domain tags for the device connected through this adapter.
+      operationId: get-adapter-domainTags
+      parameters:
+      - description: The adapter id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                opc ua domain tags example:
+                  description: An example for domain tags in opc ua
+                  summary: 'Example for domain tags for opc ua '
+                  value: {}
+              schema:
+                $ref: '#/components/schemas/DomainTagModelList'
+          description: Success
+      summary: Get the domain tags for the device connected through this adapter.
+      tags:
+      - Tag Endpoint
+    post:
+      description: Add a new domain tag to the specified adapter.
+      operationId: add-adapter-domainTags
+      parameters:
+      - description: The adapter id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainTagModel'
+        description: The domain tag.
+        required: true
+      responses:
+        "200":
+          description: Success
+      summary: Add a new domain tag to the specified adapter
+      tags:
+      - Tag Endpoint
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagId}:
+    delete:
+      description: Delete the specified domain tag on the given adapter.
+      operationId: delete-adapter-domainTags
+      parameters:
+      - description: The adapter Id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      - description: The domain tag Id.
+        in: path
+        name: tagId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+      summary: Delete an domain tag
+      tags:
+      - Tag Endpoint
+    put:
+      description: Update the domain tag of an adapter.
+      operationId: update-adapter-domainTags
+      parameters:
+      - description: The id of the adapter whose domain tag will be updated.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      - description: The id of the domain tag that will be changed.
+        in: path
+        name: tagId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainTagModel'
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                transition-status-result:
+                  description: Example response with PENDING status.
+                  summary: Adapter Connection Transition Result
+                  value:
+                    status: PENDING
+                    callbackTimeoutMillis: 1000
+              schema:
+                $ref: '#/components/schemas/StatusTransitionResult'
+          description: Success
+      summary: Update the domain tag of an adapter.
+      tags:
+      - Tag Endpoint
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
     post:
       description: Add adapter to the system.
@@ -4267,6 +4398,22 @@ components:
       required:
       - arguments
       - type
+    DomainTagModel:
+      type: object
+      properties:
+        tag:
+          type: string
+          description: 'The tag that '
+        tagAddress:
+          $ref: '#/components/schemas/TagAddress'
+    DomainTagModelList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/DomainTagModel'
     EnvironmentProperties:
       type: object
       description: A map of properties relating to the installation
@@ -5069,6 +5216,13 @@ components:
         type:
           type: string
           description: The type of the object in transition
+    TagAddress:
+      type: object
+      description: The address for the data point on the device
+      properties:
+        address:
+          type: string
+          description: The address for the data point on the device
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge

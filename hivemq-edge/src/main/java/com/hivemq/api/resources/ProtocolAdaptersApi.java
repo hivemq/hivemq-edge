@@ -16,6 +16,7 @@
 package com.hivemq.api.resources;
 
 import com.hivemq.api.model.ApiBodyExamples;
+import com.hivemq.api.model.TagResourceExamples;
 import com.hivemq.api.model.adapters.Adapter;
 import com.hivemq.api.model.adapters.AdaptersList;
 import com.hivemq.api.model.adapters.ProtocolAdaptersList;
@@ -24,6 +25,8 @@ import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.status.StatusTransitionResult;
+import com.hivemq.api.model.tags.DomainTagModel;
+import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,9 +39,19 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import javax.annotation.security.PermitAll;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path(ProtocolAdaptersApi.PATH)
 @Tag(name = "Protocol Adapters", description = "Interact with protocol adapters.")
@@ -60,7 +73,8 @@ public interface ProtocolAdaptersApi {
                                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                                                        schema = @Schema(implementation = ProtocolAdaptersList.class)))})
     @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response getAdapterTypes();
+    @NotNull
+    Response getAdapterTypes();
 
     @POST
     @Path("/adapters/{adapterType: ([a-zA-Z_0-9\\-])*}")
@@ -68,17 +82,17 @@ public interface ProtocolAdaptersApi {
                operationId = "addAdapter",
                description = "Add adapter to the system.",
                responses = {
-                       @ApiResponse(responseCode = "200",
-                                    description = "Success")})
-    @NotNull Response addAdapter(
+                       @ApiResponse(responseCode = "200", description = "Success")})
+    @NotNull
+    Response addAdapter(
             @NotNull @Parameter(name = "adapterType",
                                 description = "The adapter type.",
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("adapterType") String adapterType,
             @NotNull @Parameter(name = "adapter",
-                       description = "The new adapter.",
-                       required = true,
-                       in = ParameterIn.DEFAULT) Adapter adapter);
+                                description = "The new adapter.",
+                                required = true,
+                                in = ParameterIn.DEFAULT) Adapter adapter);
 
     @GET
     @Path("/adapters/")
@@ -93,11 +107,10 @@ public interface ProtocolAdaptersApi {
                                                        examples = {
                                                                @ExampleObject(description = "An example adapter list.",
                                                                               name = "adapter-list",
-                                                                              value = ApiBodyExamples.EXAMPLE_ADAPTER_LIST)
-                                                       }))})
+                                                                              value = ApiBodyExamples.EXAMPLE_ADAPTER_LIST)}))})
     @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response getAdapters();
-
+    @NotNull
+    Response getAdapters();
 
 
     @GET
@@ -113,10 +126,10 @@ public interface ProtocolAdaptersApi {
                                                        examples = {
                                                                @ExampleObject(description = "An example filtered adapter list.",
                                                                               name = "filtered-adapters",
-                                                                              value = ApiBodyExamples.EXAMPLE_FILTERED_TYPE_ADAPTERS)
-                                                       }))})
+                                                                              value = ApiBodyExamples.EXAMPLE_FILTERED_TYPE_ADAPTERS)}))})
     @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response getAdaptersForType(
+    @NotNull
+    Response getAdaptersForType(
             @NotNull @Parameter(name = "adapterType",
                                 description = "The adapter type.",
                                 required = true,
@@ -136,10 +149,10 @@ public interface ProtocolAdaptersApi {
                                                        examples = {
                                                                @ExampleObject(description = "An example adapter.",
                                                                               name = "adapter",
-                                                                              value = ApiBodyExamples.EXAMPLE_ADAPTER)
-                                                       }))})
+                                                                              value = ApiBodyExamples.EXAMPLE_ADAPTER)}))})
     @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response getAdapter(
+    @NotNull
+    Response getAdapter(
             @NotNull @Parameter(name = "adapterId",
                                 description = "The adapter Id.",
                                 required = true,
@@ -151,14 +164,15 @@ public interface ProtocolAdaptersApi {
                operationId = "updateAdapter",
                description = "Update adapter configured in the system.",
                responses = {
-                       @ApiResponse(responseCode = "200",
-                                    description = "Success")})
+                       @ApiResponse(responseCode = "200", description = "Success")})
     @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response updateAdapter(
+    @NotNull
+    Response updateAdapter(
             @NotNull @Parameter(name = "adapterId",
                                 description = "The adapter Id.",
                                 required = true,
-                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId, @NotNull final Adapter adapter);
+                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId,
+            @NotNull final Adapter adapter);
 
     @DELETE
     @Path("/adapters/{adapterId: ([a-zA-Z_0-9\\-])*}")
@@ -166,10 +180,10 @@ public interface ProtocolAdaptersApi {
                operationId = "deleteAdapter",
                description = "Delete adapter configured in the system.",
                responses = {
-                       @ApiResponse(responseCode = "200",
-                                    description = "Success")})
+                       @ApiResponse(responseCode = "200", description = "Success")})
     @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response deleteAdapter(
+    @NotNull
+    Response deleteAdapter(
             @NotNull @Parameter(name = "adapterId",
                                 description = "The adapter Id.",
                                 required = true,
@@ -189,12 +203,11 @@ public interface ProtocolAdaptersApi {
                                                        examples = {
                                                                @ExampleObject(description = "An example discovery request.",
                                                                               name = "discover",
-                                                                              value = ApiBodyExamples.EXAMPLE_DISCOVERY)
-                                                       })),
-                       @ApiResponse(responseCode = "400",
-                                    description = "Protocol adapter does not support discovery")})
+                                                                              value = ApiBodyExamples.EXAMPLE_DISCOVERY)})),
+                       @ApiResponse(responseCode = "400", description = "Protocol adapter does not support discovery")})
     @Produces(MediaType.APPLICATION_JSON)
-    @NotNull Response discoverValues(
+    @NotNull
+    Response discoverValues(
             @NotNull @Parameter(name = "adapterId",
                                 description = "The adapter Id.",
                                 required = true,
@@ -220,13 +233,13 @@ public interface ProtocolAdaptersApi {
                                                                @ExampleObject(description = "Example connection status.",
                                                                               name = "example-connection-status",
                                                                               summary = "Example connection status",
-                                                                              value = ApiBodyExamples.EXAMPLE_CONNECTION_STATUS_JSON)
-                                                       }))})
-    @NotNull Response getStatus(@Parameter(name = "adapterId",
-                                            description = "The name of the adapter to query.",
-                                            required = true,
-                                            in = ParameterIn.PATH)
-                                 @PathParam("adapterId") @NotNull final String adapterId) ;
+                                                                              value = ApiBodyExamples.EXAMPLE_CONNECTION_STATUS_JSON)}))})
+    @NotNull
+    Response getStatus(
+            @Parameter(name = "adapterId",
+                       description = "The name of the adapter to query.",
+                       required = true,
+                       in = ParameterIn.PATH) @PathParam("adapterId") @NotNull final String adapterId);
 
     @PUT
     @Path("/adapters/{adapterId: ([a-zA-Z_0-9\\-])*}/status")
@@ -242,19 +255,17 @@ public interface ProtocolAdaptersApi {
                                                                @ExampleObject(description = "Example response with PENDING status.",
                                                                               name = "transition-status-result",
                                                                               summary = "Adapter Connection Transition Result",
-                                                                              value = ApiBodyExamples.EXAMPLE_STATUS_TRANSITION_RESULT)
-                                                       }))})
-    @NotNull Response changeStatus(
+                                                                              value = ApiBodyExamples.EXAMPLE_STATUS_TRANSITION_RESULT)}))})
+    @NotNull
+    Response changeStatus(
             @Parameter(name = "adapterId",
                        description = "The id of the adapter whose runtime status will change.",
                        required = true,
-                       in = ParameterIn.PATH)
-            final @PathParam("adapterId") @NotNull String adapterId,
+                       in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
             @Parameter(name = "command",
                        description = "The command to transition the adapter runtime status.",
                        required = true,
-                       in = ParameterIn.DEFAULT)
-            final @NotNull StatusTransitionCommand command);
+                       in = ParameterIn.DEFAULT) final @NotNull StatusTransitionCommand command);
 
     @GET
     @Path("/status")
@@ -270,8 +281,142 @@ public interface ProtocolAdaptersApi {
                                                                @ExampleObject(description = "Example connection status list.",
                                                                               name = "example-connection-status",
                                                                               summary = "Example connection status",
-                                                                              value = ApiBodyExamples.EXAMPLE_CONNECTION_STATUS_LIST_JSON)
-                                                       }))})
-    @NotNull Response status();
+                                                                              value = ApiBodyExamples.EXAMPLE_CONNECTION_STATUS_LIST_JSON)}))})
+    @NotNull
+    Response status();
+
+
+    @GET
+    @Path("/adapters/{adapterId}/tags")
+    @Operation(summary = "Get the domain tags for the device connected through this adapter.",
+               operationId = "get-adapter-domainTags",
+               description = "Get the domain tags for the device connected through this adapter.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = DomainTagModelList.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example for domain tags in opc ua",
+                                                                              name = "opc ua domain tags example",
+                                                                              summary = "Example for domain tags for opc ua ",
+                                                                              value = TagResourceExamples.EXAMPLE_OPC_UA)}))})
+    @Produces(APPLICATION_JSON)
+    @NotNull
+    Response getDomainTagsForAdapter(
+            @NotNull @Parameter(name = "adapterId",
+                                description = "The adapter id.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId);
+
+
+    @POST
+    @Path("/adapters/{adapterId}/tags")
+    @Operation(summary = "Add a new domain tag to the specified adapter",
+               operationId = "add-adapter-domainTags",
+               description = "Add a new domain tag to the specified adapter.",
+               responses = {
+                       @ApiResponse(responseCode = "200", description = "Success")})
+    @NotNull
+    Response addAdapterDomainTag(
+            @NotNull @Parameter(name = "adapterId",
+                                description = "The adapter id.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId,
+            @NotNull @Parameter(name = "domainTag",
+                                description = "The domain tag.",
+                                required = true,
+                                in = ParameterIn.DEFAULT) DomainTagModel domainTag);
+
+
+    @DELETE
+    @Path("/adapters/{adapterId}/tags/{tagId}")
+    @Operation(summary = "Delete an domain tag",
+               operationId = "delete-adapter-domainTags",
+               description = "Delete the specified domain tag on the given adapter.",
+               responses = {
+                       @ApiResponse(responseCode = "200", description = "Success")})
+    @Produces(APPLICATION_JSON)
+    @NotNull
+    Response deleteDomainTag(
+            @NotNull @Parameter(name = "adapterId",
+                                description = "The adapter Id.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("adapterId") String adapterId,
+            @NotNull @Parameter(name = "tagId",
+                                description = "The domain tag Id.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("tagId") String tagId);
+
+
+    @PUT
+    @Path("/adapters/{adapterId}/tags/{tagId}")
+    @Operation(summary = "Update the domain tag of an adapter.",
+               description = "Update the domain tag of an adapter.",
+               operationId = "update-adapter-domainTags",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = StatusTransitionResult.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "Example response with PENDING status.",
+                                                                              name = "transition-status-result",
+                                                                              summary = "Adapter Connection Transition Result",
+                                                                              value = ApiBodyExamples.EXAMPLE_STATUS_TRANSITION_RESULT)}))})
+    @NotNull
+    Response updateDomainTag(
+            @Parameter(name = "adapterId",
+                       description = "The id of the adapter whose domain tag will be updated.",
+                       required = true,
+                       in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
+            @NotNull @Parameter(name = "tagId",
+                                description = "The id of the domain tag that will be changed.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("tagId") String tagId,
+            final @NotNull DomainTagModel domainTag);
+
+
+    @GET
+    @Path("/tags")
+    @Operation(summary = "Get the list of all domain tags created in this Edge instance",
+               operationId = "get-domain-tags",
+               description = "Get the list of all domain tags created in this Edge instance",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = DomainTagModelList.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example for domain tags in opc ua",
+                                                                              name = "opc ua domain tags example",
+                                                                              summary = "Example for domain tags for opc ua ",
+                                                                              value = TagResourceExamples.EXAMPLE_OPC_UA)}))})
+    @Produces(APPLICATION_JSON)
+    @NotNull
+    Response getDomainTags();
+
+
+    // TODO not part of this ticket as it does not include schemas
+    /**
+
+     @GET
+     @Path("/domain/tags/schema")
+     @Operation(summary = "Get the data schema associated with the specified tags",
+     operationId = "get-tag-schemas",
+     description = "Get the data schema associated with the specified tags",
+     responses = {
+     @ApiResponse(responseCode = "200",
+     description = "Success",
+     content = @Content(mediaType = APPLICATION_JSON,
+     schema = @Schema(implementation = TagSchemaList.class),
+     examples = {
+     @ExampleObject(description = "An example for domain tags in opc ua",
+     name = "opc ua domain tags example",
+     summary = "Example for domain tags for opc ua ",
+     value = TagResourceExamples.EXAMPLE_OPC_UA)}))})
+     @Produces(APPLICATION_JSON)
+     @NotNull Response getTagSchema();
+     **/
 
 }
