@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { UiSchema } from '@rjsf/utils'
+import { GenericObjectType, UiSchema } from '@rjsf/utils'
 
 import { MOCK_TOPIC_REF1, MOCK_TOPIC_REF2 } from '@/__test-utils__/react-flow/topics.ts'
 import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
@@ -21,17 +21,12 @@ export const mockUISchema: UiSchema = {
     {
       id: 'coreFields',
       title: 'Settings',
-      properties: ['id'],
+      properties: ['id', 'minValue', 'maxValue', 'minDelay', 'maxDelay'],
     },
     {
       id: 'subFields',
-      title: 'Subscription',
-      properties: ['subscriptions'],
-    },
-    {
-      id: 'publishing',
-      title: 'Publishing',
-      properties: ['maxPollingErrorsBeforeRemoval', 'pollingIntervalMillis', 'minValue', 'maxValue'],
+      title: 'Simulation to MQTT',
+      properties: ['simulationToMqtt'],
     },
   ],
   'ui:submitButtonOptions': {
@@ -40,11 +35,23 @@ export const mockUISchema: UiSchema = {
   id: {
     'ui:disabled': false,
   },
-  subscriptions: {
-    items: {
-      'ui:order': ['destination', 'qos', '*'],
-      'ui:collapsable': {
-        titleKey: 'destination',
+  'ui:order': ['id', 'minValue', 'maxValue', 'minDelay', 'maxDelay', '*'],
+  simulationToMqtt: {
+    simulationToMqttMappings: {
+      'ui:batchMode': true,
+      items: {
+        'ui:order': [
+          'mqttTopic',
+          'mqttQos',
+          'mqttUserProperties',
+          'messageHandlingOptions',
+          'includeTimestamp',
+          'includeTagNames',
+          '*',
+        ],
+        'ui:collapsable': {
+          titleKey: 'mqttTopic',
+        },
       },
     },
   },
@@ -54,6 +61,114 @@ export const mockJSONSchema: JsonNode = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   type: 'object',
   properties: {
+    minValue: {
+      type: 'integer',
+      title: 'Min. Generated Value',
+      description: 'Minimum value of the generated decimal number',
+      default: 0,
+      minimum: 0,
+    },
+    maxValue: {
+      type: 'integer',
+      title: 'Max. Generated Value (Excl.)',
+      description: 'Maximum value of the generated decimal number (excluded)',
+      default: 1000,
+      maximum: 1000,
+    },
+    simulationToMqtt: {
+      type: 'object',
+      properties: {
+        maxPollingErrorsBeforeRemoval: {
+          type: 'integer',
+          title: 'Max. Polling Errors',
+          description:
+            'Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)',
+          default: 10,
+          minimum: -1,
+        },
+        pollingIntervalMillis: {
+          type: 'integer',
+          title: 'Polling Interval [ms]',
+          description: 'Time in millisecond that this endpoint will be polled',
+          default: 1000,
+          minimum: 1,
+        },
+        simulationToMqttMappings: {
+          title: 'simulationToMqttMappings',
+          description: 'List of simulation to mqtt mappings for the simulation',
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              includeTagNames: {
+                type: 'boolean',
+                title: 'Include Tag Names In Publish?',
+                description: 'Include the names of the tags in the resulting MQTT publish',
+                default: false,
+              },
+              includeTimestamp: {
+                type: 'boolean',
+                title: 'Include Sample Timestamp In Publish?',
+                description: 'Include the unix timestamp of the sample time in the resulting MQTT message',
+                default: true,
+              },
+              messageHandlingOptions: {
+                type: 'string',
+                enum: ['MQTTMessagePerTag', 'MQTTMessagePerSubscription'],
+                title: 'Message Handling Options',
+                description:
+                  'This setting defines the format of the resulting MQTT message, either a message per changed tag or a message per subscription that may include multiple data points per sample',
+                default: 'MQTTMessagePerTag',
+                enumNames: [
+                  'MQTT Message Per Device Tag',
+                  'MQTT Message Per Subscription (Potentially Multiple Data Points Per Sample)',
+                ],
+              },
+              mqttQos: {
+                type: 'integer',
+                title: 'MQTT QoS',
+                description: 'MQTT Quality of Service level',
+                default: 0,
+                minimum: 0,
+                maximum: 2,
+              },
+              mqttTopic: {
+                type: 'string',
+                title: 'Destination MQTT Topic',
+                description: 'The topic to publish data on',
+                format: 'mqtt-topic',
+              },
+              mqttUserProperties: {
+                title: 'MQTT User Properties',
+                description: 'Arbitrary properties to associate with the mapping',
+                maxItems: 10,
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    name: {
+                      type: 'string',
+                      title: 'Name',
+                      description: 'Name of the associated property',
+                    },
+                    value: {
+                      type: 'string',
+                      title: 'Value',
+                      description: 'Value of the associated property',
+                    },
+                  },
+                  required: ['name', 'value'],
+                  maxItems: 10,
+                },
+              },
+            },
+            required: ['mqttTopic'],
+          },
+        },
+      },
+      title: 'simulationToMqtt',
+      description: 'Define Simulations to create MQTT messages.',
+    },
     id: {
       type: 'string',
       title: 'Identifier',
@@ -61,45 +176,24 @@ export const mockJSONSchema: JsonNode = {
       minLength: 1,
       maxLength: 1024,
       format: 'identifier',
-      pattern: '([a-zA-Z_0-9\\-])*',
+      pattern: '^([a-zA-Z_0-9-_])*$',
     },
-    pollingIntervalMillis: {
+    minDelay: {
       type: 'integer',
-      title: 'Polling interval [ms]',
-      description: 'Interval in milliseconds to poll for changes',
-      default: 10000,
-      minimum: 100,
-      maximum: 86400000,
+      title: 'Minimum of delay',
+      description: 'Minimum of artificial delay before the polling method generates a value',
+      default: 0,
+      minimum: 0,
     },
-    subscriptions: {
-      title: 'Subscriptions',
-      description: 'List of subscriptions for the simulation',
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          destination: {
-            type: 'string',
-            title: 'Destination Topic',
-            description: 'The topic to publish data on',
-            format: 'mqtt-topic',
-          },
-          qos: {
-            type: 'integer',
-            title: 'QoS',
-            description: 'MQTT quality of service level',
-            default: 0,
-            minimum: 0,
-            maximum: 2,
-          },
-        },
-        required: ['destination', 'qos'],
-        title: 'Subscriptions',
-        description: 'List of subscriptions for the simulation',
-      },
+    maxDelay: {
+      type: 'integer',
+      title: 'Maximum of delay',
+      description: 'Maximum of artificial delay before the polling method generates a value',
+      default: 0,
+      minimum: 0,
     },
   },
-  required: ['id', 'subscriptions'],
+  required: ['simulationToMqtt', 'id'],
 }
 
 export const mockProtocolAdapter: ProtocolAdapter = {
@@ -123,19 +217,23 @@ export const mockProtocolAdapter: ProtocolAdapter = {
   tags: ['tag1', 'tag2', 'tag3'],
 }
 
-export const mockAdapterConfig: Record<string, Record<string, unknown>> = {
-  id: MOCK_ADAPTER_ID,
-  pollingIntervalMillis: 10000,
-  subscriptions: [
-    {
-      destination: MOCK_TOPIC_REF1,
-      qos: 0,
-    },
-    {
-      destination: MOCK_TOPIC_REF2,
-      qos: 0,
-    },
-  ],
+export const mockAdapterConfig: GenericObjectType = {
+  minValue: 0,
+  maxValue: 1000,
+  simulationToMqtt: {
+    pollingIntervalMillis: 10000,
+    maxPollingErrorsBeforeRemoval: 10,
+    simulationToMqttMappings: [
+      {
+        mqttTopic: MOCK_TOPIC_REF1,
+        qos: 0,
+      },
+      {
+        mqttTopic: MOCK_TOPIC_REF2,
+        qos: 0,
+      },
+    ],
+  },
 } as never
 
 export const mockAdapter: Adapter = {
