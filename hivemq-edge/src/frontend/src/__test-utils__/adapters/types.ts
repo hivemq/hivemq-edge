@@ -5,7 +5,7 @@ export enum MockAdapterType {
   BACNET = 'bacnetip',
   S7 = 's7',
   MODBUS = 'modbus',
-  FILE_INPUT = 'file_input',
+  FILE = 'file',
   HTTP = 'http',
   SIMULATION = 'simulation',
   EIP = 'eip',
