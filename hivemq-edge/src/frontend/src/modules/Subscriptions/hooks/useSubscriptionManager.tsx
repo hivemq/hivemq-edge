@@ -7,6 +7,7 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import { type SubscriptionManagerType } from '@/modules/Subscriptions/types.ts'
 import { MOCK_MAPPING_DATA, MOCK_OUTWARD_SUBSCRIPTION_OPCUA } from '@/modules/Subscriptions/utils/subscription.utils.ts'
 import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
+import { getInwardMappingRootProperty } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 export const useSubscriptionManager = (adapterId: string) => {
   const { data: allProtocols, isLoading: isProtocolLoading } = useGetAdapterTypes()
@@ -31,25 +32,25 @@ export const useSubscriptionManager = (adapterId: string) => {
 
     // TODO[NVL] This is still a hack; backend needs to provide identification of subscription properties
     const paths = getTopicPaths(selectedProtocol?.configSchema || {})
-    const subIndex = getMainRootFromPath(paths)
-    if (!subIndex) return undefined
+    const mappingIndex = getMainRootFromPath(paths)
+    if (!mappingIndex) return undefined
 
-    const formData = selectedAdapter.config?.[subIndex]
+    const formData = selectedAdapter.config?.[mappingIndex]
     if (!formData) return undefined
 
-    const subs = properties?.[subIndex]
-    if (!subs) return undefined
+    const mappingProperties = properties?.[mappingIndex]
+    if (!mappingProperties) return undefined
 
+    const mappingPropName = getInwardMappingRootProperty(selectedProtocol.id as string)
     const schema: RJSFSchema = {
       $schema: 'https://json-schema.org/draft/2020-12/schema',
       type: 'object',
       properties: {
-        subscriptions: subs,
+        [mappingPropName]: mappingProperties,
       },
-      required: ['subscriptions'],
     }
     const { ['ui:tabs']: tabs, ...rest } = selectedProtocol.uiSchema as UiSchema
-    return { schema, formData: { subscriptions: formData }, uiSchema: rest }
+    return { schema, formData: { [mappingPropName]: formData }, uiSchema: rest }
   }, [adapterInfo])
 
   const outwardManager = useMemo<SubscriptionManagerType | undefined>(() => {
