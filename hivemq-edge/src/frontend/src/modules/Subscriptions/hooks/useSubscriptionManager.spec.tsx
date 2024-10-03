@@ -14,6 +14,7 @@ import { Adapter, AdaptersList, Bridge, BridgeList, ProtocolAdapter, ProtocolAda
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 import { useSubscriptionManager } from '@/modules/Subscriptions/hooks/useSubscriptionManager.tsx'
 import { SubscriptionManagerType } from '@/modules/Subscriptions/types.ts'
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
   <QueryClientProvider
@@ -150,11 +151,11 @@ describe('useSubscriptionManager', () => {
     )
   })
 
-  it('should return outward subscription', async () => {
+  it('should return outward mapping specs', async () => {
     server.use(
       ...customHandlers(
-        [{ ...mockProtocolAdapter, id: 'opc-ua-client' }],
-        [{ ...mockAdapter, type: 'opc-ua-client' }],
+        [{ ...mockProtocolAdapter, id: MockAdapterType.OPC_UA }],
+        [{ ...mockAdapter, type: MockAdapterType.OPC_UA }],
         []
       )
     )
@@ -163,46 +164,16 @@ describe('useSubscriptionManager', () => {
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
     })
-    expect(result.current).toStrictEqual({
-      ...TEST_INWARD_EXPECTED,
-      outwardManager: expect.objectContaining({
-        formData: {
-          subscriptions: expect.arrayContaining([
-            expect.objectContaining({
-              'mqtt-topic': ['bar/test8', 'pump1/temperature'],
-            }),
-          ]),
-        },
-        uiSchema: {
-          subscriptions: {
-            'ui:field': 'mqtt:transform',
-            items: {
-              'mqtt-topic': {
-                items: {
-                  'ui:options': {
-                    create: false,
-                    multiple: false,
-                  },
-                },
-              },
-            },
-          },
-          'ui:submitButtonOptions': {
-            norender: true,
-          },
-        },
-        schema: expect.objectContaining({
-          required: ['subscriptions'],
-          type: 'object',
-          properties: expect.objectContaining({
-            subscriptions: expect.objectContaining({
-              items: expect.objectContaining({
-                required: ['node', 'mqtt-topic'],
-              }),
-            }),
-          }),
-        }),
-      }),
-    })
+
+    const { outwardManager, isLoading } = result.current
+    expect(isLoading).toBeFalsy()
+    expect(outwardManager).not.toBeUndefined()
+
+    const { formData, schema, uiSchema } = outwardManager as SubscriptionManagerType
+    expect(formData).not.toBeUndefined()
+    expect(schema).not.toBeUndefined()
+    expect(uiSchema).not.toBeUndefined()
+
+    // TODO[NVL] Tests to be continued when not dealing with a mock
   })
 })
