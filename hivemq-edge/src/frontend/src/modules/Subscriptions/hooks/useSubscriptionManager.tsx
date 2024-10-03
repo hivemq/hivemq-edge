@@ -7,7 +7,7 @@ import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useList
 import { type SubscriptionManagerType } from '@/modules/Subscriptions/types.ts'
 import { MOCK_MAPPING_DATA, MOCK_OUTWARD_SUBSCRIPTION_OPCUA } from '@/modules/Subscriptions/utils/subscription.utils.ts'
 import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
-import { getInwardMappingRootProperty } from '@/modules/Workspace/utils/adapter.utils.ts'
+import { getInwardMappingRootProperty, isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 
 export const useSubscriptionManager = (adapterId: string) => {
   const { data: allProtocols, isLoading: isProtocolLoading } = useGetAdapterTypes()
@@ -57,7 +57,7 @@ export const useSubscriptionManager = (adapterId: string) => {
     if (!adapterInfo) return undefined
     const { selectedProtocol } = adapterInfo
 
-    if (!['opc-ua-client'].includes(selectedProtocol.id || '')) return undefined
+    if (!isBidirectional(selectedProtocol)) return undefined
 
     return {
       schema: MOCK_OUTWARD_SUBSCRIPTION_OPCUA.schema || {},
