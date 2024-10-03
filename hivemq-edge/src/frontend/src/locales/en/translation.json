@@ -718,10 +718,10 @@
       "command": {
         "overview": "Open the overview panel",
         "group": "Group the selected adapters",
-        "subscriptions": {
-          "common": "Manage subscriptions of the device",
-          "inward": "Inward subscriptions",
-          "outward": "Outward subscriptions"
+        "mappings": {
+          "common": "Manage mappings of the device",
+          "inward": "Inward mappings",
+          "outward": "Outward mappings"
         }
       }
     },
@@ -812,10 +812,6 @@
     },
     "deleteProtocolAdapterDialog": {
       "header": "Delete Adapter"
-    },
-    "SubscriptionEditor": {
-      "header": "Define the subscription pattern",
-      "submit": "Add Subscription"
     }
   },
   "validation": {
@@ -921,8 +917,8 @@
     }
   },
   "warnings": {
-    "deprecated": {
-      "subscriptions": "The subscriptions are now available through the workspace"
+    "featureFlag": {
+      "splitSchema": "The mappings are now available through the workspace"
     }
   },
   "domainMapping": {

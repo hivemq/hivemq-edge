@@ -31,7 +31,7 @@ export const getRequiredUiSchema = (
       'ui:field': 'text:warning',
       'ui:options': {
         status,
-        message: i18n.t('warnings.deprecated.subscriptions'),
+        message: i18n.t('warnings.featureFlag.splitSchema'),
       },
     }
   }
