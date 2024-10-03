@@ -16,17 +16,17 @@ import {
 
 import type { Adapter } from '@/api/__generated__'
 import DrawerExpandButton from '@/components/Chakra/DrawerExpandButton.tsx'
-import SubscriptionForm from '@/modules/Subscriptions/components/SubscriptionForm.tsx'
+import MappingForm from '@/modules/Mappings/components/MappingForm.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 
-interface AdapterSubscriptionManagerProps {
+interface AdapterMappingManagerProps {
   type: 'inward' | 'outward'
 }
 
 // TODO[NVL] Ensure layout fully responsive
-const AdapterSubscriptionManager: FC<AdapterSubscriptionManagerProps> = ({ type }) => {
+const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
   const { t } = useTranslation()
   const [isExpanded, setExpanded] = useBoolean(true)
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -60,11 +60,11 @@ const AdapterSubscriptionManager: FC<AdapterSubscriptionManagerProps> = ({ type 
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           {!adapterId && <ErrorMessage message={t('protocolAdapter.error.loading')} />}
-          {adapterId && <SubscriptionForm adapterId={adapterId} adapterType={selectedNode?.data.type} type={type} />}
+          {adapterId && <MappingForm adapterId={adapterId} adapterType={selectedNode?.data.type} type={type} />}
         </DrawerBody>
       </DrawerContent>
     </Drawer>
   )
 }
 
-export default AdapterSubscriptionManager
+export default AdapterMappingManager

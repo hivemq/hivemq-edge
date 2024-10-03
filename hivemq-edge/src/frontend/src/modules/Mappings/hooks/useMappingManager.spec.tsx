@@ -12,8 +12,8 @@ import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { Adapter, AdaptersList, Bridge, BridgeList, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
-import { useSubscriptionManager } from '@/modules/Subscriptions/hooks/useSubscriptionManager.tsx'
-import { SubscriptionManagerType } from '@/modules/Subscriptions/types.ts'
+import { useMappingManager } from '@/modules/Mappings/hooks/useMappingManager.tsx'
+import { MappingManagerType } from '@/modules/Mappings/types.ts'
 import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 
 const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = ({ children }) => (
@@ -63,13 +63,13 @@ const customHandlers = (
   }),
 ]
 
-describe('useSubscriptionManager', () => {
+describe('useMappingManager', () => {
   beforeEach(() => {
     server.use(...customHandlers([mockProtocolAdapter], [mockAdapter], []))
   })
 
   it('should return no mapping specs for wrong adapter', async () => {
-    const { result } = renderHook(() => useSubscriptionManager('wrong-adapter'), { wrapper })
+    const { result } = renderHook(() => useMappingManager('wrong-adapter'), { wrapper })
     expect(result.current.isLoading).toBeTruthy()
 
     await waitFor(() => {
@@ -83,7 +83,7 @@ describe('useSubscriptionManager', () => {
   })
 
   it('should return inward mapping specs', async () => {
-    const { result } = renderHook(() => useSubscriptionManager(MOCK_ADAPTER_ID), { wrapper })
+    const { result } = renderHook(() => useMappingManager(MOCK_ADAPTER_ID), { wrapper })
     expect(result.current.isLoading).toBeTruthy()
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
@@ -93,7 +93,7 @@ describe('useSubscriptionManager', () => {
     expect(isLoading).toBeFalsy()
     expect(inwardManager).not.toBeUndefined()
 
-    const { formData, schema, uiSchema } = inwardManager as SubscriptionManagerType
+    const { formData, schema, uiSchema } = inwardManager as MappingManagerType
     expect(formData).not.toBeUndefined()
     expect(formData.simulationToMqtt).toStrictEqual(
       expect.objectContaining({
@@ -159,7 +159,7 @@ describe('useSubscriptionManager', () => {
         []
       )
     )
-    const { result } = renderHook(() => useSubscriptionManager(MOCK_ADAPTER_ID), { wrapper })
+    const { result } = renderHook(() => useMappingManager(MOCK_ADAPTER_ID), { wrapper })
     expect(result.current.isLoading).toBeTruthy()
     await waitFor(() => {
       expect(result.current.isLoading).toBeFalsy()
@@ -169,7 +169,7 @@ describe('useSubscriptionManager', () => {
     expect(isLoading).toBeFalsy()
     expect(outwardManager).not.toBeUndefined()
 
-    const { formData, schema, uiSchema } = outwardManager as SubscriptionManagerType
+    const { formData, schema, uiSchema } = outwardManager as MappingManagerType
     expect(formData).not.toBeUndefined()
     expect(schema).not.toBeUndefined()
     expect(uiSchema).not.toBeUndefined()

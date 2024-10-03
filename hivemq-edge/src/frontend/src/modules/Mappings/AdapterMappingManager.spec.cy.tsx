@@ -1,13 +1,13 @@
 /// <reference types="cypress" />
 
-import AdapterSubscriptionManager from '@/modules/Subscriptions/AdapterSubscriptionManager.tsx'
 import { Route, Routes } from 'react-router-dom'
 import { Node } from 'reactflow'
 
 import { ReactFlowTesting } from '@/__test-utils__/react-flow/ReactFlowTesting.tsx'
 import { MOCK_NODE_ADAPTER } from '@/__test-utils__/react-flow/nodes.ts'
-import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
+import AdapterMappingManager from '@/modules/Mappings/AdapterMappingManager.tsx'
 
 const getWrapperWith = (initialNodes?: Node[]) => {
   const Wrapper: React.JSXElementConstructor<{ children: React.ReactNode }> = ({ children }) => {
@@ -32,7 +32,7 @@ const getWrapperWith = (initialNodes?: Node[]) => {
   return Wrapper
 }
 
-describe('AdapterSubscriptionManager', () => {
+describe('AdapterMappingManager', () => {
   beforeEach(() => {
     cy.viewport(800, 800)
     cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter] }).as('getProtocol')
@@ -41,7 +41,7 @@ describe('AdapterSubscriptionManager', () => {
   })
 
   it('should render the drawer', () => {
-    cy.mountWithProviders(<AdapterSubscriptionManager type="inward" />, {
+    cy.mountWithProviders(<AdapterMappingManager type="inward" />, {
       routerProps: { initialEntries: [`/node/wrong-adapter`] },
       wrapper: getWrapperWith(),
     })
@@ -60,7 +60,7 @@ describe('AdapterSubscriptionManager', () => {
   })
 
   it('should render error properly', () => {
-    cy.mountWithProviders(<AdapterSubscriptionManager type="inward" />, {
+    cy.mountWithProviders(<AdapterMappingManager type="inward" />, {
       routerProps: { initialEntries: [`/node/wrong-adapter`] },
       wrapper: getWrapperWith(),
     })
@@ -75,7 +75,7 @@ describe('AdapterSubscriptionManager', () => {
   })
 
   it('should render inward properly', () => {
-    cy.mountWithProviders(<AdapterSubscriptionManager type="inward" />, {
+    cy.mountWithProviders(<AdapterMappingManager type="inward" />, {
       routerProps: { initialEntries: [`/node/idAdapter`] },
       wrapper: getWrapperWith([{ ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }]),
     })
@@ -85,7 +85,7 @@ describe('AdapterSubscriptionManager', () => {
   })
 
   it('should render outward properly', () => {
-    cy.mountWithProviders(<AdapterSubscriptionManager type="outward" />, {
+    cy.mountWithProviders(<AdapterMappingManager type="outward" />, {
       routerProps: { initialEntries: [`/node/idAdapter`] },
       wrapper: getWrapperWith([{ ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }]),
     })

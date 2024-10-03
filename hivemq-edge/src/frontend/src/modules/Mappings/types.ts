@@ -1,7 +1,7 @@
 import { GenericObjectType, type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import { AlertProps } from '@chakra-ui/react'
 
-export interface SubscriptionManagerType {
+export interface MappingManagerType {
   schema: RJSFSchema
   formData: GenericObjectType
   uiSchema: UiSchema
@@ -11,7 +11,7 @@ export interface SubscriptionManagerType {
 /**
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
  */
-export interface OutwardSubscription {
+export interface OutwardMapping {
   node: string
   'mqtt-topic': string[]
   mapping: Mapping[]
