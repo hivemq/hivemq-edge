@@ -1,7 +1,16 @@
 import { describe, expect, vi } from 'vitest'
-import { adapterExportFormats } from '@/modules/ProtocolAdapters/utils/export.utils.ts'
+import { adapterExportFormats, formatSheetName } from '@/modules/ProtocolAdapters/utils/export.utils.ts'
 import { ExportFormat } from '@/modules/ProtocolAdapters/types.ts'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
+
+describe('formatSheetName', () => {
+  it('should return a valid name', () => {
+    expect(formatSheetName('123')).toStrictEqual('123')
+    expect(formatSheetName('a.very.long.name.with.tricky.utf.characters')).toStrictEqual(
+      'a.very.long.name.with.tricky.ut'
+    )
+  })
+})
 
 describe('adapterExportFormats', () => {
   it('should return list of valid formats', () => {

@@ -17,6 +17,7 @@ import {
   getMainRootFromPath,
   getPropertiesFromPath,
   getTopicPaths,
+  getValuesFromPath,
   mergeAllTopics,
 } from './topics-utils.ts'
 import { mockJSONSchema } from '@/api/hooks/useProtocolAdapters/__handlers__'
@@ -190,6 +191,25 @@ describe('getMainRootFromPath', () => {
     expect(getMainRootFromPath(['root-'])).toStrictEqual('root-')
     expect(getMainRootFromPath(['root.*.first.one'])).toStrictEqual('root')
     expect(getMainRootFromPath(['root.*.first.one', 'root2.*.next.one'])).toStrictEqual('root')
+  })
+})
+
+describe('getValuesFromPath', () => {
+  it('should work', () => {
+    expect(getValuesFromPath('', mockJSONSchema)).toStrictEqual(undefined)
+    expect(getValuesFromPath('test', mockJSONSchema)).toStrictEqual(undefined)
+    expect(getValuesFromPath('test.still.wrong', mockJSONSchema)).toStrictEqual(undefined)
+    expect(
+      getValuesFromPath('properties.simulationToMqtt.properties.maxPollingErrorsBeforeRemoval', mockJSONSchema)
+    ).toStrictEqual(
+      expect.objectContaining({
+        default: 10,
+        description: 'Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)',
+        minimum: -1,
+        title: 'Max. Polling Errors',
+        type: 'integer',
+      })
+    )
   })
 })
 
