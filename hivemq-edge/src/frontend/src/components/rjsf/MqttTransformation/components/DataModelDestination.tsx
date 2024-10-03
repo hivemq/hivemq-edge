@@ -7,7 +7,7 @@ import ErrorMessage from '@/components/ErrorMessage.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import JsonSchemaBrowser from '@/components/rjsf/MqttTransformation/JsonSchemaBrowser.tsx'
 import ValidationStatus from '@/components/rjsf/MqttTransformation/components/mapping/ValidationStatus.tsx'
-import { MappingValidation } from '@/modules/Subscriptions/types.ts'
+import { MappingValidation } from '@/modules/Mappings/types.ts'
 
 interface DataModelDestinationProps extends CardProps {
   topic: string

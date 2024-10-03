@@ -1,8 +1,8 @@
 import type { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
+import { OutwardMapping } from '@/modules/Mappings/types.ts'
 import MappingInstruction from './MappingInstruction.tsx'
 
-const MOCK_SUBS: OutwardSubscription = {
+const MOCK_SUBS: OutwardMapping = {
   node: 'my-node',
   'mqtt-topic': ['my-topic'],
   mapping: [],

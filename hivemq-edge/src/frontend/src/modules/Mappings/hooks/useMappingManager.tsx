@@ -4,12 +4,12 @@ import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
 
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
-import { type SubscriptionManagerType } from '@/modules/Subscriptions/types.ts'
-import { MOCK_MAPPING_DATA, MOCK_OUTWARD_SUBSCRIPTION_OPCUA } from '@/modules/Subscriptions/utils/subscription.utils.ts'
+import { type MappingManagerType } from '@/modules/Mappings/types.ts'
+import { MOCK_MAPPING_DATA, MOCK_OUTWARD_SUBSCRIPTION_OPCUA } from '@/modules/Mappings/utils/subscription.utils.ts'
 import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
 import { getInwardMappingRootProperty, isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 
-export const useSubscriptionManager = (adapterId: string) => {
+export const useMappingManager = (adapterId: string) => {
   const { data: allProtocols, isLoading: isProtocolLoading } = useGetAdapterTypes()
   const { data: allAdapters, isLoading: isAdapterLoading } = useListProtocolAdapters()
 
@@ -23,7 +23,7 @@ export const useSubscriptionManager = (adapterId: string) => {
     return { selectedAdapter, selectedProtocol }
   }, [allAdapters, allProtocols?.items, adapterId])
 
-  const inwardManager = useMemo<SubscriptionManagerType | undefined>(() => {
+  const inwardManager = useMemo<MappingManagerType | undefined>(() => {
     if (!adapterInfo) return undefined
     const { selectedProtocol, selectedAdapter } = adapterInfo
 
@@ -53,7 +53,7 @@ export const useSubscriptionManager = (adapterId: string) => {
     return { schema, formData: { [mappingPropName]: formData }, uiSchema: rest }
   }, [adapterInfo])
 
-  const outwardManager = useMemo<SubscriptionManagerType | undefined>(() => {
+  const outwardManager = useMemo<MappingManagerType | undefined>(() => {
     if (!adapterInfo) return undefined
     const { selectedProtocol } = adapterInfo
 

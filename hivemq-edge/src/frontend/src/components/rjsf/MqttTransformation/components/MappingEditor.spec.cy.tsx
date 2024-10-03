@@ -1,8 +1,8 @@
-import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
+import { OutwardMapping } from '@/modules/Mappings/types.ts'
 import MappingEditor from './MappingEditor.tsx'
 import { GENERATE_DATA_MODELS } from '@/api/hooks/useDomainModel/__handlers__'
 
-const MOCK_SUBS: OutwardSubscription = {
+const MOCK_SUBS: OutwardMapping = {
   node: 'my-node',
   'mqtt-topic': ['my-topic'],
   mapping: [{ source: ['dropped-property'], destination: 'Second String' }],

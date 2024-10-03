@@ -10,7 +10,7 @@ import {
   SelectSourceTopics,
 } from '@/components/rjsf/MqttTransformation/components/EntitySelector.tsx'
 import { useMappingValidation } from '@/components/rjsf/MqttTransformation/hooks/useMappingValidation.tsx'
-import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
+import { OutwardMapping } from '@/modules/Mappings/types.ts'
 
 export enum MappingStrategy {
   EXACT = 'EXACT',
@@ -19,12 +19,12 @@ export enum MappingStrategy {
 }
 
 interface SubscriptionContainerProps {
-  item: OutwardSubscription
+  item: OutwardMapping
   adapterType?: string
   adapterId?: string
   onClose: () => void
-  onSubmit: (newItem: OutwardSubscription) => void
-  onChange: (id: keyof OutwardSubscription, v: JsonNode | string | string[] | undefined) => void
+  onSubmit: (newItem: OutwardMapping) => void
+  onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | undefined) => void
 }
 
 const SubscriptionContainer: FC<SubscriptionContainerProps> = ({

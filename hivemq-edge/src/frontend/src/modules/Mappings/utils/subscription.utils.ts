@@ -1,5 +1,5 @@
 import { type RJSFSchema, UiSchema } from '@rjsf/utils'
-import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
+import { OutwardMapping } from '@/modules/Mappings/types.ts'
 
 interface MockSubscription {
   schema?: RJSFSchema
@@ -93,7 +93,7 @@ export const MOCK_OUTWARD_SUBSCRIPTION_OPCUA: MockSubscription = {
   },
 }
 
-export const MOCK_MAPPING_DATA: OutwardSubscription[] = [
+export const MOCK_MAPPING_DATA: OutwardMapping[] = [
   {
     'mqtt-topic': ['bar/test8', 'pump1/temperature'],
     mapping: [

@@ -17,7 +17,7 @@ const UnifiedNamespacePage = lazy(() => import('@/modules/UnifiedNamespace/Unifi
 const EdgeFlowPage = lazy(() => import('@/modules/Workspace/EdgeFlowPage.tsx'))
 const NodePanelController = lazy(() => import('@/modules/Workspace/components/controls/NodePanelController.tsx'))
 const EvenLogPage = lazy(() => import('@/modules/EventLog/EvenLogPage.tsx'))
-const AdapterSubscriptionManager = lazy(() => import('@/modules/Subscriptions/AdapterSubscriptionManager.tsx'))
+const AdapterSubscriptionManager = lazy(() => import('@/modules/Mappings/AdapterMappingManager.tsx'))
 
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
 

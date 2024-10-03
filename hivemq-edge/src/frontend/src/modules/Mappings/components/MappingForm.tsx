@@ -10,20 +10,20 @@ import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
 import { customFormatsValidator } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
-import { useSubscriptionManager } from '@/modules/Subscriptions/hooks/useSubscriptionManager.tsx'
+import { useMappingManager } from '@/modules/Mappings/hooks/useMappingManager.tsx'
 import { useTranslation } from 'react-i18next'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
-interface SubscriptionFormProps {
+interface MappingFormProps {
   adapterId: string
   adapterType?: string
   type: 'inward' | 'outward'
 }
 
 // TODO[NVL] Should replicate the config from the adapter form; share component?
-const SubscriptionForm: FC<SubscriptionFormProps> = ({ adapterId, adapterType, type }) => {
+const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => {
   const { t } = useTranslation()
-  const { inwardManager, outwardManager } = useSubscriptionManager(adapterId)
+  const { inwardManager, outwardManager } = useMappingManager(adapterId)
 
   const subscriptionManager = type === 'inward' ? inwardManager : outwardManager
 
@@ -69,4 +69,4 @@ const SubscriptionForm: FC<SubscriptionFormProps> = ({ adapterId, adapterType, t
   )
 }
 
-export default SubscriptionForm
+export default MappingForm
