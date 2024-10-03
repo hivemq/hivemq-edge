@@ -74,6 +74,8 @@ export const getTopicPaths = (configSchema: RJSFSchema) => {
   )
 }
 
+export const getValuesFromPath = (p: string, o: GenericObjectType) => p.split('.').reduce((a, v) => a?.[v], o)
+
 export const getPropertiesFromPath = (path: string, instance: JSONSchema7 | undefined): JSONSchema7 | undefined => {
   const [property, ...rest] = path.split('.')
 
@@ -93,7 +95,7 @@ export const getPropertiesFromPath = (path: string, instance: JSONSchema7 | unde
 
 const getTopicsFromPath = (path: string, instance: GenericObjectType): string[] => {
   /* istanbul ignore next -- @preserve */
-  if (!path.length) {
+  if (!path.length || !instance) {
     console.log('Warning! Is this really happening?')
     return []
   }
