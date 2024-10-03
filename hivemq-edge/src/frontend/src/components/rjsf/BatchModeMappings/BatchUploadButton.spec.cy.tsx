@@ -1,5 +1,5 @@
-import BatchUploadButton from '@/components/rjsf/BatchSubscription/BatchUploadButton.tsx'
-import { MOCK_ID_SCHEMA, MOCK_SCHEMA } from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
+import BatchUploadButton from '@/components/rjsf/BatchModeMappings/BatchUploadButton.tsx'
+import { MOCK_ID_SCHEMA, MOCK_SCHEMA } from '@/components/rjsf/BatchModeMappings/__test-utils__/store.mocks.ts'
 
 describe('BatchUploadButton', () => {
   beforeEach(() => {

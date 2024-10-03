@@ -8,7 +8,7 @@ import {
   TOPIC_PATH_ITEMS_TOKEN,
 } from '@/modules/Workspace/utils/topics-utils.ts'
 import { AdapterExportError, ExportFormat } from '@/modules/ProtocolAdapters/types.ts'
-import { acceptMimeTypes } from '@/components/rjsf/BatchSubscription/utils/config.utils.ts'
+import { acceptMimeTypes } from '@/components/rjsf/BatchModeMappings/utils/config.utils.ts'
 import { downloadJSON, downloadTimeStamp } from '@datahub/utils/download.utils.ts'
 import validator from '@rjsf/validator-ajv8'
 

@@ -6,8 +6,8 @@ import { Controller, useFieldArray, useForm } from 'react-hook-form'
 import { Box, HStack, Input, chakra, FormControl, FormErrorMessage } from '@chakra-ui/react'
 import { LuChevronsRight } from 'react-icons/lu'
 
-import { ColumnMappingData, ColumnOption, StepRendererProps } from '@/components/rjsf/BatchSubscription/types.ts'
-import { findMatch } from '@/components/rjsf/BatchSubscription/utils/levenshtein.utils.ts'
+import { ColumnMappingData, ColumnOption, StepRendererProps } from '@/components/rjsf/BatchModeMappings/types.ts'
+import { findMatch } from '@/components/rjsf/BatchModeMappings/utils/levenshtein.utils.ts'
 
 const ColumnMatcherStep: FC<StepRendererProps> = ({ store, onContinue }) => {
   const { schema, worksheet } = store

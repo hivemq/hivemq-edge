@@ -15,9 +15,9 @@ import {
   useDisclosure,
 } from '@chakra-ui/react'
 import { LuHardDriveUpload } from 'react-icons/lu'
-import { UploadStepper } from '@/components/rjsf/BatchSubscription/components/UploadStepper.tsx'
-import { useBatchModeSteps } from '@/components/rjsf/BatchSubscription/hooks/useBatchModeSteps.ts'
-import { BatchModeStepType } from '@/components/rjsf/BatchSubscription/types.ts'
+import { UploadStepper } from '@/components/rjsf/BatchModeMappings/components/UploadStepper.tsx'
+import { useBatchModeSteps } from '@/components/rjsf/BatchModeMappings/hooks/useBatchModeSteps.ts'
+import { BatchModeStepType } from '@/components/rjsf/BatchModeMappings/types.ts'
 
 interface BatchUploadButtonProps {
   idSchema: IdSchema<unknown>

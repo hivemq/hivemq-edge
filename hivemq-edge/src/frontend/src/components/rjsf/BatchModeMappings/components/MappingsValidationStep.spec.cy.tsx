@@ -1,11 +1,11 @@
-import { BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
-import SubscriptionsValidationStep from '@/components/rjsf/BatchSubscription/components/SubscriptionsValidationStep.tsx'
+import { BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'
+import MappingsValidationStep from '@/components/rjsf/BatchModeMappings/components/MappingsValidationStep.tsx'
 import {
   MOCK_ID_SCHEMA,
   MOCK_MAPPING,
   MOCK_SCHEMA,
   MOCK_WORKSHEET,
-} from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
+} from '@/components/rjsf/BatchModeMappings/__test-utils__/store.mocks.ts'
 
 const MOCK_STORE: BatchModeStore = {
   idSchema: MOCK_ID_SCHEMA,
@@ -20,7 +20,7 @@ describe('SubscriptionsValidationStep', () => {
   })
 
   it('should render the steps', () => {
-    cy.mountWithProviders(<SubscriptionsValidationStep onContinue={cy.stub()} store={MOCK_STORE} />)
+    cy.mountWithProviders(<MappingsValidationStep onContinue={cy.stub()} store={MOCK_STORE} />)
 
     cy.get('table').as('table').should('have.attr', 'aria-label', 'List of subscriptions to be created')
     cy.get('@table').find('thead tr').eq(0).find('th').should('have.length', 2)

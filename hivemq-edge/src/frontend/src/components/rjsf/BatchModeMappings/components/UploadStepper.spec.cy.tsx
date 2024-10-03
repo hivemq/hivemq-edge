@@ -1,12 +1,12 @@
 import { FC } from 'react'
-import { UploadStepper } from '@/components/rjsf/BatchSubscription/components/UploadStepper.tsx'
+import { UploadStepper } from '@/components/rjsf/BatchModeMappings/components/UploadStepper.tsx'
 import {
   BatchModeStepType,
   BatchModeSteps,
   StepRendererProps,
   BatchModeStore,
-} from '@/components/rjsf/BatchSubscription/types.ts'
-import { MOCK_ID_SCHEMA } from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
+} from '@/components/rjsf/BatchModeMappings/types.ts'
+import { MOCK_ID_SCHEMA } from '@/components/rjsf/BatchModeMappings/__test-utils__/store.mocks.ts'
 
 const MOCK_STORE: BatchModeStore = {
   idSchema: MOCK_ID_SCHEMA,

@@ -16,10 +16,10 @@ import {
 } from '@chakra-ui/react'
 import { LuCheckSquare } from 'react-icons/lu'
 
-import { ErrorObject, StepRendererProps, ValidationColumns } from '@/components/rjsf/BatchSubscription/types.ts'
+import { ErrorObject, StepRendererProps, ValidationColumns } from '@/components/rjsf/BatchModeMappings/types.ts'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 
-const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue }) => {
+const MappingsValidationStep: FC<StepRendererProps> = ({ store, onContinue }) => {
   const { t } = useTranslation('components')
   const [flagError, setFlagError] = useBoolean()
 
@@ -163,4 +163,4 @@ const SubscriptionsValidationStep: FC<StepRendererProps> = ({ store, onContinue 
   )
 }
 
-export default SubscriptionsValidationStep
+export default MappingsValidationStep

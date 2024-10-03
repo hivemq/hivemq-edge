@@ -1,10 +1,10 @@
-import { BatchModeStore, ValidationColumns } from '@/components/rjsf/BatchSubscription/types.ts'
-import ConfirmStep from '@/components/rjsf/BatchSubscription/components/ConfirmStep.tsx'
+import { BatchModeStore, ValidationColumns } from '@/components/rjsf/BatchModeMappings/types.ts'
+import ConfirmStep from '@/components/rjsf/BatchModeMappings/components/ConfirmStep.tsx'
 import {
   MOCK_ID_SCHEMA,
   MOCK_SCHEMA,
   MOCK_WORKSHEET,
-} from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
+} from '@/components/rjsf/BatchModeMappings/__test-utils__/store.mocks.ts'
 
 const MOCK_VALIDATION: ValidationColumns[] = [{ row: 0, isError: false, message: 'MQTT topic validation failed' }]
 const MOCK_STORE: BatchModeStore = {

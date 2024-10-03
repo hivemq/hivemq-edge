@@ -13,7 +13,7 @@ import {
   StepTitle,
   VStack,
 } from '@chakra-ui/react'
-import { BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
+import { BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'
 
 interface UploadStepperProps {
   activeStep: number

@@ -1,5 +1,5 @@
 import { expect } from 'vitest'
-import levenshtein, { findMatch } from '@/components/rjsf/BatchSubscription/utils/levenshtein.utils.ts'
+import levenshtein, { findMatch } from '@/components/rjsf/BatchModeMappings/utils/levenshtein.utils.ts'
 
 describe('Levenshtein', () => {
   it.each([

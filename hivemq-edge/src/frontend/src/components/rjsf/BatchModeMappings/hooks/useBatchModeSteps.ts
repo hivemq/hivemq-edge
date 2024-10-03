@@ -4,11 +4,11 @@ import { useCallback, useState } from 'react'
 import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 import { IdSchema } from '@rjsf/utils'
 
-import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
-import DataSourceStep from '@/components/rjsf/BatchSubscription/components/DataSourceStep.tsx'
-import SubscriptionsValidationStep from '@/components/rjsf/BatchSubscription/components/SubscriptionsValidationStep.tsx'
-import ColumnMatcherStep from '@/components/rjsf/BatchSubscription/components/ColumnMatcherStep.tsx'
-import ConfirmStep from '@/components/rjsf/BatchSubscription/components/ConfirmStep.tsx'
+import { BatchModeStepType, BatchModeSteps, BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'
+import DataSourceStep from '@/components/rjsf/BatchModeMappings/components/DataSourceStep.tsx'
+import MappingsValidationStep from '@/components/rjsf/BatchModeMappings/components/MappingsValidationStep.tsx'
+import ColumnMatcherStep from '@/components/rjsf/BatchModeMappings/components/ColumnMatcherStep.tsx'
+import ConfirmStep from '@/components/rjsf/BatchModeMappings/components/ConfirmStep.tsx'
 
 export const useBatchModeSteps = (idSchema: IdSchema<unknown>, schema: RJSFSchema) => {
   const { t } = useTranslation('components')
@@ -47,7 +47,7 @@ export const useBatchModeSteps = (idSchema: IdSchema<unknown>, schema: RJSFSchem
       id: BatchModeStepType.VALIDATE,
       title: t('rjsf.batchUpload.modal.step.validate.title'),
       description: t('rjsf.batchUpload.modal.step.validate.description'),
-      renderer: SubscriptionsValidationStep,
+      renderer: MappingsValidationStep,
     },
     {
       id: BatchModeStepType.CONFIRM,

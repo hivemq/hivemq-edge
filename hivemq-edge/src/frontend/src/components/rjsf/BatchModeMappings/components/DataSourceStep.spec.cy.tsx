@@ -1,6 +1,6 @@
-import DataSourceStep from '@/components/rjsf/BatchSubscription/components/DataSourceStep.tsx'
-import { BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
-import { MOCK_ID_SCHEMA } from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
+import DataSourceStep from '@/components/rjsf/BatchModeMappings/components/DataSourceStep.tsx'
+import { BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'
+import { MOCK_ID_SCHEMA } from '@/components/rjsf/BatchModeMappings/__test-utils__/store.mocks.ts'
 
 const MOCK_STORE: BatchModeStore = {
   idSchema: MOCK_ID_SCHEMA,

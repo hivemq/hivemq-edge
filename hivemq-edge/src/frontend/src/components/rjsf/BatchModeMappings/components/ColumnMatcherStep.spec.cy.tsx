@@ -1,10 +1,10 @@
-import { BatchModeStore } from '@/components/rjsf/BatchSubscription/types.ts'
-import ColumnMatcherStep from '@/components/rjsf/BatchSubscription/components/ColumnMatcherStep.tsx'
+import { BatchModeStore } from '@/components/rjsf/BatchModeMappings/types.ts'
+import ColumnMatcherStep from '@/components/rjsf/BatchModeMappings/components/ColumnMatcherStep.tsx'
 import {
   MOCK_ID_SCHEMA,
   MOCK_SCHEMA,
   MOCK_WORKSHEET,
-} from '@/components/rjsf/BatchSubscription/__test-utils__/store.mocks.ts'
+} from '@/components/rjsf/BatchModeMappings/__test-utils__/store.mocks.ts'
 
 const MOCK_STORE: BatchModeStore = {
   idSchema: MOCK_ID_SCHEMA,
