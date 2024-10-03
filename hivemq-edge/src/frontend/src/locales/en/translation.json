@@ -571,6 +571,12 @@
         "noSchema": "There are no valid schema defining the extracted mappings",
         "notValid": "The data collected from the adapter is not valid"
       }
+    },
+    "mapping": {
+      "manager": {
+        "header_INWARD": "Managing inward mappings",
+        "header_OUTWARD": "Managing outward mappings"
+      }
     }
   },
   "articles": {

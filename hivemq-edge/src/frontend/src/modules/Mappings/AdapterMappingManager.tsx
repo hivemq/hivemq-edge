@@ -56,7 +56,7 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
         <DrawerCloseButton />
         <DrawerExpandButton isExpanded={isExpanded} toggle={setExpanded.toggle} />
         <DrawerHeader>
-          <Text>Manage {type} subscriptions</Text>
+          <Text>{t('protocolAdapter.mapping.manager.header', { context: type })}</Text>
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           {!adapterId && <ErrorMessage message={t('protocolAdapter.error.loading')} />}
