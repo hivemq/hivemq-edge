@@ -20,9 +20,10 @@ import MappingForm from '@/modules/Mappings/components/MappingForm.tsx'
 import { NodeTypes } from '@/modules/Workspace/types.ts'
 import useWorkspaceStore from '@/modules/Workspace/hooks/useWorkspaceStore.ts'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
+import { MappingType } from './types'
 
 interface AdapterMappingManagerProps {
-  type: 'inward' | 'outward'
+  type: MappingType
 }
 
 // TODO[NVL] Ensure layout fully responsive

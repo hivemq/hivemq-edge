@@ -20,6 +20,7 @@ const EvenLogPage = lazy(() => import('@/modules/EventLog/EvenLogPage.tsx'))
 const AdapterSubscriptionManager = lazy(() => import('@/modules/Mappings/AdapterMappingManager.tsx'))
 
 import { dataHubRoutes } from '@/extensions/datahub/routes.tsx'
+import { MappingType } from '@/modules/Mappings/types.ts'
 
 export const routes = createBrowserRouter(
   [
@@ -76,11 +77,11 @@ export const routes = createBrowserRouter(
             },
             {
               path: ':nodeType/:device?/:adapter?/:nodeId/inward',
-              element: <AdapterSubscriptionManager type="inward" />,
+              element: <AdapterSubscriptionManager type={MappingType.INWARD} />,
             },
             {
               path: ':nodeType/:device?/:adapter?/:nodeId/outward',
-              element: <AdapterSubscriptionManager type="outward" />,
+              element: <AdapterSubscriptionManager type={MappingType.OUTWARD} />,
             },
           ],
         },

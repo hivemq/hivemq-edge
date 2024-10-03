@@ -1,4 +1,5 @@
 import { type FC, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import Form from '@rjsf/chakra-ui'
 import { type IChangeEvent } from '@rjsf/core'
 
@@ -9,15 +10,15 @@ import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
 import { customFormatsValidator } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
-import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
+import { MappingType } from '@/modules/Mappings/types.ts'
 import { useMappingManager } from '@/modules/Mappings/hooks/useMappingManager.tsx'
-import { useTranslation } from 'react-i18next'
+import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
 
 interface MappingFormProps {
   adapterId: string
   adapterType?: string
-  type: 'inward' | 'outward'
+  type: MappingType
 }
 
 // TODO[NVL] Should replicate the config from the adapter form; share component?
@@ -25,7 +26,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => 
   const { t } = useTranslation()
   const { inwardManager, outwardManager } = useMappingManager(adapterId)
 
-  const mappingManager = type === 'inward' ? inwardManager : outwardManager
+  const mappingManager = type === MappingType.INWARD ? inwardManager : outwardManager
 
   const context: AdapterContext = {
     isEditAdapter: true,
@@ -45,7 +46,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => 
     [mappingManager]
   )
 
-  if (!mappingManager) return <ErrorMessage type={type} message={t('protocolAdapter.export.error.noSchema')} />
+  if (!mappingManager) return <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />
 
   return (
     <Form
