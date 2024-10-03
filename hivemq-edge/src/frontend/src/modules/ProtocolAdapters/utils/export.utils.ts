@@ -28,7 +28,7 @@ export const adapterExportFormats: ExportFormat[] = [
     },
   },
   {
-    value: ExportFormat.Type.SUBSCRIPTIONS,
+    value: ExportFormat.Type.MAPPINGS,
     formats: Object.values(acceptMimeTypes).flat(),
     isDisabled: (protocol?: ProtocolAdapter) => {
       if (!protocol) return true
@@ -46,36 +46,36 @@ export const downloadTableData = (name: string, adapter: Adapter, protocol: Prot
   // Get the list of "mqtt topic" xPaths from the protocol
   const paths = getTopicPaths(protocol.configSchema || {})
 
-  // Only get the first of the subscription arrays (we are ignoring many other sources of subscriptions)
+  // Only get the first of the mapping arrays (we are ignoring many other sources of mappins)
   const mappingPath = paths.find((path) => path.includes(`.${TOPIC_PATH_ITEMS_TOKEN}.`))
-  if (!mappingPath) throw new AdapterExportError('protocolAdapter.export.error.noSubscription')
+  if (!mappingPath) throw new AdapterExportError('protocolAdapter.export.error.noMapping')
 
   // Extract the path to the containing array property
-  // TODO This is wrong: the "subscription" could be nested or the mqtt topic itself nested
-  //  (e.g. root.subscription.*.nested.*.destination or root.remote.*.subscription.destination)
-  const subscriptionRoot = mappingPath.split(`.${TOPIC_PATH_ITEMS_TOKEN}.`).shift()
-  if (!subscriptionRoot) throw new AdapterExportError('protocolAdapter.export.error.noSubscription')
+  // TODO This is wrong: the "mappings" could be nested or the mqtt topic itself nested
+  //  (e.g. root.mappings.*.nested.*.destination or root.remote.*.mappings.destination)
+  const mappingRoot = mappingPath.split(`.${TOPIC_PATH_ITEMS_TOKEN}.`).shift()
+  if (!mappingRoot) throw new AdapterExportError('protocolAdapter.export.error.noMapping')
 
   // Get the JSON Schema of the item of the containing array property
-  const subscriptionSchema = getPropertiesFromPath(mappingPath, protocol.configSchema)
+  const mappingSchema = getPropertiesFromPath(mappingPath, protocol.configSchema)
 
-  if (!subscriptionSchema) throw new AdapterExportError('protocolAdapter.export.error.noSchema')
+  if (!mappingSchema) throw new AdapterExportError('protocolAdapter.export.error.noSchema')
 
   // Get the data from the active adapter
   // TODO This is still wrong: no guarantees it's an array
-  let rows = getValuesFromPath(subscriptionRoot, adapter.config || {}) as RJSFSchema[] | undefined
+  let rows = getValuesFromPath(mappingRoot, adapter.config || {}) as RJSFSchema[] | undefined
 
   if (!rows?.length) {
     // if empty, build a dummy row
     // TODO This is wrong: cells should be matching the types
-    const entries = Object.keys(subscriptionSchema).map((property) => [property, ''])
+    const entries = Object.keys(mappingSchema).map((property) => [property, ''])
     rows = [Object.fromEntries(entries)]
   } else {
     // Validate the extracted data to the extracted  schema
     const validate = validator.ajv.compile({
       type: 'array',
       // TODO This is wrong: required is missing. The extraction of the item's JSONSchema is not working. Get definitions!
-      items: { properties: subscriptionSchema },
+      items: { properties: mappingSchema },
     })
     const isValid = validate(rows)
     if (!isValid) throw new AdapterExportError('protocolAdapter.export.error.notValid')
@@ -84,7 +84,7 @@ export const downloadTableData = (name: string, adapter: Adapter, protocol: Prot
   // generate worksheet and workbook
   const worksheet = XLSX.utils.json_to_sheet(rows)
   const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, formatSheetName(subscriptionRoot))
+  XLSX.utils.book_append_sheet(workbook, worksheet, formatSheetName(mappingRoot))
 
   // calculate column width
   const colSizes = rows.reduce<number[]>((acc, currentRow) => {

@@ -21,7 +21,7 @@ describe('adapterExportFormats', () => {
       }),
       expect.objectContaining({
         formats: ['.xlsx', '.xls', '.csv'],
-        value: 'SUBSCRIPTIONS',
+        value: 'MAPPINGS',
       }),
     ])
   })
@@ -33,14 +33,14 @@ describe('adapterExportFormats', () => {
     expect(sub.isDisabled?.()).toBeFalsy()
     expect(sub.downloader).not.toBeUndefined()
     expect(callback).not.toHaveBeenCalled()
-    sub.downloader?.('sssss', '.json', mockAdapter, mockProtocolAdapter, callback)
+    sub.downloader?.('test', '.json', mockAdapter, mockProtocolAdapter, callback)
     expect(callback).toHaveBeenCalled()
   })
 
-  it('should run the subscription downloader', () => {
+  it('should run the mapping downloader', () => {
     const sub = adapterExportFormats[1]
     const callback = vi.fn()
-    expect(sub.value).toStrictEqual(ExportFormat.Type.SUBSCRIPTIONS)
+    expect(sub.value).toStrictEqual(ExportFormat.Type.MAPPINGS)
     expect(sub.isDisabled?.(mockProtocolAdapter)).toBeFalsy()
     expect(sub.downloader).not.toBeUndefined()
     expect(callback).not.toHaveBeenCalled()

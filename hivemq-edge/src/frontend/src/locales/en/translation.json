@@ -552,8 +552,8 @@
       "formats": {
         "label_CONFIGURATION": "Full configuration",
         "description_CONFIGURATION": "This will export the whole configuration of the adapter, as a standalone JSON file.",
-        "label_SUBSCRIPTIONS": "Subscriptions",
-        "description_SUBSCRIPTIONS": "This will only export the subscriptions currently defined in the adapter, in a format suitable for batch processing.",
+        "label_MAPPINGS": "Mappings",
+        "description_MAPPINGS": "This will only export the mappings currently defined in the adapter, in a format suitable for batch processing.",
         "notAvailable": "The format is not available for this adapter."
       },
       "mimeTypes": {
@@ -567,8 +567,8 @@
         "status_success": "Adapter {{ name }} successfully downloaded "
       },
       "error": {
-        "noSubscription": "No subscription could be detected in the adapter configuration",
-        "noSchema": "There are no valid schema defining the extracted subscriptions",
+        "noMapping": "No mapping could be found in the adapter configuration",
+        "noSchema": "There are no valid schema defining the extracted mappings",
         "notValid": "The data collected from the adapter is not valid"
       }
     }
