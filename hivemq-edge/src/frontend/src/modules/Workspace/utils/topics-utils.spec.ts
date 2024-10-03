@@ -202,21 +202,23 @@ describe('getPropertiesFromPath', () => {
       })
     )
     expect(getPropertiesFromPath('test.*', { type: 'string' })).toStrictEqual(undefined)
-    expect(getPropertiesFromPath('subscriptions.*.destination', mockJSONSchema)).toStrictEqual({
-      destination: {
-        description: 'The topic to publish data on',
-        format: 'mqtt-topic',
-        title: 'Destination Topic',
-        type: 'string',
-      },
-      qos: {
-        default: 0,
-        description: 'MQTT quality of service level',
-        maximum: 2,
-        minimum: 0,
-        title: 'QoS',
-        type: 'integer',
-      },
-    })
+    expect(getPropertiesFromPath('simulationToMqtt.simulationToMqttMappings.*.items', mockJSONSchema)).toStrictEqual(
+      expect.objectContaining({
+        mqttTopic: {
+          description: 'The topic to publish data on',
+          format: 'mqtt-topic',
+          title: 'Destination MQTT Topic',
+          type: 'string',
+        },
+        mqttQos: {
+          default: 0,
+          description: 'MQTT Quality of Service level',
+          maximum: 2,
+          minimum: 0,
+          title: 'MQTT QoS',
+          type: 'integer',
+        },
+      })
+    )
   })
 })
