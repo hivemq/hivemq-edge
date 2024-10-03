@@ -95,6 +95,6 @@ describe('AdapterSubscriptionManager', () => {
     cy.get('[role="alert"] span').should('have.attr', 'data-status', 'error')
     cy.get('[role="alert"] div div')
       .should('have.attr', 'data-status', 'error')
-      .should('contains.text', 'There are no valid schema defining the extracted subscriptions')
+      .should('contains.text', 'There are no valid schema defining the extracted mappings')
   })
 })
