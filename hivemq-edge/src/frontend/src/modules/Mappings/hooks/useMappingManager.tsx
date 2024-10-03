@@ -2,10 +2,10 @@ import { useMemo } from 'react'
 import { type JSONSchema7 } from 'json-schema'
 import { type RJSFSchema, type UiSchema } from '@rjsf/utils'
 
+import { MOCK_MAPPING_DATA, MOCK_OUTWARD_MAPPING_OPCUA } from '@/__test-utils__/adapters/mapping.utils.ts'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
 import { useListProtocolAdapters } from '@/api/hooks/useProtocolAdapters/useListProtocolAdapters.ts'
 import { type MappingManagerType } from '@/modules/Mappings/types.ts'
-import { MOCK_MAPPING_DATA, MOCK_OUTWARD_SUBSCRIPTION_OPCUA } from '@/modules/Mappings/utils/subscription.utils.ts'
 import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
 import { getInwardMappingRootProperty, isBidirectional } from '@/modules/Workspace/utils/adapter.utils.ts'
 
@@ -60,11 +60,11 @@ export const useMappingManager = (adapterId: string) => {
     if (!isBidirectional(selectedProtocol)) return undefined
 
     return {
-      schema: MOCK_OUTWARD_SUBSCRIPTION_OPCUA.schema || {},
+      schema: MOCK_OUTWARD_MAPPING_OPCUA.schema || {},
       formData: {
         subscriptions: MOCK_MAPPING_DATA,
       },
-      uiSchema: MOCK_OUTWARD_SUBSCRIPTION_OPCUA.uiSchema || {},
+      uiSchema: MOCK_OUTWARD_MAPPING_OPCUA.uiSchema || {},
     }
   }, [adapterInfo])
 

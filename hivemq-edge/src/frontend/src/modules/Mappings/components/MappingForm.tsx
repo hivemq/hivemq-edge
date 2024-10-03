@@ -25,7 +25,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => 
   const { t } = useTranslation()
   const { inwardManager, outwardManager } = useMappingManager(adapterId)
 
-  const subscriptionManager = type === 'inward' ? inwardManager : outwardManager
+  const mappingManager = type === 'inward' ? inwardManager : outwardManager
 
   const context: AdapterContext = {
     isEditAdapter: true,
@@ -34,27 +34,30 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => 
     adapterId: adapterId,
   }
 
+  /**
+   * @deprecated This is a mock, missing validation (https://hivemq.kanbanize.com/ctrl_board/57/cards/25908/details/)
+   */
   const onFormSubmit = useCallback(
     (data: IChangeEvent) => {
       const subscriptions = data.formData?.subscriptions
-      subscriptionManager?.onSubmit?.(subscriptions)
+      mappingManager?.onSubmit?.(subscriptions)
     },
-    [subscriptionManager]
+    [mappingManager]
   )
 
-  if (!subscriptionManager) return <ErrorMessage type={type} message={t('protocolAdapter.export.error.noSchema')} />
+  if (!mappingManager) return <ErrorMessage type={type} message={t('protocolAdapter.export.error.noSchema')} />
 
   return (
     <Form
       id="adapter-instance-form"
-      schema={subscriptionManager.schema}
-      uiSchema={subscriptionManager.uiSchema}
+      schema={mappingManager.schema}
+      uiSchema={mappingManager.uiSchema}
       liveValidate
       onSubmit={onFormSubmit}
       validator={customFormatsValidator}
       showErrorList="bottom"
       onError={(errors) => console.log('XXXXXXX', errors)}
-      formData={subscriptionManager.formData}
+      formData={mappingManager.formData}
       widgets={adapterJSFWidgets}
       fields={adapterJSFFields}
       formContext={context}

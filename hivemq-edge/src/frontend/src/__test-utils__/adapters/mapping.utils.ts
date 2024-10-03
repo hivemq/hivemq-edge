@@ -1,7 +1,7 @@
 import { type RJSFSchema, UiSchema } from '@rjsf/utils'
 import { OutwardMapping } from '@/modules/Mappings/types.ts'
 
-interface MockSubscription {
+interface MockMapping {
   schema?: RJSFSchema
   uiSchema?: UiSchema
 }
@@ -9,7 +9,7 @@ interface MockSubscription {
 /**
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
  */
-export const MOCK_OUTWARD_SUBSCRIPTION_OPCUA: MockSubscription = {
+export const MOCK_OUTWARD_MAPPING_OPCUA: MockMapping = {
   schema: {
     $schema: 'https://json-schema.org/draft/2020-12/schema',
     type: 'object',
