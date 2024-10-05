@@ -2,9 +2,9 @@
 apache-commonsIO = "2.17.0"
 assertj = "3.26.3"
 hivemq-edge-adapterSdk = "2024.5"
-jackson = "2.17.2"
+jackson = "2.18.0"
 junit-jupiter = "5.11.0"
-mockito = "5.13.0"
+mockito = "5.14.1"
 slf4j = "2.0.16"
 
 [libraries]
