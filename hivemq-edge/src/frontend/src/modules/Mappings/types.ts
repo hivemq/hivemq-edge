@@ -8,7 +8,7 @@ export enum MappingType {
 
 export interface MappingManagerType {
   schema: RJSFSchema
-  formData: GenericObjectType
+  formData?: GenericObjectType
   uiSchema: UiSchema
   onSubmit?: (data: unknown) => void
 }
