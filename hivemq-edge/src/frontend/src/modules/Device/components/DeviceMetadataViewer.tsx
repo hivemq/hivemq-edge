@@ -37,7 +37,7 @@ const DeviceMetadataViewer: FC<DeviceMetadataProps> = ({ protocolAdapter }) => {
               <Text>{protocolAdapter?.category?.displayName}</Text>
             </Box>
           </Flex>
-          <IconButton aria-label="Load Metadata" icon={<LuUpload />} isDisabled />
+          <IconButton aria-label={t('device.drawer.metadataPanel.cta.load')} icon={<LuUpload />} isDisabled />
         </Flex>
       </CardHeader>
       <CardBody>

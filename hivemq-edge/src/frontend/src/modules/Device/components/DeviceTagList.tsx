@@ -1,12 +1,14 @@
 import { FC } from 'react'
-import { Card, CardBody, CardHeader, Code, Heading, HStack, List, ListItem } from '@chakra-ui/react'
-import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
-import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
-import { Adapter } from '@/api/__generated__'
-import { PLCTag } from '@/components/MQTT/EntityTag.tsx'
-import { formatTagDataPoint } from '@/modules/Device/utils/tags.utils.ts'
-import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { useTranslation } from 'react-i18next'
+import { Card, CardBody, CardHeader, Code, Flex, Heading, HStack, List, ListItem } from '@chakra-ui/react'
+
+import { Adapter } from '@/api/__generated__'
+import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
+import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
+import ErrorMessage from '@/components/ErrorMessage.tsx'
+import { PLCTag } from '@/components/MQTT/EntityTag.tsx'
+import DeviceTagDrawer from '@/modules/Device/components/DeviceTagDrawer.tsx'
+import { formatTagDataPoint } from '@/modules/Device/utils/tags.utils.ts'
 
 interface DeviceTagListProps {
   adapter?: Adapter
@@ -19,13 +21,19 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
   return (
     <Card size="sm">
       <CardHeader>
-        <Heading size="sm">{t('device.drawer.tagPanel.title')}</Heading>
+        <Flex>
+          <Flex flex="1" alignItems="center" flexWrap="wrap">
+            <Heading size="sm">{t('device.drawer.tagList.title')}</Heading>
+          </Flex>
+          <DeviceTagDrawer adapter={adapter} />
+        </Flex>
       </CardHeader>
       <CardBody>
         {isLoading && <LoaderSpinner />}
-        {isError && <ErrorMessage message="XXXX Cannot load the tags" />}
-        {!isError && !data?.items?.length && <ErrorMessage message="XXXX No tag defined" status="info" />}
+        {isError && <ErrorMessage message={t('device.errors.noTagLoaded')} />}
+        {!isError && !data?.items?.length && <ErrorMessage message={t('device.errors.noTagCreated')} status="info" />}
         {!isError && data && (
+          // TODO[NVL] Too simple. Use a paginated table
           <List>
             {data.items?.map((e) => (
               <ListItem key={e.tag} m={1} display="flex" justifyContent="space-between">
