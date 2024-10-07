@@ -54,7 +54,7 @@ export interface AdapterContext {
 export namespace ExportFormat {
   export enum Type {
     CONFIGURATION = 'CONFIGURATION',
-    SUBSCRIPTIONS = 'SUBSCRIPTIONS',
+    MAPPINGS = 'MAPPINGS',
   }
 }
 

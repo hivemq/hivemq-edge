@@ -1,9 +1,9 @@
-import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
+import { OutwardMapping } from '@/modules/Mappings/types.ts'
 import SubscriptionContainer from './SubscriptionContainer.tsx'
 import { mockAdapter, mockProtocolAdapter } from '@/api/hooks/useProtocolAdapters/__handlers__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 
-const MOCK_SUBS: OutwardSubscription = {
+const MOCK_SUBS: OutwardMapping = {
   node: 'my-node',
   'mqtt-topic': ['my-topic'],
   mapping: [{ source: ['dropped-property'], destination: 'Second String' }],

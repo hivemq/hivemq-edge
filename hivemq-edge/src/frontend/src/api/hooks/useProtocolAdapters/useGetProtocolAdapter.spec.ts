@@ -29,20 +29,21 @@ describe('useGetProtocolAdapter', () => {
           startedAt: '2023-08-21T11:51:24.234+01',
         },
         type: 'simulation',
-        config: {
-          id: 'my-adapter',
-          pollingIntervalMillis: 10000,
-          subscriptions: [
-            {
-              destination: 'root/topic/ref/1',
-              qos: 0,
-            },
-            {
-              destination: 'root/topic/ref/2',
-              qos: 0,
-            },
-          ],
-        },
+        config: expect.objectContaining({
+          simulationToMqtt: expect.objectContaining({
+            pollingIntervalMillis: 10000,
+            simulationToMqttMappings: [
+              {
+                mqttTopic: 'root/topic/ref/1',
+                qos: 0,
+              },
+              {
+                mqttTopic: 'root/topic/ref/2',
+                qos: 0,
+              },
+            ],
+          }),
+        }),
       })
     )
   })

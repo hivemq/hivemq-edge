@@ -7,7 +7,7 @@ import { useGetTagSchemas } from '@/api/hooks/useDomainModel/useGetTagSchemas.ts
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { Mapping } from '@/modules/Subscriptions/types.ts'
+import { Mapping } from '@/modules/Mappings/types.ts'
 
 interface MappingEditorProps extends Omit<CardProps, 'onChange'> {
   topic: string
