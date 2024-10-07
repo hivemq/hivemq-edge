@@ -6,6 +6,7 @@ import { Box, HStack, Icon, Image, SkeletonText, Text, VStack } from '@chakra-ui
 
 import { type Adapter } from '@/api/__generated__'
 import { useGetAdapterTypes } from '@/api/hooks/useProtocolAdapters/useGetAdapterTypes.ts'
+import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import { ConnectionStatusBadge } from '@/components/ConnectionStatusBadge'
 import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
@@ -32,6 +33,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
   const { onContextMenu } = useContextMenu(id, selected, `/workspace/node/adapter/${adapter.type}`)
   const navigate = useNavigate()
   const showSkeleton = useStore(selectorIsSkeletonZoom)
+  const { data } = useGetDomainTags(adapter.id)
 
   const HACK_BIDIRECTIONAL = isBidirectional(adapterProtocol)
   const adapterNavPath = `/workspace/node/adapter/${adapter.type}/${id}`
@@ -63,7 +65,7 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
       >
         {!showSkeleton && (
           <VStack>
-            {HACK_BIDIRECTIONAL && <MappingBadge destinations={['topic/mock/todo']} isTag />}
+            {HACK_BIDIRECTIONAL && <MappingBadge destinations={data?.items?.map((e) => e.tag) || []} isTag />}
 
             <HStack>
               <Image aria-label={adapter.type} boxSize="20px" objectFit="scale-down" src={adapterProtocol?.logoUrl} />
