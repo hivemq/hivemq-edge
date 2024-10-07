@@ -567,6 +567,7 @@
         "status_success": "Adapter {{ name }} successfully downloaded "
       },
       "error": {
+        "noAdapterConfig": "No adapter configuration exists",
         "noMapping": "No mapping could be found in the adapter configuration",
         "noSchema": "There are no valid schema defining the extracted mappings",
         "notValid": "The data collected from the adapter is not valid"

@@ -11,6 +11,7 @@ export interface MappingManagerType {
   formData?: GenericObjectType
   uiSchema: UiSchema
   onSubmit?: (data: unknown) => void
+  errors?: string
 }
 
 /**

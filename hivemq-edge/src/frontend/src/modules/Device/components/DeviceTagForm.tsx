@@ -34,7 +34,8 @@ const DeviceTagForm: FC<DeviceTagFormProps> = ({ adapterId, adapterType }) => {
   )
 
   if (isLoadingTags || isLoading) return <LoaderSpinner />
-  if (!tagsManager || isError) return <ErrorMessage message={t('protocolAdapter.error.loading')} />
+  if (!tagsManager || isError || tagsManager.errors)
+    return <ErrorMessage message={t('protocolAdapter.error.loading')} />
 
   return (
     <Form
