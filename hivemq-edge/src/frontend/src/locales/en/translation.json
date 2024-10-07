@@ -581,12 +581,28 @@
   },
   "device": {
     "drawer": {
-      "tagPanel": {
-        "title": "List of Device Tags"
+      "metadataPanel": {
+        "cta": {
+          "load": "Load Metadata"
+        }
+      },
+      "tagList": {
+        "title": "List of Device Tags",
+        "cta": {
+          "edit": "Edit tags"
+        }
+      },
+      "tagEditor": {
+        "title": "Edit the tags",
+        "cta": {
+          "edit": "Edit tags"
+        }
       }
     },
     "errors": {
-      "noMetadataLoaded": "No metadata loaded for the device"
+      "noMetadataLoaded": "No metadata loaded for the device",
+      "noTagLoaded": "Cannot load the tags",
+      "noTagCreated": "There is no tag created yet"
     }
   },
 
