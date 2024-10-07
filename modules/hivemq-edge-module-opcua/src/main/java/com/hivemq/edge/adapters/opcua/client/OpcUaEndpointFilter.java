@@ -75,9 +75,7 @@ public class OpcUaEndpointFilter implements Function<List<EndpointDescription>, 
             final EndpointDescription endpointDescription = EndpointUtil.updateUrl(endpoint,
                     EndpointUtil.getHost(adapterConfig.getUri()),
                     EndpointUtil.getPort(adapterConfig.getUri()));
-            if (log.isInfoEnabled()) {
-                log.info("Overwriting returned endpoint {} with {}", endpoint, endpointDescription);
-            };
+            log.info("Overwriting returned endpoint {} with {}", endpoint, endpointDescription);
             return endpointDescription;
         }
         return endpoint;
