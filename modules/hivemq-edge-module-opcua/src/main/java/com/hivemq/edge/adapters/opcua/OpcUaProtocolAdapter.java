@@ -139,12 +139,11 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                                     final OpcUaToMqttMapping subscriptionConfig =
                                             subscriptionMap.get(subscription.getSubscriptionId());
                                     if (subscriptionConfig != null) {
-                                        try {
-                                            subscribeToNode(subscriptionConfig).get();
-                                        } catch (final InterruptedException | ExecutionException e) {
-                                            log.error("Not able to recreate OPC UA subscription after transfer failure",
-                                                    e);
-                                        }
+                                        subscribeToNode(subscriptionConfig)
+                                                .exceptionally(ex -> {
+                                                    log.error("Not able to recreate OPC UA subscription after transfer failure", ex);
+                                                    return null;
+                                                });
                                     }
                                 }));
                 createAllSubscriptions().whenComplete((unused, throwable) -> {
@@ -155,13 +154,11 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                     }
                 });
             }).exceptionally(throwable -> {
-                log.error("Not able to connect and subscribe to OPC UA server {}", adapterConfig.getUri(), throwable);
                 stopInternal();
                 output.failStart(throwable, throwable.getMessage());
                 return null;
             });
         } catch (final Exception e) {
-            log.error("Not able to start OPC UA client for server {}", adapterConfig.getUri(), e);
             output.failStart(e, "Not able to start OPC UA client for server " + adapterConfig.getUri());
         }
     }
@@ -342,15 +339,18 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         opcUaClient.addSessionActivityListener(new SessionActivityListener() {
             @Override
             public void onSessionInactive(final @NotNull UaSession session) {
+                log.info("OPC UA client of protocol adapter '{}' disconnected: {}", getId(), session);
                 protocolAdapterState.setConnectionStatus(DISCONNECTED);
             }
 
             @Override
             public void onSessionActive(final @NotNull UaSession session) {
+                log.info("OPC UA client of protocol adapter '{}' connected: {}", getId(), session);
                 protocolAdapterState.setConnectionStatus(CONNECTED);
             }
         });
         opcUaClient.addFaultListener(serviceFault -> {
+            log.info("OPC UA client of protocol adapter '{}' detected a service fault: {}", getId(), serviceFault);
             moduleServices.eventService()
                     .createAdapterEvent(adapterConfig.getId(), adapterInformation.getProtocolId())
                     .withSeverity(Event.SEVERITY.ERROR)
@@ -418,13 +418,9 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                 uint(0),
                 uint(BrowseResultMask.All.getValue()));
 
-        try {
-            final BrowseResult browseResult = client.browse(browse).get();
-            return handleBrowseResult(client, parent, callback, depth, browseResult);
-        } catch (final InterruptedException | ExecutionException e) {
-            log.error("Browsing nodeId={} failed: {}", browseRoot, e.getMessage(), e);
-            return CompletableFuture.failedFuture(e);
-        }
+        return client
+                .browse(browse)
+                .thenCompose(res -> handleBrowseResult(client, parent, callback, depth, res));
     }
 
     private @NotNull CompletableFuture<Void> handleBrowseResult(
@@ -432,7 +428,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
             final @Nullable ReferenceDescription parent,
             final @NotNull BiConsumer<ReferenceDescription, ReferenceDescription> callback,
             final int depth,
-            final BrowseResult browseResult) throws InterruptedException, ExecutionException {
+            final BrowseResult browseResult) {
         final ReferenceDescription[] references = browseResult.getReferences();
 
         final ImmutableList.Builder<CompletableFuture<Void>> childFutures = ImmutableList.builder();
@@ -452,9 +448,11 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
         final ByteString continuationPoint = browseResult.getContinuationPoint();
         if (continuationPoint != null && !continuationPoint.isNull()) {
-            final BrowseResult nextBrowseResult =
-                    Objects.requireNonNull(opcUaClient).browseNext(false, continuationPoint).get();
-            handleBrowseResult(opcUaClient, parent, callback, depth, nextBrowseResult);
+                childFutures.add(
+                        Objects.requireNonNull(opcUaClient)
+                                .browseNext(false, continuationPoint)
+                                .thenCompose(nextBrowseResult ->
+                                        handleBrowseResult(opcUaClient, parent, callback, depth, nextBrowseResult)));
         }
 
         return CompletableFuture.allOf(childFutures.build().toArray(new CompletableFuture[]{}));
