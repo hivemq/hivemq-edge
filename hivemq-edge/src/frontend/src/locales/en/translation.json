@@ -551,9 +551,9 @@
       },
       "formats": {
         "label_CONFIGURATION": "Full configuration",
-        "description_CONFIGURATION": "This will export the whole configuration of the adapter, as a standalone JSON file.",
+        "description_CONFIGURATION": "Export the complete configuration of the adapter, as a standalone JSON file.",
         "label_MAPPINGS": "Mappings",
-        "description_MAPPINGS": "This will only export the mappings currently defined in the adapter, in a format suitable for batch processing.",
+        "description_MAPPINGS": "Export all the mappings of the adapter in a batch-processing format.",
         "notAvailable": "The format is not available for this adapter."
       },
       "mimeTypes": {
