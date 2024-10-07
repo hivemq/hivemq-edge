@@ -1,14 +1,15 @@
 import { FC } from 'react'
-import { Alert, AlertDescription, AlertIcon, AlertTitle } from '@chakra-ui/react'
+import { Alert, AlertDescription, AlertIcon, type AlertStatus, AlertTitle } from '@chakra-ui/react'
 
 interface ErrorMessageProps {
   type?: string | number
   message?: string
+  status?: AlertStatus
 }
 
-const ErrorMessage: FC<ErrorMessageProps> = ({ type, message }) => {
+const ErrorMessage: FC<ErrorMessageProps> = ({ type, message, status = 'error' }) => {
   return (
-    <Alert status="error">
+    <Alert status={status}>
       <AlertIcon />
       <div>
         <AlertTitle>{type || ''}</AlertTitle>
