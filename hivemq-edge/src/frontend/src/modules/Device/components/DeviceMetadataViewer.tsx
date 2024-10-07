@@ -43,7 +43,7 @@ const DeviceMetadataViewer: FC<DeviceMetadataProps> = ({ protocolAdapter }) => {
       <CardBody>
         <Alert status="error">
           <AlertIcon />
-          <AlertDescription>{t('XXXX no metadata loaded for the device')}</AlertDescription>
+          <AlertDescription>{t('device.errors.noMetadataLoaded')}</AlertDescription>
         </Alert>
       </CardBody>
     </Card>
