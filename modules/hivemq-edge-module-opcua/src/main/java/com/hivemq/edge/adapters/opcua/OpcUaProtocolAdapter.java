@@ -341,18 +341,18 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         opcUaClient.addSessionActivityListener(new SessionActivityListener() {
             @Override
             public void onSessionInactive(final @NotNull UaSession session) {
-                log.info("OpcUa client disconnected: {}", session);
+                log.info("OPC UA client of protocol adapter '{}' disconnected: {}", getId(), session);
                 protocolAdapterState.setConnectionStatus(DISCONNECTED);
             }
 
             @Override
             public void onSessionActive(final @NotNull UaSession session) {
-                log.info("OpcUa client connected: {}", session);
+                log.info("OPC UA client of protocol adapter '{}' connected: {}", getId(), session);
                 protocolAdapterState.setConnectionStatus(CONNECTED);
             }
         });
         opcUaClient.addFaultListener(serviceFault -> {
-            log.warn("OpcUa service fault detected: {}", serviceFault);
+            log.info("OPC UA client of protocol adapter '{}' detected a service fault: {}", getId(), serviceFault);
             moduleServices.eventService()
                     .createAdapterEvent(adapterConfig.getId(), adapterInformation.getProtocolId())
                     .withSeverity(Event.SEVERITY.ERROR)
