@@ -97,7 +97,6 @@ export const schemaHandlers = (onSampling?: (topicFilter: string) => Promise<MQT
     http.get('**/management/domain/tags/schema', ({ request }) => {
       const url = new URL(request.url)
       const tags = url.searchParams.getAll('tags')
-      console.log('XXXXX tags', tags)
       return HttpResponse.json<TagSchema>(GENERATE_DATA_MODELS(true, tags[0]), { status: 200 })
     }),
 
@@ -113,8 +112,6 @@ export const schemaHandlers = (onSampling?: (topicFilter: string) => Promise<MQT
         const schemas = payloadToSchema(samples)
         return HttpResponse.json<TagSchema>(schemas, { status: 200 })
       }
-      console.log('xxx')
-
       return HttpResponse.json({ d: 1 }, { status: 404 })
     }),
   ]

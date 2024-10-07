@@ -5,14 +5,14 @@ import { RJSFSchema } from '@rjsf/utils/src/types.ts'
 import { Accordion, AccordionItem, AccordionButton, AccordionPanel, AccordionIcon, Box } from '@chakra-ui/react'
 
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
-import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
+import { OutwardMapping } from '@/modules/Mappings/types.ts'
 import ListSubscriptions from '@/components/rjsf/MqttTransformation/components/ListSubscriptions.tsx'
 import SubscriptionContainer from '@/components/rjsf/MqttTransformation/components/SubscriptionContainer.tsx'
 
-export const MqttTransformationField: FC<FieldProps<OutwardSubscription[], RJSFSchema, AdapterContext>> = (props) => {
+export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema, AdapterContext>> = (props) => {
   const { t } = useTranslation('components')
   const [selectedItem, setSelectedItem] = useState<number | undefined>(undefined)
-  const [subsData, setSubsData] = useState<OutwardSubscription[] | undefined>(props.formData)
+  const [subsData, setSubsData] = useState<OutwardMapping[] | undefined>(props.formData)
 
   const { adapterId, adapterType } = props.formContext || {}
 
@@ -53,7 +53,7 @@ export const MqttTransformationField: FC<FieldProps<OutwardSubscription[], RJSFS
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleChange = (id: keyof OutwardSubscription, v: any) => {
+  const handleChange = (id: keyof OutwardMapping, v: any) => {
     if (selectedItem === undefined) return
     setSubsData((old) => {
       const currentItem = old?.[selectedItem]

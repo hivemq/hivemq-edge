@@ -17,6 +17,7 @@ import {
   getMainRootFromPath,
   getPropertiesFromPath,
   getTopicPaths,
+  getValuesFromPath,
   mergeAllTopics,
 } from './topics-utils.ts'
 import { mockJSONSchema } from '@/api/hooks/useProtocolAdapters/__handlers__'
@@ -193,6 +194,25 @@ describe('getMainRootFromPath', () => {
   })
 })
 
+describe('getValuesFromPath', () => {
+  it('should work', () => {
+    expect(getValuesFromPath('', mockJSONSchema)).toStrictEqual(undefined)
+    expect(getValuesFromPath('test', mockJSONSchema)).toStrictEqual(undefined)
+    expect(getValuesFromPath('test.still.wrong', mockJSONSchema)).toStrictEqual(undefined)
+    expect(
+      getValuesFromPath('properties.simulationToMqtt.properties.maxPollingErrorsBeforeRemoval', mockJSONSchema)
+    ).toStrictEqual(
+      expect.objectContaining({
+        default: 10,
+        description: 'Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)',
+        minimum: -1,
+        title: 'Max. Polling Errors',
+        type: 'integer',
+      })
+    )
+  })
+})
+
 describe('getPropertiesFromPath', () => {
   it('should work', () => {
     expect(getPropertiesFromPath('test', undefined)).toStrictEqual(undefined)
@@ -202,21 +222,23 @@ describe('getPropertiesFromPath', () => {
       })
     )
     expect(getPropertiesFromPath('test.*', { type: 'string' })).toStrictEqual(undefined)
-    expect(getPropertiesFromPath('subscriptions.*.destination', mockJSONSchema)).toStrictEqual({
-      destination: {
-        description: 'The topic to publish data on',
-        format: 'mqtt-topic',
-        title: 'Destination Topic',
-        type: 'string',
-      },
-      qos: {
-        default: 0,
-        description: 'MQTT quality of service level',
-        maximum: 2,
-        minimum: 0,
-        title: 'QoS',
-        type: 'integer',
-      },
-    })
+    expect(getPropertiesFromPath('simulationToMqtt.simulationToMqttMappings.*.items', mockJSONSchema)).toStrictEqual(
+      expect.objectContaining({
+        mqttTopic: {
+          description: 'The topic to publish data on',
+          format: 'mqtt-topic',
+          title: 'Destination MQTT Topic',
+          type: 'string',
+        },
+        mqttQos: {
+          default: 0,
+          description: 'MQTT Quality of Service level',
+          maximum: 2,
+          minimum: 0,
+          title: 'MQTT QoS',
+          type: 'integer',
+        },
+      })
+    )
   })
 })

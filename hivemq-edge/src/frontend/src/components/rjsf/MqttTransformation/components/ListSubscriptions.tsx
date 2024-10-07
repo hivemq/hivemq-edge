@@ -7,10 +7,10 @@ import { LuPencil, LuPlus, LuTrash } from 'react-icons/lu'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PaginatedTable from '@/components/PaginatedTable/PaginatedTable.tsx'
 import { PLCTag, Topic } from '@/components/MQTT/EntityTag.tsx'
-import { OutwardSubscription } from '@/modules/Subscriptions/types.ts'
+import { OutwardMapping } from '@/modules/Mappings/types.ts'
 
 interface ListSubscriptionsProps {
-  items: OutwardSubscription[]
+  items: OutwardMapping[]
   onEdit?: (index: number) => void
   onDelete?: (index: number) => void
   onAdd?: () => void
@@ -20,7 +20,7 @@ interface ListSubscriptionsProps {
 const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onAdd, isDisabled }) => {
   const { t } = useTranslation('components')
 
-  const columns = useMemo<ColumnDef<OutwardSubscription>[]>(() => {
+  const columns = useMemo<ColumnDef<OutwardMapping>[]>(() => {
     return [
       {
         accessorKey: 'mqtt-topic',
@@ -78,7 +78,7 @@ const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete
 
   return (
     <Card>
-      <PaginatedTable<OutwardSubscription>
+      <PaginatedTable<OutwardMapping>
         aria-label="list of mapping"
         data={items}
         columns={columns}

@@ -1,6 +1,6 @@
 import { FC } from 'react'
 import { Alert, AlertIcon, AlertTitle } from '@chakra-ui/react'
-import { MappingValidation } from '@/modules/Subscriptions/types.ts'
+import { MappingValidation } from '@/modules/Mappings/types.ts'
 import { useTranslation } from 'react-i18next'
 
 interface ValidationStatusProps {

@@ -71,18 +71,17 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
     const { configSchema, uiSchema, capabilities } = adapter || {}
 
-    // TODO[NVL] This is still a hack; backend needs to provide identification of subscription properties
+    // TODO[NVL] This is still a hack; backend needs to provide identification of mapping-related properties
     const paths = getTopicPaths(configSchema || {})
     const subIndex = getMainRootFromPath(paths)
-    const hideSubscriptionsKey =
-      import.meta.env.VITE_FLAG_ADAPTER_SCHEMA_HIDE_SUBSCRIPTION === 'true' ? subIndex : undefined
+    const hiddenMappingsKey = import.meta.env.VITE_FLAG_ADAPTER_SPLIT_SCHEMA === 'true' ? subIndex : undefined
 
     return {
       isDiscoverable: Boolean(capabilities?.includes('DISCOVER')),
       schema: configSchema,
       name: adapter?.name,
       logo: adapter?.logoUrl,
-      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter, hideSubscriptionsKey),
+      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter, hiddenMappingsKey),
     }
   }, [data?.items, isNewAdapter, adapterType])
 

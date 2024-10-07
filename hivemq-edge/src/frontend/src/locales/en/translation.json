@@ -551,9 +551,9 @@
       },
       "formats": {
         "label_CONFIGURATION": "Full configuration",
-        "description_CONFIGURATION": "This will export the whole configuration of the adapter, as a standalone JSON file.",
-        "label_SUBSCRIPTIONS": "Subscriptions",
-        "description_SUBSCRIPTIONS": "This will only export the subscriptions currently defined in the adapter, in a format suitable for batch processing.",
+        "description_CONFIGURATION": "Export the complete configuration of the adapter, as a standalone JSON file.",
+        "label_MAPPINGS": "Mappings",
+        "description_MAPPINGS": "Export all the mappings of the adapter in a batch-processing format.",
         "notAvailable": "The format is not available for this adapter."
       },
       "mimeTypes": {
@@ -567,9 +567,15 @@
         "status_success": "Adapter {{ name }} successfully downloaded "
       },
       "error": {
-        "noSubscription": "No subscription could be detected in the adapter configuration",
-        "noSchema": "There are no valid schema defining the extracted subscriptions",
+        "noMapping": "No mapping could be found in the adapter configuration",
+        "noSchema": "There are no valid schema defining the extracted mappings",
         "notValid": "The data collected from the adapter is not valid"
+      }
+    },
+    "mapping": {
+      "manager": {
+        "header_INWARD": "Managing inward mappings",
+        "header_OUTWARD": "Managing outward mappings"
       }
     }
   },
@@ -712,10 +718,10 @@
       "command": {
         "overview": "Open the overview panel",
         "group": "Group the selected adapters",
-        "subscriptions": {
-          "common": "Manage subscriptions of the device",
-          "inward": "Inward subscriptions",
-          "outward": "Outward subscriptions"
+        "mappings": {
+          "common": "Manage mappings of the device",
+          "inward": "Inward mappings",
+          "outward": "Outward mappings"
         }
       }
     },
@@ -806,10 +812,6 @@
     },
     "deleteProtocolAdapterDialog": {
       "header": "Delete Adapter"
-    },
-    "SubscriptionEditor": {
-      "header": "Define the subscription pattern",
-      "submit": "Add Subscription"
     }
   },
   "validation": {
@@ -915,8 +917,8 @@
     }
   },
   "warnings": {
-    "deprecated": {
-      "subscriptions": "The subscriptions are now available through the workspace"
+    "featureFlag": {
+      "splitSchema": "The mappings are now available through the workspace"
     }
   },
   "domainMapping": {

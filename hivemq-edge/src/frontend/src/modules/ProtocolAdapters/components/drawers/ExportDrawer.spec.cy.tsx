@@ -31,7 +31,7 @@ describe('ExportDrawer', () => {
     cy.getByTestId('field-content-options').find('label').as('options')
     cy.get('@options').should('have.length', 2)
     cy.get('@options').eq(0).should('contain.text', 'Full configuration')
-    cy.get('@options').eq(1).should('contain.text', 'Subscriptions')
+    cy.get('@options').eq(1).should('contain.text', 'Mappings')
 
     cy.getByTestId('field-format-label').should('contain.text', 'Select the file format of the output')
     cy.get('#field-format').should('contain.text', '.json')

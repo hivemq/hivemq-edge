@@ -43,13 +43,13 @@ const NodeAdapter: FC<NodeProps<Adapter>> = ({ id, data: adapter, selected, drag
           {HACK_BIDIRECTIONAL && (
             <IconButton
               icon={<Icon as={deviceCapabilityIcon['WRITE']} />}
-              aria-label={t('workspace.toolbar.command.subscriptions.outward')}
+              aria-label={t('workspace.toolbar.command.mappings.outward')}
               onClick={() => navigate(`${adapterNavPath}/outward`)}
             />
           )}
           <IconButton
             icon={<Icon as={deviceCapabilityIcon['READ']} />}
-            aria-label={t('workspace.toolbar.command.subscriptions.inward')}
+            aria-label={t('workspace.toolbar.command.mappings.inward')}
             onClick={() => navigate(`${adapterNavPath}/inward`)}
           />
         </ToolbarButtonGroup>
