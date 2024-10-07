@@ -15,18 +15,23 @@
  */
 package com.hivemq.persistence.domain;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.Immutable;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Immutable
 public class DomainTag {
 
-    private final @NotNull String tagAddress;
+    private final @NotNull JsonNode tagAddress;
     private final @NotNull String tag;
 
     public DomainTag(
-            final @NotNull String tagAddress, final @NotNull String tag) {
+            final @NotNull JsonNode tagAddress, final @NotNull String tag) {
         this.tagAddress = tagAddress;
         this.tag = tag;
     }
@@ -35,31 +40,32 @@ public class DomainTag {
         return new DomainTag(domainTag.getTagAddress().getAddress(), domainTag.getTag());
     }
 
+    public static DomainTag simpleAddress(final @NotNull String domainAddress, final @NotNull String tag) {
+        final ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
+        objectNode.set("address", new TextNode(domainAddress));
+        return new DomainTag(objectNode, tag);
+    }
+
     public @NotNull String getTag() {
         return tag;
     }
 
-    public @NotNull String getTagAddress() {
+    public @NotNull JsonNode getTagAddress() {
         return tagAddress;
     }
 
+    // only tag is used as duplicates based on this field are not allowed.
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
         final DomainTag domainTag = (DomainTag) o;
-        return tagAddress.equals(domainTag.tagAddress) && tag.equals(domainTag.tag);
+        return tag.equals(domainTag.tag);
     }
 
     @Override
     public int hashCode() {
-        int result = tagAddress.hashCode();
-        result = 31 * result + tag.hashCode();
-        return result;
+        return tag.hashCode();
     }
 }

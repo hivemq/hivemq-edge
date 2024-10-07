@@ -3605,7 +3605,7 @@ paths:
                         address: ns=2;i=test2
                       tag: tag2
               schema:
-                $ref: '#/components/schemas/TagList'
+                $ref: '#/components/schemas/DomainTagList'
           description: Success
       summary: Get the domain tags for the device connected through this adapter.
       tags:
@@ -3624,7 +3624,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Tag'
+              $ref: '#/components/schemas/DomainTag'
         description: The domain tag.
         required: true
       responses:
@@ -3694,7 +3694,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Tag'
+              $ref: '#/components/schemas/DomainTag'
       responses:
         "200":
           description: Success
@@ -3787,7 +3787,7 @@ paths:
                         address: ns=2;i=test2
                       tag: tag2
               schema:
-                $ref: '#/components/schemas/TagList'
+                $ref: '#/components/schemas/DomainTagList'
           description: Success
       summary: Get the list of all domain tags created in this Edge instance
       tags:
@@ -4435,6 +4435,22 @@ components:
       required:
       - arguments
       - type
+    DomainTag:
+      type: object
+      properties:
+        tag:
+          type: string
+          description: 'The tag that '
+        tagAddress:
+          $ref: '#/components/schemas/TagAddress'
+    DomainTagList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/DomainTag'
     EnvironmentProperties:
       type: object
       description: A map of properties relating to the installation
@@ -5237,29 +5253,12 @@ components:
         type:
           type: string
           description: The type of the object in transition
-    Tag:
-      type: object
-      properties:
-        tag:
-          type: string
-          description: 'The tag that '
-        tagAddress:
-          $ref: '#/components/schemas/TagAddress'
     TagAddress:
       type: object
       description: The address for the data point on the device
       properties:
         address:
-          type: string
-          description: The address for the data point on the device
-    TagList:
-      type: object
-      properties:
-        items:
-          type: array
-          description: List of result items that are returned by this endpoint
-          items:
-            $ref: '#/components/schemas/Tag'
+          $ref: '#/components/schemas/JsonNode'
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge

@@ -20,6 +20,7 @@ import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 public class DomainTagPersistenceImpl implements DomainTagPersistence {
 
     private final @NotNull HashMap<String, Set<DomainTag>> adapterToDomainTag = new HashMap<>();
+    private final @NotNull ArrayList<String> alreadyUsedTags = new ArrayList<>();
 
     @Inject
     public DomainTagPersistenceImpl() {
@@ -39,25 +41,30 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
     public synchronized @NotNull DomainTagAddResult addDomainTag(
             final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
         final DomainTagAddResult[] result = new DomainTagAddResult[1];
+
+        if (alreadyUsedTags.contains(domainTag.getTag())) {
+            return DomainTagAddResult.failed(DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS,
+                    "An identical DomainTag exists already for adapter '" + adapterId + "'");
+        }
+
         adapterToDomainTag.compute(adapterId, (key, currentValue) -> {
             if (currentValue == null) {
                 final Set<DomainTag> domainTags = new HashSet<>();
                 domainTags.add(domainTag);
-                result[0] = DomainTagAddResult.success();
+                alreadyUsedTags.add(domainTag.getTag());
                 return domainTags;
             } else {
-                if (currentValue.add(domainTag)) {
-                    result[0] = DomainTagAddResult.success();
-                } else {
-                    result[0] = DomainTagAddResult.failed(DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS,
-                            "An identical DomainTag exists already for adapter '" + adapterId + "'");
-                }
+                currentValue.add(domainTag);
+                alreadyUsedTags.add(domainTag.getTag());
                 return currentValue;
             }
         });
-        return result[0];
+        return DomainTagAddResult.success();
     }
 
+
+
+    //TODO as tagId is now edge-wide unique, the logic needs to be checked
     @Override
     public synchronized @NotNull DomainTagUpdateResult updateDomainTag(
             @NotNull final String adapterId, @NotNull final String tagId, @NotNull final DomainTag domainTag) {
@@ -66,7 +73,6 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
             return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.NOT_FOUND,
                     "No adapter with id '{}' was found with DomainTags");
         }
-
 
         final boolean removed = domainTags.removeIf(domainTag1 -> domainTag1.getTag().equals(tagId));
         if (!removed) {

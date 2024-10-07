@@ -49,7 +49,7 @@ class ProtocolAdaptersResourceImplTest {
     void getDomainTagsForAdapter() {
         final ArrayList<DomainTag> domainTags = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            domainTags.add(new DomainTag("address", "tag"));
+            domainTags.add(DomainTag.simpleAddress("address", "tag"));
         }
 
         when(domainTagPersistence.getTagsForAdapter(any())).thenReturn(domainTags);
@@ -70,7 +70,7 @@ class ProtocolAdaptersResourceImplTest {
         when(domainTagPersistence.addDomainTag(any(), any())).thenReturn(DomainTagAddResult.success());
 
         final Response response = protocolAdaptersResource.addAdapterDomainTag("adapter",
-                new DomainTagModel(new TagAddress("address"), "tag"));
+                 DomainTagModel.fromDomainTag(DomainTag.simpleAddress("address", "tag")));
 
         assertEquals(200, response.getStatus());
     }
@@ -81,7 +81,7 @@ class ProtocolAdaptersResourceImplTest {
                 any())).thenReturn(DomainTagAddResult.failed(DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS));
 
         final Response response = protocolAdaptersResource.addAdapterDomainTag("adapter",
-                new DomainTagModel(new TagAddress("address"), "tag"));
+                DomainTagModel.fromDomainTag(DomainTag.simpleAddress("address", "tag")));
 
         assertEquals(403, response.getStatus());
     }
@@ -118,7 +118,7 @@ class ProtocolAdaptersResourceImplTest {
 
         final Response response = protocolAdaptersResource.updateDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),
-                new DomainTagModel(new TagAddress("address"), "tag"));
+                DomainTagModel.fromDomainTag(DomainTag.simpleAddress("address", "tag")));
 
         assertEquals(200, response.getStatus());
     }
@@ -131,7 +131,7 @@ class ProtocolAdaptersResourceImplTest {
 
         final Response response = protocolAdaptersResource.updateDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),
-                new DomainTagModel(new TagAddress("address"), "tag"));
+                DomainTagModel.fromDomainTag(DomainTag.simpleAddress("address", "tag")));
 
         assertEquals(403, response.getStatus());
     }
@@ -140,7 +140,7 @@ class ProtocolAdaptersResourceImplTest {
     void getDomainTags() {
         final ArrayList<DomainTag> domainTags = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            domainTags.add(new DomainTag("address", "tag"));
+            domainTags.add(DomainTag.simpleAddress("address", "tag"));
         }
 
         when(domainTagPersistence.getDomainTags()).thenReturn(domainTags);

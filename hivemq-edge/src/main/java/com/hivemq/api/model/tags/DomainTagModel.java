@@ -24,7 +24,7 @@ import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-@Schema(name = "Tag")
+@Schema(name = "DomainTag")
 public class DomainTagModel {
 
     @JsonProperty("tagAddress")

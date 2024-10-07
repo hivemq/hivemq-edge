@@ -17,24 +17,37 @@ package com.hivemq.api.model.tags;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.persistence.domain.DomainTag;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
 @Schema(name = "TagAddress")
 public class TagAddress {
 
+
     @JsonProperty("address")
     @Schema(description = "The address for the data point on the device")
-    private final @NotNull String address;
+    private final @NotNull JsonNode address;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public TagAddress(@JsonProperty("address") final @NotNull String address) {
+    public TagAddress(@JsonProperty("address") final @NotNull JsonNode address) {
         this.address = address;
     }
 
-    public @NotNull String getAddress() {
+    public static @NotNull TagAddress from(final @NotNull String address) {
+        final ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
+        objectNode.set("address", new TextNode(address));
+        return new TagAddress(objectNode);
+    }
+
+    public @NotNull JsonNode getAddress() {
         return address;
     }
 
