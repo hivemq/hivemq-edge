@@ -25,6 +25,12 @@ gradlePlugin {
             implementationClass = "$group.versionupdater.VersionUpdaterPlugin"
         }
     }
+    plugins {
+        create("third-party-license-generator") {
+            id = "$group.$name"
+            implementationClass = "$group.licensethirdparty.ThirdPartyLicenseGeneratorPlugin"
+        }
+    }
 }
 
 tasks.withType<AbstractArchiveTask>().configureEach {

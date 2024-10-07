@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.shadow)
     alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")
+    id("com.hivemq.third-party-license-generator")
 }
 
 group = "com.hivemq"
@@ -76,8 +77,17 @@ val releaseBinary: Configuration by configurations.creating {
     }
 }
 
+val thirdPartyLicenses: Configuration by configurations.creating {
+    isCanBeConsumed = true
+    isCanBeResolved = false
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named("third-party-licenses"))
+    }
+}
+
 artifacts {
     add(releaseBinary.name, tasks.shadowJar)
+    add(thirdPartyLicenses.name, tasks.updateThirdPartyLicenses.flatMap { it.outputDirectory })
 }
 
 /* ******************** compliance ******************** */
@@ -183,21 +193,13 @@ downloadLicenses {
     dependencyConfiguration = "runtimeClasspath"
 }
 
-val updateThirdPartyLicenses by tasks.registering {
-    group = "license"
+tasks.updateThirdPartyLicenses {
     dependsOn(tasks.downloadLicenses)
-    doLast {
-        javaexec {
-            classpath("gradle/tools/license-third-party-tool-2.0.jar")
-            args(
-                "$buildDir/reports/license/dependency-license.xml",
-                "$projectDir/src/distribution/third-party-licenses/licenses",
-                "$projectDir/src/distribution/third-party-licenses/licenses.html"
-            )
-        }
-    }
+    projectName.set(project.name)
+    group = "license"
+    dependencyLicense.set(tasks.downloadLicenses.get().xmlDestination.resolve("dependency-license.xml"))
+    outputDirectory.set(layout.projectDirectory.dir("build/distribution/third-party-licenses"))
 }
-
 val javaComponent = components["java"] as AdhocComponentWithVariants
 javaComponent.withVariantsFromConfiguration(configurations.shadowRuntimeElements.get()) {
     skip()
