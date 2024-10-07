@@ -40,8 +40,6 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
     @Override
     public synchronized @NotNull DomainTagAddResult addDomainTag(
             final @NotNull String adapterId, final @NotNull DomainTag domainTag) {
-        final DomainTagAddResult[] result = new DomainTagAddResult[1];
-
         if (alreadyUsedTags.contains(domainTag.getTag())) {
             return DomainTagAddResult.failed(DomainTagAddResult.DomainTagPutStatus.ALREADY_EXISTS,
                     "An identical DomainTag exists already for adapter '" + adapterId + "'");
@@ -62,22 +60,19 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
         return DomainTagAddResult.success();
     }
 
-
-
-    //TODO as tagId is now edge-wide unique, the logic needs to be checked
     @Override
     public synchronized @NotNull DomainTagUpdateResult updateDomainTag(
             @NotNull final String adapterId, @NotNull final String tagId, @NotNull final DomainTag domainTag) {
         final Set<DomainTag> domainTags = adapterToDomainTag.get(adapterId);
         if (domainTags == null || domainTags.isEmpty()) {
             return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.NOT_FOUND,
-                    "No adapter with id '{}' was found with DomainTags");
+                    "No adapter with id '{}' was found.");
         }
 
         final boolean removed = domainTags.removeIf(domainTag1 -> domainTag1.getTag().equals(tagId));
         if (!removed) {
             return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.NOT_FOUND,
-                    "No tag with id '{}' was found.");
+                    "No tag with id '" + tagId + "' was found for adapter '" + adapterId + "'.");
         } else {
             domainTags.add(domainTag);
             return DomainTagUpdateResult.success();
