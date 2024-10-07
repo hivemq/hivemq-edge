@@ -18,9 +18,11 @@ package com.hivemq.api.model.tags;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 
+@Schema(name = "TagAddress")
 public class TagAddress {
 
     @JsonProperty("address")
@@ -34,5 +36,24 @@ public class TagAddress {
 
     public @NotNull String getAddress() {
         return address;
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final TagAddress that = (TagAddress) o;
+        return address.equals(that.address);
+    }
+
+    @Override
+    public int hashCode() {
+        return address.hashCode();
+    }
+
+    @Override
+    public @NotNull String toString() {
+        return "TagAddress{" + "address='" + address + '\'' + '}';
     }
 }

@@ -42,7 +42,7 @@ public class DomainTagDeleteResult {
         return new DomainTagDeleteResult(deleteResult, errorMessage);
     }
 
-    public @NotNull DomainTagDeleteStatus getDomainTagUpdateStatus() {
+    public @NotNull DomainTagDeleteStatus getDomainTagDeleteStatus() {
         return dataPolicyUpdateStatus;
     }
 

@@ -430,7 +430,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         final String tagId = new String(decoded, StandardCharsets.UTF_8);
 
         final DomainTagDeleteResult domainTagDeleteResult = domainTagPersistence.deleteDomainTag(adapterId, tagId);
-        switch (domainTagDeleteResult.getDomainTagUpdateStatus()) {
+        switch (domainTagDeleteResult.getDomainTagDeleteStatus()) {
             case SUCCESS:
                 return Response.ok().build();
             case NOT_FOUND:
@@ -445,7 +445,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response updateDomainTag(
             final @NotNull String adapterId, @NotNull final String tagId, final @NotNull DomainTagModel domainTag) {
         final DomainTagUpdateResult domainTagUpdateResult =
-                domainTagPersistence.updateDomainTag(adapterId, tagId, domainTag);
+                domainTagPersistence.updateDomainTag(adapterId, tagId, DomainTag.fromDomainTagEntity(domainTag));
         switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();

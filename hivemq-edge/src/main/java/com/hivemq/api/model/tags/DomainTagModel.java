@@ -17,10 +17,14 @@ package com.hivemq.api.model.tags;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(name = "Tag")
 public class DomainTagModel {
 
     @JsonProperty("tagAddress")
@@ -50,5 +54,26 @@ public class DomainTagModel {
 
     public static @NotNull DomainTagModel fromDomainTag(final @NotNull DomainTag domainTag) {
         return new DomainTagModel(new TagAddress(domainTag.getTagAddress()), domainTag.getTag());
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final DomainTagModel that = (DomainTagModel) o;
+        return tagAddress.equals(that.tagAddress) && tag.equals(that.tag);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = tagAddress.hashCode();
+        result = 31 * result + tag.hashCode();
+        return result;
+    }
+
+    @Override
+    public @NotNull String toString() {
+        return "DomainTagModel{" + "tag='" + tag + '\'' + ", tagAddress=" + tagAddress + '}';
     }
 }

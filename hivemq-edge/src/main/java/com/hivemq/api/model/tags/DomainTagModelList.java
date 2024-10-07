@@ -19,9 +19,12 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.api.model.ItemsResponse;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
+
+@Schema(name = "TagList")
 public class DomainTagModelList extends ItemsResponse<DomainTagModel> {
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)

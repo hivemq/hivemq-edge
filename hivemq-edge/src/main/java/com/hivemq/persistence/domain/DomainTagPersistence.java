@@ -30,7 +30,7 @@ public interface DomainTagPersistence {
     DomainTagUpdateResult updateDomainTag(
             @NotNull String adapterId,
             @NotNull String tagId,
-            @NotNull DomainTagModel domainTag);
+            @NotNull DomainTag domainTag);
 
 
     @NotNull
