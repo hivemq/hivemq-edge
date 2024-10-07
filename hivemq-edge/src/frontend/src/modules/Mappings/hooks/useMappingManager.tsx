@@ -75,15 +75,18 @@ export const useMappingManager = (adapterId: string) => {
   const tagsManager = useMemo<MappingManagerType | undefined>(() => {
     if (!adapterInfo) return undefined
 
-    const schema = getInwardMappingSchema(adapterInfo.selectedProtocol)
-
-    return {
-      schema: createSchema(schema.items as RJSFSchema),
-      uiSchema: {
-        'ui:submitButtonOptions': {
-          norender: true,
+    try {
+      const schema = getInwardMappingSchema(adapterInfo.selectedProtocol)
+      return {
+        schema: createSchema(schema.items as RJSFSchema),
+        uiSchema: {
+          'ui:submitButtonOptions': {
+            norender: true,
+          },
         },
-      },
+      }
+    } catch (e) {
+      return { schema: {}, uiSchema: {}, errors: (e as Error).message }
     }
   }, [adapterInfo])
 
