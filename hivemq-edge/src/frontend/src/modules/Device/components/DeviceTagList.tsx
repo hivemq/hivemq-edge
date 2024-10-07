@@ -19,7 +19,7 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
   return (
     <Card size="sm">
       <CardHeader>
-        <Heading size="sm">{t('XXXXX List of Device Tags')}</Heading>
+        <Heading size="sm">{t('device.drawer.tagPanel.title')}</Heading>
       </CardHeader>
       <CardBody>
         {isLoading && <LoaderSpinner />}
