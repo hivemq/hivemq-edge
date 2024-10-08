@@ -24,8 +24,6 @@ gradlePlugin {
             id = "$group.$name"
             implementationClass = "$group.versionupdater.VersionUpdaterPlugin"
         }
-    }
-    plugins {
         create("third-party-license-generator") {
             id = "$group.$name"
             implementationClass = "$group.licensethirdparty.ThirdPartyLicenseGeneratorPlugin"
