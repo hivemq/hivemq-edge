@@ -79,6 +79,7 @@ describe('useMappingManager', () => {
       inwardManager: undefined,
       isLoading: false,
       outwardManager: undefined,
+      tagsManager: undefined,
     })
   })
 
