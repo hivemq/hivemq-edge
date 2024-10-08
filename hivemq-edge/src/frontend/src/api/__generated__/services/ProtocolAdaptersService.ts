@@ -238,11 +238,13 @@ export class ProtocolAdaptersService {
      * Get the domain tags for the device connected through this adapter
      * Get the domain tags for the device connected through this adapter
      * @param adapterId The name of the adapter to query.
+     * @param adapterType The name of the adapter to query. (DEV ONLY - will be regenerated)
      * @returns DomainTagList Success
      * @throws ApiError
      */
     public getAdapterDomainTags(
         adapterId: string,
+        adapterType?: string
     ): CancelablePromise<DomainTagList> {
         return this.httpRequest.request({
             method: 'GET',
@@ -250,6 +252,9 @@ export class ProtocolAdaptersService {
             path: {
                 'adapterId': adapterId,
             },
+            query: {
+                'type': adapterType,
+          },
         });
     }
 
