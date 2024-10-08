@@ -510,8 +510,11 @@ export const mockAdapter_OPCUA: Adapter = {
   id: 'opcua-1',
   type: 'opcua',
   config: {
+    // @ts-ignore TODO[26764] bug with backend, https://hivemq.kanbanize.com/ctrl_board/57/cards/26764/details/
     id: 'opcua-1',
+    // @ts-ignore TODO[26764] bug with backend, https://hivemq.kanbanize.com/ctrl_board/57/cards/26764/details/
     uri: 'opc.tcp://test.host.local:53530/OPCUA/Server',
+    // @ts-ignore TODO[26764] bug with backend, https://hivemq.kanbanize.com/ctrl_board/57/cards/26764/details/
     overrideUri: false,
     tls: {
       enabled: false,
