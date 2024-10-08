@@ -33,6 +33,7 @@ const DevicePropertyDrawer: FC<DevicePropertyDrawerProps> = ({ isOpen, selectedN
   const { nodes, edges } = useWorkspaceStore()
   const { data, isError, isLoading } = useGetAdapterTypes()
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [adapterNode] = getIncomers<Adapter, any>(selectedNode, nodes, edges)
 
   const protocol = data?.items?.find((e) => e.id === adapterNode.data.type)
