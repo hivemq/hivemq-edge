@@ -16,9 +16,12 @@ const omit = (obj: JsonNode, ...props: string[]) => {
 
 /**
  * @deprecated This is a mock, missing support for tags
+ * Note that the stubs generated from the OpenAPI include schemas (see src/api/__generated__/schemas) but they are not usable
+ * due to the lack of connection between the instances.
+ * TheLibrary is not supported anymore; it needs replacement, see https://hivemq.kanbanize.com/ctrl_board/57/cards/24980/details/
  */
 export const createSchema = (items: RJSFSchema) => {
-  // This is totally wrong. The DeviceDataPoint schema should be clearly indicated in the
+  // TODO[NVL] This is total rubbish. The DeviceDataPoint schema should be self-extracted from the OpenAPI specs rather than second-guessed
   const sourceProperties = omit(
     items.properties as JsonNode,
     'mqttQos',
@@ -37,6 +40,8 @@ export const createSchema = (items: RJSFSchema) => {
     definitions: {
       DeviceDataPoint: {
         type: 'object',
+        title: 'Tag Address',
+        description: `The address of the data-point on the device.`,
         properties: sourceProperties,
       },
       DomainTag: {
@@ -45,6 +50,7 @@ export const createSchema = (items: RJSFSchema) => {
         properties: {
           tag: {
             type: 'string',
+            title: 'Tag Name',
             description: `The Tag associated with the data-point.`,
           },
           dataPoint: {
@@ -56,6 +62,8 @@ export const createSchema = (items: RJSFSchema) => {
     properties: {
       tags: {
         type: 'array',
+        title: 'List of tags',
+        description: 'The list of all tags defined in the device',
         items: {
           $ref: '#/definitions/DomainTag',
         },
