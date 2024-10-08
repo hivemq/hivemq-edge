@@ -17,8 +17,6 @@ package com.hivemq.api.model.tags;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import com.hivemq.persistence.domain.DomainTag;
@@ -35,12 +33,24 @@ public class DomainTagModel {
     @Schema(description = "The tag that ")
     private final @NotNull String tag;
 
+    @JsonProperty("protocolId")
+    @Schema(description = "The tag that ")
+    private final @NotNull String protocolId;
+
+    @JsonProperty("description")
+    @Schema(description = "The tag that ")
+    private final @NotNull String description;
+
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagModel(
             @JsonProperty("tagAddress") final @NotNull TagAddress tagAddress,
-            @JsonProperty("tag") final @NotNull String tag) {
+            @JsonProperty("tag") final @NotNull String tag,
+            @JsonProperty("protocolId") final @NotNull String protocolId,
+            @JsonProperty("description") final @NotNull String description) {
         this.tagAddress = tagAddress;
         this.tag = tag;
+        this.protocolId = protocolId;
+        this.description = description;
     }
 
     public @NotNull String getTag() {
@@ -51,9 +61,19 @@ public class DomainTagModel {
         return tagAddress;
     }
 
+    public @NotNull String getDescription() {
+        return description;
+    }
+
+    public @NotNull String getProtocolId() {
+        return protocolId;
+    }
 
     public static @NotNull DomainTagModel fromDomainTag(final @NotNull DomainTag domainTag) {
-        return new DomainTagModel(new TagAddress(domainTag.getTagAddress()), domainTag.getTag());
+        return new DomainTagModel(new TagAddress(domainTag.getTagAddress()),
+                domainTag.getTag(),
+                "someProtocolId",
+                "someDescription");
     }
 
     @Override
@@ -62,18 +82,35 @@ public class DomainTagModel {
         if (o == null || getClass() != o.getClass()) return false;
 
         final DomainTagModel that = (DomainTagModel) o;
-        return tagAddress.equals(that.tagAddress) && tag.equals(that.tag);
+        return tagAddress.equals(that.tagAddress) &&
+                tag.equals(that.tag) &&
+                protocolId.equals(that.protocolId) &&
+                description.equals(that.description);
     }
 
     @Override
     public int hashCode() {
         int result = tagAddress.hashCode();
         result = 31 * result + tag.hashCode();
+        result = 31 * result + protocolId.hashCode();
+        result = 31 * result + description.hashCode();
         return result;
     }
 
     @Override
     public @NotNull String toString() {
-        return "DomainTagModel{" + "tag='" + tag + '\'' + ", tagAddress=" + tagAddress + '}';
+        return "DomainTagModel{" +
+                "description='" +
+                description +
+                '\'' +
+                ", tagAddress=" +
+                tagAddress +
+                ", tag='" +
+                tag +
+                '\'' +
+                ", protocolId='" +
+                protocolId +
+                '\'' +
+                '}';
     }
 }

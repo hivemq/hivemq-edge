@@ -29,21 +29,31 @@ public class DomainTag {
 
     private final @NotNull JsonNode tagAddress;
     private final @NotNull String tag;
+    private final @NotNull String protocolId;
+    private final @NotNull String description;
 
     public DomainTag(
-            final @NotNull JsonNode tagAddress, final @NotNull String tag) {
+            final @NotNull JsonNode tagAddress,
+            final @NotNull String tag,
+            final @NotNull String protocolId,
+            final @NotNull String description) {
         this.tagAddress = tagAddress;
         this.tag = tag;
+        this.protocolId = protocolId;
+        this.description = description;
     }
 
-    public static DomainTag fromDomainTagEntity(final @NotNull DomainTagModel domainTag) {
-        return new DomainTag(domainTag.getTagAddress().getAddress(), domainTag.getTag());
+    public static @NotNull DomainTag fromDomainTagEntity(final @NotNull DomainTagModel domainTag) {
+        return new DomainTag(domainTag.getTagAddress().getAddress(),
+                domainTag.getTag(),
+                domainTag.getProtocolId(),
+                domainTag.getDescription());
     }
 
-    public static DomainTag simpleAddress(final @NotNull String domainAddress, final @NotNull String tag) {
+    public static @NotNull DomainTag simpleAddress(final @NotNull String domainAddress, final @NotNull String tag) {
         final ObjectNode objectNode = JsonNodeFactory.instance.objectNode();
         objectNode.set("address", new TextNode(domainAddress));
-        return new DomainTag(objectNode, tag);
+        return new DomainTag(objectNode, tag, "someProtocolId" , "someDescription");
     }
 
     public @NotNull String getTag() {
@@ -54,11 +64,23 @@ public class DomainTag {
         return tagAddress;
     }
 
+    public @NotNull String getDescription() {
+        return description;
+    }
+
+    public @NotNull String getProtocolId() {
+        return protocolId;
+    }
+
     // only tag is used as duplicates based on this field are not allowed.
     @Override
     public boolean equals(final @Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         final DomainTag domainTag = (DomainTag) o;
         return tag.equals(domainTag.tag);
