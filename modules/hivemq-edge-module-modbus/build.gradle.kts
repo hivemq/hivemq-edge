@@ -9,7 +9,7 @@ plugins {
     alias(libs.plugins.shadow)
     alias(libs.plugins.license)
     id("com.hivemq.edge-version-updater")
-     id("com.hivemq.third-party-license-generator")
+    id("com.hivemq.third-party-license-generator")
 }
 
 group = "com.hivemq"
