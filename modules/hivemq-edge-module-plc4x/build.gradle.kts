@@ -201,7 +201,7 @@ tasks.updateThirdPartyLicenses {
     projectName.set(project.name)
     group = "license"
     dependencyLicense.set(tasks.downloadLicenses.get().xmlDestination.resolve("dependency-license.xml"))
-    outputDirectory.set(layout.projectDirectory.dir("build/distribution/third-party-licenses"))
+    outputDirectory.set(layout.buildDirectory.dir("distribution/third-party-licenses"))
 }
 
 val javaComponent = components["java"] as AdhocComponentWithVariants
