@@ -35,4 +35,5 @@ export const MOCK_LOCAL_STORAGE: Record<string, XYPosition> = {
   [`${IdStubs.HOST_NODE}#bridge-id-01`]: { x: 3, y: 3 },
   [`${IdStubs.LISTENER_NODE}#tcp-listener-1883`]: { x: 1, y: 1 },
   [`${IdStubs.ADAPTER_NODE}#${MOCK_ADAPTER_ID}`]: { x: 1, y: 1 },
+  [`${IdStubs.CLIENT_NODE}#my-first-client`]: { x: 1, y: 1 },
 }

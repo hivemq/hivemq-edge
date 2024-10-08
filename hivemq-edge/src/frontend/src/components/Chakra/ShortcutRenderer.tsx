@@ -8,7 +8,7 @@ interface ShortcutRendererProps {
 
 const ShortcutRenderer: FC<ShortcutRendererProps> = ({ hotkeys, description }) => {
   const listHotkeys = hotkeys.split(',')
-  const shortcuts = listHotkeys.map((e) => e.split('+'))
+  const shortcuts = listHotkeys.map((hotkey) => hotkey.split('+'))
 
   const localiseKeyboard = (shortcut: string[]) => {
     const [modifier, ...rest] = shortcut

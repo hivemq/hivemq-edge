@@ -5,8 +5,10 @@ import queryClient from '@/api/queryClient.ts'
 import '@/config/i18n.config.ts'
 
 import { server } from '@/__test-utils__/msw/mockServer.ts'
-import { handlers } from '@/__test-utils__/msw/handlers.ts'
 import { SimpleWrapper as wrapper } from '@/__test-utils__/hooks/SimpleWrapper.tsx'
+import { handlers as useFrontendServices } from '@/api/hooks/useFrontendServices/__handlers__'
+import { handlers as ProtocolAdapterHandlers } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { handlers as DataHubDataPoliciesService } from '@/extensions/datahub/api/hooks/DataHubDataPoliciesService/__handlers__'
 
 import { useGetPoliciesMatching } from '@/modules/Workspace/hooks/useGetPoliciesMatching.ts'
 import {
@@ -22,7 +24,7 @@ vi.mock('@/modules/Workspace/hooks/useWorkspaceStore.ts', async () => {
 
 describe('useGetPoliciesMatching', () => {
   beforeEach(() => {
-    server.use(...handlers)
+    server.use(...useFrontendServices, ...DataHubDataPoliciesService, ...ProtocolAdapterHandlers)
   })
 
   afterEach(() => {

@@ -4,5 +4,7 @@ import NodeBridge from './NodeBridge.tsx'
 import NodeEdge from './NodeEdge.tsx'
 import NodeListener from './NodeListener.tsx'
 import NodeHost from './NodeHost.tsx'
+import NodeDevice from './NodeDevice.tsx'
+import NodeClient from './NodeClient.tsx'
 
-export { NodeGroup, NodeAdapter, NodeBridge, NodeEdge, NodeListener, NodeHost }
+export { NodeGroup, NodeAdapter, NodeBridge, NodeEdge, NodeListener, NodeHost, NodeDevice, NodeClient }

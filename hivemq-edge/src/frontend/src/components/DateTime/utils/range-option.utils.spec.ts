@@ -79,7 +79,7 @@ const allTests: DefaultOptionTestSuite[] = [
 
 describe('makeDefaultRangeOption', () => {
   it.each<DefaultOptionTestSuite>(allTests)('should return $nbItems for $min $max', ({ min, max, items }) => {
-    const tt = makeDefaultRangeOption(min, max)
-    expect(tt.map((e) => e.value)).toEqual(items)
+    const rangeOptions = makeDefaultRangeOption(min, max)
+    expect(rangeOptions.map((range) => range.value)).toEqual(items)
   })
 })

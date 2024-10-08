@@ -10,12 +10,21 @@ import { server } from '@/__test-utils__/msw/mockServer.ts'
 import { MOCK_ADAPTER_OPC_UA, MOCK_PROTOCOL_OPC_UA } from '@/__test-utils__/adapters/opc-ua.ts'
 import { MOCK_ADAPTER_MODBUS, MOCK_PROTOCOL_MODBUS } from '@/__test-utils__/adapters/modbus.ts'
 
-import { Adapter, AdaptersList, Bridge, BridgeList, ProtocolAdapter, ProtocolAdaptersList } from '@/api/__generated__'
+import {
+  Adapter,
+  AdaptersList,
+  Bridge,
+  BridgeList,
+  ClientFilterList,
+  ProtocolAdapter,
+  ProtocolAdaptersList,
+} from '@/api/__generated__'
 import { mockBridge } from '@/api/hooks/useGetBridges/__handlers__'
 
 import { AuthProvider } from '@/modules/Auth/AuthProvider.tsx'
 
 import { EdgeTopicsOptions, useGetEdgeTopics, reduceTopicsBy } from './useGetEdgeTopics.ts'
+import { mockClientSubscription } from '@/api/hooks/useClientSubscriptions/__handlers__'
 
 interface Suite {
   topic: string
@@ -66,7 +75,8 @@ const wrapper: React.JSXElementConstructor<{ children: React.ReactElement }> = (
 const customHandlers = (
   types: Array<ProtocolAdapter> | undefined,
   adapters?: Array<Adapter> | undefined,
-  bridges?: Array<Bridge> | undefined
+  bridges?: Array<Bridge> | undefined,
+  clients?: ClientFilterList | undefined
 ) => [
   http.get('**/protocol-adapters/types', () => {
     return types
@@ -88,11 +98,19 @@ const customHandlers = (
           status: 500,
         })
   }),
+
+  http.get('**/management/client/filters', () => {
+    return clients
+      ? HttpResponse.json<ClientFilterList>(clients, { status: 200 })
+      : new HttpResponse(null, {
+          status: 500,
+        })
+  }),
 ]
 
 describe('useGetEdgeTopics', () => {
   it('should return basic payload', async () => {
-    server.use(...customHandlers([], [], []))
+    server.use(...customHandlers([], [], [], []))
 
     const { result } = renderHook(() => useGetEdgeTopics(), { wrapper })
     await waitFor(() => {
@@ -108,7 +126,7 @@ describe('useGetEdgeTopics', () => {
   })
 
   it("should return bridge's topics", async () => {
-    server.use(...customHandlers([], [], [mockBridge]))
+    server.use(...customHandlers([], [], [mockBridge], []))
     server.listHandlers()
 
     const { result } = renderHook(() => useGetEdgeTopics(), { wrapper })
@@ -124,7 +142,7 @@ describe('useGetEdgeTopics', () => {
   })
 
   it("should return bridge's topics for publishing and subscribing", async () => {
-    server.use(...customHandlers([], [], [mockBridge]))
+    server.use(...customHandlers([], [], [mockBridge], []))
     server.listHandlers()
 
     const { result } = renderHook(() => useGetEdgeTopics({ publishOnly: false }), { wrapper })
@@ -144,7 +162,8 @@ describe('useGetEdgeTopics', () => {
       ...customHandlers(
         [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS],
         [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
-        [mockBridge]
+        [mockBridge],
+        [mockClientSubscription]
       )
     )
     server.listHandlers()
@@ -161,6 +180,7 @@ describe('useGetEdgeTopics', () => {
           'a/valid/topic/opc-ua-client/1',
           'a/valid/topic/opc-ua-client/2',
           'root/topic/ref/1',
+          'test/topic/1',
         ],
       })
     )
