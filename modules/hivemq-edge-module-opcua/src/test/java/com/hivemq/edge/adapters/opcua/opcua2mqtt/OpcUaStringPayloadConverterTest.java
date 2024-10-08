@@ -83,7 +83,7 @@ class OpcUaStringPayloadConverterTest extends AbstractOpcUaPayloadConverterTest 
         final String nodeId =
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> serverValue, 999);
 
-        final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId, PayloadMode.STRING);
+        final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId);
         assertEquals(ProtocolAdapterState.ConnectionStatus.CONNECTED,
                 protocolAdapter.getProtocolAdapterState().getConnectionStatus());
 

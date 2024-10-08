@@ -89,7 +89,7 @@ class OpcUaJsonPayloadConverterTest extends AbstractOpcUaPayloadConverterTest {
         final String nodeId =
                 opcUaServerExtension.getTestNamespace().addNode("Test" + name + "Node", typeId, () -> value, 999);
 
-        final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId, PayloadMode.JSON);
+        final OpcUaProtocolAdapter protocolAdapter = createAndStartAdapter(nodeId);
         assertEquals(ProtocolAdapterState.ConnectionStatus.CONNECTED,
                 protocolAdapter.getProtocolAdapterState().getConnectionStatus());
 

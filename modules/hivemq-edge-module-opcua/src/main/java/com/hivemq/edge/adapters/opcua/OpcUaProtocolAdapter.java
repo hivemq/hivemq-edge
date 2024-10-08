@@ -39,12 +39,9 @@ import com.hivemq.adapter.sdk.api.writing.WritingPayload;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
-import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
-import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionListener;
 import com.hivemq.edge.adapters.opcua.config.BidirectionalOpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
-import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
@@ -53,21 +50,17 @@ import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.SessionActivityListener;
 import org.eclipse.milo.opcua.sdk.client.api.UaSession;
 import org.eclipse.milo.opcua.sdk.client.dtd.DataTypeDictionarySessionInitializer;
-import org.eclipse.milo.opcua.stack.core.AttributeId;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
 import org.eclipse.milo.opcua.stack.core.UaException;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
-import org.eclipse.milo.opcua.stack.core.types.builtin.QualifiedName;
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode;
 import org.eclipse.milo.opcua.stack.core.types.builtin.Variant;
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;
-import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -76,12 +69,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
@@ -97,10 +87,10 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ModuleServices moduleServices;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
-    private @Nullable OpcUaClient opcUaClient;
+    private volatile @Nullable OpcUaClient opcUaClient;
     private volatile @Nullable JsonToOpcUAConverter jsonToOpcUAConverter;
     private volatile @Nullable JsonSchemaGenerator jsonSchemaGenerator;
-    private final @NotNull Map<UInteger, OpcUaToMqttMapping> subscriptionMap = new ConcurrentHashMap<>();
+    private volatile @Nullable OpcUaSubscriptionLifecycle opcUaSubscriptionLifecycle;
 
     public OpcUaProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -119,7 +109,8 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
     @Override
     public void start(
-            final @NotNull ProtocolAdapterStartInput input, final @NotNull ProtocolAdapterStartOutput output) {
+            final @NotNull ProtocolAdapterStartInput input,
+            final @NotNull ProtocolAdapterStartOutput output) {
         try {
             if (opcUaClient == null) {
                 createClient();
@@ -131,34 +122,36 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                 } catch (final UaException e) {
                     log.error("Unable to create the converter for writing.", e);
                 }
+                this.opcUaSubscriptionLifecycle = new OpcUaSubscriptionLifecycle(
+                        opcUaClient,
+                        adapterConfig.getId(),
+                        adapterInformation.getProtocolId(),
+                        protocolAdapterMetricsService,
+                        moduleServices.eventService(),
+                        moduleServices.adapterPublishService());
 
                 opcUaClient.getSubscriptionManager()
-                        .addSubscriptionListener(new OpcUaSubscriptionListener(protocolAdapterMetricsService,
-                                (subscription) -> {
-                                    //re-create a subscription on failure
-                                    final OpcUaToMqttMapping subscriptionConfig =
-                                            subscriptionMap.get(subscription.getSubscriptionId());
-                                    if (subscriptionConfig != null) {
-                                        subscribeToNode(subscriptionConfig)
-                                                .exceptionally(ex -> {
-                                                    log.error("Not able to recreate OPC UA subscription after transfer failure", ex);
-                                                    return null;
-                                                });
-                                    }
-                                }));
-                createAllSubscriptions().whenComplete((unused, throwable) -> {
+                        .addSubscriptionListener(opcUaSubscriptionLifecycle);
+
+                opcUaSubscriptionLifecycle
+                        .subscribeAll(adapterConfig.getOpcuaToMqttConfig().getOpcuaToMqttMappings())
+                        .whenComplete((unused, throwable) -> {
                     if (throwable == null) {
                         output.startedSuccessfully();
                     } else {
+                        protocolAdapterState.setErrorConnectionStatus(throwable, null);
                         output.failStart(throwable, throwable.getMessage());
                     }
                 });
             }).exceptionally(throwable -> {
+                log.error("Not able to connect and subscribe to OPC UA server {}", adapterConfig.getUri(), throwable);
                 stopInternal();
+                protocolAdapterState.setErrorConnectionStatus(throwable, null);
                 output.failStart(throwable, throwable.getMessage());
                 return null;
             });
         } catch (final Exception e) {
+            log.error("Not able to start OPC UA client for server {}", adapterConfig.getUri(), e);
             output.failStart(e, "Not able to start OPC UA client for server " + adapterConfig.getUri());
         }
     }
@@ -179,9 +172,14 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
             if (opcUaClient == null) {
                 return CompletableFuture.completedFuture(null);
             } else {
-                subscriptionMap.clear();
+                OpcUaSubscriptionLifecycle temp = opcUaSubscriptionLifecycle;
+                opcUaSubscriptionLifecycle = null;
+                if (temp != null) {
+                    opcUaSubscriptionLifecycle.stop();
+                }
                 try {
-                    return opcUaClient.disconnect()
+                    return opcUaClient
+                            .disconnect()
                             .thenAccept(client -> protocolAdapterState.setConnectionStatus(DISCONNECTED));
                 } finally {
                     opcUaClient = null;
@@ -194,11 +192,9 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
     @Override
     public void discoverValues(
-            final @NotNull ProtocolAdapterDiscoveryInput input, final @NotNull ProtocolAdapterDiscoveryOutput output) {
-
-        if (opcUaClient == null) {
-            throw new IllegalStateException("OPC UA Adapter not started yet");
-        }
+            final @NotNull ProtocolAdapterDiscoveryInput input,
+            final @NotNull ProtocolAdapterDiscoveryOutput output) {
+        Objects.requireNonNull(opcUaClient, "OPC UA Adapter not started yet");
 
         final NodeId browseRoot;
         if (input.getRootNode() == null || input.getRootNode().isBlank()) {
@@ -239,13 +235,12 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
     @Override
     public void write(final @NotNull WritingInput writingInput, final @NotNull WritingOutput writingOutput) {
+        Objects.requireNonNull(opcUaClient, "OPC UA Adapter not started yet");
         final OpcUaPayload opcUAWritePayload = (OpcUaPayload) writingInput.getWritingPayload();
         final MqttToOpcUaMapping writeContext = (MqttToOpcUaMapping) writingInput.getWritingContext();
         log.debug("Write for opcua is invoked with payload '{}' and context '{}' ", opcUAWritePayload, writeContext);
         try {
-            if (jsonToOpcUAConverter == null) {
-                throw new IllegalStateException("Converter is null.");
-            }
+            Objects.requireNonNull(jsonToOpcUAConverter, "Converter is null.");
 
             final NodeId nodeId = NodeId.parse(writeContext.getNode());
             final Object opcUaObject;
@@ -259,11 +254,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
             final Variant variant = new Variant(opcUaObject);
             final DataValue dataValue = new DataValue(variant, null, null);
-            if (opcUaClient == null) {
-                log.warn("Client is not connected.");
-                writingOutput.fail("Client is not connected.");
-                return;
-            }
             final CompletableFuture<StatusCode> writeFuture = opcUaClient.writeValue(nodeId, dataValue);
             writeFuture.whenComplete((statusCode, throwable) -> {
                 if (throwable != null) {
@@ -301,31 +291,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         return OpcUaPayload.class;
     }
 
-    private @NotNull CompletableFuture<Void> createAllSubscriptions() {
-        //noinspection ConstantValue
-        if (adapterConfig.getOpcuaToMqttConfig().getOpcuaToMqttMappings() == null ||
-                adapterConfig.getOpcuaToMqttConfig().getOpcuaToMqttMappings().isEmpty()) {
-            return CompletableFuture.completedFuture(null);
-        }
-
-        final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
-        final ImmutableList.Builder<CompletableFuture<Void>> subscribeFutures = ImmutableList.builder();
-
-        for (final OpcUaToMqttMapping subscription : adapterConfig.getOpcuaToMqttConfig().getOpcuaToMqttMappings()) {
-            subscribeFutures.add(subscribeToNode(subscription));
-        }
-
-        CompletableFuture.allOf(subscribeFutures.build().toArray(new CompletableFuture[]{})).thenApply(unused -> {
-            resultFuture.complete(null);
-            return null;
-        }).exceptionally(throwable -> {
-            protocolAdapterState.setErrorConnectionStatus(throwable, null);
-            resultFuture.completeExceptionally(throwable);
-            return null;
-        });
-        return resultFuture;
-    }
-
     private void createClient() throws UaException {
         final String configPolicyUri = adapterConfig.getSecurity().getPolicy().getSecurityPolicy().getUri();
 
@@ -360,34 +325,6 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         });
     }
 
-    private @NotNull CompletableFuture<Void> subscribeToNode(final @NotNull OpcUaToMqttMapping subscription) {
-        try {
-            final CompletableFuture<Void> resultFuture = new CompletableFuture<>();
-
-            final ReadValueId readValueId = new ReadValueId(NodeId.parse(subscription.getNode()),
-                    AttributeId.Value.uid(),
-                    null,
-                    QualifiedName.NULL_VALUE);
-
-            Objects.requireNonNull(opcUaClient)
-                    .getSubscriptionManager()
-                    .createSubscription(subscription.getPublishingInterval())
-                    .thenAccept(new OpcUaSubscriptionConsumer(subscription,
-                            readValueId,
-                            moduleServices.adapterPublishService(),
-                            moduleServices.eventService(),
-                            resultFuture,
-                            opcUaClient,
-                            subscriptionMap,
-                            protocolAdapterMetricsService,
-                            adapterConfig.getId(),
-                            this));
-            return resultFuture;
-        } catch (final Exception e) {
-            return CompletableFuture.failedFuture(e);
-        }
-    }
-
     private static @Nullable NodeType getNodeType(final @NotNull ReferenceDescription ref) {
         switch (ref.getNodeClass()) {
             case Object:
@@ -405,7 +342,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         }
     }
 
-    private @NotNull CompletableFuture<Void> browse(
+    private static @NotNull CompletableFuture<Void> browse(
             final @NotNull OpcUaClient client,
             final @NotNull NodeId browseRoot,
             final @Nullable ReferenceDescription parent,
@@ -420,10 +357,10 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
 
         return client
                 .browse(browse)
-                .thenCompose(res -> handleBrowseResult(client, parent, callback, depth, res));
+                .thenCompose(browseResult -> handleBrowseResult(client, parent, callback, depth, browseResult));
     }
 
-    private @NotNull CompletableFuture<Void> handleBrowseResult(
+    private static @NotNull CompletableFuture<Void> handleBrowseResult(
             final @NotNull OpcUaClient client,
             final @Nullable ReferenceDescription parent,
             final @NotNull BiConsumer<ReferenceDescription, ReferenceDescription> callback,
@@ -449,10 +386,10 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         final ByteString continuationPoint = browseResult.getContinuationPoint();
         if (continuationPoint != null && !continuationPoint.isNull()) {
                 childFutures.add(
-                        Objects.requireNonNull(opcUaClient)
+                        Objects.requireNonNull(client)
                                 .browseNext(false, continuationPoint)
                                 .thenCompose(nextBrowseResult ->
-                                        handleBrowseResult(opcUaClient, parent, callback, depth, nextBrowseResult)));
+                                        handleBrowseResult(client, parent, callback, depth, nextBrowseResult)));
         }
 
         return CompletableFuture.allOf(childFutures.build().toArray(new CompletableFuture[]{}));
