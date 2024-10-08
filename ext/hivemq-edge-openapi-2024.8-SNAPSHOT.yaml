@@ -4438,11 +4438,17 @@ components:
     DomainTag:
       type: object
       properties:
-        tag:
+        description:
           type: string
-          description: 'The tag that '
+          description: A user created description for this tag.
+        protocolId:
+          type: string
+          description: The protocol id of the protocol for which this tag was created.
         tagAddress:
           $ref: '#/components/schemas/TagAddress'
+        tagName:
+          type: string
+          description: The name of the tag that identifies it within this edge instance.
     DomainTagList:
       type: object
       properties:
@@ -5255,7 +5261,7 @@ components:
           description: The type of the object in transition
     TagAddress:
       type: object
-      description: The address for the data point on the device
+      description: The address for the data point on the device.
       properties:
         address:
           $ref: '#/components/schemas/JsonNode'

@@ -93,6 +93,7 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
             return DomainTagDeleteResult.failed(DomainTagDeleteResult.DomainTagDeleteStatus.NOT_FOUND,
                     "No tag with id '{}' was found.");
         } else {
+            alreadyUsedTags.remove(tagId);
             return DomainTagDeleteResult.success();
         }
     }

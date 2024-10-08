@@ -26,25 +26,25 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public class DomainTagModel {
 
     @JsonProperty("tagAddress")
-    @Schema(description = "The address for the data point on the device")
+    @Schema(description = "The address for the data point on the device.")
     private final @NotNull TagAddress tagAddress;
 
-    @JsonProperty("tag")
-    @Schema(description = "The tag that ")
+    @JsonProperty("tagName")
+    @Schema(description = "The name of the tag that identifies it within this edge instance.")
     private final @NotNull String tag;
 
     @JsonProperty("protocolId")
-    @Schema(description = "The tag that ")
+    @Schema(description = "The protocol id of the protocol for which this tag was created.")
     private final @NotNull String protocolId;
 
     @JsonProperty("description")
-    @Schema(description = "The tag that ")
+    @Schema(description = "A user created description for this tag.")
     private final @NotNull String description;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public DomainTagModel(
             @JsonProperty("tagAddress") final @NotNull TagAddress tagAddress,
-            @JsonProperty("tag") final @NotNull String tag,
+            @JsonProperty("tagName") final @NotNull String tag,
             @JsonProperty("protocolId") final @NotNull String protocolId,
             @JsonProperty("description") final @NotNull String description) {
         this.tagAddress = tagAddress;
