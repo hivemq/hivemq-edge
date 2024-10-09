@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.SubscriptionListener {
 
@@ -63,18 +64,29 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     @Override
     public void onSubscriptionTransferFailed(
             final @NotNull UaSubscription subscription, final @NotNull StatusCode statusCode) {
+
         protocolAdapterMetricsService.increment("subscription.transfer.failed.count");
+
+        //clear subscription from the map since it is dead
         final OpcUaSubscriptionConsumer.SubscriptionResult subscriptionResult =
-                subscriptionMap.get(subscription.getSubscriptionId());
+                subscriptionMap.remove(subscription.getSubscriptionId());
+
         if (subscriptionResult != null) {
             subscribe(subscriptionResult.subscription)
                 .exceptionally(ex -> {
                     if(ex instanceof UaServiceFaultException) {
                         UaServiceFaultException cause = (UaServiceFaultException) ex.getCause();
                         if(cause.getStatusCode().getValue() == StatusCodes.Bad_SubscriptionIdInvalid) {
-                            log.warn("Resubscribing to OPC UA after transfer failure {}", statusCode, ex);
-                            subscriptionMap.remove(subscription.getSubscriptionId());
-                            subscribe(subscriptionResult.subscription);
+                            log.warn("Resubscribing to OPC UA after transfer failure: {}", statusCode, ex);
+                            try {
+                                subscribe(subscriptionResult.subscription)
+                                    .exceptionally(t -> {
+                                        log.error("Problem resucbscribing after subscription {} failed with {}", subscription.getSubscriptionId(), statusCode, t);
+                                        return null;
+                                    }).get();
+                            } catch (InterruptedException | ExecutionException e) {
+                                log.error("Problem resucbscribing after subscription {} failed with {}", subscription.getSubscriptionId(), statusCode, e);
+                            }
                         } else {
                             log.error("Not able to recreate OPC UA subscription after transfer failure", ex);
                         }
@@ -89,6 +101,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
     }
 
     public CompletableFuture<Void> subscribe(final @NotNull OpcUaToMqttMapping subscription) {
+        log.info("Subscribing to OPC UA node {}", subscription.getNode());
         final ReadValueId readValueId = new ReadValueId(NodeId.parse(subscription.getNode()),
                 AttributeId.Value.uid(),
                 null,
