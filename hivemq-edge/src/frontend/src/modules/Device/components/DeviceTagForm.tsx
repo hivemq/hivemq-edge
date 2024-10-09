@@ -2,6 +2,7 @@ import { FC, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { IChangeEvent } from '@rjsf/core'
 import Form from '@rjsf/chakra-ui'
+import debug from 'debug'
 
 import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
@@ -14,11 +15,14 @@ import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate
 import { customFormatsValidator } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { adapterJSFFields, adapterJSFWidgets } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { useMappingManager } from '@/modules/Mappings/hooks/useMappingManager.tsx'
+import { DomainTagList } from '@/api/__generated__'
 
 interface DeviceTagFormProps {
   adapterId: string
   adapterType?: string
 }
+
+const rjsfLog = debug('RJSF:DeviceTagForm')
 
 const DeviceTagForm: FC<DeviceTagFormProps> = ({ adapterId, adapterType }) => {
   const { t } = useTranslation()
@@ -58,7 +62,7 @@ const DeviceTagForm: FC<DeviceTagFormProps> = ({ adapterId, adapterType }) => {
         ArrayFieldTemplate,
         ArrayFieldItemTemplate,
       }}
-      onError={(errors) => console.log('XXXXX', errors)}
+      onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
     />
   )
 }
