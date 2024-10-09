@@ -1,65 +1,88 @@
 /// <reference types="cypress" />
 
 import DeviceTagForm from '@/modules/Device/components/DeviceTagForm.tsx'
-import {
-  MOCK_DEVICE_TAGS,
-  mockAdapter_OPCUA,
-  mockProtocolAdapter_OPCUA,
-} from '@/api/hooks/useProtocolAdapters/__handlers__'
-import { DomainTagList } from '@/api/__generated__'
+import { ManagerContextType } from '@/modules/Mappings/types.ts'
+import { createSchema } from '@/modules/Device/utils/tags.utils.ts'
 
-describe('AdapterSubscriptionManager', () => {
+describe('DeviceTagForm', () => {
   beforeEach(() => {
-    cy.viewport(800, 800)
+    cy.viewport(800, 1000)
   })
 
   it('should render the errors', () => {
-    cy.intercept('/api/v1/management/protocol-adapters/types', { statusCode: 404 })
-    cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 404 })
-    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags?*', { statusCode: 404 })
-
-    cy.mountWithProviders(<DeviceTagForm context={{}} />, {
+    const mockContext: ManagerContextType = { schema: undefined }
+    cy.mountWithProviders(<DeviceTagForm context={mockContext} />, {
       routerProps: { initialEntries: [`/node/wrong-adapter`] },
     })
-    cy.getByTestId('loading-spinner').should('be.visible')
 
     cy.get('[role="alert"')
       .should('have.attr', 'data-status', 'error')
-      .should('contain.text', 'We cannot load your adapters for the time being. Please try again later')
+      .should('contain.text', 'The form cannot be created, due to internal errors')
   })
 
-  it.only('should render the form', () => {
-    const mockProtocolAdapter_OPCUA_ID = mockProtocolAdapter_OPCUA?.id as string
-    const mockAdapter_OPCUA_ID = mockAdapter_OPCUA.id as string
-    cy.intercept('/api/v1/management/protocol-adapters/types', { items: [mockProtocolAdapter_OPCUA] }).as(
-      'getProtocols'
-    )
-    cy.intercept('/api/v1/management/protocol-adapters/adapters', { items: [mockAdapter_OPCUA] }).as('getAdapters')
-    const mockResponse: DomainTagList = {
-      items: MOCK_DEVICE_TAGS(mockProtocolAdapter_OPCUA_ID, mockAdapter_OPCUA_ID),
+  it('should render the form', () => {
+    const onSubmit = cy.stub().as('onSubmit')
+
+    const mockContext: ManagerContextType = {
+      schema: createSchema({ properties: { test: { type: 'string' } } }),
+      formData: {
+        items: [
+          {
+            tag: 'opcua-generator/power/off',
+            dataPoint: {
+              test: 'ns=3;i=1002',
+            },
+          },
+          // {
+          //   tag: 'opcua-generator/log/event',
+          //   dataPoint: {
+          //     test: 'ns=3;i=1008',
+          //   },
+          // },
+        ],
+      },
     }
-    cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags*', mockResponse).as('getTags')
 
-    cy.mountWithProviders(<DeviceTagForm context={{}} />)
-    cy.getByTestId('loading-spinner').should('be.visible')
+    cy.mountWithProviders(<DeviceTagForm context={mockContext} onSubmit={onSubmit} />)
 
-    cy.wait(['@getProtocols', '@getAdapters', '@getTags'])
+    cy.get('#root_items__title').should('contain.text', 'List of tags')
+    cy.get('#root_items__title + p').should('contain.text', 'The list of all tags defined in the device')
+    cy.get('#root_items__title + p + [role="list"] + div button').should('contain.text', 'Add Item')
 
-    cy.get('#root_tags__title').should('contain.text', 'List of tags')
-    cy.get('#root_tags__title + p').should('contain.text', 'The list of all tags defined in the device')
-    cy.get('#root_tags__title + p + [role="list"]').as('tagList').should('be.visible')
+    cy.get('#root_items__title + p + [role="list"]').as('tagList').should('be.visible')
     cy.get('@tagList').find('[role="listitem"]').should('have.length', 1)
 
     cy.get('@tagList').eq(0).find('[role="toolbar"] button').eq(0).should('have.attr', 'aria-label', 'Remove')
-    cy.get('#root_tags_0__title').should('have.text', 'tags-0')
+    cy.get('#root_items_0__title').should('have.text', 'items-0')
 
     cy.get('@tagList').eq(0).find('[role="group"] > label').eq(0).should('contain.text', 'Tag Name')
-    cy.get('@tagList')
-      .eq(0)
-      .find('[role="group"] > input')
-      .eq(0)
-      .should('contain.value', `${mockProtocolAdapter_OPCUA_ID}/log/event`)
+    cy.get('@tagList').eq(0).find('[role="group"] > input').eq(0).should('contain.value', `opcua-generator/power/off`)
 
-    cy.get('#root_tags__title + p + [role="list"] + div button').should('contain.text', 'Add Item')
+    cy.get('#root_items__title + p + [role="list"] + div button').click()
+    cy.get('@tagList').find('[role="listitem"]').should('have.length', 2)
+
+    cy.get('@tagList').eq(0).find('[role="group"] > label').eq(2).should('contain.text', 'Tag Name')
+    cy.get('@tagList').eq(0).find('[role="group"] > input').eq(2).type('1234')
+    cy.get('@tagList').eq(0).find('[role="group"] > label').eq(3).should('contain.text', 'test')
+    cy.get('@tagList').eq(0).find('[role="group"] > input').eq(3).type('5678')
+
+    cy.get('@onSubmit').should('not.have.been.called')
+    cy.get('button[type="submit"]').click()
+    cy.get('@onSubmit').should('have.been.calledWith', {
+      items: [
+        {
+          tag: 'opcua-generator/power/off',
+          dataPoint: {
+            test: 'ns=3;i=1002',
+          },
+        },
+        {
+          tag: '1234',
+          dataPoint: {
+            test: '5678',
+          },
+        },
+      ],
+    })
   })
 })
