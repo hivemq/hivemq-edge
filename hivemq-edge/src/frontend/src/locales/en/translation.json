@@ -63,6 +63,9 @@
     },
     "wip": {
       "message": "This is a work in progress. Be patient with us"
+    },
+    "rjsf": {
+      "validation": "Some validation errors in the form"
     }
   },
   "login": {
@@ -591,6 +594,14 @@
         "title": "List of Device Tags",
         "cta": {
           "edit": "Edit tags"
+        },
+        "toast": {
+          "description_loading": "Processing the request",
+          "delete": {
+            "title": "Delete Tag",
+            "description_success": "The tag has been deleted from the device",
+            "description_error": "The tag has been deleted from the device"
+          }
         }
       },
       "tagEditor": {
@@ -601,6 +612,7 @@
       }
     },
     "errors": {
+      "noAdapter": "The protocol adapter for this device cannot be found",
       "noMetadataLoaded": "No metadata loaded for the device",
       "noTagLoaded": "Cannot load the tags",
       "noTagCreated": "There is no tag created yet"

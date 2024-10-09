@@ -39,7 +39,7 @@ const DevicePropertyDrawer: FC<DevicePropertyDrawerProps> = ({ isOpen, selectedN
   const protocol = data?.items?.find((e) => e.id === adapterNode.data.type)
 
   if (isLoading) return <LoaderSpinner />
-  if (isError) return <ErrorMessage message="XXXX Cannot load the protocols" />
+  if (isError) return <ErrorMessage message={t('device.errors.noAdapter')} />
 
   return (
     <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} variant="hivemq">
