@@ -86,7 +86,7 @@ export const useTagManager = (adapterId: string | undefined) => {
 
   const onUpdateList = (tags: DomainTagList) => {
     if (!adapterId) return
-    toast.promise(updateListMutator.mutateAsync({ adapterId: adapterId, requestBody: tags }), formatToast('update'))
+    toast.promise(updateListMutator.mutateAsync({ adapterId: adapterId, requestBody: tags }), formatToast('updateList'))
   }
 
   const context: ManagerContextType = {
@@ -108,6 +108,7 @@ export const useTagManager = (adapterId: string | undefined) => {
     isLoading: isLoading || protocolLoad,
     isError,
     error,
-    isPending: createMutator.isPending || updateMutator.isPending || deleteMutator.isPending, // assuming only one operation at a time
+    isPending:
+      createMutator.isPending || updateMutator.isPending || deleteMutator.isPending || updateListMutator.isPending, // assuming only one operation at a time
   }
 }

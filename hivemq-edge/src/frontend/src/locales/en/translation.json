@@ -600,7 +600,12 @@
           "delete": {
             "title": "Delete Tag",
             "description_success": "The tag has been deleted from the device",
-            "description_error": "The tag has been deleted from the device"
+            "description_error": "The tag could not be deleted"
+          },
+          "updateList": {
+            "title": "Edit the tags",
+            "description_success": "The tags has been modified on the device",
+            "description_error": "The list of tags could not be updated on the device"
           }
         }
       },
@@ -612,6 +617,7 @@
       }
     },
     "errors": {
+      "noFormSchema": "The form cannot be created, due to internal errors",
       "noAdapter": "The protocol adapter for this device cannot be found",
       "noMetadataLoaded": "No metadata loaded for the device",
       "noTagLoaded": "Cannot load the tags",
