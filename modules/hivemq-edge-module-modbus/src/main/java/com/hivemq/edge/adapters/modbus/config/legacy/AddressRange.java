@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hivemq.edge.adapters.modbus.config;
+package com.hivemq.edge.adapters.modbus.config.legacy;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
+import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 
-@JsonPropertyOrder({"startIdx", "nrRegistersToRead"})
+@JsonPropertyOrder({"startIdx", "endIdx"})
 public class AddressRange {
 
     @JsonProperty(value = "startIdx", required = true)
@@ -30,18 +31,18 @@ public class AddressRange {
                        required = true)
     public final int startIdx;
 
-    @JsonProperty(value = "nrRegistersToRead", required = true)
-    @ModuleConfigField(title = "# of registers to read",
-                       description = "Number of registers to read",
+    @JsonProperty(value = "endIdx", required = true)
+    @ModuleConfigField(title = "End Index",
+                       description = "The Finishing Index (Excl.) of the Address Range",
                        numberMin = 1,
                        numberMax = ModbusAdapterConfig.PORT_MAX,
                        required = true)
-    public final int nrRegistersToRead;
+    public final int endIdx;
 
     public AddressRange(
             @JsonProperty(value = "startIdx", required = true) final int startIdx,
-            @JsonProperty(value = "nrRegistersToRead", required = true) final int nrRegistersToRead) {
+            @JsonProperty(value = "endIdx", required = true) final int endIdx) {
         this.startIdx = startIdx;
-        this.nrRegistersToRead = nrRegistersToRead;
+        this.endIdx = endIdx;
     }
 }

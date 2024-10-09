@@ -35,7 +35,6 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.atIndex;
 import static org.mockito.Mockito.mock;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -78,7 +77,7 @@ public class ModbusAdapterConfigTest {
             });
 
             assertThat(modbusToMqttMapping.getAddressRange().startIdx).isEqualTo(11);
-            assertThat(modbusToMqttMapping.getAddressRange().endIdx).isEqualTo(15);
+            assertThat(modbusToMqttMapping.getAddressRange().nrRegistersToRead).isEqualTo(4);
             assertThat(modbusToMqttMapping.getDataType()).isEqualTo(ModbusDataType.INT_64);
 
         }, modbusToMqttMapping -> {
@@ -97,7 +96,7 @@ public class ModbusAdapterConfigTest {
             });
 
             assertThat(modbusToMqttMapping.getAddressRange().startIdx).isEqualTo(16);
-            assertThat(modbusToMqttMapping.getAddressRange().endIdx).isEqualTo(18);
+            assertThat(modbusToMqttMapping.getAddressRange().nrRegistersToRead).isEqualTo(2);
             assertThat(modbusToMqttMapping.getDataType()).isEqualTo(ModbusDataType.INT_32);
         });
     }
@@ -129,7 +128,7 @@ public class ModbusAdapterConfigTest {
             assertThat(modbusToMqttMapping.getIncludeTagNames()).isFalse();
             assertThat(modbusToMqttMapping.getUserProperties()).isEmpty();
             assertThat(modbusToMqttMapping.getAddressRange().startIdx).isEqualTo(11);
-            assertThat(modbusToMqttMapping.getAddressRange().endIdx).isEqualTo(12);
+            assertThat(modbusToMqttMapping.getAddressRange().nrRegistersToRead).isEqualTo(1);
             assertThat(modbusToMqttMapping.getDataType()).isEqualTo(ModbusDataType.INT_16);
         });
     }
@@ -213,7 +212,7 @@ public class ModbusAdapterConfigTest {
     }
 
     @Test
-    public void convertConfigObject_endIdxMissing_exception() throws Exception {
+    public void convertConfigObject_nrRegistersToReadMissing_exception() throws Exception {
         final URL resource = getClass().getResource("/modbus-adapter-missing-endIdx-config.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
@@ -222,7 +221,7 @@ public class ModbusAdapterConfigTest {
 
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'endIdx'");
+                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'nrRegistersToRead'");
     }
 
     @Test
@@ -233,7 +232,7 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("The data type INT_16 needs exactly 1 register, but 2 registers were configured.");
     }
@@ -246,7 +245,7 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("The data type INT_32 needs exactly 2 registers, but 5 registers were configured.");
     }
@@ -259,7 +258,7 @@ public class ModbusAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory();
+        final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory = new ModbusProtocolAdapterFactory(false);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("modbus"))).hasMessageContaining("The data type INT_64 needs exactly 4 registers, but 5 registers were configured.");
     }
@@ -272,7 +271,7 @@ public class ModbusAdapterConfigTest {
                 false,
                 true,
                 List.of(new MqttUserProperty("my-name", "my-value")),
-                new AddressRange(1, 2),
+                new AddressRange(1, 1),
                 ModbusDataType.UINT_16);
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
@@ -307,7 +306,7 @@ public class ModbusAdapterConfigTest {
             });
             assertThat((Map<String, Object>) mapping.get("addressRange")).satisfies((addressRange) -> {
                 assertThat(addressRange.get("startIdx")).isEqualTo(1);
-                assertThat(addressRange.get("endIdx")).isEqualTo(2);
+                assertThat(addressRange.get("nrRegistersToRead")).isEqualTo(1);
             });
             assertThat(mapping.get("dataType")).isEqualTo("UINT_16");
         });
@@ -321,7 +320,7 @@ public class ModbusAdapterConfigTest {
                 null,
                 null,
                 null,
-                new AddressRange(1, 2),
+                new AddressRange(1, 1),
                 null);
 
         final ModbusToMqttMapping pollingContext2 = new ModbusToMqttMapping("my/destination/2",
@@ -330,7 +329,7 @@ public class ModbusAdapterConfigTest {
                 null,
                 null,
                 null,
-                new AddressRange(10, 11),
+                new AddressRange(10, 1),
                 null);
 
 
@@ -362,7 +361,7 @@ public class ModbusAdapterConfigTest {
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
             assertThat((Map<String, Object>) mapping.get("addressRange")).satisfies((addressRange) -> {
                 assertThat(addressRange.get("startIdx")).isEqualTo(1);
-                assertThat(addressRange.get("endIdx")).isEqualTo(2);
+                assertThat(addressRange.get("nrRegistersToRead")).isEqualTo(1);
             });
         }, mapping -> {
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination/2");
@@ -373,7 +372,7 @@ public class ModbusAdapterConfigTest {
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
             assertThat((Map<String, Object>) mapping.get("addressRange")).satisfies((addressRange) -> {
                 assertThat(addressRange.get("startIdx")).isEqualTo(10);
-                assertThat(addressRange.get("endIdx")).isEqualTo(11);
+                assertThat(addressRange.get("nrRegistersToRead")).isEqualTo(1);
             });
             assertThat(mapping.get("dataType")).isEqualTo("INT_16");
         });

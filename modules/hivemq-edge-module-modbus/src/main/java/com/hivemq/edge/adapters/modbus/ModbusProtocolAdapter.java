@@ -222,7 +222,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
         try {
             final AddressRange addressRange = modbusToMqttMapping.getAddressRange();
             final DataPoint dataPoint = modbusClient.readHoldingRegisters(addressRange.startIdx,
-                    addressRange.endIdx - addressRange.startIdx, modbusToMqttMapping.getDataType());
+                    addressRange.nrRegistersToRead, modbusToMqttMapping.getDataType());
             final ModBusData data = new ModBusData(modbusToMqttMapping);
             data.addDataPoint(dataPoint);
             return data;

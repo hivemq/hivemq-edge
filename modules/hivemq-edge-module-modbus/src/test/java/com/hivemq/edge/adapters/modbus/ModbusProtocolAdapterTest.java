@@ -26,6 +26,7 @@ import com.hivemq.edge.modules.adapters.data.DataPointImpl;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -66,8 +67,10 @@ class ModbusProtocolAdapterTest {
                 true,
                 false,
                 List.of(),
-                new AddressRange(1, 2),
+                new AddressRange(1, 1),
                 ModbusDataType.INT_16);
-        return new ModBusData(pollingContext);
+        final ModBusData data = new ModBusData(pollingContext);
+        IntStream.range(0, 10).forEach(i -> data.addDataPoint(new DataPointImpl("register-" + i, i)));
+        return data;
     }
 }

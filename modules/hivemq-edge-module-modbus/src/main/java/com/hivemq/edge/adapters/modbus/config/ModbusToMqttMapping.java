@@ -105,7 +105,7 @@ public class ModbusToMqttMapping implements PollingContext {
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
         this.dataType = requireNonNullElse(dataType, ModbusDataType.INT_16);
 
-        final int registerCount = addressRange.endIdx - addressRange.startIdx;
+        final int registerCount = addressRange.nrRegistersToRead;
         switch (this.dataType) {
             case INT_16:
             case UINT_16:
