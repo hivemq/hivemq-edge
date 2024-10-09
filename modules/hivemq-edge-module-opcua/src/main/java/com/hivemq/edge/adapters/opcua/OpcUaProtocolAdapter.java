@@ -26,6 +26,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
@@ -54,6 +55,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     private final @NotNull OpcUaAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull ProtocolAdapterMetricsService protocolAdapterMetricsService;
+    private final @NotNull ModuleServices moduleServices;
     private volatile @Nullable OpcUaClientWrapper opcUaClientWrapper ;
 
     public OpcUaProtocolAdapter(
@@ -63,6 +65,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
         this.protocolAdapterMetricsService = input.getProtocolAdapterMetricsHelper();
+        this.moduleServices = input.moduleServices();
     }
 
     @Override
@@ -80,7 +83,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                     try {
                         OpcUaClientWrapper.createAndConnect(adapterConfig,
                                 protocolAdapterState,
-                                input.moduleServices(),
+                                moduleServices,
                                 adapterConfig.getId(),
                                 adapterInformation.getProtocolId(),
                                 protocolAdapterMetricsService).thenApply(wrapper -> {
