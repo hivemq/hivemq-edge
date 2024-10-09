@@ -3,12 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardBody, CardHeader, Code, Flex, Heading, HStack, List, ListItem } from '@chakra-ui/react'
 
 import { Adapter } from '@/api/__generated__'
-import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { PLCTag } from '@/components/MQTT/EntityTag.tsx'
 import DeviceTagDrawer from '@/modules/Device/components/DeviceTagDrawer.tsx'
 import { formatTagDataPoint } from '@/modules/Device/utils/tags.utils.ts'
+import { useTagManager } from '@/modules/Mappings/hooks/useTagManager.tsx'
 
 interface DeviceTagListProps {
   adapter?: Adapter
@@ -16,7 +16,7 @@ interface DeviceTagListProps {
 
 const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError } = useGetDomainTags(adapter?.id, adapter?.type)
+  const { data, isLoading, isError } = useTagManager(adapter?.id)
 
   return (
     <Card size="sm">
@@ -31,8 +31,10 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
       <CardBody>
         {isLoading && <LoaderSpinner />}
         {isError && <ErrorMessage message={t('device.errors.noTagLoaded')} />}
-        {!isError && !data?.items?.length && <ErrorMessage message={t('device.errors.noTagCreated')} status="info" />}
-        {!isError && data && (
+        {!isError && !isLoading && !data?.items?.length && (
+          <ErrorMessage message={t('device.errors.noTagCreated')} status="info" />
+        )}
+        {!isError && !isLoading && data && (
           // TODO[NVL] Too simple. Use a paginated table
           <List>
             {data.items?.map((e) => (
