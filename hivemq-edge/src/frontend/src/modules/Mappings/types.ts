@@ -6,11 +6,12 @@ export enum MappingType {
   OUTWARD = 'OUTWARD',
 }
 
-export interface MappingManagerType {
+export interface MappingManagerType<T = any> {
   schema: RJSFSchema
   formData?: GenericObjectType
   uiSchema: UiSchema
-  onSubmit?: (data: unknown) => void
+  onSubmit?: (data: T) => void
+  onError?: (e: Error) => void
   errors?: string
 }
 
