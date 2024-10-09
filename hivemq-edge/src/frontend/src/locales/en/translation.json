@@ -595,6 +595,9 @@
         "cta": {
           "edit": "Edit tags"
         },
+        "formatter": {
+          "unknownFormat": "< unknown format >"
+        },
         "toast": {
           "description_loading": "Processing the request",
           "delete": {
