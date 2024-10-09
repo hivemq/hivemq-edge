@@ -19,9 +19,10 @@ import { Adapter } from '@/api/__generated__'
 
 interface DeviceTagDrawerProps {
   adapter?: Adapter
+  isDisabled?: boolean
 }
 
-const DeviceTagDrawer: FC<DeviceTagDrawerProps> = ({ adapter }) => {
+const DeviceTagDrawer: FC<DeviceTagDrawerProps> = ({ adapter, isDisabled = false }) => {
   const { t } = useTranslation()
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -31,7 +32,7 @@ const DeviceTagDrawer: FC<DeviceTagDrawerProps> = ({ adapter }) => {
         variant="primary"
         aria-label={t('device.drawer.tagList.cta.edit')}
         icon={<LuFileCog />}
-        isDisabled={false}
+        isDisabled={isDisabled}
         onClick={onOpen}
       />
       <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} closeOnOverlayClick={false}>
@@ -47,7 +48,7 @@ const DeviceTagDrawer: FC<DeviceTagDrawerProps> = ({ adapter }) => {
           </DrawerBody>
 
           <DrawerFooter>
-            <Button variant="primary" type="submit" form="namespace-form">
+            <Button variant="primary" type="submit" form="adapter-instance-form">
               {t('unifiedNamespace.submit.label')}
             </Button>
           </DrawerFooter>
