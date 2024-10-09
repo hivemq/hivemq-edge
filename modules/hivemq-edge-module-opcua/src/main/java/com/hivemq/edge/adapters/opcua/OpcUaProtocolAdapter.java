@@ -175,7 +175,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
                 OpcUaSubscriptionLifecycle temp = opcUaSubscriptionLifecycle;
                 opcUaSubscriptionLifecycle = null;
                 if (temp != null) {
-                    opcUaSubscriptionLifecycle.stop();
+                    temp.stop();
                 }
                 try {
                     return opcUaClient
@@ -194,7 +194,8 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     public void discoverValues(
             final @NotNull ProtocolAdapterDiscoveryInput input,
             final @NotNull ProtocolAdapterDiscoveryOutput output) {
-        Objects.requireNonNull(opcUaClient, "OPC UA Adapter not started yet");
+        OpcUaClient client = opcUaClient;
+        Objects.requireNonNull(client, "OPC UA Adapter not started yet");
 
         final NodeId browseRoot;
         if (input.getRootNode() == null || input.getRootNode().isBlank()) {
@@ -207,7 +208,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
             browseRoot = parsedNodeId.get();
         }
 
-        browse(opcUaClient, browseRoot, null, (ref, parent) -> {
+        browse(client, browseRoot, null, (ref, parent) -> {
             final String name = ref.getBrowseName() != null ? ref.getBrowseName().getName() : "";
             final String displayName = ref.getDisplayName() != null ? ref.getDisplayName().getText() : "";
             final NodeType nodeType = getNodeType(ref);
