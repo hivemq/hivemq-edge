@@ -34,12 +34,12 @@ const DevicePropertyDrawer: FC<DevicePropertyDrawerProps> = ({ isOpen, selectedN
   const { data, isError, isLoading } = useGetAdapterTypes()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [adapterNode] = getIncomers<Adapter, any>(selectedNode, nodes, edges)
-
-  const protocol = data?.items?.find((e) => e.id === adapterNode.data.type)
+  const incomers = getIncomers<Adapter, any>(selectedNode, nodes, edges)
+  const adapter = incomers.find(Boolean)?.data
+  const protocol = data?.items?.find((e) => e.id === adapter?.type)
 
   if (isLoading) return <LoaderSpinner />
-  if (isError) return <ErrorMessage message={t('device.errors.noAdapter')} />
+  if (isError || !adapter || !protocol) return <ErrorMessage message={t('device.errors.noAdapter')} />
 
   return (
     <Drawer isOpen={isOpen} placement="right" size="md" onClose={onClose} variant="hivemq">
@@ -52,7 +52,7 @@ const DevicePropertyDrawer: FC<DevicePropertyDrawerProps> = ({ isOpen, selectedN
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           <DrawerBody display="flex" flexDirection="column" gap={6}>
             <DeviceMetadataViewer protocolAdapter={protocol} />
-            <DeviceTagList adapter={adapterNode.data} />
+            <DeviceTagList adapter={adapter} />
           </DrawerBody>
         </DrawerBody>
       </DrawerContent>
