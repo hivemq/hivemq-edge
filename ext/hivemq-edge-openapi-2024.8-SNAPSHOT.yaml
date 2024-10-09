@@ -33,6 +33,8 @@ tags:
   name: Metrics Endpoint
 - description: Interact with protocol adapters.
   name: Protocol Adapters
+- description: Manage samples of payloads.
+  name: Payload Sampling
 - description: Configure Unified Namespace.
   name: UNS
 - description: This resource bundles endpoints for the available Finite State Machines
@@ -3884,6 +3886,43 @@ paths:
       summary: Obtain a list of configured adapters for the specified type
       tags:
       - Protocol Adapters
+  /api/v1/management/sampling/topic/{topic}:
+    get:
+      description: Obtain a list of samples that their gathered for the given topic.
+      operationId: getSamplesForTopic
+      parameters:
+      - description: The topic.
+        in: path
+        name: topic
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayloadSampleList'
+          description: Success
+      summary: Obtain a list of samples that their gathered for the given topic.
+      tags:
+      - Payload Sampling
+    post:
+      description: Start sampling for the given topic.
+      operationId: startSamplingForTopic
+      parameters:
+      - description: The topic.
+        in: path
+        name: topic
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+      summary: Start sampling for the given topic.
+      tags:
+      - Payload Sampling
   /api/v1/management/uns/isa95:
     get:
       description: Obtain isa95 config.
@@ -5010,6 +5049,22 @@ components:
           - CSV
       required:
       - contentType
+    PayloadSample:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        payload:
+          type: string
+          description: The payload of the sample. The bytes are base64 encoded to
+            ensure compatibility even if the payload is a arbitrary byte sequence.
+    PayloadSampleList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/PayloadSample'
     PolicyOperation:
       type: object
       description: The pipeline to execute when this action is triggered. The operations

@@ -230,6 +230,25 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
                         bucketIndex), queueId, shared));
     }
 
+    @Override
+    public @NotNull ListenableFuture<ImmutableList<PUBLISH>> peek(
+            @NotNull final String queueId,
+            final boolean shared,
+            final long byteLimit,
+            final int maxMessages) {
+        try {
+            checkNotNull(queueId, "Queue ID must not be null");
+        } catch (final Exception exception) {
+            return Futures.immediateFailedFuture(exception);
+        }
+        return singleWriter.submit(queueId,
+                (bucketIndex) -> checkPayloadReference(localPersistence.peek(queueId,
+                        shared,
+                        byteLimit,
+                        maxMessages,
+                        bucketIndex), queueId, shared));
+    }
+
     @NotNull
     private <T extends MessageWithID> ImmutableList<T> checkPayloadReference(
             final @NotNull ImmutableList<T> publishes, final @NotNull String queueId, final boolean shared) {
