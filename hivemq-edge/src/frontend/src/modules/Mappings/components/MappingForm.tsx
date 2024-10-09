@@ -2,6 +2,7 @@ import { type FC, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import Form from '@rjsf/chakra-ui'
 import { type IChangeEvent } from '@rjsf/core'
+import debug from 'debug'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
@@ -20,6 +21,8 @@ interface MappingFormProps {
   adapterType?: string
   type: MappingType
 }
+
+const rjsfLog = debug('RJSF:MappingForm')
 
 // TODO[NVL] Should replicate the config from the adapter form; share component?
 const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => {
@@ -57,7 +60,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => 
       onSubmit={onFormSubmit}
       validator={customFormatsValidator}
       showErrorList="bottom"
-      onError={(errors) => console.log('XXXXXXX', errors)}
+      onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
       formData={mappingManager.formData}
       widgets={adapterJSFWidgets}
       fields={adapterJSFFields}

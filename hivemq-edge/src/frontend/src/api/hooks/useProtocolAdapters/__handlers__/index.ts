@@ -710,8 +710,6 @@ export const deviceHandlers = [
     const url = new URL(request.url)
     const type = url.searchParams.get('type')
 
-    console.log('XX')
-
     return HttpResponse.json<DomainTagList>({ items: MOCK_DEVICE_TAGS(adapterId as string, type) }, { status: 200 })
   }),
 
