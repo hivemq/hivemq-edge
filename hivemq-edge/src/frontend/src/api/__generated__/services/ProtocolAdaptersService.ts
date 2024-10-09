@@ -329,4 +329,28 @@ export class ProtocolAdaptersService {
         });
     }
 
+  /**
+   * Update a domain tag
+   * Update the domain tag of an adapter
+   * @param adapterId The adapter Id.
+   * @param tagId The tag id.
+   * @param requestBody
+   * @returns any Success
+   * @throws ApiError
+   */
+  public updateAdapterAllDomainTags(
+      adapterId: string,
+      requestBody?: DomainTagList,
+  ): CancelablePromise<any> {
+    return this.httpRequest.request({
+      method: 'PUT',
+      url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
+      path: {
+        'adapterId': adapterId,
+      },
+      body: requestBody,
+      mediaType: 'application/json',
+    });
+  }
+
 }
