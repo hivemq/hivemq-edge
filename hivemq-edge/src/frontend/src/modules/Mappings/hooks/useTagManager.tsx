@@ -12,6 +12,7 @@ import { useUpdateDomainTags } from '@/api/hooks/useProtocolAdapters/useUpdateDo
 import useGetAdapterInfo from '@/modules/ProtocolAdapters/hooks/useGetAdapterInfo.ts'
 import { getInwardMappingSchema } from '@/modules/Workspace/utils/adapter.utils.ts'
 import { createSchema } from '@/modules/Device/utils/tags.utils.ts'
+import { ManagerContextType } from '@/modules/Mappings/types.ts'
 
 interface TagManagerSchema {
   isError?: boolean
@@ -88,12 +89,15 @@ export const useTagManager = (adapterId: string | undefined) => {
     toast.promise(updateListMutator.mutateAsync({ adapterId: adapterId, requestBody: tags }), formatToast('update'))
   }
 
+  const context: ManagerContextType = {
+    schema: tagSchema,
+    uiSchema: {},
+    formData: tagList,
+  }
+
   return {
     // The context of the operations
-    context: {
-      tagSchema,
-      uiSchema: {},
-    },
+    context,
     // The CRUD operations
     data: tagList,
     onUpdateList,

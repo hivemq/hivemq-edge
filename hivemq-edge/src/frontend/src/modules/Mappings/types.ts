@@ -1,6 +1,12 @@
 import { GenericObjectType, type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import { AlertProps } from '@chakra-ui/react'
 
+export interface ManagerContextType {
+  schema?: RJSFSchema
+  formData?: GenericObjectType
+  uiSchema?: UiSchema
+}
+
 export enum MappingType {
   INWARD = 'INWARD',
   OUTWARD = 'OUTWARD',
