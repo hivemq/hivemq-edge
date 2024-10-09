@@ -17,6 +17,8 @@ package com.hivemq.api.resources.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterCapability;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
@@ -35,6 +37,8 @@ import com.hivemq.api.model.status.Status;
 import com.hivemq.api.model.status.StatusList;
 import com.hivemq.api.model.status.StatusTransitionCommand;
 import com.hivemq.api.model.status.StatusTransitionResult;
+import com.hivemq.api.model.tags.DomainTagModel;
+import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
 import com.hivemq.api.utils.ApiErrorUtils;
 import com.hivemq.configuration.service.ConfigurationService;
@@ -46,6 +50,11 @@ import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidationFailure;
 import com.hivemq.edge.modules.api.adapters.ProtocolAdapterValidator;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
+import com.hivemq.persistence.domain.DomainTag;
+import com.hivemq.persistence.domain.DomainTagAddResult;
+import com.hivemq.persistence.domain.DomainTagDeleteResult;
+import com.hivemq.persistence.domain.DomainTagPersistence;
+import com.hivemq.persistence.domain.DomainTagUpdateResult;
 import com.hivemq.protocols.ProtocolAdapterManager;
 import com.hivemq.protocols.ProtocolAdapterSchemaManager;
 import com.hivemq.protocols.ProtocolAdapterUtils;
@@ -57,7 +66,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.Response;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -76,6 +87,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     private final @NotNull ProtocolAdapterManager protocolAdapterManager;
     private final @NotNull ObjectMapper objectMapper;
     private final @NotNull VersionProvider versionProvider;
+    private final @NotNull DomainTagPersistence domainTagPersistence;
 
     @Inject
     public ProtocolAdaptersResourceImpl(
@@ -83,12 +95,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             final @NotNull ConfigurationService configurationService,
             final @NotNull ProtocolAdapterManager protocolAdapterManager,
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull VersionProvider versionProvider) {
+            final @NotNull VersionProvider versionProvider,
+            final @NotNull DomainTagPersistence domainTagPersistence) {
         this.remoteService = remoteService;
         this.configurationService = configurationService;
         this.protocolAdapterManager = protocolAdapterManager;
         this.objectMapper = ProtocolAdapterUtils.createProtocolAdapterMapper(objectMapper);
         this.versionProvider = versionProvider;
+        this.domainTagPersistence = domainTagPersistence;
     }
 
     @Override
@@ -151,7 +165,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAdapter(final @NotNull String adapterId) {
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance = protocolAdapterManager.getAdapterById(adapterId);
+        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+                protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
@@ -178,12 +193,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response discoverValues(
             @NotNull final String adapterId, final @Nullable String rootNode, final @Nullable Integer depth) {
 
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance = protocolAdapterManager.getAdapterById(adapterId);
+        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+                protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
 
-        final ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter> adapterInstance = instance.get();
+        final ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter> adapterInstance =
+                instance.get();
         if (!adapterInstance.getAdapterInformation().getCapabilities().contains(ProtocolAdapterCapability.DISCOVER)) {
             return ApiErrorUtils.badRequest("Adapter does not support discovery");
         }
@@ -213,13 +230,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             Thread.currentThread().interrupt();
             log.warn("Thread was interrupted during discovery for adapter '{}'", adapterId);
             return ErrorResponseUtil.genericError("Exception during discovery.");
-        } catch (Exception e ){
+        } catch (Exception e) {
             log.warn("Exception was thrown during discovery for adapter '{}'.", adapterId);
             return ErrorResponseUtil.genericError("Exception during discovery.");
-        }
-
-
-        finally {
+        } finally {
             Thread.currentThread().setContextClassLoader(contextClassLoader);
         }
         final NodeTreeImpl nodeTree = output.getNodeTree();
@@ -235,7 +249,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             return ApiErrorUtils.notFound("Adapter Type not found by adapterType");
         }
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance = protocolAdapterManager.getAdapterById(adapter.getId());
+        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+                protocolAdapterManager.getAdapterById(adapter.getId());
         if (instance.isPresent()) {
             ApiErrorUtils.addValidationError(errorMessages, "id", "Adapter ID must be unique in system");
             return ApiErrorUtils.badRequest(errorMessages);
@@ -262,7 +277,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response updateAdapter(final @NotNull String adapterId, final @NotNull Adapter adapter) {
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance = protocolAdapterManager.getAdapterById(adapterId);
+        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+                protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Cannot update an adapter that does not exist");
         }
@@ -275,7 +291,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response deleteAdapter(final @NotNull String adapterId) {
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance = protocolAdapterManager.getAdapterById(adapterId);
+        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+                protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
         }
@@ -287,7 +304,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
-    public @NotNull Response changeStatus(final @NotNull String adapterId, final @NotNull StatusTransitionCommand command) {
+    public @NotNull Response changeStatus(
+            final @NotNull String adapterId, final @NotNull StatusTransitionCommand command) {
         ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", adapterId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", adapterId, HiveMQEdgeConstants.ID_REGEX);
@@ -332,7 +350,8 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     protected @NotNull Status getStatusInternal(final @NotNull String adapterId) {
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> optionalAdapterInstance = protocolAdapterManager.getAdapterById(adapterId);
+        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> optionalAdapterInstance =
+                protocolAdapterManager.getAdapterById(adapterId);
         return optionalAdapterInstance.map(AdapterStatusModelConversionUtils::getAdapterStatus)
                 .orElseGet(() -> Status.unknown(Status.RUNTIME_STATUS.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
     }
@@ -366,10 +385,109 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response status() {
         ImmutableList.Builder<Status> builder = new ImmutableList.Builder<>();
-        Map<String, ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> adapters = protocolAdapterManager.getProtocolAdapters();
+        Map<String, ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> adapters =
+                protocolAdapterManager.getProtocolAdapters();
         for (ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter> instance : adapters.values()) {
             builder.add(AdapterStatusModelConversionUtils.getAdapterStatus(instance));
         }
         return Response.status(200).entity(new StatusList(builder.build())).build();
     }
+
+
+    @Override
+    public @NotNull Response getDomainTagsForAdapter(@NotNull final String adapterId) {
+        final List<DomainTag> tagsForAdapter = domainTagPersistence.getTagsForAdapter(adapterId);
+        if (tagsForAdapter.isEmpty()) {
+            // empty list is also 200 as discussed.
+            return Response.ok().build();
+        }
+        final List<DomainTagModel> domainTagModels =
+                tagsForAdapter.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
+        final DomainTagModelList domainTagModelList = new DomainTagModelList(domainTagModels);
+        return Response.ok().entity(domainTagModelList).build();
+    }
+
+    @Override
+    public @NotNull Response addAdapterDomainTag(
+            @NotNull final String adapterId, @NotNull final DomainTagModel domainTag) {
+        final DomainTagAddResult domainTagAddResult =
+                domainTagPersistence.addDomainTag(adapterId, DomainTag.fromDomainTagEntity(domainTag));
+        switch (domainTagAddResult.getDomainTagPutStatus()) {
+            case SUCCESS:
+                return Response.ok().build();
+            case ALREADY_EXISTS:
+                return Response.status(403).entity(alreadyExists(domainTag.getTag())).build();
+            case INTERNAL_ERROR:
+                return Response.serverError().build();
+        }
+        return Response.serverError().build();
+    }
+
+    @Override
+    public @NotNull Response deleteDomainTag(
+            @NotNull final String adapterId, @NotNull final String tagIdBase64Encoded) {
+        final byte[] decoded = Base64.getDecoder().decode(tagIdBase64Encoded);
+        final String tagId = new String(decoded, StandardCharsets.UTF_8);
+
+        final DomainTagDeleteResult domainTagDeleteResult = domainTagPersistence.deleteDomainTag(adapterId, tagId);
+        switch (domainTagDeleteResult.getDomainTagDeleteStatus()) {
+            case SUCCESS:
+                return Response.ok().build();
+            case NOT_FOUND:
+                return Response.status(403).entity(itemNotFound(tagId)).build();
+            case INTERNAL_ERROR:
+                return Response.serverError().build();
+        }
+        return Response.serverError().build();
+    }
+
+    @Override
+    public @NotNull Response updateDomainTag(
+            final @NotNull String adapterId, @NotNull final String tagId, final @NotNull DomainTagModel domainTag) {
+        final DomainTagUpdateResult domainTagUpdateResult =
+                domainTagPersistence.updateDomainTag(adapterId, tagId, DomainTag.fromDomainTagEntity(domainTag));
+        switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
+            case SUCCESS:
+                return Response.ok().build();
+            case NOT_FOUND:
+                return Response.status(403).entity("").build();
+            case INTERNAL_ERROR:
+                return Response.serverError().build();
+        }
+        return Response.serverError().build();
+    }
+
+    @Override
+    public @NotNull Response getDomainTags() {
+        final List<DomainTag> domainTags = domainTagPersistence.getDomainTags();
+        if (domainTags.isEmpty()) {
+            // empty list is also 200 as discussed.
+            return Response.ok().build();
+        }
+        final List<DomainTagModel> domainTagModels =
+                domainTags.stream().map(DomainTagModel::fromDomainTag).collect(Collectors.toList());
+        return Response.ok().entity(new DomainTagModelList(domainTagModels)).build();
+    }
+
+
+    public @NotNull String itemNotFound(final @NotNull String tagId) {
+        final ObjectNode objectNode = objectMapper.createObjectNode();
+        objectNode.set("type", new TextNode("https://docs.hivemq.com/problem-registry/not-found"));
+        objectNode.set("title", new TextNode("The item cannot be found."));
+        objectNode.set("detail",
+                new TextNode("The tag '" + tagId + "' cannot be found and therefore cannot be deleted"));
+        objectNode.set("instance", new TextNode("/tags/"+tagId));
+        return objectNode.toString();
+    }
+
+    public @NotNull String alreadyExists(final @NotNull String tagId) {
+        final ObjectNode objectNode = objectMapper.createObjectNode();
+        objectNode.set("type", new TextNode("https://docs.hivemq.com/problem-registry/already-present"));
+        objectNode.set("title", new TextNode("The item already exists."));
+        objectNode.set("detail",
+                new TextNode("The tag '" + tagId + "' cannot be created since another item already exists with the same id."));
+        objectNode.set("instance", new TextNode("/tags"));
+        return objectNode.toString();
+    }
+
 }

@@ -41,6 +41,8 @@ import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistence
 import com.hivemq.persistence.clientsession.ClientSessionSubscriptionPersistenceImpl;
 import com.hivemq.persistence.clientsession.SharedSubscriptionService;
 import com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl;
+import com.hivemq.persistence.domain.DomainTagPersistence;
+import com.hivemq.persistence.domain.DomainTagPersistenceImpl;
 import com.hivemq.persistence.ioc.annotation.Persistence;
 import com.hivemq.persistence.ioc.provider.SingleWriterProvider;
 import com.hivemq.persistence.ioc.provider.local.PersistenceExecutorProvider;
@@ -91,6 +93,9 @@ public abstract class PersistenceModule {
 
     @Binds
     abstract @NotNull ClientQueuePersistence clientQueuePersistence(@NotNull ClientQueuePersistenceImpl clientQueuePersistence);
+
+    @Binds
+    abstract @NotNull DomainTagPersistence domainTagPersistence(@NotNull DomainTagPersistenceImpl domainTagPersistence);
 
     @Provides
     @Singleton
