@@ -1,9 +1,11 @@
 import { DeviceDataPoint, JsonNode } from '@/api/__generated__'
 import { RJSFSchema } from '@rjsf/utils'
 
+import i18n from '@/config/i18n.config.ts'
+
 export const formatTagDataPoint = (data?: DeviceDataPoint) => {
   if (data) return JSON.stringify(data, null, 4)
-  return '< unknown format >'
+  return i18n.t('device.drawer.tagList.formatter.unknownFormat')
 }
 
 const omit = (obj: JsonNode, ...props: string[]) => {
