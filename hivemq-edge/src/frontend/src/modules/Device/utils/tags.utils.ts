@@ -60,7 +60,7 @@ export const createSchema = (items: RJSFSchema) => {
       },
     },
     properties: {
-      tags: {
+      items: {
         type: 'array',
         title: 'List of tags',
         description: 'The list of all tags defined in the device',
