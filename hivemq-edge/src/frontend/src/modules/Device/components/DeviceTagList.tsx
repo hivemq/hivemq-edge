@@ -2,7 +2,7 @@ import { FC } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardBody, CardHeader, Code, Flex, Heading, HStack, List, ListItem } from '@chakra-ui/react'
 
-import { Adapter } from '@/api/__generated__'
+import { Adapter, DomainTagList } from '@/api/__generated__'
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import ErrorMessage from '@/components/ErrorMessage.tsx'
 import { PLCTag } from '@/components/MQTT/EntityTag.tsx'
@@ -16,7 +16,11 @@ interface DeviceTagListProps {
 
 const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError } = useTagManager(adapter?.id)
+  const { data, isLoading, isError, context, onUpdateList } = useTagManager(adapter?.id)
+
+  const onHandleSubmit = (data: DomainTagList | undefined) => {
+    if (data) onUpdateList(data)
+  }
 
   return (
     <Card size="sm">
@@ -25,7 +29,7 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
           <Flex flex="1" alignItems="center" flexWrap="wrap">
             <Heading size="sm">{t('device.drawer.tagList.title')}</Heading>
           </Flex>
-          <DeviceTagDrawer adapter={adapter} isDisabled={isLoading || isError} />
+          <DeviceTagDrawer isDisabled={isLoading || isError} context={context} onSubmit={onHandleSubmit} />
         </Flex>
       </CardHeader>
       <CardBody>
