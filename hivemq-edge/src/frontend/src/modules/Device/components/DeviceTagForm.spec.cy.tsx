@@ -18,7 +18,7 @@ describe('AdapterSubscriptionManager', () => {
     cy.intercept('/api/v1/management/protocol-adapters/adapters', { statusCode: 404 })
     cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags?*', { statusCode: 404 })
 
-    cy.mountWithProviders(<DeviceTagForm adapterId="my-id" adapterType="my-type" />, {
+    cy.mountWithProviders(<DeviceTagForm context={{}} />, {
       routerProps: { initialEntries: [`/node/wrong-adapter`] },
     })
     cy.getByTestId('loading-spinner').should('be.visible')
@@ -40,7 +40,7 @@ describe('AdapterSubscriptionManager', () => {
     }
     cy.intercept('/api/v1/management/protocol-adapters/adapters/*/tags*', mockResponse).as('getTags')
 
-    cy.mountWithProviders(<DeviceTagForm adapterId={mockAdapter_OPCUA_ID} adapterType={mockProtocolAdapter_OPCUA_ID} />)
+    cy.mountWithProviders(<DeviceTagForm context={{}} />)
     cy.getByTestId('loading-spinner').should('be.visible')
 
     cy.wait(['@getProtocols', '@getAdapters', '@getTags'])

@@ -12,6 +12,7 @@ export enum MappingType {
   OUTWARD = 'OUTWARD',
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface MappingManagerType<T = any> {
   schema: RJSFSchema
   formData?: GenericObjectType
