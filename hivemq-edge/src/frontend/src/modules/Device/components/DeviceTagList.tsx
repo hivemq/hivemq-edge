@@ -25,7 +25,7 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
           <Flex flex="1" alignItems="center" flexWrap="wrap">
             <Heading size="sm">{t('device.drawer.tagList.title')}</Heading>
           </Flex>
-          <DeviceTagDrawer adapter={adapter} />
+          <DeviceTagDrawer adapter={adapter} isDisabled={isLoading || isError} />
         </Flex>
       </CardHeader>
       <CardBody>
