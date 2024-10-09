@@ -12,6 +12,7 @@ import {
   isBidirectional,
 } from '@/modules/Workspace/utils/adapter.utils.ts'
 import { createSchema } from '@/modules/Device/utils/tags.utils.ts'
+import { DomainTagList } from '@/api/__generated__'
 
 export const useMappingManager = (adapterId: string) => {
   const { data: allProtocols, isLoading: isProtocolLoading } = useGetAdapterTypes()
@@ -72,8 +73,12 @@ export const useMappingManager = (adapterId: string) => {
     }
   }, [adapterInfo])
 
-  const tagsManager = useMemo<MappingManagerType | undefined>(() => {
+  const tagsManager = useMemo<MappingManagerType<DomainTagList> | undefined>(() => {
     if (!adapterInfo) return undefined
+
+    const handleOnError = (e: Error) => {
+      console.error(e.message)
+    }
 
     try {
       const schema = getInwardMappingSchema(adapterInfo.selectedProtocol)
@@ -84,8 +89,10 @@ export const useMappingManager = (adapterId: string) => {
             norender: true,
           },
         },
+        onSubmit: (e) => console.log('XXXXXXXX', e),
       }
     } catch (e) {
+      handleOnError(e as Error)
       return { schema: {}, uiSchema: {}, errors: (e as Error).message }
     }
   }, [adapterInfo])
