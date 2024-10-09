@@ -6,6 +6,7 @@ import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import {
   Adapter,
   AdaptersList,
+  type DeviceDataPoint,
   type DomainTag,
   type DomainTagList,
   JsonNode,
@@ -655,13 +656,16 @@ export const mockDataPointOPCUA: ValuesTree = {
   ],
 }
 
+export const MOCK_DEVICE_TAG_ADDRESS_MODBUS: DeviceDataPoint = { startIdx: 0, endIdx: 1 }
+export const MOCK_DEVICE_TAG_ADDRESS_OPCUA: DeviceDataPoint = { node: 'ns=3;i=1002' }
+
 export const MOCK_DEVICE_TAGS = (adapterId: string, type?: string | null): DomainTag[] => {
   switch (type) {
     case MockAdapterType.MODBUS:
-      return [{ tag: `${adapterId}/alert`, dataPoint: { startIdx: 0, endIdx: 1 } }]
+      return [{ tag: `${adapterId}/alert`, dataPoint: MOCK_DEVICE_TAG_ADDRESS_MODBUS }]
     case MockAdapterType.OPC_UA:
       return [
-        { tag: `${adapterId}/power/off`, dataPoint: { node: 'ns=3;i=1002' } },
+        { tag: `${adapterId}/power/off`, dataPoint: MOCK_DEVICE_TAG_ADDRESS_OPCUA },
         { tag: `${adapterId}/log/event`, dataPoint: { node: 'ns=3;i=1008' } },
       ]
     default:
@@ -722,6 +726,10 @@ export const deviceHandlers = [
   }),
 
   http.put('*/protocol-adapters/adapters/:adapterId/tags/:tagId', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
+
+  http.put('*/protocol-adapters/adapters/:adapterId/tags', () => {
     return HttpResponse.json({}, { status: 200 })
   }),
 ]
