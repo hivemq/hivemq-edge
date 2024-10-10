@@ -40,8 +40,6 @@ dependencies {
     compileOnly(libs.jackson.databind)
     compileOnly(libs.slf4j.api)
 
-
-    testImplementation(libs.hivemq.edge)
     testImplementation(libs.jackson.databind)
     testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.apache.commonsIO)

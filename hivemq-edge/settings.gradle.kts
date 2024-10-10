@@ -59,3 +59,10 @@ if (file("../../hivemq-edge-adapter-sdk").exists()) {
     )
 }
 
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("libs") {
+            from(files("../gradle/libs.versions.toml"))
+        }
+    }
+}
