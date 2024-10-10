@@ -42,6 +42,7 @@ dependencies {
     implementation(libs.plc4j.s7)
     implementation(libs.plc4j.ads)
     implementation(libs.plc4j.api)
+    implementation(libs.plc4j.connection.cache)
     implementation(libs.plc4j.transport.raw.socket)
 }
 
