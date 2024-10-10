@@ -161,7 +161,7 @@ public class OpcUaProtocolAdapter implements ProtocolAdapter, WritingProtocolAda
     @Override
     public @NotNull List<MqttToOpcUaMapping> getWritingContexts() {
         if(adapterConfig instanceof BidirectionalOpcUaAdapterConfig) {
-            return ((BidirectionalOpcUaAdapterConfig) adapterConfig).getMqttToOpcUaConfig().getMappings();
+            return ((BidirectionalOpcUaAdapterConfig) adapterConfig).getMqttToOpcUaConfig().getMqttToOpcUaMappings();
         }
         return Collections.emptyList();
     }
