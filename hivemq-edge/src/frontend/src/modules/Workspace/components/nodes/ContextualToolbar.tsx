@@ -128,7 +128,6 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
       >
         <ToolbarButtonGroup>
           <IconButton
-            size="sm"
             data-testid="node-group-toolbar-panel"
             icon={<LuPanelRightOpen />}
             aria-label={t('workspace.toolbar.command.overview')}

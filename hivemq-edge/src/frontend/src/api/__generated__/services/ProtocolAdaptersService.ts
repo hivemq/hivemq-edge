@@ -238,11 +238,13 @@ export class ProtocolAdaptersService {
      * Get the domain tags for the device connected through this adapter
      * Get the domain tags for the device connected through this adapter
      * @param adapterId The name of the adapter to query.
+     * @param adapterType The name of the adapter to query. (DEV ONLY - will be regenerated)
      * @returns DomainTagList Success
      * @throws ApiError
      */
     public getAdapterDomainTags(
         adapterId: string,
+        adapterType?: string
     ): CancelablePromise<DomainTagList> {
         return this.httpRequest.request({
             method: 'GET',
@@ -250,6 +252,9 @@ export class ProtocolAdaptersService {
             path: {
                 'adapterId': adapterId,
             },
+            query: {
+                'type': adapterType,
+          },
         });
     }
 
@@ -323,5 +328,29 @@ export class ProtocolAdaptersService {
             mediaType: 'application/json',
         });
     }
+
+  /**
+   * Update a domain tag
+   * Update the domain tag of an adapter
+   * @param adapterId The adapter Id.
+   * @param tagId The tag id.
+   * @param requestBody
+   * @returns any Success
+   * @throws ApiError
+   */
+  public updateAdapterAllDomainTags(
+      adapterId: string,
+      requestBody?: DomainTagList,
+  ): CancelablePromise<any> {
+    return this.httpRequest.request({
+      method: 'PUT',
+      url: '/api/v1/management/protocol-adapters/adapters/{adapterId}/tags',
+      path: {
+        'adapterId': adapterId,
+      },
+      body: requestBody,
+      mediaType: 'application/json',
+    });
+  }
 
 }
