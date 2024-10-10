@@ -36,6 +36,7 @@ export const createSchema = (items: RJSFSchema) => {
     'messageHandlingOptions',
     'mqttUserProperties'
   )
+  if (!Object.keys(sourceProperties).length) throw new Error(i18n.t('device.errors.noFormSchema'))
 
   return {
     // $schema: 'https://json-schema.org/draft/2020-12/schema',

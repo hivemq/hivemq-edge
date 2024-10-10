@@ -25,7 +25,8 @@ export const useTagManager = (adapterId: string | undefined) => {
   const toast = useToast()
 
   const { protocol, isLoading: protocolLoad } = useGetAdapterInfo(adapterId)
-  const { data: tagSchema } = useMemo<TagManagerSchema>(() => {
+  const { data: tagList, isLoading, isError: isTagError, error: tagError } = useGetDomainTags(adapterId, protocol?.id)
+  const tagManager = useMemo<TagManagerSchema>(() => {
     try {
       if (!protocol) return { isError: true, error: t('device.errors.noAdapter') }
 
@@ -37,11 +38,12 @@ export const useTagManager = (adapterId: string | undefined) => {
     }
   }, [protocol, t])
 
-  const { data: tagList, isLoading, isError: isTagError, error: tagError } = useGetDomainTags(adapterId, protocol?.id)
+  // TODO[NVL] Error formats differ too much. ProblemDetails!
   const { error, isError } = useMemo(() => {
     if (!adapterId) return { error: t('device.errors.noAdapter'), isError: true }
+    if (tagManager.isError) return { error: tagManager.error, isError: true }
     return { error: tagError, isError: isTagError }
-  }, [adapterId, isTagError, t, tagError])
+  }, [adapterId, isTagError, t, tagError, tagManager.error, tagManager.isError])
 
   const createMutator = useCreateDomainTags()
   const deleteMutator = useDeleteDomainTags()
@@ -90,7 +92,7 @@ export const useTagManager = (adapterId: string | undefined) => {
   }
 
   const context: ManagerContextType = {
-    schema: tagSchema,
+    schema: tagManager.data,
     uiSchema: {},
     formData: tagList,
   }
