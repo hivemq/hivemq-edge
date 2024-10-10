@@ -26,7 +26,7 @@
                     <modbusToMqttMapping>
                         <mqttTopic>my/topic</mqttTopic>
                         <addressRange>
-                            <endIdx>13</endIdx>
+                            <nrRegistersToRead>2</nrRegistersToRead>
                         </addressRange>
                     </modbusToMqttMapping>
                 </modbusToMqttMappings>

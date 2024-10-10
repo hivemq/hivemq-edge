@@ -1,0 +1,21 @@
+<hivemq>
+    <protocol-adapters>
+        <modbus>
+            <id>my-modbus-protocol-adapter</id>
+            <port>1234</port>
+            <host>my.modbus-server.com</host>
+            <modbusToMqtt>
+            <modbusToMqttMappings>
+                <modbusToMqttMapping>
+                    <mqttTopic>my/topic</mqttTopic>
+                    <addressRange>
+                        <startIdx>10</startIdx>
+                        <nrRegistersToRead>5</nrRegistersToRead>
+                    </addressRange>
+                    <dataType>INT_32</dataType>
+                </modbusToMqttMapping>
+            </modbusToMqttMappings>
+            </modbusToMqtt>
+        </modbus>
+    </protocol-adapters>
+</hivemq>

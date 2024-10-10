@@ -59,7 +59,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     private final @NotNull ProtocolAdapterState protocolAdapterState;
     private final @NotNull AdapterFactories adapterFactories;
 
-    private volatile @Nullable IModbusClient modbusClient;
+    private volatile @Nullable ModbusClient modbusClient;
     private final @NotNull Map<ModbusToMqttMapping, List<DataPoint>> lastSamples = new HashMap<>();
 
     public ModbusProtocolAdapter(
@@ -78,7 +78,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
         try {
             initConnection();
             output.startedSuccessfully();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             output.failStart(e, "Exception during setup of Modbus client.");
         }
 
@@ -90,7 +90,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
             if (modbusClient != null) {
                 modbusClient.disconnect();
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
                 output.failStop(e, "Error encountered closing connection to Modbus device.");
                 return;
         }
@@ -119,7 +119,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
             } else {
                 pollingOutput.fail(new IllegalStateException("client not initialised"),"The client is not initialised.");
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             pollingOutput.fail(e, null);
         }
     }
@@ -140,14 +140,14 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     }
 
 
-    private @NotNull IModbusClient initConnection() {
+    private @NotNull ModbusClient initConnection() {
         if (modbusClient == null) {
             synchronized (lock) {
                 if (modbusClient == null) {
                     if (log.isTraceEnabled()) {
                         log.trace("Creating new instance of Modbus Client with {}.", adapterConfig);
                     }
-                    modbusClient = new ModbusClient(adapterConfig);
+                    modbusClient = new ModbusClient(adapterConfig, adapterFactories.dataPointFactory());
                 }
             }
         }
@@ -162,7 +162,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
 
     @Override
     public void discoverValues(
-            @NotNull ProtocolAdapterDiscoveryInput input, @NotNull ProtocolAdapterDiscoveryOutput output) {
+            @NotNull final ProtocolAdapterDiscoveryInput input, @NotNull final ProtocolAdapterDiscoveryOutput output) {
         //-- Do the discovery of registers and coils, only for root level
         final NodeTree nodeTree = output.getNodeTree();
         if (input.getRootNode() == null) {
@@ -199,13 +199,13 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
         pollingOutput.finish();
     }
 
-    private void calculateDelta(@NotNull ModBusData modBusData, @NotNull PollingOutput pollingOutput) {
-        ModbusToMqttMapping subscription =
+    private void calculateDelta(@NotNull final ModBusData modBusData, @NotNull final PollingOutput pollingOutput) {
+        final ModbusToMqttMapping subscription =
                 (ModbusToMqttMapping) modBusData.getPollingContext();
 
-        List<DataPoint> previousSampleDataPoints = lastSamples.put(subscription, modBusData.getDataPoints());
-        List<DataPoint> currentSamplePoints = modBusData.getDataPoints();
-        List<DataPoint> delta = AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
+        final List<DataPoint> previousSampleDataPoints = lastSamples.put(subscription, modBusData.getDataPoints());
+        final List<DataPoint> currentSamplePoints = modBusData.getDataPoints();
+        final List<DataPoint> delta = AdapterDataUtils.mergeChangedSamples(previousSampleDataPoints, currentSamplePoints);
         if (log.isTraceEnabled()) {
             log.trace("Calculating change data old {} samples, new {} sample, delta {}",
                     previousSampleDataPoints != null ? previousSampleDataPoints.size() : 0,
@@ -218,25 +218,21 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
         }
     }
 
-    protected @NotNull ModBusData readRegisters(@NotNull final PollingContext sub) {
+    protected @NotNull ModBusData readRegisters(final @NotNull ModbusToMqttMapping modbusToMqttMapping) {
         try {
-            ModbusToMqttMapping subscription = (ModbusToMqttMapping) sub;
-            AddressRange addressRange = subscription.getAddressRange();
-            Short[] registers = modbusClient.readHoldingRegisters(addressRange.startIdx,
-                    addressRange.endIdx - addressRange.startIdx);
-            ModBusData data = new ModBusData(subscription, adapterFactories.dataPointFactory());
-            //add data point per register
-            for (int i = 0; i < registers.length; i++) {
-                data.addDataPoint("register-" + (addressRange.startIdx + i), registers[i]);
-            }
+            final AddressRange addressRange = modbusToMqttMapping.getAddressRange();
+            final DataPoint dataPoint = modbusClient.readHoldingRegisters(addressRange.startIdx,
+                    addressRange.nrRegistersToRead, modbusToMqttMapping.getDataType());
+            final ModBusData data = new ModBusData(modbusToMqttMapping);
+            data.addDataPoint(dataPoint);
             return data;
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     private static void addAddresses(
-            @NotNull NodeTree tree, @NotNull String parent, int startIdx, int count, int groupIdx) {
+            @NotNull final NodeTree tree, @NotNull final String parent, final int startIdx, final int count, final int groupIdx) {
 
         String parentNode = parent;
         if (groupIdx < count) {

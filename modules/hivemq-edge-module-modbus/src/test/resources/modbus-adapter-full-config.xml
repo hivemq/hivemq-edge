@@ -33,7 +33,7 @@
                         <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <addressRange>
                             <startIdx>11</startIdx>
-                            <endIdx>13</endIdx>
+                            <nrRegistersToRead>4</nrRegistersToRead>
                         </addressRange>
                         <mqttUserProperties>
                             <mqttUserProperty>
@@ -47,14 +47,15 @@
                         </mqttUserProperties>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
+                        <dataType>INT_64</dataType>
                     </modbusToMqttMapping>
                     <modbusToMqttMapping>
                         <mqttTopic>my/topic/2</mqttTopic>
                         <mqttQos>1</mqttQos>
                         <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <addressRange>
-                            <startIdx>11</startIdx>
-                            <endIdx>13</endIdx>
+                            <startIdx>16</startIdx>
+                            <nrRegistersToRead>2</nrRegistersToRead>
                         </addressRange>
                         <mqttUserProperties>
                             <mqttUserProperty>
@@ -68,6 +69,7 @@
                         </mqttUserProperties>
                         <includeTagNames>true</includeTagNames>
                         <includeTimestamp>false</includeTimestamp>
+                        <dataType>INT_32</dataType>
                     </modbusToMqttMapping>
                 </modbusToMqttMappings>
             </modbusToMqtt>
