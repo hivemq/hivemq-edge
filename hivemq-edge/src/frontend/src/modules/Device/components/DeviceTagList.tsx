@@ -40,7 +40,7 @@ const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
         )}
         {!isError && !isLoading && data && (
           // TODO[NVL] Too simple. Use a paginated table
-          <List>
+          <List data-testid="device-tags-list">
             {data.items?.map((e) => (
               <ListItem key={e.tag} m={1} display="flex" justifyContent="space-between">
                 <HStack w="100%" justifyContent="space-between">
