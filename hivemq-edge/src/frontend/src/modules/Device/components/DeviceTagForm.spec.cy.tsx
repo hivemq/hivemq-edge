@@ -33,12 +33,6 @@ describe('DeviceTagForm', () => {
               test: 'ns=3;i=1002',
             },
           },
-          // {
-          //   tag: 'opcua-generator/log/event',
-          //   dataPoint: {
-          //     test: 'ns=3;i=1008',
-          //   },
-          // },
         ],
       },
     }
