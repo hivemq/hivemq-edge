@@ -18,7 +18,6 @@ package com.hivemq.edge.adapters.opcua.opcua2mqtt;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopInput;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
-import com.hivemq.edge.adapters.opcua.config.PayloadMode;
 import com.hivemq.mqtt.message.publish.PUBLISH;
 import com.hivemq.protocols.ProtocolAdapterStopOutputImpl;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
