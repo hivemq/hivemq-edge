@@ -38,6 +38,7 @@ import org.apache.plc4x.java.api.messages.PlcReadResponse;
 import org.apache.plc4x.java.api.types.PlcResponseCode;
 import org.apache.plc4x.java.api.value.PlcValue;
 import org.apache.plc4x.java.spi.messages.DefaultPlcReadResponse;
+import org.apache.plc4x.java.utils.cache.CachedPlcConnectionManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -65,6 +66,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
     protected static final String TAG_ADDRESS_TYPE_SEP = ":";
     private final Logger log = LoggerFactory.getLogger(getClass());
     protected final static @NotNull PlcDriverManager driverManager = PlcDriverManager.getDefault();
+    protected final static @NotNull CachedPlcConnectionManager cachedConnectionManager = CachedPlcConnectionManager.getBuilder().build();
     private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     protected final @NotNull T adapterConfig;
@@ -178,6 +180,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
 
     protected @NotNull Plc4xConnection<T> createConnection() throws Plc4xException {
         return new Plc4xConnection<>(driverManager,
+                cachedConnectionManager,
                 adapterConfig,
                 plc4xAdapterConfig -> Plc4xDataUtils.createQueryString(createQueryStringParams(plc4xAdapterConfig),
                         true)) {

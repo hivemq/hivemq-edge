@@ -15,6 +15,7 @@ hivemq-edge-adapterSdk = { module = "com.hivemq:hivemq-edge-adapter-sdk", versio
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 mockito-junitJupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 plc4j-api = { module = "org.apache.plc4x:plc4j-api", version.ref = "apache-plc4x" }
+plc4j-connection-cache = { module = "org.apache.plc4x:plc4j-connection-cache", version.ref = "apache-plc4x" }
 plc4j-s7 = { module = "org.apache.plc4x:plc4j-driver-s7", version.ref = "apache-plc4x" }
 plc4j-ads = { module = "org.apache.plc4x:plc4j-driver-ads", version.ref = "apache-plc4x" }
 plc4j-transport-raw-socket = { module = "org.apache.plc4x:plc4j-transport-raw-socket", version.ref = "apache-plc4x" }

@@ -19,6 +19,7 @@ import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import org.apache.plc4x.java.api.PlcConnection;
+import org.apache.plc4x.java.api.PlcConnectionManager;
 import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.exceptions.PlcConnectionException;
 import org.apache.plc4x.java.api.messages.PlcReadRequest;
@@ -41,17 +42,20 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig<?>> {
 
     private final Object lock = new Object();
     protected final @NotNull PlcDriverManager plcDriverManager;
+    protected final @NotNull PlcConnectionManager plcConnectionManager;
     protected final @NotNull T config;
     protected final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider;
     protected volatile @NotNull PlcConnection plcConnection;
 
     public Plc4xConnection(
             final @NotNull PlcDriverManager plcDriverManager,
+            final @NotNull PlcConnectionManager plcConnectionManager,
             final @NotNull T config,
             final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider) throws Plc4xException {
         this.plcDriverManager = plcDriverManager;
         this.config = config;
         this.connectionQueryStringProvider = connectionQueryStringProvider;
+        this.plcConnectionManager = plcConnectionManager;
         if (!validConfiguration(config)) {
             if (log.isTraceEnabled()) {
                 log.trace("Configuration provided to PLC4X, connection was considered invalid by implementation");
@@ -83,7 +87,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig<?>> {
                         if (log.isTraceEnabled()) {
                             log.trace("Connecting via PLC4X to {}.", connectionString);
                         }
-                        plcConnection = plcDriverManager.getConnectionManager().getConnection(connectionString);
+                        plcConnection = plcConnectionManager.getConnection(connectionString);
                     }
                 }
             }
