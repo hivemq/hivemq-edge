@@ -16,16 +16,8 @@ describe('formatTagDataPoint', () => {
 
 describe('createSchema', () => {
   it('should return a wrong schema if items not defined', () => {
-    expect(createSchema({ fakeProperty: 'my-property' })).toStrictEqual(
-      expect.objectContaining({
-        definitions: expect.objectContaining({
-          DeviceDataPoint: expect.objectContaining({
-            properties: {},
-          }),
-          DomainTag: expect.objectContaining({}),
-        }),
-        properties: expect.objectContaining({}),
-      })
+    expect(() => createSchema({ fakeProperty: 'my-property' })).toThrowError(
+      'The form cannot be created, due to internal errors'
     )
   })
 
