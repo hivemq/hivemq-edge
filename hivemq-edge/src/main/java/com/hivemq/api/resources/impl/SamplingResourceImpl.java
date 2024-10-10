@@ -27,6 +27,7 @@ import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 
 @Singleton
@@ -46,6 +47,10 @@ public class SamplingResourceImpl implements SamplingApi {
 
         final List<byte[]> samples = samplingService.getSamples(topic);
         final ArrayList<PayloadSample> sampleArrayList = new ArrayList<>();
+
+        // we want LIFO, but the queue return FIFO
+        Collections.reverse(samples);
+
         samples.forEach(sample -> sampleArrayList.add(new PayloadSample(Base64.getEncoder().encodeToString(sample))));
         return Response.ok().entity(new PayloadSampleList(sampleArrayList)).build();
     }
@@ -53,7 +58,6 @@ public class SamplingResourceImpl implements SamplingApi {
     @Override
     public @NotNull Response startSamplingForTopic(@NotNull final String topicBase64) {
         final String topic = new String(Base64.getDecoder().decode(topicBase64), StandardCharsets.UTF_8);
-        System.err.println(topicBase64 + "->" + topic);
         samplingService.startSampling(topic);
         return Response.ok().build();
     }

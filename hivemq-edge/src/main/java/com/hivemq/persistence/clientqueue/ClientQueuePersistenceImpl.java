@@ -53,6 +53,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.hivemq.persistence.clientsession.SharedSubscriptionServiceImpl.SharedSubscription;
+import static com.hivemq.sampling.SamplingService.SAMPLER_PREFIX;
 
 @Singleton
 public class ClientQueuePersistenceImpl extends AbstractPersistence implements ClientQueuePersistence {
@@ -108,12 +109,20 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
             return Futures.immediateFailedFuture(exception);
         }
 
+
         return singleWriter.submit(queueId, (bucketIndex) -> {
+            MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
+                    mqttConfigurationService.getQueuedMessagesStrategy();
+            // TODO thats super ugly.
+            if(queueId.startsWith(SAMPLER_PREFIX)){
+                queuedMessagesStrategy = MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
+            }
+
             localPersistence.add(queueId,
                     shared,
                     publish,
                     queueLimit,
-                    mqttConfigurationService.getQueuedMessagesStrategy(),
+                    queuedMessagesStrategy,
                     retained,
                     bucketIndex);
             final int queueSize = localPersistence.size(queueId, shared, bucketIndex);
@@ -145,11 +154,17 @@ public class ClientQueuePersistenceImpl extends AbstractPersistence implements C
 
         return singleWriter.submit(queueId, (bucketIndex) -> {
             final boolean queueWasEmpty = localPersistence.size(queueId, shared, bucketIndex) == 0;
+            MqttConfigurationService.QueuedMessagesStrategy queuedMessagesStrategy =
+                    mqttConfigurationService.getQueuedMessagesStrategy();
+            // TODO thats super ugly.
+            if(queueId.startsWith(SAMPLER_PREFIX)){
+                queuedMessagesStrategy = MqttConfigurationService.QueuedMessagesStrategy.DISCARD_OLDEST;
+            }
+
             localPersistence.add(queueId,
                     shared,
                     publishes,
-                    queueLimit,
-                    mqttConfigurationService.getQueuedMessagesStrategy(),
+                    queueLimit, queuedMessagesStrategy,
                     retained,
                     bucketIndex);
             if (queueWasEmpty) {

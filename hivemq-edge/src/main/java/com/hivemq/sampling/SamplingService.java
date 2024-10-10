@@ -36,7 +36,7 @@ public class SamplingService {
 
     private final @NotNull LocalTopicTree localTopicTree;
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
-    private static final @NotNull String SAMPLER_PREFIX = "Sampler#";
+    public static final @NotNull String SAMPLER_PREFIX = "Sampler#";
 
 
     @Inject
@@ -62,7 +62,7 @@ public class SamplingService {
     public @NotNull List<byte[]> getSamples(final @NotNull String topic) {
         final String clientId = SAMPLER_PREFIX + topic;
         final String queueId = clientId + "/" + topic;
-        final ListenableFuture<ImmutableList<PUBLISH>> publishes = clientQueuePersistence.peek(queueId, true, 10_000, 10);
+        final ListenableFuture<ImmutableList<PUBLISH>> publishes = clientQueuePersistence.peek(queueId, true, 100_000, 10);
         try {
          return publishes.get().stream().map(PUBLISH::getPayload).collect(Collectors.toList());
         } catch (InterruptedException | ExecutionException e) {

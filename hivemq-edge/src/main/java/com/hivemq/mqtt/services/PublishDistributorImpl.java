@@ -49,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
 import static com.hivemq.mqtt.handler.publish.PublishStatus.*;
+import static com.hivemq.sampling.SamplingService.SAMPLER_PREFIX;
 
 /**
  * @author Christoph Schäbel
@@ -185,6 +186,8 @@ public class PublishDistributorImpl implements PublishDistributor {
                         appliedQoS = 0;
                     }
                 }
+            }else if(client.startsWith(SAMPLER_PREFIX)){
+                appliedQueueLimit = 10L;
             }
 
             return queuePublish(client,

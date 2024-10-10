@@ -381,7 +381,6 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
 
             // check for expiration, but do not modify the queue
             if (!publishWithRetained.isExpired()) {
-                messageCount++;
                 bytes += publishWithRetained.getEstimatedSizeInMemory();
                 // check if adding the message would exceed the byte limit
                 if ((bytes > bytesLimit)) {
