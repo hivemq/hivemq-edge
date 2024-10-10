@@ -36,7 +36,7 @@ public class MqttToOpcUaConfig {
         this.mqttToOpcUatMappings = Objects.requireNonNullElse(MqttToOpcUatMappings, List.of());
     }
 
-    public @NotNull List<MqttToOpcUaMapping> getMappings() {
+    public @NotNull List<MqttToOpcUaMapping> getMqttToOpcUaMappings() {
         return mqttToOpcUatMappings;
     }
 }

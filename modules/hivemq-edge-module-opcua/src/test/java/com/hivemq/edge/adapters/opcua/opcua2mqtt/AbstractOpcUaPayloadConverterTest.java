@@ -25,13 +25,13 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapterInformation;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
-import com.hivemq.edge.adapters.opcua.config.PayloadMode;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.mqtt.message.QoS;
@@ -80,6 +80,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
                 "protocolId"));
         when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
         when(protocolAdapterInput.adapterFactories()).thenReturn(adapterFactories);
+        when(protocolAdapterInput.getProtocolAdapterMetricsHelper()).thenReturn(mock(ProtocolAdapterMetricsService.class));
         when(adapterPublishService.createPublish()).thenReturn(adapterPublishBuilder);
         when(moduleServices.adapterPublishService()).thenReturn(adapterPublishService);
         when(eventService.createAdapterEvent(any(), any())).thenReturn(new EventBuilderImpl(event -> {}));
@@ -87,8 +88,7 @@ abstract class AbstractOpcUaPayloadConverterTest {
     }
 
     @NotNull
-    protected OpcUaProtocolAdapter createAndStartAdapter(
-            final @NotNull String subcribedNodeId, final PayloadMode payloadMode) throws Exception {
+    protected OpcUaProtocolAdapter createAndStartAdapter(final @NotNull String subcribedNodeId) throws Exception {
 
         final OpcUaToMqttConfig opcuaToMqttConfig =
                 new OpcUaToMqttConfig(List.of(new OpcUaToMqttMapping(subcribedNodeId, "topic", null, null, null, null)));

@@ -19,95 +19,92 @@ import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.OpcUaException;
-import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
-import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn;
+import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoredItemCreateRequest;
 import org.eclipse.milo.opcua.stack.core.types.structured.MonitoringParameters;
 import org.eclipse.milo.opcua.stack.core.types.structured.ReadValueId;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 
-public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
+public class OpcUaSubscriptionConsumer {
     private static final Logger log = LoggerFactory.getLogger(OpcUaSubscriptionConsumer.class);
 
     private final @NotNull OpcUaToMqttMapping subscription;
     private final @NotNull ReadValueId readValueId;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
     private final @NotNull EventService eventService;
-    private final @NotNull CompletableFuture<Void> resultFuture;
-    private final @NotNull OpcUaClient opcUaClient;
-    private final @NotNull Map<UInteger, OpcUaToMqttMapping> subscriptionMap;
+    private final @NotNull SerializationContext serializationContext;
+    private final @NotNull Optional<EndpointDescription> endpointDescription;
     private final @NotNull ProtocolAdapterMetricsService metricsHelper;
     private final @NotNull String adapterId;
-    private final @NotNull OpcUaProtocolAdapter protocolAdapter;
+    private final @NotNull String protocolAdapterId;
+    private final @NotNull UaSubscription uaSubscription;
 
     public OpcUaSubscriptionConsumer(
             final @NotNull OpcUaToMqttMapping subscription,
+            final @NotNull UaSubscription uaSubscription,
             final @NotNull ReadValueId readValueId,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @Nullable EventService eventService,
-            final @NotNull CompletableFuture<Void> resultFuture,
-            final @NotNull OpcUaClient opcUaClient,
-            final @NotNull Map<UInteger, OpcUaToMqttMapping> subscriptionMap,
+            final @NotNull EventService eventService,
+            final @NotNull Optional<EndpointDescription> endpointDescription,
+            final @NotNull SerializationContext serializationContext,
             final @NotNull ProtocolAdapterMetricsService metricsHelper,
             final @NotNull String adapterId,
-            final @NotNull OpcUaProtocolAdapter protocolAdapter) {
+            final @NotNull String protocolAdapterId) {
         this.subscription = subscription;
         this.readValueId = readValueId;
         this.adapterPublishService = adapterPublishService;
         this.eventService = eventService;
-        this.resultFuture = resultFuture;
-        this.opcUaClient = opcUaClient;
-        this.subscriptionMap = subscriptionMap;
+        this.serializationContext = serializationContext;
+        this.endpointDescription = endpointDescription;
         this.metricsHelper = metricsHelper;
         this.adapterId = adapterId;
-        this.protocolAdapter = protocolAdapter;
+        this.protocolAdapterId = protocolAdapterId;
+        this.uaSubscription = uaSubscription;
     }
 
-    @Override
-    public void accept(final UaSubscription uaSubscription) {
-
-        subscriptionMap.put(uaSubscription.getSubscriptionId(), subscription);
+    public CompletableFuture<SubscriptionResult> start() {
         // create a new client handle, these have to be unique for each handle.
-        UInteger clientHandle = uaSubscription.nextClientHandle();
+        final UInteger clientHandle = uaSubscription.nextClientHandle();
 
-        MonitoringParameters parameters = new MonitoringParameters(clientHandle,
+        final MonitoringParameters parameters = new MonitoringParameters(clientHandle,
                 (double) subscription.getPublishingInterval(),
                 null,
                 uint(subscription.getServerQueueSize()),
                 true);
 
-        MonitoredItemCreateRequest request =
+        final MonitoredItemCreateRequest request =
                 new MonitoredItemCreateRequest(readValueId, MonitoringMode.Reporting, parameters);
 
-        UaSubscription.ItemCreationCallback onItemCreated =
+        final UaSubscription.ItemCreationCallback onItemCreated =
                 (item, id) -> item.setValueConsumer(new OpcUaDataValueConsumer(subscription,
                         adapterPublishService,
-                        opcUaClient,
+                        serializationContext,
+                        endpointDescription,
                         readValueId.getNodeId(),
                         metricsHelper,
                         adapterId,
                         eventService,
-                        protocolAdapter));
+                        protocolAdapterId));
 
-        uaSubscription.createMonitoredItems(TimestampsToReturn.Both, List.of(request), onItemCreated)
-                .thenAccept(items -> {
+        return uaSubscription
+                .createMonitoredItems(TimestampsToReturn.Both, List.of(request), onItemCreated)
+                .thenApply(items -> {
                     for (final UaMonitoredItem item : items) {
                         if (item.getStatusCode().isGood()) {
                             if (log.isDebugEnabled()) {
@@ -132,11 +129,22 @@ public class OpcUaSubscriptionConsumer implements Consumer<UaSubscription> {
                                     "')");
                         }
                     }
-                    resultFuture.complete(null);
-                })
-                .exceptionally(monitorThrowable -> {
-                    resultFuture.completeExceptionally(monitorThrowable);
-                    return null;
+                    return new SubscriptionResult(subscription, uaSubscription, this);
                 });
+    }
+
+    public static class SubscriptionResult {
+        public final @NotNull OpcUaToMqttMapping subscription;
+        public final @NotNull UaSubscription uaSubscription;
+        public final @NotNull OpcUaSubscriptionConsumer consumer;
+
+        public SubscriptionResult(
+                final @NotNull OpcUaToMqttMapping subscription,
+                final @NotNull UaSubscription uaSubscription,
+                final @NotNull OpcUaSubscriptionConsumer consumer) {
+            this.subscription = subscription;
+            this.uaSubscription = uaSubscription;
+            this.consumer = consumer;
+        }
     }
 }

@@ -24,6 +24,7 @@ import com.google.gson.JsonPrimitive;
 import org.eclipse.milo.opcua.binaryschema.Struct;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.StatusCodes;
+import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.ByteString;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
@@ -59,14 +60,15 @@ public class OpcUaJsonPayloadConverter {
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
     public static @NotNull ByteBuffer convertPayload(
-            final @NotNull OpcUaClient opcUaClient, @NotNull final DataValue dataValue) {
+            final @NotNull SerializationContext serializationContext,
+            final @NotNull DataValue dataValue) {
         final Object value = dataValue.getValue().getValue();
         final boolean reversibleMode = false;
         final JsonObject jsonObject = new JsonObject();
         if (reversibleMode) {
             addDataValueFields(dataValue, jsonObject, reversibleMode);
         }
-        convertValue(value, jsonObject, reversibleMode, "value", opcUaClient);
+        convertValue(value, jsonObject, reversibleMode, "value", serializationContext);
         return ByteBuffer.wrap(GSON.toJson(jsonObject).getBytes(StandardCharsets.UTF_8));
     }
 
@@ -75,10 +77,10 @@ public class OpcUaJsonPayloadConverter {
             final @NotNull JsonObject holder,
             final boolean reversibleMode,
             final @NotNull String fieldName,
-            final @NotNull OpcUaClient opcUaClient) {
+            final @NotNull SerializationContext serializationContext) {
         if (value instanceof DataValue) {
             addDataValueFields((DataValue) value, holder, reversibleMode);
-            convertValue(((DataValue) value).getValue(), holder, reversibleMode, fieldName, opcUaClient);
+            convertValue(((DataValue) value).getValue(), holder, reversibleMode, fieldName, serializationContext);
         } else if (value instanceof Boolean) {
             holder.add(fieldName, new JsonPrimitive((Boolean) value));
         } else if (value instanceof Byte) {
@@ -149,12 +151,12 @@ public class OpcUaJsonPayloadConverter {
             if (!reversibleMode) {
                 try {
                     final Object decodedValue =
-                            ((ExtensionObject) value).decode(opcUaClient.getDynamicSerializationContext());
-                    convertValue(decodedValue, holder, reversibleMode, fieldName, opcUaClient);
+                            ((ExtensionObject) value).decode(serializationContext);
+                    convertValue(decodedValue, holder, reversibleMode, fieldName, serializationContext);
                 } catch (Throwable t) {
                     log.debug("Not able to decode body of OPC UA ExtensionObject, using undecoded body value instead",
                             t);
-                    convertValue(((ExtensionObject) value).getBody(), holder, reversibleMode, fieldName, opcUaClient);
+                    convertValue(((ExtensionObject) value).getBody(), holder, reversibleMode, fieldName, serializationContext);
                 }
 
             } else {
@@ -172,13 +174,13 @@ public class OpcUaJsonPayloadConverter {
                 }
 
                 final Object decodedValue =
-                        ((ExtensionObject) value).decode(opcUaClient.getDynamicSerializationContext());
-                convertValue(decodedValue, extensionObject, reversibleMode, "body", opcUaClient);
+                        ((ExtensionObject) value).decode(serializationContext);
+                convertValue(decodedValue, extensionObject, reversibleMode, "body", serializationContext);
                 holder.add(fieldName, extensionObject);
             }
         } else if (value instanceof Variant) {
             if (!reversibleMode) {
-                convertValue(((Variant) value).getValue(), holder, reversibleMode, fieldName, opcUaClient);
+                convertValue(((Variant) value).getValue(), holder, reversibleMode, fieldName, serializationContext);
             } else {
                 final JsonObject variant = new JsonObject();
                 final Optional<ExpandedNodeId> dataType = ((Variant) value).getDataType();
@@ -186,7 +188,7 @@ public class OpcUaJsonPayloadConverter {
                     final Number typeId = dataType.get().getNamespaceIndex();
                     variant.add("type", new JsonPrimitive(typeId));
                 }
-                convertValue(((Variant) value).getValue(), variant, reversibleMode, "body", opcUaClient);
+                convertValue(((Variant) value).getValue(), variant, reversibleMode, "body", serializationContext);
                 holder.add(fieldName, variant);
             }
         } else if (value instanceof DiagnosticInfo) {
@@ -196,7 +198,7 @@ public class OpcUaJsonPayloadConverter {
             final Struct struct = (Struct) value;
             final JsonObject structRoot = new JsonObject();
             for (Struct.Member member : struct.getMembers().values()) {
-                convertValue(member.getValue(), structRoot, reversibleMode, member.getName(), opcUaClient);
+                convertValue(member.getValue(), structRoot, reversibleMode, member.getName(), serializationContext);
             }
             holder.add(fieldName, structRoot);
         } else {

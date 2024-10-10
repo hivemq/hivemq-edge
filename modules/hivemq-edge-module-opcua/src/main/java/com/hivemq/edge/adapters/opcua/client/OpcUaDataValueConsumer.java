@@ -22,13 +22,10 @@ import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.events.model.Payload;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
-import com.hivemq.edge.adapters.opcua.OpcUaProtocolAdapter;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
-import com.hivemq.edge.adapters.opcua.config.PayloadMode;
 import com.hivemq.edge.adapters.opcua.opcua2mqtt.OpcUaJsonPayloadConverter;
-import com.hivemq.edge.adapters.opcua.opcua2mqtt.OpcUaStringPayloadConverter;
 import com.hivemq.edge.adapters.opcua.util.Bytes;
-import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
+import org.eclipse.milo.opcua.stack.core.serialization.SerializationContext;
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue;
 import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
 import org.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;
@@ -37,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -48,38 +46,41 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
 
     private final @NotNull OpcUaToMqttMapping mapping;
     private final @NotNull ProtocolAdapterPublishService adapterPublishService;
-    private final @NotNull OpcUaClient opcUaClient;
+    private final @NotNull SerializationContext serializationContext;
+    private final @NotNull Optional<EndpointDescription> endpoint;
     private final @NotNull NodeId nodeId;
     private final @NotNull ProtocolAdapterMetricsService metricsHelper;
     private final @NotNull EventService eventService;
-    private final @NotNull OpcUaProtocolAdapter protocolAdapter;
+    private final @NotNull String protocolAdapterId;
     private final @NotNull String adapterId;
     private final @NotNull AtomicBoolean firstMessageReceived = new AtomicBoolean(false);
 
     public OpcUaDataValueConsumer(
             final @NotNull OpcUaToMqttMapping mapping,
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
-            final @NotNull OpcUaClient opcUaClient,
+            final @NotNull SerializationContext serializationContext,
+            final @NotNull Optional<EndpointDescription> endpoint,
             final @NotNull NodeId nodeId,
             final @NotNull ProtocolAdapterMetricsService metricsHelper,
             final @NotNull String adapterId,
             final @NotNull EventService eventService,
-            final @NotNull OpcUaProtocolAdapter protocolAdapter) {
+            final @NotNull String protocolAdapterId) {
         this.mapping = mapping;
         this.adapterPublishService = adapterPublishService;
-        this.opcUaClient = opcUaClient;
         this.nodeId = nodeId;
         this.adapterId = adapterId;
         this.metricsHelper = metricsHelper;
         this.eventService = eventService;
-        this.protocolAdapter = protocolAdapter;
+        this.protocolAdapterId = protocolAdapterId;
+        this.serializationContext = serializationContext;
+        this.endpoint = endpoint;
     }
 
     @Override
     public void accept(final @NotNull DataValue dataValue) {
         try {
 
-            final byte[] convertedPayload = convertPayload(dataValue, PayloadMode.JSON);
+            final byte[] convertedPayload = convertPayload(dataValue, serializationContext);
             final ProtocolAdapterPublishBuilder publishBuilder = adapterPublishService.createPublish()
                     .withTopic(mapping.getMqttTopic())
                     .withPayload(convertedPayload)
@@ -89,21 +90,19 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
             publishBuilder.withMessageExpiryInterval(mapping.getMessageExpiryInterval());
 
             try {
-
-                final EndpointDescription endpoint = opcUaClient.getStackClient().getConfig().getEndpoint();
-                if (endpoint != null) {
-                    publishBuilder.withContextInformation("opcua-server-endpoint-url", endpoint.getEndpointUrl());
+                endpoint.ifPresent(ep -> {
+                    publishBuilder.withContextInformation("opcua-server-endpoint-url", ep.getEndpointUrl());
                     publishBuilder.withContextInformation("opcua-server-application-uri",
-                            endpoint.getServer().getApplicationUri());
-                }
-            } catch (Exception e) {
+                    ep.getServer().getApplicationUri());
+                });
+            } catch (final Exception e) {
                 //ignore, but log
                 log.debug("Not able to get dynamic context infos for OPC UA message for adapter {}", adapterId);
             }
 
 
             if (firstMessageReceived.compareAndSet(false, true)) {
-                eventService.createAdapterEvent(adapterId, protocolAdapter.getId())
+                eventService.createAdapterEvent(adapterId, protocolAdapterId)
                         .withSeverity(Event.SEVERITY.INFO)
                         .withMessage(String.format("Adapter '%s' took first sample to be published to '%s'",
                                 adapterId,
@@ -117,6 +116,7 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
             publishFuture.thenAccept(publishReturnCode -> {
                 metricsHelper.incrementReadPublishSuccess();
             }).exceptionally(throwable -> {
+                log.error("Error on publishing from OPC UA subscription for adapter {}", adapterId, throwable);
                 metricsHelper.incrementReadPublishFailure();
                 return null;
             });
@@ -126,19 +126,13 @@ public class OpcUaDataValueConsumer implements Consumer<DataValue> {
         }
     }
 
-    private byte @NotNull [] convertPayload(
-            DataValue dataValue, final @NotNull PayloadMode payloadMode) {
+    private static byte @NotNull [] convertPayload(
+            final @NotNull DataValue dataValue,
+            final @NotNull SerializationContext serializationContext) {
         //null value, emtpy buffer
         if (dataValue.getValue().getValue() == null) {
             return EMTPY_BYTES;
         }
-        //option to choose different encoding types here -> string vs. json ...
-        switch (payloadMode) {
-            case STRING:
-                return Bytes.fromReadOnlyBuffer(OpcUaStringPayloadConverter.convertPayload(dataValue));
-            case JSON:
-            default:
-                return Bytes.fromReadOnlyBuffer(OpcUaJsonPayloadConverter.convertPayload(opcUaClient, dataValue));
-        }
+        return Bytes.fromReadOnlyBuffer(OpcUaJsonPayloadConverter.convertPayload(serializationContext, dataValue));
     }
 }

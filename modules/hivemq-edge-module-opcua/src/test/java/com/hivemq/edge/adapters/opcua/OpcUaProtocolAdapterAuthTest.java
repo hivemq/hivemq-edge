@@ -20,6 +20,7 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.edge.adapters.opcua.config.Auth;
 import com.hivemq.edge.adapters.opcua.config.BasicAuth;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
@@ -55,6 +56,10 @@ class OpcUaProtocolAdapterAuthTest {
         when(protocolAdapterInput.getProtocolAdapterState()).thenReturn(new ProtocolAdapterStateImpl(mock(),
                 "id",
                 "protocolId"));
+        final ModuleServices moduleServices = mock();
+        when(moduleServices.eventService()).thenReturn(mock(EventService.class));
+        when(moduleServices.adapterPublishService()).thenReturn(mock(ProtocolAdapterPublishService.class));
+        when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
     }
 
     @Test
@@ -69,6 +74,7 @@ class OpcUaProtocolAdapterAuthTest {
                 null);
 
         when(protocolAdapterInput.getConfig()).thenReturn(config);
+
         final OpcUaProtocolAdapter protocolAdapter =
                 new OpcUaProtocolAdapter(OpcUaProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
 
