@@ -139,9 +139,9 @@ public class OpcUaSubscriptionConsumer {
         public final @NotNull OpcUaSubscriptionConsumer consumer;
 
         public SubscriptionResult(
-                @NotNull final OpcUaToMqttMapping subscription,
-                @NotNull final UaSubscription uaSubscription,
-                @NotNull final OpcUaSubscriptionConsumer consumer) {
+                final @NotNull OpcUaToMqttMapping subscription,
+                final @NotNull UaSubscription uaSubscription,
+                final @NotNull OpcUaSubscriptionConsumer consumer) {
             this.subscription = subscription;
             this.uaSubscription = uaSubscription;
             this.consumer = consumer;
