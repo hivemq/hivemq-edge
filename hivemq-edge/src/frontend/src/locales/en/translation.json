@@ -718,13 +718,10 @@
       "command": {
         "overview": "Open the overview panel",
         "group": "Group the selected adapters",
-        "device": {
-          "metadata": "Edit device tags"
-        },
         "mappings": {
           "common": "Manage mappings of the device",
-          "inward": "Edit inward mappings",
-          "outward": "Edit outward mappings"
+          "inward": "Inward mappings",
+          "outward": "Outward mappings"
         }
       }
     },
