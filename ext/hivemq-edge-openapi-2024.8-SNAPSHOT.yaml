@@ -3640,13 +3640,12 @@ paths:
                   summary: An example response in case an tag is already present for
                     this tagId.
                   value:
-                    type: https://docs.hivemq.com/problem-registry/already-present
-                    title: The item already exists.
-                    detail: The tag 'tag' cannot be created since another item already
-                      exists with the same id.
-                    instance: /tags
+                    errors:
+                    - title: The resource already exists
+                      detail: The tag 'tag' cannot be created since another item already
+                        exists with the same id.
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/Errors'
           description: Already Present
       summary: Add a new domain tag to the specified adapter
       tags:
@@ -3679,13 +3678,11 @@ paths:
                   summary: An example response in case no tag is present for this
                     tagId.
                   value:
-                    type: https://docs.hivemq.com/problem-registry/not-found
-                    title: The item cannot be found.
-                    detail: The tag 'tag1' cannot be found and therefore cannot be
-                      deleted
-                    instance: /tags/tag1
+                    errors:
+                    - title: Resource not found
+                      detail: Tag with id 'tag1' not found
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/Errors'
           description: Not Found
       summary: Update the domain tag of an adapter.
       tags:
@@ -3747,13 +3744,11 @@ paths:
                   summary: An example response in case no tag is present for this
                     tagId.
                   value:
-                    type: https://docs.hivemq.com/problem-registry/not-found
-                    title: The item cannot be found.
-                    detail: The tag 'tag1' cannot be found and therefore cannot be
-                      deleted
-                    instance: /tags/tag1
+                    errors:
+                    - title: Resource not found
+                      detail: Tag with id 'tag1' not found
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/Errors'
           description: Not Found
       summary: Update the domain tag of an adapter.
       tags:
