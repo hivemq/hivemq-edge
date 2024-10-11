@@ -3886,6 +3886,27 @@ paths:
       summary: Obtain a list of configured adapters for the specified type
       tags:
       - Protocol Adapters
+  /api/v1/management/sampling/schema/{topic}:
+    get:
+      description: Obtain a JsonSchema based in the stored samples for a given topic.
+      operationId: getSchemaForTopic
+      parameters:
+      - description: The topic.
+        in: path
+        name: topic
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JsonNode'
+          description: Success
+      summary: Obtain a JsonSchema based in the stored samples for a given topic.
+      tags:
+      - Payload Sampling
   /api/v1/management/sampling/topic/{topic}:
     get:
       description: Obtain a list of samples that their gathered for the given topic.

@@ -15,15 +15,23 @@
  */
 package com.hivemq.api.resources.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.model.samples.PayloadSample;
 import com.hivemq.api.model.samples.PayloadSampleList;
 import com.hivemq.api.resources.SamplingApi;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.sampling.SamplingService;
+import com.hivemq.util.ErrorResponseUtil;
+import com.saasquatch.jsonschemainferrer.AdditionalPropertiesPolicies;
+import com.saasquatch.jsonschemainferrer.JsonSchemaInferrer;
+import com.saasquatch.jsonschemainferrer.RequiredPolicies;
+import com.saasquatch.jsonschemainferrer.SpecVersion;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -34,10 +42,19 @@ import java.util.List;
 public class SamplingResourceImpl implements SamplingApi {
 
     private final @NotNull SamplingService samplingService;
+    private final @NotNull ObjectMapper objectMapper;
+    private static final JsonSchemaInferrer INFERRER = JsonSchemaInferrer.newBuilder()
+            .setSpecVersion(SpecVersion.DRAFT_07)
+            .setAdditionalPropertiesPolicy(AdditionalPropertiesPolicies.notAllowed())
+            .setRequiredPolicy(RequiredPolicies.nonNullCommonFields())
+            .build();
+
 
     @Inject
-    public SamplingResourceImpl(final @NotNull SamplingService samplingService) {
+    public SamplingResourceImpl(
+            final @NotNull SamplingService samplingService, final @NotNull ObjectMapper objectMapper) {
         this.samplingService = samplingService;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -53,6 +70,28 @@ public class SamplingResourceImpl implements SamplingApi {
 
         samples.forEach(sample -> sampleArrayList.add(new PayloadSample(Base64.getEncoder().encodeToString(sample))));
         return Response.ok().entity(new PayloadSampleList(sampleArrayList)).build();
+    }
+
+    @Override
+    public @NotNull Response getSchemaForTopic(@NotNull final String topicBase64) {
+        final String topic = new String(Base64.getDecoder().decode(topicBase64), StandardCharsets.UTF_8);
+        final List<byte[]> samples = samplingService.getSamples(topic);
+        if (samples.isEmpty()) {
+            return ErrorResponseUtil.notFound("samples", "topic");
+        }
+
+        final ArrayList<JsonNode> jsonSamples = new ArrayList<>();
+        for (final byte[] sample : samples) {
+            try {
+                jsonSamples.add(objectMapper.readTree(sample));
+            } catch (final IOException e) {
+                // TODO
+                return Response.serverError().build();
+            }
+        }
+
+        final JsonNode inferredSchema = INFERRER.inferForSamples(jsonSamples);
+        return Response.ok().entity(inferredSchema).build();
     }
 
     @Override

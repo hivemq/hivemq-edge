@@ -16,6 +16,7 @@
 package com.hivemq.api.resources;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.hivemq.api.model.samples.PayloadSampleList;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import io.swagger.v3.oas.annotations.Operation;
@@ -63,6 +64,25 @@ public interface SamplingApi {
                                 description = "The topic.",
                                 required = true,
                                 in = ParameterIn.PATH) @PathParam("topic") String topic);
+
+    @GET
+    @Path("/schema/{topic}")
+    @Operation(summary = "Obtain a JsonSchema based in the stored samples for a given topic.",
+               operationId = "getSchemaForTopic",
+               description = "Obtain a JsonSchema based in the stored samples for a given topic.",
+               responses = {
+                       @ApiResponse(responseCode = "200",
+                                    description = "Success",
+                                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                                       schema = @Schema(implementation = JsonNode.class)))})
+    @Produces(MediaType.APPLICATION_JSON)
+    @NotNull
+    Response getSchemaForTopic(
+            @NotNull @Parameter(name = "topic",
+                                description = "The topic.",
+                                required = true,
+                                in = ParameterIn.PATH) @PathParam("topic") String topic);
+
 
     @POST
     @Path("/topic/{topic}")

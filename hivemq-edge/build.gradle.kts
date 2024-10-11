@@ -95,6 +95,7 @@ java {
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://jitpack.io") }
     exclusiveContent {
         forRepository {
             maven {
@@ -194,6 +195,9 @@ dependencies {
     implementation(libs.jsonSchemaValidator)
     implementation(libs.victools.jsonschema.generator)
     implementation(libs.victools.jsonschema.jackson)
+    // TODO add to toml after changes are merged.
+    implementation("com.github.saasquatch:json-schema-inferrer:0.2.1")
+
 }
 
 /* ******************** test ******************** */
