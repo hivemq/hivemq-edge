@@ -54,7 +54,6 @@ public class DomainTagDeleteResult {
 
     public enum DomainTagDeleteStatus {
         SUCCESS(),
-        NOT_FOUND(),
-        INTERNAL_ERROR();
+        NOT_FOUND()
     }
 }

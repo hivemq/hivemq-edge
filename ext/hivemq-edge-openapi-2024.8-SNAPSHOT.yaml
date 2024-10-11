@@ -3600,10 +3600,10 @@ paths:
                     items:
                     - tagAddress:
                         address: ns=2;i=test
-                      tag: tag1
+                      tagName: tag1
                     - tagAddress:
                         address: ns=2;i=test2
-                      tag: tag2
+                      tagName: tag2
               schema:
                 $ref: '#/components/schemas/DomainTagList'
           description: Success
@@ -3651,6 +3651,45 @@ paths:
       summary: Add a new domain tag to the specified adapter
       tags:
       - Protocol Adapters
+    put:
+      description: Update all domain tags of an adapter.
+      operationId: update-adapter-domainTags
+      parameters:
+      - description: The id of the adapter whose domain tags will be updated.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainTagList'
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case no tag is present for this
+                    tagId.
+                  summary: An example response in case no tag is present for this
+                    tagId.
+                  value:
+                    type: https://docs.hivemq.com/problem-registry/not-found
+                    title: The item cannot be found.
+                    detail: The tag 'tag1' cannot be found and therefore cannot be
+                      deleted
+                    instance: /tags/tag1
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Not Found
+      summary: Update the domain tag of an adapter.
+      tags:
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagId}:
     delete:
       description: Delete the specified domain tag on the given adapter.
@@ -3676,7 +3715,7 @@ paths:
       - Protocol Adapters
     put:
       description: Update the domain tag of an adapter.
-      operationId: update-adapter-domainTags
+      operationId: update-adapter-domainTag
       parameters:
       - description: The id of the adapter whose domain tag will be updated.
         in: path
@@ -3782,10 +3821,10 @@ paths:
                     items:
                     - tagAddress:
                         address: ns=2;i=test
-                      tag: tag1
+                      tagName: tag1
                     - tagAddress:
                         address: ns=2;i=test2
-                      tag: tag2
+                      tagName: tag2
               schema:
                 $ref: '#/components/schemas/DomainTagList'
           description: Success
@@ -4437,6 +4476,7 @@ components:
       - type
     DomainTag:
       type: object
+      description: List of result items that are returned by this endpoint
       properties:
         description:
           type: string

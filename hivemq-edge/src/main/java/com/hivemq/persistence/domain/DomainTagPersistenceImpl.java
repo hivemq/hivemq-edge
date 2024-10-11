@@ -65,13 +65,13 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
             @NotNull final String adapterId, @NotNull final String tagId, @NotNull final DomainTag domainTag) {
         final Set<DomainTag> domainTags = adapterToDomainTag.get(adapterId);
         if (domainTags == null || domainTags.isEmpty()) {
-            return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.NOT_FOUND,
+            return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND,
                     "No adapter with id '{}' was found.");
         }
 
         final boolean removed = domainTags.removeIf(domainTag1 -> domainTag1.getTag().equals(tagId));
         if (!removed) {
-            return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.NOT_FOUND,
+            return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND,
                     "No tag with id '" + tagId + "' was found for adapter '" + adapterId + "'.");
         } else {
             domainTags.add(domainTag);
@@ -87,7 +87,7 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
         final Set<DomainTag> existingDomainTags = adapterToDomainTag.get(adapterId);
 
         if (existingDomainTags == null) {
-            return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.NOT_FOUND,
+            return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND,
                     "No adapter with id '{}' was found.");
         }
 

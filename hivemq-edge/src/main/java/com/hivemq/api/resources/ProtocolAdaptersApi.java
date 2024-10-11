@@ -29,7 +29,7 @@ import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.api.model.tags.DomainTagModelList;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
-import com.hivemq.http.error.Error;
+import com.hivemq.http.error.Errors;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -321,7 +321,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "403",
                                     description = "Already Present",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Error.class),
+                                                       schema = @Schema(implementation = Errors.class),
                                                        examples = {
                                                                @ExampleObject(description = "An example response in case an tag is already present for this tagId.",
                                                                               name = "already present example",
@@ -371,7 +371,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "403",
                                     description = "Not Found",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Error.class),
+                                                       schema = @Schema(implementation = Errors.class),
                                                        examples = {
                                                                @ExampleObject(description = "An example response in case no tag is present for this tagId.",
                                                                               name = "already present example",
@@ -391,7 +391,7 @@ public interface ProtocolAdaptersApi {
 
 
     @PUT
-    @Path("/adapters/{adapterId}/tags/{tagId}")
+    @Path("/adapters/{adapterId}/tags/")
     @Operation(summary = "Update the domain tag of an adapter.",
                description = "Update all domain tags of an adapter.",
                operationId = "update-adapter-domainTags",
@@ -400,7 +400,7 @@ public interface ProtocolAdaptersApi {
                        @ApiResponse(responseCode = "403",
                                     description = "Not Found",
                                     content = @Content(mediaType = APPLICATION_JSON,
-                                                       schema = @Schema(implementation = Error.class),
+                                                       schema = @Schema(implementation = Errors.class),
                                                        examples = {
                                                                @ExampleObject(description = "An example response in case no tag is present for this tagId.",
                                                                               name = "already present example",

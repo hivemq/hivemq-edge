@@ -80,7 +80,7 @@ class DomainTagPersistenceImplTest {
         final DomainTagUpdateResult domainTagUpdateResult =
                 domainTagPersistence.updateDomainTag("adapter", domainTag.getTag(), domainTag);
         assertSame(domainTagUpdateResult.getDomainTagUpdateStatus(),
-                DomainTagUpdateResult.DomainTagUpdateStatus.NOT_FOUND);
+                DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND);
 
         final List<DomainTag> tagsForAdapter = domainTagPersistence.getTagsForAdapter("adapter");
         assertEquals(0, tagsForAdapter.size());
@@ -98,7 +98,7 @@ class DomainTagPersistenceImplTest {
         final DomainTagUpdateResult domainTagUpdateResult =
                 domainTagPersistence.updateDomainTag("adapter", updatedDomainTag.getTag(), updatedDomainTag);
         assertSame(domainTagUpdateResult.getDomainTagUpdateStatus(),
-                DomainTagUpdateResult.DomainTagUpdateStatus.NOT_FOUND);
+                DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND);
 
         final List<DomainTag> tagsForAdapter = domainTagPersistence.getTagsForAdapter("adapter");
         assertEquals(1, tagsForAdapter.size());

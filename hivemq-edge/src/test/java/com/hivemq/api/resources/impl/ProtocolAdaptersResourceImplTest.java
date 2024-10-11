@@ -18,7 +18,6 @@ package com.hivemq.api.resources.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.api.model.tags.DomainTagModelList;
-import com.hivemq.api.model.tags.TagAddress;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -36,7 +35,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 
-import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdateStatus.NOT_FOUND;
+import static com.hivemq.persistence.domain.DomainTagUpdateResult.DomainTagUpdateStatus.ADAPTER_NOT_FOUND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.ArgumentMatchers.any;
@@ -142,7 +141,7 @@ class ProtocolAdaptersResourceImplTest {
     void updateDomainTag_whenTagDoesNotExists_thenReturn403() {
         when(domainTagPersistence.updateDomainTag(any(),
                 any(),
-                any())).thenReturn(DomainTagUpdateResult.failed(NOT_FOUND));
+                any())).thenReturn(DomainTagUpdateResult.failed(ADAPTER_NOT_FOUND));
 
         final Response response = protocolAdaptersResource.updateDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)),

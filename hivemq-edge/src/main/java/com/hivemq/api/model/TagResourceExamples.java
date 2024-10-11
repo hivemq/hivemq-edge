@@ -23,30 +23,30 @@ public class TagResourceExamples {
             "         \"tagAddress\":{\n" +
             "            \"address\":\"ns=2;i=test\"\n" +
             "         },\n" +
-            "         \"tag\":\"tag1\"\n" +
+            "         \"tagName\":\"tag1\"\n" +
             "      },\n" +
             "      {\n" +
             "         \"tagAddress\":{\n" +
             "            \"address\":\"ns=2;i=test2\"\n" +
             "         },\n" +
-            "         \"tag\":\"tag2\"\n" +
+            "         \"tagName\":\"tag2\"\n" +
             "      }\n" +
             "   ]\n" +
             "}";
 
 
     public static final String EXAMPLE_ALREADY_PRESENT = "{\n" +
-            "   \"type\":\"https://docs.hivemq.com/problem-registry/already-present\",\n" +
-            "   \"title\":\"The item already exists.\",\n" +
-            "   \"detail\":\"The tag 'tag' cannot be created since another item already exists with the same id.\",\n" +
-            "   \"instance\":\"/tags\"\n" +
+            "  \"errors\" : [ {\n" +
+            "    \"title\" : \"The resource already exists\",\n" +
+            "    \"detail\" : \"The tag 'tag' cannot be created since another item already exists with the same id.\"\n" +
+            "  } ]\n" +
             "}";
 
     public static final String EXAMPLE_NOT_PRESENT = "{\n" +
-            "   \"type\":\"https://docs.hivemq.com/problem-registry/not-found\",\n" +
-            "   \"title\":\"The item cannot be found.\",\n" +
-            "   \"detail\":\"The tag 'tag1' cannot be found and therefore cannot be deleted\",\n" +
-            "   \"instance\":\"/tags/tag1\"\n" +
+            "  \"errors\" : [ {\n" +
+            "    \"title\" : \"Resource not found\",\n" +
+            "    \"detail\" : \"Tag with id 'tag1' not found\"\n" +
+            "  } ]\n" +
             "}";
 
 
@@ -56,17 +56,16 @@ public class TagResourceExamples {
             "         \"tagAddress\":{\n" +
             "            \"address\":\"address1\"\n" +
             "         },\n" +
-            "         \"tag\":\"tag1\"\n" +
+            "         \"tagName\":\"tag1\"\n" +
             "      },\n" +
             "      {\n" +
             "         \"tagAddress\":{\n" +
             "            \"address\":\"address2\"\n" +
             "         },\n" +
-            "         \"tag\":\"tag2\"\n" +
+            "         \"tagName\":\"tag2\"\n" +
             "      }\n" +
             "   ]\n" +
             "}";
-
 
 
 }

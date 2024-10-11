@@ -416,7 +416,12 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case SUCCESS:
                 return Response.ok().build();
             case ALREADY_EXISTS:
-                return Response.status(403).entity(alreadyExists(domainTag.getTag())).build();
+                final @NotNull String tagId = domainTag.getTag();
+
+                return ErrorResponseUtil.alreadyExists("The tag '" +
+                        tagId +
+                        "' cannot be created since another item already exists with the same id.");
+
             case INTERNAL_ERROR:
                 return Response.serverError().build();
         }
@@ -434,9 +439,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
             case SUCCESS:
                 return Response.ok().build();
             case NOT_FOUND:
-                return Response.status(403).entity(itemNotFound(tagId)).build();
-            case INTERNAL_ERROR:
-                return Response.serverError().build();
+                return ErrorResponseUtil.notFound("Tag", tagId);
         }
         return Response.serverError().build();
     }
@@ -449,7 +452,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();
-            case NOT_FOUND:
+            case ADAPTER_NOT_FOUND:
                 return Response.status(403).entity("").build();
             case INTERNAL_ERROR:
                 return Response.serverError().build();
@@ -467,11 +470,14 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
             case SUCCESS:
                 return Response.ok().build();
-            case NOT_FOUND:
-                return Response.status(403).entity(adapterNotFound(adapterId)).build();
+            case ADAPTER_NOT_FOUND:
+                return ErrorResponseUtil.notFound("adapter", adapterId);
             case ALREADY_USED_BY_ANOTHER_ADAPTER:
                 //noinspection DataFlowIssue cant be null here.
-                return Response.status(403).entity(alreadyExists(domainTagUpdateResult.getErrorMessage())).build();
+                final @NotNull String tagId = domainTagUpdateResult.getErrorMessage();
+                return ErrorResponseUtil.alreadyExists("The tag '" +
+                        tagId +
+                        "' cannot be created since another item already exists with the same id.");
             case INTERNAL_ERROR:
                 return Response.serverError().build();
         }
@@ -511,15 +517,4 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         return objectNode.toString();
     }
 
-    public @NotNull String alreadyExists(final @NotNull String tagId) {
-        final ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.set("type", new TextNode("https://docs.hivemq.com/problem-registry/already-present"));
-        objectNode.set("title", new TextNode("The item already exists."));
-        objectNode.set("detail",
-                new TextNode("The tag '" +
-                        tagId +
-                        "' cannot be created since another item already exists with the same id."));
-        objectNode.set("instance", new TextNode("/tags"));
-        return objectNode.toString();
-    }
 }
