@@ -28,7 +28,7 @@ const DeviceMetadataViewer: FC<DeviceMetadataProps> = ({ protocolAdapter }) => {
   return (
     <Card size="sm">
       <CardHeader>
-        <Flex>
+        <Flex data-testid="device-metadata-header">
           <Flex flex="1" gap="4" alignItems="center" flexWrap="wrap">
             <Avatar src={protocolAdapter?.logoUrl} />
             <Box>
