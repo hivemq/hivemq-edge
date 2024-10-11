@@ -137,13 +137,14 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({
           <ToolbarButtonGroup>
             <IconButton
               size="sm"
-            data-testid="node-group-toolbar-panel"
-            icon={<LuPanelRightOpen />}
-            aria-label={t('workspace.toolbar.command.overview')}
-            onClick={onOpenPanel}
-          />
-        </ToolbarButtonGroup>
-      </NodeToolbar>)}
+              data-testid="node-group-toolbar-panel"
+              icon={<LuPanelRightOpen />}
+              aria-label={t('workspace.toolbar.command.overview')}
+              onClick={onOpenPanel}
+            />
+          </ToolbarButtonGroup>
+        </NodeToolbar>
+      )}
       {(children || isGroupable) && (
         <NodeToolbar
           isVisible={Boolean(mainNodes?.id === id && !dragging)}
