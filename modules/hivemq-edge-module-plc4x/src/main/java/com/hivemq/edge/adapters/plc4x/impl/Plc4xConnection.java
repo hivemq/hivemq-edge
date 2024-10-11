@@ -43,6 +43,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig<?>> {
     protected final @NotNull PlcDriverManager plcDriverManager;
     protected final @NotNull T config;
     protected final @NotNull Plc4xConnectionQueryStringProvider<T> connectionQueryStringProvider;
+    protected final @NotNull String connectionString;
     protected volatile @NotNull PlcConnection plcConnection;
 
     public Plc4xConnection(
@@ -58,6 +59,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig<?>> {
             }
             throw new Plc4xException("invalid connection configuration, unable to initialize");
         }
+        this.connectionString = createConnectionString(config);
         initConnection();
     }
 
@@ -79,10 +81,6 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig<?>> {
             if (plcConnection == null) {
                 synchronized (lock) {
                     if (plcConnection == null) {
-                        String connectionString = createConnectionString(config);
-                        if (log.isTraceEnabled()) {
-                            log.trace("Connecting via PLC4X to {}.", connectionString);
-                        }
                         plcConnection = plcDriverManager.getConnectionManager().getConnection(connectionString);
                     }
                 }
@@ -128,7 +126,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig<?>> {
 
     public @NotNull CompletableFuture<? extends PlcReadResponse> read(final @NotNull Plc4xToMqttMapping plc4xPollingContext) {
         lazyConnectionCheck();
-        if (!plcConnection.getMetadata().canRead()) {
+        if (!plcConnection.getMetadata().isReadSupported()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type read-blocking"));
         }
         if (log.isTraceEnabled()) {
@@ -148,7 +146,7 @@ public abstract class Plc4xConnection<T extends Plc4xAdapterConfig<?>> {
             final @NotNull Plc4xToMqttMapping subscription,
             final @NotNull Consumer<PlcSubscriptionEvent> consumer) {
         lazyConnectionCheck();
-        if (!plcConnection.getMetadata().canSubscribe()) {
+        if (!plcConnection.getMetadata().isSubscribeSupported()) {
             return CompletableFuture.failedFuture(new Plc4xException("connection type cannot subscribe"));
         }
         if (log.isTraceEnabled()) {

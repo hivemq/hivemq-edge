@@ -2,7 +2,7 @@
 apache-commonsIO = "2.17.0"
 apache-commonsCompress = "1.27.1"
 apache-commonsLang = "3.17.0"
-apache-plc4x = "0.11.0"
+apache-plc4x = "0.12.0"
 assertj = "3.26.3"
 awaitility = "4.2.2"
 bouncycastle = "1.70"
