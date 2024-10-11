@@ -2,6 +2,7 @@
 apache-commonsIO = "2.17.0"
 apache-commonsCompress = "1.27.1"
 apache-commonsLang = "3.17.0"
+apache-plc4x = "0.11.0"
 assertj = "3.26.3"
 awaitility = "4.2.2"
 bouncycastle = "1.70"
@@ -30,7 +31,9 @@ jsonSchemaValidator = "1.5.2"
 junit-jupiter = "5.11.0"
 junit = "4.13.2"
 logback = "1.5.8"
+milo = "0.6.14"
 mockito = "5.14.1"
+modbus = "1.2.2"
 mqtt-sn-codec = "838f51d691"
 netty = "4.1.114.Final"
 pmd = "6.55.0"
@@ -55,6 +58,7 @@ byteBuddy = { module = "net.bytebuddy:byte-buddy", version.ref = "byteBuddy" }
 concurrentUnit = { module = "net.jodah:concurrentunit", version.ref = "concurrentUnit" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
+digitalpetri-modbus-master-tcp = { module = "com.digitalpetri.modbus:modbus-master-tcp", version.ref = "modbus" }
 dropwizard-metrics = { module = "io.dropwizard.metrics:metrics-core", version.ref = "dropwizard-metrics" }
 dropwizard-metrics-jmx = { module = "io.dropwizard.metrics:metrics-jmx", version.ref = "dropwizard-metrics" }
 dropwizard-metrics-jvm = { module = "io.dropwizard.metrics:metrics-jvm", version.ref = "dropwizard-metrics" }
@@ -87,6 +91,10 @@ junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-jupiter" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 junit-vintageEngine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit-jupiter" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+milo-bsdParserGson = { module = "org.eclipse.milo:bsd-parser-gson", version.ref = "milo" }
+milo-client = { module = "org.eclipse.milo:sdk-client", version.ref = "milo" }
+milo-dictionaryReader = { module = "org.eclipse.milo:dictionary-reader", version.ref = "milo" }
+milo-server = { module = "org.eclipse.milo:sdk-server", version.ref = "milo" }
 mockito-junitJupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 mqtt-sn-codec = { module = "com.github.simon622.mqtt-sn:mqtt-sn-codec", version.ref = "mqtt-sn-codec" }
 netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty" }
@@ -95,6 +103,10 @@ netty-codec-http = { module = "io.netty:netty-codec-http", version.ref = "netty"
 netty-commons = { module = "io.netty:netty-common", version.ref = "netty" }
 netty-handler = { module = "io.netty:netty-handler", version.ref = "netty" }
 netty-transport = { module = "io.netty:netty-transport", version.ref = "netty" }
+plc4j-api = { module = "org.apache.plc4x:plc4j-api", version.ref = "apache-plc4x" }
+plc4j-s7 = { module = "org.apache.plc4x:plc4j-driver-s7", version.ref = "apache-plc4x" }
+plc4j-ads = { module = "org.apache.plc4x:plc4j-driver-ads", version.ref = "apache-plc4x" }
+plc4j-transport-raw-socket = { module = "org.apache.plc4x:plc4j-transport-raw-socket", version.ref = "apache-plc4x" }
 shrinkwrap-api = { module = "org.jboss.shrinkwrap:shrinkwrap-api", version.ref = "shrinkwrap" }
 shrinkwrap-impl = { module = "org.jboss.shrinkwrap:shrinkwrap-impl-base", version.ref = "shrinkwrap" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -115,5 +127,6 @@ license = { id = "com.github.hierynomus.license", version = "0.16.1" }
 shadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }
 spotbugs = { id = "com.github.spotbugs", version = "4.8.0" }
 forbiddenApis = { id = "de.thetaphi.forbiddenapis", version = "3.7" }
+
 
 
