@@ -15,9 +15,9 @@
  */
 package com.hivemq.api.model;
 
-public class TagResourceExamples {
+public interface TagResourceExamples {
 
-    public static final String EXAMPLE_OPC_UA = "{\n" +
+    String EXAMPLE_OPC_UA = "{\n" +
             "   \"items\":[\n" +
             "      {\n" +
             "         \"tagAddress\":{\n" +
@@ -35,37 +35,17 @@ public class TagResourceExamples {
             "}";
 
 
-    public static final String EXAMPLE_ALREADY_PRESENT = "{\n" +
+    String EXAMPLE_ALREADY_PRESENT = "{\n" +
             "  \"errors\" : [ {\n" +
             "    \"title\" : \"The resource already exists\",\n" +
             "    \"detail\" : \"The tag 'tag' cannot be created since another item already exists with the same id.\"\n" +
             "  } ]\n" +
             "}";
 
-    public static final String EXAMPLE_NOT_PRESENT = "{\n" +
+    String EXAMPLE_NOT_PRESENT = "{\n" +
             "  \"errors\" : [ {\n" +
             "    \"title\" : \"Resource not found\",\n" +
             "    \"detail\" : \"Tag with id 'tag1' not found\"\n" +
             "  } ]\n" +
             "}";
-
-
-    public static final String EXAMPLE_LIST = "{\n" +
-            "   \"items\":[\n" +
-            "      {\n" +
-            "         \"tagAddress\":{\n" +
-            "            \"address\":\"address1\"\n" +
-            "         },\n" +
-            "         \"tagName\":\"tag1\"\n" +
-            "      },\n" +
-            "      {\n" +
-            "         \"tagAddress\":{\n" +
-            "            \"address\":\"address2\"\n" +
-            "         },\n" +
-            "         \"tagName\":\"tag2\"\n" +
-            "      }\n" +
-            "   ]\n" +
-            "}";
-
-
 }

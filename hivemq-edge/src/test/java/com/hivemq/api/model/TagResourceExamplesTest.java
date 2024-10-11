@@ -14,7 +14,6 @@ class TagResourceExamplesTest {
 
     @Test
     void assertThatExamplesAreParsable() throws JsonProcessingException {
-        objectMapper.readValue(TagResourceExamples.EXAMPLE_LIST, DomainTagModelList.class);
         objectMapper.readValue(TagResourceExamples.EXAMPLE_OPC_UA, DomainTagModelList.class);
         objectMapper.readValue(TagResourceExamples.EXAMPLE_ALREADY_PRESENT, Errors.class);
         objectMapper.readValue(TagResourceExamples.EXAMPLE_NOT_PRESENT, Errors.class);
