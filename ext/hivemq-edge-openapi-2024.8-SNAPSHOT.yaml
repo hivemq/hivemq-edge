@@ -3577,6 +3577,182 @@ paths:
       summary: Transition the runtime status of an adapter
       tags:
       - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/tags:
+    get:
+      description: Get the domain tags for the device connected through this adapter.
+      operationId: get-adapter-domainTags
+      parameters:
+      - description: The adapter id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                opc ua domain tags example:
+                  description: An example for domain tags in opc ua
+                  summary: 'Example for domain tags for opc ua '
+                  value:
+                    items:
+                    - tagAddress:
+                        address: ns=2;i=test
+                      tagName: tag1
+                    - tagAddress:
+                        address: ns=2;i=test2
+                      tagName: tag2
+              schema:
+                $ref: '#/components/schemas/DomainTagList'
+          description: Success
+      summary: Get the domain tags for the device connected through this adapter.
+      tags:
+      - Protocol Adapters
+    post:
+      description: Add a new domain tag to the specified adapter.
+      operationId: add-adapter-domainTags
+      parameters:
+      - description: The adapter id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainTag'
+        description: The domain tag.
+        required: true
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case an tag is already present
+                    for this tagId.
+                  summary: An example response in case an tag is already present for
+                    this tagId.
+                  value:
+                    errors:
+                    - title: The resource already exists
+                      detail: The tag 'tag' cannot be created since another item already
+                        exists with the same id.
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Already Present
+      summary: Add a new domain tag to the specified adapter
+      tags:
+      - Protocol Adapters
+    put:
+      description: Update all domain tags of an adapter.
+      operationId: update-adapter-domainTags
+      parameters:
+      - description: The id of the adapter whose domain tags will be updated.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainTagList'
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case no tag is present for this
+                    tagId.
+                  summary: An example response in case no tag is present for this
+                    tagId.
+                  value:
+                    errors:
+                    - title: Resource not found
+                      detail: Tag with id 'tag1' not found
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Not Found
+      summary: Update the domain tag of an adapter.
+      tags:
+      - Protocol Adapters
+  /api/v1/management/protocol-adapters/adapters/{adapterId}/tags/{tagId}:
+    delete:
+      description: Delete the specified domain tag on the given adapter.
+      operationId: delete-adapter-domainTags
+      parameters:
+      - description: The adapter Id.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      - description: The domain tag Id.
+        in: path
+        name: tagId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Success
+      summary: Delete an domain tag
+      tags:
+      - Protocol Adapters
+    put:
+      description: Update the domain tag of an adapter.
+      operationId: update-adapter-domainTag
+      parameters:
+      - description: The id of the adapter whose domain tag will be updated.
+        in: path
+        name: adapterId
+        required: true
+        schema:
+          type: string
+      - description: The id of the domain tag that will be changed.
+        in: path
+        name: tagId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainTag'
+      responses:
+        "200":
+          description: Success
+        "403":
+          content:
+            application/json:
+              examples:
+                already present example:
+                  description: An example response in case no tag is present for this
+                    tagId.
+                  summary: An example response in case no tag is present for this
+                    tagId.
+                  value:
+                    errors:
+                    - title: Resource not found
+                      detail: Tag with id 'tag1' not found
+              schema:
+                $ref: '#/components/schemas/Errors'
+          description: Not Found
+      summary: Update the domain tag of an adapter.
+      tags:
+      - Protocol Adapters
   /api/v1/management/protocol-adapters/adapters/{adapterType}:
     post:
       description: Add adapter to the system.
@@ -3622,6 +3798,32 @@ paths:
                 $ref: '#/components/schemas/StatusList'
           description: The Connection Details Verification Result.
       summary: Get the status of all the adapters in the system.
+      tags:
+      - Protocol Adapters
+  /api/v1/management/protocol-adapters/tags:
+    get:
+      description: Get the list of all domain tags created in this Edge instance
+      operationId: get-domain-tags
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                opc ua domain tags example:
+                  description: An example for domain tags in opc ua
+                  summary: 'Example for domain tags for opc ua '
+                  value:
+                    items:
+                    - tagAddress:
+                        address: ns=2;i=test
+                      tagName: tag1
+                    - tagAddress:
+                        address: ns=2;i=test2
+                      tagName: tag2
+              schema:
+                $ref: '#/components/schemas/DomainTagList'
+          description: Success
+      summary: Get the list of all domain tags created in this Edge instance
       tags:
       - Protocol Adapters
   /api/v1/management/protocol-adapters/types:
@@ -4267,6 +4469,29 @@ components:
       required:
       - arguments
       - type
+    DomainTag:
+      type: object
+      description: List of result items that are returned by this endpoint
+      properties:
+        description:
+          type: string
+          description: A user created description for this tag.
+        protocolId:
+          type: string
+          description: The protocol id of the protocol for which this tag was created.
+        tagAddress:
+          $ref: '#/components/schemas/TagAddress'
+        tagName:
+          type: string
+          description: The name of the tag that identifies it within this edge instance.
+    DomainTagList:
+      type: object
+      properties:
+        items:
+          type: array
+          description: List of result items that are returned by this endpoint
+          items:
+            $ref: '#/components/schemas/DomainTag'
     EnvironmentProperties:
       type: object
       description: A map of properties relating to the installation
@@ -5069,6 +5294,12 @@ components:
         type:
           type: string
           description: The type of the object in transition
+    TagAddress:
+      type: object
+      description: The address for the data point on the device.
+      properties:
+        address:
+          $ref: '#/components/schemas/JsonNode'
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge
