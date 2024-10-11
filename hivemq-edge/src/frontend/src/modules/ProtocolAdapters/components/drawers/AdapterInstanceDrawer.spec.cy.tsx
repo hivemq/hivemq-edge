@@ -79,7 +79,7 @@ describe('AdapterInstanceDrawer', () => {
   })
 
   describe('Custom Templates', () => {
-    it.only('should render expandable array items', () => {
+    it('should render expandable array items', () => {
       cy.mountWithProviders(
         <AdapterInstanceDrawer
           adapterType={mockProtocolAdapter.id}
