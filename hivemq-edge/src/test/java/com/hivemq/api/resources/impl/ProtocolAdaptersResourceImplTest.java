@@ -120,7 +120,7 @@ class ProtocolAdaptersResourceImplTest {
         final Response response = protocolAdaptersResource.deleteDomainTag("adapter",
                 Base64.getEncoder().encodeToString("tag".getBytes(StandardCharsets.UTF_8)));
 
-        assertEquals(403, response.getStatus());
+        assertEquals(404, response.getStatus());
 
     }
 
