@@ -18,8 +18,10 @@ package com.hivemq.persistence.domain;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -101,6 +103,75 @@ class DomainTagPersistenceImplTest {
         final List<DomainTag> tagsForAdapter = domainTagPersistence.getTagsForAdapter("adapter");
         assertEquals(1, tagsForAdapter.size());
         assertEquals(domainTag, tagsForAdapter.get(0));
+    }
+
+
+    @Test
+    void updateDomainTag_whenTagNameDoesExistForAnotherAdapter_thenReturnError() {
+        final DomainTag domainTag = DomainTag.simpleAddress("someAddress", "tag1");
+        final DomainTag domainTag2 = DomainTag.simpleAddress("someAddress", "tag2");
+        final DomainTag domainTag3 = DomainTag.simpleAddress("someAddress", "tag3");
+
+        final DomainTag domainTagForAnotherAdapter = DomainTag.simpleAddress("someAddress", "otherTag");
+
+        domainTagPersistence.addDomainTag("adapter", domainTag);
+        domainTagPersistence.addDomainTag("adapter", domainTag2);
+        domainTagPersistence.addDomainTag("adapter", domainTag3);
+        domainTagPersistence.addDomainTag("otherAdapter", domainTagForAnotherAdapter);
+
+        final DomainTagUpdateResult domainTagUpdateResult =
+                domainTagPersistence.updateDomainTags("adapter", Set.of(domainTag, domainTag2, domainTag3, domainTagForAnotherAdapter));
+        assertSame(domainTagUpdateResult.getDomainTagUpdateStatus(),
+                DomainTagUpdateResult.DomainTagUpdateStatus.ALREADY_USED_BY_ANOTHER_ADAPTER);
+
+        final List<DomainTag> tagsForAdapter = domainTagPersistence.getTagsForAdapter("adapter");
+        assertEquals(3, tagsForAdapter.size());
+        assertTrue(tagsForAdapter.contains(domainTag));
+        assertTrue(tagsForAdapter.contains(domainTag2));
+        assertTrue(tagsForAdapter.contains(domainTag3));
+    }
+
+    @Test
+    void updateDomainTag_whenLessTagsThanBeforeAreAdded_thenOnlyPersistTheNewTags() {
+        final DomainTag domainTag = DomainTag.simpleAddress("someAddress", "tag1");
+        final DomainTag domainTag2 = DomainTag.simpleAddress("someAddress", "tag2");
+        final DomainTag domainTag3 = DomainTag.simpleAddress("someAddress", "tag3");
+
+
+        domainTagPersistence.addDomainTag("adapter", domainTag);
+        domainTagPersistence.addDomainTag("adapter", domainTag2);
+        domainTagPersistence.addDomainTag("adapter", domainTag3);
+
+        final DomainTagUpdateResult domainTagUpdateResult =
+                domainTagPersistence.updateDomainTags("adapter", Set.of(domainTag, domainTag2));
+        assertSame(domainTagUpdateResult.getDomainTagUpdateStatus(),
+                DomainTagUpdateResult.DomainTagUpdateStatus.SUCCESS);
+
+        final List<DomainTag> tagsForAdapter = domainTagPersistence.getTagsForAdapter("adapter");
+        assertEquals(2, tagsForAdapter.size());
+        assertTrue(tagsForAdapter.contains(domainTag));
+        assertTrue(tagsForAdapter.contains(domainTag2));
+        assertFalse(tagsForAdapter.contains(domainTag3));
+    }
+
+    @Test
+    void updateDomainTag_whenMoreTagsThanBeforeAreAdded_thenPersistTheNewTags() {
+        final DomainTag domainTag = DomainTag.simpleAddress("someAddress", "tag1");
+        final DomainTag domainTag2 = DomainTag.simpleAddress("someAddress", "tag2");
+        final DomainTag domainTag3 = DomainTag.simpleAddress("someAddress", "tag3");
+
+        domainTagPersistence.addDomainTag("adapter", domainTag);
+
+        final DomainTagUpdateResult domainTagUpdateResult =
+                domainTagPersistence.updateDomainTags("adapter", Set.of(domainTag, domainTag2));
+        assertSame(domainTagUpdateResult.getDomainTagUpdateStatus(),
+                DomainTagUpdateResult.DomainTagUpdateStatus.SUCCESS);
+
+        final List<DomainTag> tagsForAdapter = domainTagPersistence.getTagsForAdapter("adapter");
+        assertEquals(2, tagsForAdapter.size());
+        assertTrue(tagsForAdapter.contains(domainTag));
+        assertTrue(tagsForAdapter.contains(domainTag2));
+        assertFalse(tagsForAdapter.contains(domainTag3));
     }
 
 

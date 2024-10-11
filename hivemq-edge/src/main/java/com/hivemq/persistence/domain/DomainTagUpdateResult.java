@@ -55,6 +55,7 @@ public class DomainTagUpdateResult {
     public enum DomainTagUpdateStatus {
         SUCCESS(),
         NOT_FOUND(),
+        ALREADY_USED_BY_ANOTHER_ADAPTER(),
         INTERNAL_ERROR();
     }
 }

@@ -80,6 +80,45 @@ public class DomainTagPersistenceImpl implements DomainTagPersistence {
     }
 
     @Override
+    public @NotNull DomainTagUpdateResult updateDomainTags(
+            @NotNull final String adapterId, @NotNull final Set<DomainTag> domainTags) {
+
+        // first step check that the tagIds are not used by any other adapter but only on this adapter:
+        final Set<DomainTag> existingDomainTags = adapterToDomainTag.get(adapterId);
+
+        if (existingDomainTags == null) {
+            return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.NOT_FOUND,
+                    "No adapter with id '{}' was found.");
+        }
+
+        final Set<String> alreadyExistingIdsForTheAdapter =
+                existingDomainTags.stream().map(DomainTag::getTag).collect(Collectors.toSet());
+
+        for (final DomainTag domainTag : domainTags) {
+            if (alreadyExistingIdsForTheAdapter.contains(domainTag.getTag())) {
+                // adapter already has the tag and updating is ok
+                continue;
+            }
+
+            if (alreadyUsedTags.contains(domainTag.getTag())) {
+                // this is a problem: Another adapter has a tag with the same name. This is not allowed and we must stop here.
+                return DomainTagUpdateResult.failed(DomainTagUpdateResult.DomainTagUpdateStatus.ALREADY_USED_BY_ANOTHER_ADAPTER,
+                        domainTag.getTag());
+            }
+        }
+
+        // we need to remove all tag names that are not used anymore and add tag names that are used now and were not before
+        alreadyUsedTags.removeAll(alreadyExistingIdsForTheAdapter);
+        for (final DomainTag domainTag : domainTags) {
+            alreadyUsedTags.add(domainTag.getTag());
+        }
+
+        adapterToDomainTag.put(adapterId, domainTags);
+
+        return DomainTagUpdateResult.success();
+    }
+
+    @Override
     public synchronized @NotNull DomainTagDeleteResult deleteDomainTag(
             @NotNull final String adapterId, @NotNull final String tagId) {
         final Set<DomainTag> domainTags = adapterToDomainTag.get(adapterId);

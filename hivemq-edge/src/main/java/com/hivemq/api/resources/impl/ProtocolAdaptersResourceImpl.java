@@ -117,7 +117,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                                 installedAdapter,
                                 configurationService,
                                 versionProvider);
-                    } catch (Throwable t) {
+                    } catch (final Throwable t) {
                         if (logger.isWarnEnabled()) {
                             logger.warn("Not able to properly load protocol adapter.", t);
                         }
@@ -148,7 +148,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAdaptersForType(@NotNull final String adapterType) {
-        Optional<ProtocolAdapterInformation> protocolAdapterType =
+        final Optional<ProtocolAdapterInformation> protocolAdapterType =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterType.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
@@ -165,7 +165,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response getAdapter(final @NotNull String adapterId) {
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
                 protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
@@ -193,7 +193,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     public @NotNull Response discoverValues(
             @NotNull final String adapterId, final @Nullable String rootNode, final @Nullable Integer depth) {
 
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
                 protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
@@ -222,15 +222,15 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
             }, output);
             output.getOutputFuture().orTimeout(1, TimeUnit.MINUTES).get();
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
+        } catch (final ExecutionException e) {
+            final Throwable cause = e.getCause();
             log.warn("Exception occurred during discovery for adapter '{}'", adapterId, cause);
             return ErrorResponseUtil.genericError("Exception during discovery.");
-        } catch (InterruptedException e) {
+        } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("Thread was interrupted during discovery for adapter '{}'", adapterId);
             return ErrorResponseUtil.genericError("Exception during discovery.");
-        } catch (Exception e) {
+        } catch (final Exception e) {
             log.warn("Exception was thrown during discovery for adapter '{}'.", adapterId);
             return ErrorResponseUtil.genericError("Exception during discovery.");
         } finally {
@@ -243,13 +243,13 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response addAdapter(final @NotNull String adapterType, final @NotNull Adapter adapter) {
-        Optional<ProtocolAdapterInformation> protocolAdapterType =
+        final Optional<ProtocolAdapterInformation> protocolAdapterType =
                 protocolAdapterManager.getAdapterTypeById(adapterType);
         if (protocolAdapterType.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter Type not found by adapterType");
         }
-        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+        final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
                 protocolAdapterManager.getAdapterById(adapter.getId());
         if (instance.isPresent()) {
             ApiErrorUtils.addValidationError(errorMessages, "id", "Adapter ID must be unique in system");
@@ -261,7 +261,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         }
         try {
             protocolAdapterManager.addAdapter(adapterType, adapter.getId(), adapter.getConfig());
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             if (e.getCause() instanceof UnrecognizedPropertyException) {
                 ApiErrorUtils.addValidationError(errorMessages,
                         ((UnrecognizedPropertyException) e.getCause()).getPropertyName(),
@@ -277,7 +277,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response updateAdapter(final @NotNull String adapterId, final @NotNull Adapter adapter) {
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
                 protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Cannot update an adapter that does not exist");
@@ -291,7 +291,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response deleteAdapter(final @NotNull String adapterId) {
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
+        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> instance =
                 protocolAdapterManager.getAdapterById(adapterId);
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Adapter not found");
@@ -306,7 +306,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response changeStatus(
             final @NotNull String adapterId, final @NotNull StatusTransitionCommand command) {
-        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", adapterId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", adapterId, HiveMQEdgeConstants.ID_REGEX);
         ApiErrorUtils.validateRequiredEntity(errorMessages, "command", command);
@@ -336,7 +336,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     @Override
     public @NotNull Response getStatus(final @NotNull String adapterId) {
 
-        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        final ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
         ApiErrorUtils.validateRequiredField(errorMessages, "id", adapterId, false);
         ApiErrorUtils.validateRequiredFieldRegex(errorMessages, "id", adapterId, HiveMQEdgeConstants.ID_REGEX);
         if (protocolAdapterManager.getAdapterById(adapterId).isEmpty()) {
@@ -350,15 +350,15 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     protected @NotNull Status getStatusInternal(final @NotNull String adapterId) {
-        Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> optionalAdapterInstance =
-                protocolAdapterManager.getAdapterById(adapterId);
+        final Optional<ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>>
+                optionalAdapterInstance = protocolAdapterManager.getAdapterById(adapterId);
         return optionalAdapterInstance.map(AdapterStatusModelConversionUtils::getAdapterStatus)
                 .orElseGet(() -> Status.unknown(Status.RUNTIME_STATUS.STOPPED, ApiConstants.ADAPTER_TYPE, adapterId));
     }
 
     protected void validateAdapterSchema(
             final @NotNull ApiErrorMessages apiErrorMessages, final @NotNull Adapter adapter) {
-        ProtocolAdapterInformation information =
+        final ProtocolAdapterInformation information =
                 protocolAdapterManager.getAllAvailableAdapterTypes().get(adapter.getProtocolAdapterType());
         if (information == null) {
             ApiErrorUtils.addValidationError(apiErrorMessages,
@@ -375,7 +375,7 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
                 protocolAdapterManager.getProtocolAdapterFactory(information.getProtocolId());
         final ProtocolAdapterSchemaManager protocolAdapterSchemaManager =
                 new ProtocolAdapterSchemaManager(objectMapper, protocolAdapterFactory.getConfigClass());
-        ProtocolAdapterValidator validator =
+        final ProtocolAdapterValidator validator =
                 (objectMapper, config) -> protocolAdapterSchemaManager.validateObject(config);
         final List<ProtocolAdapterValidationFailure> errors =
                 validator.validateConfiguration(objectMapper, adapter.getConfig());
@@ -384,10 +384,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
 
     @Override
     public @NotNull Response status() {
-        ImmutableList.Builder<Status> builder = new ImmutableList.Builder<>();
-        Map<String, ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> adapters =
+        final ImmutableList.Builder<Status> builder = new ImmutableList.Builder<>();
+        final Map<String, ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter>> adapters =
                 protocolAdapterManager.getProtocolAdapters();
-        for (ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter> instance : adapters.values()) {
+        for (final ProtocolAdapterWrapper<? extends com.hivemq.adapter.sdk.api.ProtocolAdapter> instance : adapters.values()) {
             builder.add(AdapterStatusModelConversionUtils.getAdapterStatus(instance));
         }
         return Response.status(200).entity(new StatusList(builder.build())).build();
@@ -458,6 +458,27 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
     @Override
+    public @NotNull Response updateDomainTags(
+            final @NotNull String adapterId, final @NotNull DomainTagModelList domainTagList) {
+        final Set<DomainTag> domainTags =
+                domainTagList.getItems().stream().map(DomainTag::fromDomainTagEntity).collect(Collectors.toSet());
+        final DomainTagUpdateResult domainTagUpdateResult =
+                domainTagPersistence.updateDomainTags(adapterId, domainTags);
+        switch (domainTagUpdateResult.getDomainTagUpdateStatus()) {
+            case SUCCESS:
+                return Response.ok().build();
+            case NOT_FOUND:
+                return Response.status(403).entity(adapterNotFound(adapterId)).build();
+            case ALREADY_USED_BY_ANOTHER_ADAPTER:
+                //noinspection DataFlowIssue cant be null here.
+                return Response.status(403).entity(alreadyExists(domainTagUpdateResult.getErrorMessage())).build();
+            case INTERNAL_ERROR:
+                return Response.serverError().build();
+        }
+        return Response.serverError().build();
+    }
+
+    @Override
     public @NotNull Response getDomainTags() {
         final List<DomainTag> domainTags = domainTagPersistence.getDomainTags();
         if (domainTags.isEmpty()) {
@@ -470,13 +491,23 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
     }
 
 
+    public @NotNull String adapterNotFound(final @NotNull String adapterId) {
+        final ObjectNode objectNode = objectMapper.createObjectNode();
+        objectNode.set("type", new TextNode("https://docs.hivemq.com/problem-registry/not-found"));
+        objectNode.set("title", new TextNode("The item cannot be found."));
+        objectNode.set("detail",
+                new TextNode("The adapter '" + adapterId + "' cannot be found and therefore no tags can be created."));
+        objectNode.set("instance", new TextNode("/adapters/" + adapterId));
+        return objectNode.toString();
+    }
+
     public @NotNull String itemNotFound(final @NotNull String tagId) {
         final ObjectNode objectNode = objectMapper.createObjectNode();
         objectNode.set("type", new TextNode("https://docs.hivemq.com/problem-registry/not-found"));
         objectNode.set("title", new TextNode("The item cannot be found."));
         objectNode.set("detail",
                 new TextNode("The tag '" + tagId + "' cannot be found and therefore cannot be deleted"));
-        objectNode.set("instance", new TextNode("/tags/"+tagId));
+        objectNode.set("instance", new TextNode("/tags/" + tagId));
         return objectNode.toString();
     }
 
@@ -485,9 +516,10 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         objectNode.set("type", new TextNode("https://docs.hivemq.com/problem-registry/already-present"));
         objectNode.set("title", new TextNode("The item already exists."));
         objectNode.set("detail",
-                new TextNode("The tag '" + tagId + "' cannot be created since another item already exists with the same id."));
+                new TextNode("The tag '" +
+                        tagId +
+                        "' cannot be created since another item already exists with the same id."));
         objectNode.set("instance", new TextNode("/tags"));
         return objectNode.toString();
     }
-
 }

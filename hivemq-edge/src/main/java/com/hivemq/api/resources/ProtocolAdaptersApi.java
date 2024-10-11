@@ -365,7 +365,7 @@ public interface ProtocolAdaptersApi {
     @Path("/adapters/{adapterId}/tags/{tagId}")
     @Operation(summary = "Update the domain tag of an adapter.",
                description = "Update the domain tag of an adapter.",
-               operationId = "update-adapter-domainTags",
+               operationId = "update-adapter-domainTag",
                responses = {
                        @ApiResponse(responseCode = "200", description = "Success"),
                        @ApiResponse(responseCode = "403",
@@ -390,6 +390,32 @@ public interface ProtocolAdaptersApi {
             final @NotNull DomainTagModel domainTag);
 
 
+    @PUT
+    @Path("/adapters/{adapterId}/tags/{tagId}")
+    @Operation(summary = "Update the domain tag of an adapter.",
+               description = "Update all domain tags of an adapter.",
+               operationId = "update-adapter-domainTags",
+               responses = {
+                       @ApiResponse(responseCode = "200", description = "Success"),
+                       @ApiResponse(responseCode = "403",
+                                    description = "Not Found",
+                                    content = @Content(mediaType = APPLICATION_JSON,
+                                                       schema = @Schema(implementation = Error.class),
+                                                       examples = {
+                                                               @ExampleObject(description = "An example response in case no tag is present for this tagId.",
+                                                                              name = "already present example",
+                                                                              summary = "An example response in case no tag is present for this tagId.",
+                                                                              value = TagResourceExamples.EXAMPLE_NOT_PRESENT)}))})
+    @NotNull
+    Response updateDomainTags(
+            @Parameter(name = "adapterId",
+                       description = "The id of the adapter whose domain tags will be updated.",
+                       required = true,
+                       in = ParameterIn.PATH) final @PathParam("adapterId") @NotNull String adapterId,
+            final @NotNull DomainTagModelList domainTagList);
+
+
+
     @GET
     @Path("/tags")
     @Operation(summary = "Get the list of all domain tags created in this Edge instance",
@@ -408,6 +434,14 @@ public interface ProtocolAdaptersApi {
     @Produces(APPLICATION_JSON)
     @NotNull
     Response getDomainTags();
+
+
+
+
+
+
+
+
 
 
     // TODO not part of this ticket as it does not include schemas

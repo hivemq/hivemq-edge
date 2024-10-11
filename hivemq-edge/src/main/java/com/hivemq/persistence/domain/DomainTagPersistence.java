@@ -19,6 +19,7 @@ import com.hivemq.api.model.tags.DomainTagModel;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 import java.util.List;
+import java.util.Set;
 
 public interface DomainTagPersistence {
 
@@ -31,6 +32,12 @@ public interface DomainTagPersistence {
             @NotNull String adapterId,
             @NotNull String tagId,
             @NotNull DomainTag domainTag);
+
+
+    @NotNull
+    DomainTagUpdateResult updateDomainTags(
+            @NotNull String adapterId,
+            @NotNull Set<DomainTag> domainTags);
 
 
     @NotNull
