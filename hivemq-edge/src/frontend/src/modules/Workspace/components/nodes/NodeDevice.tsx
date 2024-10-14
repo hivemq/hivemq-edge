@@ -13,15 +13,27 @@ import { useContextMenu } from '@/modules/Workspace/hooks/useContextMenu.ts'
 import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 import { CONFIG_ADAPTER_WIDTH } from '@/modules/Workspace/utils/nodes-utils.ts'
 import { selectorIsSkeletonZoom } from '@/modules/Workspace/utils/react-flow.utils.ts'
+import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
+import IconButton from '@/components/Chakra/IconButton.tsx'
+import { useTranslation } from 'react-i18next'
 
 const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data, dragging }) => {
+  const { t } = useTranslation()
   const { onContextMenu } = useContextMenu(id, selected, '/workspace/node')
   const { category, capabilities } = data
   const showSkeleton = useStore(selectorIsSkeletonZoom)
 
   return (
     <>
-      <ContextualToolbar id={id} onOpenPanel={onContextMenu} dragging={dragging} />
+      <ContextualToolbar id={id} onOpenPanel={onContextMenu} dragging={dragging} hasNoOverview>
+        <ToolbarButtonGroup>
+          <IconButton
+            icon={<Icon as={deviceCapabilityIcon['READ']} />}
+            aria-label={t('workspace.toolbar.command.device.metadata')}
+            onClick={onContextMenu}
+          />
+        </ToolbarButtonGroup>
+      </ContextualToolbar>
       <NodeWrapper
         isSelected={selected}
         wordBreak="break-word"
@@ -29,8 +41,6 @@ const NodeDevice: FC<NodeProps<DeviceMetadata>> = ({ id, selected, data, draggin
         p={3}
         w={CONFIG_ADAPTER_WIDTH}
         borderTopRadius={30}
-        onDoubleClick={onContextMenu}
-        onContextMenu={onContextMenu}
       >
         <VStack>
           {!showSkeleton && (
