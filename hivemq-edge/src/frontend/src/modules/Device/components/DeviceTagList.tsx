@@ -16,10 +16,10 @@ interface DeviceTagListProps {
 
 const DeviceTagList: FC<DeviceTagListProps> = ({ adapter }) => {
   const { t } = useTranslation()
-  const { data, isLoading, isError, context, onUpdateList } = useTagManager(adapter?.id)
+  const { data, isLoading, isError, context, onupdateCollection } = useTagManager(adapter?.id)
 
   const onHandleSubmit = (data: DomainTagList | undefined) => {
-    if (data) onUpdateList(data)
+    if (data) onupdateCollection(data)
   }
 
   return (

@@ -25,7 +25,6 @@ export const useTagManager = (adapterId: string | undefined) => {
   const toast = useToast()
 
   const { protocol, isLoading: protocolLoad } = useGetAdapterInfo(adapterId)
-  const { data: tagList, isLoading, isError: isTagError, error: tagError } = useGetDomainTags(adapterId, protocol?.id)
   const tagManager = useMemo<TagManagerSchema>(() => {
     try {
       if (!protocol) return { isError: true, error: t('device.errors.noAdapter') }
@@ -37,6 +36,7 @@ export const useTagManager = (adapterId: string | undefined) => {
       return { isError: true, error: (e as Error).message }
     }
   }, [protocol, t])
+  const { data: tagList, isLoading, isError: isTagError, error: tagError } = useGetDomainTags(adapterId, protocol?.id)
 
   // TODO[NVL] Error formats differ too much. ProblemDetails!
   const { error, isError } = useMemo(() => {
@@ -48,8 +48,9 @@ export const useTagManager = (adapterId: string | undefined) => {
   const createMutator = useCreateDomainTags()
   const deleteMutator = useDeleteDomainTags()
   const updateMutator = useUpdateDomainTags()
-  const updateListMutator = useUpdateAllDomainTags()
+  const updateCollectionMutator = useUpdateAllDomainTags()
 
+  // TODO[NVL] Insert Edge-wide toast configuration (need refactoring)
   const formatToast = (operation: string) => ({
     success: {
       title: t(`device.drawer.tagList.toast.${operation}.title`),
@@ -86,9 +87,12 @@ export const useTagManager = (adapterId: string | undefined) => {
     )
   }
 
-  const onUpdateList = (tags: DomainTagList) => {
+  const onupdateCollection = (tags: DomainTagList) => {
     if (!adapterId) return
-    toast.promise(updateListMutator.mutateAsync({ adapterId: adapterId, requestBody: tags }), formatToast('updateList'))
+    toast.promise(
+      updateCollectionMutator.mutateAsync({ adapterId: adapterId, requestBody: tags }),
+      formatToast('updateCollection')
+    )
   }
 
   const context: ManagerContextType = {
@@ -102,15 +106,18 @@ export const useTagManager = (adapterId: string | undefined) => {
     context,
     // The CRUD operations
     data: tagList,
-    onUpdateList,
     onCreate,
     onDelete,
     onUpdate,
+    onupdateCollection,
     // The state (as in ReactQuery)
     isLoading: isLoading || protocolLoad,
     isError,
     error,
     isPending:
-      createMutator.isPending || updateMutator.isPending || deleteMutator.isPending || updateListMutator.isPending, // assuming only one operation at a time
+      createMutator.isPending ||
+      updateMutator.isPending ||
+      deleteMutator.isPending ||
+      updateCollectionMutator.isPending, // assuming only one operation at a time
   }
 }

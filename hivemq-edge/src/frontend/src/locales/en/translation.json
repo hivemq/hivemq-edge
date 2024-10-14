@@ -605,7 +605,7 @@
             "description_success": "The tag has been deleted from the device",
             "description_error": "The tag could not be deleted"
           },
-          "updateList": {
+          "updateCollection": {
             "title": "Edit the tags",
             "description_success": "The tags has been modified on the device",
             "description_error": "The list of tags could not be updated on the device"
