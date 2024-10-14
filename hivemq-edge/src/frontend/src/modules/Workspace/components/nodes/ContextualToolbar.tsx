@@ -27,9 +27,16 @@ type SelectedNodeProps = Pick<NodeProps, 'id' | `dragging`> & Pick<NodeToolbarPr
 interface ContextualToolbarProps extends SelectedNodeProps {
   onOpenPanel?: MouseEventHandler | undefined
   children?: React.ReactNode
+  hasNoOverview?: boolean
 }
 
-const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, children, dragging }) => {
+const ContextualToolbar: FC<ContextualToolbarProps> = ({
+  id,
+  onOpenPanel,
+  children,
+  hasNoOverview = false,
+  dragging,
+}) => {
   const { t } = useTranslation()
   const { onInsertGroupNode, nodes, edges } = useWorkspaceStore()
   const theme = useTheme()
@@ -120,22 +127,24 @@ const ContextualToolbar: FC<ContextualToolbarProps> = ({ id, onOpenPanel, childr
 
   return (
     <>
-      <NodeToolbar
-        isVisible={Boolean(mainNodes?.id === id && !dragging)}
-        position={Position.Right}
-        role="toolbar"
-        aria-label={t('workspace.toolbar.container.right')}
-      >
-        <ToolbarButtonGroup>
-          <IconButton
-            size="sm"
-            data-testid="node-group-toolbar-panel"
-            icon={<LuPanelRightOpen />}
-            aria-label={t('workspace.toolbar.command.overview')}
-            onClick={onOpenPanel}
-          />
-        </ToolbarButtonGroup>
-      </NodeToolbar>
+      {!hasNoOverview && (
+        <NodeToolbar
+          isVisible={Boolean(mainNodes?.id === id && !dragging)}
+          position={Position.Right}
+          role="toolbar"
+          aria-label={t('workspace.toolbar.container.right')}
+        >
+          <ToolbarButtonGroup>
+            <IconButton
+              size="sm"
+              data-testid="node-group-toolbar-panel"
+              icon={<LuPanelRightOpen />}
+              aria-label={t('workspace.toolbar.command.overview')}
+              onClick={onOpenPanel}
+            />
+          </ToolbarButtonGroup>
+        </NodeToolbar>
+      )}
       {(children || isGroupable) && (
         <NodeToolbar
           isVisible={Boolean(mainNodes?.id === id && !dragging)}
