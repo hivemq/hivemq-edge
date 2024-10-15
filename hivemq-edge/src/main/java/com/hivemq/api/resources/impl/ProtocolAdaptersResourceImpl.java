@@ -266,6 +266,11 @@ public class ProtocolAdaptersResourceImpl extends AbstractApi implements Protoco
         if (instance.isEmpty()) {
             return ApiErrorUtils.notFound("Cannot update an adapter that does not exist");
         }
+        ApiErrorMessages errorMessages = ApiErrorUtils.createErrorContainer();
+        validateAdapterSchema(errorMessages, adapter);
+        if (ApiErrorUtils.hasRequestErrors(errorMessages)) {
+            return ApiErrorUtils.badRequest(errorMessages);
+        }
         if (logger.isDebugEnabled()) {
             logger.debug("Updating adapter \"{}\".", adapterId);
         }
