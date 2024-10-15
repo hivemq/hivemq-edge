@@ -46,7 +46,6 @@ dependencies {
 
 dependencies {
     testImplementation("com.hivemq:hivemq-edge")
-    testImplementation(libs.hivemq.edge.adapterSdk)
     testImplementation(libs.apache.commonsIO)
     testImplementation(libs.mockito.junitJupiter)
     testImplementation(libs.junit.jupiter)

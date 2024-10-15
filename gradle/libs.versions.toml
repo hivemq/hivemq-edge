@@ -118,6 +118,7 @@ wiremock-jre8-standalone = { module = "com.github.tomakehurst:wiremock-jre8-stan
 zeroAllocationHashing = { module = "net.openhft:zero-allocation-hashing", version.ref = "zeroAllocationHashing" }
 
 [plugins]
+cyclonedx = { id = "org.cyclonedx.bom", version = "1.10.0" }
 defaults = { id = "io.github.sgtsilvio.gradle.defaults", version = "0.2.0" }
 metadata = { id = "io.github.sgtsilvio.gradle.metadata", version = "0.6.0" }
 javadocLinks = { id = "io.github.sgtsilvio.gradle.javadoc-links", version = "0.8.0" }
