@@ -37,7 +37,6 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.bootstrap.factories.WritingServiceProvider;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -318,8 +317,7 @@ public class ProtocolAdapterManager {
 
     private @NotNull CompletableFuture<Void> startWriting(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         final CompletableFuture<Void> startWritingFuture;
-        if (writingEnabled() &&
-                protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
+        if (writingEnabled() && protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
             if (log.isDebugEnabled()) {
                 log.debug("Start writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
@@ -377,8 +375,13 @@ public class ProtocolAdapterManager {
 
         return stopWritingFuture.thenComposeAsync(ignored -> {
             final ProtocolAdapterStopOutputImpl adapterStopOutput = new ProtocolAdapterStopOutputImpl();
-            protocolAdapterWrapper.stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
-            return adapterStopOutput.getOutputFuture();
+            if (protocolAdapterWrapper.getRuntimeStatus() == ProtocolAdapterState.RuntimeStatus.STARTED) {
+                protocolAdapterWrapper.stop(new ProtocolAdapterStopInputImpl(), adapterStopOutput);
+                return adapterStopOutput.getOutputFuture();
+            } else {
+                return CompletableFuture.completedFuture(null);
+            }
+
         }, executorService).<Void>thenApply(input -> {
             log.info("Protocol-adapter '{}' stopped successfully.", protocolAdapterWrapper.getId());
             protocolAdapterWrapper.setRuntimeStatus(ProtocolAdapterState.RuntimeStatus.STOPPED);
@@ -465,12 +468,9 @@ public class ProtocolAdapterManager {
         if (adapterWrapper != null) {
             protocolAdapterMetrics.decreaseProtocolAdapterMetric(adapterWrapper.getAdapterInformation()
                     .getProtocolId());
-
             try {
-                if (adapterWrapper.getRuntimeStatus() == ProtocolAdapterState.RuntimeStatus.STARTED) {
-                    // FIXME: We need to adapt the whole flow to async
-                    stop(adapterWrapper).get();
-                }
+                // stop in any case as some resources must be cleaned up even if the adapter is still being started and is not yet in started state
+                stop(adapterWrapper).get();
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (final ExecutionException e) {
