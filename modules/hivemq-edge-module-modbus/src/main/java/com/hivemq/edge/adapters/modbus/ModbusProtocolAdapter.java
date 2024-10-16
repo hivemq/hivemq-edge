@@ -101,8 +101,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
                 .disconnect()
                 .whenComplete((unused,t) -> {
                         if(t == null) {
-                            output.stoppedSuccessfully();
                             protocolAdapterState.setConnectionStatus(DISCONNECTED);
+                            output.stoppedSuccessfully();
                         } else {
                             output.failStop(t, "Error encountered closing connection to Modbus device.");
                         }
