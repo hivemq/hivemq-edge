@@ -1476,6 +1476,18 @@ public class ClientQueueMemoryLocalPersistenceTest {
         }
     }
 
+    @Test
+    public void test_peek_whenQueueEmpty_thenReturnEmptyList() {
+        metricRegistry = new MetricRegistry();
+        persistence = new ClientQueueMemoryLocalPersistence(payloadPersistence,
+                messageDroppedService,
+                metricRegistry,
+                new InternalConfigurationServiceImpl());
+
+        final ImmutableList<PUBLISH> publishes = persistence.peek("queueId", true, 100_000, 10, 0);
+        assertEquals(0, publishes.size());
+    }
+
     private ImmutableIntArray createPacketIds(final int start, final int size) {
         final ImmutableIntArray.Builder builder = ImmutableIntArray.builder();
         for (int i = start; i < (size + start); i++) {
