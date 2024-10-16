@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom'
 import { IChangeEvent } from '@rjsf/core'
 import { IdSchema, RJSFSchema } from '@rjsf/utils'
 import { RJSFValidationError } from '@rjsf/utils/src/types.ts'
+import debug from 'debug'
 import Form from '@rjsf/chakra-ui'
 import {
   Button,
@@ -39,6 +40,7 @@ import {
   getRequiredUiSchema,
 } from '@/modules/ProtocolAdapters/utils/uiSchema.utils.ts'
 import { AdapterContext } from '@/modules/ProtocolAdapters/types.ts'
+import { getMainRootFromPath, getTopicPaths } from '@/modules/Workspace/utils/topics-utils.ts'
 
 interface AdapterInstanceDrawerProps {
   adapterType?: string
@@ -52,6 +54,7 @@ interface AdapterInstanceDrawerProps {
 }
 
 const FLAG_POST_VALIDATE = false
+const rjsfLog = debug('RJSF:AdapterInstanceDrawer')
 
 const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   adapterType,
@@ -69,12 +72,18 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
   const { schema, uiSchema, name, logo, isDiscoverable } = useMemo(() => {
     const adapter: ProtocolAdapter | undefined = data?.items?.find((e) => e.id === adapterType)
     const { configSchema, uiSchema, capabilities } = adapter || {}
+
+    // TODO[NVL] This is still a hack; backend needs to provide identification of mapping-related properties
+    const paths = getTopicPaths(configSchema || {})
+    const subIndex = getMainRootFromPath(paths)
+    const hiddenMappingsKey = import.meta.env.VITE_FLAG_ADAPTER_SPLIT_SCHEMA === 'true' ? subIndex : undefined
+
     return {
       isDiscoverable: Boolean(capabilities?.includes('DISCOVER')),
       schema: configSchema,
       name: adapter?.name,
       logo: adapter?.logoUrl,
-      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter),
+      uiSchema: getRequiredUiSchema(uiSchema, isNewAdapter, hiddenMappingsKey),
     }
   }, [data?.items, isNewAdapter, adapterType])
 
@@ -152,7 +161,7 @@ const AdapterInstanceDrawer: FC<AdapterInstanceDrawerProps> = ({
                   onSubmit={onValidate}
                   validator={customFormatsValidator}
                   showErrorList="bottom"
-                  onError={(errors) => console.log('XXXXXXX', errors)}
+                  onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
                   formData={defaultValues}
                   customValidate={customValidate(schema, allAdapters, t)}
                   transformErrors={filterUnboundErrors}

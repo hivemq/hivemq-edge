@@ -15,7 +15,6 @@ const defaultEdgeFlowContext: EdgeFlowOptions = {
   showTopics: true,
   showStatus: true,
   showGateway: false,
-  showHosts: false,
 }
 
 const defaultEdgeFlowGrouping: EdgeFlowGrouping = {

@@ -15,7 +15,7 @@ const MOCK_NODE_CLIENT_FILTER: NodeProps<ClientFilterData> = {
   ...MOCK_DEFAULT_NODE,
 }
 
-describe('ClientFilterNode', () => {
+describe('', () => {
   beforeEach(() => {
     cy.viewport(400, 400)
   })

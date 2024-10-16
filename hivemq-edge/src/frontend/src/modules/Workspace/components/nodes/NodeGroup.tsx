@@ -4,14 +4,13 @@ import {
   Handle,
   NodeProps,
   NodeResizer,
-  NodeToolbar,
   Position,
   NodeRemoveChange,
   NodeResetChange,
   EdgeRemoveChange,
 } from 'reactflow'
-import { Box, ButtonGroup, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
-import { LuExpand, LuPanelRightOpen, LuShrink } from 'react-icons/lu'
+import { Box, Icon, Text, useColorMode, useDisclosure, useTheme } from '@chakra-ui/react'
+import { LuExpand, LuShrink } from 'react-icons/lu'
 import { ImUngroup } from 'react-icons/im'
 
 import ConfirmationDialog from '@/components/Modal/ConfirmationDialog.tsx'
@@ -20,13 +19,15 @@ import { Group } from '../../types.ts'
 import useWorkspaceStore from '../../hooks/useWorkspaceStore.ts'
 import { useContextMenu } from '../../hooks/useContextMenu.ts'
 import IconButton from '@/components/Chakra/IconButton.tsx'
+import ToolbarButtonGroup from '@/components/react-flow/ToolbarButtonGroup.tsx'
+import ContextualToolbar from '@/modules/Workspace/components/nodes/ContextualToolbar.tsx'
 
 const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
   const { t } = useTranslation()
   const { colors } = useTheme()
   const { onToggleGroup, onNodesChange, onEdgesChange, nodes, edges } = useWorkspaceStore()
   const { isOpen: isConfirmUngroupOpen, onOpen: onConfirmUngroupOpen, onClose: onConfirmUngroupClose } = useDisclosure()
-  const { onContextMenu } = useContextMenu(id, selected, '/edge-flow/group')
+  const { onContextMenu } = useContextMenu(id, selected, '/workspace/group')
   const { colorMode } = useColorMode()
   const isLight = colorMode === 'light'
 
@@ -43,17 +44,17 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
     // TODO[NVL] Create a store action
     onToggleGroup({ id, data }, true)
     onNodesChange(
-      nodes.map((e) => {
-        if (data.childrenNodeIds.includes(e.id)) {
+      nodes.map((node) => {
+        if (data.childrenNodeIds.includes(node.id)) {
           return {
             item: {
-              ...e,
+              ...node,
               parentNode: undefined,
-              position: { x: e.position.x + props.xPos, y: e.position.y + props.yPos },
+              position: { x: node.position.x + props.xPos, y: node.position.y + props.yPos },
             },
             type: 'reset',
           } as NodeResetChange
-        } else return { item: e, type: 'reset' } as NodeResetChange
+        } else return { item: node, type: 'reset' } as NodeResetChange
       })
     )
     onNodesChange([{ id, type: 'remove' } as NodeRemoveChange])
@@ -64,15 +65,8 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
 
   return (
     <>
-      <NodeToolbar
-        isVisible={selected}
-        position={Position.Top}
-        role="toolbar"
-        aria-controls={`node-group-${id}`}
-        aria-label={t('workspace.grouping.toolbar.aria-label', { id })}
-        style={{ display: 'flex', gap: '12px' }}
-      >
-        <ButtonGroup size="sm" variant="outline" colorScheme="gray">
+      <ContextualToolbar id={id} dragging={props.dragging} onOpenPanel={onContextMenu}>
+        <ToolbarButtonGroup isAttached={false}>
           <IconButton
             data-testid="node-group-toolbar-expand"
             icon={<Icon as={data.isOpen ? LuShrink : LuExpand} boxSize={5} />}
@@ -87,17 +81,8 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
             aria-label={t('workspace.grouping.command.ungroup')}
             onClick={onConfirmUngroup}
           />
-          <IconButton
-            size="sm"
-            variant="solid"
-            colorScheme="gray"
-            data-testid="node-group-toolbar-panel"
-            icon={<Icon as={LuPanelRightOpen} boxSize={5} />}
-            aria-label={t('workspace.grouping.command.overview')}
-            onClick={onContextMenu}
-          />
-        </ButtonGroup>
-      </NodeToolbar>
+        </ToolbarButtonGroup>
+      </ContextualToolbar>
       {selected && (
         <NodeResizer
           isVisible={true}
@@ -120,6 +105,7 @@ const NodeGroup: FC<NodeProps<Group>> = ({ id, data, selected, ...props }) => {
         borderStyle="solid"
         onDoubleClick={onContextMenu}
         onContextMenu={onContextMenu}
+        data-groupopen={data.isOpen}
       >
         <Text m={2} colorScheme="black">
           {data.title}

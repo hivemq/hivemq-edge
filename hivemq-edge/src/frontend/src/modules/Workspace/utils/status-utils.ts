@@ -64,7 +64,7 @@ export type EdgeStyle = Pick<Edge, 'style' | 'animated' | 'markerEnd' | 'data'>
 export const getEdgeStatus = (isConnected: boolean, hasTopics: boolean, themeForStatus: string): EdgeStyle => {
   const edge: EdgeStyle = {}
   edge.style = {
-    strokeWidth: isConnected ? 1.5 : 0.5,
+    strokeWidth: 1.5,
     stroke: themeForStatus,
   }
   edge.animated = isConnected && hasTopics

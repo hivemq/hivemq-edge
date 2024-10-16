@@ -14,11 +14,14 @@ import {
   discoverAdapterTopics,
   flattenObject,
   getBridgeTopics,
+  getMainRootFromPath,
   getPropertiesFromPath,
   getTopicPaths,
+  getValuesFromPath,
   mergeAllTopics,
 } from './topics-utils.ts'
 import { mockJSONSchema } from '@/api/hooks/useProtocolAdapters/__handlers__'
+import { mockClientSubscriptionsList } from '@/api/hooks/useClientSubscriptions/__handlers__'
 
 describe('getBridgeTopics', () => {
   it('should extract topics from a Bridge', async () => {
@@ -134,11 +137,12 @@ describe('discoverAdapterTopics', () => {
 })
 
 describe('mergeAllTopics', () => {
-  it('should extract every topics from all bridges and adapters', async () => {
+  it('should extract every topics from all clients, bridges and adapters', async () => {
     const actual = mergeAllTopics(
       { items: [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS] },
       [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
-      [mockBridge, mockBridge]
+      [mockBridge, mockBridge],
+      mockClientSubscriptionsList
     )
 
     expect(actual).toStrictEqual([
@@ -147,11 +151,12 @@ describe('mergeAllTopics', () => {
       'a/valid/topic/opc-ua-client/1',
       'a/valid/topic/opc-ua-client/2',
       'a/valid/topic/modbus/1',
+      'test/topic/1',
     ])
   })
 
   it('should extract every topics from all bridges', async () => {
-    const actual = mergeAllTopics(undefined, undefined, [mockBridge, mockBridge])
+    const actual = mergeAllTopics(undefined, undefined, [mockBridge, mockBridge], undefined)
 
     expect(actual).toStrictEqual(['#', 'root/topic/ref/1'])
   })
@@ -160,6 +165,7 @@ describe('mergeAllTopics', () => {
     const actual = mergeAllTopics(
       { items: [MOCK_PROTOCOL_OPC_UA, MOCK_PROTOCOL_MODBUS] },
       [MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_OPC_UA as Adapter, MOCK_ADAPTER_MODBUS as Adapter],
+      undefined,
       undefined
     )
 
@@ -171,9 +177,39 @@ describe('mergeAllTopics', () => {
   })
 
   it('should not extract any topic!', async () => {
-    const actual = mergeAllTopics(undefined, undefined, undefined)
+    const actual = mergeAllTopics(undefined, undefined, undefined, undefined)
 
     expect(actual).toStrictEqual([])
+  })
+})
+
+describe('getMainRootFromPath', () => {
+  it('should work', () => {
+    expect(getMainRootFromPath([])).toStrictEqual(undefined)
+    expect(getMainRootFromPath(['root'])).toStrictEqual('root')
+    expect(getMainRootFromPath(['root.'])).toStrictEqual('root')
+    expect(getMainRootFromPath(['root-'])).toStrictEqual('root-')
+    expect(getMainRootFromPath(['root.*.first.one'])).toStrictEqual('root')
+    expect(getMainRootFromPath(['root.*.first.one', 'root2.*.next.one'])).toStrictEqual('root')
+  })
+})
+
+describe('getValuesFromPath', () => {
+  it('should work', () => {
+    expect(getValuesFromPath('', mockJSONSchema)).toStrictEqual(undefined)
+    expect(getValuesFromPath('test', mockJSONSchema)).toStrictEqual(undefined)
+    expect(getValuesFromPath('test.still.wrong', mockJSONSchema)).toStrictEqual(undefined)
+    expect(
+      getValuesFromPath('properties.simulationToMqtt.properties.maxPollingErrorsBeforeRemoval', mockJSONSchema)
+    ).toStrictEqual(
+      expect.objectContaining({
+        default: 10,
+        description: 'Max. errors polling the endpoint before the polling daemon is stopped (-1 for unlimited retries)',
+        minimum: -1,
+        title: 'Max. Polling Errors',
+        type: 'integer',
+      })
+    )
   })
 })
 
@@ -186,21 +222,23 @@ describe('getPropertiesFromPath', () => {
       })
     )
     expect(getPropertiesFromPath('test.*', { type: 'string' })).toStrictEqual(undefined)
-    expect(getPropertiesFromPath('subscriptions.*.destination', mockJSONSchema)).toStrictEqual({
-      destination: {
-        description: 'The topic to publish data on',
-        format: 'mqtt-topic',
-        title: 'Destination Topic',
-        type: 'string',
-      },
-      qos: {
-        default: 0,
-        description: 'MQTT quality of service level',
-        maximum: 2,
-        minimum: 0,
-        title: 'QoS',
-        type: 'integer',
-      },
-    })
+    expect(getPropertiesFromPath('simulationToMqtt.simulationToMqttMappings.*.items', mockJSONSchema)).toStrictEqual(
+      expect.objectContaining({
+        mqttTopic: {
+          description: 'The topic to publish data on',
+          format: 'mqtt-topic',
+          title: 'Destination MQTT Topic',
+          type: 'string',
+        },
+        mqttQos: {
+          default: 0,
+          description: 'MQTT Quality of Service level',
+          maximum: 2,
+          minimum: 0,
+          title: 'MQTT QoS',
+          type: 'integer',
+        },
+      })
+    )
   })
 })

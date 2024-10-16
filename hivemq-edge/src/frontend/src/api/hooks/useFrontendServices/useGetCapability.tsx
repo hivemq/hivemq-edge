@@ -14,7 +14,7 @@ export const useGetCapability = (id: string) => {
   return useMemo<Capability | undefined>(() => {
     if (!data || !isSuccess || id.trim() === '') return undefined
 
-    const index = data.items?.findIndex((e) => e.id === id)
+    const index = data.items?.findIndex((capability) => capability.id === id)
     if (index === -1 || index === undefined) return undefined
 
     return data.items?.[index]

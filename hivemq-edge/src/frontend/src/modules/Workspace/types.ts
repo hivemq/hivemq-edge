@@ -1,9 +1,9 @@
 import { Edge, Node, OnEdgesChange, OnNodesChange, NodeAddChange, EdgeAddChange, Rect } from 'reactflow'
+import { ProtocolAdapter } from '@/api/__generated__'
 
 export interface EdgeFlowOptions {
   showTopics: boolean
   showStatus: boolean
-  showHosts: boolean
   showGateway: boolean
 }
 
@@ -21,9 +21,11 @@ export enum NodeTypes {
   EDGE_NODE = 'EDGE_NODE',
   BRIDGE_NODE = 'BRIDGE_NODE',
   ADAPTER_NODE = 'ADAPTER_NODE',
+  CLIENT_NODE = 'CLIENT_NODE',
   LISTENER_NODE = 'LISTENER_NODE',
   CLUSTER_NODE = 'CLUSTER_NODE',
   HOST_NODE = 'HOST_NODE',
+  DEVICE_NODE = 'DEVICE_NODE',
 }
 
 export enum EdgeTypes {
@@ -34,7 +36,9 @@ export enum IdStubs {
   EDGE_NODE = 'edge',
   BRIDGE_NODE = 'bridge',
   ADAPTER_NODE = 'adapter',
+  CLIENT_NODE = 'client',
   HOST_NODE = 'host',
+  DEVICE_NODE = 'device',
   GROUP_NODE = 'group',
   LISTENER_NODE = 'listener',
   CONNECTOR = 'connect',
@@ -68,3 +72,13 @@ export interface WorkspaceAction {
   onToggleGroup: (node: Pick<Node<Group, NodeTypes.CLUSTER_NODE>, 'id' | 'data'>, show: boolean) => void
   onGroupSetData: (id: string, node: Pick<Group, 'title' | 'colorScheme'>) => void
 }
+
+export interface TopicTreeMetadata {
+  label: string
+  count: number
+}
+
+/**
+ * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
+ */
+export type DeviceMetadata = ProtocolAdapter
