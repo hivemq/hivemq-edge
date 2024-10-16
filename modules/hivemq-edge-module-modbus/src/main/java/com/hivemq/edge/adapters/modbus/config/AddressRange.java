@@ -38,20 +38,26 @@ public class AddressRange {
                        required = true)
     public final int nrRegistersToRead;
 
-
-
     @JsonProperty(value = "readType", required = true)
     @ModuleConfigField(title = "The way the register range should be read",
                        description = "Type of read to performe on the registers",
                        required = true)
     public final ModbusAdu readType;
 
+    @JsonProperty(value = "unitId", required = true)
+    @ModuleConfigField(title = "The id of the unit to access",
+                       description = "Id of the unit to access on the modbus",
+                       required = true)
+    public final int unitId;
+
     public AddressRange(
             @JsonProperty(value = "startIdx", required = true) final int startIdx,
             @JsonProperty(value = "nrRegistersToRead", required = true) final int nrRegistersToRead,
-            @JsonProperty(value = "readType", required = true) final ModbusAdu readType) {
+            @JsonProperty(value = "readType", required = true) final ModbusAdu readType,
+            @JsonProperty(value = "unitId", required = true) final int unitId) {
         this.startIdx = startIdx;
         this.nrRegistersToRead = nrRegistersToRead;
         this.readType = readType;
+        this.unitId = unitId;
     }
 }

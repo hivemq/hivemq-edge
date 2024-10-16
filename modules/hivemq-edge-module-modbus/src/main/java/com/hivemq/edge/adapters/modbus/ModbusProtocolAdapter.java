@@ -210,7 +210,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
             final @NotNull ModbusClient modbusClient) {
         final AddressRange addressRange = modbusToMqttMapping.getAddressRange();
 
-        return doRead(addressRange.startIdx, addressRange.nrRegistersToRead, modbusToMqttMapping.getDataType(), addressRange.readType, modbusClient)
+        return doRead(addressRange.startIdx, addressRange.nrRegistersToRead, addressRange.unitId, modbusToMqttMapping.getDataType(), addressRange.readType, modbusClient)
                 .thenApply(dataPoint -> {
                     final ModBusData data = new ModBusData(modbusToMqttMapping);
                     data.addDataPoint(dataPoint);
@@ -221,6 +221,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     protected static CompletableFuture<DataPoint> doRead(
             final int startIdx,
             final int count,
+            final int unitId,
             final @NotNull ModbusDataType dataType,
             final @NotNull ModbusAdu readType,
             final @NotNull ModbusClient modbusClient) {
@@ -229,19 +230,27 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
                     .readHoldingRegisters(
                             startIdx,
                             count,
-                            dataType);
+                            dataType,
+                            unitId);
         } else if (INPUT_REGISTERS.equals(readType)) {
             return modbusClient
                     .readInputRegisters(
                             startIdx,
                             count,
-                            dataType);
+                            dataType,
+                            unitId);
         } else if (COILS.equals(readType)) {
             return modbusClient
-                    .readCoils(startIdx, count);
+                    .readCoils(
+                            startIdx,
+                            count,
+                            unitId);
         } else if (DISCRETE_INPUT.equals(readType)) {
             return modbusClient
-                    .readDiscreteInput(startIdx, count);
+                    .readDiscreteInput(
+                            startIdx,
+                            count,
+                            unitId);
         }
         return CompletableFuture.failedFuture(new Exception("Unknown read type " + readType));
     }
