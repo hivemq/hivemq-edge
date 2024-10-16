@@ -18,17 +18,17 @@ package com.hivemq.edge.adapters.modbus.impl;
 import com.digitalpetri.modbus.master.ModbusTcpMaster;
 import com.digitalpetri.modbus.master.ModbusTcpMasterConfig;
 import com.digitalpetri.modbus.requests.ReadCoilsRequest;
+import com.digitalpetri.modbus.requests.ReadDiscreteInputsRequest;
 import com.digitalpetri.modbus.requests.ReadHoldingRegistersRequest;
 import com.digitalpetri.modbus.requests.ReadInputRegistersRequest;
-import com.digitalpetri.modbus.responses.ModbusResponse;
 import com.digitalpetri.modbus.responses.ReadCoilsResponse;
+import com.digitalpetri.modbus.responses.ReadDiscreteInputsResponse;
 import com.digitalpetri.modbus.responses.ReadHoldingRegistersResponse;
 import com.digitalpetri.modbus.responses.ReadInputRegistersResponse;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
-import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
 import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
-import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
+import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
 import org.jetbrains.annotations.NotNull;
@@ -36,142 +36,115 @@ import org.jetbrains.annotations.NotNull;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Simon L Johnson
  */
 public class ModbusClient {
 
-    private final @NotNull ModbusAdapterConfig adapterConfig;
     private final @NotNull DataPointFactory dataPointFactory;
 
-    private final Object lock = new Object();
-    private ModbusTcpMaster modbusClient;
-    private final AtomicBoolean connected = new AtomicBoolean(false);
+    private final ModbusTcpMaster modbusClient;
 
     public ModbusClient(
             final @NotNull ModbusAdapterConfig adapterConfig, final @NotNull DataPointFactory dataPointFactory) {
-        this.adapterConfig = adapterConfig;
         this.dataPointFactory = dataPointFactory;
-    }
-
-    private ModbusTcpMaster getOrCreateClient() {
-        if (modbusClient == null) {
-            synchronized (lock) {
-                if (modbusClient == null) {
-                    final ModbusTcpMasterConfig config =
-                            new ModbusTcpMasterConfig.Builder(adapterConfig.getHost()).setPort(adapterConfig.getPort())
-                                    .setInstanceId(adapterConfig.getId())
-                                    .setTimeout(Duration.ofMillis(adapterConfig.getTimeoutMillis()))
-                                    .build();
-                    modbusClient = new ModbusTcpMaster(config);
-                }
-            }
-        }
-        return modbusClient;
+        final ModbusTcpMasterConfig config =
+                new ModbusTcpMasterConfig.Builder(adapterConfig.getHost())
+                        .setPort(adapterConfig.getPort())
+                        .setInstanceId(adapterConfig.getId())
+                        .setTimeout(Duration.ofMillis(adapterConfig.getTimeoutMillis()))
+                        .build();
+        modbusClient = new ModbusTcpMaster(config);
     }
 
     public boolean isConnected() {
-        return connected.get();
+        return modbusClient.isConnected();
     }
 
-    public CompletableFuture connect() {
-        final ModbusTcpMaster client = getOrCreateClient();
-        if (!connected.get()) {
-            return client.connect().thenRun(() -> connected.set(true));
-        }
-        return CompletableFuture.completedFuture(null);
+    public CompletableFuture<Void> connect() {
+        return modbusClient.connect().thenApply(unused -> null);
     }
 
-    public Boolean[] readCoils(final int startIdx, final int count) throws ProtocolAdapterException {
-        try {
-            final ModbusTcpMaster client = getOrCreateClient();
-            final CompletableFuture<ModbusResponse> future =
-                    client.sendRequest(new ReadCoilsRequest(startIdx, Math.min(count, 2000)), 0);
-            final Boolean[] val = new Boolean[count];
-            future.thenAccept(response -> {
+    /**
+     * Coils are 1bit.
+     */
+    public @NotNull CompletableFuture<DataPoint> readCoils(final int startIdx, final int count) {
+        return modbusClient
+            .<ReadCoilsResponse>sendRequest(new ReadCoilsRequest(startIdx, Math.min(count, 2000)), 0) //TODO: make configurable
+            .thenApply(response -> {
                 try {
-                    final ReadCoilsResponse coilsResponse = (ReadCoilsResponse) response;
-                    final ByteBuf buf = coilsResponse.getCoilStatus();
-                    int idx = 0;
-                    while (buf.isReadable()) {
-                        val[idx++] = buf.readBoolean();
-                    }
-                } finally {
-                    ReferenceCountUtil.release(response);
-                }
-            }).get();
-            return val;
-        } catch (final Exception e) {
-            throw new ProtocolAdapterException(e);
-        }
-    }
-
-    public @NotNull DataPoint readHoldingRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType)
-            throws ProtocolAdapterException {
-        try {
-            final ModbusTcpMaster client = getOrCreateClient();
-            final CompletableFuture<ReadHoldingRegistersResponse> future =
-                    client.sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count, 125)), 0);
-            return future.thenApply(response -> {
-                try {
-                    final ByteBuf buf = response.getRegisters();
+                    final ByteBuf buf = response.getCoilStatus();
                     return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + count),
-                            convert(buf, dataType, count));
+                            convert(buf, ModbusDataType.BOOL, count));
                 } finally {
                     ReferenceCountUtil.release(response);
                 }
-            }).get();
-
-        } catch (final Exception e) {
-            throw new ProtocolAdapterException(e);
-        }
+            });
     }
 
-    public Short[] readInputRegisters(final int startIdx, final int count) throws ProtocolAdapterException {
-
-        try {
-            final ModbusTcpMaster client = getOrCreateClient();
-            final CompletableFuture<ModbusResponse> future =
-                    client.sendRequest(new ReadInputRegistersRequest(startIdx, Math.min(count, 125)), 0);
-            final Short[] val = new Short[count];
-            future.thenAccept(response -> {
-                try {
-                    final ReadInputRegistersResponse coilsResponse = (ReadInputRegistersResponse) response;
-                    final ByteBuf buf = coilsResponse.getRegisters();
-                    //2 bytes per register BE
-                    int idx = 0;
-                    while (buf.isReadable()) {
-                        val[idx++] = buf.readShort();
+    /**
+     * Discrete registers are 1bit.
+     */
+    public @NotNull CompletableFuture<DataPoint> readDiscreteInput(final int startIdx, final int count) {
+        return modbusClient
+                .<ReadDiscreteInputsResponse>sendRequest(new ReadDiscreteInputsRequest(startIdx, Math.min(count, 2000)), 0) //TODO: make configurable
+                .thenApply(response -> {
+                    try {
+                        final ByteBuf buf = response.getInputStatus();
+                        return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + count),
+                                convert(buf, ModbusDataType.BOOL, count));
+                    } finally {
+                        ReferenceCountUtil.release(response);
                     }
-                } finally {
-                    ReferenceCountUtil.release(response);
-                }
-            }).get();
-            return val;
-        } catch (final Exception e) {
-            throw new ProtocolAdapterException(e);
-        }
+                });
     }
 
-    public boolean disconnect() {
+    /**
+     * Holding registers are 16bit.
+     */
+    public @NotNull CompletableFuture<DataPoint> readHoldingRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType) {
+        return modbusClient
+                .<ReadHoldingRegistersResponse>sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count, 125)), 0) //TODO: make configurable
+                .thenApply(response -> {
+                    try {
+                        final ByteBuf buf = response.getRegisters();
+                        return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + count),
+                                convert(buf, dataType, count));
+                    } finally {
+                        ReferenceCountUtil.release(response);
+                    }
+                });
+    }
+
+    /**
+     * Inout registers are 16bit.
+     */
+    public @NotNull CompletableFuture<DataPoint> readInputRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType) {
+        return modbusClient
+                .<ReadInputRegistersResponse>sendRequest(new ReadInputRegistersRequest(startIdx, Math.min(count, 125)), 0)
+                .thenApply(response -> {
+                    try {
+                        final ByteBuf buf = response.getRegisters();
+                        return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + count),
+                                convert(buf, dataType, count));
+                    } finally {
+                        ReferenceCountUtil.release(response);
+                    }
+                });
+    }
+
+    public CompletableFuture<Void> disconnect() {
         //-- If the client is manually disconnected before connection established ensure we still call into the client
         //-- to shut it all down.
-        if (modbusClient != null) {
-            try {
-                modbusClient.disconnect().get();
-                return true;
-            } catch (final Exception e) {
-                //error disconnecting
-            }
-        }
-        return false;
+        return modbusClient.disconnect().thenApply(t -> null);
     }
 
     private @NotNull Object convert(
             final @NotNull ByteBuf buffi, final @NotNull ModbusDataType dataType, final int count) {
         switch (dataType) {
+            case BOOL:
+                return buffi.readBoolean();
             case INT_16:
                 return buffi.readShort();
             case UINT_16:

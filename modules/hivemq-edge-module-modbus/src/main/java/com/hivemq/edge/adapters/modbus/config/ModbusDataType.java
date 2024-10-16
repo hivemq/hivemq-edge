@@ -1,6 +1,7 @@
 package com.hivemq.edge.adapters.modbus.config;
 
 public enum ModbusDataType {
+    BOOL,
     INT_16,
     UINT_16,
     INT_32,

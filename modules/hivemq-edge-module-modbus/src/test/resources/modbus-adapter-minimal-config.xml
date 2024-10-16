@@ -28,6 +28,7 @@
                         <addressRange>
                             <startIdx>11</startIdx>
                             <nrRegistersToRead>1</nrRegistersToRead>
+                            <readType>HOLDING_REGISTERS</readType>
                         </addressRange>
                     </modbusToMqttMapping>
                 </modbusToMqttMappings>
