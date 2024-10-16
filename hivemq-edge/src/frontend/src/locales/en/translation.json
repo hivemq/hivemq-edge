@@ -63,6 +63,9 @@
     },
     "wip": {
       "message": "This is a work in progress. Be patient with us"
+    },
+    "rjsf": {
+      "validation": "Some validation errors in the form"
     }
   },
   "login": {
@@ -567,6 +570,7 @@
         "status_success": "Adapter {{ name }} successfully downloaded "
       },
       "error": {
+        "noAdapterConfig": "No adapter configuration exists",
         "noMapping": "No mapping could be found in the adapter configuration",
         "noSchema": "There are no valid schema defining the extracted mappings",
         "notValid": "The data collected from the adapter is not valid"
@@ -579,6 +583,51 @@
       }
     }
   },
+  "device": {
+    "drawer": {
+      "metadataPanel": {
+        "cta": {
+          "load": "Load Metadata"
+        }
+      },
+      "tagList": {
+        "title": "List of Device Tags",
+        "cta": {
+          "edit": "Edit tags"
+        },
+        "formatter": {
+          "unknownFormat": "< unknown format >"
+        },
+        "toast": {
+          "description_loading": "Processing the request",
+          "delete": {
+            "title": "Delete Tag",
+            "description_success": "The tag has been deleted from the device",
+            "description_error": "The tag could not be deleted"
+          },
+          "updateCollection": {
+            "title": "Edit the tags",
+            "description_success": "The tags has been modified on the device",
+            "description_error": "The list of tags could not be updated on the device"
+          }
+        }
+      },
+      "tagEditor": {
+        "title": "Edit the tags",
+        "cta": {
+          "edit": "Edit tags"
+        }
+      }
+    },
+    "errors": {
+      "noFormSchema": "The form cannot be created, due to internal errors",
+      "noAdapter": "The protocol adapter for this device cannot be found",
+      "noMetadataLoaded": "No metadata loaded for the device",
+      "noTagLoaded": "Cannot load the tags",
+      "noTagCreated": "There is no tag created yet"
+    }
+  },
+
   "articles": {
     "title": "Articles",
     "description": "Some reading for your understanding of HiveMQ Edge",

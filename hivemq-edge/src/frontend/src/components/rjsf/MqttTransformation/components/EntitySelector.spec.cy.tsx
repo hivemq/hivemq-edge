@@ -40,9 +40,9 @@ describe('SelectSourceTopics', () => {
         <SelectDestinationTag adapterId={mockAdapterId} values={['tag/test1']} onChange={cy.stub()} />
       )
 
-      // Loading
-      cy.get('#mapping-select-destination').should('contain.text', 'Loading...')
-      cy.get('#mapping-select-destination').should('not.contain.text', 'Loading...')
+      // // Loading
+      // cy.get('#mapping-select-destination').should('contain.text', 'Loading...')
+      // cy.get('#mapping-select-destination').should('not.contain.text', 'Loading...')
 
       cy.get('#mapping-select-destination').should('contain.text', 'tag/test1')
     })

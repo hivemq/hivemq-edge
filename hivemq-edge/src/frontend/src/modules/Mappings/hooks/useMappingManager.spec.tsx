@@ -79,6 +79,7 @@ describe('useMappingManager', () => {
       inwardManager: undefined,
       isLoading: false,
       outwardManager: undefined,
+      tagsManager: undefined,
     })
   })
 
@@ -95,7 +96,7 @@ describe('useMappingManager', () => {
 
     const { formData, schema, uiSchema } = inwardManager as MappingManagerType
     expect(formData).not.toBeUndefined()
-    expect(formData.simulationToMqtt).toStrictEqual(
+    expect(formData?.simulationToMqtt).toStrictEqual(
       expect.objectContaining({
         simulationToMqttMappings: [
           {

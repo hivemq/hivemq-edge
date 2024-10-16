@@ -1,3 +1,4 @@
+import { type RJSFSchema } from '@rjsf/utils'
 import { type IconType } from 'react-icons'
 import { TbSettingsAutomation } from 'react-icons/tb'
 import { FaIndustry } from 'react-icons/fa6'
@@ -9,9 +10,12 @@ import { isMockAdapterTypeBidirectional } from '@/__test-utils__/adapters/types.
 import { type ProtocolAdapter, Status } from '@/api/__generated__'
 import { HmInput, HmOutput } from '@/components/react-icons/hm'
 
+import i18n from '@/config/i18n.config.ts'
+
 const MQTT_PROPERTY_STUB = {
   inward: 'ToMqtt',
   outward: 'mqttTo',
+  mapping: 'Mappings',
 }
 
 const capitalize = (s: string) => s && s[0].toUpperCase() + s.slice(1)
@@ -22,6 +26,19 @@ export const getOutwardMappingRootProperty = (adapterType: string) =>
 
 export const isBidirectional = (adapter: ProtocolAdapter | undefined) => {
   return Boolean(adapter?.capabilities?.includes('WRITE') || isMockAdapterTypeBidirectional(adapter?.id))
+}
+
+export const getInwardMappingSchema = (adapter: ProtocolAdapter | undefined): RJSFSchema => {
+  if (!adapter || !adapter.id) throw new Error(i18n.t('protocolAdapter.export.error.noAdapterConfig'))
+  const root = getInwardMappingRootProperty(adapter.id)
+  const { properties } = adapter.configSchema as RJSFSchema
+  if (!properties) throw new Error(i18n.t('protocolAdapter.export.error.noMapping'))
+
+  const mapping = (properties as RJSFSchema)[root] as RJSFSchema
+  const mappingProps = mapping.properties as RJSFSchema
+  if (!mappingProps) throw new Error(i18n.t('protocolAdapter.export.error.notValid'))
+
+  return mappingProps[`${root}${MQTT_PROPERTY_STUB.mapping}`]
 }
 
 /**

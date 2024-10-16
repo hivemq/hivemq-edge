@@ -6,6 +6,7 @@ import { MOCK_ADAPTER_ID } from '@/__test-utils__/mocks.ts'
 import {
   Adapter,
   AdaptersList,
+  type DeviceDataPoint,
   type DomainTag,
   type DomainTagList,
   JsonNode,
@@ -15,6 +16,7 @@ import {
   Status,
   type ValuesTree,
 } from '@/api/__generated__'
+import { MockAdapterType } from '@/__test-utils__/adapters/types.ts'
 
 export const mockUISchema: UiSchema = {
   'ui:tabs': [
@@ -217,6 +219,265 @@ export const mockProtocolAdapter: ProtocolAdapter = {
   tags: ['tag1', 'tag2', 'tag3'],
 }
 
+export const mockProtocolAdapter_OPCUA: ProtocolAdapter = {
+  id: 'opcua',
+  protocol: 'OPC UA',
+  name: 'OPC UA to MQTT Protocol Adapter',
+  description:
+    'Connects HiveMQ Edge to existing OPC UA services as a client and enables a seamless exchange of data between MQTT and OPC-UA.',
+  url: 'https://docs.hivemq.com/hivemq-edge/protocol-adapters.html#opc-ua-adapter',
+  version: 'Development Version',
+  logoUrl: '/module/images/opc-ua-icon.jpg',
+  author: 'HiveMQ',
+  installed: true,
+  capabilities: ['DISCOVER', 'READ'],
+  category: {
+    name: 'INDUSTRIAL',
+    displayName: 'Industrial',
+    description: 'Industrial, typically field bus protocols.',
+  },
+  configSchema: {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    type: 'object',
+    properties: {
+      auth: {
+        type: 'object',
+        properties: {
+          basic: {
+            type: 'object',
+            properties: {
+              password: {
+                type: 'string',
+                title: 'Password',
+                description: 'Password for basic authentication',
+              },
+              username: {
+                type: 'string',
+                title: 'Username',
+                description: 'Username for basic authentication',
+              },
+            },
+            title: 'Basic Authentication',
+            description: 'Username / password based authentication',
+          },
+          x509: {
+            type: 'object',
+            properties: {
+              enabled: {
+                type: 'boolean',
+                title: 'Enable X509',
+                description: 'Enables X509 auth',
+              },
+            },
+            title: 'X509 Authentication',
+            description: 'Authentication based on certificate / private key',
+          },
+        },
+      },
+      id: {
+        type: 'string',
+        title: 'Identifier',
+        description: 'Unique identifier for this protocol adapter',
+        minLength: 1,
+        maxLength: 1024,
+        format: 'identifier',
+        pattern: '^([a-zA-Z_0-9-_])*$',
+      },
+      opcuaToMqtt: {
+        type: 'object',
+        properties: {
+          opcuaToMqttMappings: {
+            title: 'opcuaToMqttMappings',
+            description: 'Map your sensor data to MQTT Topics',
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                messageExpiryInterval: {
+                  type: 'integer',
+                  title: 'MQTT message expiry interval [s]',
+                  description: 'Time in seconds until an MQTT publish message expires',
+                  minimum: 1,
+                  maximum: 4294967295,
+                },
+                mqttQos: {
+                  type: 'integer',
+                  title: 'MQTT QoS',
+                  description: 'MQTT quality of service level',
+                  default: 0,
+                  minimum: 0,
+                  maximum: 2,
+                },
+                mqttTopic: {
+                  type: 'string',
+                  title: 'Destination MQTT topic',
+                  description: 'The MQTT topic to publish to',
+                  format: 'mqtt-topic',
+                },
+                node: {
+                  type: 'string',
+                  title: 'Source Node ID',
+                  description: 'identifier of the node on the OPC UA server. Example: "ns=3;s=85/0:Temperature"',
+                },
+                publishingInterval: {
+                  type: 'integer',
+                  title: 'OPC UA publishing interval [ms]',
+                  description: 'OPC UA publishing interval in milliseconds for this subscription on the server',
+                  default: 1000,
+                  minimum: 1,
+                },
+                serverQueueSize: {
+                  type: 'integer',
+                  title: 'OPC UA server queue size',
+                  description: 'OPC UA queue size for this subscription on the server',
+                  default: 1,
+                  minimum: 1,
+                },
+              },
+              required: ['mqttTopic', 'node'],
+            },
+          },
+        },
+        title: 'OpcUA To MQTT Config',
+        description: 'The configuration for a data stream from OpcUA to MQTT',
+      },
+      overrideUri: {
+        type: 'boolean',
+        title: 'Override server returned endpoint URI',
+        description:
+          'Overrides the endpoint URI returned from the OPC UA server with the hostname and port from the specified URI.',
+        default: false,
+        format: 'boolean',
+      },
+      security: {
+        type: 'object',
+        properties: {
+          policy: {
+            type: 'string',
+            enum: [
+              'NONE',
+              'BASIC128RSA15',
+              'BASIC256',
+              'BASIC256SHA256',
+              'AES128_SHA256_RSAOAEP',
+              'AES256_SHA256_RSAPSS',
+            ],
+            title: 'OPC UA security policy',
+            description: 'Security policy to use for communication with the server.',
+          },
+        },
+      },
+      tls: {
+        type: 'object',
+        properties: {
+          enabled: {
+            type: 'boolean',
+            title: 'Enable TLS',
+            description: 'Enables TLS encrypted connection',
+            default: true,
+          },
+          keystore: {
+            type: 'object',
+            properties: {
+              password: {
+                type: 'string',
+                title: 'Keystore password',
+                description: 'Password to open the keystore.',
+              },
+              path: {
+                type: 'string',
+                title: 'Keystore path',
+                description: 'Path on the local file system to the keystore.',
+              },
+              privateKeyPassword: {
+                type: 'string',
+                title: 'Private key password',
+                description: 'Password to access the private key.',
+              },
+            },
+            required: ['password', 'path', 'privateKeyPassword'],
+            title: 'Keystore',
+            description:
+              'Keystore that contains the client certificate including the chain. Required for X509 authentication.',
+          },
+          truststore: {
+            type: 'object',
+            properties: {
+              password: {
+                type: 'string',
+                title: 'Truststore password',
+                description: 'Password to open the truststore.',
+              },
+              path: {
+                type: 'string',
+                title: 'Truststore path',
+                description: 'Path on the local file system to the truststore.',
+              },
+            },
+            required: ['password', 'path'],
+            title: 'Truststore',
+            description: 'Truststore wich contains the trusted server certificates or trusted intermediates.',
+          },
+        },
+      },
+      uri: {
+        type: 'string',
+        title: 'OPC UA Server URI',
+        description: 'URI of the OPC UA server to connect to',
+        format: 'uri',
+      },
+    },
+    required: ['id', 'opcuaToMqtt', 'uri'],
+  },
+  uiSchema: {
+    'ui:tabs': [
+      {
+        id: 'coreFields',
+        title: 'Connection',
+        properties: ['id', 'uri', 'overrideUri'],
+      },
+      {
+        id: 'subFields',
+        title: 'OPC UA to MQTT',
+        properties: ['opcuaToMqtt'],
+      },
+      {
+        id: 'security',
+        title: 'Security',
+        properties: ['security', 'tls'],
+      },
+      {
+        id: 'authentication',
+        title: 'Authentication',
+        properties: ['auth'],
+      },
+    ],
+    id: {
+      'ui:disabled': true,
+    },
+    'ui:order': ['id', 'uri', '*'],
+    opcuaToMqtt: {
+      'ui:batchMode': true,
+      opcuaToMqttMappings: {
+        items: {
+          'ui:order': ['node', 'mqttTopic', 'mqttQos', '*'],
+          'ui:collapsable': {
+            titleKey: 'mqttTopic',
+          },
+          node: {
+            'ui:widget': 'discovery:tagBrowser',
+          },
+        },
+      },
+    },
+    auth: {
+      basic: {
+        'ui:order': ['username', 'password', '*'],
+      },
+    },
+  },
+}
+
 export const mockAdapterConfig: GenericObjectType = {
   minValue: 0,
   maxValue: 1000,
@@ -243,6 +504,46 @@ export const mockAdapter: Adapter = {
   status: {
     startedAt: '2023-08-21T11:51:24.234+01',
     connection: Status.connection.CONNECTED,
+  },
+}
+
+export const mockAdapter_OPCUA: Adapter = {
+  id: 'opcua-1',
+  type: 'opcua',
+  config: {
+    // @ts-ignore TODO[26764] bug with backend, https://hivemq.kanbanize.com/ctrl_board/57/cards/26764/details/
+    id: 'opcua-1',
+    // @ts-ignore TODO[26764] bug with backend, https://hivemq.kanbanize.com/ctrl_board/57/cards/26764/details/
+    uri: 'opc.tcp://test.host.local:53530/OPCUA/Server',
+    // @ts-ignore TODO[26764] bug with backend, https://hivemq.kanbanize.com/ctrl_board/57/cards/26764/details/
+    overrideUri: false,
+    tls: {
+      enabled: false,
+    },
+    opcuaToMqtt: {
+      opcuaToMqttMappings: [
+        {
+          node: 'ns=3;s=85/0:Temperature',
+          mqttTopic: 'generator/group1/energy',
+          publishingInterval: 1000,
+          serverQueueSize: 1,
+          mqttQos: 0,
+          messageExpiryInterval: 4294967295,
+        },
+      ],
+    },
+    security: {
+      policy: 'NONE',
+    },
+  },
+  status: {
+    runtime: Status.runtime.STOPPED,
+    connection: Status.connection.ERROR,
+    id: 'opcua-1',
+    type: 'adapter',
+    startedAt: '2024-10-08T10:34:21.692+01',
+    message:
+      "com.hivemq.edge.adapters.opcua.OpcUaException: OPC UA subscription failed for nodeId `NodeId{ns=3, id=85/0:Temperature}`: Bad_NodeIdUnknown,The node id refers to a node that does not exist in the server address space. (status 'StatusCode{name=Bad_NodeIdUnknown, value=0x80340000, quality=bad}')",
   },
 }
 
@@ -355,11 +656,22 @@ export const mockDataPointOPCUA: ValuesTree = {
   ],
 }
 
-export const MOCK_DEVICE_TAGS = (adapterId: string): DomainTag[] => [
-  { tag: `${adapterId}/power-management/alert`, dataPoint: { node: 'ns=3;i=1002' } },
-  { tag: `${adapterId}/power-management/off`, dataPoint: { node: 'ns=3;i=1003' } },
-  { tag: `${adapterId}/log/event`, dataPoint: { node: 'ns=3;i=1008' } },
-]
+export const MOCK_DEVICE_TAG_ADDRESS_MODBUS: DeviceDataPoint = { startIdx: 0, endIdx: 1 }
+export const MOCK_DEVICE_TAG_ADDRESS_OPCUA: DeviceDataPoint = { node: 'ns=3;i=1002' }
+
+export const MOCK_DEVICE_TAGS = (adapterId: string, type?: string | null): DomainTag[] => {
+  switch (type) {
+    case MockAdapterType.MODBUS:
+      return [{ tag: `${adapterId}/alert`, dataPoint: MOCK_DEVICE_TAG_ADDRESS_MODBUS }]
+    case MockAdapterType.OPC_UA:
+      return [
+        { tag: `${adapterId}/power/off`, dataPoint: MOCK_DEVICE_TAG_ADDRESS_OPCUA },
+        { tag: `${adapterId}/log/event`, dataPoint: { node: 'ns=3;i=1008' } },
+      ]
+    default:
+      return [{ tag: `${adapterId}/log/event`, dataPoint: {} }]
+  }
+}
 
 export const handlers = [
   http.get('*/protocol-adapters/types', () => {
@@ -397,10 +709,12 @@ export const handlers = [
 ]
 
 export const deviceHandlers = [
-  http.get('*/protocol-adapters/adapters/:adapterId/tags', ({ params }) => {
+  http.get('*/protocol-adapters/adapters/:adapterId/tags', ({ params, request }) => {
     const { adapterId } = params
+    const url = new URL(request.url)
+    const type = url.searchParams.get('type')
 
-    return HttpResponse.json<DomainTagList>({ items: MOCK_DEVICE_TAGS(adapterId as string) }, { status: 200 })
+    return HttpResponse.json<DomainTagList>({ items: MOCK_DEVICE_TAGS(adapterId as string, type) }, { status: 200 })
   }),
 
   http.post('*/protocol-adapters/adapters/:adapterId/tags', () => {
@@ -412,6 +726,10 @@ export const deviceHandlers = [
   }),
 
   http.put('*/protocol-adapters/adapters/:adapterId/tags/:tagId', () => {
+    return HttpResponse.json({}, { status: 200 })
+  }),
+
+  http.put('*/protocol-adapters/adapters/:adapterId/tags', () => {
     return HttpResponse.json({}, { status: 200 })
   }),
 ]
