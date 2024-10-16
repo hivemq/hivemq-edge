@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import com.hivemq.bridge.MessageForwarderImpl;
 import com.hivemq.bridge.config.LocalSubscription;
 import com.hivemq.bridge.config.MqttBridge;
 import com.hivemq.configuration.service.BridgeConfigurationService;
@@ -48,8 +49,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import static com.hivemq.mqtt.handler.publish.PublishStatus.*;
+import static com.hivemq.mqtt.handler.publish.PublishStatus.DELIVERED;
+import static com.hivemq.mqtt.handler.publish.PublishStatus.FAILED;
+import static com.hivemq.mqtt.handler.publish.PublishStatus.NOT_CONNECTED;
 import static com.hivemq.sampling.SamplingService.SAMPLER_PREFIX;
+import static com.hivemq.sampling.SamplingService.SAMPLER_QUEUE_LIMIT;
 
 /**
  * @author Christoph Schäbel
@@ -159,8 +163,7 @@ public class PublishDistributorImpl implements PublishDistributor {
                 subscriptionIdentifier);
     }
 
-    @NotNull
-    private ListenableFuture<PublishStatus> handlePublish(
+    private @NotNull ListenableFuture<PublishStatus> handlePublish(
             @NotNull final PUBLISH publish,
             @NotNull final String client,
             final int subscriptionQos,
@@ -169,34 +172,31 @@ public class PublishDistributorImpl implements PublishDistributor {
             @Nullable final ImmutableIntArray subscriptionIdentifier) {
 
         if (sharedSubscription) {
-            int appliedQoS = subscriptionQos;
-            // if nothing specified a queue limit, we use the default one.
-            Long appliedQueueLimit = mqttConfigurationService.maxQueuedMessages();
-            // update with the configuration of the bridge, if it is a bridge client
-            final CustomBridgeLimitations customBridgeLimitations = getBridgeConfig(client);
-
             // only do the bridge iterations for client ids that can even be bridge clients
-            if(client.startsWith("forwarder")) {
-                if (customBridgeLimitations != null) {
-                    final Long queueLimitFromConfig = customBridgeLimitations.queueLimit;
-                    if (queueLimitFromConfig != null) {
-                        appliedQueueLimit = queueLimitFromConfig;
-                    }
-                    if (!customBridgeLimitations.persist) {
-                        appliedQoS = 0;
-                    }
-                }
-            }else if(client.startsWith(SAMPLER_PREFIX)){
-                appliedQueueLimit = 10L;
+            if (client.startsWith(MessageForwarderImpl.FORWARDER_PREFIX)) {
+                return handlePublishForBridgeForwarder(publish,
+                        client,
+                        retainAsPublished,
+                        subscriptionIdentifier,
+                        mqttConfigurationService.maxQueuedMessages(),
+                        subscriptionQos);
+            } else if (client.startsWith(SAMPLER_PREFIX)) {
+                return queuePublish(client,
+                        publish,
+                        subscriptionQos,
+                        true,
+                        retainAsPublished,
+                        subscriptionIdentifier,
+                        SAMPLER_QUEUE_LIMIT);
+            } else {
+                return queuePublish(client,
+                        publish,
+                        subscriptionQos,
+                        true,
+                        retainAsPublished,
+                        subscriptionIdentifier,
+                        mqttConfigurationService.maxQueuedMessages());
             }
-
-            return queuePublish(client,
-                    publish,
-                    appliedQoS,
-                    true,
-                    retainAsPublished,
-                    subscriptionIdentifier,
-                    appliedQueueLimit);
         }
 
         final boolean qos0Message = Math.min(subscriptionQos, publish.getQoS().getQosNumber()) == 0;
@@ -219,6 +219,37 @@ public class PublishDistributorImpl implements PublishDistributor {
                 retainAsPublished,
                 subscriptionIdentifier,
                 clientSession.getQueueLimit());
+    }
+
+    private @org.jetbrains.annotations.NotNull SettableFuture<PublishStatus> handlePublishForBridgeForwarder(
+            final @NotNull PUBLISH publish,
+            final @NotNull String client,
+            boolean retainAsPublished,
+            final @NotNull ImmutableIntArray subscriptionIdentifier,
+            final @NotNull Long queueLimit,
+            int appliedQoS) {
+        // update with the configuration of the bridge, if it is a bridge client
+        final CustomBridgeLimitations customBridgeLimitations = getBridgeConfig(client);
+        long appliedQueueLimit = queueLimit;
+
+        if (customBridgeLimitations != null) {
+            final Long queueLimitFromConfig = customBridgeLimitations.queueLimit;
+            if (queueLimitFromConfig != null) {
+                // bridges can overwrite the default
+                appliedQueueLimit = queueLimitFromConfig;
+            }
+            if (!customBridgeLimitations.persist) {
+                // if the bridge has the persist flag disabled, we reduce the QoS of the messages 0, so they are not stored in the file persistence in case.
+                appliedQoS = 0;
+            }
+        }
+        return queuePublish(client,
+                publish,
+                appliedQoS,
+                true,
+                retainAsPublished,
+                subscriptionIdentifier,
+                appliedQueueLimit);
     }
 
     @NotNull
@@ -257,13 +288,13 @@ public class PublishDistributorImpl implements PublishDistributor {
 
     private @Nullable CustomBridgeLimitations getBridgeConfig(final @NotNull String clientId) {
         for (MqttBridge bridge : bridgeConfigurationService.getBridges()) {
-            final String bridgeClientId = "forwarder#" + bridge.getId();
+            final String bridgeClientId = MessageForwarderImpl.FORWARDER_PREFIX + bridge.getId();
             if (clientId.contains(bridgeClientId)) {
                 for (LocalSubscription localSubscription : bridge.getLocalSubscriptions()) {
-                    final String detailedCBridgeClientId =
-                            "forwarder#" + bridge.getId() + "-" + localSubscription.calculateUniqueId();
+                    final String detailedBridgeClientId =
+                            MessageForwarderImpl.FORWARDER_PREFIX + bridge.getId() + "-" + localSubscription.calculateUniqueId();
                     // contains as it ends with the topic filter, which we dont know
-                    if (clientId.contains(detailedCBridgeClientId)) {
+                    if (clientId.contains(detailedBridgeClientId)) {
                         return new CustomBridgeLimitations(bridge.isPersist(), localSubscription.getQueueLimit());
                     }
                 }

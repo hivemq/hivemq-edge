@@ -34,14 +34,17 @@ import java.util.stream.Collectors;
 @Singleton
 public class SamplingService {
 
+
+    public static final @NotNull String SAMPLER_PREFIX = "Sampler#";
+    public static final long SAMPLER_QUEUE_LIMIT = 10;
+
     private final @NotNull LocalTopicTree localTopicTree;
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
-    public static final @NotNull String SAMPLER_PREFIX = "Sampler#";
-
 
     @Inject
-    public SamplingService(final @NotNull LocalTopicTree localTopicTree,
-                           final @NotNull ClientQueuePersistence clientQueuePersistence) {
+    public SamplingService(
+            final @NotNull LocalTopicTree localTopicTree,
+            final @NotNull ClientQueuePersistence clientQueuePersistence) {
         this.localTopicTree = localTopicTree;
         this.clientQueuePersistence = clientQueuePersistence;
     }
@@ -62,9 +65,10 @@ public class SamplingService {
     public @NotNull List<byte[]> getSamples(final @NotNull String topic) {
         final String clientId = SAMPLER_PREFIX + topic;
         final String queueId = clientId + "/" + topic;
-        final ListenableFuture<ImmutableList<PUBLISH>> publishes = clientQueuePersistence.peek(queueId, true, 100_000, 10);
+        final ListenableFuture<ImmutableList<PUBLISH>> publishes =
+                clientQueuePersistence.peek(queueId, true, 100_000, 10);
         try {
-         return publishes.get().stream().map(PUBLISH::getPayload).collect(Collectors.toList());
+            return publishes.get().stream().map(PUBLISH::getPayload).collect(Collectors.toList());
         } catch (InterruptedException | ExecutionException e) {
             //TODO
             throw new RuntimeException(e);
