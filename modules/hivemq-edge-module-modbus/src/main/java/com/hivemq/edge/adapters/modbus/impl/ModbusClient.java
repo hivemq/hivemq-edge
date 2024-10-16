@@ -42,6 +42,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public class ModbusClient {
 
+    public static final int DEFAULT_MAX_INPUT_REGISTERS = 125;
+    public static final int DEFAULT_MAX_DISCRETE_INPUTS = 2000;
     private final @NotNull DataPointFactory dataPointFactory;
 
     private final ModbusTcpMaster modbusClient;
@@ -71,7 +73,7 @@ public class ModbusClient {
      */
     public @NotNull CompletableFuture<DataPoint> readCoils(final int startIdx, final int count, final int unitId) {
         return modbusClient
-            .<ReadCoilsResponse>sendRequest(new ReadCoilsRequest(startIdx, Math.min(count, 2000)), unitId)
+            .<ReadCoilsResponse>sendRequest(new ReadCoilsRequest(startIdx, Math.min(count, DEFAULT_MAX_DISCRETE_INPUTS)), unitId)
             .thenApply(response -> {
                 try {
                     final ByteBuf buf = response.getCoilStatus();
@@ -88,7 +90,8 @@ public class ModbusClient {
      */
     public @NotNull CompletableFuture<DataPoint> readDiscreteInput(final int startIdx, final int count, final int unitId) {
         return modbusClient
-                .<ReadDiscreteInputsResponse>sendRequest(new ReadDiscreteInputsRequest(startIdx, Math.min(count, 2000)), unitId)
+                .<ReadDiscreteInputsResponse>sendRequest(new ReadDiscreteInputsRequest(startIdx, Math.min(count,
+                        DEFAULT_MAX_DISCRETE_INPUTS)), unitId)
                 .thenApply(response -> {
                     try {
                         final ByteBuf buf = response.getInputStatus();
@@ -105,7 +108,8 @@ public class ModbusClient {
      */
     public @NotNull CompletableFuture<DataPoint> readHoldingRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType, final int unitId) {
         return modbusClient
-                .<ReadHoldingRegistersResponse>sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count, 125)), unitId)
+                .<ReadHoldingRegistersResponse>sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count,
+                        DEFAULT_MAX_INPUT_REGISTERS)), unitId)
                 .thenApply(response -> {
                     try {
                         final ByteBuf buf = response.getRegisters();
@@ -122,7 +126,8 @@ public class ModbusClient {
      */
     public @NotNull CompletableFuture<DataPoint> readInputRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType, final int unitId) {
         return modbusClient
-                .<ReadInputRegistersResponse>sendRequest(new ReadInputRegistersRequest(startIdx, Math.min(count, 125)), unitId)
+                .<ReadInputRegistersResponse>sendRequest(new ReadInputRegistersRequest(startIdx, Math.min(count,
+                        DEFAULT_MAX_INPUT_REGISTERS)), unitId)
                 .thenApply(response -> {
                     try {
                         final ByteBuf buf = response.getRegisters();
