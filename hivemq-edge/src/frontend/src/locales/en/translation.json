@@ -578,8 +578,8 @@
     },
     "mapping": {
       "manager": {
-        "header_INWARD": "Managing inward mappings",
-        "header_OUTWARD": "Managing outward mappings"
+        "header_INWARD": "Manage inward mappings",
+        "header_OUTWARD": "Manage outward mappings"
       }
     }
   },

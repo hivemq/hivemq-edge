@@ -56,15 +56,16 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => 
       id="adapter-instance-form"
       schema={mappingManager.schema}
       uiSchema={mappingManager.uiSchema}
+      formData={mappingManager.formData}
+      formContext={context}
       liveValidate
+      noHtml5Validate
+      focusOnFirstError
       onSubmit={onFormSubmit}
       validator={customFormatsValidator}
       showErrorList="bottom"
-      onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
-      formData={mappingManager.formData}
       widgets={adapterJSFWidgets}
       fields={adapterJSFFields}
-      formContext={context}
       templates={{
         ObjectFieldTemplate,
         FieldTemplate,
@@ -72,6 +73,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => 
         ArrayFieldTemplate,
         ArrayFieldItemTemplate,
       }}
+      onError={(errors) => rjsfLog(t('error.rjsf.validation'), errors)}
     />
   )
 }

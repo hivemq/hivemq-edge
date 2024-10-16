@@ -49,7 +49,7 @@ describe('AdapterMappingManager', () => {
 
     cy.get('[role="dialog"]').should('be.visible')
 
-    cy.get('header').should('contain.text', 'Managing inward mappings')
+    cy.get('header').should('contain.text', 'Manage inward mappings')
     cy.get('[role="dialog"]').find('button').as('dialog-buttons').should('have.length', 2)
     cy.get('@dialog-buttons').eq(0).should('have.attr', 'aria-label', 'Close')
     cy.get('@dialog-buttons').eq(1).should('have.attr', 'aria-label', 'Shrink')
@@ -82,7 +82,7 @@ describe('AdapterMappingManager', () => {
     })
 
     cy.getByTestId('data-length').should('contain.text', '1')
-    cy.get('header').should('contain.text', 'Managing inward mappings')
+    cy.get('header').should('contain.text', 'Manage inward mappings')
   })
 
   it('should render outward properly', () => {
@@ -90,7 +90,7 @@ describe('AdapterMappingManager', () => {
       routerProps: { initialEntries: [`/node/idAdapter`] },
       wrapper: getWrapperWith([{ ...MOCK_NODE_ADAPTER, position: { x: 0, y: 0 } }]),
     })
-    cy.get('header').should('contain.text', 'Managing outward mappings')
+    cy.get('header').should('contain.text', 'Manage outward mappings')
 
     cy.get('[role="alert"]').should('be.visible')
     cy.get('[role="alert"] span').should('have.attr', 'data-status', 'error')

@@ -188,7 +188,7 @@
     },
     "MqttTransformationField": {
       "tabs": {
-        "list": "List of subscriptions",
+        "list": "List of mappings",
         "editor": "Mapping Editor"
       },
       "unset": "< unset >",
