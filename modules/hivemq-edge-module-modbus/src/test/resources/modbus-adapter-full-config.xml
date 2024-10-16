@@ -34,6 +34,7 @@
                         <addressRange>
                             <startIdx>11</startIdx>
                             <nrRegistersToRead>4</nrRegistersToRead>
+                            <readType>HOLDING_REGISTERS</readType>
                         </addressRange>
                         <mqttUserProperties>
                             <mqttUserProperty>
@@ -56,6 +57,7 @@
                         <addressRange>
                             <startIdx>16</startIdx>
                             <nrRegistersToRead>2</nrRegistersToRead>
+                            <readType>HOLDING_REGISTERS</readType>
                         </addressRange>
                         <mqttUserProperties>
                             <mqttUserProperty>
