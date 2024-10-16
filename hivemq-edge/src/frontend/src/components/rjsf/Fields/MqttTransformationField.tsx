@@ -65,7 +65,7 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
   if (!subsData) return null
 
   return (
-    <Accordion defaultIndex={0} index={selectedItem === undefined ? 0 : 1}>
+    <Accordion defaultIndex={0} index={selectedItem === undefined ? 0 : 1} data-testid="mapping-editor-switch">
       <AccordionItem isDisabled={selectedItem !== undefined}>
         <AccordionButton>
           <Box as="span" flex="1" textAlign="left">
