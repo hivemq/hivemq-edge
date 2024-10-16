@@ -221,7 +221,7 @@ public class PublishDistributorImpl implements PublishDistributor {
                 clientSession.getQueueLimit());
     }
 
-    private @org.jetbrains.annotations.NotNull SettableFuture<PublishStatus> handlePublishForBridgeForwarder(
+    private @NotNull SettableFuture<PublishStatus> handlePublishForBridgeForwarder(
             final @NotNull PUBLISH publish,
             final @NotNull String client,
             boolean retainAsPublished,
