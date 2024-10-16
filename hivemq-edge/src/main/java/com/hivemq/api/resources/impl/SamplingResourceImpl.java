@@ -27,6 +27,8 @@ import com.saasquatch.jsonschemainferrer.AdditionalPropertiesPolicies;
 import com.saasquatch.jsonschemainferrer.JsonSchemaInferrer;
 import com.saasquatch.jsonschemainferrer.RequiredPolicies;
 import com.saasquatch.jsonschemainferrer.SpecVersion;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -41,13 +43,16 @@ import java.util.List;
 @Singleton
 public class SamplingResourceImpl implements SamplingApi {
 
-    private final @NotNull SamplingService samplingService;
-    private final @NotNull ObjectMapper objectMapper;
-    private static final JsonSchemaInferrer INFERRER = JsonSchemaInferrer.newBuilder()
+
+    private static final @NotNull Logger log = LoggerFactory.getLogger(SamplingResourceImpl.class);
+    private static final @NotNull JsonSchemaInferrer INFERRER = JsonSchemaInferrer.newBuilder()
             .setSpecVersion(SpecVersion.DRAFT_07)
             .setAdditionalPropertiesPolicy(AdditionalPropertiesPolicies.notAllowed())
             .setRequiredPolicy(RequiredPolicies.nonNullCommonFields())
             .build();
+
+    private final @NotNull SamplingService samplingService;
+    private final @NotNull ObjectMapper objectMapper;
 
 
     @Inject
@@ -77,6 +82,7 @@ public class SamplingResourceImpl implements SamplingApi {
         final String topic = new String(Base64.getDecoder().decode(topicBase64), StandardCharsets.UTF_8);
         final List<byte[]> samples = samplingService.getSamples(topic);
         if (samples.isEmpty()) {
+            log.info("No samples were found for the requested topic '{}'.", topic);
             return ErrorResponseUtil.notFound("samples", "topic");
         }
 
@@ -85,7 +91,8 @@ public class SamplingResourceImpl implements SamplingApi {
             try {
                 jsonSamples.add(objectMapper.readTree(sample));
             } catch (final IOException e) {
-                // TODO
+                log.warn("Parsing error while trying to create json samples from payload.");
+                log.debug("Original exception: ", e);
                 return Response.serverError().build();
             }
         }

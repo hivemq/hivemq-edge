@@ -24,6 +24,8 @@ import com.hivemq.mqtt.message.subscribe.Topic;
 import com.hivemq.mqtt.topic.SubscriptionFlag;
 import com.hivemq.mqtt.topic.tree.LocalTopicTree;
 import com.hivemq.persistence.clientqueue.ClientQueuePersistence;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -35,8 +37,13 @@ import java.util.stream.Collectors;
 public class SamplingService {
 
 
+    private static final Logger log = LoggerFactory.getLogger(SamplingService.class);
+
     public static final @NotNull String SAMPLER_PREFIX = "Sampler#";
-    public static final long SAMPLER_QUEUE_LIMIT = 10;
+
+    public static final int SAMPLE_SIZE = 10;
+    public static final long SAMPLER_QUEUE_LIMIT = SAMPLE_SIZE;
+    public static final int BYTE_LIMIT_SAMPLES = 100_000;
 
     private final @NotNull LocalTopicTree localTopicTree;
     private final @NotNull ClientQueuePersistence clientQueuePersistence;
@@ -50,6 +57,7 @@ public class SamplingService {
     }
 
     public void startSampling(final @NotNull String topic) {
+        log.debug("Starting sampling for topic: '{}'", topic);
         final String clientId = SAMPLER_PREFIX + topic;
         localTopicTree.addTopic(clientId,
                 new Topic(topic, QoS.AT_LEAST_ONCE, false, true),
@@ -58,6 +66,7 @@ public class SamplingService {
     }
 
     public void stopSampling(final @NotNull String topic) {
+        log.debug("Stopping sampling for topic: '{}'", topic);
         final String clientId = SAMPLER_PREFIX + topic;
         localTopicTree.removeSubscriber(clientId, topic, null);
     }
@@ -66,11 +75,11 @@ public class SamplingService {
         final String clientId = SAMPLER_PREFIX + topic;
         final String queueId = clientId + "/" + topic;
         final ListenableFuture<ImmutableList<PUBLISH>> publishes =
-                clientQueuePersistence.peek(queueId, true, 100_000, 10);
+                clientQueuePersistence.peek(queueId, true, BYTE_LIMIT_SAMPLES, SAMPLE_SIZE);
         try {
             return publishes.get().stream().map(PUBLISH::getPayload).collect(Collectors.toList());
         } catch (InterruptedException | ExecutionException e) {
-            //TODO
+            log.warn("Exception while retrieval of sample payloads for topic '{}'", topic);
             throw new RuntimeException(e);
         }
     }
