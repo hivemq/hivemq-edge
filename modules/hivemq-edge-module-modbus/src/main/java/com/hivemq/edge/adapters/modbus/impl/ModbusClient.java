@@ -69,9 +69,9 @@ public class ModbusClient {
     /**
      * Coils are 1bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readCoils(final int startIdx, final int count) {
+    public @NotNull CompletableFuture<DataPoint> readCoils(final int startIdx, final int count, final int unitId) {
         return modbusClient
-            .<ReadCoilsResponse>sendRequest(new ReadCoilsRequest(startIdx, Math.min(count, 2000)), 0) //TODO: make configurable
+            .<ReadCoilsResponse>sendRequest(new ReadCoilsRequest(startIdx, Math.min(count, 2000)), unitId)
             .thenApply(response -> {
                 try {
                     final ByteBuf buf = response.getCoilStatus();
@@ -86,9 +86,9 @@ public class ModbusClient {
     /**
      * Discrete registers are 1bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readDiscreteInput(final int startIdx, final int count) {
+    public @NotNull CompletableFuture<DataPoint> readDiscreteInput(final int startIdx, final int count, final int unitId) {
         return modbusClient
-                .<ReadDiscreteInputsResponse>sendRequest(new ReadDiscreteInputsRequest(startIdx, Math.min(count, 2000)), 0) //TODO: make configurable
+                .<ReadDiscreteInputsResponse>sendRequest(new ReadDiscreteInputsRequest(startIdx, Math.min(count, 2000)), unitId)
                 .thenApply(response -> {
                     try {
                         final ByteBuf buf = response.getInputStatus();
@@ -103,9 +103,9 @@ public class ModbusClient {
     /**
      * Holding registers are 16bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readHoldingRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType) {
+    public @NotNull CompletableFuture<DataPoint> readHoldingRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType, final int unitId) {
         return modbusClient
-                .<ReadHoldingRegistersResponse>sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count, 125)), 0) //TODO: make configurable
+                .<ReadHoldingRegistersResponse>sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count, 125)), unitId)
                 .thenApply(response -> {
                     try {
                         final ByteBuf buf = response.getRegisters();
@@ -120,9 +120,9 @@ public class ModbusClient {
     /**
      * Inout registers are 16bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readInputRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType) {
+    public @NotNull CompletableFuture<DataPoint> readInputRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType, final int unitId) {
         return modbusClient
-                .<ReadInputRegistersResponse>sendRequest(new ReadInputRegistersRequest(startIdx, Math.min(count, 125)), 0)
+                .<ReadInputRegistersResponse>sendRequest(new ReadInputRegistersRequest(startIdx, Math.min(count, 125)), unitId)
                 .thenApply(response -> {
                     try {
                         final ByteBuf buf = response.getRegisters();
