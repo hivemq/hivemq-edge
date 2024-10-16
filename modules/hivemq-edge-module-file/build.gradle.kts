@@ -45,6 +45,7 @@ dependencies {
     testImplementation(libs.assertj)
     testImplementation(libs.mockito.junitJupiter)
     testImplementation("com.hivemq:hivemq-edge")
+
 }
 
 tasks.test {
@@ -197,6 +198,7 @@ tasks.updateThirdPartyLicenses {
     dependencyLicense.set(tasks.downloadLicenses.get().xmlDestination.resolve("dependency-license.xml"))
     outputDirectory.set(layout.buildDirectory.dir("distribution/third-party-licenses"))
 }
+
 val javaComponent = components["java"] as AdhocComponentWithVariants
 javaComponent.withVariantsFromConfiguration(configurations.shadowRuntimeElements.get()) {
     skip()

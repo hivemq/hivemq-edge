@@ -2,7 +2,6 @@ import nl.javadude.gradle.plugins.license.DownloadLicensesExtension.license
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent.*
 
-
 plugins {
     java
     alias(libs.plugins.defaults)
@@ -41,14 +40,12 @@ dependencies {
     compileOnly(libs.jackson.databind)
     implementation(libs.digitalpetri.modbus.master.tcp)
 
-    testImplementation(libs.hivemq.edge)
     testImplementation(libs.jackson.databind)
-    testImplementation(libs.hivemq.edge.adapterSdk)
-    testImplementation(libs.apache.commonsIO)
-    testImplementation(libs.mockito.junitJupiter)
     testImplementation(libs.junit.jupiter)
-    testImplementation(libs.guava)
     testImplementation(libs.assertj)
+    testImplementation(libs.mockito.junitJupiter)
+    testImplementation(libs.guava)
+    testImplementation("com.hivemq:hivemq-edge")
 
 }
 
@@ -207,3 +204,4 @@ val javaComponent = components["java"] as AdhocComponentWithVariants
 javaComponent.withVariantsFromConfiguration(configurations.shadowRuntimeElements.get()) {
     skip()
 }
+
