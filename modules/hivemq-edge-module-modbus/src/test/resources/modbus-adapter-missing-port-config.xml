@@ -26,6 +26,8 @@
                     <addressRange>
                         <startIdx>11</startIdx>
                         <endIdx>13</endIdx>
+                        <readType>HOLDING_REGISTERS</readType>
+                        <unitId>0</unitId>
                     </addressRange>
                     <dataType>INT_32</dataType>
                 </subscription>
