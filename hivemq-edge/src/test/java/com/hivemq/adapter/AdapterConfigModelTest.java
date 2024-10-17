@@ -26,9 +26,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.base.Preconditions;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
+import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
-import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.extension.sdk.api.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
@@ -102,6 +102,11 @@ public class AdapterConfigModelTest {
         @Override
         public @NotNull String getId() {
             return "id";
+        }
+
+        @Override
+        public @NotNull List<String> getUsedTags() {
+            return List.of();
         }
     }
 
