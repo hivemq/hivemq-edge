@@ -271,14 +271,13 @@ public class ProtocolAdapterManager {
             }
 
             // this should not be out in the wild, but this was the constructor format after adding bi-directional adapters
-            if (parameters.length == 1 && parameters[0].getType().equals(Boolean.class)) {
+            if (parameters.length == 1 && parameters[0].getType().equals(boolean.class)) {
                 return factoryClass.getDeclaredConstructor(boolean.class, ProtocolAdapterTagService.class)
                         .newInstance(writingEnabled(), protocolAdapterTagService);
             }
 
             // current format: 1. Boolean writeEnabled, 2. ProtocolAdapterTagService to add tags during config migration
-            if (parameters.length == 2 &&
-                    parameters[0].getType().equals(Boolean.class) &&
+            if (parameters.length == 2 && parameters[0].getType().equals(boolean.class) &&
                     parameters[1].getType().equals(ProtocolAdapterTagService.class)) {
                 return factoryClass.getDeclaredConstructor(boolean.class, ProtocolAdapterTagService.class)
                         .newInstance(writingEnabled(), protocolAdapterTagService);
