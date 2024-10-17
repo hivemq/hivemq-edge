@@ -15,7 +15,6 @@
  */
 package com.hivemq.edge.adapters.modbus;
 
-import com.digitalpetri.modbus.ModbusResponseException;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.adapter.sdk.api.discovery.NodeTree;
@@ -60,7 +59,6 @@ import static com.hivemq.edge.adapters.modbus.config.ModbusAdu.INPUT_REGISTERS;
 
 public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqttMapping> {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
-    private final @NotNull Object lock = new Object();
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ModbusAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
@@ -101,8 +99,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
                 .disconnect()
                 .whenComplete((unused,t) -> {
                         if(t == null) {
-                            protocolAdapterState.setConnectionStatus(DISCONNECTED);
                             output.stoppedSuccessfully();
+                            protocolAdapterState.setConnectionStatus(DISCONNECTED);
                         } else {
                             output.failStop(t, "Error encountered closing connection to Modbus device.");
                         }
@@ -116,6 +114,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
 
         //-- If a previously linked job has terminally disconnected the client
         //-- we need to ensure any orphaned jobs tidy themselves up properly
+
         readRegisters(pollingInput.getPollingContext(), modbusClient)
             .whenComplete((modbusdata, throwable) -> {
                 if (throwable != null) {
