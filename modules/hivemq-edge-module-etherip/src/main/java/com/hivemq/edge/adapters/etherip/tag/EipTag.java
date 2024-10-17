@@ -21,6 +21,26 @@ public class EipTag implements Tag<EipAddress> {
 
     @Override
     public @NotNull String getTagName() {
-        return "";
+        return tagName;
+    }
+
+    @Override
+    public boolean equals(@NotNull final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        final EipTag eipTag = (EipTag) o;
+        return tagName.equals(eipTag.tagName) && eipAddress.equals(eipTag.eipAddress);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = tagName.hashCode();
+        result = 31 * result + eipAddress.hashCode();
+        return result;
     }
 }
