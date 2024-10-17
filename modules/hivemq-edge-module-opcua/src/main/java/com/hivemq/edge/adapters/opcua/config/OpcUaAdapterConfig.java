@@ -94,6 +94,12 @@ public class OpcUaAdapterConfig implements ProtocolAdapterConfig {
         return id;
     }
 
+    @Override
+    public @NotNull List<String> getUsedTags() {
+        // TODO
+        return List.of();
+    }
+
     public @NotNull String getUri() {
         return uri;
     }

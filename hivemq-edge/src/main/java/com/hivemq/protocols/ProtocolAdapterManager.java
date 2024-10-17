@@ -34,10 +34,10 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterMetricsService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.adapter.sdk.api.writing.WritingContext;
 import com.hivemq.adapter.sdk.api.writing.WritingProtocolAdapter;
-import com.hivemq.bootstrap.factories.WritingServiceProvider;
 import com.hivemq.configuration.service.ConfigurationService;
 import com.hivemq.edge.HiveMQEdgeRemoteService;
 import com.hivemq.edge.VersionProvider;
@@ -91,6 +91,7 @@ public class ProtocolAdapterManager {
     private final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator;
     private final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService;
     private final @NotNull ExecutorService executorService;
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
     private final @NotNull Object lock = new Object();
 
@@ -108,7 +109,8 @@ public class ProtocolAdapterManager {
             final @NotNull ProtocolAdapterMetrics protocolAdapterMetrics,
             final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
             final @NotNull ProtocolAdapterWritingService protocolAdapterWritingService,
-            final @NotNull ExecutorService executorService) {
+            final @NotNull ExecutorService executorService,
+            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         this.configurationService = configurationService;
         this.metricRegistry = metricRegistry;
         this.moduleServices = moduleServices;
@@ -122,6 +124,7 @@ public class ProtocolAdapterManager {
         this.jsonPayloadDefaultCreator = jsonPayloadDefaultCreator;
         this.protocolAdapterWritingService = protocolAdapterWritingService;
         this.executorService = executorService;
+        this.protocolAdapterTagService = protocolAdapterTagService;
     }
 
 
@@ -318,8 +321,7 @@ public class ProtocolAdapterManager {
 
     private @NotNull CompletableFuture<Void> startWriting(final @NotNull ProtocolAdapterWrapper protocolAdapterWrapper) {
         final CompletableFuture<Void> startWritingFuture;
-        if (writingEnabled() &&
-                protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
+        if (writingEnabled() && protocolAdapterWrapper.getAdapter() instanceof WritingProtocolAdapter) {
             if (log.isDebugEnabled()) {
                 log.debug("Start writing for protocol adapter with id '{}'", protocolAdapterWrapper.getId());
             }
@@ -346,8 +348,7 @@ public class ProtocolAdapterManager {
                         objectMapper,
                         moduleServices.adapterPublishService(),
                         adapterSubscription,
-                        eventService,
-                        jsonPayloadDefaultCreator);
+                        eventService, jsonPayloadDefaultCreator, protocolAdapterTagService);
                 protocolAdapterPollingService.schedulePolling(sampler);
             });
         }

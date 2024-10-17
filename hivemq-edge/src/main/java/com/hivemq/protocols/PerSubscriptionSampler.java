@@ -15,12 +15,12 @@
  */
 package com.hivemq.protocols;
 
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.events.EventService;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.modules.adapters.data.ProtocolAdapterDataSampleImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import org.slf4j.Logger;
@@ -43,12 +43,12 @@ public class PerSubscriptionSampler<T extends PollingContext> extends AbstractSu
             final @NotNull ProtocolAdapterPublishService adapterPublishService,
             final @NotNull T pollingContext,
             final @NotNull EventService eventService,
-            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator) {
+            final @NotNull JsonPayloadDefaultCreator jsonPayloadDefaultCreator,
+            final @NotNull ProtocolAdapterTagService tagService) {
         super(protocolAdapter,
                 objectMapper,
                 adapterPublishService,
-                eventService,
-                jsonPayloadDefaultCreator);
+                eventService, jsonPayloadDefaultCreator, tagService);
         this.perSubscriptionProtocolAdapter = protocolAdapter.getAdapter();
         this.pollingContext = pollingContext;
     }
