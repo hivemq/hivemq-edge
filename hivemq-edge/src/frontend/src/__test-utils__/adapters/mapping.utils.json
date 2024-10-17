@@ -1,0 +1,84 @@
+{
+  "type": "object",
+  "definitions": {
+    "FieldMappingItemTransformation": {
+      "additionalProperties": true
+    },
+    "FieldMappingItemDefinitionWithSource": {
+      "type": "object",
+      "allOf": [{ "$ref": "#/definitions/FieldMappingItemDefinition" }],
+      "required": ["schemaRoot"],
+      "properties": {
+        "schemaRoot": {
+          "type": "string"
+        }
+      }
+    },
+    "FieldMappingItemDefinition": {
+      "type": "object",
+      "required": ["propertyPath"],
+      "properties": {
+        "propertyPath": {
+          "type": "string"
+        },
+        "transformation": {
+          "$ref": "#/definitions/FieldMappingItemTransformation"
+        }
+      }
+    },
+    "FieldMappingItem": {
+      "type": "object",
+      "required": ["source", "destination"],
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/FieldMappingItemDefinition"
+        },
+        "destination": {
+          "$ref": "#/definitions/FieldMappingItemDefinition"
+        }
+      }
+    },
+
+    "FieldMapping": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FieldMappingItem"
+      }
+    }
+  },
+  "properties": {
+    "mqttToOpcuaMappings": {
+      "title": "mqttToOpcuaMappings",
+      "description": "Map your MQTT data to OpcUA.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "mqttMaxQos": {
+            "type": "integer",
+            "title": "MQTT Maximum QoS",
+            "description": "MQTT maximum quality of service level for the subscription",
+            "default": 1,
+            "minimum": 0,
+            "maximum": 1
+          },
+          "mqttTopicFilter": {
+            "type": "string",
+            "title": "Source MQTT topic filter",
+            "description": "The MQTT topic filter to map from",
+            "format": "mqtt-topic-filter"
+          },
+          "tag": {
+            "type": "string",
+            "title": "Destination Tag",
+            "description": "identifier of the tag associated with the OPCUA node"
+          },
+          "fieldMapping": {
+            "$ref": "#/definitions/FieldMapping"
+          }
+        },
+        "required": ["mqttTopicFilter", "tag"]
+      }
+    }
+  }
+}
