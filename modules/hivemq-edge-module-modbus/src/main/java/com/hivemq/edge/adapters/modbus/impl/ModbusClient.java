@@ -107,6 +107,7 @@ public class ModbusClient {
      * Holding registers are 16bit.
      */
     public @NotNull CompletableFuture<DataPoint> readHoldingRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType, final int unitId) {
+
         return modbusClient
                 .<ReadHoldingRegistersResponse>sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count,
                         DEFAULT_MAX_INPUT_REGISTERS)), unitId)
