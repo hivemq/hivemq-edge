@@ -348,6 +348,66 @@ public class ClientQueueMemoryLocalPersistence implements ClientQueueLocalPersis
         return publishes.build();
     }
 
+    @Override
+    public @NotNull ImmutableList<PUBLISH> peek(
+            @NotNull final String queueId,
+            final boolean shared,
+            final long bytesLimit,
+            final int maxMessages,
+            final int bucketIndex) {
+        checkNotNull(queueId, "Queue ID must not be null");
+        ThreadPreConditions.startsWith(SINGLE_WRITER_THREAD_PREFIX);
+        final Map<String, Messages> bucket = shared ? sharedBuckets[bucketIndex] : buckets[bucketIndex];
+        final Messages messages = bucket.get(queueId);
+        if (messages == null) {
+            return ImmutableList.of();
+        }
+
+        int messageCount = 0;
+        int bytes = 0;
+        final ImmutableList.Builder<PUBLISH> publishes = ImmutableList.builder();
+
+        // Qos 1 and 2 has prio
+        for (int index = 0; index < messages.qos1Or2Messages.size() && messageCount < maxMessages; index++) {
+            final MessageWithID messageWithID = messages.qos1Or2Messages.get(index);
+            if (!(messageWithID instanceof PublishWithRetained)) {
+                continue;
+            }
+            final PublishWithRetained publishWithRetained = (PublishWithRetained) messageWithID;
+            if (publishWithRetained.getPacketIdentifier() != NO_PACKET_ID) {
+                //already inflight
+                continue;
+            }
+
+            // check for expiration, but do not modify the queue
+            if (!publishWithRetained.isExpired()) {
+                bytes += publishWithRetained.getEstimatedSizeInMemory();
+                // check if adding the message would exceed the byte limit
+                if ((bytes > bytesLimit)) {
+                    break;
+                } else {
+                    publishes.add(publishWithRetained);
+                    messageCount++;
+                }
+            }
+        }
+
+        // read as many qos0 as possible
+        for (int index = 0; messageCount < maxMessages && index < messages.qos0Messages.size(); index++) {
+            final PublishWithRetained publishWithRetained = messages.qos0Messages.get(index);
+            final int estimatedSize = publishWithRetained.getEstimatedSize();
+            bytes += estimatedSize;
+            // check if we would exceed the byte limit.
+            if (bytes <= bytesLimit) {
+                publishes.add(publishWithRetained);
+                messageCount++;
+            } else {
+                break;
+            }
+        }
+        return publishes.build();
+    }
+
     private @NotNull ImmutableList<PUBLISH> getQos0Publishes(
             final @NotNull Messages messages, final @NotNull ImmutableIntArray packetIds, final long bytesLimit) {
 
