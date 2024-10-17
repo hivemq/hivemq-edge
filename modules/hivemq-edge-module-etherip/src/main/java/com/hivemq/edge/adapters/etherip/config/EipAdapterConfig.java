@@ -96,7 +96,7 @@ public class EipAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> getUsedTags() {
+    public @NotNull List<String> calculateAllUsedTags() {
         return eipToMqttConfig.getMappings().stream().map(EipToMqttMapping::getTagName).collect(Collectors.toList());
     }
 

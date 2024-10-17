@@ -138,7 +138,7 @@ public class SchemaNodeGeneratorTest {
         }
 
         @Override
-        public @NotNull List<String> getUsedTags() {
+        public @NotNull List<String> calculateAllUsedTags() {
             return List.of();
         }
     }
@@ -169,7 +169,7 @@ public class SchemaNodeGeneratorTest {
         }
 
         @Override
-        public @NotNull List<String> getUsedTags() {
+        public @NotNull List<String> calculateAllUsedTags() {
             return List.of();
         }
     }
