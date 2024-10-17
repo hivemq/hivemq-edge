@@ -18,9 +18,10 @@ package com.hivemq.edge.adapters.modbus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.modbus.config.AddressRange;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
@@ -41,9 +42,13 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
     private static final @NotNull Logger log = LoggerFactory.getLogger(ModbusProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public ModbusProtocolAdapterFactory(final boolean writingEnabled) {
+    public ModbusProtocolAdapterFactory(
+            final boolean writingEnabled,
+            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         this.writingEnabled = writingEnabled;
+        this.protocolAdapterTagService = protocolAdapterTagService;
     }
 
     @Override

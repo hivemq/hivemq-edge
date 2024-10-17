@@ -18,9 +18,10 @@ package com.hivemq.edge.adapters.plc4x.types.ads;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.ProtocolAdapter;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
+import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
-import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSToMqttConfig;
@@ -41,9 +42,13 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
     private static final @NotNull Logger log = LoggerFactory.getLogger(ADSProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public ADSProtocolAdapterFactory(final boolean writingEnabled) {
+    public ADSProtocolAdapterFactory(
+            final boolean writingEnabled,
+            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         this.writingEnabled = writingEnabled;
+        this.protocolAdapterTagService = protocolAdapterTagService;
     }
 
     @Override

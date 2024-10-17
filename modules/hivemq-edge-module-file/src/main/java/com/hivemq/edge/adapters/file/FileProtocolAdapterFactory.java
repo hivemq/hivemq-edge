@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
@@ -38,9 +39,12 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
     private static final @NotNull Logger log = LoggerFactory.getLogger(FileProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public FileProtocolAdapterFactory(final boolean writingEnabled) {
+    public FileProtocolAdapterFactory(
+            final boolean writingEnabled, final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         this.writingEnabled = writingEnabled;
+        this.protocolAdapterTagService = protocolAdapterTagService;
     }
 
     @Override
@@ -57,13 +61,13 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
 
     @Override
     public @NotNull ProtocolAdapterConfig convertConfigObject(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         try {
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } catch (final Exception currentConfigFailedException) {
             try {
-                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
+                log.warn(
+                        "Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
                         FileProtocolAdapterInformation.INSTANCE.getDisplayName(),
                         currentConfigFailedException.getMessage());
                 if (log.isDebugEnabled()) {
@@ -89,8 +93,7 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
     }
 
     private static @NotNull FileAdapterConfig tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         final LegacyFileAdapterConfig legacyFileAdapterConfig =
                 objectMapper.convertValue(config, LegacyFileAdapterConfig.class);
 
