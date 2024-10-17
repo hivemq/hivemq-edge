@@ -279,7 +279,7 @@ public class ProtocolAdapterManager {
             // current format: 1. Boolean writeEnabled, 2. ProtocolAdapterTagService to add tags during config migration
             if (parameters.length == 2 &&
                     parameters[0].getType().equals(Boolean.class) &&
-                    parameters[0].getType().equals(ProtocolAdapterTagService.class)) {
+                    parameters[1].getType().equals(ProtocolAdapterTagService.class)) {
                 return factoryClass.getDeclaredConstructor(boolean.class, ProtocolAdapterTagService.class)
                         .newInstance(writingEnabled(), protocolAdapterTagService);
             }
