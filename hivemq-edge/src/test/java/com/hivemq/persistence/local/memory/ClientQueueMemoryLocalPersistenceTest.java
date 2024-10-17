@@ -40,8 +40,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,6 +50,7 @@ import static com.hivemq.configuration.service.MqttConfigurationService.QueuedMe
 import static com.hivemq.persistence.clientqueue.ClientQueuePersistenceImpl.SHARED_IN_FLIGHT_MARKER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.anyInt;
@@ -81,11 +80,12 @@ public class ClientQueueMemoryLocalPersistenceTest {
 
     private final long byteLimit = 5 * 1024 * 1024;
     private MetricRegistry metricRegistry;
-    private final @NotNull InternalConfigurationServiceImpl internalConfigurationService = new InternalConfigurationServiceImpl();
+    private final @NotNull InternalConfigurationServiceImpl internalConfigurationService =
+            new InternalConfigurationServiceImpl();
 
     @Before
     public void setUp() throws Exception {
-        internalConfigurationService.set(PERSISTENCE_BUCKET_COUNT, ""+bucketCount);
+        internalConfigurationService.set(PERSISTENCE_BUCKET_COUNT, "" + bucketCount);
         InternalConfigurations.QOS_0_MEMORY_HARD_LIMIT_DIVISOR.set(10000);
         InternalConfigurations.QOS_0_MEMORY_LIMIT_PER_CLIENT_BYTES.set(1024);
         InternalConfigurations.RETAINED_MESSAGE_QUEUE_SIZE.set(5);
@@ -1446,6 +1446,48 @@ public class ClientQueueMemoryLocalPersistenceTest {
 
     }
 
+    @Test
+    public void test_peek() {
+        metricRegistry = new MetricRegistry();
+        persistence = new ClientQueueMemoryLocalPersistence(payloadPersistence,
+                messageDroppedService,
+                metricRegistry,
+                new InternalConfigurationServiceImpl());
+
+        for (int i = 0; i < 20; i++) {
+            final PUBLISH publish = createPublish(20, QoS.AT_LEAST_ONCE, "topic" + i);
+            persistence.add("queueId", true, publish, 10L, DISCARD_OLDEST, false, 0);
+        }
+
+
+        final ImmutableList<PUBLISH> publishes = persistence.peek("queueId", true, 100_000, 10, 0);
+        assertEquals(10, publishes.size());
+
+        for (int i = 0; i < 10; i++) {
+            final PUBLISH publish = publishes.get(i);
+            final String expectedTopic = "topic" + (10 + i);
+            assertEquals(expectedTopic, publish.getTopic());
+        }
+
+        // peek must be idem-potent
+        final ImmutableList<PUBLISH> publishes2 = persistence.peek("queueId", true, 100_000, 10, 0);
+        for (int i = 0; i < publishes.size(); i++) {
+            assertSame(publishes.get(i), publishes2.get(i));
+        }
+    }
+
+    @Test
+    public void test_peek_whenQueueEmpty_thenReturnEmptyList() {
+        metricRegistry = new MetricRegistry();
+        persistence = new ClientQueueMemoryLocalPersistence(payloadPersistence,
+                messageDroppedService,
+                metricRegistry,
+                new InternalConfigurationServiceImpl());
+
+        final ImmutableList<PUBLISH> publishes = persistence.peek("queueId", true, 100_000, 10, 0);
+        assertEquals(0, publishes.size());
+    }
+
     private ImmutableIntArray createPacketIds(final int start, final int size) {
         final ImmutableIntArray.Builder builder = ImmutableIntArray.builder();
         for (int i = start; i < (size + start); i++) {
@@ -1499,11 +1541,7 @@ public class ClientQueueMemoryLocalPersistenceTest {
 
 
     private PUBLISH createPublish(
-            final int packetId,
-            final QoS qos,
-            final String topic,
-            final int publishId,
-            final byte[] message) {
+            final int packetId, final QoS qos, final String topic, final int publishId, final byte[] message) {
         return new PUBLISHFactory.Mqtt5Builder().withPacketIdentifier(packetId)
                 .withQoS(qos)
                 .withOnwardQos(qos)

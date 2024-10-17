@@ -135,6 +135,7 @@ abstract class UpdateThirdPartyLicensesTask : DefaultTask() {
             url == "http://www.w3.org/Consortium/Legal/copyright-software-19980720" -> KnownLicense.W3C_19980720
             // from here license name and url are not enough to determine the exact license, so we checked the specific dependency manually
             (name == "BSD") && (coordinates.group == "dk.brics") && (coordinates.name == "automaton") -> KnownLicense.BSD_3_CLAUSE
+            (coordinates.group == "com.github.saasquatch") && (coordinates.name == "json-schema-inferrer") -> KnownLicense.APACHE_2_0
             (name == "BSD") && (coordinates.group == "org.picocontainer") && (coordinates.name == "picocontainer") -> KnownLicense.BSD_3_CLAUSE
             (name == "BSD") && (coordinates.group == "org.ow2.asm") && (coordinates.name == "asm") -> KnownLicense.BSD_3_CLAUSE
             (name == "BSD licence") && (coordinates.group == "org.antlr") && (coordinates.name == "antlr-runtime") -> KnownLicense.BSD_3_CLAUSE

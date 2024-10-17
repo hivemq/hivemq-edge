@@ -18,7 +18,6 @@ package com.hivemq.api.ioc;
 import com.google.common.collect.ImmutableList;
 import com.hivemq.api.ApiResourceRegistry;
 import com.hivemq.api.auth.handler.IAuthenticationHandler;
-import com.hivemq.api.auth.handler.impl.BasicAuthenticationHandler;
 import com.hivemq.api.auth.handler.impl.BearerTokenAuthenticationHandler;
 import com.hivemq.api.auth.jwt.JwtAuthenticationProvider;
 import com.hivemq.api.auth.provider.ITokenGenerator;
@@ -34,6 +33,7 @@ import com.hivemq.api.resources.GatewayApi;
 import com.hivemq.api.resources.HealthCheckApi;
 import com.hivemq.api.resources.MetricsApi;
 import com.hivemq.api.resources.ProtocolAdaptersApi;
+import com.hivemq.api.resources.SamplingApi;
 import com.hivemq.api.resources.UnsApi;
 import com.hivemq.api.resources.impl.AuthenticationResourceImpl;
 import com.hivemq.api.resources.impl.BridgeResourceImpl;
@@ -43,11 +43,10 @@ import com.hivemq.api.resources.impl.GatewayResourceImpl;
 import com.hivemq.api.resources.impl.HealthCheckResourceImpl;
 import com.hivemq.api.resources.impl.MetricsResourceImpl;
 import com.hivemq.api.resources.impl.ProtocolAdaptersResourceImpl;
+import com.hivemq.api.resources.impl.SamplingResourceImpl;
 import com.hivemq.api.resources.impl.UnsResourceImpl;
 import com.hivemq.common.shutdown.ShutdownHooks;
 import com.hivemq.configuration.service.ApiConfigurationService;
-import com.hivemq.edge.HiveMQCapabilityService;
-import com.hivemq.edge.impl.capability.CapabilityServiceImpl;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 import com.hivemq.http.JaxrsHttpServer;
 import com.hivemq.http.config.JaxrsBootstrapFactory;
@@ -90,6 +89,8 @@ public abstract class ApiModule {
     abstract @NotNull ITokenVerifier tokenVerifier(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
     @Binds
     abstract @NotNull ITokenGenerator tokenGenerator(@NotNull JwtAuthenticationProvider jwtAuthenticationProvider);
+    @Binds
+    abstract @NotNull SamplingApi samplingResource(@NotNull SamplingResourceImpl samplingResource);
 
     @Provides
     @Singleton
