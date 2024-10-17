@@ -10,6 +10,7 @@ import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'
 import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
 import { ArrayFieldItemTemplate } from '@/components/rjsf/ArrayFieldItemTemplate.tsx'
+import { useEdgeToast } from '@/hooks/useEdgeToast/useEdgeToast.tsx'
 import { customFormatsValidator } from '@/modules/ProtocolAdapters/utils/validation-utils.ts'
 import { MappingType } from '@/modules/Mappings/types.ts'
 import { useMappingManager } from '@/modules/Mappings/hooks/useMappingManager.tsx'
@@ -28,6 +29,7 @@ const rjsfLog = debug('RJSF:MappingForm')
 const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => {
   const { t } = useTranslation()
   const { inwardManager, outwardManager } = useMappingManager(adapterId)
+  const { errorToast } = useEdgeToast()
 
   const mappingManager = type === MappingType.INWARD ? inwardManager : outwardManager
 
@@ -38,15 +40,19 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => 
     adapterId: adapterId,
   }
 
-  /**
-   * @deprecated This is a mock, missing validation (https://hivemq.kanbanize.com/ctrl_board/57/cards/25908/details/)
-   */
   const onFormSubmit = useCallback(
     (data: IChangeEvent) => {
-      const subscriptions = data.formData?.subscriptions
-      mappingManager?.onSubmit?.(subscriptions)
+      if (!mappingManager?.onSubmit) {
+        errorToast(
+          {
+            title: t('protocolAdapter.toast.update.title'),
+            description: t('protocolAdapter.toast.update.error'),
+          },
+          new Error(t('protocolAdapter.export.error.noSchema'))
+        )
+      } else mappingManager.onSubmit(data.formData)
     },
-    [mappingManager]
+    [errorToast, mappingManager, t]
   )
 
   if (!mappingManager) return <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />
