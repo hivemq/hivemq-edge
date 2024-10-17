@@ -32,7 +32,7 @@ public class S7AdapterConfig extends Plc4xAdapterConfig<Plc4xToMqttConfig> {
     private static final int PORT_MAX = 65535;
 
     @Override
-    public @NotNull List<String> getUsedTags() {
+    public @NotNull List<String> calculateAllUsedTags() {
         // TODO
         return List.of();
     }

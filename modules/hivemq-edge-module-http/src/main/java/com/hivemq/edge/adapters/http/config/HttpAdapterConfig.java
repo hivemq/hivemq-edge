@@ -94,7 +94,7 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> getUsedTags() {
+    public @NotNull List<String> calculateAllUsedTags() {
         // TODO
         return List.of();
     }

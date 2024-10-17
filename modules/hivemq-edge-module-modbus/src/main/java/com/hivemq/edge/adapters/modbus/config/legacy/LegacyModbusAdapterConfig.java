@@ -80,7 +80,7 @@ public class LegacyModbusAdapterConfig implements ProtocolAdapterConfig {
     }
 
     @Override
-    public @NotNull List<String> getUsedTags() {
+    public @NotNull List<String> calculateAllUsedTags() {
         return List.of();
     }
 
