@@ -20,6 +20,8 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 public class FileAdapterConfig implements ProtocolAdapterConfig {
 
@@ -51,6 +53,12 @@ public class FileAdapterConfig implements ProtocolAdapterConfig {
     @Override
     public @NotNull String getId() {
         return id;
+    }
+
+    @Override
+    public @NotNull List<String> getUsedTags() {
+        //TODO
+        return List.of();
     }
 
     public @NotNull FileToMqttConfig getFileToMqttConfig() {

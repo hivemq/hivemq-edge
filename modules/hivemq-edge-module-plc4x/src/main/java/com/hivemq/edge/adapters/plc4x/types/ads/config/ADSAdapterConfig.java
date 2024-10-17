@@ -21,6 +21,8 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 
 public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
 
@@ -118,5 +120,11 @@ public class ADSAdapterConfig extends Plc4xAdapterConfig<ADSToMqttConfig> {
     @Override
     public @NotNull ADSToMqttConfig getPlc4xToMqttConfig() {
         return adsToMqttConfig;
+    }
+
+    @Override
+    public @NotNull List<String> getUsedTags() {
+        // TODO
+        return List.of();
     }
 }

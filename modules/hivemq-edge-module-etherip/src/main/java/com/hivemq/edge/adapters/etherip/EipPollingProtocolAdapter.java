@@ -25,11 +25,14 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValue;
 import com.hivemq.edge.adapters.etherip.model.EtherIpValueFactory;
+import com.hivemq.edge.adapters.etherip.tag.EipAddress;
 import etherip.EtherNetIP;
 import etherip.data.CipException;
 import etherip.types.CIPData;
@@ -123,9 +126,14 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
             return;
         }
 
-        final String tagAddress = createTagAddressForSubscription(pollingInput.getPollingContext());
+        final ProtocolAdapterTagService protocolAdapterTagService = pollingInput.protocolAdapterTagService();
+        final Tag<EipAddress> eipAddressTag =
+                protocolAdapterTagService.resolveTag(pollingInput.getPollingContext().getTagName(), EipAddress.class);
+
+        final String tagAddress = createTagAddressForSubscription(pollingInput.getPollingContext(),
+                eipAddressTag.getTagAddress().getAddress());
         try {
-            final CIPData evt = etherNetIP.readTag(pollingInput.getPollingContext().getTagAddress());
+            final CIPData evt = etherNetIP.readTag(eipAddressTag.getTagAddress().getAddress());
 
             if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
                 handleResult(evt, tagAddress).forEach(it -> {
@@ -178,12 +186,14 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
 
     /**
      * Use this hook method to modify the query generated used to read|subscribe to the devices,
-     * for the most part this is simply the tagAddress field unchanged from the subscription
+     * for the most part this is simply the tagAddress field unchanged from the eipToMqttMapping
      * <p>
      * Default: tagAddress:expectedDataType eg. "0%20:BOOL"
      */
-    protected @NotNull String createTagAddressForSubscription(@NotNull final EipToMqttMapping subscription) {
-        return String.format("%s%s%s", subscription.getTagAddress(), TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
+    protected @NotNull String createTagAddressForSubscription(
+            @NotNull final EipToMqttMapping eipToMqttMapping,
+            final @NotNull String address) {
+        return String.format("%s%s%s", address, TAG_ADDRESS_TYPE_SEP, eipToMqttMapping.getDataType());
     }
 
 }

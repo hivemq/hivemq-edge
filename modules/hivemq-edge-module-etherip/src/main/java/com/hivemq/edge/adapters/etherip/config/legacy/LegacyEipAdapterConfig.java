@@ -73,6 +73,12 @@ public class LegacyEipAdapterConfig implements ProtocolAdapterConfig {
         return id;
     }
 
+    @Override
+    public @NotNull List<String> getUsedTags() {
+        // TODO
+        return List.of();
+    }
+
     public int getPort() {
         return port;
     }

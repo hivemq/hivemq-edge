@@ -17,14 +17,13 @@ package com.hivemq.edge.adapters.http.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
-import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 
 import static com.hivemq.edge.adapters.http.HttpAdapterConstants.DEFAULT_TIMEOUT_SECONDS;
@@ -92,6 +91,12 @@ public class HttpAdapterConfig implements ProtocolAdapterConfig {
     @Override
     public @NotNull String getId() {
         return id;
+    }
+
+    @Override
+    public @NotNull List<String> getUsedTags() {
+        // TODO
+        return List.of();
     }
 
     public int getHttpConnectTimeoutSeconds() {
