@@ -21,11 +21,12 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.opcua.config.BidirectionalOpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
+import com.hivemq.edge.adapters.opcua.config.legacy.LegacyOpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
-import com.hivemq.edge.adapters.opcua.config.legacy.LegacyOpcUaAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,9 +40,13 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
     private static final @NotNull Logger log = LoggerFactory.getLogger(OpcUaProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public OpcUaProtocolAdapterFactory(final boolean writingEnabled) {
+    public OpcUaProtocolAdapterFactory(
+            final boolean writingEnabled,
+            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         this.writingEnabled = writingEnabled;
+        this.protocolAdapterTagService = protocolAdapterTagService;
     }
 
     @Override

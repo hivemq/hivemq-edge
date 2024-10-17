@@ -67,7 +67,11 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
     public @NotNull ProtocolAdapterConfig convertConfigObject(
             final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         try {
-            return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+            final ProtocolAdapterConfig protocolAdapterConfig =
+                    ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
+            System.err.println(protocolAdapterConfig);
+            return protocolAdapterConfig;
+
         } catch (final Exception currentConfigFailedException) {
             try {
                 log.warn(
@@ -103,15 +107,14 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
         final LegacyEipAdapterConfig legacyEipAdapterConfig =
                 objectMapper.convertValue(config, LegacyEipAdapterConfig.class);
 
-        // TODO migration
-
         // reference tag in the config
 
         final List<EipToMqttMapping> eipToMqttMappings = new ArrayList<>();
         for (final LegacyEipAdapterConfig.PollingContextImpl context : legacyEipAdapterConfig.getSubscriptions()) {
             // create tag first
-            final ProtocolAdapterTagService.AddStatus addStatus =
-                    tagService.addTag(new EipTag(context.getTagName(), new EipAddress(context.getTagAddress())));
+            final ProtocolAdapterTagService.AddStatus addStatus = tagService.addTag(legacyEipAdapterConfig.getId(),
+                    "eip",
+                    new EipTag(context.getTagName(), new EipAddress(context.getTagAddress())));
             switch (addStatus) {
                 case SUCCESS:
                     eipToMqttMappings.add(new EipToMqttMapping(context.getDestinationMqttTopic(),
@@ -129,7 +132,10 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
                             "While migrating the EIPConfig a tag could not be added because a tag with the same name '{}' was already present. Another tagName using an random Uuid is used instead: '{}'",
                             context.getTagName(),
                             newTagName);
-                    tagService.addTag(new EipTag(newTagName, new EipAddress(context.getTagAddress())));
+                    tagService.addTag(legacyEipAdapterConfig.getId(),
+                            "eip",
+                            new EipTag(newTagName, new EipAddress(context.getTagAddress())));
+
                     eipToMqttMappings.add(new EipToMqttMapping(context.getDestinationMqttTopic(),
                             context.getQos(),
                             context.getMessageHandlingOptions(),

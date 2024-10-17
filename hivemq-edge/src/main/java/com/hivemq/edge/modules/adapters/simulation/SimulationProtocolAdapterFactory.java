@@ -21,6 +21,7 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationAdapterConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttConfig;
 import com.hivemq.edge.modules.adapters.simulation.config.SimulationToMqttMapping;
@@ -38,9 +39,13 @@ public class SimulationProtocolAdapterFactory implements ProtocolAdapterFactory<
     private static final @NotNull Logger log = LoggerFactory.getLogger(SimulationProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
+    private final ProtocolAdapterTagService protocolAdapterTagService;
 
-    public SimulationProtocolAdapterFactory(final boolean writingEnabled) {
+    public SimulationProtocolAdapterFactory(
+            final boolean writingEnabled,
+            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         this.writingEnabled = writingEnabled;
+        this.protocolAdapterTagService = protocolAdapterTagService;
     }
 
     @Override

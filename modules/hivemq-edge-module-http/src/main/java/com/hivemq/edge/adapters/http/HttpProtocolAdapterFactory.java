@@ -21,12 +21,12 @@ import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.config.ProtocolAdapterConfig;
 import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.http.config.BidirectionalHttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.legacy.LegacyHttpAdapterConfig;
-import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,9 +42,13 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
     private static final Logger log = LoggerFactory.getLogger(HttpProtocolAdapterFactory.class);
 
     final boolean writingEnabled;
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public HttpProtocolAdapterFactory(final boolean writingEnabled) {
+    public HttpProtocolAdapterFactory(
+            final boolean writingEnabled,
+            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         this.writingEnabled = writingEnabled;
+        this.protocolAdapterTagService = protocolAdapterTagService;
     }
 
     @Override

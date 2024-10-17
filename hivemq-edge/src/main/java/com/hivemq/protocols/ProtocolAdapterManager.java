@@ -60,7 +60,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -233,12 +235,11 @@ public class ProtocolAdapterManager {
 
         implementations.add(SimulationProtocolAdapterFactory.class);
 
-        for (final Class<? extends ProtocolAdapterFactory> facroryClass : implementations) {
+        for (final Class<? extends ProtocolAdapterFactory> factoryClass : implementations) {
             try {
-                final ProtocolAdapterFactory<?> protocolAdapterFactory =
-                        facroryClass.getDeclaredConstructor(boolean.class).newInstance(writingEnabled());
+                final ProtocolAdapterFactory<?> protocolAdapterFactory = findConstructorAndInitialize(factoryClass);
                 if (log.isDebugEnabled()) {
-                    log.debug("Discovered protocol adapter implementation {}.", facroryClass.getName());
+                    log.debug("Discovered protocol adapter implementation {}.", factoryClass.getName());
                 }
                 final ProtocolAdapterInformation information = protocolAdapterFactory.getInformation();
                 factoryMap.put(information.getProtocolId(), protocolAdapterFactory);
@@ -256,6 +257,36 @@ public class ProtocolAdapterManager {
                                 protocolAdapterFactory.getInformation().getProtocolName() +
                                 "'")
                         .collect(Collectors.joining(", ")));
+    }
+
+    private ProtocolAdapterFactory<?> findConstructorAndInitialize(final @NotNull Class<? extends ProtocolAdapterFactory> factoryClass)
+            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+        final Constructor<?>[] declaredConstructors = factoryClass.getDeclaredConstructors();
+        // check all possible constructors to enable backwards compatibility
+        for (final Constructor<?> declaredConstructor : declaredConstructors) {
+            final Parameter[] parameters = declaredConstructor.getParameters();
+            // likely custom protocol adapter implementations still have the old default no-arg constructor.
+            if (parameters.length == 0) {
+                return factoryClass.getDeclaredConstructor().newInstance(writingEnabled(), protocolAdapterTagService);
+            }
+
+            // this should not be out in the wild, but this was the constructor format after adding bi-directional adapters
+            if (parameters.length == 1 && parameters[0].getType().equals(Boolean.class)) {
+                return factoryClass.getDeclaredConstructor(boolean.class, ProtocolAdapterTagService.class)
+                        .newInstance(writingEnabled(), protocolAdapterTagService);
+            }
+
+            // current format: 1. Boolean writeEnabled, 2. ProtocolAdapterTagService to add tags during config migration
+            if (parameters.length == 2 &&
+                    parameters[0].getType().equals(Boolean.class) &&
+                    parameters[0].getType().equals(ProtocolAdapterTagService.class)) {
+                return factoryClass.getDeclaredConstructor(boolean.class, ProtocolAdapterTagService.class)
+                        .newInstance(writingEnabled(), protocolAdapterTagService);
+            }
+
+            log.warn("No fitting constructor was found to initialize adapter factory class '{}'.", factoryClass);
+        }
+        throw new IllegalAccessException();
     }
 
     public @Nullable ProtocolAdapterFactory<?> getProtocolAdapterFactory(final @NotNull String protocolAdapterType) {
@@ -347,8 +378,7 @@ public class ProtocolAdapterManager {
                         protocolAdapterWrapper,
                         objectMapper,
                         moduleServices.adapterPublishService(),
-                        adapterSubscription,
-                        eventService, jsonPayloadDefaultCreator, protocolAdapterTagService);
+                        adapterSubscription, eventService, jsonPayloadDefaultCreator, protocolAdapterTagService);
                 protocolAdapterPollingService.schedulePolling(sampler);
             });
         }

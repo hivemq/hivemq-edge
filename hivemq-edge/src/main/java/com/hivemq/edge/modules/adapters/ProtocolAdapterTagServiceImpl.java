@@ -16,10 +16,12 @@
 package com.hivemq.edge.modules.adapters;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.persistence.domain.DomainTag;
+import com.hivemq.persistence.domain.DomainTagAddResult;
 import com.hivemq.persistence.domain.DomainTagPersistence;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,6 +32,7 @@ import javax.inject.Singleton;
 public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService {
 
     private final @NotNull DomainTagPersistence domainTagPersistence;
+    private final @NotNull ObjectMapper objectMapper = new ObjectMapper();
 
     @Inject
     public ProtocolAdapterTagServiceImpl(final @NotNull DomainTagPersistence domainTagPersistence) {
@@ -39,7 +42,6 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
     @Override
     public @NotNull <T> Tag<T> resolveTag(final @NotNull String tagName, final @NotNull Class<T> addressClass) {
         final DomainTag tag = domainTagPersistence.getTag(tagName);
-        final ObjectMapper objectMapper = new ObjectMapper();
         try {
             final T address = objectMapper.treeToValue(tag.getTagAddress(), addressClass);
             return new Tag<T>() {
@@ -61,7 +63,19 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
     }
 
     @Override
-    public @NotNull AddStatus addTag(@NotNull final Tag<?> tag) {
-        return null;
+    public @NotNull AddStatus addTag(
+            final @NotNull String adapterId, final @NotNull String protocolId, @NotNull final Tag<?> tag) {
+        final JsonNode jsonNode = objectMapper.valueToTree(tag.getTagAddress());
+        final DomainTagAddResult domainTagAddResult =
+                domainTagPersistence.addDomainTag(adapterId, new DomainTag(jsonNode, tag.getTagName(), protocolId, ""));
+
+        switch (domainTagAddResult.getDomainTagPutStatus()) {
+            case SUCCESS:
+                return AddStatus.SUCCESS;
+            case ALREADY_EXISTS:
+                return AddStatus.ALREADY_PRESENT;
+        }
+        // shouldnt be able to happen
+        throw new RuntimeException();
     }
 }
