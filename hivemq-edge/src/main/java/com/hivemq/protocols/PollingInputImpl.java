@@ -17,18 +17,27 @@ package com.hivemq.protocols;
 
 import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.extension.sdk.api.annotations.NotNull;
 
 public class PollingInputImpl<T extends  PollingContext> implements PollingInput<T> {
 
     private final @NotNull T pollingContext;
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
-    public PollingInputImpl(final @NotNull T pollingContext) {
+    public PollingInputImpl(
+            final @NotNull T pollingContext, final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         this.pollingContext = pollingContext;
+        this.protocolAdapterTagService = protocolAdapterTagService;
     }
 
     @Override
     public @NotNull T getPollingContext() {
         return pollingContext;
+    }
+
+    @Override
+    public @NotNull ProtocolAdapterTagService protocolAdapterTagService() {
+        return protocolAdapterTagService;
     }
 }
