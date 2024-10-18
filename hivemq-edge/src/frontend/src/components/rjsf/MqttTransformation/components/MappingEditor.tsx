@@ -7,13 +7,13 @@ import { useGetTagSchemas } from '@/api/hooks/useDomainModel/useGetTagSchemas.ts
 import LoaderSpinner from '@/components/Chakra/LoaderSpinner.tsx'
 import MappingInstruction from '@/components/rjsf/MqttTransformation/components/mapping/MappingInstruction.tsx'
 import { getPropertyListFrom } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { Mapping } from '@/modules/Mappings/types.ts'
+import { FieldMapping } from '@/modules/Mappings/types.ts'
 
 interface MappingEditorProps extends Omit<CardProps, 'onChange'> {
   topic: string
   showTransformation?: boolean
-  mapping?: Mapping[]
-  onChange?: (v: Mapping[] | undefined) => void
+  mapping?: FieldMapping[]
+  onChange?: (v: FieldMapping[] | undefined) => void
 }
 
 const MappingEditor: FC<MappingEditorProps> = ({ topic, showTransformation = false, mapping, onChange, ...props }) => {

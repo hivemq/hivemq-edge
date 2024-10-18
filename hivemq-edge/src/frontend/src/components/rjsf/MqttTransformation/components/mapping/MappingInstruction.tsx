@@ -18,7 +18,7 @@ import { RiDeleteBin2Fill, RiFormula } from 'react-icons/ri'
 import IconButton from '@/components/Chakra/IconButton.tsx'
 import PropertyItem from '@/components/rjsf/MqttTransformation/components/schema/PropertyItem.tsx'
 import { FlatJSONSchema7 } from '@/components/rjsf/MqttTransformation/utils/json-schema.utils.ts'
-import { Mapping } from '@/modules/Mappings/types.ts'
+import { FieldMapping } from '@/modules/Mappings/types.ts'
 import { getDropZoneBorder } from '@/modules/Theme/utils.ts'
 
 enum DropState {
@@ -30,7 +30,7 @@ enum DropState {
 interface MappingInstructionProps {
   property: FlatJSONSchema7
   showTransformation?: boolean
-  mapping?: Mapping
+  mapping?: FieldMapping
   onChange?: (source: string, destination: string) => void
 }
 

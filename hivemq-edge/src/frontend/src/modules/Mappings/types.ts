@@ -26,24 +26,31 @@ export interface MappingManagerType<T = any> {
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
  */
 export interface OutwardMapping {
-  node: string
-  'mqtt-topic': string[]
-  mapping: Mapping[]
+  mqttTopicFilter: string
+  tag: string
+  fieldMapping: FieldMapping[]
 }
 
 /**
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
  */
-export interface Mapping {
-  source: string[]
-  destination: string
-  transformation?: Transformation
+export interface FieldMapping {
+  source: FieldMappingDefinition
+  destination: FieldMappingDefinition
+  transformation?: FieldTransformation
 }
 
 /**
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
  */
-export interface Transformation {
+export interface FieldMappingDefinition {
+  propertyPath: string
+}
+
+/**
+ * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
+ */
+export interface FieldTransformation {
   function: 'toString' | 'toInt' | 'join'
   params: string
 }
