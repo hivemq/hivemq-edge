@@ -17,9 +17,8 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
   const { adapterId, adapterType } = props.formContext || {}
 
   useEffect(() => {
-    // TODO[NVL] Add validation and persistence
-    return () => undefined
-  }, [])
+    props.onChange(subsData)
+  }, [props, subsData])
 
   const handleEdit = (index: number) => {
     setSelectedItem(index)
@@ -34,11 +33,13 @@ export const MqttTransformationField: FC<FieldProps<OutwardMapping[], RJSFSchema
   }
 
   const handleClose = () => {
+    console.log('XXXX')
     setSelectedItem(undefined)
   }
 
   const handleSubmit = () => {
     setSelectedItem(undefined)
+    props.onChange(subsData)
   }
 
   const handleAdd = () => {
