@@ -66,7 +66,7 @@ class FileAdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isFalse();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getFilePath()).isEqualTo("path/to/file1");
+            assertThat(mapping.getTagName()).isEqualTo("tag1");
             assertThat(mapping.getContentType()).isEqualTo(ContentType.BINARY);
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
@@ -82,7 +82,7 @@ class FileAdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isFalse();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getFilePath()).isEqualTo("path/to/file2");
+            assertThat(mapping.getTagName()).isEqualTo("tag2");
             assertThat(mapping.getContentType()).isEqualTo(ContentType.TEXT_CSV);
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
@@ -117,7 +117,7 @@ class FileAdapterConfigTest {
             assertThat(subscription.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(subscription.getIncludeTimestamp()).isTrue();
             assertThat(subscription.getIncludeTagNames()).isFalse();
-            assertThat(subscription.getFilePath()).isEqualTo("path/to/file1");
+            assertThat(subscription.getTagName()).isEqualTo("tag1");
             assertThat(subscription.getContentType()).isEqualTo(ContentType.BINARY);
         });
     }
@@ -137,8 +137,8 @@ class FileAdapterConfigTest {
     }
 
     @Test
-    public void convertConfigObject_filePathMissing_exception() throws Exception {
-        final URL resource = getClass().getResource("/file-adapter-file-path-missing.xml");
+    public void convertConfigObject_tagNameMissing_exception() throws Exception {
+        final URL resource = getClass().getResource("/file-adapter-tag-name-missing.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
@@ -147,7 +147,7 @@ class FileAdapterConfigTest {
         final FileProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new FileProtocolAdapterFactory(false, protocolAdapterTagService);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'filePath'");
+                (Map) adapters.get("file"))).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -171,8 +171,7 @@ class FileAdapterConfigTest {
                 MQTTMessagePerTag,
                 false,
                 true,
-                List.of(new MqttUserProperty("my-name", "my-value")),
-                "path/to/file",
+                List.of(new MqttUserProperty("my-name", "my-value")), "tag",
                 ContentType.BINARY);
 
         final FileAdapterConfig modbusAdapterConfig =
@@ -197,7 +196,7 @@ class FileAdapterConfigTest {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");
                 assertThat(userProperty.get("value")).isEqualTo("my-value");
             });
-            assertThat(mapping.get("filePath")).isEqualTo("path/to/file");
+            assertThat(mapping.get("tagName")).isEqualTo("tag");
             assertThat(mapping.get("contentType")).isEqualTo("BINARY");
         });
     }
@@ -209,8 +208,7 @@ class FileAdapterConfigTest {
                 null,
                 null,
                 null,
-                null,
-                "path/to/file",
+                null, "tag",
                 ContentType.BINARY);
 
         final FileAdapterConfig modbusAdapterConfig =
@@ -232,7 +230,7 @@ class FileAdapterConfigTest {
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
-            assertThat(mapping.get("filePath")).isEqualTo("path/to/file");
+            assertThat(mapping.get("tagName")).isEqualTo("tag");
             assertThat(mapping.get("contentType")).isEqualTo("BINARY");
         });
     }
