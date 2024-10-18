@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.file.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -40,6 +41,7 @@ import static org.mockito.Mockito.mock;
 class LegacyFileAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {
@@ -49,7 +51,8 @@ class LegacyFileAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final FileProtocolAdapterFactory fileProtocolAdapterFactory = new FileProtocolAdapterFactory(false);
+        final FileProtocolAdapterFactory fileProtocolAdapterFactory =
+                new FileProtocolAdapterFactory(false, protocolAdapterTagService);
         final FileAdapterConfig config =
                 (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
 
@@ -99,7 +102,8 @@ class LegacyFileAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final FileProtocolAdapterFactory fileProtocolAdapterFactory = new FileProtocolAdapterFactory(false);
+        final FileProtocolAdapterFactory fileProtocolAdapterFactory =
+                new FileProtocolAdapterFactory(false, protocolAdapterTagService);
         final FileAdapterConfig config =
                 (FileAdapterConfig) fileProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("file"));
 

@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.http.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -48,6 +49,7 @@ import static org.mockito.Mockito.mock;
 public class HttpAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
 
     @Test
     public void convertConfigObject_urlNull_exception() throws Exception {
@@ -57,7 +59,8 @@ public class HttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(false);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
         assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'url'");
     }
@@ -70,7 +73,8 @@ public class HttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(false);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
         assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
                 (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'id'");
     }
@@ -83,7 +87,8 @@ public class HttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(true);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(true, protocolAdapterTagService);
         final BidirectionalHttpAdapterConfig config =
                 (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
 
@@ -122,7 +127,8 @@ public class HttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(false);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
         final HttpAdapterConfig config =
                 (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
 
@@ -153,7 +159,8 @@ public class HttpAdapterConfigTest {
 
         assertThat(adapters.get("http")).isNotNull();
 
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(true);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(true, protocolAdapterTagService);
         final BidirectionalHttpAdapterConfig config =
                 (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
 
@@ -285,7 +292,8 @@ public class HttpAdapterConfigTest {
         final BidirectionalHttpAdapterConfig httpAdapterConfig =
                 new BidirectionalHttpAdapterConfig("my-protocol-adapter", 50, httpToMqttConfig, mqttToHttpConfig, true);
 
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(false);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
         final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
 
         assertThat(config.entrySet()).satisfiesExactlyInAnyOrder( //
@@ -399,7 +407,8 @@ public class HttpAdapterConfigTest {
         final BidirectionalHttpAdapterConfig httpAdapterConfig =
                 new BidirectionalHttpAdapterConfig("my-protocol-adapter", null, httpToMqttConfig, mqttToHttpConfig, null);
 
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(false);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
         final Map<String, Object> config = httpProtocolAdapterFactory.unconvertConfigObject(mapper, httpAdapterConfig);
 
         assertThat(config.entrySet()).satisfiesExactlyInAnyOrder( //

@@ -52,7 +52,9 @@ class LegacyEipAdapterConfigTest {
 
     @BeforeEach
     void setUp() {
-        when(protocolAdapterTagService.addTag(any())).thenReturn(ProtocolAdapterTagService.AddStatus.SUCCESS);
+        when(protocolAdapterTagService.addTag(any(),
+                any(),
+                any())).thenReturn(ProtocolAdapterTagService.AddStatus.SUCCESS);
     }
 
     @Test
@@ -65,8 +67,8 @@ class LegacyEipAdapterConfigTest {
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
                 new EipProtocolAdapterFactory(false, protocolAdapterTagService);
-        final EipAdapterConfig config =
-                (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ethernet-ip"));
+        final EipAdapterConfig config = (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("ethernet-ip"));
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -110,7 +112,9 @@ class LegacyEipAdapterConfigTest {
             });
         });
 
-        verify(protocolAdapterTagService, times(2)).addTag(eq(new EipTag("tag-name", new EipAddress("tag-address"))));
+        verify(protocolAdapterTagService, times(2)).addTag(any(),
+                any(),
+                eq(new EipTag("tag-name", new EipAddress("tag-address"))));
     }
 
     @Test
@@ -123,8 +127,8 @@ class LegacyEipAdapterConfigTest {
 
         final EipProtocolAdapterFactory eipProtocolAdapterFactory =
                 new EipProtocolAdapterFactory(false, protocolAdapterTagService);
-        final EipAdapterConfig config =
-                (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("ethernet-ip"));
+        final EipAdapterConfig config = (EipAdapterConfig) eipProtocolAdapterFactory.convertConfigObject(mapper,
+                (Map) adapters.get("ethernet-ip"));
 
         assertThat(config.getId()).isEqualTo("my-eip-protocol-adapter");
         assertThat(config.getPort()).isEqualTo(1234);
@@ -144,7 +148,9 @@ class LegacyEipAdapterConfigTest {
             assertThat(mapping.getDataType()).isEqualTo(EipDataType.BOOL);
         });
 
-        verify(protocolAdapterTagService, times(1)).addTag(eq(new EipTag("tag-name", new EipAddress("tag-address"))));
+        verify(protocolAdapterTagService, times(1)).addTag(any(),
+                any(),
+                eq(new EipTag("tag-name", new EipAddress("tag-address"))));
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
