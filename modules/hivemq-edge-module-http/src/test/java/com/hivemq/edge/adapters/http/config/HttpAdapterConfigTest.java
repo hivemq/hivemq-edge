@@ -62,7 +62,7 @@ public class HttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
         assertThatThrownBy(() -> httpProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'url'");
+                (Map) adapters.get("http"))).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -90,7 +90,8 @@ public class HttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(true, protocolAdapterTagService);
         final BidirectionalHttpAdapterConfig config =
-                (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
+                (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper,
+                        (Map) adapters.get("http"));
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpConnectTimeoutSeconds()).isEqualTo(5);
@@ -101,7 +102,7 @@ public class HttpAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
 
         final HttpToMqttMapping httpToMqttMapping = config.getHttpToMqttConfig().getMappings().get(0);
-        assertThat(httpToMqttMapping.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+        assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
         assertThat(httpToMqttMapping.getMqttTopic()).isEqualTo("my/destination");
         assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(1);
         assertThat(httpToMqttMapping.getHttpRequestMethod()).isEqualTo(GET);
@@ -111,7 +112,7 @@ public class HttpAdapterConfigTest {
         assertThat(httpToMqttMapping.getHttpRequestTimeoutSeconds()).isEqualTo(5);
 
         final MqttToHttpMapping mqttToHttpMapping = config.getMqttToHttpConfig().getMappings().get(0);
-        assertThat(mqttToHttpMapping.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+        assertThat(mqttToHttpMapping.getTagName()).isEqualTo("tag1");
         assertThat(mqttToHttpMapping.getMqttTopicFilter()).isEqualTo("my/#");
         assertThat(mqttToHttpMapping.getMqttMaxQos()).isEqualTo(1);
         assertThat(mqttToHttpMapping.getHttpRequestMethod()).isEqualTo(POST);
@@ -140,7 +141,7 @@ public class HttpAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
 
         final HttpToMqttMapping httpToMqttMapping = config.getHttpToMqttConfig().getMappings().get(0);
-        assertThat(httpToMqttMapping.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+        assertThat(httpToMqttMapping.getTagName()).isEqualTo("tag1");
         assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(0);
         assertThat(httpToMqttMapping.getHttpRequestMethod()).isEqualTo(POST);
         assertThat(httpToMqttMapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
@@ -162,7 +163,8 @@ public class HttpAdapterConfigTest {
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(true, protocolAdapterTagService);
         final BidirectionalHttpAdapterConfig config =
-                (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
+                (BidirectionalHttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper,
+                        (Map) adapters.get("http"));
 
         assertThat(config.getId()).isEqualTo("my-protocol-adapter");
         assertThat(config.getHttpToMqttConfig().isHttpPublishSuccessStatusCodeOnly()).isTrue();
@@ -171,7 +173,7 @@ public class HttpAdapterConfigTest {
         assertThat(config.isAllowUntrustedCertificates()).isTrue();
 
         assertThat(config.getHttpToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+            assertThat(mapping.getTagName()).isEqualTo("tag1");
             assertThat(mapping.getMqttTopic()).isEqualTo("my/destination");
             assertThat(mapping.getMqttQos()).isEqualTo(0);
             assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);
@@ -193,7 +195,7 @@ public class HttpAdapterConfigTest {
                 assertThat(userProperty.getValue()).isEqualTo("value2");
             });
         }, mapping -> {
-            assertThat(mapping.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+            assertThat(mapping.getTagName()).isEqualTo("tag2");
             assertThat(mapping.getMqttTopic()).isEqualTo("my/destination2");
             assertThat(mapping.getMqttQos()).isEqualTo(0);
             assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);
@@ -216,7 +218,7 @@ public class HttpAdapterConfigTest {
         });
 
         assertThat(config.getMqttToHttpConfig().getMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+            assertThat(mapping.getTagName()).isEqualTo("tag3");
             assertThat(mapping.getMqttTopicFilter()).isEqualTo("my/#");
             assertThat(mapping.getMqttMaxQos()).isEqualTo(0);
             assertThat(mapping.getHttpRequestMethod()).isEqualTo(POST);
@@ -229,7 +231,7 @@ public class HttpAdapterConfigTest {
                 assertThat(header2.getValue()).isEqualTo("bar 2");
             });
         }, mapping -> {
-            assertThat(mapping.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+            assertThat(mapping.getTagName()).isEqualTo("tag4");
             assertThat(mapping.getMqttTopicFilter()).isEqualTo("my/#");
             assertThat(mapping.getMqttMaxQos()).isEqualTo(1);
             assertThat(mapping.getHttpRequestMethod()).isEqualTo(PUT);
@@ -252,8 +254,7 @@ public class HttpAdapterConfigTest {
         final HttpToMqttConfig httpToMqttConfig = new HttpToMqttConfig(1337,
                 11,
                 true,
-                true,
-                List.of(new HttpToMqttMapping("http://192.168.0.02:777/?asdasd=asdasd",
+                true, List.of(new HttpToMqttMapping("tag1",
                                 "my/destination",
                                 0,
                                 List.of(),
@@ -262,8 +263,7 @@ public class HttpAdapterConfigTest {
                                 1774,
                                 YAML,
                                 "my-body",
-                                List.of(httpHeader2, httpHeader1)),
-                        new HttpToMqttMapping("http://192.168.0.02:777/?asdasd=asdasd",
+                                List.of(httpHeader2, httpHeader1)), new HttpToMqttMapping("tag2",
                                 "my/destination2",
                                 0,
                                 List.of(),
@@ -275,14 +275,12 @@ public class HttpAdapterConfigTest {
                                 List.of(httpHeader2, httpHeader1))));
 
 
-        final MqttToHttpConfig mqttToHttpConfig = new MqttToHttpConfig(List.of(new MqttToHttpMapping(
-                        "http://192.168.0.02:777/test0",
+        final MqttToHttpConfig mqttToHttpConfig = new MqttToHttpConfig(List.of(new MqttToHttpMapping("tag3",
                         "my0/#",
                         1,
                         POST,
                         11,
-                        List.of(httpHeader1, httpHeader2)),
-                new MqttToHttpMapping("http://192.168.0.02:777/test1",
+                        List.of(httpHeader1, httpHeader2)), new MqttToHttpMapping("tag4",
                         "my1/#",
                         2,
                         POST,
@@ -315,7 +313,7 @@ public class HttpAdapterConfigTest {
         assertThat((Boolean) httpToMqtt.get("assertResponseIsJson")).isTrue();
 
         final Map<String, Object> mapping0 = (Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(0);
-        assertThat(mapping0.get("url")).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+        assertThat(mapping0.get("tagName")).isEqualTo("tag1");
         assertThat(mapping0.get("mqttTopic")).isEqualTo("my/destination");
         assertThat(mapping0.get("mqttQos")).isEqualTo(0);
         assertThat(mapping0.get("httpRequestMethod")).isEqualTo("POST");
@@ -331,7 +329,7 @@ public class HttpAdapterConfigTest {
         });
 
         final Map<String, Object> mapping1 = (Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(1);
-        assertThat(mapping1.get("url")).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+        assertThat(mapping1.get("tagName")).isEqualTo("tag2");
         assertThat(mapping1.get("mqttTopic")).isEqualTo("my/destination2");
         assertThat(mapping1.get("mqttQos")).isEqualTo(0);
         assertThat(mapping1.get("httpRequestMethod")).isEqualTo("POST");
@@ -350,7 +348,7 @@ public class HttpAdapterConfigTest {
 
         final Map<String, Object> mqttToHttpMapping0 =
                 (Map<String, Object>) ((List) mqttToHttp.get("mqttToHttpMappings")).get(0);
-        assertThat(mqttToHttpMapping0.get("url")).isEqualTo("http://192.168.0.02:777/test0");
+        assertThat(mqttToHttpMapping0.get("tagName")).isEqualTo("tag3");
         assertThat(mqttToHttpMapping0.get("mqttTopicFilter")).isEqualTo("my0/#");
         assertThat(mqttToHttpMapping0.get("mqttMaxQos")).isEqualTo(1);
         assertThat(mqttToHttpMapping0.get("httpRequestMethod")).isEqualTo("POST");
@@ -365,7 +363,7 @@ public class HttpAdapterConfigTest {
 
         final Map<String, Object> mqttToHttpMapping1 =
                 (Map<String, Object>) ((List) mqttToHttp.get("mqttToHttpMappings")).get(1);
-        assertThat(mqttToHttpMapping1.get("url")).isEqualTo("http://192.168.0.02:777/test1");
+        assertThat(mqttToHttpMapping1.get("tagName")).isEqualTo("tag4");
         assertThat(mqttToHttpMapping1.get("mqttTopicFilter")).isEqualTo("my1/#");
         assertThat(mqttToHttpMapping1.get("mqttMaxQos")).isEqualTo(2);
         assertThat(mqttToHttpMapping1.get("httpRequestMethod")).isEqualTo("POST");
@@ -384,8 +382,7 @@ public class HttpAdapterConfigTest {
         final HttpToMqttConfig httpToMqttConfig = new HttpToMqttConfig(null,
                 null,
                 null,
-                null,
-                List.of(new HttpToMqttMapping("http://192.168.0.02:777/?asdasd=asdasd",
+                null, List.of(new HttpToMqttMapping("tag1",
                         "my/destination",
                         null,
                         null,
@@ -396,16 +393,19 @@ public class HttpAdapterConfigTest {
                         null,
                         null)));
 
-        final MqttToHttpConfig mqttToHttpConfig = new MqttToHttpConfig(List.of(new MqttToHttpMapping(
-                "http://192.168.0.02:777/?asdasd=asdasd",
+        final MqttToHttpConfig mqttToHttpConfig = new MqttToHttpConfig(List.of(new MqttToHttpMapping("tag1",
                 "my/#",
                 null,
                 null,
                 null,
                 null)));
 
-        final BidirectionalHttpAdapterConfig httpAdapterConfig =
-                new BidirectionalHttpAdapterConfig("my-protocol-adapter", null, httpToMqttConfig, mqttToHttpConfig, null);
+        final BidirectionalHttpAdapterConfig httpAdapterConfig = new BidirectionalHttpAdapterConfig(
+                "my-protocol-adapter",
+                null,
+                httpToMqttConfig,
+                mqttToHttpConfig,
+                null);
 
         final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
                 new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
@@ -430,7 +430,7 @@ public class HttpAdapterConfigTest {
         assertThat((Boolean) httpToMqtt.get("assertResponseIsJson")).isFalse();
 
         final Map<String, Object> mapping = (Map<String, Object>) ((List) httpToMqtt.get("httpToMqttMappings")).get(0);
-        assertThat(mapping.get("url")).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+        assertThat(mapping.get("tagName")).isEqualTo("tag1");
         assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination");
         assertThat(mapping.get("mqttQos")).isEqualTo(0);
         assertThat(mapping.get("httpRequestMethod")).isEqualTo("GET");
@@ -443,7 +443,7 @@ public class HttpAdapterConfigTest {
         final Map<String, Object> mqttToHttp = (Map<String, Object>) config.get("mqttToHttp");
         final Map<String, Object> mqttToHttpMapping =
                 (Map<String, Object>) ((List) mqttToHttp.get("mqttToHttpMappings")).get(0);
-        assertThat(mqttToHttpMapping.get("url")).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
+        assertThat(mqttToHttpMapping.get("tagName")).isEqualTo("tag1");
         assertThat(mqttToHttpMapping.get("mqttTopicFilter")).isEqualTo("my/#");
         assertThat(mqttToHttpMapping.get("mqttMaxQos")).isEqualTo(1);
         assertThat(mqttToHttpMapping.get("httpRequestMethod")).isEqualTo("POST");

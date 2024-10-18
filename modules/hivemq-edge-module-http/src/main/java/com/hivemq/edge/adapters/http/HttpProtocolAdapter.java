@@ -17,9 +17,6 @@ package com.hivemq.edge.adapters.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
 import com.hivemq.adapter.sdk.api.events.model.Event;
 import com.hivemq.adapter.sdk.api.exceptions.ProtocolAdapterException;
@@ -33,8 +30,9 @@ import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
-import com.hivemq.adapter.sdk.api.writing.WritingContext;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.adapter.sdk.api.writing.WritingInput;
 import com.hivemq.adapter.sdk.api.writing.WritingOutput;
 import com.hivemq.adapter.sdk.api.writing.WritingPayload;
@@ -46,6 +44,7 @@ import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.adapters.http.mqtt2http.HttpPayload;
 import com.hivemq.edge.adapters.http.mqtt2http.JsonSchema;
+import com.hivemq.edge.adapters.http.tag.HttpTagAddress;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -158,8 +157,15 @@ public class HttpProtocolAdapter
 
         final HttpToMqttMapping httpToMqttMapping = pollingInput.getPollingContext();
 
+        // first resolve the tag
+        final ProtocolAdapterTagService protocolAdapterTagService = pollingInput.protocolAdapterTagService();
+        final Tag<HttpTagAddress> addressTag =
+                protocolAdapterTagService.resolveTag(pollingInput.getPollingContext().getTagName(),
+                        HttpTagAddress.class);
+
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        builder.uri(URI.create(httpToMqttMapping.getUrl()));
+        final String url = addressTag.getTagAddress().getUrl();
+        builder.uri(URI.create(url));
         builder.timeout(Duration.ofSeconds(httpToMqttMapping.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
 
@@ -228,8 +234,7 @@ public class HttpProtocolAdapter
                 }
             }
 
-            final HttpData data = new HttpData(httpToMqttMapping,
-                    httpToMqttMapping.getUrl(),
+            final HttpData data = new HttpData(httpToMqttMapping, url,
                     httpResponse.statusCode(),
                     responseContentType,
                     adapterFactories.dataPointFactory());
@@ -281,10 +286,16 @@ public class HttpProtocolAdapter
             writingOutput.fail(new ProtocolAdapterException(), "No response was created, because the client is null.");
             return;
         }
-
         final MqttToHttpMapping mqttToHttpMapping = (MqttToHttpMapping) writingInput.getWritingContext();
+
+        // first resolve the tag
+        final ProtocolAdapterTagService protocolAdapterTagService = writingInput.protocolAdapterTagService();
+        final Tag<HttpTagAddress> addressTag =
+                protocolAdapterTagService.resolveTag(mqttToHttpMapping.getTagName(), HttpTagAddress.class);
+        final String url = addressTag.getTagAddress().getUrl();
+
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        builder.uri(URI.create(mqttToHttpMapping.getUrl()));
+        builder.uri(URI.create(url));
         builder.timeout(Duration.ofSeconds(mqttToHttpMapping.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
         mqttToHttpMapping.getHttpHeaders().forEach(hv -> builder.setHeader(hv.getName(), hv.getValue()));
@@ -317,8 +328,7 @@ public class HttpProtocolAdapter
                 writingOutput.finish();
             } else {
                 writingOutput.fail(String.format(
-                        "Forwarding a message to url '%s' failed with status code '%d",
-                        mqttToHttpMapping.getUrl(),
+                        "Forwarding a message to url '%s' failed with status code '%d", url,
                         httpResponse.statusCode()));
             }
         });
