@@ -24,10 +24,13 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
+import com.hivemq.edge.adapters.file.tag.FileTagAddress;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +91,13 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
     @Override
     public void poll(
             final @NotNull PollingInput<FileToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
-        final String absolutePathToFle = pollingInput.getPollingContext().getFilePath();
+        final ProtocolAdapterTagService protocolAdapterTagService = pollingInput.protocolAdapterTagService();
+        final Tag<FileTagAddress> eipAddressTag =
+                protocolAdapterTagService.resolveTag(pollingInput.getPollingContext().getTagName(),
+                        FileTagAddress.class);
+
+
+        final String absolutePathToFle = eipAddressTag.getTagAddress().getFilePath();
         try {
             final Path path = Path.of(absolutePathToFle);
             final long length = path.toFile().length();

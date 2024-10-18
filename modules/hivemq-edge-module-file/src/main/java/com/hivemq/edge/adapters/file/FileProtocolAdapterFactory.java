@@ -26,13 +26,19 @@ import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.config.legacy.LegacyFileAdapterConfig;
+import com.hivemq.edge.adapters.file.config.legacy.LegacyFilePollingContext;
+import com.hivemq.edge.adapters.file.tag.FileTag;
+import com.hivemq.edge.adapters.file.tag.FileTagAddress;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.UUID;
+
+import static com.hivemq.edge.adapters.file.FileProtocolAdapterInformation.PROTOCOL_ID;
 
 public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAdapterConfig> {
 
@@ -73,7 +79,7 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
                 if (log.isDebugEnabled()) {
                     log.debug("Original Exception:", currentConfigFailedException);
                 }
-                return tryConvertLegacyConfig(objectMapper, config);
+                return tryConvertLegacyConfig(objectMapper, config, protocolAdapterTagService);
             } catch (final Exception legacyConfigFailedException) {
                 log.warn("Could not load legacy '{}' configuration. Because: '{}'",
                         FileProtocolAdapterInformation.INSTANCE.getDisplayName(),
@@ -93,21 +99,29 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
     }
 
     private static @NotNull FileAdapterConfig tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
+            final @NotNull ObjectMapper objectMapper,
+            final @NotNull Map<String, Object> config,
+            ProtocolAdapterTagService tagService) {
         final LegacyFileAdapterConfig legacyFileAdapterConfig =
                 objectMapper.convertValue(config, LegacyFileAdapterConfig.class);
 
-        final List<FileToMqttMapping> fileToMqttMappings = legacyFileAdapterConfig.getPollingContexts()
-                .stream()
-                .map(context -> new FileToMqttMapping(context.getDestinationMqttTopic(),
-                        context.getQos(),
-                        context.getMessageHandlingOptions(),
-                        context.getIncludeTimestamp(),
-                        context.getIncludeTagNames(),
-                        context.getUserProperties(),
-                        context.getFilePath(),
-                        context.getContentType()))
-                .collect(Collectors.toList());
+        final List<FileToMqttMapping> fileToMqttMappings = new ArrayList<>();
+        for (final LegacyFilePollingContext context : legacyFileAdapterConfig.getPollingContexts()) {
+            // create tag first
+            final String newTagName = legacyFileAdapterConfig.getId() + "-" + UUID.randomUUID().toString();
+            tagService.addTag(legacyFileAdapterConfig.getId(),
+                    PROTOCOL_ID,
+                    new FileTag(newTagName, new FileTagAddress(context.getFilePath())));
+            final FileToMqttMapping fileToMqttMapping = new FileToMqttMapping(context.getDestinationMqttTopic(),
+                    context.getQos(),
+                    context.getMessageHandlingOptions(),
+                    context.getIncludeTimestamp(),
+                    context.getIncludeTagNames(),
+                    context.getUserProperties(),
+                    context.getFilePath(),
+                    context.getContentType());
+            fileToMqttMappings.add(fileToMqttMapping);
+        }
 
         final FileToMqttConfig fileToMqttConfig =
                 new FileToMqttConfig(legacyFileAdapterConfig.getPollingIntervalMillis(),

@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.hivemq.edge.adapters.etherip.EipProtocolAdapterInformation.PROTOCOL_ID;
+
 public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdapterConfig> {
 
     private static final @NotNull Logger log = LoggerFactory.getLogger(EipProtocolAdapterFactory.class);
@@ -113,7 +115,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
         for (final LegacyEipAdapterConfig.PollingContextImpl context : legacyEipAdapterConfig.getSubscriptions()) {
             // create tag first
             final ProtocolAdapterTagService.AddStatus addStatus = tagService.addTag(legacyEipAdapterConfig.getId(),
-                    "eip",
+                    PROTOCOL_ID,
                     new EipTag(context.getTagName(), new EipAddress(context.getTagAddress())));
             switch (addStatus) {
                 case SUCCESS:
@@ -132,8 +134,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
                             "While migrating the EIPConfig a tag could not be added because a tag with the same name '{}' was already present. Another tagName using an random Uuid is used instead: '{}'",
                             context.getTagName(),
                             newTagName);
-                    tagService.addTag(legacyEipAdapterConfig.getId(),
-                            "eip",
+                    tagService.addTag(legacyEipAdapterConfig.getId(), PROTOCOL_ID,
                             new EipTag(newTagName, new EipAddress(context.getTagAddress())));
 
                     eipToMqttMappings.add(new EipToMqttMapping(context.getDestinationMqttTopic(),
