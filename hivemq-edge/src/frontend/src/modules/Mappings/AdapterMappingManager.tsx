@@ -61,7 +61,14 @@ const AdapterMappingManager: FC<AdapterMappingManagerProps> = ({ type }) => {
         </DrawerHeader>
         <DrawerBody display="flex" flexDirection="column" gap={6}>
           {!adapterId && <ErrorMessage message={t('protocolAdapter.error.loading')} />}
-          {adapterId && <MappingForm adapterId={adapterId} adapterType={selectedNode?.data.type} type={type} />}
+          {adapterId && (
+            <MappingForm
+              adapterId={adapterId}
+              adapterType={selectedNode?.data.type}
+              type={type}
+              onSubmit={handleClose}
+            />
+          )}
         </DrawerBody>
       </DrawerContent>
     </Drawer>

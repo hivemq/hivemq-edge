@@ -21,12 +21,13 @@ interface MappingFormProps {
   adapterId: string
   adapterType?: string
   type: MappingType
+  onSubmit: () => void
 }
 
 const rjsfLog = debug('RJSF:MappingForm')
 
 // TODO[NVL] Should replicate the config from the adapter form; share component?
-const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => {
+const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSubmit }) => {
   const { t } = useTranslation()
   const { inwardManager, outwardManager } = useMappingManager(adapterId)
   const { errorToast } = useEdgeToast()
@@ -50,7 +51,11 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type }) => 
           },
           new Error(t('protocolAdapter.export.error.noSchema'))
         )
-      } else mappingManager.onSubmit(data.formData)
+      } else {
+        mappingManager.onSubmit(data.formData)
+        // TODO[NVL] A bit too fast; handle pending and errors
+        onSubmit()
+      }
     },
     [errorToast, mappingManager, t]
   )
