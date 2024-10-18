@@ -169,7 +169,6 @@ class EipAdapterConfigTest {
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);
             assertThat(mapping.get("tagName")).isEqualTo("tag-name");
-            assertThat(mapping.get("tagAddress")).isEqualTo("tag-address");
             assertThat(mapping.get("jsonPayloadCreator")).isNull();
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");

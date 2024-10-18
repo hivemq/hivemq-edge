@@ -16,6 +16,7 @@
 package com.hivemq.edge.adapters.http.config.legacy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.configuration.entity.HiveMQConfigEntity;
 import com.hivemq.configuration.reader.ConfigFileReaderWriter;
 import com.hivemq.configuration.reader.ConfigurationFile;
@@ -41,6 +42,8 @@ import static org.mockito.Mockito.mock;
 public class LegacyHttpAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+
 
     @Test
     public void convertConfigObject_defaults() throws Exception {
@@ -50,7 +53,8 @@ public class LegacyHttpAdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(false);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
         final HttpAdapterConfig config =
                 (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
 
@@ -81,7 +85,8 @@ public class LegacyHttpAdapterConfigTest {
 
         assertThat(adapters.get("http")).isNotNull();
 
-        final HttpProtocolAdapterFactory httpProtocolAdapterFactory = new HttpProtocolAdapterFactory(false);
+        final HttpProtocolAdapterFactory httpProtocolAdapterFactory =
+                new HttpProtocolAdapterFactory(false, protocolAdapterTagService);
         final HttpAdapterConfig config =
                 (HttpAdapterConfig) httpProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("http"));
 
