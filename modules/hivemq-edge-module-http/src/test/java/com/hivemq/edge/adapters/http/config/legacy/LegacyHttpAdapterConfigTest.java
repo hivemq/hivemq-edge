@@ -36,7 +36,10 @@ import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpContent
 import static com.hivemq.edge.adapters.http.config.HttpAdapterConfig.HttpMethod.GET;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @SuppressWarnings("unchecked")
 public class LegacyHttpAdapterConfigTest {
@@ -66,13 +69,14 @@ public class LegacyHttpAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(10);
 
         final HttpToMqttMapping httpToMqttMapping = config.getHttpToMqttConfig().getMappings().get(0);
-        //TODO assertThat(httpToMqttMapping.getUrl()).isEqualTo("http://192.168.0.02:777/?asdasd=asdasd");
         assertThat(httpToMqttMapping.getMqttTopic()).isEqualTo("my/destination");
         assertThat(httpToMqttMapping.getMqttQos()).isEqualTo(1);
         assertThat(httpToMqttMapping.getHttpRequestMethod()).isEqualTo(GET);
         assertThat(httpToMqttMapping.getHttpRequestBodyContentType()).isEqualTo(JSON);
         assertThat(httpToMqttMapping.getHttpRequestBody()).isNull();
         assertThat(httpToMqttMapping.getHttpHeaders()).isEmpty();
+
+        verify(protocolAdapterTagService, times(1)).addTag(any(), any(), any());
     }
 
     @Test
@@ -97,7 +101,6 @@ public class LegacyHttpAdapterConfigTest {
         assertThat(config.getHttpToMqttConfig().getMaxPollingErrorsBeforeRemoval()).isEqualTo(13);
 
         assertThat(config.getHttpToMqttConfig().getMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getTagName()).isEqualTo("tag1");
             assertThat(mapping.getMqttTopic()).isEqualTo("my/destination");
             assertThat(mapping.getMqttQos()).isEqualTo(0);
             assertThat(mapping.getHttpRequestMethod()).isEqualTo(GET);
@@ -105,6 +108,8 @@ public class LegacyHttpAdapterConfigTest {
             assertThat(mapping.getHttpRequestBodyContentType()).isEqualTo(YAML);
             assertThat(mapping.getHttpRequestBody()).isEqualTo("my-body");
         });
+
+        verify(protocolAdapterTagService, times(1)).addTag(any(), any(), any());
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {
