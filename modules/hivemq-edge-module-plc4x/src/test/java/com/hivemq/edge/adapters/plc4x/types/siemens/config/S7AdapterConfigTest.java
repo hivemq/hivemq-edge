@@ -52,7 +52,7 @@ class S7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false, mock());
         final S7AdapterConfig config =
                 (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
 
@@ -96,7 +96,7 @@ class S7AdapterConfigTest {
         final HiveMQConfigEntity configEntity = loadConfig(path);
         final Map<String, Object> adapters = configEntity.getProtocolAdapterConfig();
 
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false, mock());
         final S7AdapterConfig config =
                 (S7AdapterConfig) s7ProtocolAdapterFactory.convertConfigObject(mapper, (Map) adapters.get("s7"));
 
@@ -148,7 +148,7 @@ class S7AdapterConfigTest {
                 5,
                 new S7ToMqttConfig(12, 13, true, List.of(pollingContext)));
 
-        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false);
+        final S7ProtocolAdapterFactory s7ProtocolAdapterFactory = new S7ProtocolAdapterFactory(false, mock());
         final Map<String, Object> config =
                 s7ProtocolAdapterFactory.unconvertConfigObject(mapper, s7AdapterConfig);
 
