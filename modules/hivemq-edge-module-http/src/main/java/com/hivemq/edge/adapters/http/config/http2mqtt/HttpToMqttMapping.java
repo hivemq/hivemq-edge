@@ -20,8 +20,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,12 +40,11 @@ import static java.util.Objects.requireNonNullElseGet;
 
 public class HttpToMqttMapping implements PollingContext {
 
-    @JsonProperty(value = "url", required = true)
-    @ModuleConfigField(title = "URL",
-                       description = "The url of the HTTP request you would like to make",
+    @JsonProperty(value = "tagName", required = true)
+    @ModuleConfigField(title = "tagName", description = "The name of the tag that holds the address data.",
                        format = ModuleConfigField.FieldType.URI,
                        required = true)
-    private final @NotNull String url;
+    private final @NotNull String tagName;
 
     @JsonProperty(value = "mqttTopic", required = true)
     @ModuleConfigField(title = "Destination MQTT Topic",
@@ -106,7 +105,7 @@ public class HttpToMqttMapping implements PollingContext {
 
     @JsonCreator
     public HttpToMqttMapping(
-            @JsonProperty(value = "url", required = true) final @NotNull String url,
+            @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
             @JsonProperty(value = "mqttTopic", required = true) final @NotNull String mqttTopic,
             @JsonProperty(value = "mqttQos") final @Nullable Integer mqttQos,
             @JsonProperty(value = "mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties,
@@ -116,7 +115,7 @@ public class HttpToMqttMapping implements PollingContext {
             @JsonProperty(value = "httpRequestBodyContentType") final @Nullable HttpAdapterConfig.HttpContentType httpRequestBodyContentType,
             @JsonProperty(value = "httpRequestBody") final @Nullable String httpRequestBody,
             @JsonProperty(value = "httpHeaders") final @Nullable List<HttpAdapterConfig.HttpHeader> httpHeaders) {
-        this.url = url;
+        this.tagName = tagName;
         this.mqttTopic = mqttTopic;
         this.mqttQos = requireNonNullElse(mqttQos, 0);
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
@@ -133,8 +132,8 @@ public class HttpToMqttMapping implements PollingContext {
         this.httpHeaders = Objects.requireNonNullElseGet(httpHeaders, List::of);
     }
 
-    public @NotNull String getUrl() {
-        return url;
+    public @NotNull String getTagName() {
+        return tagName;
     }
 
     @Override

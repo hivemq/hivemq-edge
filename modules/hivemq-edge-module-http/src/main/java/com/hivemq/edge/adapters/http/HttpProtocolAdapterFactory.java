@@ -27,12 +27,17 @@ import com.hivemq.edge.adapters.http.config.HttpAdapterConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.legacy.LegacyHttpAdapterConfig;
+import com.hivemq.edge.adapters.http.tag.HttpTag;
+import com.hivemq.edge.adapters.http.tag.HttpTagAddress;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+
+import static com.hivemq.edge.adapters.http.HttpProtocolAdapterInformation.PROTOCOL_ID;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -77,7 +82,7 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
                 if (log.isDebugEnabled()) {
                     log.debug("Original Exception:", currentConfigFailedException);
                 }
-                return tryConvertLegacyConfig(objectMapper, config);
+                return tryConvertLegacyConfig(objectMapper, config, protocolAdapterTagService);
             } catch (final Exception legacyConfigFailedException) {
                 log.warn("Could not load legacy '{}' configuration. Because: '{}'",
                         HttpProtocolAdapterInformation.INSTANCE.getDisplayName(),
@@ -101,11 +106,18 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
 
     private static @NotNull HttpAdapterConfig tryConvertLegacyConfig(
             final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+            final @NotNull Map<String, Object> config,
+            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         final LegacyHttpAdapterConfig legacyHttpAdapterConfig =
                 objectMapper.convertValue(config, LegacyHttpAdapterConfig.class);
 
-        final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(legacyHttpAdapterConfig.getUrl(),
+        // create tag first
+        final String newTagName = legacyHttpAdapterConfig.getId() + "-" + UUID.randomUUID().toString();
+        protocolAdapterTagService.addTag(legacyHttpAdapterConfig.getId(),
+                PROTOCOL_ID,
+                new HttpTag(newTagName, new HttpTagAddress(legacyHttpAdapterConfig.getUrl())));
+
+        final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(newTagName,
                 legacyHttpAdapterConfig.getDestination(),
                 legacyHttpAdapterConfig.getQos(),
                 List.of(),
