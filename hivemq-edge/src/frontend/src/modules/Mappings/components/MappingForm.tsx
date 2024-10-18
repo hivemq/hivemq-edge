@@ -57,7 +57,7 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSub
         onSubmit()
       }
     },
-    [errorToast, mappingManager, t]
+    [errorToast, mappingManager, onSubmit, t]
   )
 
   if (!mappingManager) return <ErrorMessage message={t('protocolAdapter.export.error.noSchema')} />
