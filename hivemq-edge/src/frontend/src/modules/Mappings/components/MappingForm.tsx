@@ -5,7 +5,6 @@ import { type IChangeEvent } from '@rjsf/core'
 import debug from 'debug'
 
 import ErrorMessage from '@/components/ErrorMessage.tsx'
-import { ObjectFieldTemplate } from '@/components/rjsf/ObjectFieldTemplate.tsx'
 import { FieldTemplate } from '@/components/rjsf/FieldTemplate.tsx'
 import { BaseInputTemplate } from '@/components/rjsf/BaseInputTemplate.tsx'
 import { ArrayFieldTemplate } from '@/components/rjsf/ArrayFieldTemplate.tsx'
@@ -78,7 +77,8 @@ const MappingForm: FC<MappingFormProps> = ({ adapterId, adapterType, type, onSub
       widgets={adapterJSFWidgets}
       fields={adapterJSFFields}
       templates={{
-        ObjectFieldTemplate,
+        // TODO[NVL] There is a bug with that template (user properties not displayed)
+        // ObjectFieldTemplate,
         FieldTemplate,
         BaseInputTemplate,
         ArrayFieldTemplate,
