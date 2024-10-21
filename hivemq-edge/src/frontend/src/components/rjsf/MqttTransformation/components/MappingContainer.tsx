@@ -27,7 +27,7 @@ interface SubscriptionContainerProps {
   onChange: (id: keyof OutwardMapping, v: JsonNode | string | string[] | undefined) => void
 }
 
-const SubscriptionContainer: FC<SubscriptionContainerProps> = ({
+const MappingContainer: FC<SubscriptionContainerProps> = ({
   adapterId,
   adapterType,
   item,
@@ -43,30 +43,30 @@ const SubscriptionContainer: FC<SubscriptionContainerProps> = ({
       <Stack gap={2} flexDirection="row">
         <VStack flex={1} alignItems="stretch" maxW="40vw">
           <Box>
-            <SelectSourceTopics values={item['mqtt-topic']} onChange={(v) => onChange('mqtt-topic', v)} />
+            <SelectSourceTopics value={item.mqttTopicFilter} onChange={(v) => onChange('mqttTopicFilter', v)} />
           </Box>
-          <DataModelSources flex={1} topics={item['mqtt-topic']} />
+          <DataModelSources flex={1} topics={[item.mqttTopicFilter]} />
         </VStack>
         <VStack flex={2} alignItems="stretch">
           <Box maxW="50%">
             <SelectDestinationTag
               adapterId={adapterId}
               adapterType={adapterType}
-              values={[item.node]}
-              onChange={(v) => onChange('node', v)}
+              value={item.tag}
+              onChange={(v) => onChange('tag', v)}
             />
           </Box>
           <HStack alignItems="stretch">
             {strategy != MappingStrategy.EXACT && (
               <MappingEditor
                 flex={1}
-                topic={item.node}
-                mapping={item.mapping}
+                topic={item.tag}
+                mapping={item.fieldMapping}
                 showTransformation={strategy === MappingStrategy.TRANSFORMED}
-                onChange={(mappings) => onChange('mapping', mappings)}
+                onChange={(mappings) => onChange('fieldMapping', mappings)}
               />
             )}
-            <DataModelDestination flex={1} topic={item.node} validation={validation} />
+            <DataModelDestination flex={1} topic={item.tag} validation={validation} />
           </HStack>
         </VStack>
       </Stack>
@@ -82,4 +82,4 @@ const SubscriptionContainer: FC<SubscriptionContainerProps> = ({
   )
 }
 
-export default SubscriptionContainer
+export default MappingContainer

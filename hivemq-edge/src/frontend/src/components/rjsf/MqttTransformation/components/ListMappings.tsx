@@ -17,23 +17,23 @@ interface ListSubscriptionsProps {
   isDisabled: boolean
 }
 
-const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onAdd, isDisabled }) => {
+const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onAdd, isDisabled }) => {
   const { t } = useTranslation('components')
 
   const columns = useMemo<ColumnDef<OutwardMapping>[]>(() => {
     return [
       {
-        accessorKey: 'mqtt-topic',
+        accessorKey: 'mqttTopicFilter',
         enableSorting: false,
         cell: (info) => {
-          const values = info.getValue<string[]>()
+          const values = info.getValue<string>()
           if (!values.length) return <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
-          return values.map((e) => <Topic key={e} tagTitle={e} />)
+          return <Topic key={values} tagTitle={values} />
         },
         header: t('rjsf.MqttTransformationField.listing.sources'),
       },
       {
-        accessorKey: 'node',
+        accessorKey: 'tag',
         cell: (info) => {
           const val = info.getValue<string>()
           return val ? <PLCTag tagTitle={val} /> : <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
@@ -88,4 +88,4 @@ const ListSubscriptions: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete
   )
 }
 
-export default ListSubscriptions
+export default ListMappings
