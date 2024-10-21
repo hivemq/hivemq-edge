@@ -17,65 +17,92 @@ package com.hivemq.edge.adapters.plc4x.types.siemens;
 
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
+import com.hivemq.adapter.sdk.api.services.ModuleServices;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagAddress;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class S7ProtocolAdapterTest {
 
     private final @NotNull ProtocolAdapterInput protocolAdapterInput = mock();
+    private final @NotNull ModuleServices moduleServices = mock();
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+    private @NotNull TestS7ProtocolAdapter adapter;
+
+    @BeforeEach
+    void setUp() {
+        when(protocolAdapterInput.moduleServices()).thenReturn(moduleServices);
+        when(moduleServices.protocolAdapterTagService()).thenReturn(protocolAdapterTagService);
+        adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
+    }
 
     @Test
     public void whenTagSpecialDataType_thenModifyAddress() {
-        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
+        final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%IW200"));
+        when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%IX200:DATE",
                 adapter.createTagAddressForSubscription(new S7TestSub("%IW200", Plc4xDataType.DATA_TYPE.DATE)));
     }
 
     @Test
     public void whenTagNormalDataType_thenDoNotModifyAddress() {
-        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
+        final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%IW200"));
+        when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%IW200:WORD",
                 adapter.createTagAddressForSubscription(new S7TestSub("%IW200", Plc4xDataType.DATA_TYPE.WORD)));
     }
 
     @Test
     public void whenTagBitDataType_thenDoNotModifyAddress() {
-        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
+        final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%IX200.2"));
+        when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%IX200.2:BOOL",
                 adapter.createTagAddressForSubscription(new S7TestSub("%IX200.2", Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
     @Test
     public void whenBlockSpecialDataType_thenModifyAddress() {
-        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
+        final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%DB23.DBW200"));
+        when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
+
         assertEquals("%DB23.DBX200:WCHAR",
                 adapter.createTagAddressForSubscription(new S7TestSub("%DB23.DBW200", Plc4xDataType.DATA_TYPE.WCHAR)));
     }
 
     @Test
     public void whenBlockNormalDataType_thenDoNotModifyAddress() {
-        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
+        final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%DB23.DBD200"));
+        when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%DB23.DBD200:DINT",
                 adapter.createTagAddressForSubscription(new S7TestSub("%DB23.DBD200", Plc4xDataType.DATA_TYPE.DINT)));
     }
 
     @Test
     public void whenBlockShortSpecialDataType_thenModifyAddress() {
-        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
+        final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%DB23:200"));
+        when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%DB23:200:DATE",
                 adapter.createTagAddressForSubscription(new S7TestSub("%DB23:200", Plc4xDataType.DATA_TYPE.DATE)));
     }
 
     @Test
     public void whenBlockBitDataType_thenDoNotModifyAddress() {
-        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
+        final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%DB100:DBX200.2"));
+        when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%DB100:DBX200.2:BOOL",
                 adapter.createTagAddressForSubscription(new S7TestSub("%DB100:DBX200.2",
                         Plc4xDataType.DATA_TYPE.BOOL)));
@@ -83,14 +110,16 @@ public class S7ProtocolAdapterTest {
 
     @Test
     public void whenBlockShortNormalDataType_thenDoNotModifyAddress() {
-        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
+        final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%DB23:200"));
+        when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%DB23:200:DINT",
                 adapter.createTagAddressForSubscription(new S7TestSub("%DB23:200", Plc4xDataType.DATA_TYPE.DINT)));
     }
 
     @Test
     public void whenBlockShortBitDataType_thenDoNotModifyAddress() {
-        final TestS7ProtocolAdapter adapter = new TestS7ProtocolAdapter(protocolAdapterInput);
+        final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%DB100:200.2"));
+        when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%DB100:200.2:BOOL",
                 adapter.createTagAddressForSubscription(new S7TestSub("%DB100:200.2", Plc4xDataType.DATA_TYPE.BOOL)));
     }
@@ -98,8 +127,7 @@ public class S7ProtocolAdapterTest {
     private static class TestS7ProtocolAdapter extends S7ProtocolAdapter {
 
         public TestS7ProtocolAdapter(final @NotNull ProtocolAdapterInput protocolAdapterInput) {
-            super(S7ProtocolAdapterInformation.INSTANCE,
-                    protocolAdapterInput);
+            super(S7ProtocolAdapterInformation.INSTANCE, protocolAdapterInput);
         }
 
         @Override
@@ -111,8 +139,7 @@ public class S7ProtocolAdapterTest {
     private static class S7TestSub extends Plc4xToMqttMapping {
 
         public S7TestSub(
-                final @NotNull String tagAddress,
-                final Plc4xDataType.@NotNull DATA_TYPE dataType) {
+                final @NotNull String tagAddress, final Plc4xDataType.@NotNull DATA_TYPE dataType) {
             super("mqttTopic",
                     1,
                     MessageHandlingOptions.MQTTMessagePerTag,

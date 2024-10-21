@@ -74,7 +74,6 @@ class S7AdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
 
         }, mapping -> {
@@ -83,7 +82,6 @@ class S7AdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
         });
     }
@@ -118,7 +116,6 @@ class S7AdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
-            assertThat(mapping.getTagAddress()).isEqualTo("tag-address");
             assertThat(mapping.getTagName()).isEqualTo("tag-name");
             assertThat(mapping.getDataType()).isEqualTo(Plc4xDataType.DATA_TYPE.BOOL);
         });
@@ -174,7 +171,6 @@ class S7AdapterConfigTest {
             assertThat(mapping.get("includeTimestamp")).isEqualTo(false);
             assertThat(mapping.get("includeTagNames")).isEqualTo(true);
             assertThat(mapping.get("tagName")).isEqualTo("tag-name");
-            assertThat(mapping.get("tagAddress")).isEqualTo("tag-address");
             assertThat(mapping.get("jsonPayloadCreator")).isNull();
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).satisfiesExactly((userProperty) -> {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");

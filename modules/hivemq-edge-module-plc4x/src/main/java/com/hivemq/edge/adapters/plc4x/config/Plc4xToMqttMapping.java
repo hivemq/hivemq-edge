@@ -20,19 +20,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
-import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.config.MqttUserProperty;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
-import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.*;
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
-@JsonPropertyOrder({"tagName", "tagAddress", "dataType", "mqttTopic", "mqttQos"})
+@JsonPropertyOrder({"tagName", "dataType", "mqttTopic", "mqttQos"})
 public class Plc4xToMqttMapping implements PollingContext {
 
     @JsonProperty(value = "tagName", required = true)
@@ -41,12 +41,6 @@ public class Plc4xToMqttMapping implements PollingContext {
                        required = true,
                        format = ModuleConfigField.FieldType.IDENTIFIER)
     private final @NotNull String tagName;
-
-    @JsonProperty(value = "tagAddress", required = true)
-    @ModuleConfigField(title = "Tag Address",
-                       description = "The well formed address of the tag to read",
-                       required = true)
-    private final @NotNull String tagAddress;
 
     @JsonProperty(value = "dataType", required = true)
     @ModuleConfigField(title = "Data Type", description = "The expected data type of the tag", enumDisplayValues = {
@@ -140,17 +134,12 @@ public class Plc4xToMqttMapping implements PollingContext {
         this.includeTimestamp = requireNonNullElse(includeTimestamp, true);
         this.includeTagNames = requireNonNullElse(includeTagNames, false);
         this.tagName = tagName;
-        this.tagAddress = tagAddress;
         this.dataType = dataType;
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
     }
 
     public @NotNull String getTagName() {
         return tagName;
-    }
-
-    public @NotNull String getTagAddress() {
-        return tagAddress;
     }
 
     public @NotNull DATA_TYPE getDataType() {

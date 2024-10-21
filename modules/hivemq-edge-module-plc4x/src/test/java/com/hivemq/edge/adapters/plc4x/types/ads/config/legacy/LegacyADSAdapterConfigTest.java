@@ -71,7 +71,6 @@ class LegacyADSAdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerSubscription);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isTrue();
-            assertThat(mapping.getTagAddress()).isEqualTo("MYPROGRAM.MyStringVar");
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name");
 
             assertThat(mapping.getUserProperties()).satisfiesExactly(userProperty -> {
@@ -113,7 +112,6 @@ class LegacyADSAdapterConfigTest {
             assertThat(mapping.getMessageHandlingOptions()).isEqualTo(MQTTMessagePerTag);
             assertThat(mapping.getIncludeTimestamp()).isTrue();
             assertThat(mapping.getIncludeTagNames()).isFalse();
-            assertThat(mapping.getTagAddress()).isEqualTo("MYPROGRAM.MyStringVar");
             assertThat(mapping.getTagName()).isEqualTo("my-tag-name");
             assertThat(mapping.getDataType()).isEqualTo(Plc4xDataType.DATA_TYPE.STRING);
         });

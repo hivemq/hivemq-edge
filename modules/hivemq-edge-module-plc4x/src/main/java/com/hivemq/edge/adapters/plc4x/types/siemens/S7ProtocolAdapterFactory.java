@@ -23,6 +23,9 @@ import com.hivemq.adapter.sdk.api.factories.ProtocolAdapterFactory;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.config.legacy.LegacyPlc4xAdapterConfig;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagAddress;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7ToMqttConfig;
 import com.hivemq.edge.adapters.plc4x.types.siemens.config.legacy.LegacyS7AdapterConfig;
@@ -30,9 +33,12 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.UUID;
+
+import static com.hivemq.edge.adapters.plc4x.types.siemens.S7ProtocolAdapterInformation.PROTOCOL_ID;
 
 /**
  * @author HiveMQ Adapter Generator
@@ -45,8 +51,7 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
     public S7ProtocolAdapterFactory(
-            final boolean writingEnabled,
-            final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
+            final boolean writingEnabled, final @NotNull ProtocolAdapterTagService protocolAdapterTagService) {
         this.writingEnabled = writingEnabled;
         this.protocolAdapterTagService = protocolAdapterTagService;
     }
@@ -77,7 +82,8 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
             return ProtocolAdapterFactory.super.convertConfigObject(objectMapper, config);
         } catch (final Exception currentConfigFailedException) {
             try {
-                log.warn("Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
+                log.warn(
+                        "Could not load '{}' configuration, trying to load legacy configuration. Because: '{}'. Support for the legacy configuration will be removed in the beginning of 2025.",
                         S7ProtocolAdapterInformation.INSTANCE.getDisplayName(),
                         currentConfigFailedException.getMessage());
                 if (log.isDebugEnabled()) {
@@ -97,24 +103,54 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
         }
     }
 
-    private static @NotNull S7AdapterConfig tryConvertLegacyConfig(
-            final @NotNull ObjectMapper objectMapper,
-            final @NotNull Map<String, Object> config) {
+    private @NotNull S7AdapterConfig tryConvertLegacyConfig(
+            final @NotNull ObjectMapper objectMapper, final @NotNull Map<String, Object> config) {
         final LegacyS7AdapterConfig legacyS7AdapterConfig =
                 objectMapper.convertValue(config, LegacyS7AdapterConfig.class);
 
-        final List<Plc4xToMqttMapping> plc4xToMqttMappings = legacyS7AdapterConfig.getSubscriptions()
-                .stream()
-                .map(subscription -> new Plc4xToMqttMapping(subscription.getMqttTopic(),
-                        subscription.getMqttQos(),
-                        subscription.getMessageHandlingOptions(),
-                        subscription.getIncludeTimestamp(),
-                        subscription.getIncludeTagNames(),
-                        subscription.getTagName(),
-                        subscription.getTagAddress(),
-                        subscription.getDataType(),
-                        subscription.getUserProperties()))
-                .collect(Collectors.toList());
+
+        final List<Plc4xToMqttMapping> plc4xToMqttMappings = new ArrayList<>();
+        for (LegacyPlc4xAdapterConfig.PollingContextImpl subscription : legacyS7AdapterConfig.getSubscriptions()) {
+            // create tag first
+            final ProtocolAdapterTagService.AddStatus addStatus =
+                    protocolAdapterTagService.addTag(legacyS7AdapterConfig.getId(),
+                            PROTOCOL_ID,
+                            new Plc4xTag(subscription.getTagName(), new Plc4xTagAddress(subscription.getTagAddress())));
+            // we need to check the tagName as it comes from the
+            switch (addStatus) {
+                case SUCCESS:
+                    // good case: the tag name was not used yet and we can just register a new tag
+                    plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
+                            subscription.getMqttQos(),
+                            subscription.getMessageHandlingOptions(),
+                            subscription.getIncludeTimestamp(),
+                            subscription.getIncludeTagNames(),
+                            subscription.getTagName(),
+                            subscription.getTagAddress(),
+                            subscription.getDataType(),
+                            subscription.getUserProperties()));
+                    break;
+                case ALREADY_PRESENT:
+                    final String newTagName = legacyS7AdapterConfig.getId() + "-" + UUID.randomUUID().toString();
+                    log.warn(
+                            "While migrating the EIPConfig a tag could not be added because a tag with the same name '{}' was already present. Another tagName using an random Uuid is used instead: '{}'",
+                            subscription.getTagName(),
+                            newTagName);
+                    protocolAdapterTagService.addTag(legacyS7AdapterConfig.getId(),
+                            PROTOCOL_ID,
+                            new Plc4xTag(newTagName, new Plc4xTagAddress(subscription.getTagAddress())));
+                    plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
+                            subscription.getMqttQos(),
+                            subscription.getMessageHandlingOptions(),
+                            subscription.getIncludeTimestamp(),
+                            subscription.getIncludeTagNames(),
+                            newTagName,
+                            subscription.getTagAddress(),
+                            subscription.getDataType(),
+                            subscription.getUserProperties()));
+                    break;
+            }
+        }
 
         final S7ToMqttConfig s7ToMqttConfig = new S7ToMqttConfig(legacyS7AdapterConfig.getPollingIntervalMillis(),
                 legacyS7AdapterConfig.getMaxPollingErrorsBeforeRemoval(),
