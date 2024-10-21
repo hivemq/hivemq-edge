@@ -2,17 +2,8 @@
   "type": "object",
   "definitions": {
     "FieldMappingItemTransformation": {
-      "additionalProperties": true
-    },
-    "FieldMappingItemDefinitionWithSource": {
       "type": "object",
-      "allOf": [{ "$ref": "#/definitions/FieldMappingItemDefinition" }],
-      "required": ["schemaRoot"],
-      "properties": {
-        "schemaRoot": {
-          "type": "string"
-        }
-      }
+      "additionalProperties": true
     },
     "FieldMappingItemDefinition": {
       "type": "object",
@@ -20,9 +11,6 @@
       "properties": {
         "propertyPath": {
           "type": "string"
-        },
-        "transformation": {
-          "$ref": "#/definitions/FieldMappingItemTransformation"
         }
       }
     },
@@ -35,6 +23,9 @@
         },
         "destination": {
           "$ref": "#/definitions/FieldMappingItemDefinition"
+        },
+        "transformation": {
+          "$ref": "#/definitions/FieldMappingItemTransformation"
         }
       }
     },

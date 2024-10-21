@@ -17,7 +17,7 @@ export const MOCK_OUTWARD_MAPPING_OPCUA: MockMapping = {
       // norender: true,
     },
     mqttToOpcuaMappings: {
-      // 'ui:field': 'mqtt:transform',
+      'ui:field': 'mqtt:transform',
       items: {
         'ui:order': ['*', 'mqttMaxQos'],
         fieldMapping: {
@@ -31,35 +31,29 @@ export const MOCK_OUTWARD_MAPPING_OPCUA: MockMapping = {
 
 export const MOCK_MAPPING_DATA: OutwardMapping[] = [
   {
-    'mqtt-topic': ['bar/test8', 'pump1/temperature'],
-    mapping: [
+    mqttTopicFilter: 'pump1/temperature',
+    fieldMapping: [
       {
-        source: ['dfdf'],
-        destination: 'dfdf',
-        transformation: {
-          function: 'toString',
-          params: 'dffd',
-        },
+        source: { propertyPath: 'path1' },
+        destination: { propertyPath: 'path2' },
+        transformation: {},
       },
       {
-        source: ['dd'],
-        destination: 'dffdfd',
-        transformation: {
-          function: 'toString',
-          params: 'fdfgfg',
-        },
+        source: { propertyPath: 'path3' },
+        destination: { propertyPath: 'path4' },
+        transformation: {},
       },
     ],
-    node: 'write/power-management/alert',
+    tag: 'write/power-management/alert',
   },
   {
-    'mqtt-topic': [],
-    mapping: [],
-    node: '',
+    mqttTopicFilter: '',
+    fieldMapping: [],
+    tag: '',
   },
   {
-    'mqtt-topic': [],
-    mapping: [],
-    node: '',
+    mqttTopicFilter: '',
+    fieldMapping: [],
+    tag: '',
   },
 ]
