@@ -1,21 +1,34 @@
 import { FC } from 'react'
 
 import { useGetDomainTags } from '@/api/hooks/useProtocolAdapters/useGetDomainTags.tsx'
-import { MultiTopicsCreatableSelect, SingleTopicCreatableSelect } from '@/components/MQTT/TopicCreatableSelect.tsx'
+import { SingleTopicCreatableSelect } from '@/components/MQTT/TopicCreatableSelect.tsx'
+import { useGetEdgeTopics } from '@/hooks/useGetEdgeTopics/useGetEdgeTopics.ts'
 
 // TODO[NVL] The whole topic CreatableSelect thing needs to be refactored to any type of entities
 interface SourceSelectorProps {
   adapterType?: string
   adapterId?: string
-  values: string[]
+  value: string
   onChange: (v: string | string[] | undefined) => void
 }
 
-export const SelectSourceTopics: FC<SourceSelectorProps> = ({ values, onChange }) => {
-  return <MultiTopicsCreatableSelect id="mapping-select-source" value={values} onChange={onChange} isCreatable={true} />
+export const SelectSourceTopics: FC<SourceSelectorProps> = ({ value, onChange }) => {
+  const { data, isLoading } = useGetEdgeTopics({ publishOnly: false })
+
+  return (
+    <SingleTopicCreatableSelect
+      isLoading={isLoading}
+      options={data}
+      id="mapping-select-source"
+      value={value}
+      onChange={onChange}
+      isCreatable={false}
+      isTag
+    />
+  )
 }
 
-export const SelectDestinationTag: FC<SourceSelectorProps> = ({ adapterId, values, onChange }) => {
+export const SelectDestinationTag: FC<SourceSelectorProps> = ({ adapterId, value, onChange }) => {
   const { isLoading, data } = useGetDomainTags(adapterId)
 
   return (
@@ -23,7 +36,7 @@ export const SelectDestinationTag: FC<SourceSelectorProps> = ({ adapterId, value
       isLoading={isLoading}
       options={data?.items?.map((deviceTag) => deviceTag.tag) || []}
       id="mapping-select-destination"
-      value={values[0]}
+      value={value}
       onChange={onChange}
       isCreatable={false}
       isTag
