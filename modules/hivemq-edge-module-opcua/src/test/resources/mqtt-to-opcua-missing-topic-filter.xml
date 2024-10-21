@@ -23,7 +23,7 @@
             <mqttToOpcua>
                 <mqttToOpcuaMappings>
                     <mqttToOpcuaMapping>
-                        <node>ns=1;i=1004</node>
+                        <tagName>ns=1;i=1004</tagName>
                         <mqttQos>1</mqttQos>
                     </mqttToOpcuaMapping>
                 </mqttToOpcuaMappings>

@@ -593,7 +593,9 @@ public class ProtocolAdapterManager {
                             protocolAdapterFactory.getInformation().getProtocolId());
 
             final ModuleServicesPerModuleImpl moduleServicesPerModule =
-                    new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(), eventService);
+                    new ModuleServicesPerModuleImpl(moduleServices.adapterPublishService(),
+                            eventService,
+                            moduleServices.protocolAdapterTagService());
             final ProtocolAdapter protocolAdapter =
                     protocolAdapterFactory.createAdapter(protocolAdapterFactory.getInformation(),
                             new ProtocolAdapterInputImpl(configObject,

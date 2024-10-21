@@ -92,14 +92,14 @@ class OpcUaAdapterConfigTest {
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
         assertThat(config.getOpcuaToMqttConfig().getOpcuaToMqttMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
+            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/a");
             assertThat(mapping.getQos()).isEqualTo(1);
             assertThat(mapping.getPublishingInterval()).isEqualTo(12);
             assertThat(mapping.getServerQueueSize()).isEqualTo(13);
             assertThat(mapping.getMessageExpiryInterval()).isEqualTo(15);
         }, mapping -> {
-            assertThat(mapping.getNode()).isEqualTo("ns=2;i=1004");
+            assertThat(mapping.getTagName()).isEqualTo("ns=2;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubbb/b");
             assertThat(mapping.getQos()).isEqualTo(2);
             assertThat(mapping.getPublishingInterval()).isEqualTo(13);
@@ -109,11 +109,11 @@ class OpcUaAdapterConfigTest {
 
         assertThat(config.getMqttToOpcUaConfig()).isNotNull();
         assertThat(config.getMqttToOpcUaConfig().getMqttToOpcUaMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
+            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopicFilter()).isEqualTo("test/blubb/#");
             assertThat(mapping.getMqttMaxQos()).isEqualTo(0);
         }, mapping -> {
-            assertThat(mapping.getNode()).isEqualTo("ns=2;i=1004");
+            assertThat(mapping.getTagName()).isEqualTo("ns=2;i=1004");
             assertThat(mapping.getMqttTopicFilter()).isEqualTo("test/blubbb/#");
             assertThat(mapping.getMqttMaxQos()).isEqualTo(0);
         });
@@ -149,7 +149,7 @@ class OpcUaAdapterConfigTest {
 
         assertThat(config.getOpcuaToMqttConfig()).isNotNull();
         assertThat(config.getOpcuaToMqttConfig().getOpcuaToMqttMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
+            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopic()).isEqualTo("test/blubb/#");
             assertThat(mapping.getQos()).isEqualTo(0);
             assertThat(mapping.getPublishingInterval()).isEqualTo(1000);
@@ -159,7 +159,7 @@ class OpcUaAdapterConfigTest {
 
         assertThat(config.getMqttToOpcUaConfig()).isNotNull();
         assertThat(config.getMqttToOpcUaConfig().getMqttToOpcUaMappings()).satisfiesExactly(mapping -> {
-            assertThat(mapping.getNode()).isEqualTo("ns=1;i=1004");
+            assertThat(mapping.getTagName()).isEqualTo("ns=1;i=1004");
             assertThat(mapping.getMqttTopicFilter()).isEqualTo("test/blubb/#");
             assertThat(mapping.getMqttMaxQos()).isEqualTo(1);
         });
@@ -195,7 +195,7 @@ class OpcUaAdapterConfigTest {
 
     @Test
     public void convertConfigObject_opcuaMissingNode_exception() throws Exception {
-        final URL resource = getClass().getResource("/opcua-adapter-missing-node.xml");
+        final URL resource = getClass().getResource("/opcua-adapter-missing-tagname.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
@@ -204,7 +204,7 @@ class OpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(false, protocolAdapterTagService);
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'node'");
+                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -223,7 +223,7 @@ class OpcUaAdapterConfigTest {
 
     @Test
     public void convertConfigObject_mqttToOpcuaMissingNode_exception() throws Exception {
-        final URL resource = getClass().getResource("/mqtt-to-opcua-missing-node.xml");
+        final URL resource = getClass().getResource("/mqtt-to-opcua-missing-tagname.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
         final HiveMQConfigEntity configEntity = loadConfig(path);
@@ -232,7 +232,7 @@ class OpcUaAdapterConfigTest {
         final OpcUaProtocolAdapterFactory opcUaProtocolAdapterFactory =
                 new OpcUaProtocolAdapterFactory(true, protocolAdapterTagService);
         assertThatThrownBy(() -> opcUaProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'node'");
+                (Map) adapters.get("opcua"))).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
@@ -280,7 +280,7 @@ class OpcUaAdapterConfigTest {
 
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
         assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("node")).isEqualTo("my-node");
+            assertThat(mapping.get("tagName")).isEqualTo("my-node");
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/topic");
             assertThat(mapping.get("publishingInterval")).isEqualTo(11);
             assertThat(mapping.get("serverQueueSize")).isEqualTo(12);
@@ -290,7 +290,7 @@ class OpcUaAdapterConfigTest {
 
         final Map<String, Object> mqttToOpcua = (Map<String, Object>) config.get("mqttToOpcua");
         assertThat((List<Map<String, Object>>) mqttToOpcua.get("mqttToOpcuaMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("node")).isEqualTo("my-node");
+            assertThat(mapping.get("tagName")).isEqualTo("my-node");
             assertThat(mapping.get("mqttTopicFilter")).isEqualTo("my/topic");
             assertThat(mapping.get("mqttMaxQos")).isEqualTo(0);
         });
@@ -345,7 +345,7 @@ class OpcUaAdapterConfigTest {
 
         final Map<String, Object> opcuaToMqtt = (Map<String, Object>) config.get("opcuaToMqtt");
         assertThat((List<Map<String, Object>>) opcuaToMqtt.get("opcuaToMqttMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("node")).isEqualTo("my-node");
+            assertThat(mapping.get("tagName")).isEqualTo("my-node");
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/topic");
             assertThat(mapping.get("publishingInterval")).isEqualTo(1000);
             assertThat(mapping.get("serverQueueSize")).isEqualTo(1);
@@ -355,7 +355,7 @@ class OpcUaAdapterConfigTest {
 
         final Map<String, Object> mqttToOpcua = (Map<String, Object>) config.get("mqttToOpcua");
         assertThat((List<Map<String, Object>>) mqttToOpcua.get("mqttToOpcuaMappings")).satisfiesExactly((mapping) -> {
-            assertThat(mapping.get("node")).isEqualTo("my-node");
+            assertThat(mapping.get("tagName")).isEqualTo("my-node");
             assertThat(mapping.get("mqttTopicFilter")).isEqualTo("my/topic");
             assertThat(mapping.get("mqttMaxQos")).isEqualTo(1);
         });

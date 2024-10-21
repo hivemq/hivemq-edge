@@ -22,7 +22,7 @@
             <opcuaToMqtt>
                 <opcuaToMqttMappings>
                     <opcuaToMqttMapping>
-                        <node>ns=1;i=1004</node>
+                        <tagName>ns=1;i=1004</tagName>
                         <mqttTopic>test/blubb/#</mqttTopic>
                     </opcuaToMqttMapping>
                 </opcuaToMqttMappings>
