@@ -27,7 +27,7 @@ const ListMappings: FC<ListSubscriptionsProps> = ({ items, onEdit, onDelete, onA
         enableSorting: false,
         cell: (info) => {
           const values = info.getValue<string>()
-          if (!values.length) return <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
+          if (!values?.length) return <Text>{t('rjsf.MqttTransformationField.unset')}</Text>
           return <Topic key={values} tagTitle={values} />
         },
         header: t('rjsf.MqttTransformationField.listing.sources'),
