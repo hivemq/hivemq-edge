@@ -24,6 +24,7 @@ import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
 import com.hivemq.edge.adapters.plc4x.types.ads.ADSProtocolAdapterFactory;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
@@ -35,12 +36,21 @@ import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessa
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerTag;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class LegacyADSAdapterConfigTest {
 
     private final @NotNull ObjectMapper mapper = createProtocolAdapterMapper(new ObjectMapper());
     private final @NotNull ProtocolAdapterTagService protocolAdapterTagService = mock();
+
+    @BeforeEach
+    void setUp() {
+        when(protocolAdapterTagService.addTag(any(),
+                any(),
+                any())).thenReturn(ProtocolAdapterTagService.AddStatus.SUCCESS);
+    }
 
     @Test
     public void convertConfigObject_fullConfig_valid() throws Exception {

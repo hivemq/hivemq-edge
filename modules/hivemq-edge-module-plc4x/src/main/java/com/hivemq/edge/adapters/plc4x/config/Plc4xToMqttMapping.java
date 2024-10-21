@@ -125,7 +125,6 @@ public class Plc4xToMqttMapping implements PollingContext {
             @JsonProperty("includeTimestamp") final @Nullable Boolean includeTimestamp,
             @JsonProperty("includeTagNames") final @Nullable Boolean includeTagNames,
             @JsonProperty(value = "tagName", required = true) final @NotNull String tagName,
-            @JsonProperty(value = "tagAddress", required = true) final @NotNull String tagAddress,
             @JsonProperty(value = "dataType", required = true) final @NotNull DATA_TYPE dataType,
             @JsonProperty("mqttUserProperties") final @Nullable List<MqttUserProperty> userProperties) {
         this.mqttTopic = mqttTopic;

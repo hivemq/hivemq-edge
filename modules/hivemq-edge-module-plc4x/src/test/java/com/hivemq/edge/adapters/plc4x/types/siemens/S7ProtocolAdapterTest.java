@@ -55,7 +55,7 @@ public class S7ProtocolAdapterTest {
         final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%IW200"));
         when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%IX200:DATE",
-                adapter.createTagAddressForSubscription(new S7TestSub("%IW200", Plc4xDataType.DATA_TYPE.DATE)));
+                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DATE)));
     }
 
     @Test
@@ -63,7 +63,7 @@ public class S7ProtocolAdapterTest {
         final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%IW200"));
         when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%IW200:WORD",
-                adapter.createTagAddressForSubscription(new S7TestSub("%IW200", Plc4xDataType.DATA_TYPE.WORD)));
+                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.WORD)));
     }
 
     @Test
@@ -71,7 +71,7 @@ public class S7ProtocolAdapterTest {
         final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%IX200.2"));
         when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%IX200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub("%IX200.2", Plc4xDataType.DATA_TYPE.BOOL)));
+                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
     @Test
@@ -80,7 +80,7 @@ public class S7ProtocolAdapterTest {
         when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
 
         assertEquals("%DB23.DBX200:WCHAR",
-                adapter.createTagAddressForSubscription(new S7TestSub("%DB23.DBW200", Plc4xDataType.DATA_TYPE.WCHAR)));
+                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.WCHAR)));
     }
 
     @Test
@@ -88,7 +88,7 @@ public class S7ProtocolAdapterTest {
         final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%DB23.DBD200"));
         when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%DB23.DBD200:DINT",
-                adapter.createTagAddressForSubscription(new S7TestSub("%DB23.DBD200", Plc4xDataType.DATA_TYPE.DINT)));
+                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DINT)));
     }
 
     @Test
@@ -96,7 +96,7 @@ public class S7ProtocolAdapterTest {
         final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%DB23:200"));
         when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%DB23:200:DATE",
-                adapter.createTagAddressForSubscription(new S7TestSub("%DB23:200", Plc4xDataType.DATA_TYPE.DATE)));
+                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DATE)));
     }
 
     @Test
@@ -104,8 +104,7 @@ public class S7ProtocolAdapterTest {
         final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%DB100:DBX200.2"));
         when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%DB100:DBX200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub("%DB100:DBX200.2",
-                        Plc4xDataType.DATA_TYPE.BOOL)));
+                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
     @Test
@@ -113,7 +112,7 @@ public class S7ProtocolAdapterTest {
         final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%DB23:200"));
         when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%DB23:200:DINT",
-                adapter.createTagAddressForSubscription(new S7TestSub("%DB23:200", Plc4xDataType.DATA_TYPE.DINT)));
+                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.DINT)));
     }
 
     @Test
@@ -121,7 +120,7 @@ public class S7ProtocolAdapterTest {
         final Tag<Plc4xTagAddress> tag = new Plc4xTag("tag", new Plc4xTagAddress("%DB100:200.2"));
         when(protocolAdapterTagService.resolveTag(any(), eq(Plc4xTagAddress.class))).thenReturn(tag);
         assertEquals("%DB100:200.2:BOOL",
-                adapter.createTagAddressForSubscription(new S7TestSub("%DB100:200.2", Plc4xDataType.DATA_TYPE.BOOL)));
+                adapter.createTagAddressForSubscription(new S7TestSub(Plc4xDataType.DATA_TYPE.BOOL)));
     }
 
     private static class TestS7ProtocolAdapter extends S7ProtocolAdapter {
@@ -139,16 +138,8 @@ public class S7ProtocolAdapterTest {
     private static class S7TestSub extends Plc4xToMqttMapping {
 
         public S7TestSub(
-                final @NotNull String tagAddress, final Plc4xDataType.@NotNull DATA_TYPE dataType) {
-            super("mqttTopic",
-                    1,
-                    MessageHandlingOptions.MQTTMessagePerTag,
-                    true,
-                    true,
-                    "tag",
-                    tagAddress,
-                    dataType,
-                    List.of());
+                final Plc4xDataType.@NotNull DATA_TYPE dataType) {
+            super("mqttTopic", 1, MessageHandlingOptions.MQTTMessagePerTag, true, true, "tag", dataType, List.of());
         }
     }
 }

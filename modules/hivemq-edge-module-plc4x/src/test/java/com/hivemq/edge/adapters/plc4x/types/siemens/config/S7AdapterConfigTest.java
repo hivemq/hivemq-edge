@@ -129,7 +129,6 @@ class S7AdapterConfigTest {
                 false,
                 true,
                 "tag-name",
-                "tag-address",
                 Plc4xDataType.DATA_TYPE.BOOL,
                 List.of(new MqttUserProperty("my-name", "my-value"))
         );

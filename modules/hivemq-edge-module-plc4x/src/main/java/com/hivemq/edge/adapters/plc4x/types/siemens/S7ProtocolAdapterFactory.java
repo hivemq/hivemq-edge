@@ -126,14 +126,13 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
                             subscription.getIncludeTimestamp(),
                             subscription.getIncludeTagNames(),
                             subscription.getTagName(),
-                            subscription.getTagAddress(),
                             subscription.getDataType(),
                             subscription.getUserProperties()));
                     break;
                 case ALREADY_PRESENT:
                     final String newTagName = legacyS7AdapterConfig.getId() + "-" + UUID.randomUUID().toString();
                     log.warn(
-                            "While migrating the EIPConfig a tag could not be added because a tag with the same name '{}' was already present. Another tagName using an random Uuid is used instead: '{}'",
+                            "While migrating the S7Config a tag could not be added because a tag with the same name '{}' was already present. Another tagName using an random Uuid is used instead: '{}'",
                             subscription.getTagName(),
                             newTagName);
                     protocolAdapterTagService.addTag(legacyS7AdapterConfig.getId(),
@@ -145,7 +144,6 @@ public class S7ProtocolAdapterFactory implements ProtocolAdapterFactory<S7Adapte
                             subscription.getIncludeTimestamp(),
                             subscription.getIncludeTagNames(),
                             newTagName,
-                            subscription.getTagAddress(),
                             subscription.getDataType(),
                             subscription.getUserProperties()));
                     break;
