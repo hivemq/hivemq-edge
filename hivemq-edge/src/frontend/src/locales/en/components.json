@@ -199,13 +199,13 @@
       },
       "actions": {
         "delete": {
-          "aria-label": "Delete subscription"
+          "aria-label": "Delete mapping"
         },
         "edit": {
-          "aria-label": "Edit subscription"
+          "aria-label": "Edit mapping"
         },
         "add": {
-          "aria-label": "Add a new subscription"
+          "aria-label": "Add a new mapping"
         }
       },
       "sources": {
