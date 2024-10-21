@@ -1,4 +1,4 @@
-package com.hivemq.edge.adapters.opcua.tag;
+package com.hivemq.edge.adapters.opcua.config.tag;
 
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;

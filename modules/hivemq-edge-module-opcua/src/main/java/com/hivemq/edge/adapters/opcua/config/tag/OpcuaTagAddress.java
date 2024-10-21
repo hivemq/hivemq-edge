@@ -1,4 +1,4 @@
-package com.hivemq.edge.adapters.opcua.tag;
+package com.hivemq.edge.adapters.opcua.config.tag;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

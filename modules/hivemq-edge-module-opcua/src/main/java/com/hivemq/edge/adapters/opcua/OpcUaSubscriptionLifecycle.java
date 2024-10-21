@@ -7,7 +7,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
-import com.hivemq.edge.adapters.opcua.tag.OpcuaTagAddress;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagAddress;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager;
