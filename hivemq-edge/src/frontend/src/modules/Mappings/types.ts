@@ -1,5 +1,6 @@
 import { GenericObjectType, type RJSFSchema, type UiSchema } from '@rjsf/utils'
 import { AlertProps } from '@chakra-ui/react'
+import { JsonNode } from '@/api/__generated__'
 
 export interface ManagerContextType {
   schema?: RJSFSchema
@@ -50,10 +51,7 @@ export interface FieldMappingDefinition {
 /**
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
  */
-export interface FieldTransformation {
-  function: 'toString' | 'toInt' | 'join'
-  params: string
-}
+export type FieldTransformation = JsonNode
 
 /**
  * @deprecated This is a mock, will need to be replaced by OpenAPI specs when available
