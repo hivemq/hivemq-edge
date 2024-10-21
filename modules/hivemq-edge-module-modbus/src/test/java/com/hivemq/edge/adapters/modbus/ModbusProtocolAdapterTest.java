@@ -68,7 +68,7 @@ class ModbusProtocolAdapterTest {
                 true,
                 false,
                 List.of(),
-                new AddressRange(1, 1, ModbusAdu.HOLDING_REGISTERS, 0),
+                new AddressRange(1, ModbusAdu.HOLDING_REGISTERS, 0),
                 ModbusDataType.INT_16);
         final ModBusData data = new ModBusData(pollingContext);
         IntStream.range(0, 10).forEach(i -> data.addDataPoint(new DataPointImpl("register-" + i, i)));

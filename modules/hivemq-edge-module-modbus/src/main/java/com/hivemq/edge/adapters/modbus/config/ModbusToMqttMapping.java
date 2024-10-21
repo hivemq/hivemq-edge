@@ -104,42 +104,6 @@ public class ModbusToMqttMapping implements PollingContext {
         this.addressRange = addressRange;
         this.userProperties = requireNonNullElseGet(userProperties, List::of);
         this.dataType = requireNonNullElse(dataType, ModbusDataType.INT_16);
-
-        final int registerCount = addressRange.nrRegistersToRead;
-        switch (this.dataType) {
-            case INT_16:
-            case UINT_16:
-                if (registerCount != 1) {
-                    throw new IllegalArgumentException("The data type " +
-                            this.dataType +
-                            " needs exactly 1 register, but " +
-                            registerCount +
-                            " registers were configured.");
-                }
-                break;
-            case INT_32:
-            case UINT_32:
-            case FLOAT_32:
-                if (registerCount != 2) {
-                    throw new IllegalArgumentException("The data type " +
-                            this.dataType +
-                            " needs exactly 2 registers, but " +
-                            registerCount +
-                            " registers were configured.");
-                }
-                break;
-            case INT_64:
-                if (registerCount != 4) {
-                    throw new IllegalArgumentException("The data type " +
-                            this.dataType +
-                            " needs exactly 4 registers, but " +
-                            registerCount +
-                            " registers were configured.");
-                }
-                break;
-            case UTF_8:
-            default:
-        }
     }
 
     public @NotNull AddressRange getAddressRange() {

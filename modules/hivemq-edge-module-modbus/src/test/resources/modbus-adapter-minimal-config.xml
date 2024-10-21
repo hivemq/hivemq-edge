@@ -27,7 +27,6 @@
                         <mqttTopic>my/topic</mqttTopic>
                         <addressRange>
                             <startIdx>11</startIdx>
-                            <nrRegistersToRead>1</nrRegistersToRead>
                             <readType>HOLDING_REGISTERS</readType>
                             <unitId>0</unitId>
                         </addressRange>
