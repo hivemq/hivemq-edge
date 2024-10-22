@@ -76,17 +76,15 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
 
     @Override
     public void start(@NotNull final ProtocolAdapterStartInput input, @NotNull final ProtocolAdapterStartOutput output) {
-        try {
-            modbusClient
-                    .connect()
-                    .thenRun(() -> {
+        modbusClient
+                .connect()
+                .whenComplete((unused, throwable) -> {
+                    if (throwable == null) {
                         output.startedSuccessfully();
                         protocolAdapterState.setConnectionStatus(CONNECTED);
-                    });
-        } catch (final Exception e) {
-            output.failStart(e, "Exception during setup of Modbus client.");
-        }
-
+                    } else {
+                        output.failStart(throwable, "Exception during setup of Modbus client.");
+                    }});
     }
 
     @Override
