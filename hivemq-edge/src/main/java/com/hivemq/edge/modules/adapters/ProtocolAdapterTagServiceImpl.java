@@ -67,7 +67,7 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
             final @NotNull String adapterId, final @NotNull String protocolId, @NotNull final Tag<?> tag) {
         final JsonNode jsonNode = objectMapper.valueToTree(tag.getTagDefinition());
         final DomainTagAddResult domainTagAddResult =
-                domainTagPersistence.addDomainTag(adapterId, new DomainTag(jsonNode, tag.getTagName(), protocolId, ""));
+                domainTagPersistence.addDomainTag(adapterId, new DomainTag(tag.getTagName(), protocolId, "", jsonNode));
 
         switch (domainTagAddResult.getDomainTagPutStatus()) {
             case SUCCESS:
