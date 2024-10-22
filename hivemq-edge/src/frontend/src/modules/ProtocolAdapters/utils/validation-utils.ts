@@ -37,6 +37,8 @@ export const customValidate =
 
 export const customFormatsValidator = customizeValidator({
   customFormats: {
+    // TODO[26559] This is a hack to remove the error; fix at source
+    ['boolean']: () => true,
     'mqtt-topic': /^[^+#$]*$/,
   },
 })
