@@ -216,7 +216,7 @@ public class ModbusAdapterConfigTest {
                 false,
                 true,
                 List.of(new MqttUserProperty("my-name", "my-value")),
-                new AddressRange(1, ModbusAdu.HOLDING_REGISTERS, 0),
+                new AddressRange(1, ModbusAdu.HOLDING_REGISTERS, 0, false),
                 ModbusDataType.UINT_16);
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
@@ -264,7 +264,7 @@ public class ModbusAdapterConfigTest {
                 null,
                 null,
                 null,
-                new AddressRange(1, ModbusAdu.HOLDING_REGISTERS, 0),
+                new AddressRange(1, ModbusAdu.HOLDING_REGISTERS, 0, false),
                 null);
 
         final ModbusToMqttMapping pollingContext2 = new ModbusToMqttMapping("my/destination/2",
@@ -273,7 +273,7 @@ public class ModbusAdapterConfigTest {
                 null,
                 null,
                 null,
-                new AddressRange(10, ModbusAdu.HOLDING_REGISTERS, 0),
+                new AddressRange(10, ModbusAdu.HOLDING_REGISTERS, 0, false),
                 null);
 
 

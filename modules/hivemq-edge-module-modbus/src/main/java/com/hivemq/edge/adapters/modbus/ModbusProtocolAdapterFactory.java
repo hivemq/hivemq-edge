@@ -105,7 +105,7 @@ public class ModbusProtocolAdapterFactory implements ProtocolAdapterFactory<Modb
                         context.getIncludeTimestamp(),
                         context.getIncludeTagNames(),
                         context.getLegacyProperties(),
-                        new AddressRange(context.getAddressRange().startIdx, ModbusAdu.HOLDING_REGISTERS, 0),
+                        new AddressRange(context.getAddressRange().startIdx, ModbusAdu.HOLDING_REGISTERS, 0, false),
                         ModbusDataType.INT_32))
                 .collect(Collectors.toList());
 

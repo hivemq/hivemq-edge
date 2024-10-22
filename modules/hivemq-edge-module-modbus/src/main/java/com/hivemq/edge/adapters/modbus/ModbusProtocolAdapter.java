@@ -209,7 +209,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
             final @NotNull ModbusClient modbusClient) {
         final AddressRange addressRange = modbusToMqttMapping.getAddressRange();
 
-        return doRead(addressRange.startIdx, addressRange.unitId, modbusToMqttMapping.getDataType(), addressRange.readType, modbusClient)
+        return doRead(addressRange.startIdx, addressRange.unitId, addressRange.flipRegisters, modbusToMqttMapping.getDataType(), addressRange.readType, modbusClient)
                 .thenApply(dataPoint -> {
                     final ModBusData data = new ModBusData(modbusToMqttMapping);
                     data.addDataPoint(dataPoint);
@@ -220,6 +220,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     protected static CompletableFuture<DataPoint> doRead(
             final int startIdx,
             final int unitId,
+            final boolean flipRegisters,
             final @NotNull ModbusDataType dataType,
             final @NotNull ModbusAdu readType,
             final @NotNull ModbusClient modbusClient) {
@@ -228,13 +229,15 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
                     .readHoldingRegisters(
                             startIdx,
                             dataType,
-                            unitId);
+                            unitId,
+                            flipRegisters);
         } else if (INPUT_REGISTERS.equals(readType)) {
             return modbusClient
                     .readInputRegisters(
                             startIdx,
                             dataType,
-                            unitId);
+                            unitId,
+                            flipRegisters);
         } else if (COILS.equals(readType)) {
             return modbusClient
                     .readCoils(

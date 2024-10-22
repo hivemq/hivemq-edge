@@ -42,12 +42,20 @@ public class AddressRange {
                        required = true)
     public final int unitId;
 
+    @JsonProperty(value = "flipRegisters", defaultValue = "false")
+    @ModuleConfigField(title = "Indicates if registers should be evaluated in reverse order",
+                       description = "Registers and their contents are normally written/read as big endian, some implementations decided to write the content as big endian but to order the actual registers as little endian.",
+                       defaultValue = "false")
+    public final boolean flipRegisters;
+
     public AddressRange(
             @JsonProperty(value = "startIdx", required = true) final int startIdx,
             @JsonProperty(value = "readType", required = true) final ModbusAdu readType,
-            @JsonProperty(value = "unitId", required = true) final int unitId) {
+            @JsonProperty(value = "unitId", required = true) final int unitId,
+            @JsonProperty(value = "flipRegisters", defaultValue = "false") final boolean flipRegisters) {
         this.startIdx = startIdx;
         this.readType = readType;
         this.unitId = unitId;
+        this.flipRegisters = flipRegisters;
     }
 }
