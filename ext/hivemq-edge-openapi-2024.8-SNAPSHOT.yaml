@@ -4539,8 +4539,8 @@ components:
         protocolId:
           type: string
           description: The protocol id of the protocol for which this tag was created.
-        tagAddress:
-          $ref: '#/components/schemas/TagAddress'
+        tagDefinition:
+          $ref: '#/components/schemas/JsonNode'
         tagName:
           type: string
           description: The name of the tag that identifies it within this edge instance.
@@ -5370,12 +5370,6 @@ components:
         type:
           type: string
           description: The type of the object in transition
-    TagAddress:
-      type: object
-      description: The address for the data point on the device.
-      properties:
-        address:
-          $ref: '#/components/schemas/JsonNode'
     TlsConfiguration:
       type: object
       description: tlsConfiguration associated with the bridge

@@ -43,7 +43,7 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
     public @NotNull <T> Tag<T> resolveTag(final @NotNull String tagName, final @NotNull Class<T> addressClass) {
         final DomainTag tag = domainTagPersistence.getTag(tagName);
         try {
-            final T address = objectMapper.treeToValue(tag.getTagAddress(), addressClass);
+            final T address = objectMapper.treeToValue(tag.getTagDefinition(), addressClass);
             return new Tag<T>() {
                 @Override
                 public @NotNull T getTagDefinition() {

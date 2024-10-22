@@ -28,7 +28,7 @@
             <subscriptions>
                 <subscription>
                     <tagName>my-tag-name</tagName>
-                    <tagAddress>MYPROGRAM.MyStringVar</tagAddress>
+                    <tagDefinition>MYPROGRAM.MyStringVar</tagDefinition>
                     <destination>my/mqtt/topic</destination>
                     <dataType>STRING</dataType>
                     <qos>1</qos>

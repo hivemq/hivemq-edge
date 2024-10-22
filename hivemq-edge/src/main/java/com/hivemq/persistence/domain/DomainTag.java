@@ -27,24 +27,24 @@ import org.jetbrains.annotations.Nullable;
 @Immutable
 public class DomainTag {
 
-    private final @NotNull JsonNode tagAddress;
+    private final @NotNull JsonNode tagDefinition;
     private final @NotNull String tag;
     private final @NotNull String protocolId;
     private final @NotNull String description;
 
     public DomainTag(
-            final @NotNull JsonNode tagAddress,
+            final @NotNull JsonNode tagDefinition,
             final @NotNull String tag,
             final @NotNull String protocolId,
             final @NotNull String description) {
-        this.tagAddress = tagAddress;
+        this.tagDefinition = tagDefinition;
         this.tag = tag;
         this.protocolId = protocolId;
         this.description = description;
     }
 
     public static @NotNull DomainTag fromDomainTagEntity(final @NotNull DomainTagModel domainTag) {
-        return new DomainTag(domainTag.getTagAddress().getAddress(),
+        return new DomainTag(domainTag.getTagDefinition(),
                 domainTag.getTag(),
                 domainTag.getProtocolId(),
                 domainTag.getDescription());
@@ -60,8 +60,8 @@ public class DomainTag {
         return tag;
     }
 
-    public @NotNull JsonNode getTagAddress() {
-        return tagAddress;
+    public @NotNull JsonNode getTagDefinition() {
+        return tagDefinition;
     }
 
     public @NotNull String getDescription() {

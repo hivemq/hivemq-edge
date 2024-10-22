@@ -25,7 +25,7 @@
             <subscriptions>
                 <subscription>
                     <tagName>my-tag-name-1</tagName>
-                    <tagAddress>%I204.0</tagAddress>
+                    <tagDefinition>%I204.0</tagDefinition>
                     <destination>my/topic/1</destination>
                     <dataType>SINT</dataType>
                     <qos>1</qos>

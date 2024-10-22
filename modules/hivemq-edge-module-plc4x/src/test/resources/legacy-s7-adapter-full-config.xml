@@ -33,7 +33,7 @@
             <subscriptions>
                 <subscription>
                     <tagName>my-tag-name-1</tagName>
-                    <tagAddress>%I204.0</tagAddress>
+                    <tagDefinition>%I204.0</tagDefinition>
                     <destination>my/topic/1</destination>
                     <dataType>BOOL</dataType>
                     <qos>1</qos>
@@ -43,7 +43,7 @@
                 </subscription>
                 <subscription>
                     <tagName>my-tag-name-2</tagName>
-                    <tagAddress>%I205.0</tagAddress>
+                    <tagDefinition>%I205.0</tagDefinition>
                     <destination>my/topic/2</destination>
                     <dataType>BOOL</dataType>
                     <qos>0</qos>
