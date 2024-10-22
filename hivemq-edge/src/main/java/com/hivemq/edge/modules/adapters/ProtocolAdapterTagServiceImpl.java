@@ -46,7 +46,7 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
             final T address = objectMapper.treeToValue(tag.getTagAddress(), addressClass);
             return new Tag<T>() {
                 @Override
-                public @NotNull T getTagAddress() {
+                public @NotNull T getTagDefinition() {
                     return address;
                 }
 
@@ -65,7 +65,7 @@ public class ProtocolAdapterTagServiceImpl implements ProtocolAdapterTagService 
     @Override
     public @NotNull AddStatus addTag(
             final @NotNull String adapterId, final @NotNull String protocolId, @NotNull final Tag<?> tag) {
-        final JsonNode jsonNode = objectMapper.valueToTree(tag.getTagAddress());
+        final JsonNode jsonNode = objectMapper.valueToTree(tag.getTagDefinition());
         final DomainTagAddResult domainTagAddResult =
                 domainTagPersistence.addDomainTag(adapterId, new DomainTag(jsonNode, tag.getTagName(), protocolId, ""));
 

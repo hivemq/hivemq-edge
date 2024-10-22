@@ -15,7 +15,7 @@ public class EipTag implements Tag<EipAddress> {
 
 
     @Override
-    public @NotNull EipAddress getTagAddress() {
+    public @NotNull EipAddress getTagDefinition() {
         return eipAddress;
     }
 

@@ -15,7 +15,7 @@ public class FileTag implements Tag<FileTagAddress> {
 
 
     @Override
-    public @NotNull FileTagAddress getTagAddress() {
+    public @NotNull FileTagAddress getTagDefinition() {
         return fileTagAddress;
     }
 

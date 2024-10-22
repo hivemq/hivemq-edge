@@ -162,7 +162,7 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
         // first resolve the tag
         final Tag<OpcuaTagAddress> addressTag =
                 moduleServices.protocolAdapterTagService().resolveTag(tagName, OpcuaTagAddress.class);
-        return addressTag.getTagAddress().getNode();
+        return addressTag.getTagDefinition().getNode();
     }
 
 }

@@ -14,7 +14,7 @@ public class OpcuaTag implements Tag<OpcuaTagAddress> {
     }
 
     @Override
-    public @NotNull OpcuaTagAddress getTagAddress() {
+    public @NotNull OpcuaTagAddress getTagDefinition() {
         return opcuaTagAddress;
     }
 

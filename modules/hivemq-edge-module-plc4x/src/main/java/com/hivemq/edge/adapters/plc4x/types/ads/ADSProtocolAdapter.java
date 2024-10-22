@@ -58,7 +58,7 @@ public class ADSProtocolAdapter extends AbstractPlc4xAdapter<ADSAdapterConfig, P
         // resolve the tag
         final Tag<Plc4xTagAddress> tag =
                 protocolAdapterTagService.resolveTag(subscription.getTagName(), Plc4xTagAddress.class);
-        return tag.getTagAddress().getTagAddress();
+        return tag.getTagDefinition().getTagAddress();
     }
 
     @Override

@@ -131,9 +131,9 @@ public class EipPollingProtocolAdapter implements PollingProtocolAdapter<EipToMq
                 protocolAdapterTagService.resolveTag(pollingInput.getPollingContext().getTagName(), EipAddress.class);
 
         final String tagAddress = createTagAddressForSubscription(pollingInput.getPollingContext(),
-                eipAddressTag.getTagAddress().getAddress());
+                eipAddressTag.getTagDefinition().getAddress());
         try {
-            final CIPData evt = etherNetIP.readTag(eipAddressTag.getTagAddress().getAddress());
+            final CIPData evt = etherNetIP.readTag(eipAddressTag.getTagDefinition().getAddress());
 
             if (adapterConfig.getEipToMqttConfig().getPublishChangedDataOnly()) {
                 handleResult(evt, tagAddress).forEach(it -> {

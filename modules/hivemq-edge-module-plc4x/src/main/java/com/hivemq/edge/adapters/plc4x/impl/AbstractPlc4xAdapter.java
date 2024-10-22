@@ -238,7 +238,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
         // resolve the tag
         final Tag<Plc4xTagAddress> tag =
                 protocolAdapterTagService.resolveTag(plc4xToMqttMapping.getTagName(), Plc4xTagAddress.class);
-        final String tagAddress = tag.getTagAddress().getTagAddress();
+        final String tagAddress = tag.getTagDefinition().getTagAddress();
 
         if (adapterConfig.getPlc4xToMqttConfig().getPublishChangedDataOnly()) {
             final ProtocolAdapterDataSample previousSample = lastSamples.put(tagAddress, data);
@@ -277,7 +277,7 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
         // resolve the tag
         final Tag<Plc4xTagAddress> tag =
                 protocolAdapterTagService.resolveTag(subscription.getTagName(), Plc4xTagAddress.class);
-        final String tagAddress = tag.getTagAddress().getTagAddress();
+        final String tagAddress = tag.getTagDefinition().getTagAddress();
         return String.format("%s%s%s", tagAddress, TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
     }
 

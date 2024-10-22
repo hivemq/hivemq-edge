@@ -15,7 +15,7 @@ public class HttpTag implements Tag<HttpTagAddress> {
 
 
     @Override
-    public @NotNull HttpTagAddress getTagAddress() {
+    public @NotNull HttpTagAddress getTagDefinition() {
         return httpTagAddress;
     }
 

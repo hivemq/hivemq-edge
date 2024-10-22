@@ -97,7 +97,7 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
                         FileTagAddress.class);
 
 
-        final String absolutePathToFle = eipAddressTag.getTagAddress().getFilePath();
+        final String absolutePathToFle = eipAddressTag.getTagDefinition().getFilePath();
         try {
             final Path path = Path.of(absolutePathToFle);
             final long length = path.toFile().length();

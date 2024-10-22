@@ -164,7 +164,7 @@ public class HttpProtocolAdapter
                         HttpTagAddress.class);
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
-        final String url = addressTag.getTagAddress().getUrl();
+        final String url = addressTag.getTagDefinition().getUrl();
         builder.uri(URI.create(url));
         builder.timeout(Duration.ofSeconds(httpToMqttMapping.getHttpRequestTimeoutSeconds()));
         builder.setHeader(USER_AGENT_HEADER, String.format("HiveMQ-Edge; %s", version));
@@ -292,7 +292,7 @@ public class HttpProtocolAdapter
         final ProtocolAdapterTagService protocolAdapterTagService = writingInput.protocolAdapterTagService();
         final Tag<HttpTagAddress> addressTag =
                 protocolAdapterTagService.resolveTag(mqttToHttpMapping.getTagName(), HttpTagAddress.class);
-        final String url = addressTag.getTagAddress().getUrl();
+        final String url = addressTag.getTagDefinition().getUrl();
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         builder.uri(URI.create(url));

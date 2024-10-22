@@ -15,7 +15,7 @@ public class Plc4xTag implements Tag<Plc4xTagAddress> {
     }
 
     @Override
-    public @NotNull Plc4xTagAddress getTagAddress() {
+    public @NotNull Plc4xTagAddress getTagDefinition() {
         return plc4xTagAddress;
     }
 

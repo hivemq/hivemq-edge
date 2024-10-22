@@ -129,7 +129,7 @@ public class S7ProtocolAdapter extends AbstractPlc4xAdapter<S7AdapterConfig, Plc
         // resolve the tag
         final Tag<Plc4xTagAddress> tag =
                 protocolAdapterTagService.resolveTag(subscription.getTagName(), Plc4xTagAddress.class);
-        final String tagAddress = tag.getTagAddress().getTagAddress();
+        final String tagAddress = tag.getTagDefinition().getTagAddress();
 
         final String formattedAddress = String.format("%s%s%s", tagAddress, ":", subscription.getDataType());
 
