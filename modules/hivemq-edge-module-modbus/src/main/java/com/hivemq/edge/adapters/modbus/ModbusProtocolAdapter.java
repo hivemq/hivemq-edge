@@ -250,7 +250,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
                                 startIdx,
                                 unitId);
             default:
-            return CompletableFuture.failedFuture(new Exception("Unknown read type " + readType));
+                return CompletableFuture.failedFuture(new Exception("Unknown read type " + readType));
         }
     }
 
