@@ -52,10 +52,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.CONNECTED;
 import static com.hivemq.adapter.sdk.api.state.ProtocolAdapterState.ConnectionStatus.DISCONNECTED;
-import static com.hivemq.edge.adapters.modbus.config.ModbusAdu.COILS;
-import static com.hivemq.edge.adapters.modbus.config.ModbusAdu.DISCRETE_INPUT;
-import static com.hivemq.edge.adapters.modbus.config.ModbusAdu.HOLDING_REGISTERS;
-import static com.hivemq.edge.adapters.modbus.config.ModbusAdu.INPUT_REGISTERS;
 
 public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqttMapping> {
     private static final Logger log = LoggerFactory.getLogger(ModbusProtocolAdapter.class);
