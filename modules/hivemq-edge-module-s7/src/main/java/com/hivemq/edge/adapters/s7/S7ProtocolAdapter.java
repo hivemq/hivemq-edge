@@ -16,8 +16,9 @@
 package com.hivemq.edge.adapters.s7;
 
 import com.github.xingshuangs.iot.protocol.s7.enums.EPlcType;
+import com.github.xingshuangs.iot.protocol.s7.service.S7PLC;
 import com.hivemq.adapter.sdk.api.ProtocolAdapterInformation;
-import com.hivemq.adapter.sdk.api.data.DataPoint;
+import com.hivemq.adapter.sdk.api.config.PollingContext;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -28,30 +29,34 @@ import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
 import com.hivemq.edge.adapters.s7.config.S7AdapterConfig;
-import com.hivemq.edge.adapters.s7.config.S7DataType;
-import com.hivemq.edge.adapters.s7.config.S7ToMqttConfig;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xDataType;
+import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
+import com.hivemq.edge.adapters.plc4x.impl.AbstractPlc4xAdapter;
+import com.hivemq.edge.adapters.plc4x.types.siemens.config.S7AdapterConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.hivemq.edge.adapters.plc4x.config.Plc4xDataType.DATA_TYPE.*;
 
 /**
  * @author HiveMQ Adapter Generator
  */
-public class S7ProtocolAdapter implements PollingProtocolAdapter<S7ToMqttConfig> {
+public class S7ProtocolAdapter implements PollingProtocolAdapter<S7AdapterConfig> {
 
     private static final Logger log = LoggerFactory.getLogger(S7ProtocolAdapter.class);
 
     private final ProtocolAdapterInformation adapterInformation;
     private final S7AdapterConfig adapterConfig;
     private final ProtocolAdapterState protocolAdapterState;
-    private final S7Client s7Client;
-
-    private final Map<String, DataPoint> dataPoints;
+    private final PollingContext
 
     public S7ProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -59,104 +64,52 @@ public class S7ProtocolAdapter implements PollingProtocolAdapter<S7ToMqttConfig>
         this.adapterInformation = adapterInformation;
         this.adapterConfig = input.getConfig();
         this.protocolAdapterState = input.getProtocolAdapterState();
-        final EPlcType eplcType = S7Client.getEplcType(adapterConfig.getControllerType());
-        s7Client = new S7Client(
-                eplcType,
-                adapterConfig.getHost(),
-                adapterConfig.getPort(),
-                Objects.requireNonNullElse(adapterConfig.getRemoteRack(), eplcType.getRack()),
-                Objects.requireNonNullElse(adapterConfig.getRemoteSlot(), eplcType.getSlot()),
-                Objects.requireNonNullElse(adapterConfig.getPduLength(), eplcType.getPduLength()),
-                input.adapterFactories().dataPointFactory());
-        this.dataPoints = new ConcurrentHashMap<>();
+        this.pollingContext = adapterConfig.getFileToMqttConfig().getMappings();
     }
 
     @Override
-    public @NotNull List<S7ToMqttConfig> getPollingContexts() {
-        return adapterConfig.getS7ToMqttMappings();
+    public void poll(
+            @NotNull final PollingInput<S7AdapterConfig> pollingInput,
+            @NotNull final PollingOutput pollingOutput) {
+        S7PLC s7PLC = new S7PLC(EPlcType.S1200, "127.0.0.1");
+        s7PLC.writeByte("DB2.1", (byte) 0x11);
+        s7PLC.readByte("DB2.1");
+        // close it manually, if you want to use it all the time, you do not need to close it
+        s7PLC.close();
+    }
+
+    @Override
+    public @NotNull List<S7AdapterConfig> getPollingContexts() {
+        return List.of();
     }
 
     @Override
     public int getPollingIntervalMillis() {
-        return adapterConfig.getPollingIntervalMillis();
+        return adapterInformation;
     }
 
     @Override
     public int getMaxPollingErrorsBeforeRemoval() {
-        return adapterConfig.getMaxPollingErrorsBeforeRemoval();
+        return 0;
     }
 
     @Override
     public @NotNull String getId() {
-        return adapterConfig.getId();
+        return "s7-new";
     }
 
     @Override
     public void start(
             @NotNull final ProtocolAdapterStartInput input,
             @NotNull final ProtocolAdapterStartOutput output) {
-        log.info("Connecting to {}@{}:{}", adapterConfig.getControllerType(), adapterConfig.getHost(), adapterConfig.getPort());
-        try {
-            s7Client.connect();
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.CONNECTED);
-            output.startedSuccessfully();
-        } catch (final Exception e) {
-            String msg = "Unable to connect to " + adapterConfig.getControllerType() + "@" + adapterConfig.getHost() + ":" + adapterConfig.getPort();
-            protocolAdapterState.setErrorConnectionStatus(e, msg);
-            output.failStart(e, msg);
-        }
+        log.error("REPLACE WITH AN ACTUAL IMPLEMENTATION!");
+        output.startedSuccessfully();
     }
 
     @Override
     public void stop(@NotNull final ProtocolAdapterStopInput input, @NotNull final ProtocolAdapterStopOutput output) {
-        log.info("Closing connection to {}@{}:{}", adapterConfig.getControllerType(), adapterConfig.getHost(), adapterConfig.getPort());
-        try {
-            s7Client.disconnect();
-            protocolAdapterState.setConnectionStatus(ProtocolAdapterState.ConnectionStatus.DISCONNECTED);
-            output.stoppedSuccessfully();
-        } catch (final Exception e) {
-            final String msg = "Unable to disconnect from " + adapterConfig.getControllerType() + "@" + adapterConfig.getHost() + ":" + adapterConfig.getPort();
-            protocolAdapterState.setErrorConnectionStatus(e, msg);
-            output.failStop(e, msg);
-        }
-    }
-
-    @Override
-    public void poll(
-            @NotNull final PollingInput<S7ToMqttConfig> pollingInput,
-            @NotNull final PollingOutput pollingOutput) {
-        final S7ToMqttConfig s7ToMqtt = pollingInput.getPollingContext();
-
-        //Every S7 address starts with a % but the iot-communications lib doesn't like it, so we are stripping it.
-        final String tagAddress = s7ToMqtt.getTagAddress().replace("%","");
-        final DataPoint dataPoint;
-
-        if(s7ToMqtt.getDataType() == S7DataType.BYTE) {
-            dataPoint = s7Client.readByte(tagAddress);
-        } else {
-            dataPoint = s7Client.read(s7ToMqtt.getDataType(), List.of(tagAddress)).get(0);
-        }
-
-        if(adapterConfig.getPublishChangedDataOnly()) {
-            if(dataPoints.containsKey(tagAddress)) {
-                final DataPoint existingDataPoint = dataPoints.get(tagAddress);
-                if(existingDataPoint != null && existingDataPoint.equals(dataPoint)) {
-                    if (log.isTraceEnabled()){
-                        log.trace("Skipping sending for {} because publishChangedDataOnly=true", tagAddress);
-                    }
-                } else {
-                    dataPoints.put(tagAddress, dataPoint);
-                    pollingOutput.addDataPoint(dataPoint);
-                }
-            } else {
-                dataPoints.put(tagAddress, dataPoint);
-                pollingOutput.addDataPoint(dataPoint);
-            }
-        } else {
-            pollingOutput.addDataPoint(dataPoint);
-        }
-
-        pollingOutput.finish();
+        log.error("REPLACE WITH AN ACTUAL IMPLEMENTATION!");
+        output.stoppedSuccessfully();
     }
 
     @Override
