@@ -224,32 +224,34 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
             final @NotNull ModbusDataType dataType,
             final @NotNull ModbusAdu readType,
             final @NotNull ModbusClient modbusClient) {
-        if (HOLDING_REGISTERS.equals(readType)) {
-            return modbusClient
-                    .readHoldingRegisters(
-                            startIdx,
-                            dataType,
-                            unitId,
-                            flipRegisters);
-        } else if (INPUT_REGISTERS.equals(readType)) {
-            return modbusClient
-                    .readInputRegisters(
-                            startIdx,
-                            dataType,
-                            unitId,
-                            flipRegisters);
-        } else if (COILS.equals(readType)) {
-            return modbusClient
-                    .readCoils(
-                            startIdx,
-                            unitId);
-        } else if (DISCRETE_INPUT.equals(readType)) {
-            return modbusClient
-                    .readDiscreteInput(
-                            startIdx,
-                            unitId);
+        switch (readType) {
+            case HOLDING_REGISTERS:
+                return modbusClient
+                        .readHoldingRegisters(
+                                startIdx,
+                                dataType,
+                                unitId,
+                                flipRegisters);
+            case INPUT_REGISTERS:
+                return modbusClient
+                        .readInputRegisters(
+                                startIdx,
+                                dataType,
+                                unitId,
+                                flipRegisters);
+            case COILS:
+                return modbusClient
+                        .readCoils(
+                                startIdx,
+                                unitId);
+            case DISCRETE_INPUT:
+                return modbusClient
+                        .readDiscreteInput(
+                                startIdx,
+                                unitId);
+            default:
+            return CompletableFuture.failedFuture(new Exception("Unknown read type " + readType));
         }
-        return CompletableFuture.failedFuture(new Exception("Unknown read type " + readType));
     }
 
     private static void addAddresses(
