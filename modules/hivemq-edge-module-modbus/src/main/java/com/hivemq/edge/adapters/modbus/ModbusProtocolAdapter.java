@@ -21,7 +21,6 @@ import com.hivemq.adapter.sdk.api.discovery.NodeTree;
 import com.hivemq.adapter.sdk.api.discovery.NodeType;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryInput;
 import com.hivemq.adapter.sdk.api.discovery.ProtocolAdapterDiscoveryOutput;
-import com.hivemq.adapter.sdk.api.factories.AdapterFactories;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartInput;
 import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStartOutput;
@@ -30,17 +29,19 @@ import com.hivemq.adapter.sdk.api.model.ProtocolAdapterStopOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingInput;
 import com.hivemq.adapter.sdk.api.polling.PollingOutput;
 import com.hivemq.adapter.sdk.api.polling.PollingProtocolAdapter;
+import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.adapter.sdk.api.state.ProtocolAdapterState;
+import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.modbus.config.AddressRange;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
+import com.hivemq.edge.adapters.modbus.config.tag.ModbusTagDefinition;
 import com.hivemq.edge.adapters.modbus.impl.ModbusClient;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
 import com.hivemq.edge.adapters.modbus.util.AdapterDataUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,10 +59,10 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
     private final @NotNull ProtocolAdapterInformation adapterInformation;
     private final @NotNull ModbusAdapterConfig adapterConfig;
     private final @NotNull ProtocolAdapterState protocolAdapterState;
-    private final @NotNull AdapterFactories adapterFactories;
 
-    private final @Nullable ModbusClient modbusClient;
+    private final @NotNull ModbusClient modbusClient;
     private final @NotNull Map<ModbusToMqttMapping, List<DataPoint>> lastSamples = new HashMap<>();
+    private final @NotNull ProtocolAdapterTagService protocolAdapterTagService;
 
     public ModbusProtocolAdapter(
             final @NotNull ProtocolAdapterInformation adapterInformation,
@@ -70,8 +71,8 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
         this.adapterInformation = adapterInformation;
         this.adapterConfig = adapterConfig;
         this.protocolAdapterState = input.getProtocolAdapterState();
-        this.adapterFactories = input.adapterFactories();
-        this.modbusClient = new ModbusClient(adapterConfig, adapterFactories.dataPointFactory());
+        this.protocolAdapterTagService = input.moduleServices().protocolAdapterTagService();
+        this.modbusClient = new ModbusClient(adapterConfig, input.adapterFactories().dataPointFactory());
     }
 
     @Override
@@ -198,12 +199,20 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
         }
     }
 
-    protected static @NotNull CompletableFuture<ModBusData> readRegisters(
+    protected @NotNull CompletableFuture<ModBusData> readRegisters(
             final @NotNull ModbusToMqttMapping modbusToMqttMapping,
             final @NotNull ModbusClient modbusClient) {
-        final AddressRange addressRange = modbusToMqttMapping.getAddressRange();
+        final Tag<ModbusTagDefinition> modbusTag =
+                protocolAdapterTagService.resolveTag(modbusToMqttMapping.getTagName(), ModbusTagDefinition.class);
 
-        return doRead(addressRange.startIdx, addressRange.unitId, addressRange.flipRegisters, modbusToMqttMapping.getDataType(), addressRange.readType, modbusClient)
+        final AddressRange addressRange = modbusTag.getTagDefinition().getAddressRange();
+
+        return doRead(addressRange.startIdx,
+                addressRange.unitId,
+                addressRange.flipRegisters,
+                modbusTag.getTagDefinition().getDataType(),
+                addressRange.readType,
+                modbusClient)
                 .thenApply(dataPoint -> {
                     final ModBusData data = new ModBusData(modbusToMqttMapping);
                     data.addDataPoint(dataPoint);
@@ -211,7 +220,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
                 });
     }
 
-    protected static CompletableFuture<DataPoint> doRead(
+    protected static @NotNull CompletableFuture<DataPoint> doRead(
             final int startIdx,
             final int unitId,
             final boolean flipRegisters,

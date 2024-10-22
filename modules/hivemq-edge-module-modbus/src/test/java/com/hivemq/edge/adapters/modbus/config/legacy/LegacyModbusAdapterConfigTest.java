@@ -33,7 +33,10 @@ import java.util.Map;
 import static com.hivemq.adapter.sdk.api.config.MessageHandlingOptions.MQTTMessagePerSubscription;
 import static com.hivemq.protocols.ProtocolAdapterUtils.createProtocolAdapterMapper;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class LegacyModbusAdapterConfigTest {
@@ -78,7 +81,6 @@ public class LegacyModbusAdapterConfigTest {
                 assertThat(userProperty.getValue()).isEqualTo("value2");
             });
 
-            assertThat(subscription.getAddressRange().startIdx).isEqualTo(11);
         }, subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
             assertThat(subscription.getMqttQos()).isEqualTo(1);
@@ -94,8 +96,9 @@ public class LegacyModbusAdapterConfigTest {
                 assertThat(userProperty.getValue()).isEqualTo("value2");
             });
 
-            assertThat(subscription.getAddressRange().startIdx).isEqualTo(11);
         });
+
+        verify(protocolAdapterTagService, times(2)).addTag(any(), any(), any());
     }
 
     @Test
@@ -126,8 +129,10 @@ public class LegacyModbusAdapterConfigTest {
             assertThat(subscription.getIncludeTimestamp()).isTrue();
             assertThat(subscription.getIncludeTagNames()).isFalse();
             assertThat(subscription.getUserProperties()).isEmpty();
-            assertThat(subscription.getAddressRange().startIdx).isEqualTo(11);
         });
+
+        verify(protocolAdapterTagService, times(1)).addTag(any(), any(), any());
+
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

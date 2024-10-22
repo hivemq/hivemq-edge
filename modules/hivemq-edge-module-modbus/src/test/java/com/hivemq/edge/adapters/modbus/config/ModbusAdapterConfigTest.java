@@ -80,8 +80,7 @@ public class ModbusAdapterConfigTest {
                 assertThat(userProperty.getValue()).isEqualTo("value2");
             });
 
-            assertThat(modbusToMqttMapping.getAddressRange().startIdx).isEqualTo(11);
-            assertThat(modbusToMqttMapping.getDataType()).isEqualTo(ModbusDataType.INT_64);
+            assertThat(modbusToMqttMapping.getTagName()).isEqualTo("tag1");
 
         }, modbusToMqttMapping -> {
             assertThat(modbusToMqttMapping.getMqttTopic()).isEqualTo("my/topic/2");
@@ -98,8 +97,8 @@ public class ModbusAdapterConfigTest {
                 assertThat(userProperty.getValue()).isEqualTo("value2");
             });
 
-            assertThat(modbusToMqttMapping.getAddressRange().startIdx).isEqualTo(16);
-            assertThat(modbusToMqttMapping.getDataType()).isEqualTo(ModbusDataType.INT_32);
+            assertThat(modbusToMqttMapping.getTagName()).isEqualTo("tag2");
+
         });
     }
 
@@ -131,8 +130,7 @@ public class ModbusAdapterConfigTest {
             assertThat(modbusToMqttMapping.getIncludeTimestamp()).isTrue();
             assertThat(modbusToMqttMapping.getIncludeTagNames()).isFalse();
             assertThat(modbusToMqttMapping.getUserProperties()).isEmpty();
-            assertThat(modbusToMqttMapping.getAddressRange().startIdx).isEqualTo(11);
-            assertThat(modbusToMqttMapping.getDataType()).isEqualTo(ModbusDataType.INT_16);
+            assertThat(modbusToMqttMapping.getTagName()).isEqualTo("tag1");
         });
     }
 
@@ -207,7 +205,7 @@ public class ModbusAdapterConfigTest {
     }
 
     @Test
-    public void convertConfigObject_startIdxMissing_exception() throws Exception {
+    public void convertConfigObject_tagNameMissing_exception() throws Exception {
         final URL resource = getClass().getResource("/modbus-adapter-missing-startIdx-config.xml");
         final File path = Path.of(resource.toURI()).toFile();
 
@@ -217,19 +215,16 @@ public class ModbusAdapterConfigTest {
         final ModbusProtocolAdapterFactory modbusProtocolAdapterFactory =
                 new ModbusProtocolAdapterFactory(false, protocolAdapterTagService);
         assertThatThrownBy(() -> modbusProtocolAdapterFactory.convertConfigObject(mapper,
-                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'startIdx'");
+                (Map) adapters.get("modbus"))).hasMessageContaining("Missing required creator property 'tagName'");
     }
 
     @Test
     public void unconvertConfigObject_full_valid() throws Exception {
         final ModbusToMqttMapping pollingContext = new ModbusToMqttMapping("my/destination",
-                1,
+                1, "tag1",
                 MQTTMessagePerSubscription,
                 false,
-                true,
-                List.of(new MqttUserProperty("my-name", "my-value")),
-                new AddressRange(1, ModbusAdu.HOLDING_REGISTERS, 0, false),
-                ModbusDataType.UINT_16);
+                true, List.of(new MqttUserProperty("my-name", "my-value")));
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
                 14,
@@ -262,26 +257,17 @@ public class ModbusAdapterConfigTest {
                 assertThat(userProperty.get("name")).isEqualTo("my-name");
                 assertThat(userProperty.get("value")).isEqualTo("my-value");
             });
-            assertThat((Map<String, Object>) mapping.get("addressRange")).satisfies((addressRange) -> {
-                assertThat(addressRange.get("startIdx")).isEqualTo(1);
-            });
-            assertThat(mapping.get("dataType")).isEqualTo("UINT_16");
+            assertThat(mapping.get("tagName")).isEqualTo("tag1");
         });
     }
 
     @Test
     public void unconvertConfigObject_defaults() throws ProtocolAdapterException {
         final ModbusToMqttMapping pollingContext =
-                new ModbusToMqttMapping("my/destination", null, null, null, null, null, new AddressRange(1, ModbusAdu.HOLDING_REGISTERS, 0, false), null);
+                new ModbusToMqttMapping("my/destination", null, "tag1", null, null, null, null);
 
-        final ModbusToMqttMapping pollingContext2 = new ModbusToMqttMapping("my/destination/2",
-                null,
-                null,
-                null,
-                null,
-                null,
-                new AddressRange(10, ModbusAdu.HOLDING_REGISTERS, 0, false),
-                null);
+        final ModbusToMqttMapping pollingContext2 =
+                new ModbusToMqttMapping("my/destination/2", null, "tag1", null, null, null, null);
 
 
         final ModbusAdapterConfig modbusAdapterConfig = new ModbusAdapterConfig("my-modbus-adapter",
@@ -311,9 +297,6 @@ public class ModbusAdapterConfigTest {
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
-            assertThat((Map<String, Object>) mapping.get("addressRange")).satisfies((addressRange) -> {
-                assertThat(addressRange.get("startIdx")).isEqualTo(1);
-            });
         }, mapping -> {
             assertThat(mapping.get("mqttTopic")).isEqualTo("my/destination/2");
             assertThat(mapping.get("mqttQos")).isEqualTo(0);
@@ -321,10 +304,6 @@ public class ModbusAdapterConfigTest {
             assertThat(mapping.get("includeTimestamp")).isEqualTo(true);
             assertThat(mapping.get("includeTagNames")).isEqualTo(false);
             assertThat((List<Map<String, Object>>) mapping.get("mqttUserProperties")).isEmpty();
-            assertThat((Map<String, Object>) mapping.get("addressRange")).satisfies((addressRange) -> {
-                assertThat(addressRange.get("startIdx")).isEqualTo(10);
-            });
-            assertThat(mapping.get("dataType")).isEqualTo("INT_16");
         });
     }
 
