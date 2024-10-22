@@ -15,7 +15,7 @@ public class OpcuaTagDefinition {
     private final @NotNull String node;
 
     @JsonCreator
-    public OpcuaTagDefinition(@JsonProperty("node") final @NotNull String node) {
+    public OpcuaTagDefinition(@JsonProperty(value = "node", required = true) final @NotNull String node) {
         this.node = node;
     }
 
