@@ -209,7 +209,7 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
             final @NotNull ModbusClient modbusClient) {
         final AddressRange addressRange = modbusToMqttMapping.getAddressRange();
 
-        return doRead(addressRange.startIdx, modbusToMqttMapping.getDataType().nrOfRegistersToRead, addressRange.unitId, modbusToMqttMapping.getDataType(), addressRange.readType, modbusClient)
+        return doRead(addressRange.startIdx, addressRange.unitId, modbusToMqttMapping.getDataType(), addressRange.readType, modbusClient)
                 .thenApply(dataPoint -> {
                     final ModBusData data = new ModBusData(modbusToMqttMapping);
                     data.addDataPoint(dataPoint);
@@ -219,7 +219,6 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
 
     protected static CompletableFuture<DataPoint> doRead(
             final int startIdx,
-            final int count,
             final int unitId,
             final @NotNull ModbusDataType dataType,
             final @NotNull ModbusAdu readType,
@@ -228,27 +227,23 @@ public class ModbusProtocolAdapter implements PollingProtocolAdapter<ModbusToMqt
             return modbusClient
                     .readHoldingRegisters(
                             startIdx,
-                            count,
                             dataType,
                             unitId);
         } else if (INPUT_REGISTERS.equals(readType)) {
             return modbusClient
                     .readInputRegisters(
                             startIdx,
-                            count,
                             dataType,
                             unitId);
         } else if (COILS.equals(readType)) {
             return modbusClient
                     .readCoils(
                             startIdx,
-                            count,
                             unitId);
         } else if (DISCRETE_INPUT.equals(readType)) {
             return modbusClient
                     .readDiscreteInput(
                             startIdx,
-                            count,
                             unitId);
         }
         return CompletableFuture.failedFuture(new Exception("Unknown read type " + readType));

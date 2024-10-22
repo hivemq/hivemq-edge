@@ -30,9 +30,11 @@ import com.hivemq.adapter.sdk.api.factories.DataPointFactory;
 import com.hivemq.edge.adapters.modbus.config.ModbusAdapterConfig;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -71,14 +73,14 @@ public class ModbusClient {
     /**
      * Coils are 1bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readCoils(final int startIdx, final int count, final int unitId) {
+    public @NotNull CompletableFuture<DataPoint> readCoils(final int startIdx, final int unitId) {
         return modbusClient
-            .<ReadCoilsResponse>sendRequest(new ReadCoilsRequest(startIdx, Math.min(count, DEFAULT_MAX_DISCRETE_INPUTS)), unitId)
+            .<ReadCoilsResponse>sendRequest(new ReadCoilsRequest(startIdx, Math.min(1, DEFAULT_MAX_DISCRETE_INPUTS)), unitId)
             .thenApply(response -> {
                 try {
                     final ByteBuf buf = response.getCoilStatus();
-                    return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + count),
-                            convert(buf, ModbusDataType.BOOL, count));
+                    return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + 1),
+                            convert(buf, ModbusDataType.BOOL, 1));
                 } finally {
                     ReferenceCountUtil.release(response);
                 }
@@ -88,15 +90,15 @@ public class ModbusClient {
     /**
      * Discrete registers are 1bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readDiscreteInput(final int startIdx, final int count, final int unitId) {
+    public @NotNull CompletableFuture<DataPoint> readDiscreteInput(final int startIdx, final int unitId) {
         return modbusClient
-                .<ReadDiscreteInputsResponse>sendRequest(new ReadDiscreteInputsRequest(startIdx, Math.min(count,
+                .<ReadDiscreteInputsResponse>sendRequest(new ReadDiscreteInputsRequest(startIdx, Math.min(1,
                         DEFAULT_MAX_DISCRETE_INPUTS)), unitId)
                 .thenApply(response -> {
                     try {
                         final ByteBuf buf = response.getInputStatus();
-                        return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + count),
-                                convert(buf, ModbusDataType.BOOL, count));
+                        return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + 1),
+                                convert(buf, ModbusDataType.BOOL, 1));
                     } finally {
                         ReferenceCountUtil.release(response);
                     }
@@ -106,16 +108,16 @@ public class ModbusClient {
     /**
      * Holding registers are 16bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readHoldingRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType, final int unitId) {
+    public @NotNull CompletableFuture<DataPoint> readHoldingRegisters(final int startIdx, final @NotNull ModbusDataType dataType, final int unitId) {
 
         return modbusClient
-                .<ReadHoldingRegistersResponse>sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(count,
+                .<ReadHoldingRegistersResponse>sendRequest(new ReadHoldingRegistersRequest(startIdx, Math.min(dataType.nrOfRegistersToRead,
                         DEFAULT_MAX_INPUT_REGISTERS)), unitId)
                 .thenApply(response -> {
                     try {
                         final ByteBuf buf = response.getRegisters();
-                        return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + count),
-                                convert(buf, dataType, count));
+                        return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + dataType.nrOfRegistersToRead),
+                                convert(buf, dataType, dataType.nrOfRegistersToRead));
                     } finally {
                         ReferenceCountUtil.release(response);
                     }
@@ -125,15 +127,15 @@ public class ModbusClient {
     /**
      * Inout registers are 16bit.
      */
-    public @NotNull CompletableFuture<DataPoint> readInputRegisters(final int startIdx, final int count, final @NotNull ModbusDataType dataType, final int unitId) {
+    public @NotNull CompletableFuture<DataPoint> readInputRegisters(final int startIdx, final @NotNull ModbusDataType dataType, final int unitId) {
         return modbusClient
-                .<ReadInputRegistersResponse>sendRequest(new ReadInputRegistersRequest(startIdx, Math.min(count,
+                .<ReadInputRegistersResponse>sendRequest(new ReadInputRegistersRequest(startIdx, Math.min(dataType.nrOfRegistersToRead,
                         DEFAULT_MAX_INPUT_REGISTERS)), unitId)
                 .thenApply(response -> {
                     try {
                         final ByteBuf buf = response.getRegisters();
-                        return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + count),
-                                convert(buf, dataType, count));
+                        return dataPointFactory.create("registers-" + startIdx + "-" + (startIdx + dataType.nrOfRegistersToRead),
+                                convert(buf, dataType, dataType.nrOfRegistersToRead));
                     } finally {
                         ReferenceCountUtil.release(response);
                     }
@@ -148,6 +150,7 @@ public class ModbusClient {
 
     private @NotNull Object convert(
             final @NotNull ByteBuf buffi, final @NotNull ModbusDataType dataType, final int count) {
+        boolean registersLittleEndian = true;
         switch (dataType) {
             case BOOL:
                 return buffi.readBoolean();
@@ -156,13 +159,49 @@ public class ModbusClient {
             case UINT_16:
                 return Short.toUnsignedInt(buffi.readShort());
             case INT_32:
-                return buffi.readInt();
+                if(registersLittleEndian) {
+                    byte[] bytes = ByteBuffer.allocate(4).putInt(-2147483647).array();
+                    byte b1 = buffi.readByte();
+                    byte b2 = buffi.readByte();
+                    byte b3 = buffi.readByte();
+                    byte b4 = buffi.readByte();
+                    System.out.println("SINT " + String.format("%02x", b1) + " " + String.format("%02x", b2)  + " " +  String.format("%02x", b3)  + " " +  String.format("%02x", b4));
+                    System.out.println("SINT " + String.format("%02x", bytes[2]) + " " + String.format("%02x", bytes[3])  + " " +  String.format("%02x", bytes[0])  + " " +  String.format("%02x", bytes[1]));
+                    ByteBuffer bb = ByteBuffer.wrap(new byte[] {b3 ,b4, b1, b2});
+                    return bb.getInt();
+                } else {
+                    return buffi.readInt();
+                }
             case UINT_32:
-                return Integer.toUnsignedLong(buffi.readInt());
+                if(registersLittleEndian) {
+                    byte b1 = buffi.readByte();
+                    byte b2 = buffi.readByte();
+                    byte b3 = buffi.readByte();
+                    byte b4 = buffi.readByte();
+                    System.out.println("UINT " + String.format("%02x", b1) + " " + String.format("%02x", b2)  + " " +  String.format("%02x", b3)  + " " +  String.format("%02x", b4));
+                    ByteBuffer bb = ByteBuffer.wrap(new byte[] {b4 ,b3, b2, b1});
+                    return bb.getInt();
+                } else {
+                    return buffi.readUnsignedInt();
+                }
             case INT_64:
-                return buffi.readLong();
+                if(registersLittleEndian) {
+                    return buffi.readUnsignedShort() + (buffi.readUnsignedShort() << 16);
+                } else {
+                    return buffi.readLong();
+                }
             case FLOAT_32:
-                return buffi.readFloat();
+                if(registersLittleEndian) {
+                    return buffi.readUnsignedShort() + (buffi.readUnsignedShort() << 16);
+                } else {
+                    return buffi.readFloat();
+                }
+            case FLOAT_64:
+                if(registersLittleEndian) {
+                    return buffi.readUnsignedShort() + (buffi.readUnsignedShort() << 16);
+                } else {
+                    return buffi.readDouble();
+                }
             case UTF_8:
                 final byte[] bytes = new byte[count * 2];
                 buffi.readBytes(bytes);
