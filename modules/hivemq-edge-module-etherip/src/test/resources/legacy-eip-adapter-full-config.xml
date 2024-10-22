@@ -26,7 +26,7 @@
             <subscriptions>
                 <subscription>
                     <tagName>tag-name</tagName>
-                    <tagDefinition>tag-address</tagDefinition>
+                    <tagAddress>tag-address</tagAddress>
                     <destination>my/topic</destination>
                     <dataType>BOOL</dataType>
                     <qos>1</qos>
@@ -46,7 +46,7 @@
                 </subscription>
                 <subscription>
                     <tagName>tag-name</tagName>
-                    <tagDefinition>tag-address</tagDefinition>
+                    <tagAddress>tag-address</tagAddress>
                     <destination>my/topic/2</destination>
                     <dataType>BOOL</dataType>
                     <qos>1</qos>
