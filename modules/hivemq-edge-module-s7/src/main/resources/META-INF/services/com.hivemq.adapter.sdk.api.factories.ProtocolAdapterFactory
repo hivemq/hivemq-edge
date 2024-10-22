@@ -1,1 +1,1 @@
-com.hivemq.edge.adapters.s7.S7ProtocolAdapterFactory
+com.hivemq.edge.adapters.file.FileProtocolAdapterFactory
