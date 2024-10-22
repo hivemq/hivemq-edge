@@ -77,7 +77,6 @@ public class LegacyModbusAdapterConfigTest {
             });
 
             assertThat(subscription.getAddressRange().startIdx).isEqualTo(11);
-            assertThat(subscription.getAddressRange().nrRegistersToRead).isEqualTo(2);
         }, subscription -> {
             assertThat(subscription.getMqttTopic()).isEqualTo("my/topic/2");
             assertThat(subscription.getMqttQos()).isEqualTo(1);
@@ -94,7 +93,6 @@ public class LegacyModbusAdapterConfigTest {
             });
 
             assertThat(subscription.getAddressRange().startIdx).isEqualTo(11);
-            assertThat(subscription.getAddressRange().nrRegistersToRead).isEqualTo(2);
         });
     }
 
@@ -125,7 +123,6 @@ public class LegacyModbusAdapterConfigTest {
             assertThat(subscription.getIncludeTagNames()).isFalse();
             assertThat(subscription.getUserProperties()).isEmpty();
             assertThat(subscription.getAddressRange().startIdx).isEqualTo(11);
-            assertThat(subscription.getAddressRange().nrRegistersToRead).isEqualTo(2);
         });
     }
 

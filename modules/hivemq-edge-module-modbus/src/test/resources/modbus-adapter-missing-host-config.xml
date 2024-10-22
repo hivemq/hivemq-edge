@@ -25,7 +25,8 @@
                     <destination>my/topic</destination>
                     <addressRange>
                         <startIdx>11</startIdx>
-                        <nrRegistersToRead>2</nrRegistersToRead>
+                        <readType>HOLDING_REGISTERS</readType>
+                        <unitId>0</unitId>
                     </addressRange>
                     <dataType>INT_32</dataType>
                 </subscription>

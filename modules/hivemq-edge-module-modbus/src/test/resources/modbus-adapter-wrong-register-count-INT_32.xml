@@ -10,7 +10,8 @@
                     <mqttTopic>my/topic</mqttTopic>
                     <addressRange>
                         <startIdx>10</startIdx>
-                        <nrRegistersToRead>5</nrRegistersToRead>
+                        <readType>HOLDING_REGISTERS</readType>
+                        <unitId>0</unitId>
                     </addressRange>
                     <dataType>INT_32</dataType>
                 </modbusToMqttMapping>

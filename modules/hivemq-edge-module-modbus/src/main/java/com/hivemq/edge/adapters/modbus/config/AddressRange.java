@@ -30,18 +30,32 @@ public class AddressRange {
                        required = true)
     public final int startIdx;
 
-    @JsonProperty(value = "nrRegistersToRead", required = true)
-    @ModuleConfigField(title = "# of registers to read",
-                       description = "Number of registers to read",
-                       numberMin = 1,
-                       numberMax = ModbusAdapterConfig.PORT_MAX,
+    @JsonProperty(value = "readType", required = true)
+    @ModuleConfigField(title = "The way the register range should be read",
+                       description = "Type of read to performe on the registers",
                        required = true)
-    public final int nrRegistersToRead;
+    public final ModbusAdu readType;
+
+    @JsonProperty(value = "unitId", required = true)
+    @ModuleConfigField(title = "The id of the unit to access",
+                       description = "Id of the unit to access on the modbus",
+                       required = true)
+    public final int unitId;
+
+    @JsonProperty(value = "flipRegisters", defaultValue = "false")
+    @ModuleConfigField(title = "Indicates if registers should be evaluated in reverse order",
+                       description = "Registers and their contents are normally written/read as big endian, some implementations decided to write the content as big endian but to order the actual registers as little endian.",
+                       defaultValue = "false")
+    public final boolean flipRegisters;
 
     public AddressRange(
             @JsonProperty(value = "startIdx", required = true) final int startIdx,
-            @JsonProperty(value = "nrRegistersToRead", required = true) final int nrRegistersToRead) {
+            @JsonProperty(value = "readType", required = true) final ModbusAdu readType,
+            @JsonProperty(value = "unitId", required = true) final int unitId,
+            @JsonProperty(value = "flipRegisters", defaultValue = "false") final boolean flipRegisters) {
         this.startIdx = startIdx;
-        this.nrRegistersToRead = nrRegistersToRead;
+        this.readType = readType;
+        this.unitId = unitId;
+        this.flipRegisters = flipRegisters;
     }
 }

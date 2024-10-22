@@ -29,11 +29,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author Simon L Johnson
  */
 public class ModBusData  {
-    public enum TYPE {
-        COILS,
-        INPUT_REGISTERS,
-        HOLDING_REGISTERS,
-    }
     protected @NotNull PollingContext pollingContext;
 
     //-- Handle multiple tags in the same sample

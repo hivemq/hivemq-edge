@@ -18,6 +18,7 @@ package com.hivemq.edge.adapters.modbus;
 import com.hivemq.adapter.sdk.api.config.MessageHandlingOptions;
 import com.hivemq.adapter.sdk.api.data.DataPoint;
 import com.hivemq.edge.adapters.modbus.config.AddressRange;
+import com.hivemq.edge.adapters.modbus.config.ModbusAdu;
 import com.hivemq.edge.adapters.modbus.config.ModbusDataType;
 import com.hivemq.edge.adapters.modbus.config.ModbusToMqttMapping;
 import com.hivemq.edge.adapters.modbus.model.ModBusData;
@@ -67,7 +68,7 @@ class ModbusProtocolAdapterTest {
                 true,
                 false,
                 List.of(),
-                new AddressRange(1, 1),
+                new AddressRange(1, ModbusAdu.HOLDING_REGISTERS, 0, false),
                 ModbusDataType.INT_16);
         final ModBusData data = new ModBusData(pollingContext);
         IntStream.range(0, 10).forEach(i -> data.addDataPoint(new DataPointImpl("register-" + i, i)));

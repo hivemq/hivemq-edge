@@ -33,7 +33,8 @@
                         <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <addressRange>
                             <startIdx>11</startIdx>
-                            <nrRegistersToRead>4</nrRegistersToRead>
+                            <readType>HOLDING_REGISTERS</readType>
+                            <unitId>0</unitId>
                         </addressRange>
                         <mqttUserProperties>
                             <mqttUserProperty>
@@ -55,7 +56,8 @@
                         <messageHandlingOptions>MQTTMessagePerSubscription</messageHandlingOptions>
                         <addressRange>
                             <startIdx>16</startIdx>
-                            <nrRegistersToRead>2</nrRegistersToRead>
+                            <readType>HOLDING_REGISTERS</readType>
+                            <unitId>0</unitId>
                         </addressRange>
                         <mqttUserProperties>
                             <mqttUserProperty>
