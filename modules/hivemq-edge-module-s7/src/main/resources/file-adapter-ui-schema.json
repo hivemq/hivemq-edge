@@ -1,0 +1,51 @@
+{
+  "ui:tabs" : [
+    {
+      "id" : "coreFields",
+      "title" : "Connection",
+      "properties" : [
+        "id",
+        "*"
+      ]
+    },
+    {
+      "id" : "subFields",
+      "title" : "File 2 MQTT",
+      "properties" : [
+        "fileToMqtt"
+      ]
+    }
+  ],
+  "id" : {
+    "ui:disabled" : false
+  },
+  "ui:order" : [
+    "id",
+    "*"
+  ],
+  "fileToMqtt" : {
+    "ui:batchMode" : true,
+    "ui:order" : [
+      "maxPollingErrorsBeforeRemoval",
+      "pollingIntervalMillis",
+      "fileToMqttMappings",
+      "*"
+    ],
+    "fileToMqttMappings" : {
+      "ui:batchMode" : true,
+      "items": {
+        "ui:order" : [
+          "mqttTopic",
+          "mqttQos",
+          "*",
+          "mqttUserProperties",
+          "filePath",
+          "dataType"
+        ],
+        "ui:collapsable" : {
+          "titleKey" : "mqttTopic"
+        }
+      }
+    }
+  }
+}
