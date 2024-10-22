@@ -23,8 +23,8 @@ import com.hivemq.configuration.reader.ConfigurationFile;
 import com.hivemq.edge.adapters.etherip.EipProtocolAdapterFactory;
 import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipDataType;
-import com.hivemq.edge.adapters.etherip.tag.EipAddress;
 import com.hivemq.edge.adapters.etherip.tag.EipTag;
+import com.hivemq.edge.adapters.etherip.tag.EipTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -113,8 +113,7 @@ class LegacyEipAdapterConfigTest {
         });
 
         verify(protocolAdapterTagService, times(2)).addTag(any(),
-                any(),
-                eq(new EipTag("tag-name", new EipAddress("tag-address"))));
+                any(), eq(new EipTag("tag-name", new EipTagDefinition("tag-address"))));
     }
 
     @Test
@@ -149,8 +148,7 @@ class LegacyEipAdapterConfigTest {
         });
 
         verify(protocolAdapterTagService, times(1)).addTag(any(),
-                any(),
-                eq(new EipTag("tag-name", new EipAddress("tag-address"))));
+                any(), eq(new EipTag("tag-name", new EipTagDefinition("tag-address"))));
     }
 
     private @NotNull HiveMQConfigEntity loadConfig(final @NotNull File configFile) {

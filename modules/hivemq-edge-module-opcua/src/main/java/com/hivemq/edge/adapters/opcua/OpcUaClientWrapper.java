@@ -17,7 +17,7 @@ import com.hivemq.edge.adapters.opcua.client.OpcUaClientConfigurator;
 import com.hivemq.edge.adapters.opcua.client.OpcUaEndpointFilter;
 import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.mqtt2opcua.MqttToOpcUaMapping;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagAddress;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonSchemaGenerator;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.JsonToOpcUAConverter;
 import com.hivemq.edge.adapters.opcua.mqtt2opcua.OpcUaPayload;
@@ -297,8 +297,8 @@ public class OpcUaClientWrapper {
 
     private @NotNull String resolveNodeIDFromTagName(final @NotNull String tagName) {
         // first resolve the tag
-        final Tag<OpcuaTagAddress> addressTag =
-                moduleServices.protocolAdapterTagService().resolveTag(tagName, OpcuaTagAddress.class);
+        final Tag<OpcuaTagDefinition> addressTag =
+                moduleServices.protocolAdapterTagService().resolveTag(tagName, OpcuaTagDefinition.class);
         return addressTag.getTagDefinition().getNode();
     }
 

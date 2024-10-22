@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class EipAddress {
+public class EipTagDefinition {
 
     @JsonProperty("address")
     private final @NotNull String address;
 
     @JsonCreator
-    public EipAddress(@JsonProperty("address") final @NotNull String address) {
+    public EipTagDefinition(@JsonProperty("address") final @NotNull String address) {
         this.address = address;
     }
 
@@ -28,7 +28,7 @@ public class EipAddress {
             return false;
         }
 
-        final EipAddress that = (EipAddress) o;
+        final EipTagDefinition that = (EipTagDefinition) o;
         return address.equals(that.address);
     }
 

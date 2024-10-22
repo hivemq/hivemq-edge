@@ -34,7 +34,7 @@ import com.hivemq.edge.adapters.opcua.config.OpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagAddress;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import com.hivemq.edge.modules.adapters.impl.ProtocolAdapterStateImpl;
 import com.hivemq.edge.modules.api.events.model.EventBuilderImpl;
 import com.hivemq.mqtt.message.QoS;
@@ -96,8 +96,8 @@ abstract class AbstractOpcUaPayloadConverterTest {
 
     @NotNull
     protected OpcUaProtocolAdapter createAndStartAdapter(final @NotNull String subcribedNodeId) throws Exception {
-        when(protocolAdapterTagService.resolveTag(any(), eq(OpcuaTagAddress.class))).thenReturn(new OpcuaTag("",
-                new OpcuaTagAddress(subcribedNodeId)));
+        when(protocolAdapterTagService.resolveTag(any(), eq(OpcuaTagDefinition.class))).thenReturn(new OpcuaTag("",
+                new OpcuaTagDefinition(subcribedNodeId)));
 
         final OpcUaToMqttConfig opcuaToMqttConfig =
                 new OpcUaToMqttConfig(List.of(new OpcUaToMqttMapping(subcribedNodeId, "topic", null, null, null, null)));

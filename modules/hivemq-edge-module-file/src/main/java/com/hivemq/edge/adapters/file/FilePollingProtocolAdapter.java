@@ -30,7 +30,7 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.file.config.FileAdapterConfig;
 import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.convertion.MappingException;
-import com.hivemq.edge.adapters.file.tag.FileTagAddress;
+import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.LoggerFactory;
 
@@ -92,9 +92,9 @@ public class FilePollingProtocolAdapter implements PollingProtocolAdapter<FileTo
     public void poll(
             final @NotNull PollingInput<FileToMqttMapping> pollingInput, final @NotNull PollingOutput pollingOutput) {
         final ProtocolAdapterTagService protocolAdapterTagService = pollingInput.protocolAdapterTagService();
-        final Tag<FileTagAddress> eipAddressTag =
+        final Tag<FileTagDefinition> eipAddressTag =
                 protocolAdapterTagService.resolveTag(pollingInput.getPollingContext().getTagName(),
-                        FileTagAddress.class);
+                        FileTagDefinition.class);
 
 
         final String absolutePathToFle = eipAddressTag.getTagDefinition().getFilePath();

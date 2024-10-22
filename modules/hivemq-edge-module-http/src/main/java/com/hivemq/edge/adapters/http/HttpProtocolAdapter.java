@@ -44,7 +44,7 @@ import com.hivemq.edge.adapters.http.config.mqtt2http.MqttToHttpMapping;
 import com.hivemq.edge.adapters.http.model.HttpData;
 import com.hivemq.edge.adapters.http.mqtt2http.HttpPayload;
 import com.hivemq.edge.adapters.http.mqtt2http.JsonSchema;
-import com.hivemq.edge.adapters.http.tag.HttpTagAddress;
+import com.hivemq.edge.adapters.http.tag.HttpTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -159,9 +159,9 @@ public class HttpProtocolAdapter
 
         // first resolve the tag
         final ProtocolAdapterTagService protocolAdapterTagService = pollingInput.protocolAdapterTagService();
-        final Tag<HttpTagAddress> addressTag =
+        final Tag<HttpTagDefinition> addressTag =
                 protocolAdapterTagService.resolveTag(pollingInput.getPollingContext().getTagName(),
-                        HttpTagAddress.class);
+                        HttpTagDefinition.class);
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();
         final String url = addressTag.getTagDefinition().getUrl();
@@ -290,8 +290,8 @@ public class HttpProtocolAdapter
 
         // first resolve the tag
         final ProtocolAdapterTagService protocolAdapterTagService = writingInput.protocolAdapterTagService();
-        final Tag<HttpTagAddress> addressTag =
-                protocolAdapterTagService.resolveTag(mqttToHttpMapping.getTagName(), HttpTagAddress.class);
+        final Tag<HttpTagDefinition> addressTag =
+                protocolAdapterTagService.resolveTag(mqttToHttpMapping.getTagName(), HttpTagDefinition.class);
         final String url = addressTag.getTagDefinition().getUrl();
 
         final HttpRequest.Builder builder = HttpRequest.newBuilder();

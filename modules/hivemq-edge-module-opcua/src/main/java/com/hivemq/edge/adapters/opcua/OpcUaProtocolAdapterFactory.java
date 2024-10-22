@@ -28,7 +28,7 @@ import com.hivemq.edge.adapters.opcua.config.legacy.LegacyOpcUaAdapterConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttConfig;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
 import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTag;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagAddress;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,8 +112,7 @@ public class OpcUaProtocolAdapterFactory implements ProtocolAdapterFactory<OpcUa
             // create tag first
             final String newTagName = legacyOpcUaAdapterConfig.getId() + "-" + UUID.randomUUID();
             protocolAdapterTagService.addTag(legacyOpcUaAdapterConfig.getId(),
-                    PROTOCOL_ID,
-                    new OpcuaTag(newTagName, new OpcuaTagAddress(subscription.getNode())));
+                    PROTOCOL_ID, new OpcuaTag(newTagName, new OpcuaTagDefinition(subscription.getNode())));
             opcuaToMqttMappings.add(new OpcUaToMqttMapping(subscription.getNode(),
                     subscription.getMqttTopic(),
                     subscription.getPublishingInterval(),

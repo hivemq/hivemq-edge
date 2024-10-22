@@ -6,7 +6,7 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class Plc4xTagAddress {
+public class Plc4xTagDefinition {
 
     @JsonProperty(value = "tagAddress", required = true)
     @ModuleConfigField(title = "Tag Address",
@@ -15,7 +15,7 @@ public class Plc4xTagAddress {
     private final @NotNull String tagAddress;
 
     @JsonCreator
-    public Plc4xTagAddress(@JsonProperty("tagAddress") final @NotNull String tagAddress) {
+    public Plc4xTagDefinition(@JsonProperty("tagAddress") final @NotNull String tagAddress) {
         this.tagAddress = tagAddress;
     }
 
@@ -32,7 +32,7 @@ public class Plc4xTagAddress {
             return false;
         }
 
-        final Plc4xTagAddress that = (Plc4xTagAddress) o;
+        final Plc4xTagDefinition that = (Plc4xTagDefinition) o;
         return tagAddress.equals(that.tagAddress);
     }
 

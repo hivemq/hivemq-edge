@@ -7,7 +7,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterPublishService;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.opcua.client.OpcUaSubscriptionConsumer;
 import com.hivemq.edge.adapters.opcua.config.opcua2mqtt.OpcUaToMqttMapping;
-import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagAddress;
+import com.hivemq.edge.adapters.opcua.config.tag.OpcuaTagDefinition;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription;
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager;
@@ -160,8 +160,8 @@ public class OpcUaSubscriptionLifecycle implements UaSubscriptionManager.Subscri
 
     private @NotNull String resolveNodeIDFromTagName(final @NotNull String tagName) {
         // first resolve the tag
-        final Tag<OpcuaTagAddress> addressTag =
-                moduleServices.protocolAdapterTagService().resolveTag(tagName, OpcuaTagAddress.class);
+        final Tag<OpcuaTagDefinition> addressTag =
+                moduleServices.protocolAdapterTagService().resolveTag(tagName, OpcuaTagDefinition.class);
         return addressTag.getTagDefinition().getNode();
     }
 

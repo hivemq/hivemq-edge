@@ -6,7 +6,7 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class HttpTagAddress {
+public class HttpTagDefinition {
 
     @JsonProperty(value = "url", required = true)
     @ModuleConfigField(title = "URL",
@@ -16,7 +16,7 @@ public class HttpTagAddress {
     private final @NotNull String url;
 
     @JsonCreator
-    public HttpTagAddress(@JsonProperty("url") final @NotNull String url) {
+    public HttpTagDefinition(@JsonProperty("url") final @NotNull String url) {
         this.url = url;
     }
 
@@ -33,7 +33,7 @@ public class HttpTagAddress {
             return false;
         }
 
-        final HttpTagAddress that = (HttpTagAddress) o;
+        final HttpTagDefinition that = (HttpTagDefinition) o;
         return url.equals(that.url);
     }
 

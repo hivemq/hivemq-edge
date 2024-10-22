@@ -26,8 +26,8 @@ import com.hivemq.edge.adapters.etherip.config.EipAdapterConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttConfig;
 import com.hivemq.edge.adapters.etherip.config.EipToMqttMapping;
 import com.hivemq.edge.adapters.etherip.config.legacy.LegacyEipAdapterConfig;
-import com.hivemq.edge.adapters.etherip.tag.EipAddress;
 import com.hivemq.edge.adapters.etherip.tag.EipTag;
+import com.hivemq.edge.adapters.etherip.tag.EipTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,8 +115,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
         for (final LegacyEipAdapterConfig.PollingContextImpl context : legacyEipAdapterConfig.getSubscriptions()) {
             // create tag first
             final ProtocolAdapterTagService.AddStatus addStatus = tagService.addTag(legacyEipAdapterConfig.getId(),
-                    PROTOCOL_ID,
-                    new EipTag(context.getTagName(), new EipAddress(context.getTagAddress())));
+                    PROTOCOL_ID, new EipTag(context.getTagName(), new EipTagDefinition(context.getTagAddress())));
             switch (addStatus) {
                 case SUCCESS:
                     eipToMqttMappings.add(new EipToMqttMapping(context.getDestinationMqttTopic(),
@@ -135,7 +134,7 @@ public class EipProtocolAdapterFactory implements ProtocolAdapterFactory<EipAdap
                             context.getTagName(),
                             newTagName);
                     tagService.addTag(legacyEipAdapterConfig.getId(), PROTOCOL_ID,
-                            new EipTag(newTagName, new EipAddress(context.getTagAddress())));
+                            new EipTag(newTagName, new EipTagDefinition(context.getTagAddress())));
 
                     eipToMqttMappings.add(new EipToMqttMapping(context.getDestinationMqttTopic(),
                             context.getQos(),

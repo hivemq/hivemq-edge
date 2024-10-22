@@ -6,7 +6,7 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class OpcuaTagAddress {
+public class OpcuaTagDefinition {
 
     @JsonProperty(value = "node", required = true)
     @ModuleConfigField(title = "Destination Node ID",
@@ -15,7 +15,7 @@ public class OpcuaTagAddress {
     private final @NotNull String node;
 
     @JsonCreator
-    public OpcuaTagAddress(@JsonProperty("node") final @NotNull String node) {
+    public OpcuaTagDefinition(@JsonProperty("node") final @NotNull String node) {
         this.node = node;
     }
 
@@ -32,7 +32,7 @@ public class OpcuaTagAddress {
             return false;
         }
 
-        final OpcuaTagAddress that = (OpcuaTagAddress) o;
+        final OpcuaTagDefinition that = (OpcuaTagDefinition) o;
         return node.equals(that.node);
     }
 

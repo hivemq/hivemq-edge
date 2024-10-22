@@ -25,7 +25,7 @@ import com.hivemq.adapter.sdk.api.services.ProtocolAdapterTagService;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
 import com.hivemq.edge.adapters.plc4x.config.legacy.LegacyPlc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTag;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagAddress;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.ADSToMqttConfig;
 import com.hivemq.edge.adapters.plc4x.types.ads.config.legacy.LegacyADSAdapterConfig;
@@ -113,7 +113,7 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
             final ProtocolAdapterTagService.AddStatus addStatus = protocolAdapterTagService.addTag(
                     legacyAdsAdapterConfig.getId(),
                     PROTOCOL_ID,
-                    new Plc4xTag(subscription.getTagName(), new Plc4xTagAddress(subscription.getTagAddress())));
+                    new Plc4xTag(subscription.getTagName(), new Plc4xTagDefinition(subscription.getTagAddress())));
             // we need to check the tagName as it comes from the
             switch (addStatus) {
                 case SUCCESS:
@@ -135,7 +135,7 @@ public class ADSProtocolAdapterFactory implements ProtocolAdapterFactory<ADSAdap
                             newTagName);
                     protocolAdapterTagService.addTag(legacyAdsAdapterConfig.getId(),
                             PROTOCOL_ID,
-                            new Plc4xTag(newTagName, new Plc4xTagAddress(subscription.getTagAddress())));
+                            new Plc4xTag(newTagName, new Plc4xTagDefinition(subscription.getTagAddress())));
                     plc4xToMqttMappings.add(new Plc4xToMqttMapping(subscription.getMqttTopic(),
                             subscription.getMqttQos(),
                             subscription.getMessageHandlingOptions(),

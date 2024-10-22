@@ -6,7 +6,7 @@ import com.hivemq.adapter.sdk.api.annotations.ModuleConfigField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class FileTagAddress {
+public class FileTagDefinition {
 
     @JsonProperty(value = "filePath", required = true)
     @ModuleConfigField(title = "The file path",
@@ -15,7 +15,7 @@ public class FileTagAddress {
     private final @NotNull String filePath;
 
     @JsonCreator
-    public FileTagAddress(@JsonProperty("filePath") final @NotNull String filePath) {
+    public FileTagDefinition(@JsonProperty("filePath") final @NotNull String filePath) {
         this.filePath = filePath;
     }
 
@@ -32,7 +32,7 @@ public class FileTagAddress {
             return false;
         }
 
-        final FileTagAddress that = (FileTagAddress) o;
+        final FileTagDefinition that = (FileTagDefinition) o;
         return filePath.equals(that.filePath);
     }
 

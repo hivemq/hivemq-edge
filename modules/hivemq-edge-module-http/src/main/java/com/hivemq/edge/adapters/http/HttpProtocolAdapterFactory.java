@@ -28,7 +28,7 @@ import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttConfig;
 import com.hivemq.edge.adapters.http.config.http2mqtt.HttpToMqttMapping;
 import com.hivemq.edge.adapters.http.config.legacy.LegacyHttpAdapterConfig;
 import com.hivemq.edge.adapters.http.tag.HttpTag;
-import com.hivemq.edge.adapters.http.tag.HttpTagAddress;
+import com.hivemq.edge.adapters.http.tag.HttpTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,8 +114,7 @@ public class HttpProtocolAdapterFactory implements ProtocolAdapterFactory<HttpAd
         // create tag first
         final String newTagName = legacyHttpAdapterConfig.getId() + "-" + UUID.randomUUID().toString();
         protocolAdapterTagService.addTag(legacyHttpAdapterConfig.getId(),
-                PROTOCOL_ID,
-                new HttpTag(newTagName, new HttpTagAddress(legacyHttpAdapterConfig.getUrl())));
+                PROTOCOL_ID, new HttpTag(newTagName, new HttpTagDefinition(legacyHttpAdapterConfig.getUrl())));
 
         final HttpToMqttMapping httpToMqttMapping = new HttpToMqttMapping(newTagName,
                 legacyHttpAdapterConfig.getDestination(),

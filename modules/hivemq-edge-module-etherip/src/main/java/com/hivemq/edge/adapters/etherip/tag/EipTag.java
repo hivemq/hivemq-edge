@@ -3,20 +3,20 @@ package com.hivemq.edge.adapters.etherip.tag;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 
-public class EipTag implements Tag<EipAddress> {
+public class EipTag implements Tag<EipTagDefinition> {
 
     private final @NotNull String tagName;
-    private final @NotNull EipAddress eipAddress;
+    private final @NotNull EipTagDefinition eipTagDefinition;
 
-    public EipTag(final @NotNull String tagName, final @NotNull EipAddress eipAddress) {
+    public EipTag(final @NotNull String tagName, final @NotNull EipTagDefinition eipTagDefinition) {
         this.tagName = tagName;
-        this.eipAddress = eipAddress;
+        this.eipTagDefinition = eipTagDefinition;
     }
 
 
     @Override
-    public @NotNull EipAddress getTagDefinition() {
-        return eipAddress;
+    public @NotNull EipTagDefinition getTagDefinition() {
+        return eipTagDefinition;
     }
 
     @Override
@@ -34,13 +34,13 @@ public class EipTag implements Tag<EipAddress> {
         }
 
         final EipTag eipTag = (EipTag) o;
-        return tagName.equals(eipTag.tagName) && eipAddress.equals(eipTag.eipAddress);
+        return tagName.equals(eipTag.tagName) && eipTagDefinition.equals(eipTag.eipTagDefinition);
     }
 
     @Override
     public int hashCode() {
         int result = tagName.hashCode();
-        result = 31 * result + eipAddress.hashCode();
+        result = 31 * result + eipTagDefinition.hashCode();
         return result;
     }
 }

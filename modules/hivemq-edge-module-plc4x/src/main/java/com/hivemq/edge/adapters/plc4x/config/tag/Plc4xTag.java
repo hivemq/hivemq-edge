@@ -4,19 +4,19 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class Plc4xTag implements Tag<Plc4xTagAddress> {
+public class Plc4xTag implements Tag<Plc4xTagDefinition> {
 
     private final @NotNull String tagName;
-    private final @NotNull Plc4xTagAddress plc4xTagAddress;
+    private final @NotNull Plc4xTagDefinition plc4XTagDefinition;
 
-    public Plc4xTag(final @NotNull String tagName, final @NotNull Plc4xTagAddress plc4xTagAddress) {
+    public Plc4xTag(final @NotNull String tagName, final @NotNull Plc4xTagDefinition plc4XTagDefinition) {
         this.tagName = tagName;
-        this.plc4xTagAddress = plc4xTagAddress;
+        this.plc4XTagDefinition = plc4XTagDefinition;
     }
 
     @Override
-    public @NotNull Plc4xTagAddress getTagDefinition() {
-        return plc4xTagAddress;
+    public @NotNull Plc4xTagDefinition getTagDefinition() {
+        return plc4XTagDefinition;
     }
 
     @Override
@@ -34,13 +34,13 @@ public class Plc4xTag implements Tag<Plc4xTagAddress> {
         }
 
         final Plc4xTag httpTag = (Plc4xTag) o;
-        return tagName.equals(httpTag.tagName) && plc4xTagAddress.equals(httpTag.plc4xTagAddress);
+        return tagName.equals(httpTag.tagName) && plc4XTagDefinition.equals(httpTag.plc4XTagDefinition);
     }
 
     @Override
     public int hashCode() {
         int result = tagName.hashCode();
-        result = 31 * result + plc4xTagAddress.hashCode();
+        result = 31 * result + plc4XTagDefinition.hashCode();
         return result;
     }
 }

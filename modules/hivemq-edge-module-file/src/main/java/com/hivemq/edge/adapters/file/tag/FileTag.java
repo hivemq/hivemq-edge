@@ -3,20 +3,20 @@ package com.hivemq.edge.adapters.file.tag;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 
-public class FileTag implements Tag<FileTagAddress> {
+public class FileTag implements Tag<FileTagDefinition> {
 
     private final @NotNull String tagName;
-    private final @NotNull FileTagAddress fileTagAddress;
+    private final @NotNull FileTagDefinition fileTagDefinition;
 
-    public FileTag(final @NotNull String tagName, final @NotNull FileTagAddress fileTagAddress) {
+    public FileTag(final @NotNull String tagName, final @NotNull FileTagDefinition fileTagDefinition) {
         this.tagName = tagName;
-        this.fileTagAddress = fileTagAddress;
+        this.fileTagDefinition = fileTagDefinition;
     }
 
 
     @Override
-    public @NotNull FileTagAddress getTagDefinition() {
-        return fileTagAddress;
+    public @NotNull FileTagDefinition getTagDefinition() {
+        return fileTagDefinition;
     }
 
     @Override
@@ -34,13 +34,13 @@ public class FileTag implements Tag<FileTagAddress> {
         }
 
         final FileTag fileTag = (FileTag) o;
-        return tagName.equals(fileTag.tagName) && fileTagAddress.equals(fileTag.fileTagAddress);
+        return tagName.equals(fileTag.tagName) && fileTagDefinition.equals(fileTag.fileTagDefinition);
     }
 
     @Override
     public int hashCode() {
         int result = tagName.hashCode();
-        result = 31 * result + fileTagAddress.hashCode();
+        result = 31 * result + fileTagDefinition.hashCode();
         return result;
     }
 }

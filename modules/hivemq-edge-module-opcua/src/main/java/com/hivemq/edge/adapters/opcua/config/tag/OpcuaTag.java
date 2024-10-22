@@ -3,19 +3,19 @@ package com.hivemq.edge.adapters.opcua.config.tag;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 
-public class OpcuaTag implements Tag<OpcuaTagAddress> {
+public class OpcuaTag implements Tag<OpcuaTagDefinition> {
 
     private final @NotNull String tagName;
-    private final @NotNull OpcuaTagAddress opcuaTagAddress;
+    private final @NotNull OpcuaTagDefinition opcuaTagDefinition;
 
-    public OpcuaTag(final @NotNull String tagName, final @NotNull OpcuaTagAddress opcuaTagAddress) {
+    public OpcuaTag(final @NotNull String tagName, final @NotNull OpcuaTagDefinition opcuaTagDefinition) {
         this.tagName = tagName;
-        this.opcuaTagAddress = opcuaTagAddress;
+        this.opcuaTagDefinition = opcuaTagDefinition;
     }
 
     @Override
-    public @NotNull OpcuaTagAddress getTagDefinition() {
-        return opcuaTagAddress;
+    public @NotNull OpcuaTagDefinition getTagDefinition() {
+        return opcuaTagDefinition;
     }
 
     @Override
@@ -33,13 +33,13 @@ public class OpcuaTag implements Tag<OpcuaTagAddress> {
         }
 
         final OpcuaTag httpTag = (OpcuaTag) o;
-        return tagName.equals(httpTag.tagName) && opcuaTagAddress.equals(httpTag.opcuaTagAddress);
+        return tagName.equals(httpTag.tagName) && opcuaTagDefinition.equals(httpTag.opcuaTagDefinition);
     }
 
     @Override
     public int hashCode() {
         int result = tagName.hashCode();
-        result = 31 * result + opcuaTagAddress.hashCode();
+        result = 31 * result + opcuaTagDefinition.hashCode();
         return result;
     }
 }

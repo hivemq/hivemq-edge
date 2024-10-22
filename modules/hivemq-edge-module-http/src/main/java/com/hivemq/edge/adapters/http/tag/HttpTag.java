@@ -3,20 +3,20 @@ package com.hivemq.edge.adapters.http.tag;
 import com.hivemq.adapter.sdk.api.tag.Tag;
 import org.jetbrains.annotations.NotNull;
 
-public class HttpTag implements Tag<HttpTagAddress> {
+public class HttpTag implements Tag<HttpTagDefinition> {
 
     private final @NotNull String tagName;
-    private final @NotNull HttpTagAddress httpTagAddress;
+    private final @NotNull HttpTagDefinition httpTagDefinition;
 
-    public HttpTag(final @NotNull String tagName, final @NotNull HttpTagAddress httpTagAddress) {
+    public HttpTag(final @NotNull String tagName, final @NotNull HttpTagDefinition httpTagDefinition) {
         this.tagName = tagName;
-        this.httpTagAddress = httpTagAddress;
+        this.httpTagDefinition = httpTagDefinition;
     }
 
 
     @Override
-    public @NotNull HttpTagAddress getTagDefinition() {
-        return httpTagAddress;
+    public @NotNull HttpTagDefinition getTagDefinition() {
+        return httpTagDefinition;
     }
 
     @Override
@@ -34,13 +34,13 @@ public class HttpTag implements Tag<HttpTagAddress> {
         }
 
         final HttpTag httpTag = (HttpTag) o;
-        return tagName.equals(httpTag.tagName) && httpTagAddress.equals(httpTag.httpTagAddress);
+        return tagName.equals(httpTag.tagName) && httpTagDefinition.equals(httpTag.httpTagDefinition);
     }
 
     @Override
     public int hashCode() {
         int result = tagName.hashCode();
-        result = 31 * result + httpTagAddress.hashCode();
+        result = 31 * result + httpTagDefinition.hashCode();
         return result;
     }
 }

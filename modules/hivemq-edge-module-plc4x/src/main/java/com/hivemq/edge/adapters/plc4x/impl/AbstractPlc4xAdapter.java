@@ -34,7 +34,7 @@ import com.hivemq.adapter.sdk.api.tag.Tag;
 import com.hivemq.edge.adapters.plc4x.Plc4xException;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xAdapterConfig;
 import com.hivemq.edge.adapters.plc4x.config.Plc4xToMqttMapping;
-import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagAddress;
+import com.hivemq.edge.adapters.plc4x.config.tag.Plc4xTagDefinition;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.plc4x.java.api.PlcDriverManager;
 import org.apache.plc4x.java.api.messages.PlcReadResponse;
@@ -236,8 +236,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
         final Plc4xToMqttMapping plc4xToMqttMapping = (Plc4xToMqttMapping) pollingContext;
 
         // resolve the tag
-        final Tag<Plc4xTagAddress> tag =
-                protocolAdapterTagService.resolveTag(plc4xToMqttMapping.getTagName(), Plc4xTagAddress.class);
+        final Tag<Plc4xTagDefinition> tag =
+                protocolAdapterTagService.resolveTag(plc4xToMqttMapping.getTagName(), Plc4xTagDefinition.class);
         final String tagAddress = tag.getTagDefinition().getTagAddress();
 
         if (adapterConfig.getPlc4xToMqttConfig().getPublishChangedDataOnly()) {
@@ -275,8 +275,8 @@ public abstract class AbstractPlc4xAdapter<T extends Plc4xAdapterConfig<?>, C ex
      */
     protected @NotNull String createTagAddressForSubscription(final @NotNull Plc4xToMqttMapping subscription) {
         // resolve the tag
-        final Tag<Plc4xTagAddress> tag =
-                protocolAdapterTagService.resolveTag(subscription.getTagName(), Plc4xTagAddress.class);
+        final Tag<Plc4xTagDefinition> tag =
+                protocolAdapterTagService.resolveTag(subscription.getTagName(), Plc4xTagDefinition.class);
         final String tagAddress = tag.getTagDefinition().getTagAddress();
         return String.format("%s%s%s", tagAddress, TAG_ADDRESS_TYPE_SEP, subscription.getDataType());
     }

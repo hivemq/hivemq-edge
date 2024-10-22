@@ -28,7 +28,7 @@ import com.hivemq.edge.adapters.file.config.FileToMqttMapping;
 import com.hivemq.edge.adapters.file.config.legacy.LegacyFileAdapterConfig;
 import com.hivemq.edge.adapters.file.config.legacy.LegacyFilePollingContext;
 import com.hivemq.edge.adapters.file.tag.FileTag;
-import com.hivemq.edge.adapters.file.tag.FileTagAddress;
+import com.hivemq.edge.adapters.file.tag.FileTagDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,8 +110,7 @@ public class FileProtocolAdapterFactory implements ProtocolAdapterFactory<FileAd
             // create tag first
             final String newTagName = legacyFileAdapterConfig.getId() + "-" + UUID.randomUUID().toString();
             tagService.addTag(legacyFileAdapterConfig.getId(),
-                    PROTOCOL_ID,
-                    new FileTag(newTagName, new FileTagAddress(context.getFilePath())));
+                    PROTOCOL_ID, new FileTag(newTagName, new FileTagDefinition(context.getFilePath())));
             final FileToMqttMapping fileToMqttMapping = new FileToMqttMapping(context.getDestinationMqttTopic(),
                     context.getQos(),
                     context.getMessageHandlingOptions(),
